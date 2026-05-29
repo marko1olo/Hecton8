@@ -22,6 +22,7 @@ namespace Hecton8.Core
         private int _nextMemoryPressureSampleFrame;
         private int _lastMemoryPressureDispatchFrame = -MemoryPressureSampleIntervalFrames;
         private int _nextNativeLeakAuditFrame;
+        private long _physicalMemoryBytesCold;
 
         public ServiceHeartbeatState HeartbeatState => _registeredPostFixed ? ServiceHeartbeatState.Ready : ServiceHeartbeatState.Booting;
         public bool IsServiceReady => _registeredPostFixed;
@@ -44,6 +45,7 @@ namespace Hecton8.Core
 
         public void InitializeService()
         {
+            RefreshPhysicalMemorySnapshotCold();
             PrimeSamplingFrames();
             TryRegisterPostFixed();
         }
@@ -58,11 +60,15 @@ namespace Hecton8.Core
             }
 
             GlobalRegistry.RegisterGCMonitorRuntime(this);
+            RefreshPhysicalMemorySnapshotCold();
             PrimeSamplingFrames();
         }
 
         private void OnEnable()
         {
+            if (_physicalMemoryBytesCold <= 0L)
+                RefreshPhysicalMemorySnapshotCold();
+
             TryRegisterHotSwapListener();
             TryRegisterPostFixed();
         }
@@ -88,6 +94,7 @@ namespace Hecton8.Core
         {
             OnDisable();
             GlobalRegistry.ClearGCMonitorRuntime(this);
+            _physicalMemoryBytesCold = 0L;
             PrimeSamplingFrames();
         }
 
@@ -116,11 +123,10 @@ namespace Hecton8.Core
                 return;
 
             _nextMemoryPressureSampleFrame = frame + MemoryPressureSampleIntervalFrames;
-            int physicalMemoryMb = SystemInfo.systemMemorySize;
-            if (physicalMemoryMb <= 0)
+            long physicalMemoryBytes = _physicalMemoryBytesCold;
+            if (physicalMemoryBytes <= 0L)
                 return;
 
-            long physicalMemoryBytes = (long)physicalMemoryMb * 1024L * 1024L;
             long reservedMemoryBytes = Profiler.GetTotalReservedMemoryLong();
             double usageRatio = physicalMemoryBytes > 0L
                 ? reservedMemoryBytes / (double)physicalMemoryBytes
@@ -147,6 +153,14 @@ namespace Hecton8.Core
 
             _nextNativeLeakAuditFrame = frame + NativeLeakAuditIntervalFrames;
             NativeMemorySentinel.AuditLongLivedTransientAllocations(frame);
+        }
+
+        private void RefreshPhysicalMemorySnapshotCold()
+        {
+            int physicalMemoryMb = SystemInfo.systemMemorySize;
+            _physicalMemoryBytesCold = physicalMemoryMb > 0
+                ? (long)physicalMemoryMb * 1024L * 1024L
+                : 0L;
         }
 
         private void PrimeSamplingFrames()

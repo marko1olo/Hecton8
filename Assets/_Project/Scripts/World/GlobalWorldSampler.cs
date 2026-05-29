@@ -29,8 +29,9 @@ namespace Hecton8.World
     public enum GlobalWorldSamplerConfigFlags : byte
     {
         None = 0,
-        // Legacy ABI bit. Runtime quality is GlobalQualityWeight, not this binary switch.
-        ForceMathLodLow = 1 << 0,
+        // Legacy ABI bit. Runtime quality is GlobalQualityWeight; this only reports survival sampling pressure.
+        ForceSurvivalSamplingPressure = 1 << 0,
+        ForceMathLodLow = ForceSurvivalSamplingPressure,
         EnableSmoothMin = 1 << 1,
         EnableMicroNoise = 1 << 2,
         EnableCeiling = 1 << 3,
@@ -52,7 +53,8 @@ namespace Hecton8.World
         HardFloor = 1 << 0,
         CaveSampled = 1 << 1,
         CavernOverride = 1 << 2,
-        MathLodLow = 1 << 3,
+        SurvivalSamplingPressure = 1 << 3,
+        MathLodLow = SurvivalSamplingPressure,
         SmoothMin = 1 << 4,
         Ceiling = 1 << 5,
         InvalidInput = 1 << 6,
@@ -963,7 +965,7 @@ namespace Hecton8.World
                 return;
             }
 
-            byte resultFlags = qualityWeight <= 0.05f ? (byte)GlobalWorldSamplerResultFlags.MathLodLow : (byte)0;
+            byte resultFlags = ResolveSurvivalSamplingPressureFlag(qualityWeight);
             float finalDistance = terrainDistance;
             float sdfDistance = InactiveDistanceSentinel;
             byte materialId = heightMaterial;
@@ -1044,7 +1046,7 @@ namespace Hecton8.World
             if (expensiveWeight <= 0.0001f)
             {
                 result.Normal = Float3(0f, 1f, 0f);
-                result.Flags |= (byte)((byte)GlobalWorldSamplerResultFlags.NormalEstimated | (byte)GlobalWorldSamplerResultFlags.MathLodLow);
+                result.Flags |= (byte)((byte)GlobalWorldSamplerResultFlags.NormalEstimated | (byte)GlobalWorldSamplerResultFlags.SurvivalSamplingPressure);
                 return;
             }
 
@@ -2136,6 +2138,14 @@ namespace Hecton8.World
             float quality = IsFinite(qualityWeight) ? math.saturate(qualityWeight) : DefaultQualityWeight;
             float ramp = math.saturate((quality - ExpensiveSamplingStartWeight) / (1f - ExpensiveSamplingStartWeight));
             return ramp * ramp * (3f - (2f * ramp));
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private static byte ResolveSurvivalSamplingPressureFlag(float qualityWeight)
+        {
+            return ResolveExpensiveSamplingWeight(qualityWeight) <= 0.0001f
+                ? (byte)GlobalWorldSamplerResultFlags.SurvivalSamplingPressure
+                : (byte)0;
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]

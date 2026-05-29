@@ -24,6 +24,7 @@ namespace Hecton8.Gameplay.Loot
         private static int _signalPushDropCount;
         private const string DumpRelativePath = "Docs/AgentLogs/Dump_ITEM_MAGNET_SOLVER.bin";
         private const string RuntimeObjectName = "[LootMagnetSystem]";
+        private const uint PostSimulationSystemHash = 0x4C4D5053u; // LMPS
         private const uint TelemetryFaultFlag = 1u;
         private const uint TelemetryAcousticBudgetDropFlag = 1u << 1;
         private const uint TelemetryWakeBudgetDropFlag = 1u << 2;
@@ -81,12 +82,18 @@ namespace Hecton8.Gameplay.Loot
         // COLD ALLOC: managed sidecars mirror vault slots only for legacy visual proxy/inventory commit.
         private PickupItem[] _pickupRefs;
         private ulong[] _pickupEntityIds;
+        private InventoryDeathLootCacheSignal[] _pendingDeathCacheAcquisitions;
+        private LootMagnetSignalEvent[] _pendingDeathCacheAcquisitionEvents;
+        private LootMagnetSignalEvent[] _pendingPresentationEvents;
+        private ushort[] _pendingPresentationQuantities;
+        private PostSimulationPhaseSystem _postSimulationPhase;
         private JobHandle _pullHandle;
         private bool _pullScheduled;
         private bool _scheduledVaultGuardHeld;
         private bool _registeredFastTick;
         private bool _registeredSlowTick;
         private bool _registeredLateFrameTick;
+        private bool _registeredPostSimulationDispatcher;
         private bool _registeredOriginShiftListener;
         private bool _registeredHotSwapListener;
         private bool _dumpedFault;
@@ -110,8 +117,13 @@ namespace Hecton8.Gameplay.Loot
         private uint _lastActiveLootPullsCount;
         private float _lastPeakMagnetVelocity;
         private IDataVault _scheduledVaultGuardVault;
+        private int _pendingDeathCacheAcquisitionCount;
+        private int _pendingPresentationCount;
+        private uint _slowPhaseAcquiredCountPendingTelemetry;
 
         private int Capacity => math.clamp(maxLootEntities, 1, LootMagnetConstants.MaxEntitiesHardCap);
+
+        private int PendingAcquisitionCount => _pendingDeathCacheAcquisitionCount;
 
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
         private static void ResetBootstrapState()
@@ -172,6 +184,10 @@ namespace Hecton8.Gameplay.Loot
             else
                 return;
 
+            TryRegisterDispatcherPhases();
+            if (!_registeredPostSimulationDispatcher)
+                return;
+
             TryRegisterTicks();
             TryRegisterOriginShiftListener();
         }
@@ -179,6 +195,7 @@ namespace Hecton8.Gameplay.Loot
         private void OnDisable()
         {
             ForceCompleteAndCommitScheduledJobForBarrier();
+            TryUnregisterDispatcherPhases();
             TryUnregisterTicks();
             TryUnregisterOriginShiftListener();
             ClearDataVaultRuntimeState();
@@ -189,6 +206,7 @@ namespace Hecton8.Gameplay.Loot
         private void OnDestroy()
         {
             TryUnregisterOriginShiftListener();
+            TryUnregisterDispatcherPhases();
             TryUnregisterHotSwapListener();
             if (ReferenceEquals(_bootstrapRuntime, this))
                 _bootstrapRuntime = null;
@@ -197,7 +215,7 @@ namespace Hecton8.Gameplay.Loot
         /// <inheritdoc />
         public void FastTick(float dt)
         {
-            if (_pullScheduled || _activeCount <= 0 || _inventory == null)
+            if (!_registeredPostSimulationDispatcher || _pullScheduled || _activeCount <= 0 || _inventory == null)
                 return;
 
             if (!TryResolvePlayerAup(out AbsoluteUniversePosition playerAup))
@@ -210,13 +228,19 @@ namespace Hecton8.Gameplay.Loot
         public void SlowTick()
         {
             RefreshDependencySnapshotsFromCachedOwners();
+            ApplyPendingAcquisitions();
             if (_pullScheduled)
+            {
+                RequeueInventoryDeathLootCacheSignalsWhileScheduled();
                 return;
+            }
 
             if (_inventory == null)
                 return;
 
-            if (!TryResolveVaultViews(out LootMagnetVaultViews views, Capacity, allowAllocate: true))
+            TryDrainInventoryDeathLootCacheSignals();
+
+            if (!TryResolveVaultViews(out LootMagnetVaultViews views, Capacity, allowAllocate: false))
                 return;
 
             RefreshPickupVaultFromRegistry(views);
@@ -225,43 +249,25 @@ namespace Hecton8.Gameplay.Loot
         /// <inheritdoc />
         public void LateFrameTick()
         {
-            _telemetryFrameCounter++;
-            if (!_pullScheduled)
-            {
-                TryDrainInventoryDeathLootCacheSignals();
-                TryResolvePlayerAup(out _);
-                _lastCommittedAcquiredCount = 0u;
-                _lastCommittedFlagsHash = _registryFlagsHash;
-                _lastActiveLootPullsCount = 0u;
-                _lastPeakMagnetVelocity = 0f;
-                _lastCommittedFlags = _dependencyTelemetryFlags |
-                                      _registryTelemetryFlags |
-                                      (_inventory == null ? TelemetryInventoryMissingFlag : 0u);
-                RecordTelemetry(_telemetryFrameCounter);
-                return;
-            }
+            uint presentationFlags = FlushPendingPresentationSignals();
+            presentationFlags |= FlushPullPresentationFromVault();
+            _lastCommittedFlags |= presentationFlags;
+        }
 
-            if (!DispatcherJobSwap.TryComplete(ref _pullHandle, forceComplete: false))
-            {
-                RequeueInventoryDeathLootCacheSignalsWhileScheduled();
-                return;
-            }
+        private void PostSimulationTick(in DispatcherTimingDTO timing)
+        {
+            _telemetryFrameCounter = timing.FrameId != 0u ? timing.FrameId : _telemetryFrameCounter + 1u;
+            TryResolvePlayerAup(out _);
 
-            _pullScheduled = false;
-            try
-            {
-                if (TryResolveVaultViews(out LootMagnetVaultViews views, _scheduledCapacity, allowAllocate: false) &&
-                    CanCommitCompletedJob(in views))
-                {
-                    CommitVaultResultsToManagedProxies(views);
-                }
-            }
-            finally
-            {
-                ReleaseScheduledVaultGuard();
-            }
+            uint postSimulationFlags = CompleteScheduledPullInPostSimulation();
+            ApplyPendingAcquisitions();
 
-            TryDrainInventoryDeathLootCacheSignals();
+            _lastCommittedAcquiredCount = _slowPhaseAcquiredCountPendingTelemetry;
+            _slowPhaseAcquiredCountPendingTelemetry = 0u;
+            _lastCommittedFlags = postSimulationFlags |
+                                  _dependencyTelemetryFlags |
+                                  _registryTelemetryFlags |
+                                  (_inventory == null ? TelemetryInventoryMissingFlag : 0u);
 
             if (_lastTelemetryRecordedFrame != _telemetryFrameCounter)
                 RecordTelemetry(_telemetryFrameCounter);
@@ -314,6 +320,26 @@ namespace Hecton8.Gameplay.Loot
             }
         }
 
+        private void TryRegisterDispatcherPhases()
+        {
+            if (_registeredPostSimulationDispatcher)
+                return;
+
+            if (_postSimulationPhase == null)
+                _postSimulationPhase = new PostSimulationPhaseSystem(this); // COLD ALLOC: IDispatcherSystem[1] - loot magnet post-simulation fence bridge - owner: LootMagnetSystem
+
+            _registeredPostSimulationDispatcher = GlobalRegistry.TryRegisterDispatcherSystem(_postSimulationPhase);
+        }
+
+        private void TryUnregisterDispatcherPhases()
+        {
+            if (!_registeredPostSimulationDispatcher)
+                return;
+
+            GlobalRegistry.UnregisterDispatcherSystem(_postSimulationPhase);
+            _registeredPostSimulationDispatcher = false;
+        }
+
         private void TryRegisterOriginShiftListener()
         {
             if (_registeredOriginShiftListener)
@@ -349,6 +375,17 @@ namespace Hecton8.Gameplay.Loot
                 case GlobalRegistryServiceSlot.PlayerInventory:
                     _inventoryService = currentService as IPlayerInventoryService;
                     RefreshDependencySnapshotsFromCachedOwners();
+                    break;
+                case GlobalRegistryServiceSlot.Dispatcher:
+                    TryUnregisterTicks();
+                    TryUnregisterOriginShiftListener();
+                    TryUnregisterDispatcherPhases();
+                    TryRegisterDispatcherPhases();
+                    if (_registeredPostSimulationDispatcher)
+                    {
+                        TryRegisterTicks();
+                        TryRegisterOriginShiftListener();
+                    }
                     break;
             }
         }
@@ -484,7 +521,12 @@ namespace Hecton8.Gameplay.Loot
                 LootMagnetConstants.MaxEntitiesHardCap);
             if (allowAllocate)
             {
-                EnsureManagedSidecars();
+                if (!AreManagedSidecarsReady())
+                {
+                    _dependencyTelemetryFlags |= TelemetryVaultUnavailableFlag;
+                    return false;
+                }
+
                 if (!TryResolveVaultView(vault, BufferID.EntityAUPs, capacity, allowAllocate, out views.EntityAups) ||
                     !TryResolveVaultView(vault, BufferID.EntityFlags, capacity, allowAllocate, out views.EntityFlags) ||
                     !TryResolveVaultView(vault, BufferID.EntityVelocities, capacity, allowAllocate, out views.EntityVelocities) ||
@@ -523,6 +565,23 @@ namespace Hecton8.Gameplay.Loot
             }
 
             return true;
+        }
+
+        private bool AreManagedSidecarsReady()
+        {
+            int capacity = Capacity;
+            return _pickupRefs != null &&
+                   _pickupRefs.Length == capacity &&
+                   _pickupEntityIds != null &&
+                   _pickupEntityIds.Length == capacity &&
+                   _pendingDeathCacheAcquisitions != null &&
+                   _pendingDeathCacheAcquisitions.Length == LootMagnetConstants.MaxAcquisitionsPerFrame &&
+                   _pendingDeathCacheAcquisitionEvents != null &&
+                   _pendingDeathCacheAcquisitionEvents.Length == LootMagnetConstants.MaxAcquisitionsPerFrame &&
+                   _pendingPresentationEvents != null &&
+                   _pendingPresentationEvents.Length == LootMagnetConstants.MaxAcquisitionsPerFrame &&
+                   _pendingPresentationQuantities != null &&
+                   _pendingPresentationQuantities.Length == LootMagnetConstants.MaxAcquisitionsPerFrame;
         }
 
         private static bool TryReadExistingVaultViews(IDataVault vault, int requiredCapacity, out LootMagnetVaultViews views)
@@ -599,19 +658,42 @@ namespace Hecton8.Gameplay.Loot
         private void EnsureManagedSidecars()
         {
             int capacity = Capacity;
-            if (_pickupRefs != null &&
-                _pickupRefs.Length == capacity &&
-                _pickupEntityIds != null &&
-                _pickupEntityIds.Length == capacity)
+            bool pickupSidecarsValid = _pickupRefs != null &&
+                                       _pickupRefs.Length == capacity &&
+                                       _pickupEntityIds != null &&
+                                       _pickupEntityIds.Length == capacity;
+            bool pendingSidecarsValid = _pendingDeathCacheAcquisitions != null &&
+                                        _pendingDeathCacheAcquisitions.Length == LootMagnetConstants.MaxAcquisitionsPerFrame &&
+                                        _pendingDeathCacheAcquisitionEvents != null &&
+                                        _pendingDeathCacheAcquisitionEvents.Length == LootMagnetConstants.MaxAcquisitionsPerFrame &&
+                                        _pendingPresentationEvents != null &&
+                                        _pendingPresentationEvents.Length == LootMagnetConstants.MaxAcquisitionsPerFrame &&
+                                        _pendingPresentationQuantities != null &&
+                                        _pendingPresentationQuantities.Length == LootMagnetConstants.MaxAcquisitionsPerFrame;
+            if (pickupSidecarsValid && pendingSidecarsValid)
             {
                 return;
             }
 
-            if (_pickupRefs != null || _pickupEntityIds != null)
+            if (!pickupSidecarsValid && (_pickupRefs != null || _pickupEntityIds != null))
                 ClearRuntimeVaultState();
 
-            _pickupRefs = new PickupItem[capacity]; // COLD ALLOC: PickupItem[capacity] - managed pickup sidecar for vault commit - owner: LootMagnetSystem
-            _pickupEntityIds = new ulong[capacity]; // COLD ALLOC: ulong[capacity] - pickup entity identity sidecar - owner: LootMagnetSystem
+            if (!pickupSidecarsValid)
+            {
+                _pickupRefs = new PickupItem[capacity]; // COLD ALLOC: PickupItem[capacity] - managed pickup sidecar for vault commit - owner: LootMagnetSystem
+                _pickupEntityIds = new ulong[capacity]; // COLD ALLOC: ulong[capacity] - pickup entity identity sidecar - owner: LootMagnetSystem
+            }
+
+            if (!pendingSidecarsValid)
+            {
+                ClearPendingAcquisitionQueues();
+                _pendingDeathCacheAcquisitions = new InventoryDeathLootCacheSignal[LootMagnetConstants.MaxAcquisitionsPerFrame]; // COLD ALLOC: pending death-cache acquisitions - owner: LootMagnetSystem
+                _pendingDeathCacheAcquisitionEvents = new LootMagnetSignalEvent[LootMagnetConstants.MaxAcquisitionsPerFrame]; // COLD ALLOC: pending death-cache visual DTOs - owner: LootMagnetSystem
+                _pendingPresentationEvents = new LootMagnetSignalEvent[LootMagnetConstants.MaxAcquisitionsPerFrame]; // COLD ALLOC: late-frame acquisition presentation queue - owner: LootMagnetSystem
+                _pendingPresentationQuantities = new ushort[LootMagnetConstants.MaxAcquisitionsPerFrame]; // COLD ALLOC: late-frame acquisition visual quantities - owner: LootMagnetSystem
+                _pendingDeathCacheAcquisitionCount = 0;
+                _pendingPresentationCount = 0;
+            }
         }
 
         private void RefreshPickupVaultFromRegistry(LootMagnetVaultViews views)
@@ -911,7 +993,7 @@ namespace Hecton8.Gameplay.Loot
             bool scheduled = false;
             try
             {
-                if (!TryResolveVaultViews(out LootMagnetVaultViews views, Capacity, allowAllocate: true))
+                if (!TryResolveVaultViews(out LootMagnetVaultViews views, Capacity, allowAllocate: false))
                     return;
 
                 int scheduledCapacity = ResolveWritableCapacity(in views);
@@ -1030,15 +1112,37 @@ namespace Hecton8.Gameplay.Loot
             return 1UL << (unchecked((int)(uint)(int)bufferId) & 31);
         }
 
-        private void CommitVaultResultsToManagedProxies(LootMagnetVaultViews views)
+        private uint CompleteScheduledPullInPostSimulation()
+        {
+            if (!_pullScheduled)
+                return 0u;
+
+            if (!DispatcherJobSwap.TryComplete(ref _pullHandle, forceComplete: false))
+                return 0u;
+
+            uint telemetryFlags = 0u;
+            _pullScheduled = false;
+            try
+            {
+                if (TryResolveVaultViews(out LootMagnetVaultViews views, _scheduledCapacity, allowAllocate: false) &&
+                    CanCommitCompletedJob(in views))
+                {
+                    telemetryFlags = CommitCompletedPullResultsPostSimulation(views);
+                }
+            }
+            finally
+            {
+                ReleaseScheduledVaultGuard();
+            }
+
+            return telemetryFlags;
+        }
+
+        private uint CommitCompletedPullResultsPostSimulation(LootMagnetVaultViews views)
         {
             int count = math.min(_scheduledCount, _scheduledCapacity);
-            uint acquiredCount = 0u;
             uint flagsHash = count > 0 ? TelemetryHashOffset : 0u;
-            int acquisitionBudget = LootMagnetConstants.MaxAcquisitionsPerFrame;
-            float qualityWeight01 = _qualityWeight01;
-            int acousticBudget = ResolveAcousticSignalBudget(qualityWeight01);
-            int wakeBudget = ResolveWakeSignalBudget(qualityWeight01);
+            int acquisitionBudget = math.max(0, LootMagnetConstants.MaxAcquisitionsPerFrame - PendingAcquisitionCount);
             uint telemetryFlags = _dependencyTelemetryFlags | _registryTelemetryFlags;
             if (_inventory == null)
                 telemetryFlags |= TelemetryInventoryMissingFlag;
@@ -1076,10 +1180,7 @@ namespace Hecton8.Gameplay.Loot
                             index,
                             flags,
                             in signalEvent,
-                            ref acquiredCount,
                             ref acquisitionBudget,
-                            ref acousticBudget,
-                            ref wakeBudget,
                             ref telemetryFlags,
                             ref fault,
                             ref flagsHash,
@@ -1128,27 +1229,41 @@ namespace Hecton8.Gameplay.Loot
 
                     acquisitionBudget--;
                     int quantityBefore = math.max(0, pickup.Quantity);
-                    pickup.TryHandleInventoryPickup(_inventory, _playerTransform, publishAcquiredSignal: false);
+                    LootMagnetSignalEvent queuedSignal = signalEvent;
+                    queuedSignal.PositionAup = views.EntityAups[index];
+                    queuedSignal.ItemHash = pickupItemHash;
+                    queuedSignal.Quantity = (uint)math.min(quantityBefore, (int)ushort.MaxValue);
+                    queuedSignal.Flags |= LootMagnetEventFlags.Acquired |
+                                          LootMagnetEventFlags.Acoustic |
+                                          LootMagnetEventFlags.Wake;
+                    if (queuedSignal.Frame == 0u)
+                        queuedSignal.Frame = _frameCounter;
+
+                    bool handled = pickup.TryHandleInventoryPickup(_inventory, _playerTransform, publishAcquiredSignal: false);
                     int quantityAfter = math.max(0, pickup.Quantity);
-                    int addedQuantity = math.max(0, quantityBefore - quantityAfter);
-                    if (addedQuantity > 0)
+                    int addedQuantity = handled ? math.max(0, quantityBefore - quantityAfter) : 0;
+                    if (addedQuantity <= 0)
                     {
-                        acquiredCount++;
-                        PublishItemAcquired(in signalEvent, addedQuantity);
-                        PublishItemSnapSpark(in signalEvent, addedQuantity);
-                        telemetryFlags |= PublishPresentationSignals(in signalEvent, addedQuantity, ref acousticBudget, ref wakeBudget);
+                        telemetryFlags |= TelemetryAcquisitionBudgetDeferFlag;
+                        RestoreDeferredAcquisition(views, index, flags);
+                        pickup.RestoreLootMagnetRuntimeState();
+                        FoldActiveSlotHash(in views, ref flagsHash, ref lastActiveIndex, index);
+                        continue;
                     }
+
+                    _slowPhaseAcquiredCountPendingTelemetry++;
+                    queuedSignal.Quantity = (uint)math.min(addedQuantity, (int)ushort.MaxValue);
+                    PublishItemAcquired(in queuedSignal, addedQuantity);
+                    TryQueueAcquisitionPresentation(in queuedSignal, addedQuantity);
 
                     if (quantityAfter > 0)
                     {
-                        views.EntityQuantities[index] = (ushort)math.min(quantityAfter, (int)ushort.MaxValue);
-                        views.EntityFlags[index] = addedQuantity > 0
-                            ? (flags & ~LootEntityFlags.Acquired) |
-                              LootEntityFlags.Active |
-                              LootEntityFlags.IsLoot |
-                              LootEntityFlags.Bit_IsMagnetic
-                            : LootEntityFlags.Active | LootEntityFlags.IsLoot;
                         pickup.RestoreLootMagnetRuntimeState();
+                        views.EntityQuantities[index] = (ushort)math.min(quantityAfter, (int)ushort.MaxValue);
+                        views.EntityFlags[index] = (flags & ~LootEntityFlags.Acquired) |
+                                                   LootEntityFlags.Active |
+                                                   LootEntityFlags.IsLoot |
+                                                   LootEntityFlags.Bit_IsMagnetic;
                         FoldActiveSlotHash(in views, ref flagsHash, ref lastActiveIndex, index);
                     }
                     else
@@ -1159,7 +1274,6 @@ namespace Hecton8.Gameplay.Loot
                     continue;
                 }
 
-                telemetryFlags |= PublishPresentationSignals(in signalEvent, 0, ref acousticBudget, ref wakeBudget);
                 if ((flags & LootEntityFlags.Pulling) == 0u || (flags & LootEntityFlags.Active) == 0u)
                 {
                     pickup.RestoreLootMagnetRuntimeState();
@@ -1178,16 +1292,12 @@ namespace Hecton8.Gameplay.Loot
                     continue;
                 }
 
-                pickup.ApplyLootMagnetPose(
-                    new Vector3(runtime.x, runtime.y, runtime.z),
-                    slotVelocity,
-                    LootMagnetConstants.MotionVectorVelocityThresholdSq);
                 FoldActiveSlotHash(in views, ref flagsHash, ref lastActiveIndex, index);
             }
 
             _activeCount = lastActiveIndex + 1;
             _registryFlagsHash = _activeCount > 0 ? flagsHash : 0u;
-            _lastCommittedAcquiredCount = acquiredCount;
+            _lastCommittedAcquiredCount = 0u;
             _lastCommittedFlagsHash = _registryFlagsHash;
             _lastActiveLootPullsCount = activePullsCount;
             _lastPeakMagnetVelocity = EstimatePeakVelocity(peakVelocitySq);
@@ -1198,6 +1308,8 @@ namespace Hecton8.Gameplay.Loot
                 _dumpedFault = true;
                 DumpTelemetryBuffer(in views);
             }
+
+            return _lastCommittedFlags;
         }
 
         private bool TryCommitDataOnlyDeathCacheAcquisition(
@@ -1205,10 +1317,7 @@ namespace Hecton8.Gameplay.Loot
             int index,
             uint flags,
             in LootMagnetSignalEvent signalEvent,
-            ref uint acquiredCount,
             ref int acquisitionBudget,
-            ref int acousticBudget,
-            ref int wakeBudget,
             ref uint telemetryFlags,
             ref bool fault,
             ref uint flagsHash,
@@ -1256,46 +1365,300 @@ namespace Hecton8.Gameplay.Loot
             }
 
             acquisitionBudget--;
-            bool hasCachedItemState = signalEvent.ItemHash == itemHash;
-            bool added;
-            if (hasCachedItemState)
-            {
-                ushort qualityMilli = signalEvent.QualityMilli > 0
-                    ? signalEvent.QualityMilli
-                    : DefaultRecoveredItemQualityMilli;
-                added = _inventory.TryAddItemWithState(
-                    unchecked((int)itemHash),
-                    signalEvent.GeneticsMask,
-                    qualityMilli,
-                    signalEvent.StateFlags,
-                    quantity);
-            }
-            else
-            {
-                added = _inventory.TryAddItem(unchecked((int)itemHash), quantity);
-            }
+            LootMagnetSignalEvent queuedSignal = signalEvent;
+            queuedSignal.PositionAup = views.EntityAups[index];
+            queuedSignal.ItemHash = itemHash;
+            queuedSignal.Quantity = (uint)quantity;
+            queuedSignal.Flags |= LootMagnetEventFlags.Acquired |
+                                  LootMagnetEventFlags.Acoustic |
+                                  LootMagnetEventFlags.Wake;
+            if (queuedSignal.Frame == 0u)
+                queuedSignal.Frame = _frameCounter;
 
-            if (!added)
+            InventoryDeathLootCacheSignal queuedCache = new InventoryDeathLootCacheSignal
             {
+                PositionAup = views.EntityAups[index],
+                GeneticsMask = signalEvent.GeneticsMask,
+                ItemHash = itemHash,
+                Frame = queuedSignal.Frame,
+                Quantity = (ushort)quantity,
+                QualityMilli = signalEvent.QualityMilli,
+                Flags = queuedSignal.Flags,
+                StateFlags = signalEvent.StateFlags
+            };
+            if (!TryQueueDeathCacheAcquisition(in queuedCache, in queuedSignal))
+            {
+                telemetryFlags |= TelemetryAcquisitionBudgetDeferFlag;
                 RestoreDeferredAcquisition(views, index, flags);
                 FoldActiveSlotHash(in views, ref flagsHash, ref lastActiveIndex, index);
                 return true;
             }
 
-            acquiredCount++;
-            LootMagnetSignalEvent resolvedSignal = signalEvent;
-            resolvedSignal.PositionAup = views.EntityAups[index];
-            resolvedSignal.ItemHash = itemHash;
-            resolvedSignal.Quantity = (uint)quantity;
-            resolvedSignal.Flags |= LootMagnetEventFlags.Acquired | LootMagnetEventFlags.Acoustic | LootMagnetEventFlags.Wake;
-            if (resolvedSignal.Frame == 0u)
-                resolvedSignal.Frame = _frameCounter;
-
-            PublishItemAcquired(in resolvedSignal, quantity);
-            PublishItemSnapSpark(in resolvedSignal, quantity);
-            telemetryFlags |= PublishPresentationSignals(in resolvedSignal, quantity, ref acousticBudget, ref wakeBudget);
             ClearVaultSlot(views, index);
             return true;
+        }
+
+        private bool TryQueueDeathCacheAcquisition(
+            in InventoryDeathLootCacheSignal cacheSignal,
+            in LootMagnetSignalEvent signalEvent)
+        {
+            if (_pendingDeathCacheAcquisitions == null ||
+                _pendingDeathCacheAcquisitionEvents == null ||
+                PendingAcquisitionCount >= LootMagnetConstants.MaxAcquisitionsPerFrame)
+            {
+                return false;
+            }
+
+            int index = _pendingDeathCacheAcquisitionCount;
+            if (index < 0 ||
+                index >= _pendingDeathCacheAcquisitions.Length ||
+                index >= _pendingDeathCacheAcquisitionEvents.Length)
+            {
+                return false;
+            }
+
+            _pendingDeathCacheAcquisitions[index] = cacheSignal;
+            _pendingDeathCacheAcquisitionEvents[index] = signalEvent;
+            _pendingDeathCacheAcquisitionCount = index + 1;
+            return true;
+        }
+
+        private bool TryQueueAcquisitionPresentation(in LootMagnetSignalEvent signalEvent, int addedQuantity)
+        {
+            if (_pendingPresentationEvents == null ||
+                _pendingPresentationQuantities == null ||
+                _pendingPresentationCount < 0 ||
+                _pendingPresentationCount >= LootMagnetConstants.MaxAcquisitionsPerFrame ||
+                _pendingPresentationCount >= _pendingPresentationEvents.Length ||
+                _pendingPresentationCount >= _pendingPresentationQuantities.Length)
+            {
+                _dependencyTelemetryFlags |= TelemetryAcquisitionBudgetDeferFlag;
+                return false;
+            }
+
+            int index = _pendingPresentationCount;
+            _pendingPresentationEvents[index] = signalEvent;
+            _pendingPresentationQuantities[index] = (ushort)math.clamp(addedQuantity, 1, (int)ushort.MaxValue);
+            _pendingPresentationCount = index + 1;
+            return true;
+        }
+
+        private void ApplyPendingAcquisitions()
+        {
+            if (_pendingDeathCacheAcquisitionCount <= 0)
+                return;
+
+            if (_inventory == null)
+            {
+                _dependencyTelemetryFlags |= TelemetryInventoryMissingFlag;
+                return;
+            }
+
+            uint acquiredCount = 0u;
+            ApplyPendingDeathCacheAcquisitions(ref acquiredCount);
+            _slowPhaseAcquiredCountPendingTelemetry += acquiredCount;
+        }
+
+        private void ApplyPendingDeathCacheAcquisitions(ref uint acquiredCount)
+        {
+            if (_pendingDeathCacheAcquisitions == null || _pendingDeathCacheAcquisitionEvents == null)
+            {
+                _pendingDeathCacheAcquisitionCount = 0;
+                return;
+            }
+
+            int count = _pendingDeathCacheAcquisitionCount;
+            count = math.clamp(count, 0, _pendingDeathCacheAcquisitions.Length);
+            count = math.min(count, _pendingDeathCacheAcquisitionEvents.Length);
+            for (int index = 0; index < count; index++)
+            {
+                InventoryDeathLootCacheSignal cacheSignal = _pendingDeathCacheAcquisitions[index];
+                LootMagnetSignalEvent signalEvent = _pendingDeathCacheAcquisitionEvents[index];
+                _pendingDeathCacheAcquisitions[index] = default;
+                _pendingDeathCacheAcquisitionEvents[index] = default;
+
+                uint itemHash = cacheSignal.ItemHash;
+                int quantity = math.clamp((int)cacheSignal.Quantity, 1, (int)ushort.MaxValue);
+                if (itemHash == 0u ||
+                    cacheSignal.Quantity == 0 ||
+                    !IsFiniteAup(in cacheSignal.PositionAup))
+                {
+                    _dependencyTelemetryFlags |= TelemetryDeathCacheNonFiniteFlag;
+                    continue;
+                }
+
+                ushort qualityMilli = cacheSignal.QualityMilli > 0
+                    ? cacheSignal.QualityMilli
+                    : DefaultRecoveredItemQualityMilli;
+                bool allAdded = _inventory.TryAddItemWithState(
+                    unchecked((int)itemHash),
+                    cacheSignal.GeneticsMask,
+                    qualityMilli,
+                    cacheSignal.StateFlags,
+                    quantity,
+                    out int addedQuantity);
+                if (addedQuantity <= 0)
+                {
+                    if (!SignalBus<InventoryDeathLootCacheSignal>.TryPushTracked(in cacheSignal, ref _signalPushDropCount))
+                        _dependencyTelemetryFlags |= TelemetryDeathCacheRequeueRejectedFlag;
+                    continue;
+                }
+
+                if (!allAdded && addedQuantity < quantity)
+                {
+                    InventoryDeathLootCacheSignal remainderSignal = cacheSignal;
+                    remainderSignal.Quantity = (ushort)math.clamp(quantity - addedQuantity, 1, (int)ushort.MaxValue);
+                    if (!SignalBus<InventoryDeathLootCacheSignal>.TryPushTracked(in remainderSignal, ref _signalPushDropCount))
+                        _dependencyTelemetryFlags |= TelemetryDeathCacheRequeueRejectedFlag;
+                }
+
+                acquiredCount++;
+                LootMagnetSignalEvent resolvedSignal = signalEvent;
+                resolvedSignal.PositionAup = cacheSignal.PositionAup;
+                resolvedSignal.ItemHash = itemHash;
+                resolvedSignal.Quantity = (uint)addedQuantity;
+                resolvedSignal.GeneticsMask = cacheSignal.GeneticsMask;
+                resolvedSignal.QualityMilli = qualityMilli;
+                resolvedSignal.StateFlags = cacheSignal.StateFlags;
+                resolvedSignal.Flags |= LootMagnetEventFlags.Acquired |
+                                        LootMagnetEventFlags.Acoustic |
+                                        LootMagnetEventFlags.Wake;
+                if (resolvedSignal.Frame == 0u)
+                    resolvedSignal.Frame = cacheSignal.Frame != 0u ? cacheSignal.Frame : _frameCounter;
+
+                PublishItemAcquired(in resolvedSignal, quantity);
+                TryQueueAcquisitionPresentation(in resolvedSignal, quantity);
+            }
+
+            _pendingDeathCacheAcquisitionCount = 0;
+        }
+
+        private uint FlushPendingPresentationSignals()
+        {
+            if (_pendingPresentationCount <= 0)
+                return 0u;
+
+            if (_pendingPresentationEvents == null || _pendingPresentationQuantities == null)
+            {
+                _pendingPresentationCount = 0;
+                return TelemetryAcquisitionBudgetDeferFlag;
+            }
+
+            uint telemetryFlags = 0u;
+            int acousticBudget = ResolveAcousticSignalBudget(_qualityWeight01);
+            int wakeBudget = ResolveWakeSignalBudget(_qualityWeight01);
+            int count = _pendingPresentationCount;
+            count = math.clamp(count, 0, _pendingPresentationEvents.Length);
+            count = math.min(count, _pendingPresentationQuantities.Length);
+            for (int index = 0; index < count; index++)
+            {
+                LootMagnetSignalEvent signalEvent = _pendingPresentationEvents[index];
+                int quantity = _pendingPresentationQuantities[index];
+                _pendingPresentationEvents[index] = default;
+                _pendingPresentationQuantities[index] = 0;
+                if (quantity <= 0)
+                    continue;
+
+                PublishItemSnapSpark(in signalEvent, quantity);
+                telemetryFlags |= PublishPresentationSignals(in signalEvent, quantity, ref acousticBudget, ref wakeBudget);
+            }
+
+            _pendingPresentationCount = 0;
+            return telemetryFlags;
+        }
+
+        private uint FlushPullPresentationFromVault()
+        {
+            if (_pullScheduled ||
+                _activeCount <= 0 ||
+                _pickupRefs == null ||
+                !TryResolveVaultViews(out LootMagnetVaultViews views, _activeCount, allowAllocate: false))
+            {
+                return 0u;
+            }
+
+            uint telemetryFlags = 0u;
+            int acousticBudget = ResolveAcousticSignalBudget(_qualityWeight01);
+            int wakeBudget = ResolveWakeSignalBudget(_qualityWeight01);
+            int count = math.min(_activeCount, ResolveWritableCapacity(in views));
+            for (int index = 0; index < count; index++)
+            {
+                uint flags = views.EntityFlags[index];
+                if ((flags & LootEntityFlags.Active) == 0u)
+                    continue;
+
+                LootMagnetSignalEvent signalEvent = views.SignalEvents.IsCreated && index < views.SignalEvents.Length
+                    ? views.SignalEvents[index]
+                    : default;
+                telemetryFlags |= PublishPresentationSignals(in signalEvent, 0, ref acousticBudget, ref wakeBudget);
+
+                if ((flags & LootEntityFlags.Pulling) == 0u)
+                    continue;
+
+                PickupItem pickup = _pickupRefs[index];
+                if (pickup == null || !pickup.isActiveAndEnabled)
+                    continue;
+
+                float3 runtime = views.EntityAups[index].ToRuntimeFloat3();
+                if (!IsFiniteFloat3(runtime))
+                {
+                    pickup.RestoreLootMagnetRuntimeState();
+                    telemetryFlags |= TelemetryPickupPoseNonFiniteFlag;
+                    continue;
+                }
+
+                pickup.ApplyLootMagnetPose(
+                    new Vector3(runtime.x, runtime.y, runtime.z),
+                    views.EntityVelocities[index],
+                    LootMagnetConstants.MotionVectorVelocityThresholdSq);
+            }
+
+            return telemetryFlags;
+        }
+
+        private void ClearPendingAcquisitionQueues()
+        {
+            ClearPendingDeathCacheAcquisitionSlots();
+            ClearPendingPresentationSlots();
+            _slowPhaseAcquiredCountPendingTelemetry = 0u;
+        }
+
+        private void ClearPendingDeathCacheAcquisitionSlots()
+        {
+            if (_pendingDeathCacheAcquisitions != null)
+            {
+                int count = math.clamp(_pendingDeathCacheAcquisitionCount, 0, _pendingDeathCacheAcquisitions.Length);
+                for (int index = 0; index < count; index++)
+                    _pendingDeathCacheAcquisitions[index] = default;
+            }
+
+            if (_pendingDeathCacheAcquisitionEvents != null)
+            {
+                int count = math.clamp(_pendingDeathCacheAcquisitionCount, 0, _pendingDeathCacheAcquisitionEvents.Length);
+                for (int index = 0; index < count; index++)
+                    _pendingDeathCacheAcquisitionEvents[index] = default;
+            }
+
+            _pendingDeathCacheAcquisitionCount = 0;
+        }
+
+        private void ClearPendingPresentationSlots()
+        {
+            if (_pendingPresentationEvents != null)
+            {
+                int count = math.clamp(_pendingPresentationCount, 0, _pendingPresentationEvents.Length);
+                for (int index = 0; index < count; index++)
+                    _pendingPresentationEvents[index] = default;
+            }
+
+            if (_pendingPresentationQuantities != null)
+            {
+                int count = math.clamp(_pendingPresentationCount, 0, _pendingPresentationQuantities.Length);
+                for (int index = 0; index < count; index++)
+                    _pendingPresentationQuantities[index] = 0;
+            }
+
+            _pendingPresentationCount = 0;
         }
 
         private void RestoreDeferredAcquisition(LootMagnetVaultViews views, int index, uint flags)
@@ -1326,6 +1689,7 @@ namespace Hecton8.Gameplay.Loot
 
         private void ClearRuntimeVaultState()
         {
+            ClearPendingAcquisitionQueues();
             RestoreAllManagedProxyRuntimeStates();
             ClearKnownRuntimeVaultSlots();
             _activeCount = 0;
@@ -1337,6 +1701,7 @@ namespace Hecton8.Gameplay.Loot
 
         private void ClearDataVaultRuntimeState()
         {
+            ClearPendingAcquisitionQueues();
             RestoreAllManagedProxyRuntimeStates();
             ClearKnownRuntimeVaultSlots();
             _activeCount = 0;
@@ -1679,12 +2044,12 @@ namespace Hecton8.Gameplay.Loot
                         PositionAup = signalEvent.PositionAup,
                         Vector = signalEvent.Velocity * fluidImpulseWeight01,
                         Radius = math.lerp(
-                            LootMagnetConstants.HighTierFluidImpulseRadiusMeters * 0.5f,
-                            LootMagnetConstants.UltraTierFluidImpulseRadiusMeters,
+                            LootMagnetConstants.HighFidelityFluidImpulseRadiusMeters * 0.5f,
+                            LootMagnetConstants.VisualOverkillFluidImpulseRadiusMeters,
                             fluidImpulseWeight01),
                         Lifetime = math.lerp(
-                            LootMagnetConstants.HighTierFluidImpulseLifetimeSeconds * 0.5f,
-                            LootMagnetConstants.UltraTierFluidImpulseLifetimeSeconds,
+                            LootMagnetConstants.HighFidelityFluidImpulseLifetimeSeconds * 0.5f,
+                            LootMagnetConstants.VisualOverkillFluidImpulseLifetimeSeconds,
                             fluidImpulseWeight01),
                         Frame = signalEvent.Frame,
                         SourceHash = LootMagnetConstants.FluidImpulseSourceLootZip,
@@ -1701,32 +2066,55 @@ namespace Hecton8.Gameplay.Loot
         {
             return ResolveContinuousQualityBudget(
                 qualityWeight01,
-                LootMagnetConstants.LowTierAcousticSignalsPerFrame,
-                LootMagnetConstants.DefaultAcousticSignalsPerFrame,
-                LootMagnetConstants.HighTierAcousticSignalsPerFrame,
-                LootMagnetConstants.UltraTierAcousticSignalsPerFrame);
+                LootMagnetConstants.SurvivalAcousticSignalsPerFrame,
+                LootMagnetConstants.StandardAcousticSignalsPerFrame,
+                LootMagnetConstants.HighFidelityAcousticSignalsPerFrame,
+                LootMagnetConstants.VisualOverkillAcousticSignalsPerFrame);
         }
 
         private static int ResolveWakeSignalBudget(float qualityWeight01)
         {
             return ResolveContinuousQualityBudget(
                 qualityWeight01,
-                LootMagnetConstants.LowTierWakeSignalsPerFrame,
-                LootMagnetConstants.DefaultWakeSignalsPerFrame,
-                LootMagnetConstants.HighTierWakeSignalsPerFrame,
-                LootMagnetConstants.UltraTierWakeSignalsPerFrame);
+                LootMagnetConstants.SurvivalWakeSignalsPerFrame,
+                LootMagnetConstants.StandardWakeSignalsPerFrame,
+                LootMagnetConstants.HighFidelityWakeSignalsPerFrame,
+                LootMagnetConstants.VisualOverkillWakeSignalsPerFrame);
         }
 
-        private static int ResolveContinuousQualityBudget(float qualityWeight01, int low, int middle, int high, int ultra)
+        private static int ResolveContinuousQualityBudget(
+            float qualityWeight01,
+            int survival,
+            int standard,
+            int highFidelity,
+            int visualOverkill)
         {
             float quality = math.saturate(math.isfinite(qualityWeight01) ? qualityWeight01 : 0.5f);
-            float scaled = quality * 3f;
-            float budget = scaled <= 1f
-                ? math.lerp(low, middle, scaled)
-                : (scaled <= 2f
-                    ? math.lerp(middle, high, scaled - 1f)
-                    : math.lerp(high, ultra, scaled - 2f));
+            float survivalToStandard = math.lerp(
+                (float)survival,
+                (float)standard,
+                SmoothRange01(quality, 0f, 0.42f));
+            float highFidelityToOverkill = math.lerp(
+                (float)highFidelity,
+                (float)visualOverkill,
+                SmoothRange01(quality, 0.74f, 1f));
+            float budget = math.lerp(
+                survivalToStandard,
+                highFidelityToOverkill,
+                SmoothRange01(quality, 0.42f, 0.74f));
             return math.max(0, (int)math.round(budget));
+        }
+
+        private static float SmoothRange01(float value, float edge0, float edge1)
+        {
+            float width = math.max(0.0001f, edge1 - edge0);
+            return Smooth01((value - edge0) * math.rcp(width));
+        }
+
+        private static float Smooth01(float value)
+        {
+            float t = math.saturate(value);
+            return t * t * (3f - 2f * t);
         }
 
         private static float ResolveFluidImpulseWeight01(float qualityWeight01)
@@ -1756,7 +2144,7 @@ namespace Hecton8.Gameplay.Loot
 
             try
             {
-                if (!TryResolveVaultViews(out LootMagnetVaultViews views, requiredCapacity: 0, allowAllocate: true))
+                if (!TryResolveVaultViews(out LootMagnetVaultViews views, requiredCapacity: 0, allowAllocate: false))
                     return;
 
                 RecordTelemetry(telemetryFrame, views);
@@ -1836,7 +2224,7 @@ namespace Hecton8.Gameplay.Loot
                 if (TryResolveVaultViews(out LootMagnetVaultViews views, _scheduledCapacity, allowAllocate: false) &&
                     CanCommitCompletedJob(in views))
                 {
-                    CommitVaultResultsToManagedProxies(views);
+                    CommitCompletedPullResultsPostSimulation(views);
                 }
 
                 return true;
@@ -1892,6 +2280,47 @@ namespace Hecton8.Gameplay.Loot
                     writer.Write(entry.PeakMagnetVelocity);
                     writer.Write(entry.Reserved);
                 }
+            }
+        }
+
+        private sealed class PostSimulationPhaseSystem : IDispatcherSystem
+        {
+            private readonly LootMagnetSystem _owner;
+
+            public PostSimulationPhaseSystem(LootMagnetSystem owner)
+            {
+                _owner = owner;
+            }
+
+            public uint GetSystemIdHash() => PostSimulationSystemHash;
+
+            public DispatcherPhase GetDispatcherPhase() => DispatcherPhase.PostSimulation;
+
+            public byte GetBucketId() => byte.MaxValue;
+
+            public int GetDependencyCount() => 0;
+
+            public uint GetDependencyHash(int dependencyIndex) => 0u;
+
+            public void PreSimulationTick(in DispatcherTimingDTO timing)
+            {
+            }
+
+            public JobHandle ScheduleSimulation(
+                in DispatcherTimingDTO timing,
+                in DispatcherJobContext context,
+                JobHandle dependsOn)
+            {
+                return dependsOn;
+            }
+
+            public void PostSimulationTick(in DispatcherTimingDTO timing)
+            {
+                _owner?.PostSimulationTick(in timing);
+            }
+
+            public void VisualSyncTick(in DispatcherTimingDTO timing)
+            {
             }
         }
 

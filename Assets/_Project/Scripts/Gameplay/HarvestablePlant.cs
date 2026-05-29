@@ -142,6 +142,8 @@ namespace Hecton8.Gameplay
         private bool _hotSwapListenerRegistered;
         private bool _poolMissingLogged;
         private uint _lootScatterSeed;
+        private int[] _pendingRegrownSegmentIndices;
+        private int _pendingRegrownSegmentCount;
         private IAudioService _audioService;
         private IObjectPoolService _objectPool;
         private IPhysicsService _physicsService;
@@ -183,6 +185,8 @@ namespace Hecton8.Gameplay
             {
                 _regrowTimers[i] = 0f;
             }
+
+            AllocateRegrowEventQueueCold();
         }
 
         private void OnEnable()
@@ -199,6 +203,7 @@ namespace Hecton8.Gameplay
         private void OnDisable()
         {
             InteractableRegistry.InvalidateTree(this);
+            _pendingRegrownSegmentCount = 0;
             TryUnregisterHotSwapListener();
             UnregisterFromTick();
             UnregisterLateFrame();
@@ -207,6 +212,7 @@ namespace Hecton8.Gameplay
         private void OnDestroy()
         {
             InteractableRegistry.InvalidateTree(this);
+            _pendingRegrownSegmentCount = 0;
             TryUnregisterHotSwapListener();
             UnregisterFromTick();
             UnregisterLateFrame();
@@ -464,8 +470,7 @@ namespace Hecton8.Gameplay
                 segment.rendererEnabledDirty = true;
             }
 
-            // Fire event
-            OnSegmentRegrown?.Invoke(index);
+            QueueSegmentRegrownEvent(index);
         }
 
         // ══════════════════════════════════════════════════════════
@@ -597,6 +602,41 @@ namespace Hecton8.Gameplay
                         audio.PlayAtPoint(cutSound, segment.pendingCutPosition, cutVolume);
                 }
             }
+
+            FlushQueuedRegrowEvents();
+        }
+
+        private void AllocateRegrowEventQueueCold()
+        {
+            int segmentCount = segments != null ? segments.Length : 0;
+            if (_pendingRegrownSegmentIndices == null || _pendingRegrownSegmentIndices.Length != segmentCount)
+                _pendingRegrownSegmentIndices = new int[segmentCount];
+
+            _pendingRegrownSegmentCount = 0;
+        }
+
+        private void QueueSegmentRegrownEvent(int index)
+        {
+            int[] pending = _pendingRegrownSegmentIndices;
+            if (pending == null || _pendingRegrownSegmentCount >= pending.Length)
+                return;
+
+            pending[_pendingRegrownSegmentCount++] = index;
+        }
+
+        private void FlushQueuedRegrowEvents()
+        {
+            int count = _pendingRegrownSegmentCount;
+            if (count <= 0)
+                return;
+
+            int[] pending = _pendingRegrownSegmentIndices;
+            _pendingRegrownSegmentCount = 0;
+            if (pending == null)
+                return;
+
+            for (int i = 0; i < count; i++)
+                OnSegmentRegrown?.Invoke(pending[i]);
         }
 
         private void TryRegisterHotSwapListener()

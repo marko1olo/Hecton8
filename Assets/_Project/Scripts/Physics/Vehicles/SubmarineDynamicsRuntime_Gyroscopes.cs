@@ -22,12 +22,13 @@ namespace Hecton8.Physics.Vehicles
 #endif
         private static readonly int s_GyroVisualBufferId = Shader.PropertyToID("_H8SubmarineGyroVisuals");
         private static readonly int s_GyroVisualCountId = Shader.PropertyToID("_H8SubmarineGyroVisualCount");
-        private const uint GyroSchedulePinGyros = 1u << 0;
-        private const uint GyroSchedulePinErrors = 1u << 1;
-        private const uint GyroSchedulePinPackets = 1u << 2;
-        private const uint GyroSchedulePinTelemetry = 1u << 3;
-        private const uint GyroSchedulePinVisuals = 1u << 4;
-        private const uint GyroSchedulePinCounters = 1u << 5;
+        private static readonly ulong GyroScheduleMutationGuardMask =
+            VaultMutationGuardBit(BufferID.Shinobu332SubmarineGyros) |
+            VaultMutationGuardBit(BufferID.Shinobu332GyroErrors) |
+            VaultMutationGuardBit(BufferID.Shinobu332GyroForcePackets) |
+            VaultMutationGuardBit(BufferID.Shinobu332GyroTelemetry) |
+            VaultMutationGuardBit(BufferID.Shinobu332GyroVisualStates) |
+            VaultMutationGuardBit(BufferID.Shinobu332GyroCounters);
         private static readonly ulong GyroDefaultMutationGuardMask =
             VaultMutationGuardBit(BufferID.Shinobu332SubmarineGyros) |
             VaultMutationGuardBit(BufferID.Shinobu332GyroProfiles) |
@@ -56,7 +57,6 @@ namespace Hecton8.Physics.Vehicles
         private VaultGenerationHandle<SubmarineGyroVisualStateDTO> _gyroVisualHandle;
         private VaultGenerationHandle<SubmarineGyroProfileDTO> _gyroProfileHandle;
         private VaultGenerationHandle<SubmarineGyroCounterDTO> _gyroCounterHandle;
-        private uint _gyroSchedulePinMask;
 #if UNITY_EDITOR
         private VaultGenerationHandle<byte> _gyroCsvScratchHandle;
 #endif
@@ -82,6 +82,9 @@ namespace Hecton8.Physics.Vehicles
         private bool EnsureGyroVaultBuffers(int capacity)
         {
             if (_dataVault == null)
+                return false;
+
+            if (_dataVault.IsAllocationLocked || _dataVault.IsCompactionFenceActive)
                 return false;
 
             int safeCapacity = math.clamp(capacity, 1, SubmarineDynamicsConstants.MaxVehicles);
@@ -228,63 +231,15 @@ namespace Hecton8.Physics.Vehicles
                    TryResolveVaultHandle(in _gyroCounterHandle, out counters);
         }
 
-        private bool TryLockGyroBuffers()
+        private bool ValidateGyroScheduleBuffers(int capacity)
         {
-            bool locked = false;
-            int capacity = math.clamp(vehicleCapacity, 1, SubmarineDynamicsConstants.MaxVehicles);
-            try
-            {
-                _gyroSchedulePinMask = 0u;
-                if (!TryPinGyroScheduleBuffer(in _gyroHandle, BufferID.Shinobu332SubmarineGyros, capacity, GyroSchedulePinGyros) ||
-                    !TryPinGyroScheduleBuffer(in _gyroErrorHandle, BufferID.Shinobu332GyroErrors, capacity, GyroSchedulePinErrors) ||
-                    !TryPinGyroScheduleBuffer(in _gyroForcePacketHandle, BufferID.Shinobu332GyroForcePackets, capacity, GyroSchedulePinPackets) ||
-                    !TryPinGyroScheduleBuffer(in _gyroTelemetryHandle, BufferID.Shinobu332GyroTelemetry, SubmarineDynamicsConstants.BlackBoxFrames, GyroSchedulePinTelemetry) ||
-                    !TryPinGyroScheduleBuffer(in _gyroVisualHandle, BufferID.Shinobu332GyroVisualStates, capacity, GyroSchedulePinVisuals) ||
-                    !TryPinGyroScheduleBuffer(in _gyroCounterHandle, BufferID.Shinobu332GyroCounters, 1, GyroSchedulePinCounters))
-                {
-                    return false;
-                }
-
-                locked = true;
-                return true;
-            }
-            finally
-            {
-                if (!locked)
-                    UnlockGyroBuffers();
-            }
-        }
-
-        private bool TryPinGyroScheduleBuffer<T>(
-            in VaultGenerationHandle<T> handle,
-            BufferID bufferId,
-            int requiredLength,
-            uint pinBit)
-            where T : struct
-        {
-            if (!TryAcquireVaultBufferPin(in handle, bufferId, requiredLength, out _))
-                return false;
-
-            _gyroSchedulePinMask |= pinBit;
-            return true;
-        }
-
-        private void UnlockGyroBuffers()
-        {
-            uint pinMask = _gyroSchedulePinMask;
-            if ((pinMask & GyroSchedulePinCounters) != 0u)
-                ReleaseVaultBufferPin(BufferID.Shinobu332GyroCounters);
-            if ((pinMask & GyroSchedulePinVisuals) != 0u)
-                ReleaseVaultBufferPin(BufferID.Shinobu332GyroVisualStates);
-            if ((pinMask & GyroSchedulePinTelemetry) != 0u)
-                ReleaseVaultBufferPin(BufferID.Shinobu332GyroTelemetry);
-            if ((pinMask & GyroSchedulePinPackets) != 0u)
-                ReleaseVaultBufferPin(BufferID.Shinobu332GyroForcePackets);
-            if ((pinMask & GyroSchedulePinErrors) != 0u)
-                ReleaseVaultBufferPin(BufferID.Shinobu332GyroErrors);
-            if ((pinMask & GyroSchedulePinGyros) != 0u)
-                ReleaseVaultBufferPin(BufferID.Shinobu332SubmarineGyros);
-            _gyroSchedulePinMask = 0u;
+            int safeCapacity = math.clamp(capacity, 1, SubmarineDynamicsConstants.MaxVehicles);
+            return TryValidateSimulationBuffer(in _gyroHandle, BufferID.Shinobu332SubmarineGyros, safeCapacity) &&
+                   TryValidateSimulationBuffer(in _gyroErrorHandle, BufferID.Shinobu332GyroErrors, safeCapacity) &&
+                   TryValidateSimulationBuffer(in _gyroForcePacketHandle, BufferID.Shinobu332GyroForcePackets, safeCapacity) &&
+                   TryValidateSimulationBuffer(in _gyroTelemetryHandle, BufferID.Shinobu332GyroTelemetry, SubmarineDynamicsConstants.BlackBoxFrames) &&
+                   TryValidateSimulationBuffer(in _gyroVisualHandle, BufferID.Shinobu332GyroVisualStates, safeCapacity) &&
+                   TryValidateSimulationBuffer(in _gyroCounterHandle, BufferID.Shinobu332GyroCounters, 1);
         }
 
         private unsafe JobHandle ScheduleGyroPipeline(

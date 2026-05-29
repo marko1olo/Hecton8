@@ -491,6 +491,9 @@ namespace Hecton8.Core
                     return true;
             }
 
+            if (vault.IsAllocationLocked || vault.IsCompactionFenceActive)
+                return false;
+
             handle = vault.EnsureGenerationHandle<T>(
                 bufferId,
                 requiredLength,
@@ -1580,9 +1583,10 @@ namespace Hecton8.Core
             uint shiftFrameId)
         {
             if (requestedCount <= 0 ||
-                vault == null ||
-                !vault.TryLockBuffer(BufferID.VaultHotEntityData, OwnerSystemId))
+                !TryAcquireAupMutationGuard(vault, RebaseMutationGuardBit(BufferID.VaultHotEntityData)))
+            {
                 return 0;
+            }
 
             try
             {
@@ -1606,7 +1610,7 @@ namespace Hecton8.Core
             }
             finally
             {
-                vault.TryUnlockBuffer(BufferID.VaultHotEntityData, OwnerSystemId);
+                ReleaseAupMutationGuard(vault, RebaseMutationGuardBit(BufferID.VaultHotEntityData));
             }
         }
 
@@ -1676,8 +1680,7 @@ namespace Hecton8.Core
             float3 shiftDelta)
         {
             if (requestedCount <= 0 ||
-                vault == null ||
-                !vault.TryLockBuffer(bufferId, OwnerSystemId))
+                !TryAcquireAupMutationGuard(vault, RebaseMutationGuardBit(bufferId)))
             {
                 return 0;
             }
@@ -1691,8 +1694,27 @@ namespace Hecton8.Core
             }
             finally
             {
-                vault.TryUnlockBuffer(bufferId, OwnerSystemId);
+                ReleaseAupMutationGuard(vault, RebaseMutationGuardBit(bufferId));
             }
+        }
+
+        private static bool TryAcquireAupMutationGuard(IDataVault vault, ulong guardMask)
+        {
+            return vault != null &&
+                   guardMask != 0UL &&
+                   !vault.IsCompactionFenceActive &&
+                   vault.TryAcquireMutationGuard(guardMask);
+        }
+
+        private static void ReleaseAupMutationGuard(IDataVault vault, ulong guardMask)
+        {
+            if (vault != null && guardMask != 0UL)
+                vault.ReleaseMutationGuard(guardMask);
+        }
+
+        private static ulong RebaseMutationGuardBit(BufferID bufferId)
+        {
+            return 1UL << (unchecked((int)(uint)(int)bufferId) & 31);
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]

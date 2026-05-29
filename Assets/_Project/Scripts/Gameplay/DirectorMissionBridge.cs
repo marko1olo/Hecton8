@@ -31,6 +31,11 @@ namespace Hecton8.Gameplay
         [Header("── Mission IDs ─────────────────────────────")]
         [Tooltip("ID missiy kotorye Director mozhet aktivirovat sluchayno.")]
         [SerializeField] private string[] directorMissionIds = new string[0];
+        [SerializeField, HideInInspector] private int legacyValidationInvalidMissionCount;
+        [SerializeField, HideInInspector] private int legacyValidationDuplicateMissionCount;
+        [SerializeField, HideInInspector] private int legacyValidationFirstInvalidMissionIndex = -1;
+        [SerializeField, HideInInspector] private int legacyValidationFirstDuplicateMissionIndex = -1;
+        [SerializeField, HideInInspector] private int legacyValidationRuntimeMissionCount;
 
         [Tooltip("ID discovery dlya rare discovery sobytiya.")]
         [SerializeField] private string rareDiscoveryId = "director_rare_discovery";
@@ -50,8 +55,15 @@ namespace Hecton8.Gameplay
         private IQuestSystem _missionManager;
         private IFirstHourReadModel _firstHourDirector;
 
+        public int LegacyValidationInvalidMissionCount => legacyValidationInvalidMissionCount;
+        public int LegacyValidationDuplicateMissionCount => legacyValidationDuplicateMissionCount;
+        public int LegacyValidationFirstInvalidMissionIndex => legacyValidationFirstInvalidMissionIndex;
+        public int LegacyValidationFirstDuplicateMissionIndex => legacyValidationFirstDuplicateMissionIndex;
+        public int LegacyValidationRuntimeMissionCount => legacyValidationRuntimeMissionCount;
+
         private void OnEnable()
         {
+            RebuildLegacyValidationStateCold();
             RebuildProfileRuntimeStateCold();
             RefreshRareDiscoveryHash();
             CacheRegistryServicesCold();
@@ -74,44 +86,9 @@ namespace Hecton8.Gameplay
 #if UNITY_EDITOR
         private void OnValidate()
         {
+            RebuildLegacyValidationStateCold();
             RebuildProfileRuntimeStateCold();
             RefreshRareDiscoveryHash();
-
-            if (directorMissionIds == null || directorMissionIds.Length <= 0)
-                return;
-
-            int writeIndex = 0;
-            for (int i = 0; i < directorMissionIds.Length; i++)
-            {
-                string missionId = directorMissionIds[i];
-                if (string.IsNullOrWhiteSpace(missionId))
-                    continue;
-
-                bool duplicate = false;
-                for (int j = 0; j < writeIndex; j++)
-                {
-                    if (directorMissionIds[j] == missionId)
-                    {
-                        duplicate = true;
-                        break;
-                    }
-                }
-
-                if (duplicate)
-                    continue;
-
-                directorMissionIds[writeIndex] = missionId;
-                writeIndex++;
-            }
-
-            if (writeIndex == directorMissionIds.Length)
-                return;
-
-            string[] compact = new string[writeIndex];
-            for (int i = 0; i < writeIndex; i++)
-                compact[i] = directorMissionIds[i];
-
-            directorMissionIds = compact;
         }
 #endif
 
@@ -139,6 +116,7 @@ namespace Hecton8.Gameplay
                 string missionId = directorMissionIds[idx];
 
                 if (string.IsNullOrEmpty(missionId)) continue;
+                if (HasLegacyDuplicateMissionBefore(missionId, idx)) continue;
                 if (mm.IsCompleted(missionId)) continue;
                 if (mm.IsActive(missionId)) continue;
 
@@ -256,6 +234,56 @@ namespace Hecton8.Gameplay
 #endif
                 return;
             }
+        }
+
+        private void RebuildLegacyValidationStateCold()
+        {
+            legacyValidationInvalidMissionCount = 0;
+            legacyValidationDuplicateMissionCount = 0;
+            legacyValidationFirstInvalidMissionIndex = -1;
+            legacyValidationFirstDuplicateMissionIndex = -1;
+            legacyValidationRuntimeMissionCount = 0;
+
+            if (directorMissionIds == null)
+                return;
+
+            for (int i = 0; i < directorMissionIds.Length; i++)
+            {
+                string missionId = directorMissionIds[i];
+                if (string.IsNullOrWhiteSpace(missionId))
+                {
+                    legacyValidationInvalidMissionCount++;
+                    if (legacyValidationFirstInvalidMissionIndex < 0)
+                        legacyValidationFirstInvalidMissionIndex = i;
+
+                    continue;
+                }
+
+                if (HasLegacyDuplicateMissionBefore(missionId, i))
+                {
+                    legacyValidationDuplicateMissionCount++;
+                    if (legacyValidationFirstDuplicateMissionIndex < 0)
+                        legacyValidationFirstDuplicateMissionIndex = i;
+
+                    continue;
+                }
+
+                legacyValidationRuntimeMissionCount++;
+            }
+        }
+
+        private bool HasLegacyDuplicateMissionBefore(string missionId, int index)
+        {
+            if (directorMissionIds == null || string.IsNullOrWhiteSpace(missionId))
+                return false;
+
+            for (int i = 0; i < index; i++)
+            {
+                if (string.Equals(directorMissionIds[i], missionId, StringComparison.Ordinal))
+                    return true;
+            }
+
+            return false;
         }
 
         private FirstHourMilestone ResolveMinimumMilestone()

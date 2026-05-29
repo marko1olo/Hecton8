@@ -141,6 +141,10 @@ namespace Hecton8.AI.Cognition
         private const string DumpFileName = "Dump_SHINOBU_61.bin";
         private const string LegacyDumpFileName = "Dump_LEVIATHAN_CORTEX.bin";
         private const string Agent1300DumpFileName = "Dump_1300_AICognition.bin";
+        private static readonly ulong ApexStateMutationGuardMask =
+            ApexVaultMutationGuardBit(ApexBrainVaultBufferIds.ApexState);
+        private static readonly ulong ApexTuningMutationGuardMask =
+            ApexVaultMutationGuardBit(ApexBrainVaultBufferIds.Tuning);
 #if UNITY_EDITOR
         private const string CsvFileName = "apex_predator_stats.csv";
         private static readonly uint _aggressionMultiplierHash = HashAscii("aggression_multiplier");
@@ -334,15 +338,18 @@ namespace Hecton8.AI.Cognition
         public static bool TryWriteState(IDataVault vault, ref ApexBrainVaultHandles handles, int index, in ApexStateDTO state)
         {
             if (vault == null ||
-                handles.States.BufferID == 0u ||
+                handles.States.BufferID != (uint)ApexBrainVaultBufferIds.ApexState ||
                 handles.States.Generation == 0u ||
-                !vault.TryAcquireWriteLock(in handles.States, SystemID.AICognition, out NativeArray<ApexStateDTO> states))
+                !TryAcquireApexMutationGuard(vault, ApexStateMutationGuardMask))
             {
                 return false;
             }
 
             try
             {
+                if (!TryOpenVaultView(vault, in handles.States, ApexBrainConstants.MaxLeviathans, out NativeArray<ApexStateDTO> states))
+                    return false;
+
                 if (!states.IsCreated || (uint)index >= (uint)states.Length)
                     return false;
 
@@ -351,7 +358,7 @@ namespace Hecton8.AI.Cognition
             }
             finally
             {
-                vault.ReleaseWriteLock(in handles.States, SystemID.AICognition);
+                ReleaseApexMutationGuard(vault, ApexStateMutationGuardMask);
             }
         }
 
@@ -539,15 +546,18 @@ namespace Hecton8.AI.Cognition
         public static bool TrySetTuning(IDataVault vault, ref ApexBrainVaultHandles handles, in ApexBrainTuning tuning)
         {
             if (vault == null ||
-                handles.Tuning.BufferID == 0u ||
+                handles.Tuning.BufferID != (uint)ApexBrainVaultBufferIds.Tuning ||
                 handles.Tuning.Generation == 0u ||
-                !vault.TryAcquireWriteLock(in handles.Tuning, SystemID.AICognition, out NativeArray<ApexBrainTuning> tuningBuffer))
+                !TryAcquireApexMutationGuard(vault, ApexTuningMutationGuardMask))
             {
                 return false;
             }
 
             try
             {
+                if (!TryOpenVaultView(vault, in handles.Tuning, 1, out NativeArray<ApexBrainTuning> tuningBuffer))
+                    return false;
+
                 if (!tuningBuffer.IsCreated || tuningBuffer.Length <= 0)
                     return false;
 
@@ -556,7 +566,7 @@ namespace Hecton8.AI.Cognition
             }
             finally
             {
-                vault.ReleaseWriteLock(in handles.Tuning, SystemID.AICognition);
+                ReleaseApexMutationGuard(vault, ApexTuningMutationGuardMask);
             }
         }
 
@@ -835,6 +845,25 @@ namespace Hecton8.AI.Cognition
                    vault.TryResolveHandle(in handle, out buffer) &&
                    buffer.IsCreated &&
                    buffer.Length >= requiredLength;
+        }
+
+        private static bool TryAcquireApexMutationGuard(IDataVault vault, ulong guardMask)
+        {
+            return vault != null &&
+                   guardMask != 0UL &&
+                   !vault.IsCompactionFenceActive &&
+                   vault.TryAcquireMutationGuard(guardMask);
+        }
+
+        private static void ReleaseApexMutationGuard(IDataVault vault, ulong guardMask)
+        {
+            if (guardMask != 0UL)
+                vault?.ReleaseMutationGuard(guardMask);
+        }
+
+        private static ulong ApexVaultMutationGuardBit(BufferID bufferId)
+        {
+            return 1UL << (unchecked((int)(uint)(int)bufferId) & 31);
         }
 
         private static int GetScheduleLength(in ApexBrainVaultBuffers buffers)

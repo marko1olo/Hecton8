@@ -266,8 +266,9 @@ namespace Hecton8.Core
         private readonly int[] _framesSinceTickRateChange = new int[MaxTargets];
         // COLD ALLOC: int[512] — compact target-to-visual-transform mapping — owner: FoveatedSimulationManager
         private readonly int[] _visualTargetIndices = new int[MaxTargets];
+        // COLD ALLOC: Transform[512] — compact interpolation cache rebuilt in VISUAL_SYNC without managed allocation — owner: FoveatedSimulationManager
+        private readonly Transform[] _visualTransformArray = new Transform[MaxTargets];
         private TransformAccessArray _visualTransformAccessArray;
-        private Transform[] _visualTransformArray = Array.Empty<Transform>();
         private IDataVault _dataVault;
         private IPlayerRuntimeContext _playerContext;
         private VaultGenerationHandle<float3> _jobScorePositionsHandle;
@@ -776,7 +777,7 @@ namespace Hecton8.Core
             _signalCameraPosition = Vector3.zero;
             _signalCameraForward = Vector3.forward;
             _signalCameraUp = Vector3.up;
-            _visualTransformArray = Array.Empty<Transform>();
+            Array.Clear(_visualTransformArray, 0, _visualTransformArray.Length);
         }
 
         public void OnOriginShift(in OriginShiftEventData shiftData)
@@ -1335,6 +1336,7 @@ namespace Hecton8.Core
 
         private void RebuildVisualTargetCache()
         {
+            int previousVisualTargetCount = _visualTargetCount;
             _visualTargetCount = 0;
             for (int i = 0; i < _targetCount; i++)
             {
@@ -1346,18 +1348,14 @@ namespace Hecton8.Core
                 _visualTargetCount++;
             }
 
-            if (_visualTransformArray.Length != _visualTargetCount)
-            {
-                _visualTransformArray = _visualTargetCount == 0
-                    ? Array.Empty<Transform>()
-                    : new Transform[_visualTargetCount]; // COLD ALLOC: Transform[visualTargetCount] — compact interpolation cache for low-frequency visuals — owner: FoveatedSimulationManager
-            }
-
             for (int i = 0; i < _visualTargetCount; i++)
             {
                 int targetIndex = _visualTargetIndices[i];
                 _visualTransformArray[i] = _visualTransforms[targetIndex];
             }
+
+            for (int i = _visualTargetCount; i < previousVisualTargetCount; i++)
+                _visualTransformArray[i] = null;
 
             _visualTargetCacheDirty = false;
         }
@@ -1512,11 +1510,25 @@ namespace Hecton8.Core
             out NativeArray<T> array) where T : struct
         {
             if (!IsFoveatedVaultHandle(in handle, bufferId))
+            {
+                if (vault.IsAllocationLocked || vault.IsCompactionFenceActive)
+                {
+                    array = default;
+                    return false;
+                }
+
                 handle = vault.EnsureGenerationHandle<T>(bufferId, requiredLength, VaultOwnerSystemId, options);
+            }
 
             if (TryResolveVaultArray(vault, bufferId, in handle, requiredLength, out array))
             {
                 return true;
+            }
+
+            if (vault.IsAllocationLocked || vault.IsCompactionFenceActive)
+            {
+                array = default;
+                return false;
             }
 
             handle = vault.EnsureGenerationHandle<T>(bufferId, requiredLength, VaultOwnerSystemId, options);

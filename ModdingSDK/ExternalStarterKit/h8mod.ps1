@@ -1,5 +1,5 @@
 param(
-    [ValidateSet('menu','setup','validate','review','prepare','submission','opcodes','opcodes-json','node-snippet','apply-node-snippet','setting-snippet','locale-snippet','apply-setting-snippet','apply-locale-snippet','asset-snippet','apply-asset-snippet','manifest-contract','capabilities')]
+    [ValidateSet('menu','first-mod','install-local','diagnose-local','dependencies','setup','validate','review','prepare','submission','opcodes','opcodes-json','node-snippet','apply-node-snippet','setting-snippet','locale-snippet','apply-setting-snippet','apply-locale-snippet','asset-snippet','apply-asset-snippet','manifest-contract','capabilities')]
     [string]$Action = 'menu',
     [string]$Id = '',
     [string]$DisplayName = '',
@@ -28,12 +28,19 @@ param(
     [string]$AssetOutput = 'Generated/asset_entry_snippet.json',
     [string]$AssetSnippet = 'Generated/asset_entry_snippet.json',
     [string]$Capability = 'cap.graph.command_draft',
+    [ValidateSet('list','add','remove','clear')]
+    [string]$DependencyAction = 'list',
+    [string]$DependencyId = '',
     [ValidateSet('unchanged','enable','disable')]
     [string]$CapabilityState = 'enable',
     [int]$MaxEnvelopesPerFrame = -1,
     [long]$MaxAssetBytes = -1,
     [switch]$Replace,
-    [string]$SubmissionOutput = ''
+    [switch]$BuildSubmission,
+    [string]$SubmissionOutput = '',
+    [string]$ProjectRoot = '',
+    [string]$ModsRoot = '',
+    [switch]$Json
 )
 
 $ErrorActionPreference = 'Stop'
@@ -110,6 +117,44 @@ function Invoke-SubmissionPackage {
     Complete-StarterTool
 }
 
+function Invoke-InstallLocal([bool]$PromptForMissingValues) {
+    $installProjectRoot = $ProjectRoot
+    $installModsRoot = $ModsRoot
+
+    if ($PromptForMissingValues) {
+        $installProjectRoot = Read-SetupValue $installProjectRoot 'HECTON-8 project root, blank to auto-detect from starter location'
+        $installModsRoot = Read-SetupValue $installModsRoot 'Mods root override, blank to use ProjectRoot/Mods'
+    }
+
+    $tool = Resolve-StarterTool 'Tools/install_local_mod.ps1'
+    $global:LASTEXITCODE = 0
+    if ($Replace) {
+        & $tool -Root $Root -ProjectRoot $installProjectRoot -ModsRoot $installModsRoot -Replace
+    } else {
+        & $tool -Root $Root -ProjectRoot $installProjectRoot -ModsRoot $installModsRoot
+    }
+    Complete-StarterTool
+}
+
+function Invoke-DiagnoseLocal([bool]$PromptForMissingValues) {
+    $diagnoseProjectRoot = $ProjectRoot
+    $diagnoseModsRoot = $ModsRoot
+
+    if ($PromptForMissingValues) {
+        $diagnoseProjectRoot = Read-SetupValue $diagnoseProjectRoot 'HECTON-8 project root, blank to auto-detect from starter location'
+        $diagnoseModsRoot = Read-SetupValue $diagnoseModsRoot 'Mods root override, blank to use ProjectRoot/Mods'
+    }
+
+    $tool = Resolve-StarterTool 'Tools/diagnose_local_mods.ps1'
+    $global:LASTEXITCODE = 0
+    if ($Json) {
+        & $tool -Root $Root -ProjectRoot $diagnoseProjectRoot -ModsRoot $diagnoseModsRoot -Json
+    } else {
+        & $tool -Root $Root -ProjectRoot $diagnoseProjectRoot -ModsRoot $diagnoseModsRoot
+    }
+    Complete-StarterTool
+}
+
 function Invoke-Opcodes([bool]$Json) {
     $tool = Resolve-StarterTool 'Tools/list_allowed_opcodes.ps1'
     $global:LASTEXITCODE = 0
@@ -127,6 +172,30 @@ function Invoke-Capabilities {
         Fail 'Missing Docs/capabilities.md'
     }
     Get-Content -LiteralPath $guide
+}
+
+function Invoke-Dependencies([bool]$PromptForMissingValues) {
+    $dependencyAction = $DependencyAction
+    $dependencyId = $DependencyId
+
+    if ($PromptForMissingValues) {
+        $dependencyAction = Read-SetupValue $dependencyAction 'Dependency action: list, add, remove, or clear'
+        if (@('list','add','remove','clear') -notcontains $dependencyAction) {
+            Fail 'Dependency action must be one of: list, add, remove, clear.'
+        }
+        if ($dependencyAction -eq 'add' -or $dependencyAction -eq 'remove') {
+            $dependencyId = Read-SetupValue $dependencyId 'Dependency mod id, example com.example.library'
+        }
+    }
+
+    $tool = Resolve-StarterTool 'Tools/configure_dependencies.ps1'
+    $global:LASTEXITCODE = 0
+    if ($Json) {
+        & $tool -Root $Root -Action $dependencyAction -DependencyId $dependencyId -Json
+    } else {
+        & $tool -Root $Root -Action $dependencyAction -DependencyId $dependencyId
+    }
+    Complete-StarterTool
 }
 
 function Invoke-GraphNodeSnippet([bool]$PromptForMissingValues) {
@@ -319,6 +388,49 @@ function Invoke-ManifestContractConfig([bool]$PromptForMissingValues) {
     Complete-StarterTool
 }
 
+function Invoke-FirstMod([bool]$PromptForMissingValues) {
+    $firstId = if ([string]::IsNullOrWhiteSpace($Id)) { 'com.yourname.firstmod' } else { $Id }
+    $firstDisplayName = if ([string]::IsNullOrWhiteSpace($DisplayName)) { 'First HECTON Mod' } else { $DisplayName }
+    $firstAuthor = if ([string]::IsNullOrWhiteSpace($Author)) { 'YourName' } else { $Author }
+    $firstVersion = if ([string]::IsNullOrWhiteSpace($Version)) { '0.1.0' } else { $Version }
+    $firstNodeId = if ($NodeId -eq 'node.spawn_item') { 'node.first_spawn_item' } else { $NodeId }
+    $firstOpcode = if ([string]::IsNullOrWhiteSpace($Opcode)) { 'SpawnItem' } else { $Opcode }
+    $firstNodeParametersJson = if ($NodeParametersJson -eq '{}') { '{"Item":"demo","Quantity":1}' } else { $NodeParametersJson }
+    $firstSettingId = if ($SettingId -eq 'setting.example_toggle') { 'setting.first_enabled' } else { $SettingId }
+    $firstSettingKind = if ([string]::IsNullOrWhiteSpace($SettingKind)) { 'bool' } else { $SettingKind }
+    $firstSettingDefault = if ($SettingDefault -eq 'false') { 'true' } else { $SettingDefault }
+    $firstLocaleKey = if ($LocaleKey -eq 'text.example_line') { 'text.first_mod_ready' } else { $LocaleKey }
+    $firstLocaleValue = if ($LocaleValue -eq 'Your localized text') { 'First HECTON mod ready.' } else { $LocaleValue }
+
+    if ($PromptForMissingValues) {
+        $firstId = Read-SetupValue $firstId 'Mod id, example com.yourname.firstmod'
+        $firstDisplayName = Read-SetupValue $firstDisplayName 'Display name'
+        $firstAuthor = Read-SetupValue $firstAuthor 'Author'
+        $firstVersion = Read-SetupValue $firstVersion 'Version, example 0.1.0'
+        $firstNodeId = Read-SetupValue $firstNodeId 'Graph node id, example node.first_spawn_item'
+        $firstOpcode = Read-SetupValue $firstOpcode 'Opcode alias or hex, example SpawnItem'
+        $firstNodeParametersJson = Read-SetupValue $firstNodeParametersJson 'Parameters JSON object, example {"Item":"demo","Quantity":1}'
+        $firstSettingId = Read-SetupValue $firstSettingId 'Setting id, example setting.first_enabled'
+        $firstSettingKind = Read-SetupValue $firstSettingKind 'Setting kind: bool, int, float, string, or enum'
+        $firstSettingDefault = Read-SetupValue $firstSettingDefault 'Setting default value'
+        $firstLocaleKey = Read-SetupValue $firstLocaleKey 'Locale key, example text.first_mod_ready'
+        $firstLocaleValue = Read-SetupValue $firstLocaleValue 'Localized text value'
+    }
+
+    $tool = Resolve-StarterTool 'Tools/create_first_mod.ps1'
+    $global:LASTEXITCODE = 0
+    if ($Replace -and $BuildSubmission) {
+        & $tool -Root $Root -Id $firstId -DisplayName $firstDisplayName -Author $firstAuthor -Version $firstVersion -NodeId $firstNodeId -Opcode $firstOpcode -NodeParametersJson $firstNodeParametersJson -SettingId $firstSettingId -SettingKind $firstSettingKind -SettingDefault $firstSettingDefault -LocaleKey $firstLocaleKey -LocaleValue $firstLocaleValue -Replace -BuildSubmission
+    } elseif ($Replace) {
+        & $tool -Root $Root -Id $firstId -DisplayName $firstDisplayName -Author $firstAuthor -Version $firstVersion -NodeId $firstNodeId -Opcode $firstOpcode -NodeParametersJson $firstNodeParametersJson -SettingId $firstSettingId -SettingKind $firstSettingKind -SettingDefault $firstSettingDefault -LocaleKey $firstLocaleKey -LocaleValue $firstLocaleValue -Replace
+    } elseif ($BuildSubmission) {
+        & $tool -Root $Root -Id $firstId -DisplayName $firstDisplayName -Author $firstAuthor -Version $firstVersion -NodeId $firstNodeId -Opcode $firstOpcode -NodeParametersJson $firstNodeParametersJson -SettingId $firstSettingId -SettingKind $firstSettingKind -SettingDefault $firstSettingDefault -LocaleKey $firstLocaleKey -LocaleValue $firstLocaleValue -BuildSubmission
+    } else {
+        & $tool -Root $Root -Id $firstId -DisplayName $firstDisplayName -Author $firstAuthor -Version $firstVersion -NodeId $firstNodeId -Opcode $firstOpcode -NodeParametersJson $firstNodeParametersJson -SettingId $firstSettingId -SettingKind $firstSettingKind -SettingDefault $firstSettingDefault -LocaleKey $firstLocaleKey -LocaleValue $firstLocaleValue
+    }
+    Complete-StarterTool
+}
+
 function Require-SetupValue([string]$Value, [string]$Name) {
     if ([string]::IsNullOrWhiteSpace($Value)) {
         Fail ($Name + ' is required for setup. Provide -' + $Name + ' or run menu mode.')
@@ -377,6 +489,10 @@ function Show-Menu {
     Write-Host '15 apply asset entry snippet'
     Write-Host '16 configure manifest capability/budgets'
     Write-Host '17 show capability matrix'
+    Write-Host '18 create first playable mod'
+    Write-Host '19 install local discovery copy'
+    Write-Host '20 diagnose local Mods folder'
+    Write-Host '21 configure dependencies'
     Write-Host 'q quit'
     Write-Host ''
     $choice = Read-Host 'Select action'
@@ -399,6 +515,10 @@ function Show-Menu {
         '15' { Invoke-ApplyAssetEntrySnippet $true }
         '16' { Invoke-ManifestContractConfig $true }
         '17' { Invoke-Capabilities }
+        '18' { Invoke-FirstMod $true }
+        '19' { Invoke-InstallLocal $true }
+        '20' { Invoke-DiagnoseLocal $true }
+        '21' { Invoke-Dependencies $true }
         'q' { return }
         'Q' { return }
         default { Fail ('Unknown menu action: ' + $choice) }
@@ -409,6 +529,10 @@ $Root = Split-Path -Parent $MyInvocation.MyCommand.Path
 
 switch ($Action) {
     'menu' { Show-Menu }
+    'first-mod' { Invoke-FirstMod $false }
+    'install-local' { Invoke-InstallLocal $false }
+    'diagnose-local' { Invoke-DiagnoseLocal $false }
+    'dependencies' { Invoke-Dependencies $false }
     'setup' { Invoke-Setup $false }
     'validate' { Invoke-Validate }
     'review' { Invoke-Review }

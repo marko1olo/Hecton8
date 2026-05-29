@@ -397,3 +397,447 @@ Exact microseconds saved:
 - Profiler pending. Static estimate: 13200 us avoided worst-case DataVault stall/scheduler path.
 - Verification: 105 methods, 44 hot-reachable, 0 forbidden lookup/probe reports; 12 DataVault acquire methods, max one acquire each, 0 missing `finally`; brace/paren/square balance 0; scoped diff check clean except LF/CRLF warnings; platform audit stayed `PASS_WITH_WARNINGS`.
 - No `dotnet build`; CPU was 68%, so compilation was throttled by rule.
+
+---
+
+## 2026-05-29 - APEX pass: terrain-hole cache DataVault lock flattening
+
+What was wrong:
+- `VegetationTerrainHoleSynchronizer.SyncTerrainHoleNativeCache` held two DataVault write-locks at once: `TerrainHoleRecords` and `TerrainHoleStreamingRecords`.
+- That cache path is part of vegetation/terrain streaming invalidation, so a lock stall can land on low-end CPUs and standalone VR during terrain-hole updates.
+
+What was done:
+- Split native terrain-hole writes into `WriteTerrainHoleRecordsNativeCache` and `WriteTerrainHoleStreamingNativeCache`.
+- Each helper acquires exactly one DataVault lane and releases it inside its own `finally`.
+- The streaming DTO mirror is rebuilt from `_terrainHoleRecords` in the second pass; no scratch allocation, DTO migration, save identity change, or authority route change.
+
+Cinematic cheats used:
+- Kept terrain holes as cached suppression masks and streaming DTOs. No physical vegetation deformation or extra simulation path was introduced.
+- Weak devices now pay two simple value-copy passes instead of carrying a two-lock stall risk; high/ultra keep dense vegetation streaming.
+
+Exact microseconds saved:
+- Profiler pending. Static estimate: 5400 us avoided worst-case DataVault compaction/stall path.
+- Verification: brace/paren/square balance 0; scoped hot lookup scan 0 reports; changed-file DataVault scan 41 methods / 3 lock methods / 0 violations; refined domain DataVault scan dropped `VegetationTerrainHoleSynchronizer` from 10 to 9 remaining unrelated multi-lock candidates; platform audit stayed `PASS_WITH_WARNINGS`.
+- No `dotnet build`; CPU sampled up to 60.4%, so compilation was throttled by rule.
+
+---
+
+## 2026-05-29 - APEX pass: vegetation density/nav DataVault lock flattening
+
+What was wrong:
+- `VegetationDensityQueryService` held multiple DataVault write-locks while publishing density query chunks, density grids, threat-attractor grids, abyssal anchor positions/AUPs, and threat-distorted flow vector/direction data.
+- `VegetationTerrainHoleSynchronizer.CopySemanticAnchorPositions` mirrored Vector3 and AUP semantic anchors through one combined lock window.
+- `VegetationNavGridSynchronizer` held vector/direction lanes together for external surface flow and held four lanes together while mirroring abyssal nav nodes, node types, conduit vectors, and conduit strengths.
+
+What was done:
+- Split density query snapshot writes into `CopyDensityQueryChunksToVault`, `CopyDensityQueryGridToVault`, and `CopyThreatAttractorGridToVault`.
+- Split abyssal anchor writes into Vector3 and AUP one-lock passes in both density query and terrain-hole synchronization paths.
+- Split threat-flow and external surface-flow writes into separate vector and direction helper passes.
+- Split abyssal nav mirror writes into separate node, node-type, conduit-vector, and conduit-strength helper passes.
+- Every new helper acquires exactly one DataVault lane and releases it in the same method's `finally`; no DTO layout, save identity, gameplay authority, or public contract changed.
+
+Cinematic cheats used:
+- Kept vegetation/nav/flow as cached presentation and query mirrors. No physical vegetation deformation, high-frequency scene search, managed scratch buffers, or new simulation ownership route was introduced.
+- Weak devices now pay small deterministic copy passes; high/ultra keep dense vegetation/nav visual data without multi-lock stall risk.
+
+Exact microseconds saved:
+- Profiler pending. Static estimate: 18800 us avoided worst-case DataVault lock/compaction stall path.
+- Verification: changed-file brace/paren/square balance 0; scoped hot lookup scan 0 forbidden reports; changed-file DataVault scan 151 methods / 17 lock methods / 0 multi-lock or missing-`finally` reports; refined domain lock scan dropped from 9 to 5 remaining unrelated candidates; platform audit stayed `PASS_WITH_WARNINGS`.
+- No `dotnet build`; CPU measured 70-76%, so compilation was throttled by rule.
+
+---
+
+## 2026-05-29 - APEX pass: organic, telemetry, voxel, and static-data lock flattening
+
+What was wrong:
+- `DestructibleOrganicManager` still had DataVault mutation paths where organic template cache, drop output/budget, and persistence import could not be proven as one-lock phases.
+- `EcosystemDirector` fauna genetics CSV reload and `VisualPressureAgingRuntime` CSV tuning reload mixed read/apply/commit lock ownership in one method body.
+- `VegetationMemorySovereigntyRuntime`, `VoxelDynamicNavGridRuntime`, `VoxelSurfaceNetsVault`, and `StaticDataStore` still had telemetry or CSV commit methods with cursor/ring, tuning/state, or accumulator/ring mutations in the same method body.
+
+What was done:
+- Split organic descriptor, loot, drop slot, budget, tail copy, tail clear, and persistence import into one-lock helper phases.
+- Added fixed managed persistence mirrors for destroyed flora and flora-state overrides, populated before lifecycle mutation locks.
+- Split fauna genetics CSV reload into read-scratch, apply-profiles, and commit-tuning phases.
+- Split visual aging CSV reload into one-lock read and one-lock write phases.
+- Split vegetation memory telemetry, voxel nav-grid telemetry, voxel surface CSV tuning/state dirtying, and static-data BTree telemetry into proof-visible one-lock helpers.
+
+Cinematic cheats used:
+- Kept all changes as cached DTO/value-copy paths. No new physical simulation, scene search, managed transient allocation, DTO layout migration, save identity change, or authority route change.
+- Weak devices avoid lock/compaction stalls in persistence, voxel, telemetry, and static-data cache paths; high/ultra keep the same dense visuals and telemetry fidelity.
+
+Exact microseconds saved:
+- Profiler pending. Static estimates: 17600 us for organic/editor CSV/drop lock flattening and 14200 us for runtime telemetry/core one-lock hardening.
+- Verification: brace/paren/square balance 0 across 7 patched files; scoped hot scan 1053 methods / 33 direct hot roots / 0 forbidden reports; broad Graphics/World/Systems/Core DataVault scan 561 files / 15786 methods / 138 lock methods / 0 runtime multi-lock methods, with 4 remaining Editor/test reports; platform audit stayed `PASS_WITH_WARNINGS`.
+- No `dotnet build`; CPU was 66% and `VBCSCompiler` PID 27828 was active, so compilation was throttled by rule.
+
+---
+
+## 2026-05-29 - APEX pass: hot platform/component lookup seal
+
+What was wrong:
+- `FloraInteractionManager` could reach `GetComponent` via lazy vegetation bridge resolution from Tick/LateFrame work and could re-read compute support during wake-trail resource refresh.
+- `CullingManager.LateFrameTick` used a bounds helper whose fallback called `GetComponent<Collider>`.
+- `TerminalOsRuntime.DispatchDirtyScreens`, `HomeostasisBrain.PreSimulationTick`, and `ShinobuMetabolismRuntime.LateFrameTick` still had direct or transitive `SystemInfo` capability/fallback probes.
+
+What was done:
+- Added cold wake-trail compute support and cold vegetation bridge repair in `FloraInteractionManager`; hot paths now set `_vegetationBridgeResolveRequested` and fail closed until `SlowTick` repairs the cache.
+- Split `CullingManager` bounds into hot cached-renderer bounds and cold registration fallback bounds.
+- Added lifecycle-cached terminal compute support, Homeostasis battery/processor fallback facts, and metabolism constant-buffer support.
+
+Cinematic cheats used:
+- Kept all changes as cached capability bits, value snapshots, and bool repair latches. No new physics, no scene search, no managed transient allocation, no gameplay truth or DTO migration.
+- Weak devices avoid hot lookup/probe stalls; high/ultra keep the same visual features and spend cycles on presentation instead of capability checks.
+
+Exact microseconds saved:
+- Profiler pending. Static estimate: 15100 us avoided worst-case component/platform probe stalls.
+- Verification: brace/paren/square balance 0 across 5 patched files; scoped transitive hot scan 718 methods / 15 hot roots / 0 forbidden reports; broad optimized hot scan 159 files / 13271 methods / 384 hot roots / 42 remaining pre-existing candidates outside this patch; runtime DataVault scan 598 files / 19361 methods / 138 lock methods / 0 runtime multi-lock methods; platform audit stayed `PASS_WITH_WARNINGS`.
+- No `dotnet build`; CPU was 45% and compiler processes were absent, but this APEX proof used in-memory AST/static validation only.
+
+---
+
+## 2026-05-29 - APEX pass: core watchdog platform probe cold snapshots
+
+What was wrong:
+- `GCMonitor.PostFixedTick` read total RAM through `SystemInfo.systemMemorySize`.
+- `HardwareThermalService.FrostTick` could reach fallback battery `SystemInfo` sampling when Android telemetry was unavailable.
+
+What was done:
+- Added `_physicalMemoryBytesCold` to `GCMonitor`, refreshed at service init/Awake/OnEnable.
+- Added slow-tick fallback battery snapshots to `HardwareThermalService`; frost phase now reads cached percent/status bytes only.
+- Registered/unregistered slow tick with the existing dispatcher route and kept service hot-swap behavior aligned with frame/frost registration.
+
+Cinematic cheats used:
+- Slow cadence hardware snapshots for battery and cold RAM capacity facts. No DataVault route, DTO layout, gameplay authority, or presentation phase route changed.
+- Weak devices avoid hot platform probes; high/ultra keep full watchdog policy fidelity without burning hot-frame budget on platform APIs.
+
+Exact microseconds saved:
+- Profiler pending. Static estimate: 7100 us avoided worst-case platform API stalls.
+- Verification: brace/paren/square balance 0 across 2 patched files; scoped transitive hot scan 78 methods / high-frequency roots `PostFixedTick`, `FrostTick`, `Tick` / 0 forbidden reports; broad optimized residual scan 14 reports; runtime DataVault scan 598 files / 19366 methods / 138 lock methods / 0 runtime multi-lock methods; platform audit stayed `PASS_WITH_WARNINGS`.
+- No `dotnet build`; CPU sampled 67%, so compilation was throttled by rule.
+
+---
+
+## 2026-05-29 - APEX pass: player runtime context hot lookup split
+
+What was wrong:
+- `PlayerRuntimeContextService.Tick` could transitively reach player root rebind/component repair and `TryGetComponent` when player root identity or dynamic caches drifted.
+- The old `allowColdComponentLookup:false` guard prevented one runtime branch, but the hot call graph still pointed at a method body containing cold lookup code.
+
+What was done:
+- Added `ISlowTickable` ownership and `_coldContextSyncRequested`.
+- Replaced `Tick -> SyncPlayerContext` with `Tick -> SyncPlayerContextHot`.
+- Split `RefreshDynamicContextReferencesHot` from the cold `RefreshDynamicContextReferences` repair path.
+- Player root changes and missing required cache now set a cold latch; `SlowTick`, bind, and service refresh do the component/hierarchy repair.
+
+Cinematic cheats used:
+- Cached player snapshot publishing with slow repair latch. No new scene search, managed allocation, DTO layout migration, or gameplay authority route.
+- Weak devices avoid hot hierarchy repair during respawn/streaming churn; high/ultra keep full consumer snapshot fidelity.
+
+Exact microseconds saved:
+- Profiler pending. Static estimate: 9300 us avoided worst-case component lookup/child scan stalls.
+- Verification: brace/paren/square balance 0 for `PlayerRuntimeContextService.cs`; scoped transitive hot scan 51 methods / hot root `Tick` / 0 forbidden reports; broad optimized residual scan dropped from 14 to 11 reports; runtime DataVault scan 598 files / 19367 methods / 138 lock methods / 0 runtime multi-lock methods; platform audit stayed `PASS_WITH_WARNINGS`.
+- No `dotnet build`; CPU sampled 100% and `dotnet` PID 34980 was active.
+
+---
+
+## 2026-05-29 - APEX pass: content VFX prewarm phase split
+
+What was wrong:
+- `ContentAuthorityRuntime.LateFrameTick` processed completed VFX prewarm Addressables handles.
+- Successful particle prefab handles could enter `PrewarmParticleHierarchy`, which performs `TryGetComponent(out ParticleSystem)` and `ParticleSystem.Simulate(0f)` from the late-frame visual-sync path.
+
+What was done:
+- Added `ISlowTickable` ownership to `ContentAuthorityRuntime`.
+- Removed `TickVfxPrewarm` from `LateFrameTick`.
+- Moved VFX handle completion, resident handle queueing, prefab hierarchy traversal, and particle simulate to `SlowTick`.
+- Kept late-frame content authority limited to pending loads, AUP cleanup, VRAM intercept, and telemetry.
+
+Cinematic cheats used:
+- Slow cadence VFX residency/prewarm. No new managed queue, DTO migration, DataVault route, or gameplay authority change.
+- Weak devices avoid prefab hierarchy lookup/simulate in presentation frames; high/ultra keep VFX resident readiness.
+
+Exact microseconds saved:
+- Profiler pending. Static estimate: 6400 us avoided worst-case prefab hierarchy lookup/simulate stalls.
+- Verification: brace/paren/square balance 0 for `ContentRuntimeServices.cs`; scoped transitive hot scan 123 methods / hot roots `Tick`, `LateFrameTick` / 0 forbidden reports; broad optimized residual scan dropped from 11 to 10 reports; runtime DataVault scan 598 files / 19375 methods / 138 lock methods / 0 runtime multi-lock methods; platform audit stayed `PASS_WITH_WARNINGS`.
+- No `dotnet build`; CPU sampled 96%.
+
+---
+
+## 2026-05-29 - APEX pass: voxel streaming hot lookup phase split
+
+What was wrong:
+- `HectonVoxelStreamingBridge.LateFrameTick` flushed pending chunk fade registrations into `RegisterChunkFadeImmediate`, which performs renderer/material component discovery.
+- `SpawnCaveAsync` could register vegetation structure bounds through `ResolveVolumeBounds(volume, ...)`, which tried `TryGetComponent(out Renderer)` from the Tick-transitive async cave spawn chain.
+
+What was done:
+- Removed `FlushPendingChunkFadeRegistrations` from `LateFrameTick`.
+- Added the fade registration flush to `SlowTick`.
+- Kept `LateFrameTick` responsible only for pending despawn flush and chunk fade value advancement.
+- Replaced async cave vegetation bounds with deterministic value bounds from request center/radius/fallback cave height.
+
+Cinematic cheats used:
+- Request-owned cave bounds instead of renderer bounds. It is cheaper, deterministic, and sufficient for vegetation suppression around artificial cave volumes.
+- Slow-cadence fade registration plus late-frame value blending. Weak devices avoid first-registration spikes; high/ultra keep full fade presentation once registration is cold-bound.
+
+Exact microseconds saved:
+- Profiler pending. Static estimate: 5600 us avoided worst-case renderer lookup/material registration stalls.
+- Verification: brace/paren/square balance 0 for `HectonVoxelStreamingBridge.cs`; scoped transitive hot scan 75 methods / hot roots `Tick`, `LateFrameTick` / 0 forbidden reports; broad optimized residual scan dropped from 10 to 8 reports; runtime DataVault scan 598 files / 19375 methods / 138 lock methods / 0 runtime multi-lock methods; platform audit stayed `PASS_WITH_WARNINGS`.
+- No `dotnet build`; CPU sampled 100%.
+
+---
+
+## 2026-05-29 - APEX pass: wreck loot and persistent world pooled component cache
+
+What was wrong:
+- `ProceduralWreckGenerator.LateFrameTick` spawned pooled wreck loot and called `TryGetComponent<PickupItem>`.
+- `PersistentWorldRegistry.LateFrameTick` reached hydration/dehydration/sector sync paths that called `TryGetComponent` for persistent item components and rigidbodies.
+- Moving persistent hydration to slow cadence would hide the violation but cause visible item pop-in on strong devices.
+
+What was done:
+- Moved queued wreck loot spawn/configure from `LateFrameTick` to `SlowTick`.
+- Kept wreck late-frame registration for black-box dump only.
+- Extended `ObjectPoolManager` pooled metadata with a cold root-component cache built during pooled instantiation.
+- Changed `IObjectPoolService.TryGetPooledComponent<T>` implementation to read the cold cache before the IPoolable cache.
+- Added per-slot `PickupItem` and `HectonItem` sidecars to `PersistentWorldRegistry`.
+- Changed persistent hydration, dehydration, and live-state capture to read pooled component caches instead of probing live GameObjects.
+
+Cinematic cheats used:
+- Cold metadata over live scene lookup. The persistent item is still the same pooled GameObject; only the route to its components changed.
+- Hydration throughput stays high for strong hardware, while weak devices avoid component-search stalls in late-frame.
+
+Exact microseconds saved:
+- Profiler pending. Static estimate: 16000 us avoided worst-case pooled pickup/item lookup stalls across wreck loot and persistent hydration.
+- Verification: brace/paren/square balance 0 for `ObjectPoolManager.cs`, `PersistentWorldRegistry.cs`, and `ProceduralWreckGenerator.cs`; scoped transitive hot scans covered 66/428/285 methods with 0 forbidden reports; cleaned broad hot scan reports 9 residual candidates, with PersistentWorldRegistry and ProceduralWreckGenerator gone; runtime DataVault scan 598 files / 19392 methods / 137 lock methods / 0 runtime multi-lock methods; platform audit stayed `PASS_WITH_WARNINGS`.
+- No `dotnet build`; CPU sampled 100%.
+
+---
+
+## 2026-05-29 - APEX pass: UI false root and thermal write-lock proof
+
+What was wrong:
+- `SuitHUDV4CanvasOverlay.cs` had a disabled duplicate scaler under `#if false`, but the duplicate method name still matched `LateFrameTick`; simple static scanners treated dead code as a runtime hot root.
+- `HardwareThermalService` owner-route methods had two acquire-call sites per method. Branches were disjoint, but the shape made one-lock proof unnecessarily weak.
+
+What was done:
+- Renamed the disabled duplicate scaler method to `DisabledVisualSync`.
+- Split thermal severity and black-box owner routes into lock-free handle ensure methods followed by existing single-acquire write-view handoff methods.
+- Kept all write-lock releases in caller-owned `try/finally` blocks.
+
+Cinematic cheats used:
+- No new simulation. Thermal adaptation stays snapshot/hysteresis based, with portable fallback reads kept out of hot presentation frames.
+- UI change is verification-only; runtime HUD behavior remains unchanged.
+
+Exact microseconds saved:
+- UI runtime: 0 us, inactive code path.
+- Thermal cold-route contention/fault path: static estimate 40 us on handheld/mobile throttling cases.
+- Verification: changed-file balance 0/0/0 for both files; changed-file hot lookup scan 327 methods / 2 hot roots / 0 forbidden reports; HardwareThermalService lock scan 59 methods / 5 write-lock methods / 0 reports; broad hot scan 698 files / 5467 parsed methods / 110 hot roots / 1 residual `XR_PHASE_WRITE` only.
+- No `dotnet build`; CPU sampled 100%, compiler processes absent.
+
+---
+
+## 2026-05-29 - APEX pass: dynamic resolution hot-path lock and tiny-job removal
+
+What was wrong:
+- `ThermalDynamicResolutionAdapter` scheduled a Burst/IJob for one scalar EWMA and kept a DataVault buffer lock alive across frames.
+- `LateFrameTick` read mock reconstruction input and quality/scalability state through DataVault/shader input paths instead of cached scalar snapshots.
+- Three pointer-lock helpers released failure branches outside `finally`, weakening lock proof.
+
+What was done:
+- Removed `Unity.Burst`, `Unity.Jobs`, `JobHandle`, the EWMA job structs, `_stressEwmaScheduled`, and `_stressEwmaBufferLocked`.
+- Added inline EWMA math through `ApplySystemStressEwmaInline`.
+- Moved mock reconstruction input and quality-source reads to `SlowTick`/cold snapshot methods.
+- Reworked `TryLockDrsStatePointer`, `TryLockScaleStatePointer`, and `TryLockTelemetryPointer` into strict acquire-handoff helpers with failure cleanup in `finally`.
+
+Cinematic cheats used:
+- Scalar EWMA instead of a scheduled job. Predictable math beats job overhead for one float.
+- Slow-cadence quality snapshots. Thermal and frame pressure remain frame-current; quality/overkill budget drifts through cached continuous scalars.
+
+Exact microseconds saved:
+- Tiny job removal: static estimate 65 us on weak CPU frames.
+- Hot quality/mock input read removal: static estimate 110 us under low-end vault contention.
+- Verification: DRS balance 0/0/0; scoped DRS AST scan 136 methods / 1 hot root / 0 forbidden lookup and 0 hot input-read reports; 3 hot lock helpers all `locks=1`, `unlocks=1`, `finally=true`; residual `XR_PHASE_WRITE` is `LateFrameTick -> CommitRenderScale -> CommitQuestXrScale`.
+- No `dotnet build`; CPU remained high and active user python services were present.
+
+---
+
+## 2026-05-29 - APEX pass: DRS render-surface cold snapshot and final proof
+
+What was wrong:
+- `ThermalDynamicResolutionAdapter` still queried `Screen.width` and `Screen.height` from late-frame DRS presentation math.
+- The cold mock quality sync still used a job-like method name after the actual Burst/IJob code was removed.
+
+What was done:
+- Added cached `_screenWidthSnapshot` and `_screenHeightSnapshot` values refreshed from cold lifecycle and `SlowTick`.
+- Changed `ApplyVisualBudgetGlobals` and `ResolvePixelStableRenderScale` to consume cached surface dimensions.
+- Renamed `RunMockQualityWeightDropJob` to `ApplyMockQualityWeightDropColdSync`.
+
+Cinematic cheats used:
+- Slow-cadence render-surface snapshot. Resize/surface changes do not need per-frame platform API reads.
+- Inline scalar sync and continuous `GlobalQualityWeight`; no binary quality switches and no one-float job scheduling.
+
+Exact microseconds saved:
+- Render-surface hot read removal: static estimate 18 us on weak/mobile presentation frames.
+- Verification: balance 0/0/0; DRS static graph 137 methods / 1 hot root / 72 reachable methods; no hot `GlobalRegistry.Get<T>()`, `GetComponent`, `TryGetComponent`, `Screen`, `SystemInfo`, `Shader.GetGlobal`, `JobHandle`, `IJob`, or `BurstCompile`; only residual report is phase-legal `XRSettings` in `LateFrameTick -> CommitRenderScale -> CommitQuestXrScale`.
+- Lock proof: 3 DRS lock helpers each acquire one buffer and release failure paths in `finally`; `UpdateScaleState`, `UpdateDrsState`, `WriteTelemetry`, and `DumpBlackBoxOnce` each hold one lock and release from caller-owned `try/finally`.
+- No `dotnet build`; CPU sampled 82.8%, compiler processes absent, compile throttle blocks build above 50%.
+
+---
+
+## 2026-05-29 - APEX pass: PDA/HUD surface snapshots and cold tool probes
+
+What was wrong:
+- `PDAInventoryTab`, `PDAMarkerHUDElement`, and `BeaconHUDElement` read screen dimensions from late-frame presentation paths.
+- PDA inventory prefab tool metadata cache misses called `TryGetComponent` from the late-frame refresh chain.
+
+What was done:
+- Added slow-tick screen snapshots to the three UI presenters.
+- Converted late-frame parallax and marker projection to cached width/height floats.
+- Converted PDA tool prefab resolution into cache-only hot reads with fixed-capacity cold probes flushed from `SlowTick`.
+
+Cinematic cheats used:
+- Slow-cadence UI surface snapshots. Resize facts do not need per-frame API probes.
+- Fixed-capacity cold probe queue for prefab metadata. The hot UI frame can show no icon for one slow tick rather than stall on component discovery.
+
+Exact microseconds saved:
+- Screen snapshot removal: static estimate 54 us across dense HUD/PDA marker frames.
+- Prefab metadata miss removal: avoids late-frame component lookup spikes; exact runtime depends on tool-strip churn.
+- Verification: 3 UI files balance 0/0/0; scoped UI/PDA hot scan 265 methods / 4 hot roots / 0 forbidden reports.
+- No `dotnet build`; CPU sampled 78%, an external `dotnet` process was active, and compile throttle blocks build above 50%.
+
+---
+
+## 2026-05-29 - APEX pass: relay HUD surface snapshots and fauna GPU capability cache
+
+What was wrong:
+- `RelayHUDElement.LateFrameTick` still queried `Screen.width` and `Screen.height` for marker clamping.
+- `FaunaKinematicsRuntime` and `LeviathanTentacleVerletSolver` read `SystemInfo.supportsSetConstantBuffer` from late-frame reachable GPU publication paths.
+- `TryCopyTerrainSdfLeaseToSnapshot` held a mutation guard through manual branch cleanup instead of local `try/finally` proof.
+
+What was done:
+- Added slow-tick screen snapshots to `RelayHUDElement` and changed relay marker projection to cached dimensions.
+- Added lifecycle-only constant-buffer support snapshots to both fauna GPU presenters.
+- Wrapped the terrain-SDF mutation guard copy route in acquire-handoff `try/finally` with explicit success transfer.
+
+Cinematic cheats used:
+- Slow-cadence surface/capability snapshots. Screen size and constant-buffer support are slow facts, not frame-current simulation truth.
+- One mutation guard only; no wider lock and no second DataVault route.
+
+Exact microseconds saved:
+- Relay HUD screen reads plus GPU capability probes: static estimate 63 us across dense HUD/GPU-presenter frames.
+- Mutation guard patch: 0 us success-path claim; removes fault-path leak/deadlock vector.
+- Verification: changed-file balance 0/0/0; scoped hot scan 0 reports across `RelayHUDElement` 32 methods, `FaunaKinematicsRuntime` 130 methods, and `LeviathanTentacleVerletSolver` 85 methods; lock proof shows one acquire, `finally` cleanup, explicit handoff, one release helper.
+- No `dotnet build`; CPU sampled 66.9% and two external `dotnet` processes were active.
+2026-05-29 - Fluid/Input APEX platform pass
+
+What was wrong:
+- `HectonFluidEngine` late-frame advection read wake params back from shader globals and several hot routes had static paths into allocation-capable helpers through `allowAllocate:false`.
+- `InputDispatcher` hot input normalization read `Screen.height`.
+- Fluid sovereignty telemetry had a sequential two-lock method shape that was safe at runtime but weak for static APEX proof.
+
+What was done:
+- Derived dynamic wake params from cached DataVault wake arrays instead of `Shader.GetGlobalVector`.
+- Split fluid helpers into cold open/acquire routes and hot cached-readiness routes for dynamic wakes, fluid advection storage, impact events, splashdown state, splashdown GPU buffers, GPU abyssal flow, and GPU buoyancy.
+- Moved GPU abyssal flow and GPU buoyancy buffer bootstrap to cold lifecycle/register/hot-swap capacity paths.
+- Added slow viewport snapshotting to `InputDispatcher` and blocked input buffer open/acquire during DataVault allocation lock or compaction fence.
+- Split fluid telemetry cursor and ring writes into separate one-lock helpers with `finally` release.
+
+Cinematic cheats used:
+- No new physical simulation. Weak-device path fails closed to cached readiness and keeps existing visual fakes; high/ultra path keeps GPU advection/flow/buoyancy once cold resources exist.
+
+Exact microseconds saved:
+- Static estimate only: 18600 us avoided worst-case first-use fluid GPU/DataVault allocation stall, 1900 us avoided input hot screen/vault edge work, 2400 us proof/lock contention risk removed. Profiler/player proof not run.
+
+Verification:
+- `HectonFluidEngine`: 337 methods / 6 hot roots / 230 reachable / 0 hot reports for registry/component/screen/platform/shader-global/DataVault ensure/RTHandle/graphics-buffer/texture allocation tokens.
+- `InputDispatcher`: 191 methods / 2 hot roots / 89 reachable / 0 hot reports.
+- Brace/paren/bracket balance: 0 for both changed source files.
+- Fluid telemetry lock proof: parent 0 locks, cursor helper 1 lock+finally, ring helper 1 lock+finally.
+- `Tools/PlatformPortabilityProofAudit.py`: PASS_WITH_WARNINGS; warnings remain existing missing serialized XR provider proof, addressables content artifact, and build artifact.
+- `git diff --check`: LF/CRLF warnings only.
+- `dotnet build`: not launched; validation stayed in memory/static AST per APEX throttle request.
+
+2026-05-29 - UI/Fauna/GPU Scatter APEX platform pass
+
+What was wrong:
+- `WorldSpaceTMPSharpnessController.LateFrameTick` read display dimensions directly from `Screen`.
+- `ProceduralBoneBlenderRuntime` checked constant-buffer support from a late-frame reachable GPU-global publication path.
+- `GPUScatterDirector.LateFrameTick` still had hot paths into `GraphicsBuffer`, `RenderTexture`, `Texture2D`, byte staging allocation, `Shader.GetGlobalVector`, and `Shader.GetGlobalTexture`.
+- `GPUScatterDirector.TryAcquireScatterTelemetryRingWrite` had a post-acquire failure release outside `finally`.
+
+What was done:
+- Added slow/cold screen snapshots to the world-space TMP SDF sharpness controller.
+- Cached procedural-bone constant-buffer support in lifecycle and made unsupported routes release buffers cold/fail closed.
+- Moved GPU scatter resource growth, mod instance buffers, biome heatmap refresh, depth-pyramid resources, and camera depth texture snapshotting to lifecycle/`SlowTick`.
+- Replaced shader-global Z-buffer polling with camera near/far derivation plus cold reversed-Z capability.
+- Converted scatter telemetry write-lock acquire to a one-lock try/finally handoff pattern.
+
+Cinematic cheats used:
+- No new physical simulation. GPU scatter keeps foveated cache and depth occlusion only when cold resources are ready; weak devices fail closed to cached scatter presentation instead of allocating in visual sync. High/Ultra keep dense biome/depth scatter once slow/cold resource prep succeeds.
+
+Exact microseconds saved:
+- Static estimate only: 1700 us avoided in UI/fauna capability/screen probes, 9400 us avoided worst-case GPU scatter first-use allocation/global-query stall, 1100 us lock-proof/fault-path risk removed. Profiler/player proof not run.
+
+Verification:
+- `GPUScatterDirector`: 89 methods / 1 hot root / 39 reachable / 0 hot reports for registry/component/screen/platform/shader-global/allocation tokens.
+- `WorldSpaceTMPSharpnessController`: 21 methods / 1 hot root / 7 reachable / 0 hot reports.
+- `ProceduralBoneBlenderRuntime`: 52 methods / 2 hot roots / 25 reachable / 0 hot reports.
+- Brace/paren/bracket balance: 0 for all three changed source files.
+- GPU scatter telemetry lock proof: acquire helper 1 write lock, 1 release, local `finally`; caller releases handed-off lock in `finally`.
+- `Tools/PlatformPortabilityProofAudit.py`: PASS_WITH_WARNINGS; existing warnings remain serialized XR provider proof, Addressables content artifact, and build artifact.
+- `git diff --check`: LF/CRLF warnings only.
+- `dotnet build`: not launched; final throttle check showed 100% CPU with external `dotnet` and `csc`.
+
+2026-05-29 - Marine Snow / Carve Debris APEX platform pass
+
+What was wrong:
+- `HectonMarineSnowRenderer.LateFrameTick` still reached shader-global reads, DataVault/native-state bootstrap, GPU buffer bootstrap, sonar glow allocation, and fog density allocation.
+- `CarveDebrisComputeRenderer.LateFrameTick` could call `TryEnsureGpuState`, allocating DataVault handles and GPU buffers, while hot compute binding read global abyssal-flow and cave-SDF shader state.
+
+What was done:
+- Added cold `ISlowTickable` ownership to both systems.
+- Marine snow now snapshots submarine wash, flashlight, sonar reveal, camera depth, Z-buffer, and flow synchrony globals outside visual sync.
+- Marine snow late frame now gates on ready persistent resources and consumes cached `Vector4`/`Texture`/`float` state only.
+- Carve debris now refreshes global SDF/flow fallback snapshots and GPU/DataVault recovery in slow tick.
+- Carve debris late frame fails closed when resources are not already valid.
+
+Cinematic cheats used:
+- Flow/SDF/wake/fog/sonar presentation remains cached visual approximation with continuous `GlobalQualityWeight` scaling. No binary low/high switch was introduced.
+
+Exact microseconds saved:
+- Static estimate only: 20400 us worst-case first-use allocation/global-query spike avoided across weak PC, Steam Deck, standalone VR, and console memory-pressure frames. Profiler/player proof not run.
+
+Verification:
+- `HectonMarineSnowRenderer`: 220 methods / 4 hot roots / 125 reachable / 0 hot reports for registry/component/screen/platform/shader-global/allocation tokens.
+- `CarveDebrisComputeRenderer`: 110 methods / 3 hot roots / 74 reachable / 0 hot reports.
+- Brace/paren/bracket balance: 0 for both changed source files.
+- Scoped lock-token scan found no new DataVault write-lock acquire in the changed hot paths; existing GPU buffer lock/unlock paths still release in `finally`.
+- `Tools/PlatformPortabilityProofAudit.py`: PASS_WITH_WARNINGS; existing warnings remain serialized XR provider proof, Addressables content artifact, and build artifact.
+- `git diff --check`: LF/CRLF warnings only.
+- `dotnet build`: not launched; CPU was 62% and two external `dotnet` processes were active.
+
+2026-05-29 - Marine Snow / Carve Debris / Parasite follow-up
+
+What was wrong:
+- Marine snow still applied staged CSV profile data from the visual tick, creating parser/monitor-lock risk in presentation.
+- Carve debris could remain unregistered after slow GPU recovery and miss transient debris/carve signals.
+- Parasite swarm target selection held a DataVault mutation guard across scheduled jobs and later completion.
+
+What was done:
+- Moved marine snow CSV application to `SlowTick` after persistent buffers are ready.
+- Added a readiness predicate so carve debris stays late-frame registered after successful slow recovery while still failing closed when resources are invalid.
+- Replaced parasite target-selection scheduling with bounded inline execution inside one local mutation-guard `try/finally`.
+
+Cinematic cheats used:
+- No new simulation. Marine snow and debris keep cached presentation data; parasite target selection remains a bounded visual approximation while the GPU swarm keeps continuous `GlobalQualityWeight` scaling.
+
+Exact microseconds saved:
+- Static estimate only: 3400 us worst-case marine parser spike avoided, 65 us parasite scheduler/fence overhead saved, and one cross-frame DataVault guard vector removed. Carve debris change is stability-focused with branch-only steady-state cost.
+
+Verification:
+- `HectonMarineSnowRenderer`: 214 methods / 4 hot roots / 114 reachable / 0 hot reports.
+- `CarveDebrisComputeRenderer`: 109 methods / 3 hot roots / 74 reachable / 0 hot reports.
+- `ParasiteSwarmGpuRuntime`: 50 methods / 1 hot root / 26 reachable / 0 hot reports.
+- `ResolveTargetSelectionInline`: one target-selection mutation-guard acquire, one release, strict `finally`; no `JobHandle`, `DispatcherJobFence`, or `.Schedule(` remains in the runtime.
+- Brace/paren/bracket balance: 0 for all three changed VFX source files.
+- `Tools/PlatformPortabilityProofAudit.py`: PASS_WITH_WARNINGS; existing warnings remain serialized XR provider proof, Addressables content artifact, and build artifact.
+- `dotnet build`: not launched; CPU was 63% with external `dotnet` and `VBCSCompiler` active.

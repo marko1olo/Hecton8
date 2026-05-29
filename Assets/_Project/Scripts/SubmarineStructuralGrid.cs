@@ -126,6 +126,7 @@ namespace Hecton8.Physics
         private const int LockFatiguePeakResult = 1 << 13;
         private const int LockBreachSeveritySumResult = 1 << 14;
         private const int LockBreaches = 1 << 15;
+        private const int LockStructuralJobMutationGuard = 1 << 30;
 
         private static class StructuralGridVaultRoute
         {
@@ -1477,8 +1478,9 @@ namespace Hecton8.Physics
                 }
 
                 int lockMask = 0;
-                if (!TryLockStructuralJobBuffer(in _breachesHandle, LockBreaches, ref lockMask) ||
-                    !TryLockStructuralJobBuffer(in _breachSeveritySumResultHandle, LockBreachSeveritySumResult, ref lockMask))
+                if (!TryValidateStructuralJobBuffer(in _breachesHandle, LockBreaches, ref lockMask) ||
+                    !TryValidateStructuralJobBuffer(in _breachSeveritySumResultHandle, LockBreachSeveritySumResult, ref lockMask) ||
+                    !TryAcquireStructuralJobMutationGuard(ref lockMask))
                 {
                     UnlockStructuralJobBuffers(lockMask);
                     return;
@@ -2708,7 +2710,7 @@ namespace Hecton8.Physics
             if ((mask & LockCellIntegrityFront) != 0) vault.ReleaseWriteLock(in _cellIntegrityFrontHandle, VaultOwnerSystemId);
         }
 
-        private bool TryLockStructuralJobBuffer<T>(in VaultGenerationHandle<T> handle, int bit, ref int lockMask)
+        private bool TryValidateStructuralJobBuffer<T>(in VaultGenerationHandle<T> handle, int bit, ref int lockMask)
             where T : struct
         {
             IDataVault vault = _dataVault;
@@ -2724,15 +2726,8 @@ namespace Hecton8.Physics
                 return false;
             }
 
-            if (!vault.TryLockBuffer((BufferID)handle.BufferID, VaultOwnerSystemId))
-            {
-                RecordStructuralVaultFailure(in handle, DamageControlTelemetryBufferLockFailureFlag, FailureCodeBufferLock);
-                return false;
-            }
-
             if (!IsVaultOpenForStructuralAccess(vault))
             {
-                vault.TryUnlockBuffer((BufferID)handle.BufferID, VaultOwnerSystemId);
                 RecordStructuralVaultFailure(in handle, DamageControlTelemetryCompactionFenceFlag, FailureCodeCompactionFence);
                 return false;
             }
@@ -2744,25 +2739,60 @@ namespace Hecton8.Physics
         private void UnlockStructuralJobBuffers(int mask)
         {
             IDataVault vault = _dataVault;
-            if (vault == null || mask == 0)
+            if (vault == null || mask == 0 || (mask & LockStructuralJobMutationGuard) == 0)
                 return;
 
-            if ((mask & LockBreaches) != 0) vault.TryUnlockBuffer((BufferID)_breachesHandle.BufferID, VaultOwnerSystemId);
-            if ((mask & LockBreachSeveritySumResult) != 0) vault.TryUnlockBuffer((BufferID)_breachSeveritySumResultHandle.BufferID, VaultOwnerSystemId);
-            if ((mask & LockFatiguePeakResult) != 0) vault.TryUnlockBuffer((BufferID)_fatiguePeakResultHandle.BufferID, VaultOwnerSystemId);
-            if ((mask & LockFatigueIntegrityLossPerCycle) != 0) vault.TryUnlockBuffer((BufferID)_fatigueIntegrityLossPerCycleHandle.BufferID, VaultOwnerSystemId);
-            if ((mask & LockFatigueCompartmentFlags) != 0) vault.TryUnlockBuffer((BufferID)_fatigueCompartmentFlagsHandle.BufferID, VaultOwnerSystemId);
-            if ((mask & LockCompartmentCentroids) != 0) vault.TryUnlockBuffer((BufferID)_compartmentCentroidsHandle.BufferID, VaultOwnerSystemId);
-            if ((mask & LockScheduledImpacts) != 0) vault.TryUnlockBuffer((BufferID)_scheduledImpactsHandle.BufferID, VaultOwnerSystemId);
-            if ((mask & LockQueuedImpacts) != 0) vault.TryUnlockBuffer((BufferID)_queuedImpactsHandle.BufferID, VaultOwnerSystemId);
-            if ((mask & LockCompartmentBreachAreasBack) != 0) vault.TryUnlockBuffer((BufferID)_compartmentBreachAreasBackHandle.BufferID, VaultOwnerSystemId);
-            if ((mask & LockCompartmentBreachAreasFront) != 0) vault.TryUnlockBuffer((BufferID)_compartmentBreachAreasFrontHandle.BufferID, VaultOwnerSystemId);
-            if ((mask & LockHullBreachMaskBack) != 0) vault.TryUnlockBuffer((BufferID)_hullBreachMaskBackHandle.BufferID, VaultOwnerSystemId);
-            if ((mask & LockHullBreachMaskFront) != 0) vault.TryUnlockBuffer((BufferID)_hullBreachMaskFrontHandle.BufferID, VaultOwnerSystemId);
-            if ((mask & LockCellCompartmentIndices) != 0) vault.TryUnlockBuffer((BufferID)_cellCompartmentIndicesHandle.BufferID, VaultOwnerSystemId);
-            if ((mask & LockCellFatigue) != 0) vault.TryUnlockBuffer((BufferID)_cellFatigueHandle.BufferID, VaultOwnerSystemId);
-            if ((mask & LockCellIntegrityBack) != 0) vault.TryUnlockBuffer((BufferID)_cellIntegrityBackHandle.BufferID, VaultOwnerSystemId);
-            if ((mask & LockCellIntegrityFront) != 0) vault.TryUnlockBuffer((BufferID)_cellIntegrityFrontHandle.BufferID, VaultOwnerSystemId);
+            vault.ReleaseMutationGuard(ResolveStructuralJobMutationGuardMask(mask));
+        }
+
+        private bool TryAcquireStructuralJobMutationGuard(ref int lockMask)
+        {
+            IDataVault vault = _dataVault;
+            if (!IsVaultOpenForStructuralAccess(vault) || lockMask == 0)
+                return false;
+
+            ulong guardMask = ResolveStructuralJobMutationGuardMask(lockMask);
+            if (guardMask == 0UL || !vault.TryAcquireMutationGuard(guardMask))
+            {
+                WriteDamageControlTelemetry(DamageControlTelemetryBufferLockFailureFlag, false, FailureCodeBufferLock);
+                return false;
+            }
+
+            lockMask |= LockStructuralJobMutationGuard;
+            if (IsVaultOpenForStructuralAccess(vault))
+                return true;
+
+            UnlockStructuralJobBuffers(lockMask);
+            lockMask = 0;
+            WriteDamageControlTelemetry(DamageControlTelemetryCompactionFenceFlag, false, FailureCodeCompactionFence);
+            return false;
+        }
+
+        private ulong ResolveStructuralJobMutationGuardMask(int mask)
+        {
+            ulong guardMask = 0UL;
+            if ((mask & LockBreaches) != 0) guardMask |= StructuralJobMutationGuardBit((BufferID)_breachesHandle.BufferID);
+            if ((mask & LockBreachSeveritySumResult) != 0) guardMask |= StructuralJobMutationGuardBit((BufferID)_breachSeveritySumResultHandle.BufferID);
+            if ((mask & LockFatiguePeakResult) != 0) guardMask |= StructuralJobMutationGuardBit((BufferID)_fatiguePeakResultHandle.BufferID);
+            if ((mask & LockFatigueIntegrityLossPerCycle) != 0) guardMask |= StructuralJobMutationGuardBit((BufferID)_fatigueIntegrityLossPerCycleHandle.BufferID);
+            if ((mask & LockFatigueCompartmentFlags) != 0) guardMask |= StructuralJobMutationGuardBit((BufferID)_fatigueCompartmentFlagsHandle.BufferID);
+            if ((mask & LockCompartmentCentroids) != 0) guardMask |= StructuralJobMutationGuardBit((BufferID)_compartmentCentroidsHandle.BufferID);
+            if ((mask & LockScheduledImpacts) != 0) guardMask |= StructuralJobMutationGuardBit((BufferID)_scheduledImpactsHandle.BufferID);
+            if ((mask & LockQueuedImpacts) != 0) guardMask |= StructuralJobMutationGuardBit((BufferID)_queuedImpactsHandle.BufferID);
+            if ((mask & LockCompartmentBreachAreasBack) != 0) guardMask |= StructuralJobMutationGuardBit((BufferID)_compartmentBreachAreasBackHandle.BufferID);
+            if ((mask & LockCompartmentBreachAreasFront) != 0) guardMask |= StructuralJobMutationGuardBit((BufferID)_compartmentBreachAreasFrontHandle.BufferID);
+            if ((mask & LockHullBreachMaskBack) != 0) guardMask |= StructuralJobMutationGuardBit((BufferID)_hullBreachMaskBackHandle.BufferID);
+            if ((mask & LockHullBreachMaskFront) != 0) guardMask |= StructuralJobMutationGuardBit((BufferID)_hullBreachMaskFrontHandle.BufferID);
+            if ((mask & LockCellCompartmentIndices) != 0) guardMask |= StructuralJobMutationGuardBit((BufferID)_cellCompartmentIndicesHandle.BufferID);
+            if ((mask & LockCellFatigue) != 0) guardMask |= StructuralJobMutationGuardBit((BufferID)_cellFatigueHandle.BufferID);
+            if ((mask & LockCellIntegrityBack) != 0) guardMask |= StructuralJobMutationGuardBit((BufferID)_cellIntegrityBackHandle.BufferID);
+            if ((mask & LockCellIntegrityFront) != 0) guardMask |= StructuralJobMutationGuardBit((BufferID)_cellIntegrityFrontHandle.BufferID);
+            return guardMask;
+        }
+
+        private static ulong StructuralJobMutationGuardBit(BufferID bufferId)
+        {
+            return bufferId == BufferID.Unknown ? 0UL : 1UL << ((int)bufferId & 31);
         }
 
         private bool TryAcquireStructuralMutationGuard()
@@ -2966,8 +2996,9 @@ namespace Hecton8.Physics
             }
 
             int lockMask = 0;
-            if (!TryLockStructuralJobBuffer(in _compartmentCentroidsHandle, LockCompartmentCentroids, ref lockMask) ||
-                !TryLockStructuralJobBuffer(in _cellCompartmentIndicesHandle, LockCellCompartmentIndices, ref lockMask))
+            if (!TryValidateStructuralJobBuffer(in _compartmentCentroidsHandle, LockCompartmentCentroids, ref lockMask) ||
+                !TryValidateStructuralJobBuffer(in _cellCompartmentIndicesHandle, LockCellCompartmentIndices, ref lockMask) ||
+                !TryAcquireStructuralJobMutationGuard(ref lockMask))
             {
                 UnlockStructuralJobBuffers(lockMask);
                 return false;
@@ -3104,13 +3135,14 @@ namespace Hecton8.Physics
             }
 
             int lockMask = 0;
-            if (!TryLockStructuralJobBuffer(in _cellCompartmentIndicesHandle, LockCellCompartmentIndices, ref lockMask) ||
-                !TryLockStructuralJobBuffer(in _cellIntegrityFrontHandle, LockCellIntegrityFront, ref lockMask) ||
-                !TryLockStructuralJobBuffer(in _cellIntegrityBackHandle, LockCellIntegrityBack, ref lockMask) ||
-                !TryLockStructuralJobBuffer(in _cellFatigueHandle, LockCellFatigue, ref lockMask) ||
-                !TryLockStructuralJobBuffer(in _fatigueCompartmentFlagsHandle, LockFatigueCompartmentFlags, ref lockMask) ||
-                !TryLockStructuralJobBuffer(in _fatigueIntegrityLossPerCycleHandle, LockFatigueIntegrityLossPerCycle, ref lockMask) ||
-                !TryLockStructuralJobBuffer(in _fatiguePeakResultHandle, LockFatiguePeakResult, ref lockMask))
+            if (!TryValidateStructuralJobBuffer(in _cellCompartmentIndicesHandle, LockCellCompartmentIndices, ref lockMask) ||
+                !TryValidateStructuralJobBuffer(in _cellIntegrityFrontHandle, LockCellIntegrityFront, ref lockMask) ||
+                !TryValidateStructuralJobBuffer(in _cellIntegrityBackHandle, LockCellIntegrityBack, ref lockMask) ||
+                !TryValidateStructuralJobBuffer(in _cellFatigueHandle, LockCellFatigue, ref lockMask) ||
+                !TryValidateStructuralJobBuffer(in _fatigueCompartmentFlagsHandle, LockFatigueCompartmentFlags, ref lockMask) ||
+                !TryValidateStructuralJobBuffer(in _fatigueIntegrityLossPerCycleHandle, LockFatigueIntegrityLossPerCycle, ref lockMask) ||
+                !TryValidateStructuralJobBuffer(in _fatiguePeakResultHandle, LockFatiguePeakResult, ref lockMask) ||
+                !TryAcquireStructuralJobMutationGuard(ref lockMask))
             {
                 UnlockStructuralJobBuffers(lockMask);
                 return;
@@ -3200,12 +3232,13 @@ namespace Hecton8.Physics
                     return;
 
                 int lockMask = 0;
-                if (!TryLockStructuralJobBuffer(in _cellIntegrityFrontHandle, LockCellIntegrityFront, ref lockMask) ||
-                    !TryLockStructuralJobBuffer(in _cellCompartmentIndicesHandle, LockCellCompartmentIndices, ref lockMask) ||
-                    !TryLockStructuralJobBuffer(in _scheduledImpactsHandle, LockScheduledImpacts, ref lockMask) ||
-                    !TryLockStructuralJobBuffer(in _cellIntegrityBackHandle, LockCellIntegrityBack, ref lockMask) ||
-                    !TryLockStructuralJobBuffer(in _hullBreachMaskBackHandle, LockHullBreachMaskBack, ref lockMask) ||
-                    !TryLockStructuralJobBuffer(in _compartmentBreachAreasBackHandle, LockCompartmentBreachAreasBack, ref lockMask))
+                if (!TryValidateStructuralJobBuffer(in _cellIntegrityFrontHandle, LockCellIntegrityFront, ref lockMask) ||
+                    !TryValidateStructuralJobBuffer(in _cellCompartmentIndicesHandle, LockCellCompartmentIndices, ref lockMask) ||
+                    !TryValidateStructuralJobBuffer(in _scheduledImpactsHandle, LockScheduledImpacts, ref lockMask) ||
+                    !TryValidateStructuralJobBuffer(in _cellIntegrityBackHandle, LockCellIntegrityBack, ref lockMask) ||
+                    !TryValidateStructuralJobBuffer(in _hullBreachMaskBackHandle, LockHullBreachMaskBack, ref lockMask) ||
+                    !TryValidateStructuralJobBuffer(in _compartmentBreachAreasBackHandle, LockCompartmentBreachAreasBack, ref lockMask) ||
+                    !TryAcquireStructuralJobMutationGuard(ref lockMask))
                 {
                     UnlockStructuralJobBuffers(lockMask);
                     return;

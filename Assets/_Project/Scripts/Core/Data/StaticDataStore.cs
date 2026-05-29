@@ -556,6 +556,9 @@ namespace Hecton8.Core.Data
             if (vault == null)
                 return false;
 
+            if (vault.IsAllocationLocked || vault.IsCompactionFenceActive)
+                return false;
+
             if (_blackBoxHandle.BufferID == 0u ||
                 !vault.TryResolveHandle(in _blackBoxHandle, out NativeArray<H8StaticDataTelemetryEntry> ring) ||
                 !ring.IsCreated ||
@@ -587,6 +590,9 @@ namespace Hecton8.Core.Data
         {
             IDataVault vault = _dataVault;
             if (vault == null)
+                return false;
+
+            if (vault.IsAllocationLocked || vault.IsCompactionFenceActive)
                 return false;
 
             if (_btreeTelemetryHandle.BufferID == 0u ||
@@ -772,14 +778,54 @@ namespace Hecton8.Core.Data
 
             uint safeOffset = offset >= 0L && offset <= uint.MaxValue ? (uint)offset : H8CacheBTree.NotFound;
             uint frameIndex = Hecton8.Core.SystemDispatcher.CurrentFrameId;
-            BTreeTelemetryAccumulatorDTO accumulator = default;
-            if (!vault.TryAcquireWriteLock(in _btreeTelemetryAccumulatorHandle, SystemID.CoreDataVault, out NativeArray<BTreeTelemetryAccumulatorDTO> accumulatorBuffer))
+            if (!TryAccumulateBTreeTelemetryOneLock(
+                    vault,
+                    frameIndex,
+                    found,
+                    requestedHash,
+                    safeOffset,
+                    errorHash,
+                    out BTreeTelemetryAccumulatorDTO accumulator))
+            {
                 return;
+            }
+
+            BTreeTelemetryAccumulatorDTO immediate = accumulator;
+            immediate.Flags |= H8CacheBTree.BTreeTelemetryImmediateSampleFlag;
+            int index = _btreeTelemetryWriteIndex;
+            if ((uint)index >= H8StaticDataFormat.TelemetryFrameCount)
+                index = 0;
+
+            if (!TryWriteBTreeTelemetryRingOneLock(vault, index, in immediate))
+                return;
+
+            _btreeTelemetryWriteIndex = (index + 1) % H8StaticDataFormat.TelemetryFrameCount;
+            PublishTelemetryCursor(vault, in _btreeTelemetryCursorHandle, _btreeTelemetryWriteIndex);
+        }
+
+        private bool TryAccumulateBTreeTelemetryOneLock(
+            IDataVault vault,
+            uint frameIndex,
+            bool found,
+            uint requestedHash,
+            uint safeOffset,
+            uint errorHash,
+            out BTreeTelemetryAccumulatorDTO accumulator)
+        {
+            accumulator = default;
+            if (vault == null ||
+                !vault.TryAcquireWriteLock(
+                    in _btreeTelemetryAccumulatorHandle,
+                    SystemID.CoreDataVault,
+                    out NativeArray<BTreeTelemetryAccumulatorDTO> accumulatorBuffer))
+            {
+                return false;
+            }
 
             try
             {
                 if (!accumulatorBuffer.IsCreated || accumulatorBuffer.Length < 1)
-                    return;
+                    return false;
 
                 accumulator = accumulatorBuffer[0];
                 H8CacheBTree.AccumulateTelemetry(
@@ -797,35 +843,37 @@ namespace Hecton8.Core.Data
                     ResolveGlobalQualityWeight(),
                     errorHash);
                 accumulatorBuffer[0] = accumulator;
+                return true;
             }
             finally
             {
                 vault.ReleaseWriteLock(in _btreeTelemetryAccumulatorHandle, SystemID.CoreDataVault);
             }
+        }
 
-            BTreeTelemetryAccumulatorDTO immediate = accumulator;
-            immediate.Flags |= H8CacheBTree.BTreeTelemetryImmediateSampleFlag;
-            int index = _btreeTelemetryWriteIndex;
-            if ((uint)index >= H8StaticDataFormat.TelemetryFrameCount)
-                index = 0;
+        private bool TryWriteBTreeTelemetryRingOneLock(
+            IDataVault vault,
+            int index,
+            in BTreeTelemetryAccumulatorDTO immediate)
+        {
+            if (vault == null)
+                return false;
 
             if (!vault.TryAcquireWriteLock(in _btreeTelemetryHandle, SystemID.CoreDataVault, out NativeArray<BTreeTelemetryEntry> ring))
-                return;
+                return false;
 
             try
             {
                 if (!ring.IsCreated || ring.Length < H8StaticDataFormat.TelemetryFrameCount)
-                    return;
+                    return false;
 
                 ring[index] = H8CacheBTree.BuildTelemetryEntry(in immediate);
+                return true;
             }
             finally
             {
                 vault.ReleaseWriteLock(in _btreeTelemetryHandle, SystemID.CoreDataVault);
             }
-
-            _btreeTelemetryWriteIndex = (index + 1) % H8StaticDataFormat.TelemetryFrameCount;
-            PublishTelemetryCursor(vault, in _btreeTelemetryCursorHandle, _btreeTelemetryWriteIndex);
         }
 
         private static void PublishTelemetryCursor(

@@ -1517,6 +1517,8 @@ namespace Hecton8.World
         private int _wakeTrailSimulationKernel = -1;
         private int _wakeTrailThreadGroupSizeX;
         private int _wakeTrailThreadGroupSizeY;
+        private bool _supportsWakeTrailComputeCold;
+        private bool _vegetationBridgeResolveRequested;
         private int _flowFieldResolution;
         private int _floraSwayFieldResolution;
         private int _floraSwayFieldNodeCount;
@@ -1742,7 +1744,8 @@ namespace Hecton8.World
             _floraSwayEntityMassMultiplier = Mathf.Clamp(_floraSwayEntityMassMultiplier, 0f, 4f);
             _wakeTrailQualityMilli = ResolveWakeTrailQualityMilli();
             _wakeTrailRuntimeResolution = ResolveWakeTrailResolutionForQualityWeight(_wakeTrailQualityMilli * 0.001f);
-            _vegetationBridge = ResolveVegetationBridge();
+            _supportsWakeTrailComputeCold = SystemInfo.supportsComputeShaders;
+            RefreshVegetationBridgeCold();
             _destructibleOrganicManager = ResolveDestructibleOrganicManager();
             _toxicSporeStableHashId = string.IsNullOrWhiteSpace(_toxicSporeStableId) ? 0 : LocHash.Compute(_toxicSporeStableId);
             _thermalTubewormStableHashId = string.IsNullOrWhiteSpace(_thermalTubewormStableId) ? 0 : LocHash.Compute(_thermalTubewormStableId);
@@ -1752,7 +1755,7 @@ namespace Hecton8.World
             CacheStableHashIds(_defensiveSporeBurstStableIds, ref _defensiveSporeBurstStableHashIds);
             CacheEnvironmentRuntimeServicesCold();
             TryAutoAssignWakeTrailSimulationCompute();
-            if (_wakeTrailSimulationCompute != null && SystemInfo.supportsComputeShaders)
+            if (_wakeTrailSimulationCompute != null && _supportsWakeTrailComputeCold)
             {
                 _wakeTrailSimulationKernel = ResolveKernel(_wakeTrailSimulationCompute, "SimulateWakeTrail");
                 ResolveKernelThreadGroupSizes(
@@ -2078,8 +2081,8 @@ namespace Hecton8.World
             RefreshCachedSubmarineContext();
             ScheduleWakeDecayJob();
 
-            if (_vegetationBridge == null)
-                _vegetationBridge = ResolveVegetationBridge();
+            if (_vegetationBridge == null || _vegetationBridgeResolveRequested)
+                RefreshVegetationBridgeCold();
 
             RefreshModuleParasiteState(FloraSlowTickDeltaSeconds);
             Transform runtimePlayerTransform = ResolveRuntimePlayerTransform();
@@ -2501,6 +2504,29 @@ namespace Hecton8.World
             return GetComponentInParent<HectonMapMagicVegetationBridge>();
         }
 
+        private HectonMapMagicVegetationBridge GetCachedVegetationBridgeOrRequestColdResolve()
+        {
+            HectonMapMagicVegetationBridge bridge = _vegetationBridge;
+            if (bridge != null)
+                return bridge;
+
+            _vegetationBridgeResolveRequested = true;
+            return null;
+        }
+
+        private void RefreshVegetationBridgeCold()
+        {
+            HectonMapMagicVegetationBridge bridge = ResolveVegetationBridge();
+            if (bridge == null)
+            {
+                _vegetationBridgeResolveRequested = true;
+                return;
+            }
+
+            _vegetationBridge = bridge;
+            _vegetationBridgeResolveRequested = false;
+        }
+
         private DestructibleOrganicManager ResolveDestructibleOrganicManager()
         {
             if (_destructibleOrganicManagerOverride != null)
@@ -2597,13 +2623,12 @@ namespace Hecton8.World
 
         private bool IsInsideDenseGrassZone(Vector3 positionWS)
         {
-            if (_vegetationBridge == null)
-                _vegetationBridge = ResolveVegetationBridge();
+            HectonMapMagicVegetationBridge vegetationBridge = GetCachedVegetationBridgeOrRequestColdResolve();
 
-            if (_vegetationBridge == null || _vegetationBridge.ActiveSurfaceInstanceCount < _denseGrassInstanceThreshold)
+            if (vegetationBridge == null || vegetationBridge.ActiveSurfaceInstanceCount < _denseGrassInstanceThreshold)
                 return false;
 
-            Bounds surfaceBounds = _vegetationBridge.ActiveSurfaceDrawBounds;
+            Bounds surfaceBounds = vegetationBridge.ActiveSurfaceDrawBounds;
             if (surfaceBounds.size.sqrMagnitude <= 0.0001f || !surfaceBounds.Contains(positionWS))
                 return false;
 
@@ -5221,16 +5246,15 @@ namespace Hecton8.World
 
         private void RefreshToxicSporeTemplateMask(bool force)
         {
-            if (_vegetationBridge == null)
-                _vegetationBridge = ResolveVegetationBridge();
+            HectonMapMagicVegetationBridge vegetationBridge = GetCachedVegetationBridgeOrRequestColdResolve();
 
-            FloraDataTemplate[] floraTemplates = _vegetationBridge != null ? _vegetationBridge.FloraTemplates : null;
+            FloraDataTemplate[] floraTemplates = vegetationBridge != null ? vegetationBridge.FloraTemplates : null;
             int templateCount = floraTemplates != null ? floraTemplates.Length : 0;
             if (force)
                 return;
 
             if (_cachedToxicSporeTemplateCount == templateCount &&
-                ((_vegetationBridge == null && templateCount == 0) || templateCount == _toxicSporeTemplateMask.Length))
+                ((vegetationBridge == null && templateCount == 0) || templateCount == _toxicSporeTemplateMask.Length))
             {
                 return;
             }
@@ -6806,10 +6830,9 @@ namespace Hecton8.World
 
         private void UpdateBioluminescentCascades(Vector3 playerPositionWS, float deltaTime)
         {
-            if (_vegetationBridge == null)
-                _vegetationBridge = ResolveVegetationBridge();
+            HectonMapMagicVegetationBridge vegetationBridge = GetCachedVegetationBridgeOrRequestColdResolve();
 
-            if (_vegetationBridge == null ||
+            if (vegetationBridge == null ||
                 !TryResolveCascadeReactiveTemplateMask(out NativeArray<byte> cascadeReactiveTemplateMask) ||
                 cascadeReactiveTemplateMask.Length == 0)
                 return;
@@ -7439,10 +7462,9 @@ namespace Hecton8.World
 
         private void RefreshCascadeTemplateMask(bool force)
         {
-            if (_vegetationBridge == null)
-                _vegetationBridge = ResolveVegetationBridge();
+            HectonMapMagicVegetationBridge vegetationBridge = GetCachedVegetationBridgeOrRequestColdResolve();
 
-            FloraDataTemplate[] floraTemplates = _vegetationBridge != null ? _vegetationBridge.FloraTemplates : null;
+            FloraDataTemplate[] floraTemplates = vegetationBridge != null ? vegetationBridge.FloraTemplates : null;
             int templateCount = floraTemplates != null ? floraTemplates.Length : 0;
             if (force)
                 return;
@@ -7511,10 +7533,9 @@ namespace Hecton8.World
 
         private void RefreshDefensiveSporeBurstTemplateMask(bool force)
         {
-            if (_vegetationBridge == null)
-                _vegetationBridge = ResolveVegetationBridge();
+            HectonMapMagicVegetationBridge vegetationBridge = GetCachedVegetationBridgeOrRequestColdResolve();
 
-            FloraDataTemplate[] floraTemplates = _vegetationBridge != null ? _vegetationBridge.FloraTemplates : null;
+            FloraDataTemplate[] floraTemplates = vegetationBridge != null ? vegetationBridge.FloraTemplates : null;
             int templateCount = floraTemplates != null ? floraTemplates.Length : 0;
             if (force)
                 return;
@@ -7813,10 +7834,9 @@ namespace Hecton8.World
         private void RefreshFlowFieldGlobals(float deltaTime)
         {
             _flowFieldUploadTimer -= deltaTime;
-            if (_vegetationBridge == null)
-                _vegetationBridge = ResolveVegetationBridge();
+            HectonMapMagicVegetationBridge vegetationBridge = GetCachedVegetationBridgeOrRequestColdResolve();
 
-            if (_vegetationBridge == null)
+            if (vegetationBridge == null)
             {
                 _flowFieldResolution = 0;
                 _flowFieldCellSize = 0f;
@@ -7825,7 +7845,7 @@ namespace Hecton8.World
                 return;
             }
 
-            bool hasPayload = _vegetationBridge.TryGetEcosystemFlowFieldPayload(
+            bool hasPayload = vegetationBridge.TryGetEcosystemFlowFieldPayload(
                 out NativeArray<float2>.ReadOnly flowVectors,
                 out int gridResolution,
                 out Vector3 gridCenter,
@@ -7867,7 +7887,7 @@ namespace Hecton8.World
                 if (writeBuffer == null || !writeBuffer.IsValid())
                     return;
 
-                if (!_vegetationBridge.TryUploadEcosystemFlowFieldPayload(writeBuffer, requiredCount))
+                if (!vegetationBridge.TryUploadEcosystemFlowFieldPayload(writeBuffer, requiredCount))
                     return;
 
                 _activeFlowFieldBuffer = writeBuffer;
@@ -8350,16 +8370,16 @@ namespace Hecton8.World
             _pendingWakeTrailScrollUv.y += uvOffsetY;
         }
 
-        private static int ResolveKernel(ComputeShader computeShader, string kernelName)
+        private int ResolveKernel(ComputeShader computeShader, string kernelName)
         {
-            if (computeShader == null || !SystemInfo.supportsComputeShaders || !computeShader.HasKernel(kernelName))
+            if (computeShader == null || !_supportsWakeTrailComputeCold || !computeShader.HasKernel(kernelName))
                 return -1;
 
             int kernel = computeShader.FindKernel(kernelName);
             return kernel >= 0 && computeShader.IsSupported(kernel) ? kernel : -1;
         }
 
-        private static void ResolveKernelThreadGroupSizes(
+        private void ResolveKernelThreadGroupSizes(
             ComputeShader compute,
             int kernel,
             out int sizeX,
@@ -8367,7 +8387,7 @@ namespace Hecton8.World
         {
             sizeX = 0;
             sizeY = 0;
-            if (compute == null || kernel < 0 || !SystemInfo.supportsComputeShaders || !compute.IsSupported(kernel))
+            if (compute == null || kernel < 0 || !_supportsWakeTrailComputeCold || !compute.IsSupported(kernel))
                 return;
 
             compute.GetKernelThreadGroupSizes(kernel, out uint queryX, out uint queryY, out uint queryZ);

@@ -616,15 +616,8 @@ namespace Hecton8.Gameplay
 
             int stride = UnsafeUtility.SizeOf<IkHandTelemetryEntry>();
             byte* source = (byte*)NativeArrayUnsafeUtility.GetUnsafeReadOnlyPtr((NativeArray<IkHandTelemetryEntry>)_handIkTelemetry);
-            using (FileStream stream = new FileStream(path, FileMode.Create, FileAccess.Write, FileShare.Read))
-            {
-                for (int i = 0; i < _handIkTelemetry.Length; i++)
-                    stream.Write(new ReadOnlySpan<byte>(source + (i * stride), stride));
-
-                stream.Flush(true);
-            }
-
-            return true;
+            int byteCount = stride * _handIkTelemetry.Length;
+            return Hecton8.SaveSystem.AsyncWriteManager.WriteAll(path, source, byteCount, out _);
         }
 
         private static float ResolveHandIkElapsedMicros(long startTicks)

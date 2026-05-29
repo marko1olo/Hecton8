@@ -1468,6 +1468,9 @@ namespace Hecton8.Core.Contracts.Signals
             if (!TryFindFrameSnapshotVaultForBootstrap(out IDataVault vault))
                 return false;
 
+            if (vault.IsAllocationLocked || vault.IsCompactionFenceActive)
+                return false;
+
             _frameSnapshotBufferId = ResolveSnapshotBufferId();
             _frameSnapshotHandle = vault.EnsureGenerationHandle<T>(
                 _frameSnapshotBufferId,

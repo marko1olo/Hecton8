@@ -223,7 +223,7 @@ namespace Hecton8.Core
             float stress01 = ResolveSystemStress01();
             bool stressShed = ResolveStressShed(stress01);
             float quality01 = ResolveGlobalQualityWeight01();
-            float lowTierWeight01 = ResolveLowTierWeight01(quality01);
+            float survivalPressureWeight01 = ResolveSurvivalPressureWeight01(quality01);
             float hardwareCeiling01 = ResolveHardwareVisualCeiling01(quality01);
             float stressAllowance01 = 1f - Smooth01(math.saturate((stress01 - StressRecoveryThreshold) * math.rcp(math.max(0.0001f, StressShedThreshold - StressRecoveryThreshold))));
             float highCostAllowed01 = quality01 * hardwareCeiling01 * stressAllowance01;
@@ -232,7 +232,7 @@ namespace Hecton8.Core
             float visualOverkill01 = Smooth01(math.saturate((quality01 - 0.78f) * math.rcp(0.22f))) *
                                      Smooth01(hardwareCeiling01) *
                                      stressAllowance01;
-            uint featureMask = BuildFeatureMask(lowTierWeight01, stressShed, highCostAllowed01, visualOverkill01);
+            uint featureMask = BuildFeatureMask(survivalPressureWeight01, stressShed, highCostAllowed01, visualOverkill01);
 
             if (!math.isfinite(stress01) || !math.isfinite(highCostAllowed01) || !math.isfinite(visualOverkill01))
             {
@@ -244,7 +244,7 @@ namespace Hecton8.Core
             }
 
             UploadShaderGlobals(stress01, highCostAllowed01, featureMask, visualOverkill01, force: false);
-            PushBlackBox(stress01, highCostAllowed01, visualOverkill01, lowTierWeight01, quality01, featureMask);
+            PushBlackBox(stress01, highCostAllowed01, visualOverkill01, survivalPressureWeight01, quality01, featureMask);
         }
 
         private void TryRegisterLateFrameTickable()
@@ -342,7 +342,7 @@ namespace Hecton8.Core
             float stress01,
             float highCostAllowed01,
             float visualOverkill01,
-            float lowTierWeight01,
+            float survivalPressureWeight01,
             float quality01,
             uint featureMask)
         {
@@ -367,12 +367,12 @@ namespace Hecton8.Core
                 uint stressBucket = (uint)math.round(math.saturate(stress01) * 1000f);
                 uint highCostBucket = (uint)math.round(math.saturate(highCostAllowed01) * 1000f);
                 uint overkillBucket = (uint)math.round(math.saturate(visualOverkill01) * 1000f);
-                uint lowTierBucket = (uint)math.round(math.saturate(lowTierWeight01) * 1000f);
-                entry.StateHash = Mix(featureMask ^ (stressBucket << 12) ^ (qualityByte << 24) ^ (highCostBucket << 2) ^ (overkillBucket << 14) ^ (lowTierBucket << 4));
+                uint survivalPressureBucket = (uint)math.round(math.saturate(survivalPressureWeight01) * 1000f);
+                entry.StateHash = Mix(featureMask ^ (stressBucket << 12) ^ (qualityByte << 24) ^ (highCostBucket << 2) ^ (overkillBucket << 14) ^ (survivalPressureBucket << 4));
                 entry.PomEnabled01 = math.saturate(highCostAllowed01);
                 entry.ReservedVisualDetail01 = math.saturate(highCostAllowed01);
                 entry.Refraction01 = math.saturate(highCostAllowed01);
-                entry.Reserved0 = math.saturate(lowTierWeight01);
+                entry.Reserved0 = math.saturate(survivalPressureWeight01);
                 ring[_telemetryCursor] = entry;
 
                 _telemetryCursor++;
@@ -678,11 +678,11 @@ namespace Hecton8.Core
             return _stressShedLatched;
         }
 
-        private static uint BuildFeatureMask(float lowTierWeight01, bool stressShed, float highCostAllowed01, float visualOverkill01)
+        private static uint BuildFeatureMask(float survivalPressureWeight01, bool stressShed, float highCostAllowed01, float visualOverkill01)
         {
-            lowTierWeight01 = math.saturate(lowTierWeight01);
+            survivalPressureWeight01 = math.saturate(survivalPressureWeight01);
             uint mask = FeatureHullDents | FeatureWakeSilt;
-            if (lowTierWeight01 > FeatureMaskEpsilon)
+            if (survivalPressureWeight01 > FeatureMaskEpsilon)
                 mask |= FeatureSurvivalPressure;
 
             if (stressShed)
@@ -691,7 +691,7 @@ namespace Hecton8.Core
             if (highCostAllowed01 > FeatureMaskEpsilon)
             {
                 mask |= FeaturePom | FeatureScreenRefraction;
-                float ditherAllowance01 = highCostAllowed01 * Smooth01(1f - lowTierWeight01);
+                float ditherAllowance01 = highCostAllowed01 * Smooth01(1f - survivalPressureWeight01);
                 if (ditherAllowance01 > FeatureMaskEpsilon)
                     mask |= FeatureBlueNoiseDither;
             }
@@ -727,15 +727,15 @@ namespace Hecton8.Core
             return value * value * (3f - 2f * value);
         }
 
-        private static float ResolveLowTierWeight01(float quality01)
+        private static float ResolveSurvivalPressureWeight01(float quality01)
         {
             float quality = math.saturate(math.isfinite(quality01) ? quality01 : 1f);
             float qualityDrivenWeight01 = 1f - Smooth01(math.saturate((quality - 0.18f) * 1.2195122f));
-            float hardwareFloor01 = ResolveLowTierFloor01(quality);
-            return math.max(qualityDrivenWeight01, hardwareFloor01);
+            float survivalPressureFloor01 = ResolveSurvivalPressureFloor01(quality);
+            return math.max(qualityDrivenWeight01, survivalPressureFloor01);
         }
 
-        private static float ResolveLowTierFloor01(float quality01)
+        private static float ResolveSurvivalPressureFloor01(float quality01)
         {
             float quality = math.saturate(math.isfinite(quality01) ? quality01 : 1f);
             float survivalPressure01 = 1f - Smooth01(math.saturate((quality - 0.12f) * 1.1363636f));

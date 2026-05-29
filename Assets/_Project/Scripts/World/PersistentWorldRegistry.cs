@@ -2926,6 +2926,8 @@ namespace Hecton8.World
         private GameObject[] _hydratedInstancesBySlot;
         private Transform[] _poolSlotTransforms;
         private Rigidbody[] _poolSlotRigidbodies;
+        private PickupItem[] _poolSlotPickupItems;
+        private HectonItem[] _poolSlotHectonItems;
         private Dictionary<int, GameObject> _hydratedInstancesByRecordIndex;
         private Dictionary<ulong, ItemData> _itemLookupByHash;
         private List<ItemData> _itemCatalogScratch;
@@ -3167,6 +3169,10 @@ namespace Hecton8.World
             _poolSlotTransforms = new Transform[maxTrackedItems];
             // COLD ALLOC: Rigidbody[maxTrackedItems] â€” hydrated proxy rigidbodies by slot â€” owner: PersistentWorldRegistry
             _poolSlotRigidbodies = new Rigidbody[maxTrackedItems];
+            // COLD ALLOC: PickupItem[maxTrackedItems] - hydrated proxy pickup components by slot - owner: PersistentWorldRegistry
+            _poolSlotPickupItems = new PickupItem[maxTrackedItems];
+            // COLD ALLOC: HectonItem[maxTrackedItems] - hydrated proxy item components by slot - owner: PersistentWorldRegistry
+            _poolSlotHectonItems = new HectonItem[maxTrackedItems];
             // COLD ALLOC: Dictionary<int,GameObject>[maxTrackedItems] - hydrated world-item proxy lookup - owner: PersistentWorldRegistry
             _hydratedInstancesByRecordIndex = new Dictionary<int, GameObject>(maxTrackedItems);
             // COLD ALLOC: Dictionary<ulong,ItemData>[1024] â€” persistent-id hash to ItemData lookup cache â€” owner: PersistentWorldRegistry
@@ -5762,12 +5768,14 @@ namespace Hecton8.World
             if (instance == null)
                 return false;
 
-            if (instance.TryGetComponent(out PickupItem pickupItem))
+            PickupItem pickupItem = null;
+            HectonItem hectonItem = null;
+            if (pool.TryGetPooledComponent(instance, out pickupItem))
             {
                 pickupItem.Configure(itemData, hydratedQuantity, itemGeneticsMask, itemQualityMilli);
                 pickupItem.BindPersistentWorldRecord(this, recordIndex);
             }
-            else if (instance.TryGetComponent(out HectonItem hectonItem))
+            else if (pool.TryGetPooledComponent(instance, out hectonItem))
             {
                 hectonItem.SetItemData(itemData, hydratedQuantity, itemGeneticsMask, itemQualityMilli);
                 hectonItem.BindPersistentWorldRecord(this, recordIndex);
@@ -5781,8 +5789,10 @@ namespace Hecton8.World
             _hydratedInstancesByRecordIndex[recordIndex] = instance;
             _hydratedInstancesBySlot[poolIndex] = instance;
             _poolSlotTransforms[poolIndex] = instance.transform;
+            _poolSlotPickupItems[poolIndex] = pickupItem;
+            _poolSlotHectonItems[poolIndex] = hectonItem;
 
-            if (instance.TryGetComponent(out Rigidbody pooledRigidbody))
+            if (pool.TryGetPooledRootRigidbody(instance, out Rigidbody pooledRigidbody))
             {
                 pooledRigidbody.mass = itemData.MassKg;
                 pooledRigidbody.isKinematic = false;
@@ -5829,6 +5839,8 @@ namespace Hecton8.World
                 _hydratedInstancesBySlot[poolIndex] = null;
                 _poolSlotTransforms[poolIndex] = null;
                 _poolSlotRigidbodies[poolIndex] = null;
+                _poolSlotPickupItems[poolIndex] = null;
+                _poolSlotHectonItems[poolIndex] = null;
                 pool.Despawn(instance);
                 return false;
             }
@@ -5856,16 +5868,16 @@ namespace Hecton8.World
                 SyncRecordFromLiveInstance(recordIndex, instance, instance.transform);
 
             Rigidbody pooledRigidbody = hasPoolIndex ? _poolSlotRigidbodies[poolIndex] : null;
-            if (pooledRigidbody == null)
-                instance.TryGetComponent(out pooledRigidbody);
+            PickupItem pickupItem = hasPoolIndex ? _poolSlotPickupItems[poolIndex] : null;
+            HectonItem hectonItem = hasPoolIndex ? _poolSlotHectonItems[poolIndex] : null;
 
             if (!ClearHydratedSlot(recordIndex))
                 return;
 
-            if (instance.TryGetComponent(out PickupItem pickupItem))
+            if (pickupItem != null)
                 pickupItem.ClearPersistentWorldRecord();
 
-            if (instance.TryGetComponent(out HectonItem hectonItem))
+            if (hectonItem != null)
                 hectonItem.ClearPersistentWorldRecord();
 
             if (pooledRigidbody != null)
@@ -5933,7 +5945,7 @@ namespace Hecton8.World
             }
 
             record.Position = position;
-            EntityDataRecord state = CaptureEntityStateFromLiveInstance(in record, instance, in position);
+            EntityDataRecord state = CaptureEntityStateFromLiveInstance(recordIndex, in record, instance, in position);
             record.Quantity = state.Quantity;
             if (!UpsertDeltaRecord(in record))
             {
@@ -8644,6 +8656,7 @@ namespace Hecton8.World
         }
 
         private EntityDataRecord CaptureEntityStateFromLiveInstance(
+            int recordIndex,
             in PersistentWorldItemRecord record,
             GameObject instance,
             in AbsoluteUniversePosition position)
@@ -8653,16 +8666,18 @@ namespace Hecton8.World
             state.InstanceUid = record.InstanceUid;
             state.Quantity = math.max(1, record.Quantity);
 
-            if (instance != null)
+            if (instance != null && IsValidRecordIndex(recordIndex) && TryGetPoolIndex(in record, out int poolIndex))
             {
-                if (instance.TryGetComponent(out PickupItem pickupItem))
+                PickupItem pickupItem = _poolSlotPickupItems[poolIndex];
+                HectonItem hectonItem = _poolSlotHectonItems[poolIndex];
+                if (pickupItem != null)
                 {
                     state.Quantity = math.max(1, pickupItem.Quantity);
                     state.Position.Reserved = pickupItem.GeneticsMask;
                     state.InventoryHash = unchecked((int)pickupItem.GeneticsMask);
                     state.Integrity01 = ResolveItemQuality01(pickupItem.QualityMilli);
                 }
-                else if (instance.TryGetComponent(out HectonItem hectonItem))
+                else if (hectonItem != null)
                 {
                     state.Quantity = math.max(1, hectonItem.Quantity);
                     state.Position.Reserved = hectonItem.GeneticsMask;
@@ -9051,6 +9066,8 @@ namespace Hecton8.World
             _hydratedInstancesBySlot[poolIndex] = null;
             _poolSlotTransforms[poolIndex] = null;
             _poolSlotRigidbodies[poolIndex] = null;
+            _poolSlotPickupItems[poolIndex] = null;
+            _poolSlotHectonItems[poolIndex] = null;
             return true;
         }
 
@@ -9135,6 +9152,12 @@ namespace Hecton8.World
 
             if (_poolSlotRigidbodies != null)
                 Array.Clear(_poolSlotRigidbodies, 0, _poolSlotRigidbodies.Length);
+
+            if (_poolSlotPickupItems != null)
+                Array.Clear(_poolSlotPickupItems, 0, _poolSlotPickupItems.Length);
+
+            if (_poolSlotHectonItems != null)
+                Array.Clear(_poolSlotHectonItems, 0, _poolSlotHectonItems.Length);
 
             _hydratedInstancesByRecordIndex?.Clear();
             return cleared;

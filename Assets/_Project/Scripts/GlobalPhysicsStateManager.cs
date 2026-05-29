@@ -271,6 +271,9 @@ namespace Hecton8.Physics
                 NativeArray<T> buffer = ResolveExisting(dataVault);
                 if (!buffer.IsCreated || buffer.Length < RequiredLength)
                 {
+                    if (dataVault.IsAllocationLocked || dataVault.IsCompactionFenceActive)
+                        return false;
+
                     Handle = dataVault.EnsureGenerationHandle<T>(
                         BufferId,
                         RequiredLength,
@@ -681,6 +684,7 @@ namespace Hecton8.Physics
         private Rigidbody _submarineHullBody;
         private ITickDispatcher _tickDispatcher;
         private ICelestialSkyDirectionReadModel _celestialEngineRuntime;
+        private ICelestialRuntimeSnapshotReadModel _celestialSnapshotReadModel;
         private IDataVault _nativeStateDataVault;
         private JobHandle _physicsCullingJobHandle;
         private int _trackedBodyCount;
@@ -1300,6 +1304,8 @@ namespace Hecton8.Physics
                 _tickDispatcher = GlobalRegistry.TickDispatcher;
             if (_celestialEngineRuntime == null)
                 _celestialEngineRuntime = GlobalRegistry.CelestialSkyDirection;
+            if (_celestialSnapshotReadModel == null)
+                _celestialSnapshotReadModel = GlobalRegistry.CelestialRuntimeSnapshotReadModel;
         }
 
         private void RefreshOwnerPhaseCelestialSnapshotCache()
@@ -1309,8 +1315,11 @@ namespace Hecton8.Physics
             ICelestialSkyDirectionReadModel celestialEngine = _celestialEngineRuntime;
             if (celestialEngine == null)
                 return;
+            ICelestialRuntimeSnapshotReadModel snapshotReadModel = _celestialSnapshotReadModel;
+            if (snapshotReadModel == null)
+                return;
 
-            CelestialRuntimeSnapshot snapshot = GlobalRegistry.CelestialRuntimeSnapshot;
+            CelestialRuntimeSnapshot snapshot = snapshotReadModel.RuntimeSnapshot;
             _cachedCelestialRuntimeSnapshot = snapshot;
             _cachedCelestialRuntimeSnapshotSequence = snapshot.Sequence;
         }

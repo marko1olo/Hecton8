@@ -50,6 +50,9 @@ namespace Hecton8.Core.Scheduling
             if (vault == null)
                 return;
 
+            if (vault.IsAllocationLocked || vault.IsCompactionFenceActive)
+                return;
+
             _profilesHandle = vault.EnsureGenerationHandle<JobSchedulingProfileDTO>(
                 BufferID.SystemDispatcherJobSchedulingProfiles,
                 Capacity,

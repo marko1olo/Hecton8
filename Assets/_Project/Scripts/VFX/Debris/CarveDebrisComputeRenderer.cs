@@ -22,6 +22,7 @@ namespace Hecton8.VFX.Debris
     [DisallowMultipleComponent]
     public sealed class CarveDebrisComputeRenderer : MonoBehaviour,
         ILateFrameTickable,
+        ISlowTickable,
         IDebrisComputeService,
         IGlobalRegistryHotSwapListener,
         IGlobalRegistryHotSwapRefListener
@@ -198,6 +199,7 @@ namespace Hecton8.VFX.Debris
         private bool _hotSwapRegistered;
         private bool _computeServiceRegistered;
         private bool _lateFrameRegistered;
+        private bool _slowTickRegistered;
         private bool _pendingVisualSync;
         private bool _pendingDebrisUpload;
         private bool _insideDebrisVisualSync;
@@ -207,6 +209,8 @@ namespace Hecton8.VFX.Debris
         private int _pendingVisualActiveCapacity;
         private int _pendingDebrisUploadStart;
         private int _pendingDebrisUploadEnd;
+        private Vector4 _cachedAbyssalFlowTextureParams;
+        private Vector4 _cachedAbyssalFlowCenter;
 
         private void Awake()
         {
@@ -221,6 +225,7 @@ namespace Hecton8.VFX.Debris
             TryRegisterComputeService();
             TryRegisterHotSwapListener();
             TryRegisterLateFrameTick();
+            TryRegisterSlowTick();
             TryEnsureGpuState();
         }
 
@@ -230,6 +235,7 @@ namespace Hecton8.VFX.Debris
             TryRegisterComputeService();
             TryRegisterHotSwapListener();
             TryRegisterLateFrameTick();
+            TryRegisterSlowTick();
             TryEnsureGpuState();
         }
 
@@ -238,6 +244,7 @@ namespace Hecton8.VFX.Debris
             TryUnregisterComputeService();
             TryUnregisterHotSwapListener();
             TryUnregisterLateFrameTick();
+            TryUnregisterSlowTick();
 
             ReleaseGpuState();
         }
@@ -355,8 +362,9 @@ namespace Hecton8.VFX.Debris
             int activeCapacity = _pendingVisualActiveCapacity;
             _pendingVisualSync = false;
 
-            if (!TryEnsureGpuState())
+            if (!_gpuReady || !IsGpuStateValid())
             {
+                _gpuReady = false;
                 TryUnregisterLateFrameTick();
                 return;
             }
@@ -366,7 +374,7 @@ namespace Hecton8.VFX.Debris
             DispatchGpu(dt, qualityPressure01, activeCapacity);
             RenderDebris();
             _insideDebrisVisualSync = false;
-            if (!_pendingDebrisUpload)
+            if (!_pendingDebrisUpload && !ShouldKeepDebrisLateFrameRegistered())
                 TryUnregisterLateFrameTick();
         }
 
@@ -385,6 +393,42 @@ namespace Hecton8.VFX.Debris
 
             GlobalRegistry.UnregisterLateFrameTickable(this, PriorityLayer.Environment);
             _lateFrameRegistered = false;
+        }
+
+        private void TryRegisterSlowTick()
+        {
+            if (_slowTickRegistered || !Application.isPlaying)
+                return;
+
+            _slowTickRegistered = GlobalRegistry.TryRegisterSlowTickable(this, PriorityLayer.Environment);
+        }
+
+        private void TryUnregisterSlowTick()
+        {
+            if (!_slowTickRegistered)
+                return;
+
+            GlobalRegistry.UnregisterSlowTickable(this, PriorityLayer.Environment);
+            _slowTickRegistered = false;
+        }
+
+        public void SlowTick()
+        {
+            CacheGraphicsCapabilitiesCold();
+            RefreshMissingRegistryServicesIfNeeded();
+            RefreshAbyssalFlowOverrideGlobalsCold();
+            RefreshGlobalSdfCacheCold();
+
+            if (!_gpuReady || !IsGpuStateValid())
+                TryEnsureGpuState();
+
+            if (_gpuReady && (ShouldKeepDebrisLateFrameRegistered() || _pendingVisualSync || _pendingDebrisUpload))
+                TryRegisterLateFrameTick();
+        }
+
+        private bool ShouldKeepDebrisLateFrameRegistered()
+        {
+            return isActiveAndEnabled && _gpuReady && IsGpuStateValid();
         }
 
         private void QueueVisualSync(float dt, float qualityPressure01, int activeCapacity)
@@ -1297,8 +1341,8 @@ namespace Hecton8.VFX.Debris
             }
             else if (abyssalFlowTextureOverride != null)
             {
-                Vector4 globalTextureParams = Shader.GetGlobalVector(AbyssalFlowTextureParamsId);
-                Vector4 globalFlowCenter = Shader.GetGlobalVector(AbyssalFlowCenterId);
+                Vector4 globalTextureParams = _cachedAbyssalFlowTextureParams;
+                Vector4 globalFlowCenter = _cachedAbyssalFlowCenter;
                 if (IsFiniteVector(globalFlowCenter) &&
                     TryResolveFlowTextureParams(globalTextureParams, globalTextureParams.x, out Vector4 resolvedTextureParams))
                 {
@@ -1313,6 +1357,19 @@ namespace Hecton8.VFX.Debris
             }
 
             return flowBuffer != null && flowBuffer.IsValid() ? flowBuffer : _emptyFlowBuffer;
+        }
+
+        private void RefreshAbyssalFlowOverrideGlobalsCold()
+        {
+            if (abyssalFlowTextureOverride == null)
+            {
+                _cachedAbyssalFlowTextureParams = Vector4.zero;
+                _cachedAbyssalFlowCenter = Vector4.zero;
+                return;
+            }
+
+            _cachedAbyssalFlowTextureParams = Shader.GetGlobalVector(AbyssalFlowTextureParamsId);
+            _cachedAbyssalFlowCenter = Shader.GetGlobalVector(AbyssalFlowCenterId);
         }
 
         private void DisableFlowBufferFallback(
@@ -1412,7 +1469,6 @@ namespace Hecton8.VFX.Debris
                 return voxelSdfTexture3D;
             }
 
-            RefreshGlobalSdfCacheIfNeeded();
             if (_cachedGlobalSdfActive > 0.5f && _cachedGlobalSdfTexture != null)
             {
                 sdfWorldToLocal = _cachedGlobalSdfWorldToLocal;
@@ -1424,7 +1480,7 @@ namespace Hecton8.VFX.Debris
             return _emptyTexture3D;
         }
 
-        private void RefreshGlobalSdfCacheIfNeeded()
+        private void RefreshGlobalSdfCacheCold()
         {
             int frame = Hecton8.Core.SystemDispatcher.CurrentFrameIndex;
             if (frame < _nextGlobalSdfRefreshFrame)

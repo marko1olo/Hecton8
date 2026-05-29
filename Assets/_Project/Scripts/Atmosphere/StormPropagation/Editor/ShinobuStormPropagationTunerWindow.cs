@@ -12,6 +12,11 @@ namespace Hecton8.Atmosphere.Editor
     public sealed unsafe class ShinobuStormPropagationTunerWindow : EditorWindow
     {
         private const SystemID OwnerSystem = SystemID.HabitatAtmosphere;
+        private static readonly ulong TuningMutationGuardMask =
+            StormPropagationMutationGuardBit(BufferID.ShinobuStormPropagationTuning);
+        private static readonly ulong TelemetryGraphMutationGuardMask =
+            StormPropagationMutationGuardBit(BufferID.ShinobuStormPropagationTelemetryRing) |
+            StormPropagationMutationGuardBit(BufferID.ShinobuStormPropagationTelemetryCursor);
 
         private Label _status;
         private Slider _decay;
@@ -108,7 +113,7 @@ namespace Hecton8.Atmosphere.Editor
             if (vault == null || vault.IsCompactionFenceActive)
                 return;
 
-            if (!vault.TryLockBuffer(BufferID.ShinobuStormPropagationTuning, OwnerSystem))
+            if (!vault.TryAcquireMutationGuard(TuningMutationGuardMask))
                 return;
 
             try
@@ -136,7 +141,7 @@ namespace Hecton8.Atmosphere.Editor
             }
             finally
             {
-                vault.TryUnlockBuffer(BufferID.ShinobuStormPropagationTuning, OwnerSystem);
+                vault.ReleaseMutationGuard(TuningMutationGuardMask);
             }
         }
 
@@ -147,7 +152,7 @@ namespace Hecton8.Atmosphere.Editor
             if (vault == null || vault.IsCompactionFenceActive)
                 return false;
 
-            if (!vault.TryLockBuffer(BufferID.ShinobuStormPropagationTuning, OwnerSystem))
+            if (!vault.TryAcquireMutationGuard(TuningMutationGuardMask))
                 return false;
 
             try
@@ -165,7 +170,7 @@ namespace Hecton8.Atmosphere.Editor
             }
             finally
             {
-                vault.TryUnlockBuffer(BufferID.ShinobuStormPropagationTuning, OwnerSystem);
+                vault.ReleaseMutationGuard(TuningMutationGuardMask);
             }
         }
 
@@ -198,18 +203,11 @@ namespace Hecton8.Atmosphere.Editor
             if (vault == null || vault.IsCompactionFenceActive)
                 return;
 
-            bool telemetryLocked = false;
-            bool cursorLocked = false;
-            if (!vault.TryLockBuffer(BufferID.ShinobuStormPropagationTelemetryRing, OwnerSystem))
+            if (!vault.TryAcquireMutationGuard(TelemetryGraphMutationGuardMask))
                 return;
 
-            telemetryLocked = true;
             try
             {
-                if (!vault.TryLockBuffer(BufferID.ShinobuStormPropagationTelemetryCursor, OwnerSystem))
-                    return;
-
-                cursorLocked = true;
                 if (!BorrowTelemetryRingViewUnsafe(vault, out NativeArray<StormPropagationTelemetryEntry> telemetry) ||
                     !BorrowTelemetryCursorViewUnsafe(vault, out NativeArray<int> cursor) ||
                     telemetry.Length <= 1 ||
@@ -224,8 +222,7 @@ namespace Hecton8.Atmosphere.Editor
             }
             finally
             {
-                if (cursorLocked) vault.TryUnlockBuffer(BufferID.ShinobuStormPropagationTelemetryCursor, OwnerSystem);
-                if (telemetryLocked) vault.TryUnlockBuffer(BufferID.ShinobuStormPropagationTelemetryRing, OwnerSystem);
+                vault.ReleaseMutationGuard(TelemetryGraphMutationGuardMask);
             }
         }
 
@@ -292,6 +289,11 @@ namespace Hecton8.Atmosphere.Editor
                    vault.TryResolveHandle(in handle, out cursor) &&
                    cursor.IsCreated &&
                    cursor.Length > 0;
+        }
+
+        private static ulong StormPropagationMutationGuardBit(BufferID bufferId)
+        {
+            return 1UL << ((int)bufferId & 31);
         }
     }
 }

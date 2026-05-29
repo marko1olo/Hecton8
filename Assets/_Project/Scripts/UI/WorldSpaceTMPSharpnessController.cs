@@ -10,7 +10,7 @@ namespace Hecton8.UI
     /// CanvasRenderer does not expose MaterialPropertyBlock, so SDF tuning must occur on a dedicated material instance.
     /// </summary>
     [DisallowMultipleComponent]
-    public sealed class WorldSpaceTMPSharpnessController : MonoBehaviour, ILateFrameTickable, IGlobalRegistryHotSwapListener
+    public sealed class WorldSpaceTMPSharpnessController : MonoBehaviour, ILateFrameTickable, ISlowTickable, IGlobalRegistryHotSwapListener
     {
         private static readonly int FaceDilateId = Shader.PropertyToID("_FaceDilate");
         private static readonly int OutlineSoftnessId = Shader.PropertyToID("_OutlineSoftness");
@@ -53,6 +53,7 @@ namespace Hecton8.UI
         private Material _materialInstance;
         private Material _sourceMaterial;
         private bool _registered;
+        private bool _registeredSlowTick;
         private bool _hotSwapListenerRegistered;
         private float _lastFaceDilate = float.MinValue;
         private float _lastOutlineSoftness = float.MinValue;
@@ -61,6 +62,8 @@ namespace Hecton8.UI
         private float _nearDistanceSq = 0.0036f;
         private float _farDistanceSq = 12.25f;
         private float _sharpnessUpdateRemaining;
+        private int _screenWidthSnapshot = 1;
+        private int _screenHeightSnapshot = 1;
         private bool _distanceCacheDirty = true;
 
         /// <summary>
@@ -88,6 +91,7 @@ namespace Hecton8.UI
             }
 
             TryRegisterHotSwapListener();
+            RefreshScreenSnapshotCold();
             RegisterToTickManager();
             EnsureMaterialInstance();
             ApplySharpness(force: true);
@@ -99,6 +103,7 @@ namespace Hecton8.UI
                 return;
 
             TryRegisterHotSwapListener();
+            RefreshScreenSnapshotCold();
             RegisterToTickManager();
             _targetTransform = _target != null ? _target.transform : _targetTransform;
             _cameraTransform = _camera != null ? _camera.transform : _cameraTransform;
@@ -120,6 +125,12 @@ namespace Hecton8.UI
             UnregisterFromTickManager();
             TryUnregisterHotSwapListener();
             ReleaseMaterialInstance();
+        }
+
+        /// <inheritdoc />
+        public void SlowTick()
+        {
+            RefreshScreenSnapshotCold();
         }
 
         /// <inheritdoc />
@@ -170,8 +181,8 @@ namespace Hecton8.UI
             float distanceFaceDilate = math.lerp(nearFaceDilate, farFaceDilate, distanceT);
             float distanceOutlineSoftness = math.lerp(nearOutlineSoftness, farOutlineSoftness, distanceT);
             ResolveHardwareSdfProfile(
-                Screen.width,
-                Screen.height,
+                _screenWidthSnapshot,
+                _screenHeightSnapshot,
                 out float weightNormal,
                 out float weightBold,
                 out float dilateOffset,
@@ -317,6 +328,12 @@ namespace Hecton8.UI
             return math.isfinite(deltaTime) ? math.clamp(deltaTime, 0f, 0.5f) : 0f;
         }
 
+        private void RefreshScreenSnapshotCold()
+        {
+            _screenWidthSnapshot = math.max(1, Screen.width);
+            _screenHeightSnapshot = math.max(1, Screen.height);
+        }
+
         private static void ResolveHardwareSdfProfile(
             int screenWidth,
             int screenHeight,
@@ -376,16 +393,26 @@ namespace Hecton8.UI
             if (GlobalRegistry.Dispatcher == null)
                 return;
 
-            _registered = GlobalRegistry.TryRegisterLateFrameTickable(this, PriorityLayer.UI);
+            if (!_registered)
+                _registered = GlobalRegistry.TryRegisterLateFrameTickable(this, PriorityLayer.UI);
+
+            if (!_registeredSlowTick)
+                _registeredSlowTick = GlobalRegistry.TryRegisterSlowTickable(this, PriorityLayer.UI);
         }
 
         private void UnregisterFromTickManager()
         {
-            if (!_registered)
-                return;
+            if (_registeredSlowTick)
+            {
+                GlobalRegistry.UnregisterSlowTickable(this, PriorityLayer.UI);
+                _registeredSlowTick = false;
+            }
 
-            GlobalRegistry.UnregisterLateFrameTickable(this, PriorityLayer.UI);
-            _registered = false;
+            if (_registered)
+            {
+                GlobalRegistry.UnregisterLateFrameTickable(this, PriorityLayer.UI);
+                _registered = false;
+            }
         }
 
         public void OnGlobalRegistryServiceReplaced(

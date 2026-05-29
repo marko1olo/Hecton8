@@ -611,3 +611,33 @@ Compilation/resource throttling:
 
 Cinematic Cheats used -> None; offline telemetry/reporting only.
 Exact Microseconds saved -> 0 us game runtime.
+
+## 2026-05-29 19:41 Europe/Samara - Text-only token stats refresh
+
+What was wrong:
+- The 14:40 token report was stale after more local Codex JSONL activity.
+- The operator requested refreshed token data without generated charts/images.
+
+What was done:
+- Rechecked official OpenAI GPT-5.5 and model comparison pricing pages.
+- Ran `python Tools\CodexTokenUsageFastRefresh_20260528.py`.
+- Did not run `ProjectMetricsDashboard_20260528.py`.
+- Did not regenerate chart PNGs.
+- Parsed the persisted JSON and checked the ledger contains the refreshed total.
+
+Evidence:
+- Token total: `117,684,788,669`.
+- Delta tokens since previous same-day snapshot: `1,442,071,455`.
+- Tokens/hour: `277,255,074.4142506`.
+- Tokens/second: `77,015.29844840294`.
+- GPT-5.5 base API-equivalent: `$91,354.58078`.
+- GPT-5.5 delta cost: `$1,037.1627530000114`.
+- Hour buckets retained in JSON: `100`.
+- Dashboard/charts diff check: no modified `Docs/Reports/MetricCharts` or `PROJECT_METRICS_DASHBOARD_2026-05-29.*` files from this refresh.
+
+Compilation/resource throttling:
+- `dotnet build`: not invoked by TOKEN_USAGE_AUDIT.
+- Unity build/import/playmode: not invoked.
+
+Cinematic Cheats used -> None; offline telemetry/reporting only.
+Exact Microseconds saved -> 0 us game runtime.

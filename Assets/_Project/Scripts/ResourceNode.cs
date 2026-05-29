@@ -320,7 +320,7 @@ namespace Hecton8.Scavenging
             _cachedLootOracleItemHash = 0u;
             _cachedLootOracleUnitQuantity = 0u;
             lootCount = template.DefaultLootCount;
-            TryWarmLootOraclePayloadCache();
+            TryCacheLootOraclePayloadFromTemplate(template);
             ApplyPresentation(template, fallbackMesh, fallbackMaterial);
             _currentHealth = Mathf.Clamp(_currentHealth, 0f, maxHealth);
             if (isActiveAndEnabled)
@@ -601,6 +601,23 @@ namespace Hecton8.Scavenging
                 return;
 
             TryResolveLootOraclePayload(out _, out _, allowHierarchyScan: true);
+        }
+
+        private bool TryCacheLootOraclePayloadFromTemplate(ResourceNodeTemplate template)
+        {
+            if (template == null || lootPrefab == null || lootCount <= 0)
+                return false;
+
+            int yieldHash = template.ExtractorYieldItemHashId;
+            if (yieldHash == 0)
+                return false;
+
+            return CacheLootOraclePayload(
+                lootPrefab,
+                unchecked((uint)yieldHash),
+                1,
+                out _,
+                out _);
         }
 
         private bool TryResolveLootOraclePayload(out uint itemHash, out uint quantity, bool allowHierarchyScan)

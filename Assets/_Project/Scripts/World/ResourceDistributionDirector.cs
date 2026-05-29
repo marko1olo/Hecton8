@@ -33,8 +33,7 @@ namespace Hecton8.World
         private const int DefaultPoolWarmupFloor = 64;
         private const int InitialMetamorphismCapacity = 128;
         private const int GhostProxySnapBatchCapacity = 32;
-        private const SystemID VaultOwnerSystemId = SystemID.WorldResourceSpawnerRuntime;
-        private const BufferID MetamorphismWorkspaceBufferId = BufferID.ResourceDistributionMetamorphismInputs;
+        private const SystemID MetamorphismJobOwnerSystemId = SystemID.WorldResourceSpawnerRuntime;
         private const float GameSecondsPerDay = 86400f;
         private const float DefaultSlopeSampleDistanceMeters = 4f;
         private const float DefaultVoxelSolidThreshold = 0.08f;
@@ -376,12 +375,52 @@ namespace Hecton8.World
         private int _computedPoolWarmupCount;
         private float _meteorImpactTimerSeconds;
         private uint _meteorImpactSequence;
-        private VaultGenerationHandle<PressureMetamorphismSample> _metamorphismWorkspaceHandle;
-        private IDataVault _dataVault;
+        private struct MetamorphismWorkspaceOwner
+        {
+            public NativeArray<PressureMetamorphismSample> Workspace;
+
+            public bool HasCapacity(int requiredCount)
+            {
+                return Workspace.IsCreated && Workspace.Length >= requiredCount;
+            }
+
+            public void Ensure(int capacity)
+            {
+                if (HasCapacity(capacity))
+                    return;
+
+                Dispose();
+                try
+                {
+                    Workspace = new NativeArray<PressureMetamorphismSample>(
+                        capacity,
+                        Allocator.Persistent,
+                        NativeArrayOptions.ClearMemory);
+                    NativeMemorySentinel.RegisterNativeArray(Workspace, nameof(ResourceDistributionDirector), nameof(Workspace), NativeAllocationLifetime.Scene);
+                }
+                catch
+                {
+                    Dispose();
+                    throw;
+                }
+            }
+
+            public void Dispose()
+            {
+                if (!Workspace.IsCreated)
+                    return;
+
+                NativeMemorySentinel.UnregisterNativeArray(Workspace);
+                Workspace.Dispose();
+                Workspace = default;
+            }
+        }
+
+        private MetamorphismWorkspaceOwner _metamorphismWorkspace;
         private HazardZoneManager _hazardZoneManager;
         private JobHandle _metamorphismJobHandle;
         private bool _metamorphismJobActive;
-        private bool _metamorphismBuffersLocked;
+        private bool _metamorphismWorkspaceInUse;
         private int _scheduledMetamorphismCount;
         private int _metamorphismCapacity;
         private SpawnRequest[] _ghostProxySnapRequests;
@@ -540,9 +579,6 @@ namespace Hecton8.World
             if (_playerRuntimeContext == null)
                 _playerRuntimeContext = GlobalRegistry.Player;
 
-            if (_dataVault == null)
-                _dataVault = GlobalRegistry.DataVault;
-
             if (_hazardZoneManager == null)
                 _hazardZoneManager = GlobalRegistry.HazardZones;
         }
@@ -625,7 +661,6 @@ namespace Hecton8.World
             _persistentWorldRegistry = null;
             _dispatcher = null;
             _playerRuntimeContext = null;
-            _dataVault = null;
             _hazardZoneManager = null;
         }
 
@@ -683,12 +718,6 @@ namespace Hecton8.World
                 case GlobalRegistryServiceSlot.VoxelEngineRuntime:
                     RebindVoxelEngineRuntime(previousService, currentService);
                     break;
-                case GlobalRegistryServiceSlot.DataVault:
-                    CancelMetamorphismJobForTeardown();
-                    ReleaseMetamorphismBuffers(previousService as IDataVault);
-                    _dataVault = currentService as IDataVault;
-                    EnsureMetamorphismCapacityCold(ResolveMetamorphismColdCapacity());
-                    break;
                 case GlobalRegistryServiceSlot.HazardZoneRuntime:
                     _hazardZoneManager = currentService as HazardZoneManager;
                     break;
@@ -725,25 +754,23 @@ namespace Hecton8.World
             int2 playerSector = QuantizeSector(in playerAup);
             _debugPlayerSector = new Vector2Int(playerSector.x, playerSector.y);
 
+            if (_metamorphismJobActive && _metamorphismJobHandle.IsCompleted)
+                CompleteAndApplyMetamorphismJob();
+
             RefreshResidentSectors(playerSector);
             ProcessGhostProxySurfaceSnaps();
-            SchedulePressureMetamorphismJob();
             TickMeteorImpacts(0.5f, in playerAup, playerSector);
+            FlushPendingNodeDeactivations();
+            ProcessPendingSpawns();
+            SchedulePressureMetamorphismJob();
             UpdateDiagnostics(playerSector);
         }
 
         /// <summary>
-        /// Commits pressure-metamorphism Burst results during the end-of-frame swap window.
+        /// Reserved for visual-only resource presentation once simulation ownership has settled.
         /// </summary>
         public void LateFrameTick()
         {
-            FlushPendingNodeDeactivations();
-            ProcessPendingSpawns();
-
-            if (!_metamorphismJobActive || !_metamorphismJobHandle.IsCompleted)
-                return;
-
-            CompleteAndApplyMetamorphismJob();
         }
 
         /// <summary>
@@ -1712,24 +1739,32 @@ namespace Hecton8.World
                 return;
             }
 
-            int nodeCount = BuildPressureMetamorphismInputs(
-                carbonTemplate.StableHashId,
-                out NativeArray<PressureMetamorphismSample> workspace);
-            if (nodeCount <= 0)
-                return;
-
-            PressureMetamorphismJob job = new PressureMetamorphismJob
+            try
             {
-                Workspace = workspace,
-                DeltaSeconds = 0.5f,
-                DepthThresholdMeters = pressureMetamorphismDepthMeters,
-                RequiredSeconds = pressureMetamorphismDays * GameSecondsPerDay,
-                CarbonTemplateHashId = carbonTemplate.StableHashId
-            };
+                int nodeCount = BuildPressureMetamorphismInputs(
+                    carbonTemplate.StableHashId,
+                    out NativeArray<PressureMetamorphismSample> workspace);
+                if (nodeCount <= 0)
+                    return;
 
-            _scheduledMetamorphismCount = nodeCount;
-            _metamorphismJobHandle = job.Schedule(nodeCount, 16);
-            _metamorphismJobActive = true;
+                PressureMetamorphismJob job = new PressureMetamorphismJob
+                {
+                    Workspace = workspace,
+                    DeltaSeconds = 0.5f,
+                    DepthThresholdMeters = pressureMetamorphismDepthMeters,
+                    RequiredSeconds = pressureMetamorphismDays * GameSecondsPerDay,
+                    CarbonTemplateHashId = carbonTemplate.StableHashId
+                };
+
+                _scheduledMetamorphismCount = nodeCount;
+                _metamorphismJobHandle = job.Schedule(nodeCount, 16);
+                _metamorphismJobActive = true;
+                H8Memory.RegisterActiveJob(MetamorphismJobOwnerSystemId, _metamorphismJobHandle);
+            }
+            finally
+            {
+                ReleaseMetamorphismWorkspaceLease();
+            }
         }
 
         private int BuildPressureMetamorphismInputs(
@@ -1796,7 +1831,7 @@ namespace Hecton8.World
 
             if (writeIndex <= 0)
             {
-                ReleaseMetamorphismJobBufferLocks();
+                ReleaseMetamorphismWorkspaceLease();
                 workspace = default;
             }
 
@@ -1845,7 +1880,7 @@ namespace Hecton8.World
             }
             finally
             {
-                ReleaseMetamorphismJobBufferLocks();
+                ReleaseMetamorphismWorkspaceLease();
                 _scheduledMetamorphismCount = 0;
                 _metamorphismNodeScratch.Clear();
             }
@@ -1855,7 +1890,7 @@ namespace Hecton8.World
         {
             if (!_metamorphismJobActive)
             {
-                ReleaseMetamorphismJobBufferLocks();
+                ReleaseMetamorphismWorkspaceLease();
                 return;
             }
 
@@ -1864,16 +1899,15 @@ namespace Hecton8.World
             _metamorphismJobActive = false;
             _scheduledMetamorphismCount = 0;
             _metamorphismNodeScratch?.Clear();
-            ReleaseMetamorphismJobBufferLocks();
+            ReleaseMetamorphismWorkspaceLease();
         }
 
         private bool EnsureMetamorphismCapacity(int requiredCount)
         {
-            if (requiredCount <= 0 || _metamorphismJobActive || _metamorphismBuffersLocked)
+            if (requiredCount <= 0 || _metamorphismJobActive || _metamorphismWorkspaceInUse)
                 return false;
 
-            return _metamorphismCapacity >= requiredCount &&
-                   TryReadMetamorphismWorkspace(requiredCount, out _);
+            return _metamorphismWorkspace.HasCapacity(requiredCount);
         }
 
         private int ResolveMetamorphismColdCapacity()
@@ -1883,18 +1917,18 @@ namespace Hecton8.World
 
         private void EnsureMetamorphismCapacityCold(int requiredCount)
         {
-            if (!Application.isPlaying || requiredCount <= 0 || _metamorphismJobActive || _metamorphismBuffersLocked)
+            if (!Application.isPlaying || requiredCount <= 0 || _metamorphismJobActive || _metamorphismWorkspaceInUse)
                 return;
 
             int nextCapacity = math.max(requiredCount, InitialMetamorphismCapacity);
-            if (EnsureMetamorphismVaultBuffer(
-                    ref _metamorphismWorkspaceHandle,
-                    MetamorphismWorkspaceBufferId,
-                    nextCapacity,
-                    NativeArrayOptions.ClearMemory))
+            if (_metamorphismWorkspace.HasCapacity(nextCapacity))
             {
-                _metamorphismCapacity = nextCapacity;
+                _metamorphismCapacity = _metamorphismWorkspace.Workspace.Length;
+                return;
             }
+
+            _metamorphismWorkspace.Ensure(nextCapacity);
+            _metamorphismCapacity = _metamorphismWorkspace.Workspace.IsCreated ? _metamorphismWorkspace.Workspace.Length : 0;
         }
 
         private void DisposeMetamorphismBuffers()
@@ -1902,152 +1936,57 @@ namespace Hecton8.World
             ReleaseMetamorphismBuffers();
         }
 
-        private bool EnsureMetamorphismVaultBuffer<T>(
-            ref VaultGenerationHandle<T> handle,
-            BufferID bufferId,
-            int requiredCapacity,
-            NativeArrayOptions options) where T : struct
-        {
-            IDataVault vault = _dataVault;
-            if (vault == null || requiredCapacity <= 0)
-                return false;
-
-            if (IsExactVaultHandle(in handle, bufferId) &&
-                vault.TryReadOnlyHandle(in handle, out NativeArray<T>.ReadOnly existing) &&
-                existing.IsCreated &&
-                existing.Length >= requiredCapacity)
-            {
-                return true;
-            }
-
-            ReleaseMetamorphismVaultHandle(vault, ref handle);
-            handle = vault.EnsureGenerationHandle<T>(
-                bufferId,
-                requiredCapacity,
-                VaultOwnerSystemId,
-                options);
-
-            return IsExactVaultHandle(in handle, bufferId) &&
-                   vault.TryReadOnlyHandle(in handle, out NativeArray<T>.ReadOnly resolved) &&
-                   resolved.IsCreated &&
-                   resolved.Length >= requiredCapacity;
-        }
-
         private bool TryAcquireMetamorphismJobBuffer(
             int requiredCount,
             out NativeArray<PressureMetamorphismSample> workspace)
         {
             workspace = default;
-            if (!EnsureMetamorphismCapacity(requiredCount) || _metamorphismBuffersLocked)
+            if (!EnsureMetamorphismCapacity(requiredCount) || _metamorphismWorkspaceInUse)
                 return false;
 
-            IDataVault vault = _dataVault;
-            if (vault == null)
+            workspace = _metamorphismWorkspace.Workspace;
+            if (!workspace.IsCreated || workspace.Length < requiredCount)
+            {
+                workspace = default;
                 return false;
-
-            bool success = false;
-            try
-            {
-                if (!IsExactVaultHandle(in _metamorphismWorkspaceHandle, MetamorphismWorkspaceBufferId) ||
-                    !vault.TryAcquireWriteLock(in _metamorphismWorkspaceHandle, VaultOwnerSystemId, out workspace))
-                {
-                    return false;
-                }
-
-                if (!workspace.IsCreated || workspace.Length < requiredCount)
-                {
-                    return false;
-                }
-
-                _metamorphismBuffersLocked = true;
-                success = true;
-                return true;
             }
-            finally
-            {
-                if (!success)
-                {
-                    if (IsExactVaultHandle(in _metamorphismWorkspaceHandle, MetamorphismWorkspaceBufferId))
-                        vault.ReleaseWriteLock(in _metamorphismWorkspaceHandle, VaultOwnerSystemId);
-                    workspace = default;
-                }
-            }
+
+            _metamorphismWorkspaceInUse = true;
+            return true;
         }
 
         private bool TryReadMetamorphismWorkspace(
             int requiredCount,
             out NativeArray<PressureMetamorphismSample>.ReadOnly workspace)
         {
-            return TryReadMetamorphismVaultBuffer(
-                in _metamorphismWorkspaceHandle,
-                MetamorphismWorkspaceBufferId,
-                requiredCount,
-                out workspace);
-        }
-
-        private bool TryReadMetamorphismVaultBuffer<T>(
-            in VaultGenerationHandle<T> handle,
-            BufferID bufferId,
-            int requiredCount,
-            out NativeArray<T>.ReadOnly buffer) where T : struct
-        {
-            buffer = default;
-            IDataVault vault = _dataVault;
-            return vault != null &&
-                   requiredCount > 0 &&
-                   IsExactVaultHandle(in handle, bufferId) &&
-                   vault.TryReadOnlyHandle(in handle, out buffer) &&
-                   buffer.IsCreated &&
-                   buffer.Length >= requiredCount;
-        }
-
-        private void ReleaseMetamorphismJobBufferLocks()
-        {
-            ReleaseMetamorphismJobBufferLocks(_dataVault);
-        }
-
-        private void ReleaseMetamorphismJobBufferLocks(IDataVault vault)
-        {
-            if (!_metamorphismBuffersLocked)
-                return;
-
-            if (vault != null)
+            workspace = default;
+            if (requiredCount <= 0 ||
+                !_metamorphismWorkspace.Workspace.IsCreated ||
+                _metamorphismWorkspace.Workspace.Length < requiredCount)
             {
-                if (IsExactVaultHandle(in _metamorphismWorkspaceHandle, MetamorphismWorkspaceBufferId))
-                    vault.ReleaseWriteLock(in _metamorphismWorkspaceHandle, VaultOwnerSystemId);
+                return false;
             }
 
-            _metamorphismBuffersLocked = false;
+            workspace = _metamorphismWorkspace.Workspace.AsReadOnly();
+            return true;
+        }
+
+        private void ReleaseMetamorphismWorkspaceLease()
+        {
+            if (!_metamorphismWorkspaceInUse)
+                return;
+
+            _metamorphismWorkspaceInUse = false;
         }
 
         private void ReleaseMetamorphismBuffers()
         {
-            ReleaseMetamorphismBuffers(_dataVault);
-        }
-
-        private void ReleaseMetamorphismBuffers(IDataVault vault)
-        {
             if (_metamorphismJobActive)
                 CancelMetamorphismJobForTeardown();
 
-            ReleaseMetamorphismJobBufferLocks(vault);
-            ReleaseMetamorphismVaultHandle(vault, ref _metamorphismWorkspaceHandle);
+            ReleaseMetamorphismWorkspaceLease();
+            _metamorphismWorkspace.Dispose();
             _metamorphismCapacity = 0;
-        }
-
-        private static void ReleaseMetamorphismVaultHandle<T>(IDataVault vault, ref VaultGenerationHandle<T> handle) where T : struct
-        {
-            if (vault != null && handle.BufferID != 0u && handle.Generation != 0u)
-                vault.ReleaseBuffer(in handle);
-
-            handle = default;
-        }
-
-        private static bool IsExactVaultHandle<T>(in VaultGenerationHandle<T> handle, BufferID expectedBufferId) where T : struct
-        {
-            return handle.BufferID == unchecked((uint)(int)expectedBufferId) &&
-                   handle.SystemID == (uint)VaultOwnerSystemId &&
-                   handle.Generation != 0u;
         }
 
         private void EnsureGhostProxySnapStaging()

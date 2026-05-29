@@ -16,7 +16,7 @@ namespace Hecton8.PDA
     /// </summary>
     [DisallowMultipleComponent]
     [AddComponentMenu("Hecton8/PDA/PDA Marker HUD Element")]
-    public sealed class PDAMarkerHUDElement : MonoBehaviour, ILateFrameTickable, IPDAEventListener, IGlobalRegistryHotSwapListener
+    public sealed class PDAMarkerHUDElement : MonoBehaviour, ISlowTickable, ILateFrameTickable, IPDAEventListener, IGlobalRegistryHotSwapListener
     {
         private sealed class MarkerIconDisplay
         {
@@ -80,6 +80,7 @@ namespace Hecton8.PDA
 
         private Camera _mainCamera;
         private bool _registeredToTick;
+        private bool _registeredToSlowTick;
         private bool _registeredToPDAEvents;
         private bool _markersDirty = true;
         private int _markerCount;
@@ -87,6 +88,8 @@ namespace Hecton8.PDA
         private float _cameraRetryTimer;
         private PDAMarkerRegistry _cachedMarkerRegistry;
         private IPlayerRuntimeContext _cachedPlayerContext;
+        private float _screenWidthSnapshot = 1f;
+        private float _screenHeightSnapshot = 1f;
         private bool _hotSwapListenerRegistered;
         private bool _markerRegistryColdResolved;
         private bool _playerContextColdResolved;
@@ -94,11 +97,13 @@ namespace Hecton8.PDA
         private void Awake()
         {
             BuildIconPool();
+            RefreshScreenSnapshotCold();
         }
 
         private void OnEnable()
         {
             CacheRegistryServicesCold(forceRefresh: true);
+            RefreshScreenSnapshotCold();
             TryRegisterHotSwapListener();
             TryRegisterWithTickManager();
             TryRegisterWithPDAEvents();
@@ -126,6 +131,11 @@ namespace Hecton8.PDA
         public void LateFrameTick()
         {
             SampleMarkerDisplay(SystemDispatcher.CurrentFrameUnscaledDeltaTime);
+        }
+
+        public void SlowTick()
+        {
+            RefreshScreenSnapshotCold();
         }
 
         private void SampleMarkerDisplay(float deltaTime)
@@ -168,8 +178,8 @@ namespace Hecton8.PDA
             double maxDisplayDistanceSq = (double)maxDisplayDistance * maxDisplayDistance;
             double fadeStartDistanceSq = (double)fadeStartDistance * fadeStartDistance;
             double fadeDistanceSqSpan = math.max(0.001d, maxDisplayDistanceSq - fadeStartDistanceSq);
-            float screenWidth = Screen.width;
-            float screenHeight = Screen.height;
+            float screenWidth = _screenWidthSnapshot;
+            float screenHeight = _screenHeightSnapshot;
 
             for (int i = 0; i < displayCount; i++)
             {
@@ -582,21 +592,29 @@ namespace Hecton8.PDA
 
         private void TryRegisterWithTickManager()
         {
-            if (_registeredToTick)
-                return;
             if (!Application.isPlaying || GlobalRegistry.Dispatcher == null)
                 return;
 
-            _registeredToTick = GlobalRegistry.TryRegisterLateFrameTickable(this, PriorityLayer.UI);
+            if (!_registeredToTick)
+                _registeredToTick = GlobalRegistry.TryRegisterLateFrameTickable(this, PriorityLayer.UI);
+
+            if (!_registeredToSlowTick)
+                _registeredToSlowTick = GlobalRegistry.TryRegisterSlowTickable(this, PriorityLayer.UI);
         }
 
         private void UnregisterFromTickManager()
         {
-            if (!_registeredToTick)
-                return;
+            if (_registeredToSlowTick)
+            {
+                GlobalRegistry.UnregisterSlowTickable(this, PriorityLayer.UI);
+                _registeredToSlowTick = false;
+            }
 
-            GlobalRegistry.UnregisterLateFrameTickable(this, PriorityLayer.UI);
-            _registeredToTick = false;
+            if (_registeredToTick)
+            {
+                GlobalRegistry.UnregisterLateFrameTickable(this, PriorityLayer.UI);
+                _registeredToTick = false;
+            }
         }
 
         private void TryRegisterWithPDAEvents()
@@ -648,6 +666,12 @@ namespace Hecton8.PDA
 
             GlobalRegistry.TryUnregisterHotSwapListener(this);
             _hotSwapListenerRegistered = false;
+        }
+
+        private void RefreshScreenSnapshotCold()
+        {
+            _screenWidthSnapshot = math.max(1f, Screen.width);
+            _screenHeightSnapshot = math.max(1f, Screen.height);
         }
     }
 }

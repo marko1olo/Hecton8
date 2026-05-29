@@ -563,6 +563,9 @@ namespace Hecton8.Core.Data
             if (vault == null)
                 return false;
 
+            if (vault.IsAllocationLocked || vault.IsCompactionFenceActive)
+                return false;
+
             _mappedBytesHandle = vault.EnsureGenerationHandle<byte>(
                 BufferID.BabelDictionaryMappedBytes,
                 (int)paddedLength,
@@ -924,6 +927,9 @@ namespace Hecton8.Core.Data
             IDataVault vault = _dataVault;
             if (vault != null)
             {
+                if (vault.IsAllocationLocked || vault.IsCompactionFenceActive)
+                    return false;
+
                 _errorSliceHandle = vault.EnsureGenerationHandle<byte>(
                     BufferID.BabelErrorUtf8,
                     ErrorSliceBytes,
@@ -1089,6 +1095,9 @@ namespace Hecton8.Core.Data
             if (vault == null)
                 return false;
 
+            if (vault.IsAllocationLocked || vault.IsCompactionFenceActive)
+                return false;
+
             if (_blackBoxHandle.BufferID == 0u ||
                 !vault.TryResolveHandle(in _blackBoxHandle, out NativeArray<H8StaticDataTelemetryEntry> ring) ||
                 !ring.IsCreated ||
@@ -1120,6 +1129,9 @@ namespace Hecton8.Core.Data
         {
             IDataVault vault = _dataVault;
             if (vault == null)
+                return false;
+
+            if (vault.IsAllocationLocked || vault.IsCompactionFenceActive)
                 return false;
 
             if (_btreeTelemetryHandle.BufferID == 0u ||

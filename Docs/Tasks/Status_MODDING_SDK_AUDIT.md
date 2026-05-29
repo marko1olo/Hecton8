@@ -2,7 +2,7 @@
 
 Date: 2026-05-28
 Domain: Echelon 1 mod/API cold isolation, SDK package contracts, HectonEventBus boundary
-Status: STATIC_PASS_SCHEMA_100 / GRAPH_NODE_AUTHORING_UI_ADDED / CLI_PARAMETER_FALLBACK_ADDED / REVIEW_ZIP_PROVED / HYGIENE_PASS / DOTNET_BUILD_DEFERRED_CPU / UNITY_MCP_NOT_AVAILABLE
+Status: STATIC_PASS_SCHEMA_108 / LOCAL_MODS_DIAGNOSE_ADDED / REVIEW_ZIP_PROVED / HYGIENE_PASS / EDITOR_BUILD_PASS / UNITY_MCP_NOT_AVAILABLE
 
 ## Mandates Applied
 
@@ -1278,3 +1278,115 @@ Evidence:
 - PASS: `dotnet build Assembly-CSharp-Editor.csproj -nologo -clp:ErrorsOnly -maxcpucount:1` -> 0 warnings, 0 errors, 21.53s.
 - CLEANUP: `dotnet build-server shutdown`; no `dotnet`, `csc`, `VBCSCompiler`, or `MSBuild` processes remain.
 - NOT RUN: Unity MCP/Editor console verification because Unity MCP tools are not available in this session; source/static/CLI/editor-project proof only.
+
+## Pass 82 - Schema 106 First Playable Mod Onboarding
+
+- [x] Task 385: Audit external first-mod usability after schema 105. DOD practice: compared root launcher, VS Code tasks, Workbench/SDK Hub generator output, local validator, review manifest, docs, and schema; found authors still needed several manual commands before seeing a playable graph/settings/locale draft. Rejected alternative: tell random public authors to copy JSON snippets manually. Runtime us estimate: 0 us/frame, offline SDK only.
+- [x] Task 386: Add one-command first playable mod authoring. DOD practice: added `Tools/create_first_mod.ps1` and `h8mod.ps1 -Action first-mod`; the helper composes existing bounded prepare, manifest-contract, graph snippet/apply, settings snippet/apply, locale snippet/apply, validation, and review-manifest tools. Rejected alternative: direct file mutation without existing validator-backed helpers. Runtime us estimate: 0.
+- [x] Task 387: Integrate first-mod into VS Code tasks, SDK Hub generation, validator, schema, and docs. DOD practice: VS Code now exposes `HECTON-8: create first playable mod`; SDK Hub writes the checked-in first-mod tool; local validation rejects missing first-mod task/tool; schema revision 106 and docs record the contract. Rejected alternative: checked-in starter-only UX that would drift from generated starter kits. Runtime us estimate: 0.
+- [x] Task 388: Verify modeled author flows. DOD practice: temp-copy first-mod JSON run PASS with clean `hecton8.first_mod.v1`; temp-copy launcher run PASS; rerunnable `-Replace` run PASS with one graph node, one setting, and one locale key; review manifests include `Tools/create_first_mod.ps1` and exclude `Generated/` plus `Reports/`. Rejected alternative: rely on marker checks without exercising copied starter folders. Runtime us estimate: 0.
+- [x] Task 389: Verify static/build/hygiene gates. DOD practice: parser scan PASS, starter validate PASS, schema flag probe PASS, root launcher/task/validator marker probe PASS, review manifest parse PASS, scoped diff check PASS, trailing whitespace PASS, CPU/process gate sampled at 13 percent/no compiler processes/no Unity lock, targeted `Assembly-CSharp-Editor.csproj` build PASS, build server shutdown PASS. Rejected alternative: launch repeated full builds or claim full static PASS after timeout. Runtime us estimate: 0.
+
+Evidence:
+- PASS: PowerShell parser scan for `Docs/Modding/Validate_Mod_API_Static.ps1`, `ModdingSDK/ExternalStarterKit/h8mod.ps1`, `Tools/create_first_mod.ps1`, and `Tools/validate_structure.ps1`.
+- PASS: `powershell -NoProfile -ExecutionPolicy Bypass -File ModdingSDK/ExternalStarterKit/h8mod.ps1 -Action validate` -> `PASS HECTON-8 external starter structure`.
+- PASS: schema probe found `Signal_Schema.json` revision `106`, `externalStarterKitWritesFirstModTool=true`, `externalStarterKitRootLauncherSupportsFirstMod=true`, and matching `lastStaticValidationSnapshot` flags.
+- PASS: temp-copy JSON flow at `C:\tmp\h8-firstmod-json-f54742f3771243979de59d1b6a8e2761` produced clean `hecton8.first_mod.v1`, one graph node, one setting row, locale key `text.first_mod_ready`, review manifest with `Tools/create_first_mod.ps1`, and no `Generated/` or `Reports/` source entries.
+- PASS: temp-copy launcher flow at `C:\tmp\h8-firstmod-launcher-d3c8b6993b6749d99030677596e3dbba` created the same graph/settings/locale draft through `h8mod.ps1 -Action first-mod`.
+- PASS: rerunning launcher flow with `-Replace` kept counts stable: one graph node, one setting row, one locale key.
+- PASS: checked-in review manifest parsed as `hecton8.external_review_manifest.v1`, runtime `envelope-only`, `39` source files, includes `Tools/create_first_mod.ps1`, and excludes `Generated/` plus `Reports/`.
+- PASS: targeted root launcher/task/validator marker probe proved SDK Hub root launcher template route, SDK Hub first-mod tool route, checked-in tool existence, launcher `first-mod` route, VS Code first-mod task, `-Replace`, and local validator first-mod gates.
+- PASS: scoped `git diff --check` for touched source/docs. Git line-ending warnings only; no whitespace errors.
+- PASS: touched-file trailing whitespace scan.
+- TIMEOUT: full `Docs/Modding/Validate_Mod_API_Static.ps1` rerun timed out after 425 seconds after the old root-launcher marker was fixed; no full static PASS is claimed for schema 106 in this pass.
+- PASS: build/resource gate before compile found CPU `13`, no active `dotnet`, `csc`, `VBCSCompiler`, or `MSBuild`, and no `Temp/UnityLockfile`.
+- PASS: `dotnet build Assembly-CSharp-Editor.csproj -nologo -clp:ErrorsOnly -maxcpucount:1` -> 0 warnings, 0 errors, 53.96s.
+- CLEANUP: `dotnet build-server shutdown`; follow-up process check showed no remaining `dotnet`, `csc`, `VBCSCompiler`, or `MSBuild`.
+- NOT RUN: Unity MCP/Editor console verification because Unity MCP tools are not available in this session; source/static/CLI/editor-project proof only.
+
+## Pass 83 - APEX Integrator Source Guard And DataVault Lock Flattening
+
+- [x] Task 390: Audit APEX guard coverage. DOD practice: read existing `ApexIntegratorSourceGuard` and compared its default scope against actual mod/API files with FutureCommand DataVault write locks and LateFrame dispatch. Rejected alternative: trust the old five-file guard scope. Runtime us estimate: 0 us/frame, editor-only static guard.
+- [x] Task 391: Expand APEX source guard to real modding scope. DOD practice: default guard now enumerates `Assets/_Project/Scripts/ModdingAPI` and `Assets/_Project/Scripts/Editor/ModdingSDK`, masks comments/strings, counts hot lookup, phase, hot-GC, DataVault write-lock, and build-token violations in memory. Rejected alternative: write JSON reports or rely on chat assertions. Runtime us estimate: 0.
+- [x] Task 392: Flatten mod sandbox write-lock helper. DOD practice: `TryAcquireVaultLaneWrite` now releases failure-path locks inside `finally`, and post-acquire redundant `Length == 0` branches were removed from callers so no successful acquisition can return before caller `finally`. Rejected alternative: leave helper release as a bare early branch. Runtime us estimate: 0 to low microseconds per cold lock acquisition, no per-frame managed allocation.
+- [x] Task 393: Verify APEX static invariants. DOD practice: in-memory PowerShell AST scan over 30 guarded C# files parsed 748 methods and reported zero hot lookup, phase, hot-GC, DataVault lock, and build-token violations. Rejected alternative: run another build while compiler processes are active. Runtime us estimate: 0.
+- [x] Task 394: Respect compile throttle. DOD practice: `git diff --check` PASS and trailing whitespace PASS; build was not launched because CPU sampled at 90.56 then 98.45 percent with active `dotnet` and `VBCSCompiler` processes. Rejected alternative: spam `dotnet build` under explicit resource gate violation. Runtime us estimate: 0.
+
+Evidence:
+- PASS: APEX static scan: `files=30 methods=748 hot=2 hotLookup=0 phase=0 hotGc=0 vault=0 buildTokens=0`.
+- PASS: `git diff --check` on touched C# files; line-ending warnings only.
+- PASS: touched-file trailing whitespace scan.
+- DEFERRED: `dotnet build` by throttle; CPU `90.56`/`98.45`, active `dotnet` PID `12900`, active `VBCSCompiler` PID `68868`.
+
+## Pass 84 - Schema 107 Local Discovery Install UX
+
+- [x] Task 395: Audit modder install path after first-mod onboarding. DOD practice: traced runtime loader boundary and starter kit UX; confirmed runtime remains envelope-only and current public gap was local discovery copying of a reviewed starter package into `Mods/<mod-id>`. Rejected alternative: claim managed DLL or loose content activation without loader/sandbox/save proof. Runtime us estimate: 0 us/frame, offline SDK only.
+- [x] Task 396: Add reviewed local discovery install helper. DOD practice: added `Tools/install_local_mod.ps1`; it runs prepare/review, validates review schema/runtime/id parity, verifies each reviewed file byte count and SHA-256, stages under `Mods`, replaces only with explicit `-Replace`, bounds cleanup under `Mods`, copies `Reports/review_manifest.json`, and emits JSON/text proof. Rejected alternative: blind folder copy or direct runtime activation. Runtime us estimate: 0.
+- [x] Task 397: Integrate install-local through public authoring surfaces. DOD practice: routed `h8mod.ps1 -Action install-local`, VS Code task `HECTON-8: install local discovery copy`, Workbench local install panel, SDK Hub template generation, local validator required-file/task checks, capability docs, file contract, schema 107, static validator flags, runtime playbook, review manifest, and submission zip. Rejected alternative: hidden inner tool with no UI and no drift gates. Runtime us estimate: 0.
+- [x] Task 398: Model external modder flows. DOD practice: temp-copy starter created first mod, installed it into a fake project `Mods/com.yourname.installtest`, rejected duplicate install without `-Replace`, reran JSON install with schema `hecton8.local_install.v1`, verified no `Generated/` or staging/previous leftovers, verified `Reports/review_manifest.json`, and verified direct `-ModsRoot` install. Rejected alternative: marker-only proof without exercising copied starter folders. Runtime us estimate: 0.
+- [x] Task 399: Verify static, package, and compile gates. DOD practice: parser scan PASS, JSON parse PASS, starter validate PASS, review/submission PASS, zip inspection PASS, full `Validate_Mod_API_Static.ps1` PASS schema 107, scoped diff check PASS, trailing whitespace PASS, hot lookup/DataVault token scan PASS, build gate waited until CPU 21.65/no compiler/no Unity lock, targeted `Assembly-CSharp-Editor.csproj` build PASS, and build server shutdown PASS. Rejected alternative: repeated full solution build or build under CPU >50. Runtime us estimate: 0.
+
+Evidence:
+- PASS: parser scan for `Docs/Modding/Validate_Mod_API_Static.ps1`, `ModdingSDK/ExternalStarterKit/h8mod.ps1`, `Tools/install_local_mod.ps1`, and `Tools/validate_structure.ps1`.
+- PASS: JSON parse for `ModdingSDK/ExternalStarterKit/.vscode/tasks.json` and `Docs/Modding/Signal_Schema.json`.
+- PASS: `powershell -NoProfile -ExecutionPolicy Bypass -File ModdingSDK/ExternalStarterKit/h8mod.ps1 -Action validate` -> `PASS HECTON-8 external starter structure`.
+- PASS: `powershell -NoProfile -ExecutionPolicy Bypass -File ModdingSDK/ExternalStarterKit/h8mod.ps1 -Action review` -> `PASS HECTON-8 review manifest: Reports/review_manifest.json`.
+- PASS: temp-copy install flow at `%TEMP%\h8-install-sdk-27e2b7380d89457094538ad9c6a6b177` and fake project `%TEMP%\h8-install-game-27e2b7380d89457094538ad9c6a6b177`: first-mod PASS, install-local PASS, duplicate without `-Replace` rejected, JSON install schema `hecton8.local_install.v1`, direct `-ModsRoot` install PASS, `Files=40`, `Bytes=237140`, no `Generated/` or staging artifacts in installed copy.
+- PASS: full `powershell -NoProfile -ExecutionPolicy Bypass -File Docs/Modding/Validate_Mod_API_Static.ps1` -> `Status PASS`, schema revision `107`, `ExternalStarterKitWritesInstallLocalTool=True`, `ExternalStarterKitRootLauncherSupportsInstallLocal=True`, `ExternalStarterKitVsCodeTasksSupportLocalInstall=True`. Visible `Fail` lines are expected negative fail-closed probes and process exit was `0`.
+- PASS: `powershell -NoProfile -ExecutionPolicy Bypass -File ModdingSDK/ExternalStarterKit/h8mod.ps1 -Action submission` -> `PASS HECTON-8 submission package: Generated/com.example.starter_submission.zip`.
+- PASS: review manifest parsed as schema `hecton8.external_review_manifest.v1`, runtime `envelope-only`, `40` source files, includes `Tools/install_local_mod.ps1`, excludes `Generated/` and `Reports/`.
+- PASS: submission zip inspection found `41` entries, includes `Tools/install_local_mod.ps1`, `Reports/review_manifest.json`, `.vscode/tasks.json`, and `h8mod.ps1`, and contains no `Generated/*`, `.tmp`, or `.previous` artifacts.
+- PASS: scoped `git diff --check`; line-ending warnings only, no whitespace errors.
+- PASS: touched-file trailing whitespace scan.
+- PASS: touched C#/SDK hot lookup scan found no `GlobalRegistry.Get<T>()`, `GetComponent()`, hot loop, DataVault lock, or job completion token in changed modding/editor SDK files; `List<>` and `ToArray()` occurrences are editor/offline generator code only.
+- PASS: build/resource gate waited after CPU `58.46`; second sample CPU `21.65`, no active `dotnet`, `csc`, `VBCSCompiler`, or `MSBuild`, and no `Temp/UnityLockfile`.
+- PASS: `dotnet build Assembly-CSharp-Editor.csproj -nologo -clp:ErrorsOnly -maxcpucount:1` -> 0 warnings, 0 errors, 22.11s.
+- CLEANUP: `dotnet build-server shutdown`; remaining `dotnet` PID `2740` is another agent's `dotnet build .\Hecton8.Core.csproj ... --no-restore`, not this pass.
+- NOT RUN: Unity MCP/Editor console verification because Unity MCP tools are not available in this session; source/static/CLI/editor-project proof only.
+
+## Pass 85 - Schema 108 Local Mods Diagnosis UX
+
+- [x] Task 400: Audit local install/discovery feedback after schema 107. DOD practice: modeled the external author path from first-mod to install-local and found the author still had no single safe answer for "what will the local game loader see and why is it not active". Rejected alternative: tell authors to inspect `Mods/` manually or infer loader state from review output. Runtime us estimate: 0 us/frame, offline SDK only.
+- [x] Task 401: Add read-only local Mods diagnosis. DOD practice: added `Tools/diagnose_local_mods.ps1` mirroring loader caps for manifest byte size, discovery count, top-level DLL/bundle/localization counts, API version, dependency ids, entry assembly shape, review manifest schema, byte count, and SHA-256. Rejected alternative: runtime activation, managed DLL loading, or loose content ingestion. Runtime us estimate: 0.
+- [x] Task 402: Integrate diagnosis into public authoring surfaces. DOD practice: routed `h8mod.ps1 -Action diagnose-local`, VS Code task `HECTON-8: diagnose local Mods folder`, Workbench local diagnosis panel, SDK Hub generated template, local structure validator, schema 108, static validator flags, runtime playbook, starter docs, capability docs, file contract, checked-in review manifest, and submission zip. Rejected alternative: hidden inner script without UI and drift gates. Runtime us estimate: 0.
+- [x] Task 403: Model external diagnosis and tamper detection. DOD practice: temp-copy starter created a first mod, installed into a fake project, diagnosed it through root launcher JSON, proved `DISABLED_BY_RUNTIME_BOUNDARY` with `ReviewStatus=ok`, then tampered an installed file and proved review invalidation. Rejected alternative: marker-only proof. Runtime us estimate: 0.
+- [x] Task 404: Verify static, APEX, hygiene, package, and compile gates. DOD practice: parser scan PASS, JSON parse PASS, starter validate/review/submission PASS, full static validator PASS schema 108, scoped diff check PASS, trailing whitespace PASS, hot lookup scan PASS over 30 C# files, targeted `Assembly-CSharp-Editor.csproj` build PASS after CPU/process/Unity gates, and build server shutdown PASS. Rejected alternative: full solution rebuild or build under active compiler/CPU throttle. Runtime us estimate: 0.
+
+Evidence:
+- PASS: parser scan for `Docs/Modding/Validate_Mod_API_Static.ps1`, `ModdingSDK/ExternalStarterKit/h8mod.ps1`, `ModdingSDK/ExternalStarterKit/Tools/diagnose_local_mods.ps1`, and `ModdingSDK/ExternalStarterKit/Tools/validate_structure.ps1`.
+- PASS: JSON parse for `ModdingSDK/ExternalStarterKit/.vscode/tasks.json` version `2.0.0` and `Docs/Modding/Signal_Schema.json` schema revision `108`.
+- PASS: `powershell -NoProfile -ExecutionPolicy Bypass -File ModdingSDK/ExternalStarterKit/h8mod.ps1 -Action validate` -> `PASS HECTON-8 external starter structure`.
+- PASS: root local diagnosis JSON: schema `hecton8.local_mods_diagnosis.v1`, runtime `envelope-only`, missing project `Mods` root handled as `ModsRootExists=false`, `PackageCount=0`, `DiscoverableCount=0`.
+- PASS: temp-copy external author flow created `com.yourname.diagnosetest`, installed it into fake project `Mods`, then `h8mod.ps1 -Action diagnose-local -ProjectRoot <fake> -Json` returned one package with status `DISABLED_BY_RUNTIME_BOUNDARY`, `ReviewStatus=ok`, zero issues, `BoundaryDisabledCount=1`, and `DiscoverableCount=1`.
+- PASS: tamper probe changed installed `README.md`; direct diagnosis returned `ReviewStatus=invalid` and `Reviewed file byte mismatch: README.md`.
+- PASS: review/submission regeneration: review manifest schema `hecton8.external_review_manifest.v1`, runtime `envelope-only`, `FileCount=41`, `TotalBytes=258577`, includes `Tools/diagnose_local_mods.ps1`, excludes `Generated/` and `Reports/` source entries.
+- PASS: submission zip inspection found `42` entries, includes `Tools/diagnose_local_mods.ps1` and `Reports/review_manifest.json`, and contains no `Generated/*`.
+- PASS: full `powershell -NoProfile -ExecutionPolicy Bypass -File Docs/Modding/Validate_Mod_API_Static.ps1` -> `Status PASS`, schema revision `108`, `ExternalStarterKitWritesDiagnoseLocalTool=True`, `ExternalStarterKitRootLauncherSupportsDiagnoseLocal=True`, `ExternalStarterKitVsCodeTasksSupportLocalDiagnose=True`. Visible `Fail` lines are expected negative fail-closed probes and process exit was `0`.
+- PASS: scoped `git diff --check`; line-ending warnings only, no whitespace errors.
+- PASS: touched-file trailing whitespace scan.
+- PASS: hot lookup scan over 30 mod/API and ModdingSDK editor C# files found no `GlobalRegistry.Get<T>()` or `GetComponent()` inside `Tick`, `FixedUpdate`, `LateFrameTick`, or `Execute`.
+- PASS: build/resource gate before compile found CPU `35`, no active `dotnet`, `csc`, `VBCSCompiler`, or `MSBuild`, and no `Temp/UnityLockfile`.
+- PASS: `dotnet build Assembly-CSharp-Editor.csproj -nologo -clp:ErrorsOnly -maxcpucount:1` -> 0 warnings, 0 errors, 25.91s.
+- CLEANUP: `dotnet build-server shutdown`; follow-up process check showed no remaining `dotnet`, `csc`, `VBCSCompiler`, or `MSBuild`.
+- NOT RUN: Unity MCP/Editor console verification because Unity MCP tools are not available in this session; source/static/CLI/editor-project proof only.
+
+## Pass 86 - Schema 109 Local Mods Dependency Graph Diagnosis
+
+- [x] Task 405: Audit diagnosis mismatch against runtime loader discovery. DOD practice: compared `Tools/diagnose_local_mods.ps1` to `ModLoader.CollectManifestPaths` and `BuildLoadOrder`; found first-level directory scan and no multi-mod dependency model. Rejected alternative: keep a folder listing that can disagree with recursive loader discovery. Runtime us estimate: 0 us/frame, offline SDK only.
+- [x] Task 406: Add recursive manifest discovery and dependency graph diagnosis. DOD practice: diagnosis now uses recursive `mod.json` discovery with the loader manifest cap, records discovery index/manifest path/dependencies, detects duplicate IDs, missing dependencies, dependency cycles/deadlocks, and emits load-order indices plus `DependencyGraph`. Rejected alternative: runtime probing or managed mod activation. Runtime us estimate: 0.
+- [x] Task 407: Integrate graph diagnosis into public surfaces. DOD practice: updated starter docs, capability matrix, file contract, SDK authoring plan, product blueprint, runtime playbook, Workbench help, SDK Hub checked-in fallback strings, local validator capability checks, schema revision 109, and static validator gates. Rejected alternative: source-only tool change with stale author instructions. Runtime us estimate: 0.
+- [x] Task 408: Model dependency edge cases. DOD practice: temp Mods fixture proved base-before-addon load order, duplicate ID count 1, missing dependency count 1, and cycle/deadlock count 2; starter self-diagnosis proved one package ordered under recursive discovery. Rejected alternative: marker-only proof. Runtime us estimate: 0.
+- [x] Task 409: Verify static, hygiene, and throttle gates. DOD practice: PowerShell parser scan PASS, schema JSON parse PASS, starter validate/review/submission PASS, full static validator PASS schema 109, scoped diff check PASS, trailing whitespace PASS, hot lookup scan PASS, and compile gate deferred build because CPU was 52.46 percent with an active dotnet process. Rejected alternative: run `dotnet build` under explicit project throttle violation. Runtime us estimate: 0.
+
+Evidence:
+- PASS: parser scan for `Tools/diagnose_local_mods.ps1`, `Tools/validate_structure.ps1`, and `Docs/Modding/Validate_Mod_API_Static.ps1`.
+- PASS: JSON parse for `Docs/Modding/Signal_Schema.json` schema revision `109`.
+- PASS: artificial dependency graph fixture: ordered base/addon, duplicate ID count `1`, missing dependency count `1`, cycle/deadlock count `2`.
+- PASS: starter self-diagnosis with absolute `-ModsRoot`: package count `1`, `RecursiveManifestDiscovery=True`, ordered count `1`, package dependency status `ordered`.
+- PASS: `powershell -NoProfile -ExecutionPolicy Bypass -File ModdingSDK/ExternalStarterKit/h8mod.ps1 -Action validate` -> `PASS HECTON-8 external starter structure`.
+- PASS: review/submission regeneration -> review manifest and `Generated/com.example.starter_submission.zip` include the schema 109 diagnosis tool/docs.
+- PASS: full `powershell -NoProfile -ExecutionPolicy Bypass -File Docs/Modding/Validate_Mod_API_Static.ps1` -> `Status PASS`, schema revision `109`, `ExternalStarterKitDiagnoseLocalUsesRecursiveManifestDiscovery=True`, `ExternalStarterKitDiagnoseLocalChecksDependencyGraph=True`. Visible `Fail` lines are expected negative fail-closed probes and process exit was `0`.
+- PASS: scoped `git diff --check`; line-ending warnings only, no whitespace errors.
+- PASS: touched-file trailing whitespace scan.
+- PASS: hot lookup scan over ModdingAPI/ModdingSDK C# found no `GlobalRegistry.Get<T>()` or `GetComponent()` inside `Tick`, `FixedUpdate`, `LateFrameTick`, or `Execute`.
+- DEFERRED: targeted `dotnet build` by strict throttle; gate sample showed CPU `52.46` percent and active `dotnet:34244`.

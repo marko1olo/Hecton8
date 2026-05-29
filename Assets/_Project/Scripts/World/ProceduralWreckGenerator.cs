@@ -1209,6 +1209,11 @@ namespace Hecton8.World
         private const string GeneratedProxyMeshName = "ProceduralWreckGenerator_Proxy";
         private const string BlackBoxDumpPath = "Docs/AgentLogs/Dump_1328_WreckGenerator.bin";
         private const SystemID WreckVaultOwner = SystemID.WorldStreaming;
+        private static ulong WreckVaultMutationGuardBit(BufferID bufferId)
+        {
+            return 1UL << (unchecked((int)(uint)(int)bufferId) & 31);
+        }
+
         private const BufferID WreckGeneratorGridBufferId = BufferID.WreckGeneratorGrid;
         private const BufferID WreckGeneratorPropagationQueueBufferId = BufferID.WreckGeneratorPropagationQueue;
         private const BufferID WreckGeneratorAllPlacementsBufferId = BufferID.WreckGeneratorAllPlacements;
@@ -1724,6 +1729,9 @@ namespace Hecton8.World
         private IPlayerRuntimeContext _playerRuntimeContext;
         private HectonVoxelEngine _voxelEngine;
         private IDataVault _dataVault;
+        private IDataVault _wreckVaultBufferGuardVault;
+        private ulong _wreckVaultBufferGuardMask;
+        private bool _wreckVaultBufferGuardHeld;
         private int _activeNavGridObstacleId;
         private int _pendingLootReadIndex;
         private int _pendingLootCount;
@@ -1800,18 +1808,22 @@ namespace Hecton8.World
 
         public void LateFrameTick()
         {
-            FlushOneQueuedLootSpawn();
             FlushBlackBoxDumpIfRequested();
-            if (_pendingLootCount <= 0 && !_blackBoxDumpRequested)
+            if (!_blackBoxDumpRequested)
                 TryUnregisterLootTick();
         }
 
         public void SlowTick()
         {
+            FlushOneQueuedLootSpawn();
             ProcessNearFieldDebris();
             ProcessArtifactDiscovery();
             UpdateDebrisGravityStateless();
             ValidateBlackBoxState();
+            if (_pendingLootCount <= 0 && _debrisRecordCount <= 0 && _artifactRecordCount <= 0)
+                TryUnregisterWreckSlowTick();
+            if (_pendingLootCount <= 0 && !_blackBoxDumpRequested)
+                TryUnregisterLootTick();
         }
 
         public void OnGlobalRegistryServiceReplaced(
@@ -2545,6 +2557,7 @@ namespace Hecton8.World
         private void ReleaseWreckVaultBuffers()
         {
             Interlocked.Increment(ref _wreckVaultEpoch);
+            ReleaseWreckVaultBufferGuard();
 
             _grid.Dispose();
             _propagationQueue.Dispose();
@@ -2587,25 +2600,46 @@ namespace Hecton8.World
         private bool TryLockWreckVaultBuffer(BufferID bufferId)
         {
             IDataVault vault = _dataVault;
+            ulong guardMask = WreckVaultMutationGuardBit(bufferId);
             if (vault == null ||
                 vault.IsCompactionFenceActive ||
-                !vault.TryLockBuffer(bufferId, WreckVaultOwner))
+                _wreckVaultBufferGuardHeld ||
+                !vault.TryAcquireMutationGuard(guardMask))
             {
                 return false;
             }
 
+            _wreckVaultBufferGuardVault = vault;
+            _wreckVaultBufferGuardMask = guardMask;
+            _wreckVaultBufferGuardHeld = true;
             if (!vault.IsCompactionFenceActive)
                 return true;
 
-            vault.TryUnlockBuffer(bufferId, WreckVaultOwner);
+            UnlockWreckVaultBuffer(bufferId);
             return false;
         }
 
         private void UnlockWreckVaultBuffer(BufferID bufferId)
         {
-            IDataVault vault = _dataVault;
+            ulong guardMask = WreckVaultMutationGuardBit(bufferId);
+            if (!_wreckVaultBufferGuardHeld || _wreckVaultBufferGuardMask != guardMask)
+                return;
+
+            ReleaseWreckVaultBufferGuard();
+        }
+
+        private void ReleaseWreckVaultBufferGuard()
+        {
+            if (!_wreckVaultBufferGuardHeld)
+                return;
+
+            IDataVault vault = _wreckVaultBufferGuardVault ?? _dataVault;
             if (vault != null)
-                vault.TryUnlockBuffer(bufferId, WreckVaultOwner);
+                vault.ReleaseMutationGuard(_wreckVaultBufferGuardMask);
+
+            _wreckVaultBufferGuardVault = null;
+            _wreckVaultBufferGuardMask = 0UL;
+            _wreckVaultBufferGuardHeld = false;
         }
 
         private void TryRegisterHotSwapListener()
@@ -3485,13 +3519,13 @@ namespace Hecton8.World
 
         private void TryUnregisterLootTick()
         {
-            if (_registeredLootLateFrame && _pendingLootCount <= 0 && !_blackBoxDumpRequested)
+            if (_registeredLootLateFrame && !_blackBoxDumpRequested)
             {
                 GlobalRegistry.UnregisterLateFrameTickable(this, PriorityLayer.Environment);
                 _registeredLootLateFrame = false;
             }
 
-            if (!_registeredLootTick)
+            if (!_registeredLootTick || _pendingLootCount > 0)
                 return;
 
             GlobalRegistry.UnregisterUpdatable(this, PriorityLayer.Environment);
@@ -3501,14 +3535,17 @@ namespace Hecton8.World
         private void TryRegisterLootTick()
         {
             bool hasPendingLoot = _pendingLootCount > 0;
-            bool needsLateFrame = hasPendingLoot || _blackBoxDumpRequested;
-            if (!needsLateFrame || !Application.isPlaying || _dispatcher == null)
+            bool needsLateFrame = _blackBoxDumpRequested;
+            if (!hasPendingLoot && !needsLateFrame)
                 return;
 
-            if (hasPendingLoot && !_registeredLootTick)
-                _registeredLootTick = GlobalRegistry.TryRegisterUpdatable(this, PriorityLayer.Environment);
+            if (!Application.isPlaying || _dispatcher == null)
+                return;
 
-            if (!_registeredLootLateFrame)
+            if (hasPendingLoot)
+                TryRegisterWreckSlowTick();
+
+            if (needsLateFrame && !_registeredLootLateFrame)
                 _registeredLootLateFrame = GlobalRegistry.TryRegisterLateFrameTickable(this, PriorityLayer.Environment);
         }
 
@@ -4608,7 +4645,7 @@ namespace Hecton8.World
             if (_registeredWreckSlowTick || !Application.isPlaying || _dispatcher == null)
                 return;
 
-            if (_debrisRecordCount <= 0 && _artifactRecordCount <= 0)
+            if (_debrisRecordCount <= 0 && _artifactRecordCount <= 0 && _pendingLootCount <= 0)
                 return;
 
             _registeredWreckSlowTick = GlobalRegistry.TryRegisterSlowTickable(this, PriorityLayer.Environment);

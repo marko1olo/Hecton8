@@ -2581,3 +2581,178 @@ Verification:
 - PASS: targeted `dotnet build Assembly-CSharp-Editor.csproj -nologo -clp:ErrorsOnly -maxcpucount:1` passed with 0 warnings and 0 errors in 21.53s.
 - CLEANUP: no `dotnet`, `csc`, `VBCSCompiler`, or `MSBuild` processes remain.
 - NOT RUN: Unity MCP/Editor console verification because Unity MCP tools are not available in this session.
+
+## 2026-05-29 - Schema 106 First Playable Mod Onboarding
+
+What was wrong:
+- External authors had safe primitives, but no single obvious path from copied starter folder to a first valid mod draft.
+- A random VS Code/PowerShell user still had to chain identity, manifest, graph, setting, locale, validation, and review commands manually.
+- The new onboarding helper initially exposed `-Json` while child tools could still write host output, which would break automation parsers.
+
+What was done:
+- Added `ModdingSDK/ExternalStarterKit/Tools/create_first_mod.ps1`.
+- Added `h8mod.ps1 -Action first-mod` with `-Replace` and optional `-BuildSubmission`.
+- Added VS Code task `HECTON-8: create first playable mod`.
+- Integrated the new tool into SDK Hub checked-in template generation.
+- Extended local starter validation to require the first-mod task, route, `-Replace`, and tool file.
+- Moved docs/schema/runtime playbook/static proof to schema revision `106`.
+- Made first-mod `-Json` output clean by suppressing child tool host output during JSON mode.
+- Rebuilt checked-in `Reports/review_manifest.json` so package review includes `Tools/create_first_mod.ps1`.
+
+Cinematic Cheats used:
+- No runtime mod authority was expanded.
+- The implementation composes existing offline SDK helpers instead of adding managed DLL/Harmony/BepInEx execution.
+- Runtime remains envelope-only; FutureCommandEnvelope, HectonEventBus, SignalBus, GlobalRegistry, GlobalDataVault, save, rendering, Burst/jobs, telemetry, and `GlobalQualityWeight` routes are untouched.
+
+Exact Microseconds saved:
+- Runtime frame cost: 0 us/frame.
+- Practical authoring cost removed: first mod draft creation is one command/task instead of a multi-step manual JSON workflow.
+
+Verification:
+- PASS: PowerShell parser scan for static validator, root launcher, first-mod tool, and starter validator.
+- PASS: checked-in starter `h8mod.ps1 -Action validate`.
+- PASS: schema probe found `Signal_Schema.json` revision `106`, first-mod tool flag true, root launcher first-mod flag true, and matching last-static snapshot flags.
+- PASS: temp-copy JSON first-mod flow produced clean `hecton8.first_mod.v1`, one graph node, one setting row, locale key `text.first_mod_ready`, and review manifest including `Tools/create_first_mod.ps1`.
+- PASS: temp-copy launcher first-mod flow created the same graph/settings/locale draft through the public root launcher.
+- PASS: rerunning launcher first-mod with `-Replace` kept counts stable: one graph node, one setting row, one locale key.
+- PASS: checked-in review manifest parsed as `hecton8.external_review_manifest.v1`, runtime `envelope-only`, `39` source files, includes `Tools/create_first_mod.ps1`, excludes `Generated/` and `Reports/`.
+- PASS: targeted marker probe proved SDK Hub root launcher template route, SDK Hub first-mod tool route, checked-in tool existence, launcher first-mod route, VS Code first-mod task, `-Replace`, and local validator first-mod gates.
+- PASS: scoped `git diff --check` and touched-file trailing whitespace scan. Git line-ending warnings only.
+- TIMEOUT: full `Docs/Modding/Validate_Mod_API_Static.ps1` rerun timed out after 425 seconds after the old root-launcher marker was fixed; no full static PASS is claimed for schema 106 in this pass.
+- PASS: build/resource gate found CPU `13`, no active compiler/build processes, and no Unity lock.
+- PASS: `dotnet build Assembly-CSharp-Editor.csproj -nologo -clp:ErrorsOnly -maxcpucount:1` passed with 0 warnings and 0 errors in 53.96s.
+- CLEANUP: `dotnet build-server shutdown`; follow-up process check showed no remaining `dotnet`, `csc`, `VBCSCompiler`, or `MSBuild`.
+- NOT RUN: Unity MCP/Editor console verification because Unity MCP tools are not available in this session.
+
+## 2026-05-29 - Pass 83 APEX Integrator Source Guard
+
+What was wrong:
+- `ApexIntegratorSourceGuard` existed but only covered a narrow hand-picked source set, so it did not prove DataVault lock flattening inside the actual mod sandbox validator.
+- `TryAcquireVaultLaneWrite` released invalid buffers through a direct branch, not a strict failure-path `finally`.
+- Several callers still had redundant post-acquire `Length == 0` checks that were unreachable under current lane invariants but could become a lock leak vector if future lane creation drifted.
+
+What was done:
+- Expanded the guard to enumerate the full `Assets/_Project/Scripts/ModdingAPI` and `Assets/_Project/Scripts/Editor/ModdingSDK` C# scope.
+- Added hot-GC token scanning for runtime hot methods and wrapper-aware DataVault write-lock scanning for `TryAcquireVaultLaneWrite`.
+- Moved build-token scanning onto masked source so comments/strings do not create false compiler-process proof failures.
+- Changed `TryAcquireVaultLaneWrite` to release failed acquisitions in `finally` and removed redundant post-acquire zero-length branches from callers.
+
+Cinematic Cheats used:
+- None. This is source governance and lock hygiene, not visual simulation.
+
+Exact Microseconds saved:
+- Runtime frame savings: 0 us/frame.
+- Failure-path risk reduction: avoids a possible DataVault write-lock leak on future lane invariant drift.
+- Build CPU saved: no `dotnet build` launched while CPU was 90.56-98.45 percent and `dotnet`/`VBCSCompiler` were already active.
+
+Evidence:
+- PASS: APEX static scan over 30 files, 748 methods, 2 hot methods: hot lookup 0, phase 0, hot-GC 0, DataVault lock 0, build tokens 0.
+- PASS: `git diff --check` on touched C# files; line-ending warnings only.
+- PASS: touched-file trailing whitespace scan.
+- DEFERRED: compilation by strict throttle, not by failure.
+
+## Pass 84 - Schema 107 Local Discovery Install UX
+
+What was wrong:
+- External authors could create a first playable starter package and submission zip, but there was no bounded public route to put a reviewed package into a local HECTON-8 `Mods/<mod-id>` folder.
+- Any naive local copy would skip byte/hash proof, copy `Generated/` artifacts, and look like runtime activation even though loader-managed entries and loose content ingestion remain disabled.
+- SDK Hub, Workbench, VS Code, local validator, static schema, review manifest, and docs needed one shared install contract to avoid drift.
+
+What was done:
+- Added `ModdingSDK/ExternalStarterKit/Tools/install_local_mod.ps1`.
+- Added `h8mod.ps1 -Action install-local` with `-ProjectRoot`, `-ModsRoot`, `-Replace`, and `-Json`.
+- Added VS Code task `HECTON-8: install local discovery copy` and `projectRoot` input.
+- Added Unity External Starter Kit Workbench local discovery install panel.
+- Wired SDK Hub generation to emit the checked-in install helper.
+- Extended `Tools/validate_structure.ps1`, `Validate_Mod_API_Static.ps1`, `Signal_Schema.json` schema 107, `Runtime_Verification_Playbook.md`, `External_Starter_Kit_File_Contract.md`, starter README/Tools README/capabilities docs, checked-in review manifest, and submission zip.
+- Fixed stale static proof markers for root launcher `install-local` and first-mod `[switch]$BuildSubmission` while running full schema 107 validation.
+
+Cinematic Cheats used:
+- None. This is offline SDK packaging/install UX, not visual simulation.
+
+Exact Microseconds saved:
+- Runtime frame savings: 0 us/frame.
+- Authoring/install risk reduction: local mod folders are copied only from reviewed source files with byte/SHA-256 proof, no `Generated/` or `Reports/` source entries, and no unbounded staging cleanup.
+- Build CPU saved: no build launched while CPU was 58.46 percent; targeted build launched once only after CPU dropped to 21.65 percent and compiler/Unity gates were clear.
+
+Evidence:
+- PASS: parser scan for changed PowerShell scripts.
+- PASS: JSON parse for `.vscode/tasks.json` and `Signal_Schema.json`.
+- PASS: starter validate/review/submission commands.
+- PASS: temp-copy first-mod plus install-local modeled flow, duplicate-without-Replace rejection, JSON install schema `hecton8.local_install.v1`, direct `-ModsRoot` install, no staging leftovers.
+- PASS: full `Docs/Modding/Validate_Mod_API_Static.ps1` with `Status PASS`, schema revision 107.
+- PASS: review manifest includes `Tools/install_local_mod.ps1`, `FileCount=40`, runtime `envelope-only`, no generated/report source entries.
+- PASS: submission zip includes `Tools/install_local_mod.ps1` and `Reports/review_manifest.json`, 41 entries, no temp/generated artifacts.
+- PASS: scoped `git diff --check`, trailing whitespace scan, and touched-file hot lookup/DataVault token scan.
+- PASS: `dotnet build Assembly-CSharp-Editor.csproj -nologo -clp:ErrorsOnly -maxcpucount:1` -> 0 warnings, 0 errors, 22.11s.
+- CLEANUP: `dotnet build-server shutdown`; remaining `dotnet` process belongs to another agent's `Hecton8.Core.csproj` build.
+
+## Pass 85 - Schema 108 Local Mods Diagnosis UX
+
+What was wrong:
+- External authors could create and install a reviewed starter package, but they still had no single SDK route to diagnose the local game `Mods` folder.
+- A reviewed package copied into `Mods/<mod-id>` could be tampered after install without an obvious author-facing warning.
+- The current runtime boundary was easy to misunderstand: valid local packages are discoverable, but managed entry assemblies and loose content ingestion remain disabled.
+- SDK Hub, Workbench, VS Code, local validator, schema, docs, review manifest, and generated starter templates needed the same diagnosis contract to avoid drift.
+
+What was done:
+- Added `ModdingSDK/ExternalStarterKit/Tools/diagnose_local_mods.ps1`.
+- Added `h8mod.ps1 -Action diagnose-local` with `-ProjectRoot`, `-ModsRoot`, and `-Json`.
+- Added VS Code task `HECTON-8: diagnose local Mods folder`.
+- Added Unity External Starter Kit Workbench local diagnosis controls.
+- Wired SDK Hub generated starter kits to emit the checked-in diagnosis helper and root launcher route.
+- Extended `Tools/validate_structure.ps1`, `Validate_Mod_API_Static.ps1`, `Signal_Schema.json` schema 108, runtime playbook, file contract, SDK authoring plan, SDK product blueprint, starter README, Tools README, capabilities guide, checked-in review manifest, and submission zip.
+- Fixed root launcher JSON forwarding for diagnosis so `-Json` reaches the inner diagnosis tool from both checked-in and SDK Hub generated launchers.
+
+Cinematic Cheats used:
+- None. This is offline SDK diagnosis and package-integrity UX, not visual simulation.
+
+Exact Microseconds saved:
+- Runtime frame savings: 0 us/frame.
+- Authoring/debug cost removed: a local mod diagnosis is one root command/task instead of manual `Mods` folder, manifest, hash, and review inspection.
+- Build CPU saved: no full solution rebuild was launched; one targeted editor build ran after CPU/process/Unity gates were open.
+
+Evidence:
+- PASS: parser scan for static validator, root launcher, diagnosis helper, and starter validator.
+- PASS: JSON parse for `.vscode/tasks.json` and `Signal_Schema.json` revision 108.
+- PASS: checked-in starter `h8mod.ps1 -Action validate`.
+- PASS: root local diagnosis JSON returned schema `hecton8.local_mods_diagnosis.v1`, runtime `envelope-only`, no local packages for the real project when `Mods` root is absent.
+- PASS: temp-copy external flow created `com.yourname.diagnosetest`, installed it into fake project `Mods`, then diagnosed one package as `DISABLED_BY_RUNTIME_BOUNDARY`, `ReviewStatus=ok`, zero issues, `BoundaryDisabledCount=1`.
+- PASS: tamper probe changed installed `README.md`; diagnosis reported `ReviewStatus=invalid` and byte mismatch.
+- PASS: review manifest includes `Tools/diagnose_local_mods.ps1`, `FileCount=41`, `TotalBytes=258577`, runtime `envelope-only`, no generated/report source entries.
+- PASS: submission zip includes `Tools/diagnose_local_mods.ps1` and `Reports/review_manifest.json`, 42 entries, no `Generated/*`.
+- PASS: full `Docs/Modding/Validate_Mod_API_Static.ps1` with `Status PASS`, schema revision 108.
+- PASS: scoped `git diff --check`, trailing whitespace scan, and hot lookup scan over 30 C# files.
+- PASS: `dotnet build Assembly-CSharp-Editor.csproj -nologo -clp:ErrorsOnly -maxcpucount:1` -> 0 warnings, 0 errors, 25.91s.
+- CLEANUP: `dotnet build-server shutdown`; follow-up process check showed no compiler/build processes.
+
+## Pass 86 - Schema 109 Local Mods Dependency Graph Diagnosis
+
+What was wrong:
+- `Tools/diagnose_local_mods.ps1` did not match the runtime loader's recursive `mod.json` discovery; it inspected first-level folders only.
+- The diagnosis did not model duplicate mod IDs, missing dependencies, dependency cycles, or load order, so a random external author could not understand why a multi-mod local set would be disabled before activation.
+- Docs/schema/static proof still described only manifest/review/boundary diagnosis, not the actual package graph the loader uses.
+
+What was done:
+- Updated `Tools/diagnose_local_mods.ps1` to recursively enumerate `mod.json` files with the same 64-manifest cap, record manifest path and discovery index, parse dependency IDs, and emit `DependencyGraph`.
+- Added offline loader-like graph resolution: first duplicate ID is kept, later duplicates are invalid; missing dependencies invalidate the package; no-progress unresolved sets become `cycle_or_deadlock`; ordered packages receive `LoadOrderIndex`.
+- Updated `Validate_Mod_API_Static.ps1`, `Signal_Schema.json` schema 109, runtime playbook, file contract, SDK authoring plan, SDK product blueprint, contract index, mod API spec, starter README, Tools README, capability guide, Workbench help text, SDK Hub fallback template strings, and local validator capability text checks.
+- Regenerated `Reports/review_manifest.json` and `Generated/com.example.starter_submission.zip`.
+
+Cinematic Cheats used:
+- None. This is offline SDK diagnosis and authoring UX, not visual simulation.
+
+Exact Microseconds saved:
+- Runtime frame savings: 0 us/frame.
+- Authoring/debug cost removed: multi-mod local dependency failures are visible in one no-Unity JSON/text diagnosis before runtime loader startup.
+- Build CPU saved: no `dotnet build` was launched because the strict gate sampled CPU 52.46 percent with active `dotnet:34244`.
+
+Evidence:
+- PASS: PowerShell parser scan for diagnosis helper, starter validator, and static validator.
+- PASS: `Signal_Schema.json` parse and schema revision 109.
+- PASS: artificial Mods fixture proved ordered base/addon, duplicate count 1, missing dependency count 1, cycle/deadlock count 2.
+- PASS: starter self-diagnosis found package count 1, recursive discovery true, ordered count 1, package dependency status ordered.
+- PASS: `h8mod.ps1 -Action validate`, `h8mod.ps1 -Action review`, and `h8mod.ps1 -Action submission`.
+- PASS: full `Docs/Modding/Validate_Mod_API_Static.ps1` with `Status PASS`, schema revision 109, recursive diagnosis and dependency graph flags true. Visible `Fail` lines were expected negative fail-closed probes.
+- PASS: scoped `git diff --check`, trailing whitespace scan, and hot lookup scan over ModdingAPI/ModdingSDK C#.
+- DEFERRED: targeted editor build by throttle; CPU 52.46 percent and active dotnet process.

@@ -29,6 +29,8 @@ namespace Crest
         static readonly int sp_CrestViewProjectionMatrix = Shader.PropertyToID("_CrestViewProjectionMatrix");
 
         int _xrTargetEyeIndex = -1;
+        Camera _cameraDataCamera;
+        HDAdditionalCameraData _cameraData;
 
         protected override void Execute(CustomPassContext context)
         {
@@ -53,7 +55,12 @@ namespace Crest
             // TODO: bail when not executing for main light or when no main light exists?
             // if (renderingData.lightData.mainLightIndex == -1) return;
 
-            camera.TryGetComponent<HDAdditionalCameraData>(out var cameraData);
+            if (!ReferenceEquals(camera, _cameraDataCamera))
+            {
+                RefreshCameraData(camera);
+            }
+
+            var cameraData = _cameraData;
 
             if (cameraData != null && cameraData.xrRendering)
             {
@@ -84,6 +91,17 @@ namespace Crest
             if (cameraData != null && cameraData.xrRendering && XRHelpers.IsSinglePass)
             {
                 context.cmd.EnableShaderKeyword("STEREO_INSTANCING_ON");
+            }
+        }
+
+        void RefreshCameraData(Camera camera)
+        {
+            _cameraDataCamera = camera;
+            _cameraData = null;
+
+            if (camera != null)
+            {
+                camera.TryGetComponent(out _cameraData);
             }
         }
 

@@ -97,6 +97,12 @@ namespace Hecton8.Core.Scheduling
                 return;
             }
 
+            if (dataVault.IsAllocationLocked || dataVault.IsCompactionFenceActive)
+            {
+                ResetRuntimeState(clearTelemetrySink: false);
+                return;
+            }
+
             _dataVault = dataVault;
             _laneBudgetsMsHandle = dataVault.EnsureGenerationHandle<float>(
                 BufferID.JobAdmissionLaneBudgets,

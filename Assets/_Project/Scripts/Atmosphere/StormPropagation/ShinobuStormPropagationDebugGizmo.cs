@@ -12,6 +12,8 @@ namespace Hecton8.Atmosphere
     public sealed unsafe class ShinobuStormPropagationDebugGizmo : MonoBehaviour
     {
         private const SystemID OwnerSystem = SystemID.HabitatAtmosphere;
+        private static readonly ulong StormStateMutationGuardMask =
+            StormStateMutationGuardBit(BufferID.ShinobuStormPropagationState);
 
         [SerializeField] private float radiusMeters = 12f;
         [SerializeField] private float heightMeters = 36f;
@@ -21,7 +23,7 @@ namespace Hecton8.Atmosphere
             IDataVault vault = GlobalRegistry.DataVault;
             if (vault == null ||
                 vault.IsCompactionFenceActive ||
-                !vault.TryLockBuffer(BufferID.ShinobuStormPropagationState, OwnerSystem))
+                !vault.TryAcquireMutationGuard(StormStateMutationGuardMask))
             {
                 return;
             }
@@ -41,7 +43,7 @@ namespace Hecton8.Atmosphere
             }
             finally
             {
-                vault.TryUnlockBuffer(BufferID.ShinobuStormPropagationState, OwnerSystem);
+                vault.ReleaseMutationGuard(StormStateMutationGuardMask);
             }
 
             float turbidity = math.clamp(math.isfinite(dto.TurbidityScalar) ? dto.TurbidityScalar : 1f, 1f, 4f);
@@ -72,6 +74,11 @@ namespace Hecton8.Atmosphere
                 Gizmos.DrawLine(previous, current);
                 previous = current;
             }
+        }
+
+        private static ulong StormStateMutationGuardBit(BufferID bufferId)
+        {
+            return 1UL << (unchecked((int)(uint)(int)bufferId) & 63);
         }
     }
 }

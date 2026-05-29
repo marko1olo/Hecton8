@@ -777,6 +777,16 @@ namespace Hecton8.Core
 
         private void OnDisable()
         {
+            ShutdownForLifecycle();
+        }
+
+        private void OnDestroy()
+        {
+            ShutdownForLifecycle();
+        }
+
+        private void ShutdownForLifecycle()
+        {
             UnregisterInputHook();
             TryUnregisterHotSwapListener();
             if (_registeredLateFrame != 0)

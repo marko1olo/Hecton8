@@ -15,6 +15,8 @@ namespace Hecton8.EditorTools
         private const string DecayKey = "H8.JacobianFoam.DecayRate";
         private const string ShorelineKey = "H8.JacobianFoam.ShorelineDepthFade";
         private const string QualityKey = "H8.JacobianFoam.QualityOverride";
+        private static readonly ulong TuningMutationGuardMask =
+            JacobianFoamMutationGuardBit(BufferID.JacobianFoamTuning);
 
         private Slider _pinchSlider;
         private Slider _decaySlider;
@@ -114,7 +116,7 @@ namespace Hecton8.EditorTools
                     NativeArrayOptions.ClearMemory);
             }
 
-            if (!vault.TryLockBuffer(BufferID.JacobianFoamTuning, SystemID.Vfx))
+            if (!vault.TryAcquireMutationGuard(TuningMutationGuardMask))
             {
                 SetStatus("JacobianFoamTuning locked by owner.");
                 return;
@@ -143,7 +145,7 @@ namespace Hecton8.EditorTools
             }
             finally
             {
-                vault.TryUnlockBuffer(BufferID.JacobianFoamTuning, SystemID.Vfx);
+                vault.ReleaseMutationGuard(TuningMutationGuardMask);
             }
         }
 
@@ -267,6 +269,11 @@ namespace Hecton8.EditorTools
         private static bool IsHandleCreated<T>(in VaultGenerationHandle<T> handle, BufferID bufferId) where T : struct
         {
             return handle.BufferID == unchecked((uint)(int)bufferId) && handle.Generation != 0u;
+        }
+
+        private static ulong JacobianFoamMutationGuardBit(BufferID bufferId)
+        {
+            return 1UL << ((int)bufferId & 31);
         }
 
         private static bool OpenLane<T>(

@@ -189,6 +189,8 @@ namespace Hecton8.Caves
             VoxelDeltaMutationGuardBit(BufferID.SaveVoxelDeltaCompactionOutputMaterialsScratch) |
             VoxelDeltaMutationGuardBit(BufferID.SaveVoxelDeltaCompactionOutputFlagsScratch) |
             VoxelDeltaMutationGuardBit(BufferID.SaveVoxelDeltaCompactionUniformFlagScratch);
+        private static readonly ulong ScheduledCarveWritesMutationGuardMask =
+            VoxelDeltaMutationGuardBit(BufferID.ShinobuDeltaCrusherCarveWrites);
         // COLD ALLOC: Vector4[16] - shader heat ring position-radius upload - owner: VoxelDeltaProcessor
         private static readonly Vector4[] s_recentCutHeatPositionRadius = new Vector4[RecentCutHeatMax];
         // COLD ALLOC: Vector4[16] - shader heat ring strength-time upload - owner: VoxelDeltaProcessor
@@ -261,6 +263,7 @@ namespace Hecton8.Caves
         private VaultGenerationHandle<CarveCellWrite> _scheduledCarveWritesHandle;
         private int _scheduledCarveWritesCapacity;
         private bool _scheduledCarveWritesLocked;
+        private IDataVault _scheduledCarveWritesGuardVault;
         // COLD ALLOC: PendingCompactionRequest[16] - bounded background dirty-chunk compaction queue - owner: VoxelDeltaProcessor
         private readonly PendingCompactionRequest[] _pendingCompactions = new PendingCompactionRequest[InitialPendingCompactionCapacity];
         private int _pendingCompactionHead;
@@ -5295,12 +5298,11 @@ namespace Hecton8.Caves
             if (!IsExactVaultHandle(in _scheduledCarveWritesHandle, BufferID.ShinobuDeltaCrusherCarveWrites) ||
                 _scheduledCarveWritesCapacity < ScheduledCarveWriteCapacity ||
                 vault.IsCompactionFenceActive ||
-                !vault.TryLockBuffer(BufferID.ShinobuDeltaCrusherCarveWrites, SystemID.TerrainSeams))
+                !TryAcquireScheduledCarveWritesGuard(vault))
             {
                 return false;
             }
 
-            _scheduledCarveWritesLocked = true;
             if (vault.IsCompactionFenceActive)
             {
                 UnlockScheduledCarveWrites();
@@ -5381,11 +5383,10 @@ namespace Hecton8.Caves
             if (!_scheduledCarveWritesLocked)
                 return;
 
-            IDataVault vault = ResolveDataVault();
-            if (vault != null)
-                vault.TryUnlockBuffer(BufferID.ShinobuDeltaCrusherCarveWrites, SystemID.TerrainSeams);
-
             _scheduledCarveWritesLocked = false;
+            IDataVault vault = _scheduledCarveWritesGuardVault;
+            _scheduledCarveWritesGuardVault = null;
+            vault?.ReleaseMutationGuard(ScheduledCarveWritesMutationGuardMask);
         }
 
         private bool TryAcquireScheduledCarveWritesForCommit(out NativeArray<CarveCellWrite> writes)
@@ -5398,10 +5399,9 @@ namespace Hecton8.Caves
             if (vault == null ||
                 vault.IsCompactionFenceActive ||
                 !IsExactVaultHandle(in _scheduledCarveWritesHandle, BufferID.ShinobuDeltaCrusherCarveWrites) ||
-                !vault.TryLockBuffer(BufferID.ShinobuDeltaCrusherCarveWrites, SystemID.TerrainSeams))
+                !TryAcquireScheduledCarveWritesGuard(vault))
                 return false;
 
-            _scheduledCarveWritesLocked = true;
             if (vault.IsCompactionFenceActive)
             {
                 UnlockScheduledCarveWrites();
@@ -5421,6 +5421,19 @@ namespace Hecton8.Caves
             }
 
             _scheduledCarveWritesCapacity = math.max(_scheduledCarveWritesCapacity, writes.Length);
+            return true;
+        }
+
+        private bool TryAcquireScheduledCarveWritesGuard(IDataVault vault)
+        {
+            if (_scheduledCarveWritesLocked || vault == null || vault.IsCompactionFenceActive)
+                return false;
+
+            if (!vault.TryAcquireMutationGuard(ScheduledCarveWritesMutationGuardMask))
+                return false;
+
+            _scheduledCarveWritesGuardVault = vault;
+            _scheduledCarveWritesLocked = true;
             return true;
         }
 

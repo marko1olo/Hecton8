@@ -200,7 +200,7 @@ namespace Hecton8.Physics
                 return;
             float solverDeltaTime = _simulationAccumulator;
 
-            if (!_buffersReady && !EnsureBuffersInitialized())
+            if (!_buffersReady && !EnsureBuffersInitialized(false))
                 return;
 
             if (!TryAcquireFluidSimulationMutationGuard())
@@ -821,6 +821,7 @@ namespace Hecton8.Physics
             BufferID bufferId,
             int requiredLength,
             NativeArrayOptions options,
+            bool allowColdInitialization,
             out NativeArray<T> buffer)
             where T : struct
         {
@@ -833,7 +834,7 @@ namespace Hecton8.Physics
                 return false;
             }
 
-            if (_vault.IsAllocationLocked)
+            if (_vault.IsAllocationLocked || _vault.IsCompactionFenceActive)
             {
                 if (!_vault.TryGetGenerationHandle(bufferId, out VaultGenerationHandle<T> existingHandle) ||
                     !IsFluidVaultHandle(in existingHandle, bufferId))
@@ -845,6 +846,9 @@ namespace Hecton8.Physics
                 handle = existingHandle;
                 return TryOpenFluidVaultBuffer(ref handle, bufferId, requiredLength, out buffer);
             }
+
+            if (!allowColdInitialization)
+                return false;
 
             handle = _vault.EnsureGenerationHandle<T>(
                 bufferId,
@@ -897,8 +901,11 @@ namespace Hecton8.Physics
                    handle.Generation != 0u;
         }
 
-        private bool EnsureBuffersInitialized()
+        private bool EnsureBuffersInitialized(bool allowColdInitialization = true)
         {
+            if (!allowColdInitialization)
+                return _buffersReady;
+
             if (_cachedTransform == null)
                 _cachedTransform = transform;
 
@@ -908,25 +915,25 @@ namespace Hecton8.Physics
             int safeCount = math.clamp(compartmentCount, 1, HabitatFluidIncursionConstants.MaxCompartments);
             int edgeCapacity = HabitatFluidIncursionConstants.MaxEdges;
             bool buffersReady =
-                OpenOrAcquireFluidVaultBuffer(ref _frontHandle, BufferID.ShinobuFluidCompartmentFront, safeCount, NativeArrayOptions.UninitializedMemory, out _) &&
-                OpenOrAcquireFluidVaultBuffer(ref _backHandle, BufferID.ShinobuFluidCompartmentBack, safeCount, NativeArrayOptions.UninitializedMemory, out _) &&
-                OpenOrAcquireFluidVaultBuffer(ref _integrityHandle, BufferID.ShinobuFluidIntegrityState, safeCount, NativeArrayOptions.UninitializedMemory, out _) &&
-                OpenOrAcquireFluidVaultBuffer(ref _edgeOffsetsHandle, BufferID.ShinobuFluidEdgeOffsets, safeCount + 1, NativeArrayOptions.UninitializedMemory, out _) &&
-                OpenOrAcquireFluidVaultBuffer(ref _edgeDestinationsHandle, BufferID.ShinobuFluidEdgeDestinations, edgeCapacity, NativeArrayOptions.UninitializedMemory, out _) &&
-                OpenOrAcquireFluidVaultBuffer(ref _edgeFlagsHandle, BufferID.ShinobuFluidEdgeFlags, edgeCapacity, NativeArrayOptions.UninitializedMemory, out _) &&
-                OpenOrAcquireFluidVaultBuffer(ref _edgeConductivityHandle, BufferID.ShinobuFluidEdgeConductivity, edgeCapacity, NativeArrayOptions.UninitializedMemory, out _) &&
-                OpenOrAcquireFluidVaultBuffer(ref _centroidsHandle, BufferID.ShinobuFluidCompartmentCentroids, safeCount, NativeArrayOptions.UninitializedMemory, out _) &&
-                OpenOrAcquireFluidVaultBuffer(ref _waterlineHandle, BufferID.ShinobuFluidWaterlineShader, safeCount, NativeArrayOptions.UninitializedMemory, out _) &&
-                OpenOrAcquireFluidVaultBuffer(ref _massStateHandle, BufferID.ShinobuFluidMassState, 1, NativeArrayOptions.UninitializedMemory, out _) &&
-                OpenOrAcquireFluidVaultBuffer(ref _tuningHandle, BufferID.ShinobuFluidTuning, 1, NativeArrayOptions.UninitializedMemory, out _) &&
-                OpenOrAcquireFluidVaultBuffer(ref _telemetryHandle, BufferID.ShinobuFluidTelemetryRing, HabitatFluidIncursionConstants.TelemetryFrameCount, NativeArrayOptions.UninitializedMemory, out _) &&
-                OpenOrAcquireFluidVaultBuffer(ref _compartmentTelemetryHandle, BufferID.ShinobuFluidCompartmentTelemetry, safeCount, NativeArrayOptions.UninitializedMemory, out _) &&
-                OpenOrAcquireFluidVaultBuffer(ref _telemetryCursorHandle, BufferID.ShinobuFluidTelemetryCursor, 1, NativeArrayOptions.UninitializedMemory, out _) &&
-                OpenOrAcquireFluidVaultBuffer(ref _bfsQueueHandle, BufferID.ShinobuFluidBfsQueue, safeCount, NativeArrayOptions.UninitializedMemory, out _) &&
-                OpenOrAcquireFluidVaultBuffer(ref _bfsVisitedHandle, BufferID.ShinobuFluidBfsVisited, safeCount, NativeArrayOptions.UninitializedMemory, out _) &&
-                OpenOrAcquireFluidVaultBuffer(ref _deltaVolumesHandle, BufferID.ShinobuFluidDeltaVolumes, safeCount, NativeArrayOptions.UninitializedMemory, out _) &&
-                OpenOrAcquireFluidVaultBuffer(ref _transferRemaindersHandle, BufferID.ShinobuFluidTransferRemainders, edgeCapacity, NativeArrayOptions.UninitializedMemory, out _) &&
-                OpenOrAcquireFluidVaultBuffer(ref _summaryHandle, BufferID.ShinobuFluidFrameSummary, 1, NativeArrayOptions.UninitializedMemory, out _);
+                OpenOrAcquireFluidVaultBuffer(ref _frontHandle, BufferID.ShinobuFluidCompartmentFront, safeCount, NativeArrayOptions.UninitializedMemory, allowColdInitialization, out _) &&
+                OpenOrAcquireFluidVaultBuffer(ref _backHandle, BufferID.ShinobuFluidCompartmentBack, safeCount, NativeArrayOptions.UninitializedMemory, allowColdInitialization, out _) &&
+                OpenOrAcquireFluidVaultBuffer(ref _integrityHandle, BufferID.ShinobuFluidIntegrityState, safeCount, NativeArrayOptions.UninitializedMemory, allowColdInitialization, out _) &&
+                OpenOrAcquireFluidVaultBuffer(ref _edgeOffsetsHandle, BufferID.ShinobuFluidEdgeOffsets, safeCount + 1, NativeArrayOptions.UninitializedMemory, allowColdInitialization, out _) &&
+                OpenOrAcquireFluidVaultBuffer(ref _edgeDestinationsHandle, BufferID.ShinobuFluidEdgeDestinations, edgeCapacity, NativeArrayOptions.UninitializedMemory, allowColdInitialization, out _) &&
+                OpenOrAcquireFluidVaultBuffer(ref _edgeFlagsHandle, BufferID.ShinobuFluidEdgeFlags, edgeCapacity, NativeArrayOptions.UninitializedMemory, allowColdInitialization, out _) &&
+                OpenOrAcquireFluidVaultBuffer(ref _edgeConductivityHandle, BufferID.ShinobuFluidEdgeConductivity, edgeCapacity, NativeArrayOptions.UninitializedMemory, allowColdInitialization, out _) &&
+                OpenOrAcquireFluidVaultBuffer(ref _centroidsHandle, BufferID.ShinobuFluidCompartmentCentroids, safeCount, NativeArrayOptions.UninitializedMemory, allowColdInitialization, out _) &&
+                OpenOrAcquireFluidVaultBuffer(ref _waterlineHandle, BufferID.ShinobuFluidWaterlineShader, safeCount, NativeArrayOptions.UninitializedMemory, allowColdInitialization, out _) &&
+                OpenOrAcquireFluidVaultBuffer(ref _massStateHandle, BufferID.ShinobuFluidMassState, 1, NativeArrayOptions.UninitializedMemory, allowColdInitialization, out _) &&
+                OpenOrAcquireFluidVaultBuffer(ref _tuningHandle, BufferID.ShinobuFluidTuning, 1, NativeArrayOptions.UninitializedMemory, allowColdInitialization, out _) &&
+                OpenOrAcquireFluidVaultBuffer(ref _telemetryHandle, BufferID.ShinobuFluidTelemetryRing, HabitatFluidIncursionConstants.TelemetryFrameCount, NativeArrayOptions.UninitializedMemory, allowColdInitialization, out _) &&
+                OpenOrAcquireFluidVaultBuffer(ref _compartmentTelemetryHandle, BufferID.ShinobuFluidCompartmentTelemetry, safeCount, NativeArrayOptions.UninitializedMemory, allowColdInitialization, out _) &&
+                OpenOrAcquireFluidVaultBuffer(ref _telemetryCursorHandle, BufferID.ShinobuFluidTelemetryCursor, 1, NativeArrayOptions.UninitializedMemory, allowColdInitialization, out _) &&
+                OpenOrAcquireFluidVaultBuffer(ref _bfsQueueHandle, BufferID.ShinobuFluidBfsQueue, safeCount, NativeArrayOptions.UninitializedMemory, allowColdInitialization, out _) &&
+                OpenOrAcquireFluidVaultBuffer(ref _bfsVisitedHandle, BufferID.ShinobuFluidBfsVisited, safeCount, NativeArrayOptions.UninitializedMemory, allowColdInitialization, out _) &&
+                OpenOrAcquireFluidVaultBuffer(ref _deltaVolumesHandle, BufferID.ShinobuFluidDeltaVolumes, safeCount, NativeArrayOptions.UninitializedMemory, allowColdInitialization, out _) &&
+                OpenOrAcquireFluidVaultBuffer(ref _transferRemaindersHandle, BufferID.ShinobuFluidTransferRemainders, edgeCapacity, NativeArrayOptions.UninitializedMemory, allowColdInitialization, out _) &&
+                OpenOrAcquireFluidVaultBuffer(ref _summaryHandle, BufferID.ShinobuFluidFrameSummary, 1, NativeArrayOptions.UninitializedMemory, allowColdInitialization, out _);
             if (!buffersReady)
                 return false;
 

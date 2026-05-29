@@ -436,6 +436,7 @@ Required result:
 - `ExternalStarterKitWorkbenchGeneratesAssetEntrySnippet = True`
 - `ExternalStarterKitWorkbenchAppliesAssetEntrySnippet = True`
 - `ExternalStarterKitWorkbenchConfiguresManifestContract = True`
+- `ExternalStarterKitWorkbenchConfiguresDependencies = True`
 - `ExternalStarterKitWorkbenchChecksRootLauncher = True`
 - `ExternalStarterKitWorkbenchOpensVsCodeTasks = True`
 - `ExternalStarterKitGeneratorPresent = True`
@@ -498,6 +499,13 @@ Required result:
 - `ExternalStarterKitWritesManifestContractTool = True`
 - `ExternalStarterKitManifestContractToolPasses = True`
 - `ExternalStarterKitManifestContractRejectsUnknownCapability = True`
+- `ExternalStarterKitWritesFirstModTool = True`
+- `ExternalStarterKitWritesInstallLocalTool = True`
+- `ExternalStarterKitWritesDiagnoseLocalTool = True`
+- `ExternalStarterKitDiagnoseLocalUsesRecursiveManifestDiscovery = True`
+- `ExternalStarterKitDiagnoseLocalChecksDependencyGraph = True`
+- `ExternalStarterKitWritesDependenciesTool = True`
+- `ExternalStarterKitDependencyToolMirrorsBothManifests = True`
 - `ExternalStarterKitRootLauncherSupportsAuthoringSnippets = True`
 - `ExternalStarterKitRootLauncherSupportsAuthoringSnippetApply = True`
 - `ExternalStarterKitRootLauncherSupportsAssetEntrySnippet = True`
@@ -509,6 +517,10 @@ Required result:
 - `ExternalStarterKitSubmissionPackageToolPasses = True`
 - `ExternalStarterKitSubmissionPackageIncludesReviewManifest = True`
 - `ExternalStarterKitRootLauncherSupportsSubmissionPackage = True`
+- `ExternalStarterKitRootLauncherSupportsFirstMod = True`
+- `ExternalStarterKitRootLauncherSupportsInstallLocal = True`
+- `ExternalStarterKitRootLauncherSupportsDiagnoseLocal = True`
+- `ExternalStarterKitRootLauncherSupportsDependencies = True`
 - `ExternalStarterKitIdentityToolValidatesCanonicalId = True`
 - `ExternalStarterKitIdentityToolRejectsInvalidVersion = True`
 - `ExternalStarterKitToolsAvoidNestedPowerShell = True`
@@ -523,6 +535,9 @@ Required result:
 - `ExternalStarterKitWritesVsCodeTasks = True`
 - `ExternalStarterKitVsCodeTasksPresent = True`
 - `ExternalStarterKitVsCodeTasksSupportDisabledAndReplace = True`
+- `ExternalStarterKitVsCodeTasksSupportLocalInstall = True`
+- `ExternalStarterKitVsCodeTasksSupportLocalDiagnose = True`
+- `ExternalStarterKitVsCodeTasksSupportDependencies = True`
 - `ExternalStarterKitValidatorChecksVsCodeTasks = True`
 - `ExternalStarterKitValidatorChecksSettingsAndLocaleContracts = True`
 - `ExternalStarterKitValidatorChecksAssetManifestContracts = True`

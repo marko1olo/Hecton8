@@ -183,6 +183,15 @@ namespace Hecton8.Graphics.Materials
         private static readonly ulong StructuralTuningMutationGuardMask =
             VisualAgingMutationGuardBit(BufferID.StructuralIntegrityTuning);
 
+        private static readonly ulong AgingSnapshotMutationGuardMask =
+            VisualAgingMutationGuardBit(BufferID.VisualPressureAgingParams);
+
+        private static readonly ulong DegradationSnapshotMutationGuardMask =
+            VisualAgingMutationGuardBit(BufferID.UberNoirInstanceDegradation);
+
+        private static readonly ulong TuningMutationGuardMask =
+            VisualAgingMutationGuardBit(BufferID.VisualPressureAgingTuning);
+
         private static VisualPressureAgingRuntime s_active;
         private static bool s_hasPendingEditorTuning;
         private static VisualAgingTuningDTO s_pendingEditorTuning = DefaultTuning(1u);
@@ -257,8 +266,10 @@ namespace Hecton8.Graphics.Materials
         private bool _dumpWriteFailureLogged;
         private bool _degradationDumpWriteFailureLogged;
         private bool _shutdown;
-        private bool _gizmoReadLocked;
-        private bool _degradationGizmoReadLocked;
+        private IDataVault _gizmoReadGuardVault;
+        private IDataVault _degradationGizmoReadGuardVault;
+        private bool _gizmoReadGuardHeld;
+        private bool _degradationGizmoReadGuardHeld;
 
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
         private static void ResetStaticState()
@@ -404,17 +415,18 @@ namespace Hecton8.Graphics.Materials
             if (active == null)
                 return false;
 
-            if (active._simulationScheduled || active._gizmoReadLocked)
+            if (active._simulationScheduled || active._gizmoReadGuardHeld)
                 return false;
 
             IDataVault vault = active.ResolveVault();
             if (vault == null || !active.HasCurrentOwnedCoreState(vault))
                 return false;
 
-            if (!vault.TryLockBuffer(BufferID.VisualPressureAgingParams, OwnerSystemId))
+            if (!TryAcquireVisualAgingGuard(vault, AgingSnapshotMutationGuardMask))
                 return false;
 
-            active._gizmoReadLocked = true;
+            active._gizmoReadGuardVault = vault;
+            active._gizmoReadGuardHeld = true;
             bool agingReady = IsCurrentOwnedBuffer(
                 vault,
                 in active._paramsHandle,
@@ -439,13 +451,14 @@ namespace Hecton8.Graphics.Materials
         {
 #if UNITY_EDITOR
             VisualPressureAgingRuntime active = s_active;
-            if (active == null || !active._gizmoReadLocked)
+            if (active == null || !active._gizmoReadGuardHeld)
                 return;
 
-            IDataVault vault = active.ResolveVault();
-            if (vault != null)
-                vault.TryUnlockBuffer(BufferID.VisualPressureAgingParams, OwnerSystemId);
-            active._gizmoReadLocked = false;
+            IDataVault vault = active._gizmoReadGuardVault ?? active.ResolveVault();
+            active._gizmoReadGuardVault = null;
+            active._gizmoReadGuardHeld = false;
+
+            ReleaseVisualAgingGuard(vault, AgingSnapshotMutationGuardMask);
 #endif
         }
 
@@ -460,17 +473,18 @@ namespace Hecton8.Graphics.Materials
             if (active == null)
                 return false;
 
-            if (active._simulationScheduled || active._degradationGizmoReadLocked)
+            if (active._simulationScheduled || active._degradationGizmoReadGuardHeld)
                 return false;
 
             IDataVault vault = active.ResolveVault();
             if (vault == null || !active.HasCurrentOwnedCoreState(vault))
                 return false;
 
-            if (!vault.TryLockBuffer(BufferID.UberNoirInstanceDegradation, OwnerSystemId))
+            if (!TryAcquireVisualAgingGuard(vault, DegradationSnapshotMutationGuardMask))
                 return false;
 
-            active._degradationGizmoReadLocked = true;
+            active._degradationGizmoReadGuardVault = vault;
+            active._degradationGizmoReadGuardHeld = true;
             bool degradationReady = IsCurrentOwnedBuffer(
                 vault,
                 in active._degradationHandle,
@@ -495,13 +509,14 @@ namespace Hecton8.Graphics.Materials
         {
 #if UNITY_EDITOR
             VisualPressureAgingRuntime active = s_active;
-            if (active == null || !active._degradationGizmoReadLocked)
+            if (active == null || !active._degradationGizmoReadGuardHeld)
                 return;
 
-            IDataVault vault = active.ResolveVault();
-            if (vault != null)
-                vault.TryUnlockBuffer(BufferID.UberNoirInstanceDegradation, OwnerSystemId);
-            active._degradationGizmoReadLocked = false;
+            IDataVault vault = active._degradationGizmoReadGuardVault ?? active.ResolveVault();
+            active._degradationGizmoReadGuardVault = null;
+            active._degradationGizmoReadGuardHeld = false;
+
+            ReleaseVisualAgingGuard(vault, DegradationSnapshotMutationGuardMask);
 #endif
         }
 
@@ -695,7 +710,7 @@ namespace Hecton8.Graphics.Materials
             bool requestThermalInput = HasThermalInputForSchedule(vault);
             bool requestStructuralInputs = HasStructuralInputsForSchedule(vault);
             bool requestStructuralTuning = requestStructuralInputs && HasStructuralTuningForSchedule(vault);
-            if (!TryLockJobBuffers(vault, requestThermalInput, requestStructuralInputs, requestStructuralTuning))
+            if (!TryAcquireJobBuffers(vault, requestThermalInput, requestStructuralInputs, requestStructuralTuning))
                 return dependsOn;
 
             _frame = context.Frame;
@@ -1173,7 +1188,7 @@ namespace Hecton8.Graphics.Materials
             if (vault == null || !HasCurrentOwnedCoreState(vault))
                 return false;
 
-            if (!vault.TryLockBuffer(BufferID.VisualPressureAgingTuning, OwnerSystemId))
+            if (!TryAcquireVisualAgingGuard(vault, TuningMutationGuardMask))
                 return false;
 
             try
@@ -1192,7 +1207,7 @@ namespace Hecton8.Graphics.Materials
             }
             finally
             {
-                vault.TryUnlockBuffer(BufferID.VisualPressureAgingTuning, OwnerSystemId);
+                ReleaseVisualAgingGuard(vault, TuningMutationGuardMask);
             }
         }
 
@@ -1206,7 +1221,7 @@ namespace Hecton8.Graphics.Materials
             return true;
         }
 
-        private bool TryLockJobBuffers(
+        private bool TryAcquireJobBuffers(
             IDataVault vault,
             bool includeThermalInput,
             bool includeStructuralInputs,
@@ -1235,7 +1250,7 @@ namespace Hecton8.Graphics.Materials
 
         private bool TryAcquireJobMutationGuard(IDataVault vault, ulong guardMask)
         {
-            if (guardMask == 0UL || !vault.TryAcquireMutationGuard(guardMask))
+            if (!TryAcquireVisualAgingGuard(vault, guardMask))
                 return false;
 
             _jobGuardVault = vault;
@@ -1322,6 +1337,17 @@ namespace Hecton8.Graphics.Materials
         private static ulong VisualAgingMutationGuardBit(BufferID bufferId)
         {
             return 1UL << ((int)bufferId & 63);
+        }
+
+        private static bool TryAcquireVisualAgingGuard(IDataVault vault, ulong guardMask)
+        {
+            return vault != null && guardMask != 0UL && vault.TryAcquireMutationGuard(guardMask);
+        }
+
+        private static void ReleaseVisualAgingGuard(IDataVault vault, ulong guardMask)
+        {
+            if (vault != null && guardMask != 0UL)
+                vault.ReleaseMutationGuard(guardMask);
         }
 
         private static bool IsExternalHandleValid<T>(in VaultGenerationHandle<T> handle, BufferID bufferId) where T : struct
@@ -1555,11 +1581,11 @@ namespace Hecton8.Graphics.Materials
             if (vault == null || destination == null || count <= 0)
                 return false;
 
-            bool locked = false;
+            bool guardAcquired = false;
             try
             {
-                locked = vault.TryLockBuffer(BufferID.VisualPressureAgingParams, OwnerSystemId);
-                if (!locked)
+                guardAcquired = TryAcquireVisualAgingGuard(vault, AgingSnapshotMutationGuardMask);
+                if (!guardAcquired)
                     return false;
 
                 if (!vault.TryResolveHandle(in _paramsHandle, out NativeArray<VisualAgingParamsDTO> source))
@@ -1569,8 +1595,8 @@ namespace Hecton8.Graphics.Materials
             }
             finally
             {
-                if (locked)
-                    vault.TryUnlockBuffer(BufferID.VisualPressureAgingParams, OwnerSystemId);
+                if (guardAcquired)
+                    ReleaseVisualAgingGuard(vault, AgingSnapshotMutationGuardMask);
             }
         }
 
@@ -1580,11 +1606,11 @@ namespace Hecton8.Graphics.Materials
             if (vault == null || destination == null || count <= 0)
                 return false;
 
-            bool locked = false;
+            bool guardAcquired = false;
             try
             {
-                locked = vault.TryLockBuffer(BufferID.UberNoirInstanceDegradation, OwnerSystemId);
-                if (!locked)
+                guardAcquired = TryAcquireVisualAgingGuard(vault, DegradationSnapshotMutationGuardMask);
+                if (!guardAcquired)
                     return false;
 
                 if (!vault.TryResolveHandle(in _degradationHandle, out NativeArray<InstanceDegradationDTO> source))
@@ -1594,8 +1620,8 @@ namespace Hecton8.Graphics.Materials
             }
             finally
             {
-                if (locked)
-                    vault.TryUnlockBuffer(BufferID.UberNoirInstanceDegradation, OwnerSystemId);
+                if (guardAcquired)
+                    ReleaseVisualAgingGuard(vault, DegradationSnapshotMutationGuardMask);
             }
         }
 
@@ -1668,25 +1694,8 @@ namespace Hecton8.Graphics.Materials
             if (bytesRead <= 0)
                 return false;
 
-            VisualAgingTuningDTO dto;
-            bool tuningLocked = false;
-            try
-            {
-                tuningLocked = vault.TryLockBuffer(BufferID.VisualPressureAgingTuning, OwnerSystemId);
-                if (!tuningLocked)
-                    return false;
-
-                vault.TryResolveHandle(in _tuningHandle, out NativeArray<VisualAgingTuningDTO> tuning);
-                if (!tuning.IsCreated || tuning.Length == 0)
-                    return false;
-
-                dto = tuning[0];
-            }
-            finally
-            {
-                if (tuningLocked)
-                    vault.TryUnlockBuffer(BufferID.VisualPressureAgingTuning, OwnerSystemId);
-            }
+            if (!TryReadVisualPressureAgingTuningWithGuard(vault, out VisualAgingTuningDTO dto))
+                return false;
 
             ReadOnlySpan<byte> csvBytes = _csvManagedScratch;
             if (!ParseAgingRulesCsv(csvBytes.Slice(0, bytesRead), ref dto))
@@ -1695,24 +1704,8 @@ namespace Hecton8.Graphics.Materials
             dto.CsvGeneration = unchecked(dto.CsvGeneration + 1u);
             dto.RuntimeFlags |= FlagCsvLoaded;
 
-            tuningLocked = false;
-            try
-            {
-                tuningLocked = vault.TryLockBuffer(BufferID.VisualPressureAgingTuning, OwnerSystemId);
-                if (!tuningLocked)
-                    return false;
-
-                vault.TryResolveHandle(in _tuningHandle, out NativeArray<VisualAgingTuningDTO> tuning);
-                if (!tuning.IsCreated || tuning.Length == 0)
-                    return false;
-
-                tuning[0] = dto;
-            }
-            finally
-            {
-                if (tuningLocked)
-                    vault.TryUnlockBuffer(BufferID.VisualPressureAgingTuning, OwnerSystemId);
-            }
+            if (!TryWriteVisualPressureAgingTuningWithGuard(vault, dto))
+                return false;
 
             s_pendingEditorTuning = dto;
             _csvGeneration = dto.CsvGeneration;
@@ -1721,6 +1714,53 @@ namespace Hecton8.Graphics.Materials
             _agingDirty = true;
             _degradationDirty = true;
             return true;
+        }
+
+        private bool TryReadVisualPressureAgingTuningWithGuard(IDataVault vault, out VisualAgingTuningDTO dto)
+        {
+            dto = default;
+            bool guardAcquired = false;
+            try
+            {
+                guardAcquired = TryAcquireVisualAgingGuard(vault, TuningMutationGuardMask);
+                if (!guardAcquired)
+                    return false;
+
+                vault.TryResolveHandle(in _tuningHandle, out NativeArray<VisualAgingTuningDTO> tuning);
+                if (!tuning.IsCreated || tuning.Length == 0)
+                    return false;
+
+                dto = tuning[0];
+                return true;
+            }
+            finally
+            {
+                if (guardAcquired)
+                    ReleaseVisualAgingGuard(vault, TuningMutationGuardMask);
+            }
+        }
+
+        private bool TryWriteVisualPressureAgingTuningWithGuard(IDataVault vault, in VisualAgingTuningDTO dto)
+        {
+            bool guardAcquired = false;
+            try
+            {
+                guardAcquired = TryAcquireVisualAgingGuard(vault, TuningMutationGuardMask);
+                if (!guardAcquired)
+                    return false;
+
+                vault.TryResolveHandle(in _tuningHandle, out NativeArray<VisualAgingTuningDTO> tuning);
+                if (!tuning.IsCreated || tuning.Length == 0)
+                    return false;
+
+                tuning[0] = dto;
+                return true;
+            }
+            finally
+            {
+                if (guardAcquired)
+                    ReleaseVisualAgingGuard(vault, TuningMutationGuardMask);
+            }
         }
 
         private bool EnsureCsvManagedScratchCold()

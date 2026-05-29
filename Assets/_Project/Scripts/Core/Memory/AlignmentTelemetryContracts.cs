@@ -255,6 +255,9 @@ namespace Hecton8.Core.Memory
                 _cursorHandle = default;
             }
 
+            if (vault.IsAllocationLocked || vault.IsCompactionFenceActive)
+                return false;
+
             _ringHandle = vault.EnsureGenerationHandle<AlignmentTelemetryEntry>(
                 BufferID.Arm64AlignmentTelemetryRing,
                 Capacity,

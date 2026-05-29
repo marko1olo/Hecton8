@@ -2781,65 +2781,78 @@ namespace Hecton8.Core.Memory
                 return false;
             }
 
-            int lowMask = unchecked((int)(uint)writeMask);
-            int highMask = unchecked((int)(uint)(writeMask >> 32));
-            int activeConflictMask = lowMask | highMask;
-            int observedLow = Volatile.Read(ref _mutationGuardMaskLow);
-            int observedHigh = Volatile.Read(ref _mutationGuardMaskHigh);
-            if ((observedLow & lowMask) != 0 || (observedHigh & highMask) != 0)
+            if (!TryEnterBlockMutationGate())
             {
                 RecordMutationGuardContentionFault(writeMask);
                 return false;
             }
 
-            if (HasActiveLockConflictForMutationMask(activeConflictMask))
+            try
             {
+                int lowMask = unchecked((int)(uint)writeMask);
+                int highMask = unchecked((int)(uint)(writeMask >> 32));
+                int activeConflictMask = lowMask | highMask;
+                int observedLow = Volatile.Read(ref _mutationGuardMaskLow);
+                int observedHigh = Volatile.Read(ref _mutationGuardMaskHigh);
+                if ((observedLow & lowMask) != 0 || (observedHigh & highMask) != 0)
+                {
+                    RecordMutationGuardContentionFault(writeMask);
+                    return false;
+                }
+
+                if (HasActiveLockConflictForMutationMask(activeConflictMask))
+                {
+                    RecordMutationGuardContentionFault(writeMask);
+                    return false;
+                }
+
+                bool lowAcquired = false;
+                if (lowMask != 0)
+                {
+                    if (Interlocked.CompareExchange(ref _mutationGuardMaskLow, observedLow | lowMask, observedLow) != observedLow)
+                    {
+                        RecordMutationGuardContentionFault(writeMask);
+                        return false;
+                    }
+
+                    lowAcquired = true;
+                }
+
+                bool highAcquired = false;
+                if (highMask != 0)
+                {
+                    if (Interlocked.CompareExchange(ref _mutationGuardMaskHigh, observedHigh | highMask, observedHigh) != observedHigh)
+                    {
+                        if (lowAcquired)
+                            ReleaseMutationGuard(unchecked((uint)lowMask));
+                        RecordMutationGuardContentionFault(writeMask);
+                        return false;
+                    }
+
+                    highAcquired = true;
+                }
+
+                Thread.MemoryBarrier();
+                if (Volatile.Read(ref _compactionFence) == 0 &&
+                    !HasActiveLockConflictForMutationMask(activeConflictMask))
+                {
+                    return true;
+                }
+
+                if (lowAcquired || highAcquired)
+                {
+                    ulong acquiredMask = (lowAcquired ? (uint)lowMask : 0UL) |
+                        (highAcquired ? ((ulong)(uint)highMask << 32) : 0UL);
+                    ReleaseMutationGuard(acquiredMask);
+                }
+
                 RecordMutationGuardContentionFault(writeMask);
                 return false;
             }
-
-            bool lowAcquired = false;
-            if (lowMask != 0)
+            finally
             {
-                if (Interlocked.CompareExchange(ref _mutationGuardMaskLow, observedLow | lowMask, observedLow) != observedLow)
-                {
-                    RecordMutationGuardContentionFault(writeMask);
-                    return false;
-                }
-
-                lowAcquired = true;
+                ReleaseBlockMutationGate();
             }
-
-            bool highAcquired = false;
-            if (highMask != 0)
-            {
-                if (Interlocked.CompareExchange(ref _mutationGuardMaskHigh, observedHigh | highMask, observedHigh) != observedHigh)
-                {
-                    if (lowAcquired)
-                        ReleaseMutationGuard(unchecked((uint)lowMask));
-                    RecordMutationGuardContentionFault(writeMask);
-                    return false;
-                }
-
-                highAcquired = true;
-            }
-
-            Thread.MemoryBarrier();
-            if (Volatile.Read(ref _compactionFence) == 0 &&
-                !HasActiveLockConflictForMutationMask(activeConflictMask))
-            {
-                return true;
-            }
-
-            if (lowAcquired || highAcquired)
-            {
-                ulong acquiredMask = (lowAcquired ? (uint)lowMask : 0UL) |
-                    (highAcquired ? ((ulong)(uint)highMask << 32) : 0UL);
-                ReleaseMutationGuard(acquiredMask);
-            }
-
-            RecordMutationGuardContentionFault(writeMask);
-            return false;
         }
 
         /// <inheritdoc />

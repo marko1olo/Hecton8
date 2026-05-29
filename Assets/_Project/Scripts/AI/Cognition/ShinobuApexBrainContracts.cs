@@ -77,7 +77,8 @@ namespace Hecton8.AI.Cognition
         public const byte SweetLieOccluded = 1 << 1;
         public const byte AcousticOverride = 1 << 2;
         public const byte StrikeCommitted = 1 << 3;
-        public const byte ReducedQualityNodeBudget = 1 << 4;
+        public const byte SurvivalNodeBudgetPressure = 1 << 4;
+        public const byte ReducedQualityNodeBudget = SurvivalNodeBudgetPressure;
         public const byte TailSdfSampled = 1 << 5;
         public const byte Fault = 1 << 6;
         public const byte EmergencyMockStats = 1 << 7;

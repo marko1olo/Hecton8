@@ -1,3 +1,5 @@
+using System;
+using System.Buffers.Binary;
 using System.Runtime.InteropServices;
 using System.Threading;
 using Hecton8.Audio;
@@ -222,6 +224,8 @@ namespace Hecton8.World
         private const BufferID ThermalMapWriteCelsiusBufferId = (BufferID)70057;
         private const BufferID ThermalMapSourceCelsiusBufferId = (BufferID)70058;
         private const BufferID ThermalMapInsulationBufferId = (BufferID)70059;
+        private static readonly ulong ThermalMapReadbackMutationGuardMask =
+            ThermalVaultMutationGuardBit(ThermalMapReadCelsiusBufferId);
         private const string NativeMemoryOwner = nameof(AbyssalThermalManager);
         private const NativeAllocationLifetime NativeMemoryLifetime = NativeAllocationLifetime.Session;
         private const uint ThermalHashSeed = 0xC6BC2796u;
@@ -711,7 +715,8 @@ namespace Hecton8.World
         private VaultGenerationHandle<float> _thermalMapWriteCelsiusHandle;
         private VaultGenerationHandle<float> _thermalMapSourceCelsiusHandle;
         private VaultGenerationHandle<float> _thermalMapInsulation01Handle;
-        private NativeArray<float> _thermalMapWriteScratch;
+        private ThermalMapScratchBuffers _thermalMapScratch;
+        private IDataVault _thermalMapReadbackGuardVault;
         private float[] _thermalMapVisualCelsius;
         private SaveBinaryStorage.ThermalGridRleRun[] _thermalGridRleRuns;
         private VaultGenerationHandle<AbyssalThermalManagerTelemetryEntry> _thermalTelemetryRingHandle;
@@ -736,6 +741,7 @@ namespace Hecton8.World
         private uint _lastProcessedAupShiftFrameId;
         private int _lastPersistentThermalVentRevision = int.MinValue;
         private bool _thermalMapDisposePending;
+        private bool _thermalMapReadbackGuardHeld;
         private float _thermalColdTickAccumulator;
         private float _thermalMapCellSizeMeters = DefaultThermalMapWorldSizeMeters * math.rcp(ThermalMapResolution);
         private Vector3 _thermalMapOriginWS;
@@ -765,6 +771,62 @@ namespace Hecton8.World
         private bool _pendingThermalMapActive;
         private bool _thermalMapIdleCleared;
         private Vector4[] _thermalBubbleCommands;
+
+        private struct ThermalMapScratchBuffers : global::System.IDisposable
+        {
+            public NativeArray<float> WriteScratch;
+
+            public bool IsWriteScratchReady(int requiredLength)
+            {
+                return WriteScratch.IsCreated &&
+                       WriteScratch.Length >= requiredLength;
+            }
+
+            public void EnsureWriteScratch(int requiredLength, float defaultValue)
+            {
+                if (WriteScratch.IsCreated && WriteScratch.Length == requiredLength)
+                    return;
+
+                Dispose();
+
+                // COLD ALLOC: NativeArray<float>[32768] - thermal Jacobi write scratch; prevents cross-frame DataVault write locks - owner: AbyssalThermalManager
+                NativeArray<float> scratch = new NativeArray<float>(requiredLength, Allocator.Persistent, NativeArrayOptions.UninitializedMemory);
+                try
+                {
+                    NativeMemorySentinel.RegisterNativeArray(
+                        scratch,
+                        nameof(AbyssalThermalManager),
+                        nameof(WriteScratch),
+                        NativeAllocationLifetime.Session);
+                    FillThermalMap(scratch, defaultValue);
+                    WriteScratch = scratch;
+                }
+                catch
+                {
+                    if (scratch.IsCreated)
+                        scratch.Dispose();
+                    throw;
+                }
+            }
+
+            public void FillWriteScratch(float value)
+            {
+                FillThermalMap(WriteScratch, value);
+            }
+
+            public void Dispose()
+            {
+                if (!WriteScratch.IsCreated)
+                {
+                    WriteScratch = default;
+                    return;
+                }
+
+                NativeMemorySentinel.UnregisterNativeArray(WriteScratch);
+                WriteScratch.Dispose();
+                WriteScratch = default;
+            }
+        }
 
         /// <summary>
         /// True once the thermodynamics owner is registered in the global registry.
@@ -1505,6 +1567,7 @@ namespace Hecton8.World
                 if (observed <= 0)
                 {
                     Interlocked.Exchange(ref _thermalMapReadbackRetainCount, 0);
+                    ReleaseThermalMapReadbackGuard();
                     return;
                 }
 
@@ -1512,9 +1575,14 @@ namespace Hecton8.World
                 if (Interlocked.CompareExchange(ref _thermalMapReadbackRetainCount, next, observed) != observed)
                     continue;
 
-                _dataVault?.TryUnlockBuffer(ThermalMapReadCelsiusBufferId, ThermalVaultOwnerSystem);
-                if (next == 0 && _thermalMapDisposePending)
-                    DisposeThermalMapBuffers();
+                if (next == 0)
+                {
+                    if (_thermalMapDisposePending)
+                        DisposeThermalMapBuffers();
+                    else
+                        ReleaseThermalMapReadbackGuard();
+                }
+
                 return;
             }
         }
@@ -2208,6 +2276,8 @@ namespace Hecton8.World
 
             _thermalTelemetryDumped = true;
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
+            NativeArray<byte> dumpBytes = default;
+            bool dumpRegistered = false;
             try
             {
                 string path = System.IO.Path.Combine(
@@ -2215,25 +2285,39 @@ namespace Hecton8.World
                     "Docs",
                     "AgentLogs",
                     "Dump_THERMODYNAMICS_LEAD.bin");
-                using (System.IO.FileStream stream = new System.IO.FileStream(path, System.IO.FileMode.Create, System.IO.FileAccess.Write, System.IO.FileShare.Read))
-                using (System.IO.BinaryWriter writer = new System.IO.BinaryWriter(stream))
+
+                const int HeaderBytes = sizeof(int) * 2;
+                const int EntryBytes = (sizeof(double) * 3) + sizeof(long) + sizeof(ulong) + (sizeof(float) * 2) + sizeof(uint) + sizeof(int) + sizeof(uint);
+                if (ring.Length > (int.MaxValue - HeaderBytes) / EntryBytes)
+                    return;
+
+                int byteCount = HeaderBytes + ring.Length * EntryBytes;
+                dumpBytes = new NativeArray<byte>(byteCount, Allocator.Temp, NativeArrayOptions.UninitializedMemory);
+                NativeMemorySentinel.RegisterNativeArray(dumpBytes, nameof(AbyssalThermalManager), nameof(dumpBytes), NativeAllocationLifetime.Temp);
+                dumpRegistered = true;
+
+                unsafe
                 {
-                    writer.Write(ThermalTelemetryCapacity);
-                    writer.Write(_thermalTelemetryIndex);
+                    byte* destination = (byte*)NativeArrayUnsafeUtility.GetUnsafePtr(dumpBytes);
+                    int cursor = 0;
+                    WriteInt32LittleEndian(destination, ref cursor, ThermalTelemetryCapacity);
+                    WriteInt32LittleEndian(destination, ref cursor, _thermalTelemetryIndex);
                     for (int i = 0; i < ring.Length; i++)
                     {
                         AbyssalThermalManagerTelemetryEntry entry = ring[i];
-                        writer.Write(entry.PositionAup.x);
-                        writer.Write(entry.PositionAup.y);
-                        writer.Write(entry.PositionAup.z);
-                        writer.Write(entry.Frame);
-                        writer.Write(entry.Sequence);
-                        writer.Write(entry.TemperatureCelsius);
-                        writer.Write(entry.Heat01);
-                        writer.Write(entry.Flags);
-                        writer.Write(entry.ActiveVentCount);
-                        writer.Write(entry.FailureCode);
+                        WriteDoubleLittleEndian(destination, ref cursor, entry.PositionAup.x);
+                        WriteDoubleLittleEndian(destination, ref cursor, entry.PositionAup.y);
+                        WriteDoubleLittleEndian(destination, ref cursor, entry.PositionAup.z);
+                        WriteInt64LittleEndian(destination, ref cursor, entry.Frame);
+                        WriteUInt64LittleEndian(destination, ref cursor, entry.Sequence);
+                        WriteFloatLittleEndian(destination, ref cursor, entry.TemperatureCelsius);
+                        WriteFloatLittleEndian(destination, ref cursor, entry.Heat01);
+                        WriteUInt32LittleEndian(destination, ref cursor, entry.Flags);
+                        WriteInt32LittleEndian(destination, ref cursor, entry.ActiveVentCount);
+                        WriteUInt32LittleEndian(destination, ref cursor, entry.FailureCode);
                     }
+
+                    AsyncWriteManager.WriteAll(path, destination, cursor, out _);
                 }
             }
             catch (System.IO.IOException)
@@ -2242,7 +2326,51 @@ namespace Hecton8.World
             catch (System.UnauthorizedAccessException)
             {
             }
+            finally
+            {
+                if (dumpBytes.IsCreated)
+                {
+                    if (dumpRegistered)
+                        NativeMemorySentinel.UnregisterNativeArray(dumpBytes);
+                    dumpBytes.Dispose();
+                }
+            }
 #endif
+        }
+
+        private static unsafe void WriteDoubleLittleEndian(byte* destination, ref int cursor, double value)
+        {
+            long raw = *(long*)&value;
+            WriteInt64LittleEndian(destination, ref cursor, raw);
+        }
+
+        private static unsafe void WriteFloatLittleEndian(byte* destination, ref int cursor, float value)
+        {
+            WriteUInt32LittleEndian(destination, ref cursor, math.asuint(value));
+        }
+
+        private static unsafe void WriteInt32LittleEndian(byte* destination, ref int cursor, int value)
+        {
+            BinaryPrimitives.WriteInt32LittleEndian(new Span<byte>(destination + cursor, sizeof(int)), value);
+            cursor += sizeof(int);
+        }
+
+        private static unsafe void WriteInt64LittleEndian(byte* destination, ref int cursor, long value)
+        {
+            BinaryPrimitives.WriteInt64LittleEndian(new Span<byte>(destination + cursor, sizeof(long)), value);
+            cursor += sizeof(long);
+        }
+
+        private static unsafe void WriteUInt32LittleEndian(byte* destination, ref int cursor, uint value)
+        {
+            BinaryPrimitives.WriteUInt32LittleEndian(new Span<byte>(destination + cursor, sizeof(uint)), value);
+            cursor += sizeof(uint);
+        }
+
+        private static unsafe void WriteUInt64LittleEndian(byte* destination, ref int cursor, ulong value)
+        {
+            BinaryPrimitives.WriteUInt64LittleEndian(new Span<byte>(destination + cursor, sizeof(ulong)), value);
+            cursor += sizeof(ulong);
         }
 
         private float TemperatureToHeat01(float temperatureCelsius)
@@ -2406,8 +2534,8 @@ namespace Hecton8.World
                 FillThermalMapBuffer(in _thermalMapWriteCelsiusHandle, ThermalMapWriteCelsiusBufferId, idleAmbientCelsius);
                 FillThermalMapBuffer(in _thermalMapSourceCelsiusHandle, ThermalMapSourceCelsiusBufferId, idleAmbientCelsius);
                 FillThermalMapBuffer(in _thermalMapInsulation01Handle, ThermalMapInsulationBufferId, 0f);
-                if (_thermalMapWriteScratch.IsCreated)
-                    FillThermalMap(_thermalMapWriteScratch, idleAmbientCelsius);
+                if (_thermalMapScratch.WriteScratch.IsCreated)
+                    _thermalMapScratch.FillWriteScratch(idleAmbientCelsius);
                 if (_thermalMapVisualCelsius != null)
                     FillThermalMap(_thermalMapVisualCelsius, idleAmbientCelsius);
                 _thermalGridRleRunCount = 0;
@@ -2449,8 +2577,7 @@ namespace Hecton8.World
                     in _thermalMapInsulation01Handle,
                     ThermalMapInsulationBufferId,
                     out NativeArray<float> insulation01) ||
-                !_thermalMapWriteScratch.IsCreated ||
-                _thermalMapWriteScratch.Length < ThermalMapCellCount)
+                !_thermalMapScratch.IsWriteScratchReady(ThermalMapCellCount))
             {
                 return;
             }
@@ -2460,7 +2587,7 @@ namespace Hecton8.World
                 Previous = readCelsius,
                 Sources = sourceCelsius,
                 Insulation01 = insulation01,
-                Next = _thermalMapWriteScratch,
+                Next = _thermalMapScratch.WriteScratch,
                 StartIndex = startIndex,
                 Width = ThermalMapResolution,
                 Height = ThermalMapResolution,
@@ -3010,15 +3137,7 @@ namespace Hecton8.World
             EnsureThermalFloatBuffer(ref _thermalMapSourceCelsiusHandle, ThermalMapSourceCelsiusBufferId, defaultThermalMapAmbient);
             EnsureThermalFloatBuffer(ref _thermalMapInsulation01Handle, ThermalMapInsulationBufferId, 0f);
 
-            if (!_thermalMapWriteScratch.IsCreated || _thermalMapWriteScratch.Length != ThermalMapCellCount)
-            {
-                if (_thermalMapWriteScratch.IsCreated)
-                    _thermalMapWriteScratch.Dispose();
-
-                // COLD ALLOC: NativeArray<float>[32768] - thermal Jacobi write scratch; prevents cross-frame DataVault write locks - owner: AbyssalThermalManager
-                _thermalMapWriteScratch = new NativeArray<float>(ThermalMapCellCount, Allocator.Persistent, NativeArrayOptions.UninitializedMemory);
-                FillThermalMap(_thermalMapWriteScratch, defaultThermalMapAmbient);
-            }
+            _thermalMapScratch.EnsureWriteScratch(ThermalMapCellCount, defaultThermalMapAmbient);
 
             if (_thermalMapVisualCelsius == null || _thermalMapVisualCelsius.Length != ThermalMapPlaneCellCount)
             {
@@ -3045,13 +3164,14 @@ namespace Hecton8.World
             }
 
             _thermalMapDisposePending = false;
-            ReleaseThermalFloatBuffer(_dataVault, ref _thermalMapReadCelsiusHandle, ThermalMapReadCelsiusBufferId);
-            ReleaseThermalFloatBuffer(_dataVault, ref _thermalMapWriteCelsiusHandle, ThermalMapWriteCelsiusBufferId);
-            ReleaseThermalFloatBuffer(_dataVault, ref _thermalMapSourceCelsiusHandle, ThermalMapSourceCelsiusBufferId);
-            ReleaseThermalFloatBuffer(_dataVault, ref _thermalMapInsulation01Handle, ThermalMapInsulationBufferId);
+            IDataVault thermalMapVault = _thermalMapReadbackGuardVault ?? _dataVault;
+            ReleaseThermalMapReadbackGuard();
+            ReleaseThermalFloatBuffer(thermalMapVault, ref _thermalMapReadCelsiusHandle, ThermalMapReadCelsiusBufferId);
+            ReleaseThermalFloatBuffer(thermalMapVault, ref _thermalMapWriteCelsiusHandle, ThermalMapWriteCelsiusBufferId);
+            ReleaseThermalFloatBuffer(thermalMapVault, ref _thermalMapSourceCelsiusHandle, ThermalMapSourceCelsiusBufferId);
+            ReleaseThermalFloatBuffer(thermalMapVault, ref _thermalMapInsulation01Handle, ThermalMapInsulationBufferId);
 
-            if (_thermalMapWriteScratch.IsCreated)
-                _thermalMapWriteScratch.Dispose();
+            _thermalMapScratch.Dispose();
 
             _thermalMapVisualCelsius = null;
             _thermalGridRleRuns = null;
@@ -3097,7 +3217,7 @@ namespace Hecton8.World
 
         private bool HasThermalMapStorage()
         {
-            return _thermalMapWriteScratch.IsCreated ||
+            return _thermalMapScratch.WriteScratch.IsCreated ||
                    _thermalMapVisualCelsius != null ||
                    _thermalGridRleRuns != null ||
                    HasThermalMapReadBuffer();
@@ -3214,8 +3334,7 @@ namespace Hecton8.World
             in VaultGenerationHandle<float> destinationHandle,
             BufferID destinationBufferId)
         {
-            if (!_thermalMapWriteScratch.IsCreated ||
-                _thermalMapWriteScratch.Length < ThermalMapCellCount ||
+            if (!_thermalMapScratch.IsWriteScratchReady(ThermalMapCellCount) ||
                 !TryAcquireThermalMapWriteBuffer(in destinationHandle, destinationBufferId, out NativeArray<float> destination))
             {
                 return false;
@@ -3223,7 +3342,7 @@ namespace Hecton8.World
 
             try
             {
-                NativeArray<float>.Copy(_thermalMapWriteScratch, destination, ThermalMapCellCount);
+                NativeArray<float>.Copy(_thermalMapScratch.WriteScratch, destination, ThermalMapCellCount);
                 return true;
             }
             finally
@@ -3239,16 +3358,42 @@ namespace Hecton8.World
                 vault == null ||
                 vault.IsCompactionFenceActive ||
                 !IsThermalVaultHandle(in _thermalMapReadCelsiusHandle, ThermalMapReadCelsiusBufferId) ||
-                !vault.TryLockBuffer(ThermalMapReadCelsiusBufferId, ThermalVaultOwnerSystem))
+                (_thermalMapReadbackGuardHeld && !ReferenceEquals(_thermalMapReadbackGuardVault, vault)))
             {
                 return false;
             }
 
+            if (_thermalMapReadbackGuardHeld)
+                return true;
+
+            if (!vault.TryAcquireMutationGuard(ThermalMapReadbackMutationGuardMask))
+                return false;
+
+            _thermalMapReadbackGuardVault = vault;
+            _thermalMapReadbackGuardHeld = true;
             if (!vault.IsCompactionFenceActive)
                 return true;
 
-            vault.TryUnlockBuffer(ThermalMapReadCelsiusBufferId, ThermalVaultOwnerSystem);
+            ReleaseThermalMapReadbackGuard();
             return false;
+        }
+
+        private void ReleaseThermalMapReadbackGuard()
+        {
+            if (!_thermalMapReadbackGuardHeld)
+                return;
+
+            IDataVault vault = _thermalMapReadbackGuardVault ?? _dataVault;
+            if (vault != null)
+                vault.ReleaseMutationGuard(ThermalMapReadbackMutationGuardMask);
+
+            _thermalMapReadbackGuardHeld = false;
+            _thermalMapReadbackGuardVault = null;
+        }
+
+        private static ulong ThermalVaultMutationGuardBit(BufferID bufferId)
+        {
+            return 1UL << (unchecked((int)(uint)(int)bufferId) & 31);
         }
 
         private void ReleaseThermalFloatBuffer(
@@ -3564,6 +3709,7 @@ namespace Hecton8.World
                     _simulationBucketer = currentService as ISimulationBucketer;
                     break;
                 case GlobalRegistryServiceSlot.DataVault:
+                    DisposeThermalMapBuffers();
                     ReleaseThermalTelemetry(previousService as IDataVault ?? _dataVault);
                     _dataVault = currentService as IDataVault;
                     EnsureThermalTelemetry();

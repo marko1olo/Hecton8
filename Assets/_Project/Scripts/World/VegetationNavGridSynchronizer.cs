@@ -641,37 +641,65 @@ namespace Hecton8.World
                 return false;
             }
 
-            bool flowDirectionsLocked = false;
-            bool flowVectorsLocked = false;
-            IDataVault flowDirectionsVault = null;
-            IDataVault flowVectorsVault = null;
+            return WriteExternalSurfaceFlowVectorsOneLock(flowVectors, count) &&
+                   WriteExternalSurfaceFlowDirectionsOneLock(flowVectors, count);
+        }
+
+        private bool WriteExternalSurfaceFlowVectorsOneLock(NativeArray<Vector3> flowVectors, int count)
+        {
+            if (!TryAcquireAggregateWriteBuffer(
+                    ref _surfaceAggregateFrontBuffers.FlowVectorsHandle,
+                    count,
+                    out IDataVault vault,
+                    out NativeArray<Vector3> surfaceFlowVectors))
+            {
+                return false;
+            }
+
             try
             {
-                if (!TryAcquireAggregateWriteBuffer(ref _surfaceAggregateFrontBuffers.FlowDirectionsHandle, count, out flowDirectionsVault, out NativeArray<Vector2> flowDirections))
-                    return false;
-                flowDirectionsLocked = true;
-                if (!TryAcquireAggregateWriteBuffer(ref _surfaceAggregateFrontBuffers.FlowVectorsHandle, count, out flowVectorsVault, out NativeArray<Vector3> surfaceFlowVectors))
-                    return false;
-                flowVectorsLocked = true;
-
-                int safeCount = math.min(count, math.min(flowDirections.Length, surfaceFlowVectors.Length));
+                int safeCount = math.min(count, surfaceFlowVectors.Length);
                 for (int i = 0; i < safeCount; i++)
-                {
-                    Vector3 flowVector = flowVectors[i];
-                    Vector2 flowDirection = NormalizeFlowDirection(new Vector2(flowVector.x, flowVector.z));
-                    surfaceFlowVectors[i] = flowVector;
-                    flowDirections[i] = flowDirection;
-                }
+                    surfaceFlowVectors[i] = flowVectors[i];
+
+                return true;
             }
             finally
             {
-                if (flowVectorsLocked)
-                    flowVectorsVault.ReleaseWriteLock(in _surfaceAggregateFrontBuffers.FlowVectorsHandle, VegetationMemorySovereigntyConstants.OwnerSystemId);
-                if (flowDirectionsLocked)
-                    flowDirectionsVault.ReleaseWriteLock(in _surfaceAggregateFrontBuffers.FlowDirectionsHandle, VegetationMemorySovereigntyConstants.OwnerSystemId);
+                vault.ReleaseWriteLock(
+                    in _surfaceAggregateFrontBuffers.FlowVectorsHandle,
+                    VegetationMemorySovereigntyConstants.OwnerSystemId);
+            }
+        }
+
+        private bool WriteExternalSurfaceFlowDirectionsOneLock(NativeArray<Vector3> flowVectors, int count)
+        {
+            if (!TryAcquireAggregateWriteBuffer(
+                    ref _surfaceAggregateFrontBuffers.FlowDirectionsHandle,
+                    count,
+                    out IDataVault vault,
+                    out NativeArray<Vector2> flowDirections))
+            {
+                return false;
             }
 
-            return true;
+            try
+            {
+                int safeCount = math.min(count, flowDirections.Length);
+                for (int i = 0; i < safeCount; i++)
+                {
+                    Vector3 flowVector = flowVectors[i];
+                    flowDirections[i] = NormalizeFlowDirection(new Vector2(flowVector.x, flowVector.z));
+                }
+
+                return true;
+            }
+            finally
+            {
+                vault.ReleaseWriteLock(
+                    in _surfaceAggregateFrontBuffers.FlowDirectionsHandle,
+                    VegetationMemorySovereigntyConstants.OwnerSystemId);
+            }
         }
 
         /// <summary>
@@ -1794,12 +1822,20 @@ namespace Hecton8.World
             if (safeCount <= 0)
                 return false;
 
+            return CopyAbyssalNavNodesToVault(safeCount) &&
+                   CopyAbyssalNavNodeTypesToVault(safeCount) &&
+                   CopyAbyssalNavConduitVectorsToVault(safeCount) &&
+                   CopyAbyssalNavConduitStrengthsToVault(safeCount);
+        }
+
+        private bool CopyAbyssalNavNodesToVault(int safeCount)
+        {
             if (!TryAcquireVegetationMemoryBuffer(
                     ref _nativeMemory.AbyssalNavNodeSnapshotHandle,
                     BufferID.VegetationAbyssalNavNodeSnapshot,
                     safeCount,
                     NativeArrayOptions.UninitializedMemory,
-                    out IDataVault nodeVault,
+                    out IDataVault vault,
                     out NativeArray<Vector3> nodes))
             {
                 return false;
@@ -1807,82 +1843,101 @@ namespace Hecton8.World
 
             try
             {
-                if (!TryAcquireVegetationMemoryBuffer(
-                        ref _nativeMemory.AbyssalNavNodeTypesHandle,
-                        BufferID.VegetationAbyssalNavNodeTypes,
-                        safeCount,
-                        NativeArrayOptions.UninitializedMemory,
-                        out IDataVault typeVault,
-                        out NativeArray<byte> nodeTypes))
-                {
-                    return false;
-                }
+                for (int i = 0; i < safeCount; i++)
+                    nodes[i] = _abyssalNavNodeSnapshot[i];
 
-                try
-                {
-                    if (!TryAcquireVegetationMemoryBuffer(
-                            ref _nativeMemory.AbyssalNavConduitVectorsHandle,
-                            BufferID.VegetationAbyssalNavConduitVectors,
-                            safeCount,
-                            NativeArrayOptions.UninitializedMemory,
-                            out IDataVault vectorVault,
-                            out NativeArray<Vector3> conduitVectors))
-                    {
-                        return false;
-                    }
-
-                    try
-                    {
-                        if (!TryAcquireVegetationMemoryBuffer(
-                                ref _nativeMemory.AbyssalNavConduitStrengthsHandle,
-                                BufferID.VegetationAbyssalNavConduitStrengths,
-                                safeCount,
-                                NativeArrayOptions.UninitializedMemory,
-                                out IDataVault strengthVault,
-                                out NativeArray<float> conduitStrengths))
-                        {
-                            return false;
-                        }
-
-                        try
-                        {
-                            for (int i = 0; i < safeCount; i++)
-                            {
-                                nodes[i] = _abyssalNavNodeSnapshot[i];
-                                nodeTypes[i] = _abyssalNavNodeTypesSnapshot[i];
-                                conduitVectors[i] = _abyssalNavConduitVectorsSnapshot[i];
-                                conduitStrengths[i] = _abyssalNavConduitStrengthSnapshot[i];
-                            }
-                        }
-                        finally
-                        {
-                            strengthVault.ReleaseWriteLock(
-                                in _nativeMemory.AbyssalNavConduitStrengthsHandle,
-                                VegetationMemorySovereigntyConstants.OwnerSystemId);
-                        }
-                    }
-                    finally
-                    {
-                        vectorVault.ReleaseWriteLock(
-                            in _nativeMemory.AbyssalNavConduitVectorsHandle,
-                            VegetationMemorySovereigntyConstants.OwnerSystemId);
-                    }
-                }
-                finally
-                {
-                    typeVault.ReleaseWriteLock(
-                        in _nativeMemory.AbyssalNavNodeTypesHandle,
-                        VegetationMemorySovereigntyConstants.OwnerSystemId);
-                }
+                return true;
             }
             finally
             {
-                nodeVault.ReleaseWriteLock(
+                vault.ReleaseWriteLock(
                     in _nativeMemory.AbyssalNavNodeSnapshotHandle,
                     VegetationMemorySovereigntyConstants.OwnerSystemId);
             }
+        }
 
-            return true;
+        private bool CopyAbyssalNavNodeTypesToVault(int safeCount)
+        {
+            if (!TryAcquireVegetationMemoryBuffer(
+                    ref _nativeMemory.AbyssalNavNodeTypesHandle,
+                    BufferID.VegetationAbyssalNavNodeTypes,
+                    safeCount,
+                    NativeArrayOptions.UninitializedMemory,
+                    out IDataVault vault,
+                    out NativeArray<byte> nodeTypes))
+            {
+                return false;
+            }
+
+            try
+            {
+                for (int i = 0; i < safeCount; i++)
+                    nodeTypes[i] = _abyssalNavNodeTypesSnapshot[i];
+
+                return true;
+            }
+            finally
+            {
+                vault.ReleaseWriteLock(
+                    in _nativeMemory.AbyssalNavNodeTypesHandle,
+                    VegetationMemorySovereigntyConstants.OwnerSystemId);
+            }
+        }
+
+        private bool CopyAbyssalNavConduitVectorsToVault(int safeCount)
+        {
+            if (!TryAcquireVegetationMemoryBuffer(
+                    ref _nativeMemory.AbyssalNavConduitVectorsHandle,
+                    BufferID.VegetationAbyssalNavConduitVectors,
+                    safeCount,
+                    NativeArrayOptions.UninitializedMemory,
+                    out IDataVault vault,
+                    out NativeArray<Vector3> conduitVectors))
+            {
+                return false;
+            }
+
+            try
+            {
+                for (int i = 0; i < safeCount; i++)
+                    conduitVectors[i] = _abyssalNavConduitVectorsSnapshot[i];
+
+                return true;
+            }
+            finally
+            {
+                vault.ReleaseWriteLock(
+                    in _nativeMemory.AbyssalNavConduitVectorsHandle,
+                    VegetationMemorySovereigntyConstants.OwnerSystemId);
+            }
+        }
+
+        private bool CopyAbyssalNavConduitStrengthsToVault(int safeCount)
+        {
+            if (!TryAcquireVegetationMemoryBuffer(
+                    ref _nativeMemory.AbyssalNavConduitStrengthsHandle,
+                    BufferID.VegetationAbyssalNavConduitStrengths,
+                    safeCount,
+                    NativeArrayOptions.UninitializedMemory,
+                    out IDataVault vault,
+                    out NativeArray<float> conduitStrengths))
+            {
+                return false;
+            }
+
+            try
+            {
+                for (int i = 0; i < safeCount; i++)
+                    conduitStrengths[i] = _abyssalNavConduitStrengthSnapshot[i];
+
+                return true;
+            }
+            finally
+            {
+                vault.ReleaseWriteLock(
+                    in _nativeMemory.AbyssalNavConduitStrengthsHandle,
+                    VegetationMemorySovereigntyConstants.OwnerSystemId);
+            }
         }
 
         private bool EnsureAbyssalPathBuffers(int nodeCount)

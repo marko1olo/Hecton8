@@ -161,6 +161,9 @@ namespace Hecton8.Core.Bucketing
             if (ReferenceEquals(_dataVault, dataVault) && _entityCapacity == capacity && ResolveEntityBuckets().IsCreated)
                 return;
 
+            if (dataVault.IsAllocationLocked || dataVault.IsCompactionFenceActive)
+                return;
+
             ReleaseHandlesOnly();
             _dataVault = dataVault;
             _entityCapacity = capacity;

@@ -25,7 +25,7 @@ namespace Hecton8.World
     }
 
     /// <summary>
-    /// Compact quality branch used by outpost math LOD and visual overkill selection.
+    /// Compact compatibility label for legacy outpost consumers. Runtime cost policy uses QualityWeightQ8.
     /// </summary>
     public enum OutpostGenerationQualityTier : byte
     {
@@ -52,6 +52,8 @@ namespace Hecton8.World
         [FieldOffset(52)] public OutpostGenerationQualityTier QualityTier;
         [FieldOffset(53)] public OutpostGenerationState State;
         [FieldOffset(54)] public ushort Flags;
+        [FieldOffset(56)] public byte QualityWeightQ8;
+        [FieldOffset(57)] public byte SurvivalBandWeightQ8;
         [FieldOffset(56)] private ulong _pad0;
     }
 

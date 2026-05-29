@@ -73,20 +73,16 @@ namespace Hecton8.Core.Contracts
                 return false;
             }
 
-            if (!TryEnsureBound(vault) ||
-                !vault.TryAcquireMutationGuard(IntentMutationGuardMask))
+            if (!TryAcquireBoundIntentGuard(vault) &&
+                !TryAcquireReboundIntentGuard(vault))
             {
-                if (!TryBindDataVault(vault) ||
-                    !vault.TryAcquireMutationGuard(IntentMutationGuardMask))
-                {
-                    return false;
-                }
+                return false;
             }
 
             try
             {
-                if (!TryResolveIntentCapacity(vault, out uint capacity) ||
-                    !TryReadIntentControl(vault, capacity, out BulkheadContainmentIntentControlDTO control, out uint write))
+                if (!TryResolveIntentCapacityGuarded(vault, out uint capacity) ||
+                    !TryReadIntentControlGuarded(vault, capacity, out BulkheadContainmentIntentControlDTO control, out uint write))
                 {
                     return false;
                 }
@@ -106,13 +102,25 @@ namespace Hecton8.Core.Contracts
                 intent.Frame = frame;
 
                 control.LastEdgeHashID = edgeHash;
-                return TryWriteIntent(vault, write, capacity, in intent) &&
-                       TryPublishIntentControl(vault, in control);
+                return TryWriteIntentGuarded(vault, write, capacity, in intent) &&
+                       TryPublishIntentControlGuarded(vault, in control);
             }
             finally
             {
                 vault.ReleaseMutationGuard(IntentMutationGuardMask);
             }
+        }
+
+        private static bool TryAcquireBoundIntentGuard(IDataVault vault)
+        {
+            return TryEnsureBound(vault) &&
+                   vault.TryAcquireMutationGuard(IntentMutationGuardMask);
+        }
+
+        private static bool TryAcquireReboundIntentGuard(IDataVault vault)
+        {
+            return TryBindDataVault(vault) &&
+                   vault.TryAcquireMutationGuard(IntentMutationGuardMask);
         }
 
         private static bool TryBindDataVault(IDataVault vault)
@@ -148,30 +156,23 @@ namespace Hecton8.Core.Contracts
                     TryBindDataVault(vault));
         }
 
-        private static bool TryResolveIntentCapacity(IDataVault vault, out uint capacity)
+        private static bool TryResolveIntentCapacityGuarded(IDataVault vault, out uint capacity)
         {
             capacity = 0u;
             if (vault == null ||
                 !HasBoundHandles() ||
-                !vault.TryAcquireWriteLock(in s_intentsHandle, OwnerSystemId, out NativeArray<BulkheadContainmentIntentDTO> intents))
+                !vault.TryReadOnlyHandle(in s_intentsHandle, out NativeArray<BulkheadContainmentIntentDTO>.ReadOnly intents))
             {
                 return false;
             }
 
-            try
-            {
-                capacity = intents.IsCreated
-                    ? (uint)math.min(IntentCapacity, intents.Length)
-                    : 0u;
-                return capacity > 0u;
-            }
-            finally
-            {
-                vault.ReleaseWriteLock(in s_intentsHandle, OwnerSystemId);
-            }
+            capacity = intents.IsCreated
+                ? (uint)math.min(IntentCapacity, intents.Length)
+                : 0u;
+            return capacity > 0u;
         }
 
-        private static bool TryReadIntentControl(
+        private static bool TryReadIntentControlGuarded(
             IDataVault vault,
             uint capacity,
             out BulkheadContainmentIntentControlDTO control,
@@ -182,39 +183,32 @@ namespace Hecton8.Core.Contracts
             if (vault == null ||
                 capacity == 0u ||
                 !HasBoundHandles() ||
-                !vault.TryAcquireWriteLock(in s_controlHandle, OwnerSystemId, out NativeArray<BulkheadContainmentIntentControlDTO> controlRows))
+                !vault.TryReadOnlyHandle(in s_controlHandle, out NativeArray<BulkheadContainmentIntentControlDTO>.ReadOnly controlRows))
             {
                 return false;
             }
 
-            try
-            {
-                if (!controlRows.IsCreated || controlRows.Length == 0)
-                    return false;
+            if (!controlRows.IsCreated || controlRows.Length == 0)
+                return false;
 
-                control = controlRows[0];
-                write = control.WriteCursor;
-                uint read = control.ReadCursor;
-                uint pending = write - read;
-                if (pending >= capacity)
-                {
-                    read = write - capacity + 1u;
-                    control.ReadCursor = read;
-                    control.Dropped = unchecked(control.Dropped + 1u);
-                    control.Flags |= BulkheadContainmentIntentFlags.OverflowCompensated;
-                }
-
-                control.WriteCursor = unchecked(write + 1u);
-                control.Capacity = capacity;
-                return true;
-            }
-            finally
+            control = controlRows[0];
+            write = control.WriteCursor;
+            uint read = control.ReadCursor;
+            uint pending = write - read;
+            if (pending >= capacity)
             {
-                vault.ReleaseWriteLock(in s_controlHandle, OwnerSystemId);
+                read = write - capacity + 1u;
+                control.ReadCursor = read;
+                control.Dropped = unchecked(control.Dropped + 1u);
+                control.Flags |= BulkheadContainmentIntentFlags.OverflowCompensated;
             }
+
+            control.WriteCursor = unchecked(write + 1u);
+            control.Capacity = capacity;
+            return true;
         }
 
-        private static bool TryWriteIntent(
+        private static bool TryWriteIntentGuarded(
             IDataVault vault,
             uint write,
             uint capacity,
@@ -223,52 +217,38 @@ namespace Hecton8.Core.Contracts
             if (vault == null ||
                 capacity == 0u ||
                 !HasBoundHandles() ||
-                !vault.TryAcquireWriteLock(in s_intentsHandle, OwnerSystemId, out NativeArray<BulkheadContainmentIntentDTO> intents))
+                !vault.TryResolveHandle(in s_intentsHandle, out NativeArray<BulkheadContainmentIntentDTO> intents))
             {
                 return false;
             }
 
-            try
-            {
-                if (!intents.IsCreated || intents.Length == 0)
-                    return false;
+            if (!intents.IsCreated || intents.Length == 0)
+                return false;
 
-                uint safeCapacity = (uint)math.min(capacity, intents.Length);
-                if (safeCapacity == 0u)
-                    return false;
+            uint safeCapacity = (uint)math.min(capacity, intents.Length);
+            if (safeCapacity == 0u)
+                return false;
 
-                intents[(int)(write % safeCapacity)] = intent;
-                return true;
-            }
-            finally
-            {
-                vault.ReleaseWriteLock(in s_intentsHandle, OwnerSystemId);
-            }
+            intents[(int)(write % safeCapacity)] = intent;
+            return true;
         }
 
-        private static bool TryPublishIntentControl(
+        private static bool TryPublishIntentControlGuarded(
             IDataVault vault,
             in BulkheadContainmentIntentControlDTO control)
         {
             if (vault == null ||
                 !HasBoundHandles() ||
-                !vault.TryAcquireWriteLock(in s_controlHandle, OwnerSystemId, out NativeArray<BulkheadContainmentIntentControlDTO> controlRows))
+                !vault.TryResolveHandle(in s_controlHandle, out NativeArray<BulkheadContainmentIntentControlDTO> controlRows))
             {
                 return false;
             }
 
-            try
-            {
-                if (!controlRows.IsCreated || controlRows.Length == 0)
-                    return false;
+            if (!controlRows.IsCreated || controlRows.Length == 0)
+                return false;
 
-                controlRows[0] = control;
-                return true;
-            }
-            finally
-            {
-                vault.ReleaseWriteLock(in s_controlHandle, OwnerSystemId);
-            }
+            controlRows[0] = control;
+            return true;
         }
 
         private static bool HasBoundHandles()

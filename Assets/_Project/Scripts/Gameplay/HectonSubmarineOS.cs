@@ -675,9 +675,9 @@ namespace Hecton8.Gameplay
         private const float ThermalStressVwsThreshold01 = 0.65f;
         private const float HullBreachAreaThresholdSquareMeters = 0.0001f;
         private const float SubOsUnpoweredThreshold01 = 0.001f;
-        private const float LowTierSonarRefreshIntervalSeconds = 0.1f;
-        private const float MidTierSonarRefreshIntervalSeconds = 0.06666667f;
-        private const float HighTierSonarRefreshIntervalSeconds = 0.03333334f;
+        private const float SurvivalSonarRefreshIntervalSeconds = 0.1f;
+        private const float StandardSonarRefreshIntervalSeconds = 0.06666667f;
+        private const float VisualOverkillSonarRefreshIntervalSeconds = 0.03333334f;
         private const float DiagnosticsRefreshIntervalSeconds = 0.5f;
         private const float SonarMonitorRadiusMeters = 200f;
         private const float KnotsPerMeterPerSecond = 1.94384449f;
@@ -1412,9 +1412,15 @@ namespace Hecton8.Gameplay
         private static float ResolveSonarRefreshIntervalSeconds(float qualityWeight01)
         {
             float quality = SmoothQuality01(qualityWeight01);
-            float lowToMiddle = math.lerp(LowTierSonarRefreshIntervalSeconds, MidTierSonarRefreshIntervalSeconds, math.saturate(quality * 2f));
-            float middleToHigh = math.lerp(MidTierSonarRefreshIntervalSeconds, HighTierSonarRefreshIntervalSeconds, math.saturate((quality - 0.5f) * 2f));
-            return math.lerp(lowToMiddle, middleToHigh, quality);
+            float survivalToStandard = math.lerp(
+                SurvivalSonarRefreshIntervalSeconds,
+                StandardSonarRefreshIntervalSeconds,
+                math.saturate(quality * 2f));
+            float standardToOverkill = math.lerp(
+                StandardSonarRefreshIntervalSeconds,
+                VisualOverkillSonarRefreshIntervalSeconds,
+                math.saturate((quality - 0.5f) * 2f));
+            return math.lerp(survivalToStandard, standardToOverkill, quality);
         }
 
         private static float ResolveSonarInterpolationWeight(float qualityWeight01)

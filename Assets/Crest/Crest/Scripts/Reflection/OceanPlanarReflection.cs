@@ -92,6 +92,11 @@ namespace Crest
         UniversalAdditionalCameraData _cameraData;
 #endif
 
+#if UNITY_EDITOR
+        Camera _editorPlanarReflectionCamera;
+        OceanPlanarReflection _editorPlanarReflection;
+#endif
+
         private long _lastRefreshOnFrame = -1;
 
         const int CULL_DISTANCE_COUNT = 32;
@@ -122,6 +127,9 @@ namespace Crest
             // This is anyway called in OnPreRender, but was required here as there was a black reflection
             // for a frame without this earlier setup call.
             CreateWaterObjects(_camViewpoint);
+#if CREST_URP
+            CacheReflectionCameraDataCold();
+#endif
 
 #if UNITY_EDITOR
             if (!OceanRenderer.Instance.OceanMaterial.IsKeywordEnabled("_PLANARREFLECTIONS_ON"))
@@ -158,9 +166,11 @@ namespace Crest
             var editorCamera = OceanRenderer.Instance.ViewCamera;
             if (_camViewpoint.CompareTag("MainCamera") && editorCamera != null && editorCamera.cameraType == CameraType.SceneView)
             {
-                if (!editorCamera.TryGetComponent<OceanPlanarReflection>(out var editor))
+                if (!TryGetEditorPlanarReflection(editorCamera, out var editor))
                 {
                     editor = editorCamera.gameObject.AddComponent<OceanPlanarReflection>();
+                    _editorPlanarReflectionCamera = editorCamera;
+                    _editorPlanarReflection = editor;
                 }
 
                 if (editor != null)
@@ -254,6 +264,25 @@ namespace Crest
             Refreshed(Time.renderedFrameCount);
         }
 
+#if UNITY_EDITOR
+        bool TryGetEditorPlanarReflection(Camera editorCamera, out OceanPlanarReflection editor)
+        {
+            if (!ReferenceEquals(editorCamera, _editorPlanarReflectionCamera))
+            {
+                _editorPlanarReflectionCamera = editorCamera;
+                _editorPlanarReflection = null;
+
+                if (editorCamera != null)
+                {
+                    editorCamera.TryGetComponent(out _editorPlanarReflection);
+                }
+            }
+
+            editor = _editorPlanarReflection;
+            return editor != null;
+        }
+#endif
+
         bool RequestRefresh(long frame)
         {
             if (_lastRefreshOnFrame <= 0 || RefreshPerFrames < 2)
@@ -328,6 +357,15 @@ namespace Crest
             _camReflections.useOcclusionCulling = !_disableOcclusionCulling && _camViewpoint.useOcclusionCulling;
         }
 
+#if CREST_URP
+        void CacheReflectionCameraDataCold()
+        {
+            _cameraData = null;
+            if (_camReflections != null)
+                _camReflections.TryGetComponent(out _cameraData);
+        }
+#endif
+
         // On-demand create any objects we need for water
         void CreateWaterObjects(Camera currentCamera)
         {
@@ -360,10 +398,8 @@ namespace Crest
 #if CREST_URP
             if (RenderPipelineHelper.IsUniversal)
             {
-                if (_cameraData || _camReflections.TryGetComponent(out _cameraData))
-                {
+                if (_cameraData)
                     _cameraData.renderShadows = !_disableShadows;
-                }
             }
 #endif
 

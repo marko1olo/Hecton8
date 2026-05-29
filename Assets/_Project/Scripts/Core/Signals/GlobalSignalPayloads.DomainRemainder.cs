@@ -451,17 +451,21 @@ namespace Hecton8.Core.Contracts.Signals
     {
         public const byte KindEcology = 1;
         public const byte FlagEcology = 1 << 0;
-        public const byte FlagLowTierVisual = 1 << 1;
+        public const byte FlagSurvivalPressureVisual = 1 << 1;
         public const byte FlagSdfEmergence = 1 << 2;
-        public const byte FlagHighTierOverkill = 1 << 3;
+        public const byte FlagVisualOverkillCompatibility = 1 << 3;
+        public const byte FlagLowTierVisual = FlagSurvivalPressureVisual;
+        public const byte FlagHighTierOverkill = FlagVisualOverkillCompatibility;
 
         [FieldOffset(0)] public AbsoluteUniversePosition PositionAup;
         [FieldOffset(48)] public uint SourceHash;
         [FieldOffset(52)] public ushort SpawnedCount;
         [FieldOffset(54)] public ushort RequestedCount;
         [FieldOffset(56)] public byte EntityKind;
+        [FieldOffset(57)] public byte QualityWeightQ8;
         [FieldOffset(57)] public byte QualityTier;
         [FieldOffset(58)] public byte Flags;
+        [FieldOffset(59)] public byte SurvivalPressureQ8;
         [FieldOffset(59)] public byte Reserved;
         [FieldOffset(60)] public uint Frame;
     }

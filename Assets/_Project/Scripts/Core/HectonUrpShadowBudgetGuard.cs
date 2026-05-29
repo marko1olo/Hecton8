@@ -16,7 +16,9 @@ namespace Hecton8.Core
         private const float VisualOverkillDynamicShadowCullDistanceMeters = 28f;
         private const int MaxTrackedDynamicShadowLights = 16;
         private const int SurvivalShadowAtlasResolution = 1024;
-        private const int VisualOverkillShadowAtlasResolution = 2048;
+        private const int VisualOverkillShadowAtlasResolution = 4096;
+        private const float SurvivalShadowAtlasResolutionExponent = 10f;
+        private const float VisualOverkillShadowAtlasResolutionExponent = 12f;
         private const int SurvivalDynamicShadowCasterBudget = 1;
         private const int VisualOverkillDynamicShadowCasterBudget = 3;
         private const int ShadowQualityQuantizationMilli = 25;
@@ -37,11 +39,13 @@ namespace Hecton8.Core
         private static float _shadowDistanceMeters = SurvivalShadowDistanceMeters;
         private static float _dynamicShadowCullDistanceMeters = SurvivalDynamicShadowCullDistanceMeters;
         private static int _dynamicShadowCasterBudget = SurvivalDynamicShadowCasterBudget;
+        private static bool _hasLoadedRuntimeScene;
 
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
         private static void ResetStaticState()
         {
             SceneManager.sceneLoaded -= HandleSceneLoaded;
+            SceneManager.sceneUnloaded -= HandleSceneUnloaded;
             RenderPipelineManager.beginCameraRendering -= HandleBeginCameraRendering;
             _lastResolvedAsset = null;
             _lastQualityWeightMilli = -1;
@@ -49,6 +53,7 @@ namespace Hecton8.Core
             _shadowDistanceMeters = SurvivalShadowDistanceMeters;
             _dynamicShadowCullDistanceMeters = SurvivalDynamicShadowCullDistanceMeters;
             _dynamicShadowCasterBudget = SurvivalDynamicShadowCasterBudget;
+            _hasLoadedRuntimeScene = false;
             for (int i = 0; i < MaxTrackedDynamicShadowLights; i++)
                 ClearTrackedDynamicShadowLightSlot(i);
         }
@@ -56,9 +61,12 @@ namespace Hecton8.Core
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.BeforeSceneLoad)]
         private static void Initialize()
         {
+            _hasLoadedRuntimeScene = HasLoadedRuntimeSceneCold();
             EnsureRuntimeShadowBudget();
             SceneManager.sceneLoaded -= HandleSceneLoaded;
             SceneManager.sceneLoaded += HandleSceneLoaded;
+            SceneManager.sceneUnloaded -= HandleSceneUnloaded;
+            SceneManager.sceneUnloaded += HandleSceneUnloaded;
             RenderPipelineManager.beginCameraRendering -= HandleBeginCameraRendering;
             RenderPipelineManager.beginCameraRendering += HandleBeginCameraRendering;
         }
@@ -125,8 +133,14 @@ namespace Hecton8.Core
 
         private static void HandleSceneLoaded(Scene scene, LoadSceneMode mode)
         {
+            _hasLoadedRuntimeScene = _hasLoadedRuntimeScene || (scene.IsValid() && scene.isLoaded);
             if (!EnsureRuntimeShadowBudget())
                 EnforceSceneShadowDictatorshipCold();
+        }
+
+        private static void HandleSceneUnloaded(Scene scene)
+        {
+            _hasLoadedRuntimeScene = HasLoadedRuntimeSceneCold();
         }
 
         private static void HandleBeginCameraRendering(ScriptableRenderContext context, Camera camera)
@@ -187,7 +201,7 @@ namespace Hecton8.Core
 
             _lastResolvedAsset = urpAsset;
             _lastQualityWeightMilli = qualityWeightMilli;
-            if (HasLoadedRuntimeScene())
+            if (_hasLoadedRuntimeScene)
             {
                 EnforceSceneShadowDictatorshipCold();
                 return true;
@@ -292,7 +306,7 @@ namespace Hecton8.Core
 
         private static void EnforceSceneShadowDictatorshipCold()
         {
-            if (!HasLoadedRuntimeScene())
+            if (!_hasLoadedRuntimeScene)
                 return;
 
             TryEnforceTrackedShadowDictatorship();
@@ -397,13 +411,17 @@ namespace Hecton8.Core
 
         private static int ResolveShadowAtlasResolution(float shadowQuality01)
         {
-            float scaledResolution = Mathf.Lerp(
+            int supportedResolution = 1 << Mathf.Clamp(
+                Mathf.RoundToInt(Mathf.Lerp(
+                    SurvivalShadowAtlasResolutionExponent,
+                    VisualOverkillShadowAtlasResolutionExponent,
+                    Mathf.Clamp01(shadowQuality01))),
+                10,
+                12);
+            return Mathf.Clamp(
+                supportedResolution,
                 SurvivalShadowAtlasResolution,
-                VisualOverkillShadowAtlasResolution,
-                Mathf.Clamp01(shadowQuality01));
-            return scaledResolution < 1536f
-                ? SurvivalShadowAtlasResolution
-                : VisualOverkillShadowAtlasResolution;
+                VisualOverkillShadowAtlasResolution);
         }
 
         private static int ResolveQuantizedQualityMilli(float shadowQuality01)
@@ -477,7 +495,7 @@ namespace Hecton8.Core
             return UniversalRenderPipeline.asset;
         }
 
-        private static bool HasLoadedRuntimeScene()
+        private static bool HasLoadedRuntimeSceneCold()
         {
             Scene activeScene = SceneManager.GetActiveScene();
             return activeScene.IsValid() && activeScene.isLoaded;

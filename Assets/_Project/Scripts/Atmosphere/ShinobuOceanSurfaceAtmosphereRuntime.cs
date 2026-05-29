@@ -189,6 +189,10 @@ namespace Hecton8.Atmosphere
             EnsureVaultBuffersCold();
             if (!_initializedWeather)
                 LoadLegacyWeatherOrGenerateEmergency();
+#if UNITY_EDITOR
+            if (loadWeatherProfilesCsv && !_loadedCsv)
+                _loadedCsv = TryLoadWeatherProfilesCsv();
+#endif
 
             RefreshCachedSurfaceSnapshot();
             EnsureWaveGraphicsBuffers();
@@ -283,17 +287,12 @@ namespace Hecton8.Atmosphere
 
         public void SlowTick()
         {
-            if (!EnsureVaultBuffersCold())
+            if (!_vaultBuffersReady)
                 return;
 
             ResolveCameraTransformCold();
             if (!TryCompleteWaveParameterKernel())
                 return;
-
-#if UNITY_EDITOR
-            if (loadWeatherProfilesCsv && !_loadedCsv)
-                _loadedCsv = TryLoadWeatherProfilesCsv();
-#endif
 
             ApplyStormSurgeIfNarrativeRequiresIt();
             _shaderGlobalsDirty = true;

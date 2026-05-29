@@ -44,7 +44,8 @@ namespace Hecton8.Core
         SlowTick2Hz = AiOneHz,
         TimeDilation09 = 1UL << 23,
         TimeDilation08 = TimeDilation09,
-        LowTierEmergency = 1UL << 24,
+        SurvivalPressureEmergency = 1UL << 24,
+        LowTierEmergency = SurvivalPressureEmergency,
         VisualOverkill = 1UL << 25,
         VramShedding = 1UL << 26,
         CullingDistanceSqueeze = 1UL << 27,
@@ -183,6 +184,7 @@ namespace Hecton8.Core
         private static float _systemHealthIndex01;
         private static float _peakSystemHealthIndex01;
         private static float _fallbackHardwareBias;
+        private static float _processorFallbackPressure01;
         private static float _cachedBatteryLife01 = 1f;
         private static bool _usingHardwareSnapshot;
         private static IHardwareThermalService _hardwareThermalService;
@@ -274,7 +276,8 @@ namespace Hecton8.Core
             frameTimes[0] = 0f;
             blackBox[0] = default;
             _fallbackHardwareBias = ResolveFallbackHardwareBias();
-            _cachedBatteryLife01 = 1f;
+            _processorFallbackPressure01 = ResolveProcessorFallbackPressureCold();
+            _cachedBatteryLife01 = ResolveInitialBatteryLife01();
             _batteryPollCountdown = 0;
             _currentKillSwitchMask = 0UL;
             _currentPressureLevel = 0;
@@ -322,6 +325,7 @@ namespace Hecton8.Core
             _systemHealthIndex01 = 0f;
             _peakSystemHealthIndex01 = 0f;
             _fallbackHardwareBias = 0f;
+            _processorFallbackPressure01 = 0f;
             _cachedBatteryLife01 = 1f;
             _usingHardwareSnapshot = false;
             _hardwareThermalService = null;
@@ -480,7 +484,7 @@ namespace Hecton8.Core
 
         private static void SampleFallbackHardwareMetrics(float targetFps, NativeArray<float> hardwareMetrics)
         {
-            float pressure = math.saturate(ResolveFramePressure01(targetFps) + _fallbackHardwareBias + ResolveProcessorFallbackPressure01());
+            float pressure = math.saturate(ResolveFramePressure01(targetFps) + _fallbackHardwareBias + _processorFallbackPressure01);
             hardwareMetrics[(int)HardwareMetricSlot.CpuTempC] = 48f + pressure * 34f;
             hardwareMetrics[(int)HardwareMetricSlot.GpuUtil01] = pressure;
         }
@@ -578,19 +582,19 @@ namespace Hecton8.Core
             }
 
             _batteryPollCountdown = ResolveFrostPollFrames(targetFps);
+            return _cachedBatteryLife01;
+        }
+
+        private static float ResolveInitialBatteryLife01()
+        {
             float level = SystemInfo.batteryLevel;
             if (!math.isfinite(level) || level < 0f)
-                return _cachedBatteryLife01;
+                return 1f;
 
             BatteryStatus status = SystemInfo.batteryStatus;
-            if (status == BatteryStatus.Charging || status == BatteryStatus.Full)
-            {
-                _cachedBatteryLife01 = 1f;
-                return _cachedBatteryLife01;
-            }
-
-            _cachedBatteryLife01 = math.saturate(level);
-            return _cachedBatteryLife01;
+            return status == BatteryStatus.Charging || status == BatteryStatus.Full
+                ? 1f
+                : math.saturate(level);
         }
 
         private static int ResolveFrostPollFrames(float targetFps)
@@ -1118,6 +1122,12 @@ namespace Hecton8.Core
                 return true;
             }
 
+            if (vault.IsAllocationLocked || vault.IsCompactionFenceActive)
+            {
+                buffer = default;
+                return false;
+            }
+
             handle = vault.EnsureGenerationHandle<T>(
                 bufferId,
                 requiredLength,
@@ -1229,7 +1239,7 @@ namespace Hecton8.Core
             return unchecked((uint)mask ^ (uint)(mask >> 32));
         }
 
-        private static float ResolveProcessorFallbackPressure01()
+        private static float ResolveProcessorFallbackPressureCold()
         {
             int processorFrequency = SystemInfo.processorFrequency;
             if (processorFrequency <= 0)

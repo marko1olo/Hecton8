@@ -1076,6 +1076,9 @@ namespace Hecton8.Core.Diagnostics
             if (vault == null)
                 return false;
 
+            if (vault.IsAllocationLocked || vault.IsCompactionFenceActive)
+                return false;
+
             _dataVault = vault;
             _eventRingHandle = vault.EnsureGenerationHandle<AnalyticEventDTO>(
                 AnalyticsVaultBufferIds.EventRing,

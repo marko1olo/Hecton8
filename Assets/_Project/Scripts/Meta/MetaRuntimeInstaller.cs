@@ -42,7 +42,7 @@ namespace Hecton8.Meta
             if (serviceType == null)
                 return;
 
-            if (runtimeRoot.GetComponent(serviceType) == null)
+            if (!runtimeRoot.TryGetComponent(serviceType, out _))
                 runtimeRoot.AddComponent(serviceType);
         }
     }

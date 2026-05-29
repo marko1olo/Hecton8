@@ -17,15 +17,17 @@ namespace Hecton8.Core
     /// </summary>
     [DisallowMultipleComponent]
     [DefaultExecutionOrder(-9930)]
-    public sealed class PlayerRuntimeContextService : MonoBehaviour, IPlayerRuntimeContext, IPlayerSurvivalEnvironmentReadModel, IUpdatable, IServiceHeartbeat, IServiceShutdown, IGlobalRegistryHotSwapListener
+    public sealed class PlayerRuntimeContextService : MonoBehaviour, IPlayerRuntimeContext, IPlayerSurvivalEnvironmentReadModel, IUpdatable, ISlowTickable, IServiceHeartbeat, IServiceShutdown, IGlobalRegistryHotSwapListener
     {
         private const uint KccVelocityRuntimeContextMaxAgeFrames = 12u;
 
         private bool _isInitialized;
         private bool _registeredUpdatable;
+        private bool _registeredSlowTickable;
         private bool _registeredContext;
         private bool _registeredHotSwap;
         private bool _syncInProgress;
+        private bool _coldContextSyncRequested;
         private bool _dynamicContextReferencesEnabled;
         private IPlayerInventoryService _playerInventoryService;
         private IPlayerSensoryService _playerSensoryService;
@@ -423,6 +425,7 @@ namespace Hecton8.Core
             {
                 TryRegisterHotSwapListener();
                 TryRegisterUpdatable();
+                TryRegisterSlowTickable();
                 TryRegisterContext();
                 if (syncImmediately)
                     SyncPlayerContext();
@@ -436,6 +439,7 @@ namespace Hecton8.Core
             _isInitialized = true;
             TryRegisterHotSwapListener();
             TryRegisterUpdatable();
+            TryRegisterSlowTickable();
             TryRegisterContext();
             if (syncImmediately)
                 SyncPlayerContext();
@@ -444,7 +448,19 @@ namespace Hecton8.Core
         /// <inheritdoc />
         public void Tick(float deltaTime)
         {
-            SyncPlayerContext();
+            SyncPlayerContextHot();
+        }
+
+        public void SlowTick()
+        {
+            if (!_isInitialized)
+                return;
+
+            if (_coldContextSyncRequested)
+            {
+                _coldContextSyncRequested = false;
+                SyncPlayerContext();
+            }
         }
 
         private void Awake()
@@ -458,6 +474,7 @@ namespace Hecton8.Core
             {
                 TryRegisterHotSwapListener();
                 TryRegisterUpdatable();
+                TryRegisterSlowTickable();
                 TryRegisterContext();
                 SyncPlayerContext();
             }
@@ -466,6 +483,7 @@ namespace Hecton8.Core
         private void OnDisable()
         {
             TryUnregisterUpdatable();
+            TryUnregisterSlowTickable();
             TryUnregisterHotSwapListener();
             TryUnregisterContext();
         }
@@ -493,7 +511,9 @@ namespace Hecton8.Core
                 if (currentService != null)
                 {
                     TryUnregisterUpdatable();
+                    TryUnregisterSlowTickable();
                     TryRegisterUpdatable();
+                    TryRegisterSlowTickable();
                 }
 
                 return;
@@ -516,10 +536,12 @@ namespace Hecton8.Core
         private void ShutdownServiceState()
         {
             TryUnregisterUpdatable();
+            TryUnregisterSlowTickable();
             TryUnregisterHotSwapListener();
             TryUnregisterContext();
             _isInitialized = false;
             _syncInProgress = false;
+            _coldContextSyncRequested = false;
             _dynamicContextReferencesEnabled = false;
             ClearCachedPlayerReferences();
 
@@ -555,6 +577,7 @@ namespace Hecton8.Core
             _playerRootOverride = null;
             _playerInventoryService = null;
             _playerSensoryService = null;
+            _coldContextSyncRequested = false;
             _playerObject = null;
             _playerTransform = null;
             _playerMovement = null;
@@ -597,6 +620,36 @@ namespace Hecton8.Core
             }
         }
 
+        private void SyncPlayerContextHot()
+        {
+            if (_syncInProgress)
+                return;
+
+            GameObject currentPlayerObject = BootstrapState.CurrentPlayerObject != null ? BootstrapState.CurrentPlayerObject : _playerRootOverride;
+            if (!ReferenceEquals(_playerObject, currentPlayerObject) ||
+                _playerTransform == null ||
+                _hudNotification == null && Application.isPlaying)
+            {
+                _coldContextSyncRequested = true;
+                if (_runtimeContext.IsBound && _playerTransform != null)
+                    PublishMovementSnapshot();
+                return;
+            }
+
+            _syncInProgress = true;
+            try
+            {
+                if (_dynamicContextReferencesEnabled)
+                    RefreshDynamicContextReferencesHot();
+
+                PublishMovementSnapshot();
+            }
+            finally
+            {
+                _syncInProgress = false;
+            }
+        }
+
         private void SyncPlayerContextInternal()
         {
             GameObject currentPlayerObject = BootstrapState.CurrentPlayerObject != null ? BootstrapState.CurrentPlayerObject : _playerRootOverride;
@@ -605,7 +658,7 @@ namespace Hecton8.Core
                 (_hudNotification != null || !Application.isPlaying))
             {
                 if (_dynamicContextReferencesEnabled)
-                    RefreshDynamicContextReferences();
+                    RefreshDynamicContextReferences(allowColdComponentLookup: false);
                 PublishMovementSnapshot();
                 return;
             }
@@ -648,9 +701,9 @@ namespace Hecton8.Core
                 _playerObject.TryGetComponent(out _playerPda);
                 _playerObject.TryGetComponent(out _playerCollider);
 
-                ResolvePlayerHierarchyReferencesCold();
+                CachePlayerHierarchyReferencesCold();
                 if (_dynamicContextReferencesEnabled)
-                    RefreshDynamicContextReferences();
+                    RefreshDynamicContextReferences(allowColdComponentLookup: true);
             }
 
             if (_underwaterVisuals == null)
@@ -859,7 +912,7 @@ namespace Hecton8.Core
             return math.all(math.isfinite(absolute));
         }
 
-        private void RefreshDynamicContextReferences()
+        private void RefreshDynamicContextReferencesHot()
         {
             IPlayerInventoryService playerInventoryService = _playerInventoryService;
             if (playerInventoryService != null)
@@ -907,6 +960,17 @@ namespace Hecton8.Core
                 _handAnchor = _toolManager.HandAnchor;
             }
 
+            if (_playerPda == null)
+                _playerPda = PlayerPDA.ActiveRuntimeInstance;
+        }
+
+        private void RefreshDynamicContextReferences(bool allowColdComponentLookup)
+        {
+            RefreshDynamicContextReferencesHot();
+
+            if (!allowColdComponentLookup)
+                return;
+
             if (_playerMovement != null)
             {
                 if (_playerRigidbody == null)
@@ -925,8 +989,6 @@ namespace Hecton8.Core
                     _playerObject.TryGetComponent(out _playerBuilder);
             }
 
-            if (_playerPda == null)
-                _playerPda = PlayerPDA.ActiveRuntimeInstance;
         }
 
         private void RefreshDynamicServiceReferencesCold()
@@ -935,7 +997,7 @@ namespace Hecton8.Core
             _playerSensoryService = GlobalRegistry.RegisteredPlayerSensory;
         }
 
-        private void ResolvePlayerHierarchyReferencesCold()
+        private void CachePlayerHierarchyReferencesCold()
         {
             if (_playerMovement != null)
             {
@@ -983,6 +1045,26 @@ namespace Hecton8.Core
 
             GlobalRegistry.UnregisterUpdatable(this, PriorityLayer.Core);
             _registeredUpdatable = false;
+        }
+
+        private void TryRegisterSlowTickable()
+        {
+            if (_registeredSlowTickable || !Application.isPlaying)
+                return;
+
+            if (GlobalRegistry.Dispatcher == null)
+                return;
+
+            _registeredSlowTickable = GlobalRegistry.TryRegisterSlowTickable(this, PriorityLayer.Core);
+        }
+
+        private void TryUnregisterSlowTickable()
+        {
+            if (!_registeredSlowTickable)
+                return;
+
+            GlobalRegistry.UnregisterSlowTickable(this, PriorityLayer.Core);
+            _registeredSlowTickable = false;
         }
 
         private void TryRegisterHotSwapListener()

@@ -1947,6 +1947,16 @@ namespace Hecton8.Economy
 
         private void OnDisable()
         {
+            ShutdownForLifecycle();
+        }
+
+        private void OnDestroy()
+        {
+            ShutdownForLifecycle();
+        }
+
+        private void ShutdownForLifecycle()
+        {
             CompleteActiveJobForLifecycle();
 
             TryUnregisterHotSwapListener();

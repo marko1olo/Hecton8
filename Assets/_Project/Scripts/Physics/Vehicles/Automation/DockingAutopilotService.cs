@@ -586,7 +586,7 @@ namespace Hecton8.Vehicles.Automation
                 return true;
             }
 
-            if (_dataVault.IsAllocationLocked)
+            if (_dataVault.IsAllocationLocked || _dataVault.IsCompactionFenceActive)
                 return false;
 
             VaultGenerationHandle<ActiveSplineData> acquired = _dataVault.EnsureGenerationHandle<ActiveSplineData>(

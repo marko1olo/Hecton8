@@ -59,7 +59,11 @@ namespace Hecton8.Editor.ModdingSDK
             "Tools/apply_settings_row_snippet.ps1",
             "Tools/build_review_manifest.ps1",
             "Tools/build_submission_package.ps1",
+            "Tools/configure_dependencies.ps1",
             "Tools/configure_manifest_contract.ps1",
+            "Tools/create_first_mod.ps1",
+            "Tools/install_local_mod.ps1",
+            "Tools/diagnose_local_mods.ps1",
             "Tools/create_asset_entry_snippet.ps1",
             "Tools/create_locale_entry_snippet.ps1",
             "Tools/create_graph_node_snippet.ps1",
@@ -108,6 +112,7 @@ namespace Hecton8.Editor.ModdingSDK
         private int _manifestCapabilityActionPopupIndex;
         private int _manifestMaxEnvelopesPerFrame = -1;
         private long _manifestMaxAssetBytes = -1L;
+        private string _dependencyId = "com.example.library";
         private static readonly string[] ManifestCapabilityLabels =
         {
             "Command Graph Draft",
@@ -223,6 +228,8 @@ namespace Hecton8.Editor.ModdingSDK
             EditorGUILayout.Space(10f);
             DrawManifestContract();
             EditorGUILayout.Space(10f);
+            DrawDependencies();
+            EditorGUILayout.Space(10f);
             DrawAuthoringSnippets();
             EditorGUILayout.Space(10f);
             DrawContentAssetSnippet();
@@ -232,6 +239,8 @@ namespace Hecton8.Editor.ModdingSDK
             DrawIdentityEditor();
             EditorGUILayout.Space(10f);
             DrawValidationActions();
+            EditorGUILayout.Space(10f);
+            DrawLocalDiscoveryInstall();
             EditorGUILayout.Space(10f);
             DrawFileActions();
             EditorGUILayout.Space(10f);
@@ -388,6 +397,45 @@ namespace Hecton8.Editor.ModdingSDK
 
                 if (GUILayout.Button("Open Graph Apply Tool", GUILayout.Height(28f)))
                     OpenRelativePath("ModdingSDK/ExternalStarterKit/Tools/apply_graph_node_snippet.ps1");
+            }
+            EditorGUI.EndDisabledGroup();
+        }
+
+        private void DrawDependencies()
+        {
+            EditorGUILayout.LabelField("Dependency Contract", EditorStyles.boldLabel);
+            EditorGUILayout.HelpBox(
+                "Edits Dependencies in mod.h8manifest.json and mod.json together through a bounded offline tool, rejects self/duplicate/invalid IDs, validates after write, and restores both manifests on failure. Dependency order is loader metadata only; it does not grant runtime code execution rights.",
+                MessageType.Info);
+
+            _dependencyId = EditorGUILayout.TextField("Dependency Id", _dependencyId);
+
+            EditorGUI.BeginDisabledGroup(IsToolRunning);
+            using (EditorGUILayout.HorizontalScope _ = new EditorGUILayout.HorizontalScope())
+            {
+                if (GUILayout.Button("List Dependencies", GUILayout.Height(28f)))
+                    ConfigureDependencies("list");
+
+                if (GUILayout.Button("Add Dependency + Validate", GUILayout.Height(28f)))
+                    ConfigureDependencies("add");
+
+                if (GUILayout.Button("Remove Dependency + Validate", GUILayout.Height(28f)))
+                    ConfigureDependencies("remove");
+
+                if (GUILayout.Button("Clear Dependencies + Validate", GUILayout.Height(28f)))
+                    ConfigureDependencies("clear");
+            }
+
+            using (EditorGUILayout.HorizontalScope _ = new EditorGUILayout.HorizontalScope())
+            {
+                if (GUILayout.Button("Open Dependency Tool", GUILayout.Height(24f)))
+                    OpenRelativePath("ModdingSDK/ExternalStarterKit/Tools/configure_dependencies.ps1");
+
+                if (GUILayout.Button("Open Runtime Manifest", GUILayout.Height(24f)))
+                    OpenRelativePath("ModdingSDK/ExternalStarterKit/mod.json");
+
+                if (GUILayout.Button("Open Authoring Manifest", GUILayout.Height(24f)))
+                    OpenRelativePath("ModdingSDK/ExternalStarterKit/mod.h8manifest.json");
             }
             EditorGUI.EndDisabledGroup();
         }
@@ -595,6 +643,37 @@ namespace Hecton8.Editor.ModdingSDK
             EditorGUI.EndDisabledGroup();
         }
 
+        private void DrawLocalDiscoveryInstall()
+        {
+            EditorGUILayout.LabelField("Local Discovery Install", EditorStyles.boldLabel);
+            EditorGUILayout.HelpBox(
+                "Copies the reviewed starter source set plus Reports/review_manifest.json into this project's Mods/<mod-id> folder after byte/SHA-256 verification. Diagnose Local Mods mirrors recursive loader discovery and reports dependency blockers, duplicate IDs, cycles, load order, and envelope-only runtime-boundary status without mutating files.",
+                MessageType.Info);
+
+            EditorGUI.BeginDisabledGroup(IsToolRunning);
+            using (EditorGUILayout.HorizontalScope _ = new EditorGUILayout.HorizontalScope())
+            {
+                if (GUILayout.Button("Install Local Discovery Copy", GUILayout.Height(28f)))
+                    InstallLocalDiscoveryCopy();
+
+                if (GUILayout.Button("Diagnose Local Mods", GUILayout.Height(28f)))
+                    DiagnoseLocalMods();
+
+                if (GUILayout.Button("Open Local Mods Folder", GUILayout.Height(28f)))
+                    RevealRelativePath("Mods");
+            }
+
+            using (EditorGUILayout.HorizontalScope _ = new EditorGUILayout.HorizontalScope())
+            {
+                if (GUILayout.Button("Open Install Tool", GUILayout.Height(28f)))
+                    OpenRelativePath("ModdingSDK/ExternalStarterKit/Tools/install_local_mod.ps1");
+
+                if (GUILayout.Button("Open Diagnose Tool", GUILayout.Height(28f)))
+                    OpenRelativePath("ModdingSDK/ExternalStarterKit/Tools/diagnose_local_mods.ps1");
+            }
+            EditorGUI.EndDisabledGroup();
+        }
+
         private void DrawFileActions()
         {
             EditorGUILayout.LabelField("Authoring Files", EditorStyles.boldLabel);
@@ -768,6 +847,27 @@ namespace Hecton8.Editor.ModdingSDK
             RunStarterTool("Tools/configure_manifest_contract.ps1", arguments, true);
         }
 
+        private void ConfigureDependencies(string action)
+        {
+            string arguments = " -Action " + QuoteArgument(action);
+            if (action == "add" || action == "remove")
+                arguments += " -DependencyId " + QuoteArgument(_dependencyId);
+
+            RunStarterTool("Tools/configure_dependencies.ps1", arguments, true);
+        }
+
+        private void InstallLocalDiscoveryCopy()
+        {
+            string arguments = " -ProjectRoot " + QuoteArgument(GetProjectRootPath()) + " -Replace";
+            RunStarterTool("Tools/install_local_mod.ps1", arguments, true);
+        }
+
+        private void DiagnoseLocalMods()
+        {
+            string arguments = " -ProjectRoot " + QuoteArgument(GetProjectRootPath());
+            RunStarterTool("Tools/diagnose_local_mods.ps1", arguments, false);
+        }
+
         private void CreateOrRefreshStarterKit()
         {
             ModdingSdkHubWindow.CreateExternalStarterKit();
@@ -931,7 +1031,7 @@ namespace Hecton8.Editor.ModdingSDK
 
                 StringBuilder summary = new StringBuilder(384);
                 summary.Append("Runtime rights: envelope-only command requests after SDK/review approval.");
-                summary.AppendLine().Append("Supported authoring surfaces: graph, settings, locale, content manifest, review/submission package.");
+                summary.AppendLine().Append("Supported authoring surfaces: graph, settings, locale, content manifest, review/submission package, local discovery copy, local Mods diagnosis.");
                 summary.AppendLine().Append("Allowed graph opcode hex tokens: ").Append(allowedOpcodeTokenCount);
                 summary.Append(" / aliases: ").Append(allowedOpcodeAliasCount);
                 summary.AppendLine().Append("Declared authoring capabilities: ").Append(declaredCapabilityCount);
@@ -946,6 +1046,8 @@ namespace Hecton8.Editor.ModdingSDK
                 details.AppendLine("- Locale draft: Locales/en.h8loc.json, validated before review handoff.");
                 details.AppendLine("- Content manifest draft: Content/assets.h8manifest.json plus Content/Assets/, generated/applied by asset entry tools; review/approval only before runtime use.");
                 details.AppendLine("- Review and submission artifacts: Reports/review_manifest.json and Generated/<mod-id>_submission.zip.");
+                details.AppendLine("- Local discovery install: reviewed source copy into Mods/<mod-id> after hash/byte proof; not runtime authority.");
+                details.AppendLine("- Local Mods diagnosis: read-only inspection of Mods/<mod-id> manifest/review/runtime-boundary status.");
                 details.AppendLine();
                 details.AppendLine("NOT PUBLIC RIGHTS");
                 details.AppendLine("- Managed gameplay DLLs, Harmony, BepInEx, arbitrary Unity scripts, direct GameObject/ScriptableObject/material mutation.");

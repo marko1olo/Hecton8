@@ -4244,31 +4244,11 @@ namespace Hecton8.World
             if (writeTicks == _faunaGeneticsCsvLastWriteTicks)
                 return false;
 
-            int byteCount = 0;
-            bool scratchLocked = false;
-            if (!_faunaGeneticsCsvScratch.TryAcquireWriteLock(SystemID.AIEcology, out NativeArray<byte> csvScratch))
+            if (!TryReadFaunaGeneticsCsvScratchOneLock(path, fileInfo.Length, out int byteCount))
                 return false;
 
-            scratchLocked = true;
-            try
-            {
-                if (fileInfo.Length > csvScratch.Length)
-                    return false;
-
-                byteCount = TryReadFileIntoScratch(path, csvScratch);
-            }
-            finally
-            {
-                if (scratchLocked)
-                    _faunaGeneticsCsvScratch.ReleaseWriteLock(SystemID.AIEcology);
-            }
-
-            if (byteCount <= 0 ||
-                !_faunaGeneticsCsvScratch.TryResolveReadOnly(out NativeArray<byte>.ReadOnly csvScratchRead) ||
-                csvScratchRead.Length < byteCount)
-            {
+            if (byteCount <= 0)
                 return false;
-            }
 
             FaunaGeneticsTuningDTO tuning = FaunaGeneticsTuningDTO.CreateDefault();
             if (_faunaGeneticsTuning.TryResolveReadOnly(out NativeArray<FaunaGeneticsTuningDTO>.ReadOnly tuningRead) &&
@@ -4278,7 +4258,48 @@ namespace Hecton8.World
                 tuning = tuningRead[0];
             }
 
-            int updatedCount = 0;
+            if (!TryApplyFaunaGeneticsProfilesFromScratchOneLock(byteCount, ref tuning, out int updatedCount))
+                return false;
+
+            return TryCommitFaunaGeneticsTuningOneLock(tuning, updatedCount, writeTicks);
+        }
+
+        private bool TryReadFaunaGeneticsCsvScratchOneLock(string path, long fileLength, out int byteCount)
+        {
+            byteCount = 0;
+            bool scratchLocked = false;
+            if (!_faunaGeneticsCsvScratch.TryAcquireWriteLock(SystemID.AIEcology, out NativeArray<byte> csvScratch))
+                return false;
+
+            scratchLocked = true;
+            try
+            {
+                if (fileLength > csvScratch.Length)
+                    return false;
+
+                byteCount = TryReadFileIntoScratch(path, csvScratch);
+                return byteCount > 0;
+            }
+            finally
+            {
+                if (scratchLocked)
+                    _faunaGeneticsCsvScratch.ReleaseWriteLock(SystemID.AIEcology);
+            }
+        }
+
+        private bool TryApplyFaunaGeneticsProfilesFromScratchOneLock(
+            int byteCount,
+            ref FaunaGeneticsTuningDTO tuning,
+            out int updatedCount)
+        {
+            updatedCount = 0;
+            if (byteCount <= 0 ||
+                !_faunaGeneticsCsvScratch.TryResolveReadOnly(out NativeArray<byte>.ReadOnly csvScratchRead) ||
+                csvScratchRead.Length < byteCount)
+            {
+                return false;
+            }
+
             bool profilesLocked = false;
             try
             {
@@ -4292,6 +4313,8 @@ namespace Hecton8.World
                     ReadOnlySpan<byte> csv = new ReadOnlySpan<byte>(bytes, byteCount);
                     if (!FaunaGeneticsProfileCsv.TryApplyProfiles(csv, profiles, ref tuning, out updatedCount))
                         return false;
+
+                    return true;
                 }
             }
             finally
@@ -4299,7 +4322,13 @@ namespace Hecton8.World
                 if (profilesLocked)
                     _faunaGeneticsProfiles.ReleaseWriteLock(SystemID.AIEcology);
             }
+        }
 
+        private bool TryCommitFaunaGeneticsTuningOneLock(
+            FaunaGeneticsTuningDTO tuning,
+            int updatedCount,
+            long writeTicks)
+        {
             bool tuningLocked = false;
             try
             {

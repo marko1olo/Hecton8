@@ -13,6 +13,8 @@
     "Description": { "type": "string" },
     "Dependencies": {
       "type": "array",
+      "uniqueItems": true,
+      "maxItems": 32,
       "items": { "type": "string", "pattern": "^[a-z0-9]+([._-][a-z0-9]+)*$" }
     },
     "EntryAssembly": { "const": "" },

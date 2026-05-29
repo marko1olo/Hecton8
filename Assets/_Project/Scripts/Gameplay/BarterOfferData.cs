@@ -142,9 +142,14 @@ namespace Hecton8.Gameplay
             return IsBundleEntryRuntimeValid(rewards, slot);
         }
 
-        private void OnEnable()
+        public void RefreshValidationState()
         {
             RebuildValidationCache();
+        }
+
+        private void OnEnable()
+        {
+            RefreshValidationState();
         }
 
         private void RebuildValidationCache()
@@ -300,21 +305,7 @@ namespace Hecton8.Gameplay
             if (rewards == null)
                 rewards = Array.Empty<BarterItemAmount>();
 
-            NormalizeBundle(costs);
-            NormalizeBundle(rewards);
-            RebuildValidationCache();
-        }
-
-        private static void NormalizeBundle(BarterItemAmount[] bundle)
-        {
-            if (bundle == null)
-                return;
-
-            for (int i = 0; i < bundle.Length; i++)
-            {
-                if (bundle[i].amount <= 0)
-                    bundle[i].amount = 1;
-            }
+            RefreshValidationState();
         }
 #endif
     }

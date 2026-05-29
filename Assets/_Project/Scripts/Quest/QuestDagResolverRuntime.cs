@@ -38,7 +38,7 @@ namespace Hecton8.Quest
             int factionCapacity = QuestDagRuntimeConstants.DefaultFactionCapacity)
         {
             QuestDagBufferHandles handles = default;
-            if (vault == null)
+            if (vault == null || vault.IsAllocationLocked || vault.IsCompactionFenceActive)
                 return handles;
 
             nodeCapacity = math.max(1, nodeCapacity);
@@ -474,32 +474,33 @@ namespace Hecton8.Quest
     {
         private const string OwnerLabel = nameof(QuestDagResolverService);
         private const string SpatialHashLabel = "_triggerSpatialHash";
-        private const uint PinGlobalStateMasks = 0u;
-        private const uint PinOldStateMasks = 1u;
-        private const uint PinNodes = 2u;
-        private const uint PinNodeRuntime = 3u;
-        private const uint PinTriggerVolumes = 4u;
-        private const uint PinRequiredItemHashes = 5u;
-        private const uint PinRequiredItemQuantities = 6u;
-        private const uint PinPlayerItemHashes = 7u;
-        private const uint PinPlayerItemQuantities = 8u;
-        private const uint PinFactionStandings = 9u;
-        private const uint PinTelemetryRing = 10u;
-        private const uint PinTelemetryCursor = 11u;
-        private const uint PinCounters = 12u;
-        private const uint PinTriggerNodeIndices = 13u;
-        private const uint PinNoTriggerNodeIndices = 14u;
-        private const uint PinCsvMonitor = 15u;
+        private static readonly ulong ScheduledMutationGuardMask =
+            VaultMutationGuardBit(BufferID.QuestDagGlobalStateMasks) |
+            VaultMutationGuardBit(BufferID.QuestDagOldStateMasks) |
+            VaultMutationGuardBit(BufferID.QuestDagNodes) |
+            VaultMutationGuardBit(BufferID.QuestDagNodeRuntime) |
+            VaultMutationGuardBit(BufferID.QuestDagTriggerVolumes) |
+            VaultMutationGuardBit(BufferID.QuestDagRequiredItemHashes) |
+            VaultMutationGuardBit(BufferID.QuestDagRequiredItemQuantities) |
+            VaultMutationGuardBit(BufferID.QuestDagPlayerItemHashes) |
+            VaultMutationGuardBit(BufferID.QuestDagPlayerItemQuantities) |
+            VaultMutationGuardBit(BufferID.QuestDagFactionStandings) |
+            VaultMutationGuardBit(BufferID.QuestDagTelemetryRing) |
+            VaultMutationGuardBit(BufferID.QuestDagTelemetryCursor) |
+            VaultMutationGuardBit(BufferID.QuestDagCounters) |
+            VaultMutationGuardBit(BufferID.QuestDagTriggerNodeIndices) |
+            VaultMutationGuardBit(BufferID.QuestDagNoTriggerNodeIndices) |
+            VaultMutationGuardBit(BufferID.QuestDagCsvMonitor);
         private readonly IDataVault _vault;
         private QuestDagBufferHandles _handles;
         private NativeParallelMultiHashMap<int, int> _triggerSpatialHash;
         private JobHandle _scheduledHandle;
         private long _scheduledTimestamp;
         private uint _scheduledFrame;
-        private uint _scheduledBufferPinMask;
         private float _tickDilationPressure01;
         private int _resolverCadenceFrames = 1;
         private bool _hasScheduled;
+        private bool _scheduledBufferGuardHeld;
         private bool _disposed;
         private bool _spatialHashReady;
         private int _lastSpatialVersion = int.MinValue;
@@ -568,7 +569,7 @@ namespace Hecton8.Quest
             if (_resolverCadenceFrames > 1 && (frame % (uint)_resolverCadenceFrames) != 0u)
                 return dependency;
 
-            if (!TryPinScheduledBuffers())
+            if (!TryAcquireScheduledBufferGuard())
                 return dependency;
 
             bool scheduled = false;
@@ -653,7 +654,7 @@ namespace Hecton8.Quest
             finally
             {
                 if (!scheduled)
-                    ReleaseScheduledBufferPins();
+                    ReleaseScheduledBufferGuard();
             }
         }
 
@@ -669,7 +670,7 @@ namespace Hecton8.Quest
                 return;
 
             _hasScheduled = false;
-            ReleaseScheduledBufferPins();
+            ReleaseScheduledBufferGuard();
 
             PatchPendingScheduleDrops();
             PatchSpatialHashRebuildCount();
@@ -836,7 +837,7 @@ namespace Hecton8.Quest
             {
                 DispatcherJobFence.TryComplete(ref _scheduledHandle, forceComplete: true);
                 _hasScheduled = false;
-                ReleaseScheduledBufferPins();
+                ReleaseScheduledBufferGuard();
             }
 
             JobHandle disposeHandle = Dispose(default);
@@ -866,101 +867,40 @@ namespace Hecton8.Quest
             }
 
             DispatcherJobFence.TryComplete(ref disposeDependency, forceComplete: true);
-            ReleaseScheduledBufferPins();
+            ReleaseScheduledBufferGuard();
             QuestDagVault.ReleaseBuffers(_vault, ref _handles);
 
             _disposed = true;
             return disposeDependency;
         }
 
-        private bool TryPinScheduledBuffers()
+        private bool TryAcquireScheduledBufferGuard()
         {
             IDataVault vault = _vault;
-            if (vault == null)
+            if (vault == null || vault.IsCompactionFenceActive)
                 return false;
 
-            ReleaseScheduledBufferPins();
-            uint mask = 0u;
-            bool pinned = false;
-            try
-            {
-                if (!TryPinScheduledBuffer(vault, BufferID.QuestDagGlobalStateMasks, PinGlobalStateMasks, ref mask) ||
-                    !TryPinScheduledBuffer(vault, BufferID.QuestDagOldStateMasks, PinOldStateMasks, ref mask) ||
-                    !TryPinScheduledBuffer(vault, BufferID.QuestDagNodes, PinNodes, ref mask) ||
-                    !TryPinScheduledBuffer(vault, BufferID.QuestDagNodeRuntime, PinNodeRuntime, ref mask) ||
-                    !TryPinScheduledBuffer(vault, BufferID.QuestDagTriggerVolumes, PinTriggerVolumes, ref mask) ||
-                    !TryPinScheduledBuffer(vault, BufferID.QuestDagRequiredItemHashes, PinRequiredItemHashes, ref mask) ||
-                    !TryPinScheduledBuffer(vault, BufferID.QuestDagRequiredItemQuantities, PinRequiredItemQuantities, ref mask) ||
-                    !TryPinScheduledBuffer(vault, BufferID.QuestDagPlayerItemHashes, PinPlayerItemHashes, ref mask) ||
-                    !TryPinScheduledBuffer(vault, BufferID.QuestDagPlayerItemQuantities, PinPlayerItemQuantities, ref mask) ||
-                    !TryPinScheduledBuffer(vault, BufferID.QuestDagFactionStandings, PinFactionStandings, ref mask) ||
-                    !TryPinScheduledBuffer(vault, BufferID.QuestDagTelemetryRing, PinTelemetryRing, ref mask) ||
-                    !TryPinScheduledBuffer(vault, BufferID.QuestDagTelemetryCursor, PinTelemetryCursor, ref mask) ||
-                    !TryPinScheduledBuffer(vault, BufferID.QuestDagCounters, PinCounters, ref mask) ||
-                    !TryPinScheduledBuffer(vault, BufferID.QuestDagTriggerNodeIndices, PinTriggerNodeIndices, ref mask) ||
-                    !TryPinScheduledBuffer(vault, BufferID.QuestDagNoTriggerNodeIndices, PinNoTriggerNodeIndices, ref mask) ||
-                    !TryPinScheduledBuffer(vault, BufferID.QuestDagCsvMonitor, PinCsvMonitor, ref mask))
-                {
-                    return false;
-                }
-
-                _scheduledBufferPinMask = mask;
-                pinned = true;
-                return true;
-            }
-            finally
-            {
-                if (!pinned)
-                    ReleaseScheduledBufferPins(vault, mask);
-            }
-        }
-
-        private static bool TryPinScheduledBuffer(IDataVault vault, BufferID bufferId, uint pinBit, ref uint mask)
-        {
-            if (!vault.TryLockBuffer(bufferId, SystemID.QuestDag))
+            ReleaseScheduledBufferGuard();
+            if (!vault.TryAcquireMutationGuard(ScheduledMutationGuardMask))
                 return false;
 
-            mask |= 1u << (int)pinBit;
+            _scheduledBufferGuardHeld = true;
             return true;
         }
 
-        private void ReleaseScheduledBufferPins()
+        private void ReleaseScheduledBufferGuard()
         {
-            uint mask = _scheduledBufferPinMask;
-            if (mask == 0u)
+            if (!_scheduledBufferGuardHeld)
                 return;
 
-            _scheduledBufferPinMask = 0u;
-            ReleaseScheduledBufferPins(_vault, mask);
+            _scheduledBufferGuardHeld = false;
+            _vault?.ReleaseMutationGuard(ScheduledMutationGuardMask);
         }
 
-        private static void ReleaseScheduledBufferPins(IDataVault vault, uint mask)
+        private static ulong VaultMutationGuardBit(BufferID bufferId)
         {
-            if (vault == null || mask == 0u)
-                return;
-
-            ReleaseScheduledBufferPin(vault, mask, PinCsvMonitor, BufferID.QuestDagCsvMonitor);
-            ReleaseScheduledBufferPin(vault, mask, PinNoTriggerNodeIndices, BufferID.QuestDagNoTriggerNodeIndices);
-            ReleaseScheduledBufferPin(vault, mask, PinTriggerNodeIndices, BufferID.QuestDagTriggerNodeIndices);
-            ReleaseScheduledBufferPin(vault, mask, PinCounters, BufferID.QuestDagCounters);
-            ReleaseScheduledBufferPin(vault, mask, PinTelemetryCursor, BufferID.QuestDagTelemetryCursor);
-            ReleaseScheduledBufferPin(vault, mask, PinTelemetryRing, BufferID.QuestDagTelemetryRing);
-            ReleaseScheduledBufferPin(vault, mask, PinFactionStandings, BufferID.QuestDagFactionStandings);
-            ReleaseScheduledBufferPin(vault, mask, PinPlayerItemQuantities, BufferID.QuestDagPlayerItemQuantities);
-            ReleaseScheduledBufferPin(vault, mask, PinPlayerItemHashes, BufferID.QuestDagPlayerItemHashes);
-            ReleaseScheduledBufferPin(vault, mask, PinRequiredItemQuantities, BufferID.QuestDagRequiredItemQuantities);
-            ReleaseScheduledBufferPin(vault, mask, PinRequiredItemHashes, BufferID.QuestDagRequiredItemHashes);
-            ReleaseScheduledBufferPin(vault, mask, PinTriggerVolumes, BufferID.QuestDagTriggerVolumes);
-            ReleaseScheduledBufferPin(vault, mask, PinNodeRuntime, BufferID.QuestDagNodeRuntime);
-            ReleaseScheduledBufferPin(vault, mask, PinNodes, BufferID.QuestDagNodes);
-            ReleaseScheduledBufferPin(vault, mask, PinOldStateMasks, BufferID.QuestDagOldStateMasks);
-            ReleaseScheduledBufferPin(vault, mask, PinGlobalStateMasks, BufferID.QuestDagGlobalStateMasks);
-        }
-
-        private static void ReleaseScheduledBufferPin(IDataVault vault, uint mask, uint pinBit, BufferID bufferId)
-        {
-            if ((mask & (1u << (int)pinBit)) != 0u)
-                vault.TryUnlockBuffer(bufferId, SystemID.QuestDag);
+            int bitIndex = unchecked((int)((uint)(int)bufferId & 63u));
+            return 1UL << bitIndex;
         }
 
         private static int ReadCounter(NativeArray<int> counters, QuestDagRuntimeConstants.CounterSlot slot)

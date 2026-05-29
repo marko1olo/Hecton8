@@ -270,7 +270,7 @@ namespace Hecton8.AI.Cognition
             flags = (byte)(flags | math.select(0, UtilityAICognitionActionFlags.NoTarget, selection.TargetHash == 0u));
             flags = (byte)(flags | math.select(0, UtilityAICognitionActionFlags.Fault, !finiteUtilities));
             flags = (byte)(flags | math.select(0, UtilityAICognitionActionFlags.ReducedCandidateBudget, candidateBudget < UtilityAICognitionConstants.DearLieCandidateLimit));
-            flags = (byte)(flags | math.select(0, UtilityAICognitionActionFlags.HighQuality, quality > 0.75f));
+            byte qualityWeightQ8 = UtilityAICognitionJobMath.EncodeQualityWeightQ8(quality);
 
             CognitionActionOutputDTO output = default;
             output.Utilities = utilities;
@@ -284,6 +284,7 @@ namespace Hecton8.AI.Cognition
             output.Frame = Frame;
             output.Flags = flags;
             output.CandidateCount = candidateCount;
+            output.QualityWeightQ8 = qualityWeightQ8;
             Outputs[index] = output;
         }
 
@@ -398,7 +399,7 @@ namespace Hecton8.AI.Cognition
             float faultLimit = UtilityAICognitionJobMath.SanitizePositive(tuning.Runtime.w, UtilityAICognitionConstants.FaultMicroseconds);
             uint faultFlags = 0u;
             faultFlags |= (uint)math.select(0, UtilityAICognitionActionFlags.Fault, nonFiniteCount > 0u);
-            faultFlags |= (uint)math.select(0, UtilityAICognitionActionFlags.HighQuality, BurstMicroseconds > faultLimit);
+            faultFlags |= (uint)math.select(0, UtilityAICognitionActionFlags.OverBudget, BurstMicroseconds > faultLimit);
 
             int cursor = (int)(Frame % UtilityAICognitionConstants.TelemetryFrames);
             if (TelemetryCursor.IsCreated & TelemetryCursor.Length > 0)
@@ -498,6 +499,12 @@ namespace Hecton8.AI.Cognition
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static byte EncodeQualityWeightQ8(float quality)
+        {
+            float encodedQuality = Sanitize01(quality);
+            return (byte)math.clamp((int)math.round(encodedQuality * 255f), 0, 255);
+        }
+
         public static float EvaluatePolynomial01(float x, float4 coefficients)
         {
             float input = Sanitize01(x);

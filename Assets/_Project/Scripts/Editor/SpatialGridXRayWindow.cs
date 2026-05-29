@@ -13,25 +13,25 @@ namespace Hecton8.Editor
     public sealed class SpatialGridXRayWindow : EditorWindow
     {
         private const int HistogramBars = 64;
+        private const int CounterDebugCellCount = 8;
+        private const int RawGridScratchCapacity = 256;
+        private const int DebugCellScratchCapacity = 256;
+        private static readonly Color RawGridLowColor = new Color(0.1f, 0.35f, 1f, 0.22f);
+        private static readonly Color RawGridHighColor = new Color(1f, 0.05f, 0.02f, 0.62f);
+        private static readonly Color DebugCellLowColor = new Color(0.1f, 0.35f, 1f, 0.22f);
+        private static readonly Color DebugCellHighColor = new Color(1f, 0.05f, 0.02f, 0.62f);
+        private static readonly RawGridCandidate[] RawGridCandidates = new RawGridCandidate[RawGridScratchCapacity];
+        private static readonly RawGridDrawCell[] RawGridDrawScratch = new RawGridDrawCell[RawGridScratchCapacity];
+        private static readonly ShinobuSpatialHashDebugCell[] DebugCellScratch = new ShinobuSpatialHashDebugCell[DebugCellScratchCapacity];
         private static readonly BufferID[] TelemetryReadSet =
         {
             BufferID.ShinobuSpatialGridTelemetryRing,
             BufferID.ShinobuSpatialGridTelemetryCursor,
             BufferID.ShinobuSpatialGridTuning
         };
-        private static readonly BufferID[] RawGridReadSet =
-        {
-            BufferID.ShinobuSpatialGridEntries,
-            BufferID.ShinobuSpatialGridBucketRanges,
-            BufferID.ShinobuAmbientEntitySnapshot,
-            BufferID.ShinobuAmbientAupSnapshot,
-            BufferID.ShinobuSpatialGridTelemetryRing,
-            BufferID.ShinobuSpatialGridTelemetryCursor
-        };
-        private static readonly BufferID[] DebugCellsReadSet =
-        {
-            BufferID.ShinobuSpatialHashDebugCells
-        };
+        private static readonly ulong RawGridTelemetryMutationGuardMask =
+            SpatialGridMutationGuardBit(BufferID.ShinobuSpatialGridTelemetryCursor) |
+            SpatialGridMutationGuardBit(BufferID.ShinobuSpatialGridTelemetryRing);
         private readonly Label[] _histogram = new Label[HistogramBars];
         private Label _summaryLabel;
         private Slider _cellSizeSlider;
@@ -41,6 +41,21 @@ namespace Hecton8.Editor
         private IntegerField _hashZField;
         private Toggle _drawGridToggle;
         private bool _updatingControls;
+
+        private struct RawGridCandidate
+        {
+            public SpatialGridBucketRangeDTO Range;
+            public int EntityIndex;
+            public float3 Position;
+            public AmbientEntityAupDTO Aup;
+        }
+
+        private struct RawGridDrawCell
+        {
+            public float3 Center;
+            public float CellSizeMeters;
+            public int Occupancy;
+        }
 
         [MenuItem("HECTON-8/AI/Spatial Grid X-Ray")]
         public static void Open()
@@ -121,7 +136,7 @@ namespace Hecton8.Editor
                 return;
             }
 
-            if (!TryLockReadSet(vault, TelemetryReadSet, out int lockedCount))
+            if (!TryAcquireReadSetGuard(vault, TelemetryReadSet, out ulong readSetGuardMask))
             {
                 if (_summaryLabel != null)
                     _summaryLabel.text = "Spatial grid Vault buffers are busy.";
@@ -191,7 +206,7 @@ namespace Hecton8.Editor
             }
             finally
             {
-                UnlockReadSet(vault, TelemetryReadSet, lockedCount);
+                ReleaseReadSetGuard(vault, readSetGuardMask);
             }
         }
 
@@ -213,7 +228,139 @@ namespace Hecton8.Editor
 
         private static bool DrawRawSpatialGrid(IDataVault vault)
         {
-            if (!TryLockReadSet(vault, RawGridReadSet, out int lockedCount))
+            if (!TryBuildRawGridDrawScratch(vault, out int drawCount))
+                return false;
+
+            for (int i = 0; i < drawCount; i++)
+            {
+                RawGridDrawCell cell = RawGridDrawScratch[i];
+                float density = math.saturate(cell.Occupancy / 64f);
+                Handles.color = Color.Lerp(RawGridLowColor, RawGridHighColor, density);
+                Handles.DrawWireCube((Vector3)cell.Center, Vector3.one * cell.CellSizeMeters);
+            }
+
+            return drawCount > 0;
+        }
+
+        private static bool TryBuildRawGridDrawScratch(IDataVault vault, out int drawCount)
+        {
+            drawCount = 0;
+            if (!TryReadRawGridTelemetry(vault, out SpatialGridTelemetryEntry latest) ||
+                latest.Frame == 0u ||
+                latest.CellSizeMeters <= 0f ||
+                !TryCopyRawGridRanges(vault, latest.Frame, out int candidateCount) ||
+                !TryCopyRawGridEntries(vault, candidateCount, out candidateCount) ||
+                !TryCopyRawGridPositions(vault, candidateCount, out candidateCount) ||
+                !TryCopyRawGridAups(vault, candidateCount, out candidateCount))
+            {
+                return false;
+            }
+
+            float cellSize = math.max(0.25f, latest.CellSizeMeters);
+            for (int i = 0; i < candidateCount && drawCount < RawGridDrawScratch.Length; i++)
+            {
+                RawGridCandidate candidate = RawGridCandidates[i];
+                double3 absolute = candidate.Aup.PositionAup.ToAbsoluteDouble3();
+                if (!math.all(math.isfinite(absolute)))
+                    continue;
+
+                double3 centerAbsolute = absolute - (double3)candidate.Position;
+                SpatialGridCell64 gridCell = ShinobuSpatialGridMath.QuantizeCell(absolute, cellSize);
+                double3 absoluteCellCenter = math.double3(
+                    (gridCell.X + 0.5d) * cellSize,
+                    (gridCell.Y + 0.5d) * cellSize,
+                    (gridCell.Z + 0.5d) * cellSize);
+                float3 center = (float3)(absoluteCellCenter - centerAbsolute);
+                if (!math.all(math.isfinite(center)))
+                    continue;
+
+                RawGridDrawCell drawCell = default;
+                drawCell.Center = center;
+                drawCell.CellSizeMeters = cellSize;
+                drawCell.Occupancy = candidate.Range.Count;
+                RawGridDrawScratch[drawCount++] = drawCell;
+            }
+
+            return drawCount > 0;
+        }
+
+        private static bool TryReadRawGridTelemetry(IDataVault vault, out SpatialGridTelemetryEntry latest)
+        {
+            latest = default;
+            int current = 0;
+            if (vault == null ||
+                !vault.TryAcquireMutationGuard(RawGridTelemetryMutationGuardMask))
+            {
+                return false;
+            }
+
+            try
+            {
+                if (!TryRead(vault, BufferID.ShinobuSpatialGridTelemetryCursor, out NativeArray<int> cursor) ||
+                    cursor.Length <= 0)
+                {
+                    return false;
+                }
+
+                current = math.max(0, cursor[0]);
+                if (!TryRead(vault, BufferID.ShinobuSpatialGridTelemetryRing, out NativeArray<SpatialGridTelemetryEntry> telemetry) ||
+                    telemetry.Length <= 0)
+                {
+                    return false;
+                }
+
+                int lastIndex = current > 0 ? (current - 1) % telemetry.Length : 0;
+                latest = telemetry[lastIndex];
+                return latest.Frame != 0u && latest.CellSizeMeters > 0f;
+            }
+            finally
+            {
+                vault.ReleaseMutationGuard(RawGridTelemetryMutationGuardMask);
+            }
+        }
+
+        private static bool TryCopyRawGridRanges(IDataVault vault, uint frame, out int candidateCount)
+        {
+            candidateCount = 0;
+            if (vault == null ||
+                !TryAcquireSingleBufferGuard(vault, BufferID.ShinobuSpatialGridBucketRanges, out ulong guardMask))
+            {
+                return false;
+            }
+
+            try
+            {
+                if (!TryRead(vault, BufferID.ShinobuSpatialGridBucketRanges, out NativeArray<SpatialGridBucketRangeDTO> ranges) ||
+                    ranges.Length <= 0)
+                {
+                    return false;
+                }
+
+                for (int i = 0; i < ranges.Length && candidateCount < RawGridCandidates.Length; i++)
+                {
+                    SpatialGridBucketRangeDTO range = ranges[i];
+                    if (range.Flags != frame || range.CellHash == 0u || range.Count <= 0)
+                        continue;
+
+                    RawGridCandidate candidate = default;
+                    candidate.Range = range;
+                    RawGridCandidates[candidateCount++] = candidate;
+                }
+
+                return candidateCount > 0;
+            }
+            finally
+            {
+                ReleaseReadSetGuard(vault, guardMask);
+            }
+        }
+
+        private static bool TryCopyRawGridEntries(IDataVault vault, int candidateCount, out int compactedCount)
+        {
+            compactedCount = 0;
+            if (vault == null ||
+                candidateCount <= 0 ||
+                !TryAcquireSingleBufferGuard(vault, BufferID.ShinobuSpatialGridEntries, out ulong guardMask))
             {
                 return false;
             }
@@ -221,97 +368,128 @@ namespace Hecton8.Editor
             try
             {
                 if (!TryRead(vault, BufferID.ShinobuSpatialGridEntries, out NativeArray<SpatialGridEntryDTO> entries) ||
-                    !TryRead(vault, BufferID.ShinobuSpatialGridBucketRanges, out NativeArray<SpatialGridBucketRangeDTO> ranges) ||
-                    !TryRead(vault, BufferID.ShinobuAmbientEntitySnapshot, out NativeArray<AmbientEntityDTO> entities) ||
-                    !TryRead(vault, BufferID.ShinobuAmbientAupSnapshot, out NativeArray<AmbientEntityAupDTO> aups) ||
-                    !TryRead(vault, BufferID.ShinobuSpatialGridTelemetryRing, out NativeArray<SpatialGridTelemetryEntry> telemetry) ||
-                    !TryRead(vault, BufferID.ShinobuSpatialGridTelemetryCursor, out NativeArray<int> cursor) ||
-                    entries.Length <= 0 ||
-                    ranges.Length <= 0 ||
-                    entities.Length <= 0 ||
-                    aups.Length <= 0 ||
-                    telemetry.Length <= 0 ||
-                    cursor.Length <= 0)
+                    entries.Length <= 0)
                 {
                     return false;
                 }
 
-                int current = math.max(0, cursor[0]);
-                int lastIndex = current > 0 ? (current - 1) % telemetry.Length : 0;
-                SpatialGridTelemetryEntry latest = telemetry[lastIndex];
-                if (latest.Frame == 0u || latest.CellSizeMeters <= 0f)
-                    return false;
-
-                int drawn = 0;
-                int maxDrawn = math.min(256, ranges.Length);
-                float cellSize = math.max(0.25f, latest.CellSizeMeters);
-                for (int i = 0; i < ranges.Length && drawn < maxDrawn; i++)
+                for (int i = 0; i < candidateCount; i++)
                 {
-                    SpatialGridBucketRangeDTO range = ranges[i];
-                    if (range.Flags != latest.Frame || range.CellHash == 0u || range.Count <= 0 || (uint)range.StartIndex >= (uint)entries.Length)
+                    RawGridCandidate candidate = RawGridCandidates[i];
+                    if ((uint)candidate.Range.StartIndex >= (uint)entries.Length)
                         continue;
 
-                    SpatialGridEntryDTO first = entries[range.StartIndex];
+                    SpatialGridEntryDTO first = entries[candidate.Range.StartIndex];
                     int entityIndex = (int)first.EntityRowIndex;
-                    if ((uint)entityIndex >= (uint)entities.Length || (uint)entityIndex >= (uint)aups.Length)
+                    if (entityIndex < 0)
                         continue;
 
-                    float3 position = entities[entityIndex].Position;
-                    if (!math.all(math.isfinite(position)))
-                        continue;
-
-                    double3 absolute = aups[entityIndex].PositionAup.ToAbsoluteDouble3();
-                    if (!math.all(math.isfinite(absolute)))
-                        continue;
-
-                    double3 centerAbsolute = absolute - (double3)position;
-                    SpatialGridCell64 gridCell = ShinobuSpatialGridMath.QuantizeCell(absolute, cellSize);
-                    double3 absoluteCellCenter = new double3(
-                        (gridCell.X + 0.5d) * cellSize,
-                        (gridCell.Y + 0.5d) * cellSize,
-                        (gridCell.Z + 0.5d) * cellSize);
-                    float3 center = (float3)(absoluteCellCenter - centerAbsolute);
-                    if (!math.all(math.isfinite(center)))
-                        continue;
-
-                    float density = math.saturate(range.Count / 64f);
-                    Handles.color = Color.Lerp(new Color(0.1f, 0.35f, 1f, 0.22f), new Color(1f, 0.05f, 0.02f, 0.62f), density);
-                    Handles.DrawWireCube((Vector3)center, Vector3.one * cellSize);
-                    drawn++;
+                    candidate.EntityIndex = entityIndex;
+                    RawGridCandidates[compactedCount++] = candidate;
                 }
 
-                return drawn > 0;
+                return compactedCount > 0;
             }
             finally
             {
-                UnlockReadSet(vault, RawGridReadSet, lockedCount);
+                ReleaseReadSetGuard(vault, guardMask);
+            }
+        }
+
+        private static bool TryCopyRawGridPositions(IDataVault vault, int candidateCount, out int compactedCount)
+        {
+            compactedCount = 0;
+            if (vault == null ||
+                candidateCount <= 0 ||
+                !TryAcquireSingleBufferGuard(vault, BufferID.ShinobuAmbientEntitySnapshot, out ulong guardMask))
+            {
+                return false;
+            }
+
+            try
+            {
+                if (!TryRead(vault, BufferID.ShinobuAmbientEntitySnapshot, out NativeArray<AmbientEntityDTO> entities) ||
+                    entities.Length <= 0)
+                {
+                    return false;
+                }
+
+                for (int i = 0; i < candidateCount; i++)
+                {
+                    RawGridCandidate candidate = RawGridCandidates[i];
+                    if ((uint)candidate.EntityIndex >= (uint)entities.Length)
+                        continue;
+
+                    float3 position = entities[candidate.EntityIndex].Position;
+                    if (!math.all(math.isfinite(position)))
+                        continue;
+
+                    candidate.Position = position;
+                    RawGridCandidates[compactedCount++] = candidate;
+                }
+
+                return compactedCount > 0;
+            }
+            finally
+            {
+                ReleaseReadSetGuard(vault, guardMask);
+            }
+        }
+
+        private static bool TryCopyRawGridAups(IDataVault vault, int candidateCount, out int compactedCount)
+        {
+            compactedCount = 0;
+            if (vault == null ||
+                candidateCount <= 0 ||
+                !TryAcquireSingleBufferGuard(vault, BufferID.ShinobuAmbientAupSnapshot, out ulong guardMask))
+            {
+                return false;
+            }
+
+            try
+            {
+                if (!TryRead(vault, BufferID.ShinobuAmbientAupSnapshot, out NativeArray<AmbientEntityAupDTO> aups) ||
+                    aups.Length <= 0)
+                {
+                    return false;
+                }
+
+                for (int i = 0; i < candidateCount; i++)
+                {
+                    RawGridCandidate candidate = RawGridCandidates[i];
+                    if ((uint)candidate.EntityIndex >= (uint)aups.Length)
+                        continue;
+
+                    candidate.Aup = aups[candidate.EntityIndex];
+                    RawGridCandidates[compactedCount++] = candidate;
+                }
+
+                return compactedCount > 0;
+            }
+            finally
+            {
+                ReleaseReadSetGuard(vault, guardMask);
             }
         }
 
         private static void DrawDebugCellsFallback(IDataVault vault)
         {
-            if (!TryLockReadSet(vault, DebugCellsReadSet, out int lockedCount))
+            int requestedCount = ReadDebugCellCount(vault);
+            if (requestedCount <= 0 ||
+                !TryCopyDebugCells(vault, requestedCount, out int copiedCount))
+            {
                 return;
-
-            try
-            {
-                if (!TryRead(vault, BufferID.ShinobuSpatialHashDebugCells, out NativeArray<ShinobuSpatialHashDebugCell> cells))
-                    return;
-
-                for (int i = 0; i < cells.Length; i++)
-                {
-                    ShinobuSpatialHashDebugCell cell = cells[i];
-                    if (cell.Flags == 0u || cell.Occupancy <= 0 || cell.CellSizeMeters <= 0f)
-                        continue;
-
-                    float density = math.saturate(cell.Occupancy / 64f);
-                    Handles.color = Color.Lerp(new Color(0.1f, 0.35f, 1f, 0.22f), new Color(1f, 0.05f, 0.02f, 0.62f), density);
-                    Handles.DrawWireCube((Vector3)cell.CenterLocal, Vector3.one * cell.CellSizeMeters);
-                }
             }
-            finally
+
+            for (int i = 0; i < copiedCount; i++)
             {
-                UnlockReadSet(vault, DebugCellsReadSet, lockedCount);
+                ShinobuSpatialHashDebugCell cell = DebugCellScratch[i];
+                if (cell.Flags == 0u || cell.Occupancy <= 0 || cell.CellSizeMeters <= 0f)
+                    continue;
+
+                float density = math.saturate(cell.Occupancy / 64f);
+                Handles.color = Color.Lerp(DebugCellLowColor, DebugCellHighColor, density);
+                Handles.DrawWireCube((Vector3)cell.CenterLocal, Vector3.one * cell.CellSizeMeters);
             }
         }
 
@@ -375,35 +553,88 @@ namespace Hecton8.Editor
                    buffer.IsCreated;
         }
 
-        private static bool TryLockReadSet(IDataVault vault, BufferID[] set, out int lockedCount)
+        private static int ReadCounter(NativeArray<int> counters, int index)
         {
-            lockedCount = 0;
+            if (!counters.IsCreated || (uint)index >= (uint)counters.Length)
+                return 0;
+
+            return counters[index];
+        }
+
+        private static int ReadDebugCellCount(IDataVault vault)
+        {
+            if (vault == null || !TryAcquireSingleBufferGuard(vault, BufferID.ShinobuEcosystemCounters, out ulong guardMask))
+                return 0;
+
+            try
+            {
+                if (!TryRead(vault, BufferID.ShinobuEcosystemCounters, out NativeArray<int> counters))
+                    return 0;
+
+                return math.clamp(ReadCounter(counters, CounterDebugCellCount), 0, DebugCellScratchCapacity);
+            }
+            finally
+            {
+                ReleaseReadSetGuard(vault, guardMask);
+            }
+        }
+
+        private static bool TryCopyDebugCells(IDataVault vault, int requestedCount, out int copiedCount)
+        {
+            copiedCount = 0;
+            if (vault == null ||
+                requestedCount <= 0 ||
+                !TryAcquireSingleBufferGuard(vault, BufferID.ShinobuSpatialHashDebugCells, out ulong guardMask))
+            {
+                return false;
+            }
+
+            try
+            {
+                if (!TryRead(vault, BufferID.ShinobuSpatialHashDebugCells, out NativeArray<ShinobuSpatialHashDebugCell> cells))
+                    return false;
+
+                int count = math.min(math.min(requestedCount, cells.Length), DebugCellScratch.Length);
+                for (int i = 0; i < count; i++)
+                    DebugCellScratch[i] = cells[i];
+                copiedCount = count;
+                return copiedCount > 0;
+            }
+            finally
+            {
+                ReleaseReadSetGuard(vault, guardMask);
+            }
+        }
+
+        private static bool TryAcquireSingleBufferGuard(IDataVault vault, BufferID bufferId, out ulong guardMask)
+        {
+            guardMask = SpatialGridMutationGuardBit(bufferId);
+            return vault != null && vault.TryAcquireMutationGuard(guardMask);
+        }
+
+        private static bool TryAcquireReadSetGuard(IDataVault vault, BufferID[] set, out ulong guardMask)
+        {
+            guardMask = 0UL;
             if (vault == null || set == null)
                 return false;
 
             for (int i = 0; i < set.Length; i++)
-            {
-                if (!vault.TryLockBuffer(set[i], SystemID.CoreDiagnostics))
-                {
-                    UnlockReadSet(vault, set, lockedCount);
-                    lockedCount = 0;
-                    return false;
-                }
+                guardMask |= SpatialGridMutationGuardBit(set[i]);
 
-                lockedCount++;
-            }
-
-            return true;
+            return guardMask != 0UL && vault.TryAcquireMutationGuard(guardMask);
         }
 
-        private static void UnlockReadSet(IDataVault vault, BufferID[] set, int lockedCount)
+        private static void ReleaseReadSetGuard(IDataVault vault, ulong guardMask)
         {
-            if (vault == null || set == null)
+            if (vault == null || guardMask == 0UL)
                 return;
 
-            int count = math.min(lockedCount, set.Length);
-            for (int i = count - 1; i >= 0; i--)
-                vault.TryUnlockBuffer(set[i], SystemID.CoreDiagnostics);
+            vault.ReleaseMutationGuard(guardMask);
+        }
+
+        private static ulong SpatialGridMutationGuardBit(BufferID bufferId)
+        {
+            return 1UL << ((int)bufferId & 31);
         }
     }
 }

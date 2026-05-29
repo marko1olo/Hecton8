@@ -186,6 +186,8 @@ namespace Hecton8.PDA
         private bool _cartographyUploadPending;
         private bool _cartographySimulationBuffersPinned;
         private bool _cartographyUploadBuffersPinned;
+        private IDataVault _cartographySimulationPinnedVault;
+        private IDataVault _cartographyUploadPinnedVault;
         private ulong _cartographySimulationPinnedMask;
         private ulong _cartographyUploadPinnedMask;
         private uint _cartographyUploadPendingRevision;
@@ -1569,8 +1571,13 @@ namespace Hecton8.PDA
             if (_cartographySimulationBuffersPinned)
                 return true;
 
-            if (!TryAcquireCartographyPins(CartographyPinSimulation, out _cartographySimulationPinnedMask))
+            if (!TryAcquireCartographyPins(
+                    CartographyPinSimulation,
+                    out _cartographySimulationPinnedMask,
+                    out _cartographySimulationPinnedVault))
+            {
                 return false;
+            }
 
             _cartographySimulationBuffersPinned = true;
             return true;
@@ -1581,7 +1588,8 @@ namespace Hecton8.PDA
             if (!_cartographySimulationBuffersPinned)
                 return;
 
-            ReleaseCartographyPins(_cartographyVault, _cartographySimulationPinnedMask);
+            ReleaseCartographyPins(_cartographySimulationPinnedVault, _cartographySimulationPinnedMask);
+            _cartographySimulationPinnedVault = null;
             _cartographySimulationPinnedMask = 0UL;
             _cartographySimulationBuffersPinned = false;
         }
@@ -1591,8 +1599,13 @@ namespace Hecton8.PDA
             if (_cartographyUploadBuffersPinned)
                 return true;
 
-            if (!TryAcquireCartographyPins(CartographyPinUpload, out _cartographyUploadPinnedMask))
+            if (!TryAcquireCartographyPins(
+                    CartographyPinUpload,
+                    out _cartographyUploadPinnedMask,
+                    out _cartographyUploadPinnedVault))
+            {
                 return false;
+            }
 
             _cartographyUploadBuffersPinned = true;
             return true;
@@ -1603,14 +1616,22 @@ namespace Hecton8.PDA
             if (!_cartographyUploadBuffersPinned)
                 return;
 
-            ReleaseCartographyPins(_cartographyVault, _cartographyUploadPinnedMask);
+            ReleaseCartographyPins(_cartographyUploadPinnedVault, _cartographyUploadPinnedMask);
+            _cartographyUploadPinnedVault = null;
             _cartographyUploadPinnedMask = 0UL;
             _cartographyUploadBuffersPinned = false;
         }
 
         private bool TryAcquireCartographyPins(ulong requestedMask, out ulong pinnedMask)
         {
+            IDataVault pinnedVault;
+            return TryAcquireCartographyPins(requestedMask, out pinnedMask, out pinnedVault);
+        }
+
+        private bool TryAcquireCartographyPins(ulong requestedMask, out ulong pinnedMask, out IDataVault pinnedVault)
+        {
             pinnedMask = 0UL;
+            pinnedVault = null;
             if (requestedMask == 0UL)
                 return true;
 
@@ -1621,7 +1642,11 @@ namespace Hecton8.PDA
             if (vault == null || vault.IsCompactionFenceActive)
                 return false;
 
-            return TryAcquireCartographyPins(vault, requestedMask, out pinnedMask);
+            if (!TryAcquireCartographyPins(vault, requestedMask, out pinnedMask))
+                return false;
+
+            pinnedVault = vault;
+            return true;
         }
 
         private static bool TryAcquireCartographyPins(IDataVault vault, ulong requestedMask, out ulong pinnedMask)
@@ -1630,53 +1655,65 @@ namespace Hecton8.PDA
             if (vault == null || vault.IsCompactionFenceActive)
                 return false;
 
-            if (!TryPinCartographyBuffer(vault, requestedMask, CartographyPinDiscoveryWords, CartographyVaultBufferIds.DiscoveryWords, ref pinnedMask) ||
-                !TryPinCartographyBuffer(vault, requestedMask, CartographyPinSectorTable, CartographyVaultBufferIds.SectorTable, ref pinnedMask) ||
-                !TryPinCartographyBuffer(vault, requestedMask, CartographyPinUploadPackedR8, CartographyVaultBufferIds.UploadPackedR8, ref pinnedMask) ||
-                !TryPinCartographyBuffer(vault, requestedMask, CartographyPinTelemetryRing, CartographyVaultBufferIds.TelemetryRing, ref pinnedMask) ||
-                !TryPinCartographyBuffer(vault, requestedMask, CartographyPinTelemetryCursor, CartographyVaultBufferIds.TelemetryCursor, ref pinnedMask) ||
-                !TryPinCartographyBuffer(vault, requestedMask, CartographyPinTuning, CartographyVaultBufferIds.Tuning, ref pinnedMask) ||
-                !TryPinCartographyBuffer(vault, requestedMask, CartographyPinScannerProfiles, CartographyVaultBufferIds.ScannerProfiles, ref pinnedMask) ||
-                !TryPinCartographyBuffer(vault, requestedMask, CartographyPinCsvScratch, CartographyVaultBufferIds.CsvScratch, ref pinnedMask) ||
-                !TryPinCartographyBuffer(vault, requestedMask, CartographyPinMockPings, CartographyVaultBufferIds.MockPings, ref pinnedMask) ||
-                !TryPinCartographyBuffer(vault, requestedMask, CartographyPinPendingPings, CartographyVaultBufferIds.PendingPings, ref pinnedMask) ||
-                !TryPinCartographyBuffer(vault, requestedMask, CartographyPinPendingSignalCounts, CartographyVaultBufferIds.PendingSignalCounts, ref pinnedMask) ||
-                !TryPinCartographyBuffer(vault, requestedMask, CartographyPinCounters, CartographyVaultBufferIds.Counters, ref pinnedMask) ||
-                !TryPinCartographyBuffer(vault, requestedMask, CartographyPinActiveSectorHashes, CartographyVaultBufferIds.ActiveSectorHashes, ref pinnedMask) ||
-                !TryPinCartographyBuffer(vault, requestedMask, CartographyPinDebugVoxels, CartographyVaultBufferIds.DebugVoxels, ref pinnedMask) ||
-                !TryPinCartographyBuffer(vault, requestedMask, CartographyPinRleRuns, CartographyVaultBufferIds.RleRuns, ref pinnedMask) ||
-                !TryPinCartographyBuffer(vault, requestedMask, CartographyPinSurfaceMaskWords, CartographyVaultBufferIds.SurfaceMaskWords, ref pinnedMask) ||
-                !TryPinCartographyBuffer(vault, requestedMask, CartographyPinRollbackSnapshotWords, CartographyVaultBufferIds.RollbackSnapshotWords, ref pinnedMask) ||
-                !TryPinCartographyBuffer(vault, requestedMask, CartographyPinState, CartographyVaultBufferIds.State, ref pinnedMask) ||
-                !TryPinCartographyBuffer(vault, requestedMask, CartographyPinLegacyExplorationWords, CartographyVaultBufferIds.LegacyExplorationWords, ref pinnedMask) ||
-                !TryPinCartographyBuffer(vault, requestedMask, CartographyPinLegacyExploredBitIndices, CartographyVaultBufferIds.LegacyExploredBitIndices, ref pinnedMask) ||
-                !TryPinCartographyBuffer(vault, requestedMask, CartographyPinLegacyExploredBitIndexCount, CartographyVaultBufferIds.LegacyExploredBitIndexCount, ref pinnedMask))
-            {
+            ulong guardMask = CartographyMutationGuardMaskFromPins(requestedMask);
+            if (guardMask != 0UL && !vault.TryAcquireMutationGuard(guardMask))
                 return false;
-            }
 
+            pinnedMask = requestedMask;
             return true;
         }
 
-        private static bool TryPinCartographyBuffer(
-            IDataVault vault,
-            ulong requestedMask,
-            ulong bit,
-            BufferID bufferId,
-            ref ulong pinnedMask)
+        private static ulong CartographyMutationGuardMaskFromPins(ulong pinnedMask)
         {
-            if ((requestedMask & bit) == 0UL)
-                return true;
+            ulong guardMask = 0UL;
+            if ((pinnedMask & CartographyPinDiscoveryWords) != 0UL)
+                guardMask |= CartographyMutationGuardBit(CartographyVaultBufferIds.DiscoveryWords);
+            if ((pinnedMask & CartographyPinSectorTable) != 0UL)
+                guardMask |= CartographyMutationGuardBit(CartographyVaultBufferIds.SectorTable);
+            if ((pinnedMask & CartographyPinUploadPackedR8) != 0UL)
+                guardMask |= CartographyMutationGuardBit(CartographyVaultBufferIds.UploadPackedR8);
+            if ((pinnedMask & CartographyPinTelemetryRing) != 0UL)
+                guardMask |= CartographyMutationGuardBit(CartographyVaultBufferIds.TelemetryRing);
+            if ((pinnedMask & CartographyPinTelemetryCursor) != 0UL)
+                guardMask |= CartographyMutationGuardBit(CartographyVaultBufferIds.TelemetryCursor);
+            if ((pinnedMask & CartographyPinTuning) != 0UL)
+                guardMask |= CartographyMutationGuardBit(CartographyVaultBufferIds.Tuning);
+            if ((pinnedMask & CartographyPinScannerProfiles) != 0UL)
+                guardMask |= CartographyMutationGuardBit(CartographyVaultBufferIds.ScannerProfiles);
+            if ((pinnedMask & CartographyPinCsvScratch) != 0UL)
+                guardMask |= CartographyMutationGuardBit(CartographyVaultBufferIds.CsvScratch);
+            if ((pinnedMask & CartographyPinMockPings) != 0UL)
+                guardMask |= CartographyMutationGuardBit(CartographyVaultBufferIds.MockPings);
+            if ((pinnedMask & CartographyPinPendingPings) != 0UL)
+                guardMask |= CartographyMutationGuardBit(CartographyVaultBufferIds.PendingPings);
+            if ((pinnedMask & CartographyPinPendingSignalCounts) != 0UL)
+                guardMask |= CartographyMutationGuardBit(CartographyVaultBufferIds.PendingSignalCounts);
+            if ((pinnedMask & CartographyPinCounters) != 0UL)
+                guardMask |= CartographyMutationGuardBit(CartographyVaultBufferIds.Counters);
+            if ((pinnedMask & CartographyPinActiveSectorHashes) != 0UL)
+                guardMask |= CartographyMutationGuardBit(CartographyVaultBufferIds.ActiveSectorHashes);
+            if ((pinnedMask & CartographyPinDebugVoxels) != 0UL)
+                guardMask |= CartographyMutationGuardBit(CartographyVaultBufferIds.DebugVoxels);
+            if ((pinnedMask & CartographyPinRleRuns) != 0UL)
+                guardMask |= CartographyMutationGuardBit(CartographyVaultBufferIds.RleRuns);
+            if ((pinnedMask & CartographyPinSurfaceMaskWords) != 0UL)
+                guardMask |= CartographyMutationGuardBit(CartographyVaultBufferIds.SurfaceMaskWords);
+            if ((pinnedMask & CartographyPinRollbackSnapshotWords) != 0UL)
+                guardMask |= CartographyMutationGuardBit(CartographyVaultBufferIds.RollbackSnapshotWords);
+            if ((pinnedMask & CartographyPinState) != 0UL)
+                guardMask |= CartographyMutationGuardBit(CartographyVaultBufferIds.State);
+            if ((pinnedMask & CartographyPinLegacyExplorationWords) != 0UL)
+                guardMask |= CartographyMutationGuardBit(CartographyVaultBufferIds.LegacyExplorationWords);
+            if ((pinnedMask & CartographyPinLegacyExploredBitIndices) != 0UL)
+                guardMask |= CartographyMutationGuardBit(CartographyVaultBufferIds.LegacyExploredBitIndices);
+            if ((pinnedMask & CartographyPinLegacyExploredBitIndexCount) != 0UL)
+                guardMask |= CartographyMutationGuardBit(CartographyVaultBufferIds.LegacyExploredBitIndexCount);
+            return guardMask;
+        }
 
-            if (vault.TryLockBuffer(bufferId, SystemID.UI))
-            {
-                pinnedMask |= bit;
-                return true;
-            }
-
-            ReleaseCartographyPins(vault, pinnedMask);
-            pinnedMask = 0UL;
-            return false;
+        private static ulong CartographyMutationGuardBit(BufferID bufferId)
+        {
+            return 1UL << (unchecked((int)(uint)(int)bufferId) & 31);
         }
 
         private static void ReleaseCartographyPins(IDataVault vault, ulong pinnedMask)
@@ -1684,48 +1721,9 @@ namespace Hecton8.PDA
             if (vault == null || pinnedMask == 0UL)
                 return;
 
-            if ((pinnedMask & CartographyPinLegacyExploredBitIndexCount) != 0UL)
-                vault.TryUnlockBuffer(CartographyVaultBufferIds.LegacyExploredBitIndexCount, SystemID.UI);
-            if ((pinnedMask & CartographyPinLegacyExploredBitIndices) != 0UL)
-                vault.TryUnlockBuffer(CartographyVaultBufferIds.LegacyExploredBitIndices, SystemID.UI);
-            if ((pinnedMask & CartographyPinLegacyExplorationWords) != 0UL)
-                vault.TryUnlockBuffer(CartographyVaultBufferIds.LegacyExplorationWords, SystemID.UI);
-            if ((pinnedMask & CartographyPinState) != 0UL)
-                vault.TryUnlockBuffer(CartographyVaultBufferIds.State, SystemID.UI);
-            if ((pinnedMask & CartographyPinRollbackSnapshotWords) != 0UL)
-                vault.TryUnlockBuffer(CartographyVaultBufferIds.RollbackSnapshotWords, SystemID.UI);
-            if ((pinnedMask & CartographyPinSurfaceMaskWords) != 0UL)
-                vault.TryUnlockBuffer(CartographyVaultBufferIds.SurfaceMaskWords, SystemID.UI);
-            if ((pinnedMask & CartographyPinRleRuns) != 0UL)
-                vault.TryUnlockBuffer(CartographyVaultBufferIds.RleRuns, SystemID.UI);
-            if ((pinnedMask & CartographyPinDebugVoxels) != 0UL)
-                vault.TryUnlockBuffer(CartographyVaultBufferIds.DebugVoxels, SystemID.UI);
-            if ((pinnedMask & CartographyPinActiveSectorHashes) != 0UL)
-                vault.TryUnlockBuffer(CartographyVaultBufferIds.ActiveSectorHashes, SystemID.UI);
-            if ((pinnedMask & CartographyPinCounters) != 0UL)
-                vault.TryUnlockBuffer(CartographyVaultBufferIds.Counters, SystemID.UI);
-            if ((pinnedMask & CartographyPinPendingSignalCounts) != 0UL)
-                vault.TryUnlockBuffer(CartographyVaultBufferIds.PendingSignalCounts, SystemID.UI);
-            if ((pinnedMask & CartographyPinPendingPings) != 0UL)
-                vault.TryUnlockBuffer(CartographyVaultBufferIds.PendingPings, SystemID.UI);
-            if ((pinnedMask & CartographyPinMockPings) != 0UL)
-                vault.TryUnlockBuffer(CartographyVaultBufferIds.MockPings, SystemID.UI);
-            if ((pinnedMask & CartographyPinCsvScratch) != 0UL)
-                vault.TryUnlockBuffer(CartographyVaultBufferIds.CsvScratch, SystemID.UI);
-            if ((pinnedMask & CartographyPinScannerProfiles) != 0UL)
-                vault.TryUnlockBuffer(CartographyVaultBufferIds.ScannerProfiles, SystemID.UI);
-            if ((pinnedMask & CartographyPinTuning) != 0UL)
-                vault.TryUnlockBuffer(CartographyVaultBufferIds.Tuning, SystemID.UI);
-            if ((pinnedMask & CartographyPinTelemetryCursor) != 0UL)
-                vault.TryUnlockBuffer(CartographyVaultBufferIds.TelemetryCursor, SystemID.UI);
-            if ((pinnedMask & CartographyPinTelemetryRing) != 0UL)
-                vault.TryUnlockBuffer(CartographyVaultBufferIds.TelemetryRing, SystemID.UI);
-            if ((pinnedMask & CartographyPinUploadPackedR8) != 0UL)
-                vault.TryUnlockBuffer(CartographyVaultBufferIds.UploadPackedR8, SystemID.UI);
-            if ((pinnedMask & CartographyPinSectorTable) != 0UL)
-                vault.TryUnlockBuffer(CartographyVaultBufferIds.SectorTable, SystemID.UI);
-            if ((pinnedMask & CartographyPinDiscoveryWords) != 0UL)
-                vault.TryUnlockBuffer(CartographyVaultBufferIds.DiscoveryWords, SystemID.UI);
+            ulong guardMask = CartographyMutationGuardMaskFromPins(pinnedMask);
+            if (guardMask != 0UL)
+                vault.ReleaseMutationGuard(guardMask);
         }
 
         private static void FlagCartographyFailure(CartographyVaultBuffers buffers, uint flags)

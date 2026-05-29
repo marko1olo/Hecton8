@@ -357,7 +357,7 @@ namespace Hecton8.Core.Diagnostics.Visuals
                     return true;
             }
 
-            if (vault.IsCompactionFenceActive)
+            if (vault.IsAllocationLocked || vault.IsCompactionFenceActive)
                 return false;
 
             handle = vault.EnsureGenerationHandle<T>(

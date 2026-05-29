@@ -369,6 +369,17 @@ namespace Hecton8.Scavenging
         [Tooltip("Optional rarity table evaluated before the primary weighted harvest table.")]
         private RarityDropAuthoringEntry[] rarityDrops;
 
+        [SerializeField, HideInInspector] private int validationInvalidYieldEntryCount;
+        [SerializeField, HideInInspector] private int validationFirstInvalidYieldEntryIndex = -1;
+        [SerializeField, HideInInspector] private int validationDuplicateYieldItemHashCount;
+        [SerializeField, HideInInspector] private int validationFirstDuplicateYieldItemHashIndex = -1;
+        [SerializeField, HideInInspector] private int validationRuntimeYieldEntryCount;
+        [SerializeField, HideInInspector] private int validationInvalidRarityDropCount;
+        [SerializeField, HideInInspector] private int validationFirstInvalidRarityDropIndex = -1;
+        [SerializeField, HideInInspector] private int validationDuplicateRarityDropKeyCount;
+        [SerializeField, HideInInspector] private int validationFirstDuplicateRarityDropKeyIndex = -1;
+        [SerializeField, HideInInspector] private int validationRuntimeRarityDropCount;
+
         /// <summary>Stable authored identifier used by persistence-facing systems.</summary>
         public string StableId => stableId;
 
@@ -377,6 +388,22 @@ namespace Hecton8.Scavenging
 
         /// <summary>Stable runtime hash used by scanner, save, and placement tables.</summary>
         public int StableHashId => string.IsNullOrWhiteSpace(stableId) ? 0 : LocHash.Compute(stableId);
+
+        public int ValidationInvalidYieldEntryCount => validationInvalidYieldEntryCount;
+        public int ValidationFirstInvalidYieldEntryIndex => validationFirstInvalidYieldEntryIndex;
+        public int ValidationDuplicateYieldItemHashCount => validationDuplicateYieldItemHashCount;
+        public int ValidationFirstDuplicateYieldItemHashIndex => validationFirstDuplicateYieldItemHashIndex;
+        public int ValidationRuntimeYieldEntryCount => validationRuntimeYieldEntryCount;
+        public int ValidationInvalidRarityDropCount => validationInvalidRarityDropCount;
+        public int ValidationFirstInvalidRarityDropIndex => validationFirstInvalidRarityDropIndex;
+        public int ValidationDuplicateRarityDropKeyCount => validationDuplicateRarityDropKeyCount;
+        public int ValidationFirstDuplicateRarityDropKeyIndex => validationFirstDuplicateRarityDropKeyIndex;
+        public int ValidationRuntimeRarityDropCount => validationRuntimeRarityDropCount;
+        public bool HasValidationErrors =>
+            validationInvalidYieldEntryCount > 0 ||
+            validationDuplicateYieldItemHashCount > 0 ||
+            validationInvalidRarityDropCount > 0 ||
+            validationDuplicateRarityDropKeyCount > 0;
 
         /// <summary>Legacy loot prefab used by pooled pickup emission.</summary>
         public GameObject LootPickupPrefab => lootPickupPrefab;
@@ -628,19 +655,22 @@ namespace Hecton8.Scavenging
                 return 0;
 
             int copiedCount = 0;
-            int maxEntries = math.min(harvestYield.Length, destination.Capacity - destination.Length);
-            for (int i = 0; i < maxEntries; i++)
+            int remainingCapacity = destination.Capacity - destination.Length;
+            if (remainingCapacity <= 0)
+                return 0;
+
+            for (int i = 0; i < harvestYield.Length && copiedCount < remainingCapacity; i++)
             {
                 YieldAuthoringEntry source = harvestYield[i];
-                if (!IsValidYieldEntry(in source))
+                if (!IsRuntimeYieldSlotValid(i))
                     continue;
 
                 YieldRuntimeEntry runtimeEntry = new YieldRuntimeEntry
                 {
                     ItemHashId = LocHash.Compute(source.item.PersistentId),
-                    MinimumAmount = (ushort)math.max(1, (int)source.minimumAmount),
-                    MaximumAmount = (ushort)math.max(math.max(1, (int)source.minimumAmount), (int)source.maximumAmount),
-                    Weight = (byte)math.max(1, (int)source.weight),
+                    MinimumAmount = source.minimumAmount,
+                    MaximumAmount = source.maximumAmount,
+                    Weight = source.weight,
                     Reserved0 = 0,
                     Reserved1 = 0,
                     Reserved2 = 0u
@@ -662,19 +692,22 @@ namespace Hecton8.Scavenging
                 return 0;
 
             int copiedCount = 0;
-            int maxEntries = math.min(rarityDrops.Length, destination.Capacity - destination.Length);
-            for (int i = 0; i < maxEntries; i++)
+            int remainingCapacity = destination.Capacity - destination.Length;
+            if (remainingCapacity <= 0)
+                return 0;
+
+            for (int i = 0; i < rarityDrops.Length && copiedCount < remainingCapacity; i++)
             {
                 RarityDropAuthoringEntry source = rarityDrops[i];
-                if (!IsValidRarityDropEntry(in source))
+                if (!IsRuntimeRarityDropSlotValid(i))
                     continue;
 
                 RarityDropRuntimeEntry runtimeEntry = new RarityDropRuntimeEntry
                 {
                     ItemHashId = LocHash.Compute(source.item.PersistentId),
-                    Amount = (ushort)math.max(1, (int)source.amount),
-                    RarityTier = (byte)math.clamp((int)source.rarityTier, 0, 15),
-                    ProbabilityByte = (byte)math.clamp(math.round(source.probability * 255f), 0f, 255f),
+                    Amount = source.amount,
+                    RarityTier = source.rarityTier,
+                    ProbabilityByte = (byte)math.clamp(math.round(source.probability * 255f), 1f, 255f),
                     Reserved0 = 0u,
                     Reserved1 = 0u
                 };
@@ -695,7 +728,7 @@ namespace Hecton8.Scavenging
             int scanCount = math.min(harvestYield.Length, maxCount);
             for (int i = 0; i < scanCount; i++)
             {
-                if (IsValidYieldEntry(in harvestYield[i]))
+                if (IsRuntimeYieldSlotValid(i))
                     count++;
             }
 
@@ -711,21 +744,164 @@ namespace Hecton8.Scavenging
             int scanCount = math.min(rarityDrops.Length, maxCount);
             for (int i = 0; i < scanCount; i++)
             {
-                if (IsValidRarityDropEntry(in rarityDrops[i]))
+                if (IsRuntimeRarityDropSlotValid(i))
                     count++;
             }
 
             return count;
         }
 
+        public void RefreshValidationState()
+        {
+            RebuildValidationState();
+        }
+
+        private void OnEnable()
+        {
+            RebuildValidationState();
+        }
+
+        private void RebuildValidationState()
+        {
+            validationInvalidYieldEntryCount = 0;
+            validationFirstInvalidYieldEntryIndex = -1;
+            validationDuplicateYieldItemHashCount = 0;
+            validationFirstDuplicateYieldItemHashIndex = -1;
+            validationRuntimeYieldEntryCount = 0;
+            validationInvalidRarityDropCount = 0;
+            validationFirstInvalidRarityDropIndex = -1;
+            validationDuplicateRarityDropKeyCount = 0;
+            validationFirstDuplicateRarityDropKeyIndex = -1;
+            validationRuntimeRarityDropCount = 0;
+
+            if (harvestYield != null)
+            {
+                for (int i = 0; i < harvestYield.Length; i++)
+                {
+                    if (!IsValidYieldEntry(in harvestYield[i]))
+                    {
+                        validationInvalidYieldEntryCount++;
+                        if (validationFirstInvalidYieldEntryIndex < 0)
+                            validationFirstInvalidYieldEntryIndex = i;
+                        continue;
+                    }
+
+                    if (HasDuplicateYieldEntryBefore(i))
+                    {
+                        validationDuplicateYieldItemHashCount++;
+                        if (validationFirstDuplicateYieldItemHashIndex < 0)
+                            validationFirstDuplicateYieldItemHashIndex = i;
+                        continue;
+                    }
+
+                    validationRuntimeYieldEntryCount++;
+                }
+            }
+
+            if (rarityDrops != null)
+            {
+                for (int i = 0; i < rarityDrops.Length; i++)
+                {
+                    if (!IsValidRarityDropEntry(in rarityDrops[i]))
+                    {
+                        validationInvalidRarityDropCount++;
+                        if (validationFirstInvalidRarityDropIndex < 0)
+                            validationFirstInvalidRarityDropIndex = i;
+                        continue;
+                    }
+
+                    if (HasDuplicateRarityDropBefore(i))
+                    {
+                        validationDuplicateRarityDropKeyCount++;
+                        if (validationFirstDuplicateRarityDropKeyIndex < 0)
+                            validationFirstDuplicateRarityDropKeyIndex = i;
+                        continue;
+                    }
+
+                    validationRuntimeRarityDropCount++;
+                }
+            }
+        }
+
+        private bool IsRuntimeYieldSlotValid(int index)
+        {
+            return harvestYield != null &&
+                   (uint)index < (uint)harvestYield.Length &&
+                   IsValidYieldEntry(in harvestYield[index]) &&
+                   !HasDuplicateYieldEntryBefore(index);
+        }
+
+        private bool IsRuntimeRarityDropSlotValid(int index)
+        {
+            return rarityDrops != null &&
+                   (uint)index < (uint)rarityDrops.Length &&
+                   IsValidRarityDropEntry(in rarityDrops[index]) &&
+                   !HasDuplicateRarityDropBefore(index);
+        }
+
+        private bool HasDuplicateYieldEntryBefore(int index)
+        {
+            if (harvestYield == null || (uint)index >= (uint)harvestYield.Length)
+                return false;
+
+            YieldAuthoringEntry current = harvestYield[index];
+            if (!IsValidYieldEntry(in current))
+                return false;
+
+            int currentHash = LocHash.Compute(current.item.PersistentId);
+            for (int i = 0; i < index; i++)
+            {
+                YieldAuthoringEntry previous = harvestYield[i];
+                if (IsValidYieldEntry(in previous) && LocHash.Compute(previous.item.PersistentId) == currentHash)
+                    return true;
+            }
+
+            return false;
+        }
+
+        private bool HasDuplicateRarityDropBefore(int index)
+        {
+            if (rarityDrops == null || (uint)index >= (uint)rarityDrops.Length)
+                return false;
+
+            RarityDropAuthoringEntry current = rarityDrops[index];
+            if (!IsValidRarityDropEntry(in current))
+                return false;
+
+            int currentHash = LocHash.Compute(current.item.PersistentId);
+            int currentTier = current.rarityTier;
+            for (int i = 0; i < index; i++)
+            {
+                RarityDropAuthoringEntry previous = rarityDrops[i];
+                if (IsValidRarityDropEntry(in previous) &&
+                    previous.rarityTier == currentTier &&
+                    LocHash.Compute(previous.item.PersistentId) == currentHash)
+                {
+                    return true;
+                }
+            }
+
+            return false;
+        }
+
         private static bool IsValidYieldEntry(in YieldAuthoringEntry entry)
         {
-            return entry.item != null && !string.IsNullOrWhiteSpace(entry.item.PersistentId);
+            return entry.item != null &&
+                   !string.IsNullOrWhiteSpace(entry.item.PersistentId) &&
+                   entry.minimumAmount > 0 &&
+                   entry.maximumAmount >= entry.minimumAmount &&
+                   entry.weight > 0;
         }
 
         private static bool IsValidRarityDropEntry(in RarityDropAuthoringEntry entry)
         {
-            return entry.item != null && !string.IsNullOrWhiteSpace(entry.item.PersistentId);
+            return entry.item != null &&
+                   !string.IsNullOrWhiteSpace(entry.item.PersistentId) &&
+                   entry.amount > 0 &&
+                   entry.rarityTier <= 15 &&
+                   math.isfinite(entry.probability) &&
+                   math.round(entry.probability * 255f) > 0f &&
+                   entry.probability <= 1f;
         }
 
 #if UNITY_EDITOR
@@ -771,6 +947,8 @@ namespace Hecton8.Scavenging
                     "[ResourceNodeTemplate] validLayers was Everything (-1). Replaced with HectonLayerMasks.AllDefinedProjectLayersMask.",
                     this);
             }
+
+            RebuildValidationState();
         }
 #endif
 

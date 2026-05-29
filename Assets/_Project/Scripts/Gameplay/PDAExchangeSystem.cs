@@ -1086,15 +1086,16 @@ namespace Hecton8.Gameplay
             }
 
             ClearCatalogRuntimeHashes();
+            offerCatalog.RefreshValidationState();
             int count = math.min(offerCatalog.Count, BarterDTO.MaxOffers);
             for (int i = 0; i < count; i++)
             {
                 BarterOfferData offer = offerCatalog.GetAt(i);
-                if (offer != null)
-                {
-                    _catalogOfferHashes[i] = ComputeOfferHash(offer.RuntimeOfferId);
-                    _catalogRequiredScanEntryHashes[i] = ScanEvents.ComputeEntryHash(offer.RuntimeRequiredScanEntryId);
-                }
+                if (offer == null || !offerCatalog.IsRuntimeOfferSlotValid(i))
+                    continue;
+
+                _catalogOfferHashes[i] = ComputeOfferHash(offer.RuntimeOfferId);
+                _catalogRequiredScanEntryHashes[i] = ScanEvents.ComputeEntryHash(offer.RuntimeRequiredScanEntryId);
             }
 
             _catalogRuntimeHashCount = count;

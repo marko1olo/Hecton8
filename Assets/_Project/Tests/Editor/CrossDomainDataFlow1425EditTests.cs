@@ -588,6 +588,211 @@ namespace Hecton8.Tests.Editor
         }
 
         [Test]
+        public void AudioLogSystem_UsesMutationGuardsAndColdCachedAudioService()
+        {
+            string audioLogPath = Path.Combine(
+                Application.dataPath,
+                "_Project/Scripts/AudioLog/AudioLogSystem.cs");
+            string source = File.ReadAllText(audioLogPath);
+            string lateFrameBody = ExtractMethodBody(source, "public void LateFrameTick()");
+            string flushBody = ExtractMethodBody(source, "private void FlushPendingPlaybackVisualSync()");
+            string enqueueBody = ExtractMethodBody(source, "private void EnqueuePlayback");
+            string startNextBody = ExtractMethodBody(source, "private void TryStartNextQueuedLog()");
+            string acquireBody = ExtractMethodBody(source, "private bool TryAcquireVaultMutation");
+            string encryptedAcquireBody = ExtractMethodBody(source, "private bool TryAcquireEncryptedFragmentMutation");
+            string telemetryBody = ExtractMethodBody(source, "private void RecordVaultTelemetry");
+            string unregisterBody = ExtractMethodBody(source, "private void TryUnregisterLateFrame()");
+
+            AssertAudioLogSourceAvoidsDataVaultWriteLocks(source);
+            AssertHotMethodAvoidsLookupAndLocks(lateFrameBody);
+            AssertHotMethodAvoidsLookupAndLocks(flushBody);
+            StringAssert.DoesNotContain("GlobalRegistry.Audio", flushBody);
+            StringAssert.Contains("SystemDispatcher.UnregisterLateFrameTickableDirect", unregisterBody);
+            StringAssert.DoesNotContain("GlobalRegistry.UnregisterLateFrameTickable", unregisterBody);
+            StringAssert.Contains("PlaybackQueueMutationGuardMask", source);
+            StringAssert.Contains("EncryptedFragmentStateMutationGuardMask", source);
+            StringAssert.Contains("TelemetryMutationGuardMask", source);
+            StringAssert.Contains("TryAcquireVaultMutation", enqueueBody);
+            StringAssert.Contains("ReleaseVaultMutation", enqueueBody);
+            StringAssert.Contains("TryAcquireVaultMutation", startNextBody);
+            StringAssert.Contains("ReleaseVaultMutation", startNextBody);
+            Assert.Greater(startNextBody.LastIndexOf("ReleaseVaultMutation", StringComparison.Ordinal),
+                startNextBody.IndexOf("TryAcquireVaultMutation", StringComparison.Ordinal));
+            Assert.Greater(startNextBody.LastIndexOf("PlayLogByHash", StringComparison.Ordinal),
+                startNextBody.LastIndexOf("ReleaseVaultMutation", StringComparison.Ordinal));
+            StringAssert.Contains("TryAcquireMutationGuard", acquireBody);
+            StringAssert.Contains("TryResolveHandle", acquireBody);
+            StringAssert.Contains("ReleaseMutationGuard", acquireBody);
+            StringAssert.Contains("TryAcquireMutationGuard", encryptedAcquireBody);
+            StringAssert.Contains("TryResolveHandle", encryptedAcquireBody);
+            StringAssert.Contains("ReleaseMutationGuard", encryptedAcquireBody);
+            StringAssert.Contains("TryAcquireMutationGuard", telemetryBody);
+            StringAssert.Contains("TryResolveHandle", telemetryBody);
+            StringAssert.Contains("ReleaseMutationGuard", telemetryBody);
+            StringAssert.Contains("finally", enqueueBody);
+            StringAssert.Contains("finally", startNextBody);
+            StringAssert.Contains("finally", acquireBody);
+            StringAssert.Contains("finally", encryptedAcquireBody);
+            StringAssert.Contains("finally", telemetryBody);
+        }
+
+        [Test]
+        public void NativeAudioFrameRingBuffer_MirrorsTelemetryWithMutationGuard()
+        {
+            string sourcePath = Path.Combine(
+                Application.dataPath,
+                "_Project/Scripts/Audio/NativeAudioFrameRingBuffer.cs");
+            string source = File.ReadAllText(sourcePath);
+            string mirrorBody = ExtractMethodBody(source, "private void TryMirrorTelemetryToDataVault");
+            string acquireBody = ExtractMethodBody(source, "private bool TryAcquireTelemetryMutationView");
+
+            AssertNativeAudioFrameRingBufferSourceAvoidsTelemetryWriteLocks(source);
+            StringAssert.Contains("TelemetryMutationGuardMask", source);
+            StringAssert.Contains("TryAcquireTelemetryMutationView", mirrorBody);
+            StringAssert.Contains("ReleaseTelemetryMutationGuard", mirrorBody);
+            StringAssert.Contains("TryAcquireMutationGuard", acquireBody);
+            StringAssert.Contains("TryResolveHandle", acquireBody);
+            StringAssert.Contains("ReleaseTelemetryMutationGuard", acquireBody);
+            StringAssert.Contains("ReleaseMutationGuard", source);
+            StringAssert.Contains("finally", mirrorBody);
+            StringAssert.Contains("finally", acquireBody);
+        }
+
+        [Test]
+        public void DynamicMusicGranularSynthesizer_UsesMutationGuardsInsteadOfWriteLocks()
+        {
+            string sourcePath = Path.Combine(
+                Application.dataPath,
+                "_Project/Scripts/Audio/Synthesis/DynamicMusic/DynamicMusicGranularSynthesizer.cs");
+            string source = File.ReadAllText(sourcePath);
+            string tuningBody = ExtractMethodBody(source, "private bool TryWriteTuningSnapshot");
+            string presetBody = ExtractMethodBody(source, "private bool TryWritePresetRuleSnapshot");
+            string csvBody = ExtractMethodBody(source, "private bool TryReadCsvIntoScratchAndParse");
+            string clearBody = ExtractMethodBody(source, "private bool TryClearMutationBuffer");
+            string scalarBody = ExtractMethodBody(source, "private bool TryWriteScalarSnapshot");
+            string voiceBody = ExtractMethodBody(source, "private bool TryWriteDefaultVoiceBank");
+            string grainBody = ExtractMethodBody(source, "private void GenerateDefaultGrainBankCold()");
+            string acquireBody = ExtractMethodBody(source, "private bool TryAcquireDynamicMusicMutationView");
+
+            AssertDynamicMusicSourceAvoidsDataVaultWriteLocks(source);
+            StringAssert.Contains("GuardPresetRules", source);
+            StringAssert.Contains("GuardCsvScratch", source);
+            StringAssert.Contains("TryAcquireMutationGuard", acquireBody);
+            StringAssert.Contains("TryResolveHandle", acquireBody);
+            StringAssert.Contains("ReleaseDynamicMusicMutationGuard", acquireBody);
+            StringAssert.Contains("finally", acquireBody);
+            StringAssert.Contains("TryAcquireDynamicMusicMutationView", tuningBody);
+            StringAssert.Contains("ReleaseDynamicMusicMutationGuard", tuningBody);
+            StringAssert.Contains("TryAcquireDynamicMusicMutationView", presetBody);
+            StringAssert.Contains("ReleaseDynamicMusicMutationGuard", presetBody);
+            StringAssert.Contains("TryAcquireDynamicMusicMutationView", csvBody);
+            StringAssert.Contains("ReleaseDynamicMusicMutationGuard", csvBody);
+            StringAssert.Contains("TryAcquireDynamicMusicMutationView", clearBody);
+            StringAssert.Contains("ReleaseDynamicMusicMutationGuard", clearBody);
+            StringAssert.Contains("TryAcquireDynamicMusicMutationView", scalarBody);
+            StringAssert.Contains("TryAcquireDynamicMusicMutationView", voiceBody);
+            StringAssert.Contains("TryAcquireDynamicMusicMutationView", grainBody);
+            StringAssert.Contains("finally", tuningBody);
+            StringAssert.Contains("finally", presetBody);
+            StringAssert.Contains("finally", csvBody);
+            StringAssert.Contains("finally", clearBody);
+            StringAssert.Contains("finally", scalarBody);
+            StringAssert.Contains("finally", voiceBody);
+            StringAssert.Contains("finally", grainBody);
+        }
+
+        [Test]
+        public void PlayerCriticalAudioPrologueTelemetry_UsesMutationGuards()
+        {
+            string sourcePath = Path.Combine(
+                Application.dataPath,
+                "_Project/Scripts/Audio/PlayerCriticalProceduralAudioRenderer.cs");
+            string source = File.ReadAllText(sourcePath);
+            string queueBody = ExtractMethodBody(source, "public bool QueuePrologueAudioTransition");
+            string acquireBody = ExtractMethodBody(source, "private bool TryAcquirePlayerCriticalMutationBuffer");
+            string audioTelemetryBody = ExtractMethodBody(source, "private bool RecordAudioSynthesisTelemetry");
+            string granularTelemetryBody = ExtractMethodBody(source, "private void RecordGranularTelemetry");
+            string prologueTelemetryBody = ExtractMethodBody(source, "private void RecordPrologueTransitionTelemetry");
+            string drainBody = ExtractMethodBody(source, "private void DrainPrologueTransitionQueue()");
+            string dequeueBody = ExtractMethodBody(source, "private bool TryDequeuePrologueTransitionState");
+            string prewarmBody = ExtractMethodBody(source, "private void PrewarmPrologueTransitionQueue()");
+            string produceBody = ExtractMethodBody(source, "private void ProduceAudioBlock");
+            string canProduceBody = ExtractMethodBody(source, "private bool CanProduceAudioBlock");
+
+            AssertPlayerCriticalSourceAvoidsLegacyWriteLocks(source);
+            StringAssert.Contains("PrologueTransitionRingMutationGuardMask", source);
+            StringAssert.Contains("PrologueTransitionTelemetryMutationGuardMask", source);
+            StringAssert.Contains("GranularTelemetryMutationGuardMask", source);
+            StringAssert.Contains("AudioSynthesisTelemetryMutationGuardMask", source);
+            StringAssert.Contains("AudioBlockDspMutationGuardMask", source);
+            AssertPlayerCriticalBodyAvoidsLegacyWriteLocks(queueBody);
+            AssertPlayerCriticalBodyAvoidsLegacyWriteLocks(acquireBody);
+            AssertPlayerCriticalBodyAvoidsLegacyWriteLocks(audioTelemetryBody);
+            AssertPlayerCriticalBodyAvoidsLegacyWriteLocks(granularTelemetryBody);
+            AssertPlayerCriticalBodyAvoidsLegacyWriteLocks(prologueTelemetryBody);
+            AssertPlayerCriticalBodyAvoidsLegacyWriteLocks(drainBody);
+            AssertPlayerCriticalBodyAvoidsLegacyWriteLocks(dequeueBody);
+            AssertPlayerCriticalBodyAvoidsLegacyWriteLocks(prewarmBody);
+            AssertPlayerCriticalBodyAvoidsLegacyWriteLocks(canProduceBody);
+            StringAssert.Contains("TryAcquireMutationGuard", acquireBody);
+            StringAssert.Contains("TryResolveHandle", acquireBody);
+            StringAssert.Contains("ReleaseMutationGuard", acquireBody);
+            StringAssert.Contains("TryAcquirePlayerCriticalMutationGuard(AudioBlockDspMutationGuardMask", canProduceBody);
+            StringAssert.Contains("TryResolveGranularVoiceViews", canProduceBody);
+            StringAssert.Contains("TryResolveBinauralFilterViews", canProduceBody);
+            StringAssert.Contains("TryResolveReverbViews", canProduceBody);
+            StringAssert.Contains("TryResolveTransientDelayViews", canProduceBody);
+            StringAssert.Contains("TryResolveFrameScratchViews", canProduceBody);
+            StringAssert.Contains("TryResolveSonarTapViews", canProduceBody);
+            StringAssert.Contains("TryResolveSonarDspViews", canProduceBody);
+            StringAssert.DoesNotContain("TryAcquireGranularVoiceViews", canProduceBody);
+            StringAssert.DoesNotContain("TryAcquireBinauralFilterViews", canProduceBody);
+            StringAssert.DoesNotContain("TryAcquireReverbViews", canProduceBody);
+            StringAssert.DoesNotContain("TryAcquireTransientDelayViews", canProduceBody);
+            StringAssert.DoesNotContain("TryAcquireFrameScratchViews", canProduceBody);
+            StringAssert.DoesNotContain("TryAcquireSonarTapViews", canProduceBody);
+            StringAssert.DoesNotContain("TryAcquireSonarDspViews", canProduceBody);
+            StringAssert.Contains("ReleasePlayerCriticalMutationGuard", queueBody);
+            StringAssert.Contains("ReleasePlayerCriticalMutationGuard", audioTelemetryBody);
+            StringAssert.Contains("ReleasePlayerCriticalMutationGuard", granularTelemetryBody);
+            StringAssert.Contains("ReleasePlayerCriticalMutationGuard", prologueTelemetryBody);
+            StringAssert.Contains("TryDequeuePrologueTransitionState", drainBody);
+            StringAssert.DoesNotContain("RecordPrologueTransitionTelemetry", dequeueBody);
+            Assert.Greater(queueBody.IndexOf("PublishAudioParameterSnapshot", StringComparison.Ordinal),
+                queueBody.LastIndexOf("ReleasePlayerCriticalMutationGuard", StringComparison.Ordinal));
+            Assert.Greater(produceBody.LastIndexOf("RecordAudioSynthesisTelemetry", StringComparison.Ordinal),
+                produceBody.LastIndexOf("ReleaseFrameScratchMutationGuard", StringComparison.Ordinal));
+            StringAssert.Contains("finally", queueBody);
+            StringAssert.Contains("finally", acquireBody);
+            StringAssert.Contains("finally", audioTelemetryBody);
+            StringAssert.Contains("finally", granularTelemetryBody);
+            StringAssert.Contains("finally", prologueTelemetryBody);
+            StringAssert.Contains("finally", dequeueBody);
+            StringAssert.Contains("finally", prewarmBody);
+            StringAssert.Contains("finally", canProduceBody);
+        }
+
+        [Test]
+        public void VoxelAStarProfileImport_UsesOneMutationGuard()
+        {
+            string sourcePath = Path.Combine(
+                Application.dataPath,
+                "_Project/Scripts/AI/Pathfinding/PathFunnelNavmeshRuntime_VoxelAStar.cs");
+            string source = File.ReadAllText(sourcePath);
+            string importBody = ExtractMethodBody(source, "public bool TryLoadVoxelPathingProfiles");
+
+            AssertVoxelAStarSourceAvoidsDataVaultWriteLocks(source);
+            StringAssert.Contains("VoxelPathProfileMutationGuardMask", source);
+            StringAssert.Contains("TryAcquirePathFunnelMutationGuard", importBody);
+            StringAssert.Contains("TryResolveHandle", importBody);
+            StringAssert.Contains("ReleasePathFunnelMutationGuard", importBody);
+            StringAssert.Contains("finally", importBody);
+            Assert.Greater(importBody.IndexOf("TryResolveHandle", StringComparison.Ordinal),
+                importBody.IndexOf("TryAcquirePathFunnelMutationGuard", StringComparison.Ordinal));
+            StringAssert.Contains("profileCount[0] = written", importBody);
+        }
+
+        [Test]
         public void SubmarineFluidDynamics_DoesNotDependOnVocalWarningRuntime()
         {
             string sourcePath = Path.Combine(
@@ -1310,6 +1515,57 @@ namespace Hecton8.Tests.Editor
             StringAssert.DoesNotContain("TryAcquireTelemetryWriteBuffer", source);
             StringAssert.DoesNotContain("TryAcquireUIOptimizationTelemetryWriteBuffer", source);
             StringAssert.DoesNotContain("TryAcquireSubtitleWriteBuffer", source);
+            StringAssert.DoesNotContain("TryAcquireWriteLock", source);
+            StringAssert.DoesNotContain("ReleaseWriteLock", source);
+            StringAssert.DoesNotContain("TryLockBuffer", source);
+            StringAssert.DoesNotContain("TryUnlockBuffer", source);
+        }
+
+        private static void AssertAudioLogSourceAvoidsDataVaultWriteLocks(string source)
+        {
+            StringAssert.DoesNotContain("TryAcquireVaultWrite", source);
+            StringAssert.DoesNotContain("ReleaseVaultWrite", source);
+            StringAssert.DoesNotContain("TryAcquireWriteLock", source);
+            StringAssert.DoesNotContain("ReleaseWriteLock", source);
+            StringAssert.DoesNotContain("TryLockBuffer", source);
+            StringAssert.DoesNotContain("TryUnlockBuffer", source);
+        }
+
+        private static void AssertNativeAudioFrameRingBufferSourceAvoidsTelemetryWriteLocks(string source)
+        {
+            StringAssert.DoesNotContain("TryAcquireTelemetryWriteView", source);
+            StringAssert.DoesNotContain("TryAcquireWriteLock", source);
+            StringAssert.DoesNotContain("ReleaseWriteLock", source);
+            StringAssert.DoesNotContain("TryLockBuffer", source);
+            StringAssert.DoesNotContain("TryUnlockBuffer", source);
+        }
+
+        private static void AssertDynamicMusicSourceAvoidsDataVaultWriteLocks(string source)
+        {
+            StringAssert.DoesNotContain("TryAcquireLockedView", source);
+            StringAssert.DoesNotContain("ReleaseDynamicMusicWriteLocks", source);
+            StringAssert.DoesNotContain("TryAcquireWriteLock", source);
+            StringAssert.DoesNotContain("ReleaseWriteLock", source);
+            StringAssert.DoesNotContain("TryLockBuffer", source);
+            StringAssert.DoesNotContain("TryUnlockBuffer", source);
+        }
+
+        private static void AssertPlayerCriticalBodyAvoidsLegacyWriteLocks(string source)
+        {
+            StringAssert.DoesNotContain("TryAcquireWriteLock", source);
+            StringAssert.DoesNotContain("ReleaseWriteLock", source);
+            StringAssert.DoesNotContain("TryAcquireAudioWriteBuffer", source);
+            StringAssert.DoesNotContain("ReleaseAudioWriteBuffer", source);
+        }
+
+        private static void AssertPlayerCriticalSourceAvoidsLegacyWriteLocks(string source)
+        {
+            AssertPlayerCriticalBodyAvoidsLegacyWriteLocks(source);
+            StringAssert.DoesNotContain("WriteLocks", source);
+        }
+
+        private static void AssertVoxelAStarSourceAvoidsDataVaultWriteLocks(string source)
+        {
             StringAssert.DoesNotContain("TryAcquireWriteLock", source);
             StringAssert.DoesNotContain("ReleaseWriteLock", source);
             StringAssert.DoesNotContain("TryLockBuffer", source);

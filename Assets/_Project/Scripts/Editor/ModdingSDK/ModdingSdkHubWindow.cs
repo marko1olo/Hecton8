@@ -393,7 +393,11 @@ namespace Hecton8.Editor.ModdingSDK
                 createdCount += WriteTextFileIfMissing(Path.Combine(rootPath, "Tools", "apply_asset_entry_snippet.ps1"), BuildStarterKitTemplateFile("Tools/apply_asset_entry_snippet.ps1", BuildStarterKitAssetEntryApplyScript));
                 createdCount += WriteTextFileIfMissing(Path.Combine(rootPath, "Tools", "build_review_manifest.ps1"), BuildStarterKitTemplateFile("Tools/build_review_manifest.ps1", BuildStarterKitReviewManifestScript));
                 createdCount += WriteTextFileIfMissing(Path.Combine(rootPath, "Tools", "build_submission_package.ps1"), BuildStarterKitTemplateFile("Tools/build_submission_package.ps1", BuildStarterKitSubmissionPackageScript));
+                createdCount += WriteTextFileIfMissing(Path.Combine(rootPath, "Tools", "configure_dependencies.ps1"), BuildStarterKitTemplateFile("Tools/configure_dependencies.ps1", BuildStarterKitDependenciesScript));
                 createdCount += WriteTextFileIfMissing(Path.Combine(rootPath, "Tools", "configure_manifest_contract.ps1"), BuildStarterKitTemplateFile("Tools/configure_manifest_contract.ps1", BuildStarterKitManifestContractScript));
+                createdCount += WriteTextFileIfMissing(Path.Combine(rootPath, "Tools", "create_first_mod.ps1"), BuildStarterKitTemplateFile("Tools/create_first_mod.ps1", BuildStarterKitFirstModScript));
+                createdCount += WriteTextFileIfMissing(Path.Combine(rootPath, "Tools", "install_local_mod.ps1"), BuildStarterKitTemplateFile("Tools/install_local_mod.ps1", BuildStarterKitInstallLocalModScript));
+                createdCount += WriteTextFileIfMissing(Path.Combine(rootPath, "Tools", "diagnose_local_mods.ps1"), BuildStarterKitTemplateFile("Tools/diagnose_local_mods.ps1", BuildStarterKitDiagnoseLocalModsScript));
                 createdCount += WriteTextFileIfMissing(Path.Combine(rootPath, "Tools", "apply_graph_node_snippet.ps1"), BuildStarterKitTemplateFile("Tools/apply_graph_node_snippet.ps1", BuildStarterKitGraphNodeApplyScript));
                 createdCount += WriteTextFileIfMissing(Path.Combine(rootPath, "Tools", "apply_locale_entry_snippet.ps1"), BuildStarterKitTemplateFile("Tools/apply_locale_entry_snippet.ps1", BuildStarterKitLocaleEntryApplyScript));
                 createdCount += WriteTextFileIfMissing(Path.Combine(rootPath, "Tools", "apply_settings_row_snippet.ps1"), BuildStarterKitTemplateFile("Tools/apply_settings_row_snippet.ps1", BuildStarterKitSettingsRowApplyScript));
@@ -525,7 +529,7 @@ namespace Hecton8.Editor.ModdingSDK
                 global::System.Environment.NewLine +
                 "Files:" + global::System.Environment.NewLine +
                 global::System.Environment.NewLine +
-                "- h8mod.ps1: root no-Unity launcher for setup, validate, review, prepare, submission package build, opcode discovery, manifest capability/budget configuration, graph/settings/locale/content asset snippets, graph/settings/locale/content asset snippet apply, and capability-matrix display. node-snippet accepts -NodeParametersJson and -NodeDisabled; parameters accept strict JSON or a flat CLI fallback like {Quantity:3,Item:demo}. asset-snippet accepts -AssetCrc32 auto and -AssetBytes -1 when the file exists. It delegates to Tools/*.ps1 and is not a runtime install contract." + global::System.Environment.NewLine +
+                "- h8mod.ps1: root no-Unity launcher for first playable mod creation, local discovery install, local Mods diagnosis, dependency editing, setup, validate, review, prepare, submission package build, opcode discovery, manifest capability/budget configuration, graph/settings/locale/content asset snippets, graph/settings/locale/content asset snippet apply, and capability-matrix display. first-mod sets identity, enables graph authoring, creates/applies one graph node, one setting, one locale entry, validates, and builds Reports/review_manifest.json. install-local copies the reviewed source set plus review manifest into Mods/<mod-id> for loader discovery only after byte/SHA-256 verification. diagnose-local inspects a local Mods folder recursively and reports manifest/review/dependency/runtime-boundary status without mutating files. dependencies edits dependency IDs in both manifests and validates. node-snippet accepts -NodeParametersJson and -NodeDisabled; parameters accept strict JSON or a flat CLI fallback like {Quantity:3,Item:demo}. asset-snippet accepts -AssetCrc32 auto and -AssetBytes -1 when the file exists. It delegates to Tools/*.ps1 and is not a runtime activation contract." + global::System.Environment.NewLine +
                 "- Docs/capabilities.md: current capability matrix for public authors: supported authoring surfaces, forbidden runtime rights, and expansion route." + global::System.Environment.NewLine +
                 "- mod.h8manifest.json: authoring manifest for Workbench/CLI style tools." + global::System.Environment.NewLine +
                 "- mod.json: loader compatibility manifest; EntryAssembly and EntryType stay empty in envelope-only mode." + global::System.Environment.NewLine +
@@ -538,12 +542,16 @@ namespace Hecton8.Editor.ModdingSDK
                 "- Reference/: copied opcode and tuning CSV references from the project docs." + global::System.Environment.NewLine +
                 "- Schemas/: JSON Schemas for editor autocomplete and schema-aware validation." + global::System.Environment.NewLine +
                 "- .vscode/settings.json: optional VS Code JSON schema mapping plus hecton8.powerShellExecutable override for the task runner. The local validator checks the expected schema URL/fileMatch pairs and rejects invalid settings/locale data before review packaging." + global::System.Environment.NewLine +
-                "- .vscode/tasks.json: VS Code Tasks surface for setup, validate, prepare, submission, capability/opcode discovery, snippet creation/apply, and manifest contract edits. Tasks route through h8mod.ps1 only; they do not bypass validation or create runtime rights." + global::System.Environment.NewLine +
+                "- .vscode/tasks.json: VS Code Tasks surface for first playable mod creation, local discovery install, local Mods diagnosis, setup, validate, prepare, submission, capability/opcode discovery, snippet creation/apply, and manifest contract edits. Tasks route through h8mod.ps1 only; they do not bypass validation or create runtime rights." + global::System.Environment.NewLine +
                 "- Tools/prepare_mod.ps1: one-command no-Unity setup/review loop. With -Id it writes identity, validates, and builds the review manifest; without -Id it validates existing manifests and rebuilds the review manifest." + global::System.Environment.NewLine +
                 "- Tools/validate_structure.ps1: local no-Unity structure validator for required files, canonical IDs, manifest parity, settings row schema/ID/kind/default type constraints, locale schema/code/key/value constraints, graph opcode allowlist checks, graph budget parity, envelope-only flags, and managed-entry disablement." + global::System.Environment.NewLine +
                 "- Tools/build_review_manifest.ps1: local no-Unity review manifest builder that validates first, then writes Reports/review_manifest.json with package identity, sorted file paths, byte counts, total bytes, explicit source limits, and SHA-256 hashes for submission/review. It rejects more than 256 source files, any source file over 4194304 bytes, or more than 33554432 total source bytes before hashing." + global::System.Environment.NewLine +
                 "- Tools/build_submission_package.ps1: local no-Unity submission packer. It runs prepare, then writes Generated/<mod-id>_submission.zip containing the reviewed starter sources plus Reports/review_manifest.json. It writes to a temp zip first and restores the previous submission zip if final replacement fails. This is a review handoff artifact, not a runtime install stamp." + global::System.Environment.NewLine +
+                "- Tools/install_local_mod.ps1: local no-Unity discovery installer. It runs prepare, verifies reviewed files against Reports/review_manifest.json byte counts and SHA-256 hashes, then atomically copies the reviewed source set plus review manifest into Mods/<mod-id>. This is loader discovery only; managed entry and loose content ingestion stay disabled." + global::System.Environment.NewLine +
+                "- Tools/diagnose_local_mods.ps1: local no-Unity read-only Mods inspector. It checks recursive loader discovery, loader caps, mod.json health, Reports/review_manifest.json hashes, duplicate IDs, missing dependencies, dependency cycles, load order, managed DLL/bundle/lang counts, and the envelope-only disable reason for each package under ProjectRoot/Mods or -ModsRoot." + global::System.Environment.NewLine +
+                "- Tools/configure_dependencies.ps1: local no-Unity dependency helper that edits mod.h8manifest.json and mod.json together, rejects invalid IDs, duplicates, and self-dependencies, validates after write, and restores both manifests on failure." + global::System.Environment.NewLine +
                 "- Tools/configure_manifest_contract.ps1: local no-Unity manifest helper that enables/disables public authoring capabilities and sets capped budgets with validation and rollback. Capabilities are review metadata, not runtime rights." + global::System.Environment.NewLine +
+                "- Tools/create_first_mod.ps1: local no-Unity onboarding helper that runs bounded identity, manifest contract, graph, settings, locale, validation, and review-manifest tools in sequence. -Replace makes starter onboarding rerunnable for the same sample IDs." + global::System.Environment.NewLine +
                 "- Tools/list_allowed_opcodes.ps1: local no-Unity graph helper that prints the allowed opcode aliases and hex tokens accepted by Graphs/main.h8graph.json." + global::System.Environment.NewLine +
                 "- Tools/create_graph_node_snippet.ps1: local no-Unity graph helper that writes Generated/graph_node_snippet.json from a validated node id, allowed opcode, ParametersJson object or flat CLI fallback, and optional disabled state; it does not mutate Graphs/main.h8graph.json." + global::System.Environment.NewLine +
                 "- Tools/apply_graph_node_snippet.ps1: local no-Unity graph helper that inserts Generated/graph_node_snippet.json into Graphs/main.h8graph.json, rejects duplicate node ids unless -Replace is explicit, raises the graph/manifest envelope budget to one when the first node is applied, validates after the atomic temp-write, and restores previous files on failure." + global::System.Environment.NewLine +
@@ -575,6 +583,7 @@ namespace Hecton8.Editor.ModdingSDK
                 "| Locale | Locales/en.h8loc.json | Provide keyed localized text in canonical key form. | Authoring/review contract now; runtime injection is not a public right. |" + global::System.Environment.NewLine +
                 "| Content manifest | Content/assets.h8manifest.json, Content/Assets/ | Declare content ids, paths, CRCs, and byte budgets through bounded snippet/apply tools. | Approval required; no loose runtime ingestion from this folder. |" + global::System.Environment.NewLine +
                 "| Review package | Reports/review_manifest.json, Generated/*_submission.zip | Produce one hashed handoff artifact for review. | Not a runtime install stamp. |" + global::System.Environment.NewLine +
+                "| Local Mods diagnosis | Mods/<mod-id>, Reports/review_manifest.json | Inspect a local Mods folder through diagnose_local_mods.ps1 and report recursive discovery, loader caps, manifest health, dependency blockers, duplicate IDs, cycles, load order, review hash drift, file counts, and envelope-only disable reasons. | Read-only diagnostic; no runtime rights. |" + global::System.Environment.NewLine +
                 global::System.Environment.NewLine +
                 "## Not public rights" + global::System.Environment.NewLine +
                 global::System.Environment.NewLine +
@@ -597,6 +606,7 @@ namespace Hecton8.Editor.ModdingSDK
                 "9. Use h8mod.ps1 -Action asset-snippet -AssetCrc32 auto -AssetBytes -1 to generate a safe content asset entry, then h8mod.ps1 -Action apply-asset-snippet to insert it into Content/assets.h8manifest.json with CRC/byte proof, budget repair, validation, and rollback." + global::System.Environment.NewLine +
                 "10. Run h8mod.ps1 -Action validate." + global::System.Environment.NewLine +
                 "11. Run h8mod.ps1 -Action submission and hand off Generated/<mod-id>_submission.zip." + global::System.Environment.NewLine +
+                "12. Run h8mod.ps1 -Action diagnose-local -ProjectRoot <HECTON-8 project root> after install-local to inspect the local Mods folder, dependency graph, and load order without mutating runtime files." + global::System.Environment.NewLine +
                 global::System.Environment.NewLine +
                 "## How to create a mod inside the HECTON-8 Unity project" + global::System.Environment.NewLine +
                 global::System.Environment.NewLine +
@@ -611,7 +621,7 @@ namespace Hecton8.Editor.ModdingSDK
         {
             StringBuilder builder = new StringBuilder(7168);
             builder.AppendLine("param(");
-            builder.AppendLine("    [ValidateSet('menu','setup','validate','review','prepare','submission','opcodes','opcodes-json','node-snippet','apply-node-snippet','setting-snippet','locale-snippet','apply-setting-snippet','apply-locale-snippet','asset-snippet','apply-asset-snippet','manifest-contract','capabilities')]");
+            builder.AppendLine("    [ValidateSet('menu','first-mod','install-local','diagnose-local','dependencies','setup','validate','review','prepare','submission','opcodes','opcodes-json','node-snippet','apply-node-snippet','setting-snippet','locale-snippet','apply-setting-snippet','apply-locale-snippet','asset-snippet','apply-asset-snippet','manifest-contract','capabilities')]");
             builder.AppendLine("    [string]$Action = 'menu',");
             builder.AppendLine("    [string]$Id = '',");
             builder.AppendLine("    [string]$DisplayName = '',");
@@ -640,12 +650,19 @@ namespace Hecton8.Editor.ModdingSDK
             builder.AppendLine("    [string]$AssetOutput = 'Generated/asset_entry_snippet.json',");
             builder.AppendLine("    [string]$AssetSnippet = 'Generated/asset_entry_snippet.json',");
             builder.AppendLine("    [string]$Capability = 'cap.graph.command_draft',");
+            builder.AppendLine("    [ValidateSet('list','add','remove','clear')]");
+            builder.AppendLine("    [string]$DependencyAction = 'list',");
+            builder.AppendLine("    [string]$DependencyId = '',");
             builder.AppendLine("    [ValidateSet('unchanged','enable','disable')]");
             builder.AppendLine("    [string]$CapabilityState = 'enable',");
             builder.AppendLine("    [int]$MaxEnvelopesPerFrame = -1,");
             builder.AppendLine("    [long]$MaxAssetBytes = -1,");
             builder.AppendLine("    [switch]$Replace,");
-            builder.AppendLine("    [string]$SubmissionOutput = ''");
+            builder.AppendLine("    [switch]$BuildSubmission,");
+            builder.AppendLine("    [string]$SubmissionOutput = '',");
+            builder.AppendLine("    [string]$ProjectRoot = '',");
+            builder.AppendLine("    [string]$ModsRoot = '',");
+            builder.AppendLine("    [switch]$Json");
             builder.AppendLine(")");
             builder.AppendLine();
             builder.AppendLine("$ErrorActionPreference = 'Stop'");
@@ -722,6 +739,40 @@ namespace Hecton8.Editor.ModdingSDK
             builder.AppendLine("    Complete-StarterTool");
             builder.AppendLine("}");
             builder.AppendLine();
+            builder.AppendLine("function Invoke-InstallLocal([bool]$PromptForMissingValues) {");
+            builder.AppendLine("    $installProjectRoot = $ProjectRoot");
+            builder.AppendLine("    $installModsRoot = $ModsRoot");
+            builder.AppendLine("    if ($PromptForMissingValues) {");
+            builder.AppendLine("        $installProjectRoot = Read-SetupValue $installProjectRoot 'HECTON-8 project root, blank to auto-detect from starter location'");
+            builder.AppendLine("        $installModsRoot = Read-SetupValue $installModsRoot 'Mods root override, blank to use ProjectRoot/Mods'");
+            builder.AppendLine("    }");
+            builder.AppendLine("    $tool = Resolve-StarterTool 'Tools/install_local_mod.ps1'");
+            builder.AppendLine("    $global:LASTEXITCODE = 0");
+            builder.AppendLine("    if ($Replace) {");
+            builder.AppendLine("        & $tool -Root $Root -ProjectRoot $installProjectRoot -ModsRoot $installModsRoot -Replace");
+            builder.AppendLine("    } else {");
+            builder.AppendLine("        & $tool -Root $Root -ProjectRoot $installProjectRoot -ModsRoot $installModsRoot");
+            builder.AppendLine("    }");
+            builder.AppendLine("    Complete-StarterTool");
+            builder.AppendLine("}");
+            builder.AppendLine();
+            builder.AppendLine("function Invoke-DiagnoseLocal([bool]$PromptForMissingValues) {");
+            builder.AppendLine("    $diagnoseProjectRoot = $ProjectRoot");
+            builder.AppendLine("    $diagnoseModsRoot = $ModsRoot");
+            builder.AppendLine("    if ($PromptForMissingValues) {");
+            builder.AppendLine("        $diagnoseProjectRoot = Read-SetupValue $diagnoseProjectRoot 'HECTON-8 project root, blank to auto-detect from starter location'");
+            builder.AppendLine("        $diagnoseModsRoot = Read-SetupValue $diagnoseModsRoot 'Mods root override, blank to use ProjectRoot/Mods'");
+            builder.AppendLine("    }");
+            builder.AppendLine("    $tool = Resolve-StarterTool 'Tools/diagnose_local_mods.ps1'");
+            builder.AppendLine("    $global:LASTEXITCODE = 0");
+            builder.AppendLine("    if ($Json) {");
+            builder.AppendLine("        & $tool -Root $Root -ProjectRoot $diagnoseProjectRoot -ModsRoot $diagnoseModsRoot -Json");
+            builder.AppendLine("    } else {");
+            builder.AppendLine("        & $tool -Root $Root -ProjectRoot $diagnoseProjectRoot -ModsRoot $diagnoseModsRoot");
+            builder.AppendLine("    }");
+            builder.AppendLine("    Complete-StarterTool");
+            builder.AppendLine("}");
+            builder.AppendLine();
             builder.AppendLine("function Invoke-Opcodes([bool]$Json) {");
             builder.AppendLine("    $tool = Resolve-StarterTool 'Tools/list_allowed_opcodes.ps1'");
             builder.AppendLine("    $global:LASTEXITCODE = 0");
@@ -739,6 +790,28 @@ namespace Hecton8.Editor.ModdingSDK
             builder.AppendLine("        Fail 'Missing Docs/capabilities.md'");
             builder.AppendLine("    }");
             builder.AppendLine("    Get-Content -LiteralPath $guide");
+            builder.AppendLine("}");
+            builder.AppendLine();
+            builder.AppendLine("function Invoke-Dependencies([bool]$PromptForMissingValues) {");
+            builder.AppendLine("    $dependencyAction = $DependencyAction");
+            builder.AppendLine("    $dependencyId = $DependencyId");
+            builder.AppendLine("    if ($PromptForMissingValues) {");
+            builder.AppendLine("        $dependencyAction = Read-SetupValue $dependencyAction 'Dependency action: list, add, remove, or clear'");
+            builder.AppendLine("        if (@('list','add','remove','clear') -notcontains $dependencyAction) {");
+            builder.AppendLine("            Fail 'Dependency action must be one of: list, add, remove, clear.'");
+            builder.AppendLine("        }");
+            builder.AppendLine("        if ($dependencyAction -eq 'add' -or $dependencyAction -eq 'remove') {");
+            builder.AppendLine("            $dependencyId = Read-SetupValue $dependencyId 'Dependency mod id, example com.example.library'");
+            builder.AppendLine("        }");
+            builder.AppendLine("    }");
+            builder.AppendLine("    $tool = Resolve-StarterTool 'Tools/configure_dependencies.ps1'");
+            builder.AppendLine("    $global:LASTEXITCODE = 0");
+            builder.AppendLine("    if ($Json) {");
+            builder.AppendLine("        & $tool -Root $Root -Action $dependencyAction -DependencyId $dependencyId -Json");
+            builder.AppendLine("    } else {");
+            builder.AppendLine("        & $tool -Root $Root -Action $dependencyAction -DependencyId $dependencyId");
+            builder.AppendLine("    }");
+            builder.AppendLine("    Complete-StarterTool");
             builder.AppendLine("}");
             builder.AppendLine();
             builder.AppendLine("function Invoke-GraphNodeSnippet([bool]$PromptForMissingValues) {");
@@ -931,6 +1004,33 @@ namespace Hecton8.Editor.ModdingSDK
             builder.AppendLine("    Complete-StarterTool");
             builder.AppendLine("}");
             builder.AppendLine();
+            builder.AppendLine("function Invoke-FirstMod([bool]$PromptForMissingValues) {");
+            builder.AppendLine("    $firstId = if ([string]::IsNullOrWhiteSpace($Id)) { 'com.yourname.firstmod' } else { $Id }");
+            builder.AppendLine("    $firstDisplayName = if ([string]::IsNullOrWhiteSpace($DisplayName)) { 'First HECTON Mod' } else { $DisplayName }");
+            builder.AppendLine("    $firstAuthor = if ([string]::IsNullOrWhiteSpace($Author)) { 'YourName' } else { $Author }");
+            builder.AppendLine("    $firstVersion = if ([string]::IsNullOrWhiteSpace($Version)) { '0.1.0' } else { $Version }");
+            builder.AppendLine("    $firstNodeId = if ($NodeId -eq 'node.spawn_item') { 'node.first_spawn_item' } else { $NodeId }");
+            builder.AppendLine("    $firstOpcode = if ([string]::IsNullOrWhiteSpace($Opcode)) { 'SpawnItem' } else { $Opcode }");
+            builder.AppendLine("    $firstNodeParametersJson = if ($NodeParametersJson -eq '{}') { '{\"Item\":\"demo\",\"Quantity\":1}' } else { $NodeParametersJson }");
+            builder.AppendLine("    $firstSettingId = if ($SettingId -eq 'setting.example_toggle') { 'setting.first_enabled' } else { $SettingId }");
+            builder.AppendLine("    $firstSettingKind = if ([string]::IsNullOrWhiteSpace($SettingKind)) { 'bool' } else { $SettingKind }");
+            builder.AppendLine("    $firstSettingDefault = if ($SettingDefault -eq 'false') { 'true' } else { $SettingDefault }");
+            builder.AppendLine("    $firstLocaleKey = if ($LocaleKey -eq 'text.example_line') { 'text.first_mod_ready' } else { $LocaleKey }");
+            builder.AppendLine("    $firstLocaleValue = if ($LocaleValue -eq 'Your localized text') { 'First HECTON mod ready.' } else { $LocaleValue }");
+            builder.AppendLine("    $tool = Resolve-StarterTool 'Tools/create_first_mod.ps1'");
+            builder.AppendLine("    $global:LASTEXITCODE = 0");
+            builder.AppendLine("    if ($Replace -and $BuildSubmission) {");
+            builder.AppendLine("        & $tool -Root $Root -Id $firstId -DisplayName $firstDisplayName -Author $firstAuthor -Version $firstVersion -NodeId $firstNodeId -Opcode $firstOpcode -NodeParametersJson $firstNodeParametersJson -SettingId $firstSettingId -SettingKind $firstSettingKind -SettingDefault $firstSettingDefault -LocaleKey $firstLocaleKey -LocaleValue $firstLocaleValue -Replace -BuildSubmission");
+            builder.AppendLine("    } elseif ($Replace) {");
+            builder.AppendLine("        & $tool -Root $Root -Id $firstId -DisplayName $firstDisplayName -Author $firstAuthor -Version $firstVersion -NodeId $firstNodeId -Opcode $firstOpcode -NodeParametersJson $firstNodeParametersJson -SettingId $firstSettingId -SettingKind $firstSettingKind -SettingDefault $firstSettingDefault -LocaleKey $firstLocaleKey -LocaleValue $firstLocaleValue -Replace");
+            builder.AppendLine("    } elseif ($BuildSubmission) {");
+            builder.AppendLine("        & $tool -Root $Root -Id $firstId -DisplayName $firstDisplayName -Author $firstAuthor -Version $firstVersion -NodeId $firstNodeId -Opcode $firstOpcode -NodeParametersJson $firstNodeParametersJson -SettingId $firstSettingId -SettingKind $firstSettingKind -SettingDefault $firstSettingDefault -LocaleKey $firstLocaleKey -LocaleValue $firstLocaleValue -BuildSubmission");
+            builder.AppendLine("    } else {");
+            builder.AppendLine("        & $tool -Root $Root -Id $firstId -DisplayName $firstDisplayName -Author $firstAuthor -Version $firstVersion -NodeId $firstNodeId -Opcode $firstOpcode -NodeParametersJson $firstNodeParametersJson -SettingId $firstSettingId -SettingKind $firstSettingKind -SettingDefault $firstSettingDefault -LocaleKey $firstLocaleKey -LocaleValue $firstLocaleValue");
+            builder.AppendLine("    }");
+            builder.AppendLine("    Complete-StarterTool");
+            builder.AppendLine("}");
+            builder.AppendLine();
             builder.AppendLine("function Require-SetupValue([string]$Value, [string]$Name) {");
             builder.AppendLine("    if ([string]::IsNullOrWhiteSpace($Value)) {");
             builder.AppendLine("        Fail ($Name + ' is required for setup. Provide -' + $Name + ' or run menu mode.')");
@@ -989,6 +1089,10 @@ namespace Hecton8.Editor.ModdingSDK
             builder.AppendLine("    Write-Host '15 apply asset entry snippet'");
             builder.AppendLine("    Write-Host '16 configure manifest capability/budgets'");
             builder.AppendLine("    Write-Host '17 show capability matrix'");
+            builder.AppendLine("    Write-Host '18 create first playable mod'");
+            builder.AppendLine("    Write-Host '19 install local discovery copy'");
+            builder.AppendLine("    Write-Host '20 diagnose local Mods folder'");
+            builder.AppendLine("    Write-Host '21 configure dependencies'");
             builder.AppendLine("    Write-Host 'q quit'");
             builder.AppendLine("    Write-Host ''");
             builder.AppendLine("    $choice = Read-Host 'Select action'");
@@ -1011,6 +1115,10 @@ namespace Hecton8.Editor.ModdingSDK
             builder.AppendLine("        '15' { Invoke-ApplyAssetEntrySnippet $true }");
             builder.AppendLine("        '16' { Invoke-ManifestContractConfig $true }");
             builder.AppendLine("        '17' { Invoke-Capabilities }");
+            builder.AppendLine("        '18' { Invoke-FirstMod $true }");
+            builder.AppendLine("        '19' { Invoke-InstallLocal $true }");
+            builder.AppendLine("        '20' { Invoke-DiagnoseLocal $true }");
+            builder.AppendLine("        '21' { Invoke-Dependencies $true }");
             builder.AppendLine("        'q' { return }");
             builder.AppendLine("        'Q' { return }");
             builder.AppendLine("        default { Fail ('Unknown menu action: ' + $choice) }");
@@ -1021,6 +1129,10 @@ namespace Hecton8.Editor.ModdingSDK
             builder.AppendLine();
             builder.AppendLine("switch ($Action) {");
             builder.AppendLine("    'menu' { Show-Menu }");
+            builder.AppendLine("    'first-mod' { Invoke-FirstMod $false }");
+            builder.AppendLine("    'install-local' { Invoke-InstallLocal $false }");
+            builder.AppendLine("    'diagnose-local' { Invoke-DiagnoseLocal $false }");
+            builder.AppendLine("    'dependencies' { Invoke-Dependencies $false }");
             builder.AppendLine("    'setup' { Invoke-Setup $false }");
             builder.AppendLine("    'validate' { Invoke-Validate }");
             builder.AppendLine("    'review' { Invoke-Review }");
@@ -1053,6 +1165,7 @@ namespace Hecton8.Editor.ModdingSDK
                 "  \"Author\": \"YourName\"," + global::System.Environment.NewLine +
                 "  \"Version\": \"0.1.0\"," + global::System.Environment.NewLine +
                 "  \"RequiredAPIVersion\": " + CurrentRequiredApiVersion + "," + global::System.Environment.NewLine +
+                "  \"Dependencies\": []," + global::System.Environment.NewLine +
                 "  \"Capabilities\": []," + global::System.Environment.NewLine +
                 "  \"Budgets\": {" + global::System.Environment.NewLine +
                 "    \"MaxEnvelopesPerFrame\": 0," + global::System.Environment.NewLine +
@@ -1184,7 +1297,7 @@ namespace Hecton8.Editor.ModdingSDK
                 "  \"title\": \"HECTON-8 authoring mod manifest\",",
                 "  \"type\": \"object\",",
                 "  \"additionalProperties\": false,",
-                "  \"required\": [\"Schema\", \"Id\", \"DisplayName\", \"Author\", \"Version\", \"RequiredAPIVersion\", \"Capabilities\", \"Budgets\", \"Compatibility\", \"Entrypoints\"],",
+                "  \"required\": [\"Schema\", \"Id\", \"DisplayName\", \"Author\", \"Version\", \"RequiredAPIVersion\", \"Dependencies\", \"Capabilities\", \"Budgets\", \"Compatibility\", \"Entrypoints\"],",
                 "  \"properties\": {",
                 "    \"Schema\": { \"const\": \"hecton8.h8mod.authoring.v1\" },",
                 "    \"Id\": { \"type\": \"string\", \"pattern\": \"^[a-z0-9]+([._-][a-z0-9]+)*$\" },",
@@ -1192,6 +1305,7 @@ namespace Hecton8.Editor.ModdingSDK
                 "    \"Author\": { \"type\": \"string\", \"minLength\": 1 },",
                 "    \"Version\": { \"type\": \"string\", \"pattern\": \"^(0|[1-9][0-9]*)\\\\.(0|[1-9][0-9]*)\\\\.(0|[1-9][0-9]*)(-[0-9A-Za-z]+([.-][0-9A-Za-z]+)*)?(\\\\+[0-9A-Za-z]+([.-][0-9A-Za-z]+)*)?$\" },",
                 "    \"RequiredAPIVersion\": { \"type\": \"integer\", \"minimum\": " + CurrentRequiredApiVersion + " },",
+                "    \"Dependencies\": { \"type\": \"array\", \"uniqueItems\": true, \"maxItems\": 32, \"items\": { \"type\": \"string\", \"pattern\": \"^[a-z0-9]+([._-][a-z0-9]+)*$\" } },",
                 "    \"Capabilities\": {",
                 "      \"type\": \"array\",",
                 "      \"uniqueItems\": true,",
@@ -1253,7 +1367,7 @@ namespace Hecton8.Editor.ModdingSDK
                 "    \"Version\": { \"type\": \"string\", \"pattern\": \"^(0|[1-9][0-9]*)\\\\.(0|[1-9][0-9]*)\\\\.(0|[1-9][0-9]*)(-[0-9A-Za-z]+([.-][0-9A-Za-z]+)*)?(\\\\+[0-9A-Za-z]+([.-][0-9A-Za-z]+)*)?$\" },",
                 "    \"Author\": { \"type\": \"string\", \"minLength\": 1 },",
                 "    \"Description\": { \"type\": \"string\" },",
-                "    \"Dependencies\": { \"type\": \"array\", \"items\": { \"type\": \"string\", \"pattern\": \"^[a-z0-9]+([._-][a-z0-9]+)*$\" } },",
+                "    \"Dependencies\": { \"type\": \"array\", \"uniqueItems\": true, \"maxItems\": 32, \"items\": { \"type\": \"string\", \"pattern\": \"^[a-z0-9]+([._-][a-z0-9]+)*$\" } },",
                 "    \"EntryAssembly\": { \"const\": \"\" },",
                 "    \"EntryType\": { \"const\": \"\" },",
                 "    \"RequiredAPIVersion\": { \"type\": \"integer\", \"minimum\": " + CurrentRequiredApiVersion + " },",
@@ -1426,6 +1540,10 @@ namespace Hecton8.Editor.ModdingSDK
                 global::System.Environment.NewLine +
                 "Fast path for a copied starter kit:" + global::System.Environment.NewLine +
                 global::System.Environment.NewLine +
+                "powershell -NoProfile -ExecutionPolicy Bypass -File h8mod.ps1 -Action first-mod -Id com.yourname.firstmod -DisplayName \"First HECTON Mod\" -Author \"YourName\" -Version 0.1.0 -Replace" + global::System.Environment.NewLine +
+                global::System.Environment.NewLine +
+                "Manual identity-only setup:" + global::System.Environment.NewLine +
+                global::System.Environment.NewLine +
                 "powershell -NoProfile -ExecutionPolicy Bypass -File h8mod.ps1 -Action setup -Id com.yourname.mod -DisplayName \"Your Mod\" -Author \"YourName\" -Version 0.1.0" + global::System.Environment.NewLine +
                 global::System.Environment.NewLine +
                 "Normal edit-review loop:" + global::System.Environment.NewLine +
@@ -1446,7 +1564,9 @@ namespace Hecton8.Editor.ModdingSDK
                 global::System.Environment.NewLine +
                 "Use pwsh instead of powershell on macOS/Linux with PowerShell 7. The scripts normalize child paths internally; do not rewrite Tools/, Reports/, or .vscode/ paths per platform. In VS Code, change hecton8.powerShellExecutable in .vscode/settings.json to pwsh and run Tasks: Run Task for the same h8mod.ps1 actions." + global::System.Environment.NewLine +
                 global::System.Environment.NewLine +
-                "The root h8mod.ps1 launcher is the preferred no-Unity entry point for humans. VS Code tasks call that launcher directly. It delegates to these Tools/*.ps1 scripts, prints Docs/capabilities.md for capability discovery, and does not add a second validation contract." + global::System.Environment.NewLine +
+                "The root h8mod.ps1 launcher is the preferred no-Unity entry point for humans. VS Code tasks call that launcher directly, including first playable mod creation, disabled graph node creation, and explicit graph/settings/locale/asset replace applies. It delegates to these Tools/*.ps1 scripts, prints Docs/capabilities.md for capability discovery, and does not add a second validation contract." + global::System.Environment.NewLine +
+                global::System.Environment.NewLine +
+                "Run create_first_mod.ps1 only through h8mod.ps1 -Action first-mod unless automation needs the inner tool. It sets identity, enables cap.graph.command_draft, creates and applies one SpawnItem graph node, one boolean setting, and one locale entry, then validates and builds Reports/review_manifest.json. Use -Replace for a rerunnable onboarding pass over the same sample IDs. Use -BuildSubmission when the first pass should also write the submission zip." + global::System.Environment.NewLine +
                 global::System.Environment.NewLine +
                 "prepare_mod.ps1 runs identity setup only when -Id is provided. Without -Id it validates the existing manifests and rebuilds Reports/review_manifest.json for the normal edit-review loop." + global::System.Environment.NewLine +
                 global::System.Environment.NewLine +
@@ -1481,6 +1601,7 @@ namespace Hecton8.Editor.ModdingSDK
                 "Command:" + global::System.Environment.NewLine +
                 global::System.Environment.NewLine +
                 "powershell -NoProfile -ExecutionPolicy Bypass -File h8mod.ps1" + global::System.Environment.NewLine +
+                "powershell -NoProfile -ExecutionPolicy Bypass -File h8mod.ps1 -Action first-mod -Id com.yourname.firstmod -DisplayName \"First HECTON Mod\" -Author \"YourName\" -Version 0.1.0 -Replace" + global::System.Environment.NewLine +
                 "powershell -NoProfile -ExecutionPolicy Bypass -File h8mod.ps1 -Action validate" + global::System.Environment.NewLine +
                 "powershell -NoProfile -ExecutionPolicy Bypass -File h8mod.ps1 -Action review" + global::System.Environment.NewLine +
                 "powershell -NoProfile -ExecutionPolicy Bypass -File h8mod.ps1 -Action prepare" + global::System.Environment.NewLine +
@@ -1500,6 +1621,7 @@ namespace Hecton8.Editor.ModdingSDK
                 "powershell -NoProfile -ExecutionPolicy Bypass -File Tools/list_allowed_opcodes.ps1" + global::System.Environment.NewLine +
                 "powershell -NoProfile -ExecutionPolicy Bypass -File Tools/list_allowed_opcodes.ps1 -Json" + global::System.Environment.NewLine +
                 "powershell -NoProfile -ExecutionPolicy Bypass -File Tools/configure_manifest_contract.ps1 -Capability cap.graph.command_draft -CapabilityState enable -MaxEnvelopesPerFrame 1 -MaxAssetBytes -1" + global::System.Environment.NewLine +
+                "powershell -NoProfile -ExecutionPolicy Bypass -File Tools/create_first_mod.ps1 -Id com.yourname.firstmod -DisplayName \"First HECTON Mod\" -Author \"YourName\" -Version 0.1.0 -Replace" + global::System.Environment.NewLine +
                 "powershell -NoProfile -ExecutionPolicy Bypass -File Tools/create_graph_node_snippet.ps1 -Id node.spawn_item -Opcode SpawnItem -ParametersJson '{}'" + global::System.Environment.NewLine +
                 "powershell -NoProfile -ExecutionPolicy Bypass -File Tools/create_settings_row_snippet.ps1 -Id setting.example_toggle -Kind bool -Default false" + global::System.Environment.NewLine +
                 "powershell -NoProfile -ExecutionPolicy Bypass -File Tools/create_locale_entry_snippet.ps1 -Key text.example_line -Value \"Your localized text\"" + global::System.Environment.NewLine +
@@ -2450,6 +2572,26 @@ namespace Hecton8.Editor.ModdingSDK
             return BuildStarterKitToolFromTemplate("Tools/configure_manifest_contract.ps1");
         }
 
+        private static string BuildStarterKitDependenciesScript()
+        {
+            return BuildStarterKitToolFromTemplate("Tools/configure_dependencies.ps1");
+        }
+
+        private static string BuildStarterKitFirstModScript()
+        {
+            return BuildStarterKitToolFromTemplate("Tools/create_first_mod.ps1");
+        }
+
+        private static string BuildStarterKitInstallLocalModScript()
+        {
+            return BuildStarterKitToolFromTemplate("Tools/install_local_mod.ps1");
+        }
+
+        private static string BuildStarterKitDiagnoseLocalModsScript()
+        {
+            return BuildStarterKitToolFromTemplate("Tools/diagnose_local_mods.ps1");
+        }
+
         private static string BuildStarterKitValidatorScript()
         {
             string validatorTemplate = BuildStarterKitToolFromTemplate("Tools/validate_structure.ps1");
@@ -2599,6 +2741,22 @@ namespace Hecton8.Editor.ModdingSDK
             builder.AppendLine("    }");
             builder.AppendLine("}");
             builder.AppendLine();
+            builder.AppendLine("function Validate-DependencyList([object]$Value, [string]$OwnerId, [string]$Label) {");
+            builder.AppendLine("    [void](Validate-JsonArray $Value $Label)");
+            builder.AppendLine("    $dependencies = @($Value)");
+            builder.AppendLine("    if ($dependencies.Count -gt 32) { Fail ($Label + ' exceeds 32 entries.') }");
+            builder.AppendLine("    $seen = @{}");
+            builder.AppendLine("    $result = @()");
+            builder.AppendLine("    for ($i = 0; $i -lt $dependencies.Count; $i++) {");
+            builder.AppendLine("        $dependencyId = Validate-ModId ([string]$dependencies[$i]) ($Label + '[' + $i + ']')");
+            builder.AppendLine("        if ($dependencyId -eq $OwnerId) { Fail ($Label + ' must not contain self dependency: ' + $dependencyId) }");
+            builder.AppendLine("        if ($seen.ContainsKey($dependencyId)) { Fail ($Label + ' contains duplicate dependency: ' + $dependencyId) }");
+            builder.AppendLine("        $seen[$dependencyId] = $true");
+            builder.AppendLine("        $result += $dependencyId");
+            builder.AppendLine("    }");
+            builder.AppendLine("    return @($result)");
+            builder.AppendLine("}");
+            builder.AppendLine();
             builder.AppendLine("function Validate-JsonArray([object]$Value, [string]$Label) {");
             builder.AppendLine("    if ($null -eq $Value -or -not $Value.GetType().IsArray) {");
             builder.AppendLine("        Fail ($Label + ' must be a JSON array.')");
@@ -2714,7 +2872,11 @@ namespace Hecton8.Editor.ModdingSDK
             builder.AppendLine("    'Tools/README.md',");
             builder.AppendLine("    'Tools/build_review_manifest.ps1',");
             builder.AppendLine("    'Tools/build_submission_package.ps1',");
+            builder.AppendLine("    'Tools/configure_dependencies.ps1',");
             builder.AppendLine("    'Tools/configure_manifest_contract.ps1',");
+            builder.AppendLine("    'Tools/create_first_mod.ps1',");
+            builder.AppendLine("    'Tools/install_local_mod.ps1',");
+            builder.AppendLine("    'Tools/diagnose_local_mods.ps1',");
             builder.AppendLine("    'Tools/apply_graph_node_snippet.ps1',");
             builder.AppendLine("    'Tools/apply_locale_entry_snippet.ps1',");
             builder.AppendLine("    'Tools/apply_settings_row_snippet.ps1',");
@@ -2729,7 +2891,7 @@ namespace Hecton8.Editor.ModdingSDK
             builder.AppendLine(") | ForEach-Object { [void](Require-File $_) }");
             builder.AppendLine();
             builder.AppendLine("$capabilitiesText = Get-Content -Raw -LiteralPath (Require-File 'Docs/capabilities.md')");
-            builder.AppendLine("foreach ($requiredCapabilityText in @('Supported now','Not public rights','envelope-only','FutureCommandEnvelope','Harmony','BepInEx','h8mod.ps1 -Action capabilities','h8mod.ps1 -Action manifest-contract','configure_manifest_contract.ps1','h8mod.ps1 -Action node-snippet','h8mod.ps1 -Action apply-node-snippet','h8mod.ps1 -Action setting-snippet','h8mod.ps1 -Action locale-snippet','h8mod.ps1 -Action apply-setting-snippet','h8mod.ps1 -Action apply-locale-snippet','h8mod.ps1 -Action asset-snippet','h8mod.ps1 -Action apply-asset-snippet')) {");
+            builder.AppendLine("foreach ($requiredCapabilityText in @('Supported now','Not public rights','envelope-only','FutureCommandEnvelope','Harmony','BepInEx','h8mod.ps1 -Action capabilities','h8mod.ps1 -Action manifest-contract','configure_manifest_contract.ps1','h8mod.ps1 -Action dependencies','configure_dependencies.ps1','h8mod.ps1 -Action install-local','install_local_mod.ps1','h8mod.ps1 -Action diagnose-local','diagnose_local_mods.ps1','recursive manifest discovery','dependency cycles','load order','h8mod.ps1 -Action node-snippet','h8mod.ps1 -Action apply-node-snippet','h8mod.ps1 -Action setting-snippet','h8mod.ps1 -Action locale-snippet','h8mod.ps1 -Action apply-setting-snippet','h8mod.ps1 -Action apply-locale-snippet','h8mod.ps1 -Action asset-snippet','h8mod.ps1 -Action apply-asset-snippet')) {");
             builder.AppendLine("    if (-not $capabilitiesText.Contains($requiredCapabilityText)) {");
             builder.AppendLine("        Fail ('Docs/capabilities.md missing required capability text: ' + $requiredCapabilityText)");
             builder.AppendLine("    }");
@@ -2763,6 +2925,7 @@ namespace Hecton8.Editor.ModdingSDK
             builder.AppendLine("$authoringVersion = Validate-Version ([string]$authoring.Version) 'mod.h8manifest.json Version'");
             builder.AppendLine("if ([string]$authoring.Compatibility.Runtime -ne 'envelope-only') { Fail 'mod.h8manifest.json Compatibility.Runtime must be envelope-only.' }");
             builder.AppendLine("if ([int]$authoring.RequiredAPIVersion -lt 2) { Fail 'mod.h8manifest.json RequiredAPIVersion must be >= 2.' }");
+            builder.AppendLine("$authoringDependencies = @(Validate-DependencyList $authoring.Dependencies $authoringId 'mod.h8manifest.json Dependencies')");
             builder.AppendLine("Validate-ManifestCapabilities $authoring.Capabilities");
             builder.AppendLine("if ([int]$authoring.Budgets.MaxEnvelopesPerFrame -lt 0) { Fail 'mod.h8manifest.json Budgets.MaxEnvelopesPerFrame must be >= 0.' }");
             builder.AppendLine("if ([int]$authoring.Budgets.MaxEnvelopesPerFrame -gt 256) { Fail 'mod.h8manifest.json Budgets.MaxEnvelopesPerFrame exceeds 256.' }");
@@ -2776,12 +2939,10 @@ namespace Hecton8.Editor.ModdingSDK
             builder.AppendLine("if ($authoringDisplayName -ne $runtimeName) { Fail 'mod.h8manifest.json DisplayName must match mod.json Name.' }");
             builder.AppendLine("if ($authoringAuthor -ne $runtimeAuthor) { Fail 'mod.h8manifest.json Author must match mod.json Author.' }");
             builder.AppendLine("if ($authoringVersion -ne $runtimeVersion) { Fail 'mod.h8manifest.json Version must match mod.json Version.' }");
-            builder.AppendLine("if ($null -ne $runtime.Dependencies) {");
-            builder.AppendLine("    foreach ($dependencyId in @($runtime.Dependencies)) {");
-            builder.AppendLine("        if (-not [string]::IsNullOrWhiteSpace([string]$dependencyId)) {");
-            builder.AppendLine("            [void](Validate-ModId ([string]$dependencyId) 'mod.json Dependencies item')");
-            builder.AppendLine("        }");
-            builder.AppendLine("    }");
+            builder.AppendLine("if ($null -eq $runtime.PSObject.Properties['Dependencies']) { Fail 'mod.json Dependencies is required.' }");
+            builder.AppendLine("$runtimeDependencies = @(Validate-DependencyList $runtime.Dependencies $runtimeId 'mod.json Dependencies')");
+            builder.AppendLine("if (($authoringDependencies -join \"`n\") -ne ($runtimeDependencies -join \"`n\")) {");
+            builder.AppendLine("    Fail 'mod.h8manifest.json Dependencies must match mod.json Dependencies in the same order.'");
             builder.AppendLine("}");
             builder.AppendLine("if (-not [string]::IsNullOrWhiteSpace([string]$runtime.EntryAssembly)) { Fail 'mod.json EntryAssembly must stay empty in envelope-only starter kits.' }");
             builder.AppendLine("if (-not [string]::IsNullOrWhiteSpace([string]$runtime.EntryType)) { Fail 'mod.json EntryType must stay empty in envelope-only starter kits.' }");

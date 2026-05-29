@@ -2535,6 +2535,9 @@ namespace Hecton8.Core.Database
             if (vault == null)
                 return;
 
+            if (vault.IsAllocationLocked || vault.IsCompactionFenceActive)
+                return;
+
             int scratchCapacity = math.max(1, _config.MaxQuerySectors);
             bool scratchReset = _scratchCapacity != scratchCapacity ||
                                 _sectorWindowScratchHandle.BufferID == 0u ||

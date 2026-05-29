@@ -31,12 +31,14 @@ namespace Hecton8.Core
         public const BufferID MockExtremeAupsBuffer = (BufferID)73207;
         public const BufferID FaultCounterBuffer = (BufferID)73208;
         public const SystemID OwnerSystemId = SystemID.CoreDeterminism;
-        private const uint SchedulePinTargetAups = 1u << 0;
-        private const uint SchedulePinRuntimeState = 1u << 1;
-        private const uint SchedulePinLocalOffsets = 1u << 2;
-        private const uint SchedulePinResultFlags = 1u << 3;
-        private const uint SchedulePinTelemetryRing = 1u << 4;
-        private const uint SchedulePinFaultCounters = 1u << 5;
+        private const uint ScheduleGuardLeaseToken = 1u;
+        private static readonly ulong ScheduledLocalizationMutationGuardMask =
+            AupPrecisionMutationGuardBit(TargetAupsBuffer) |
+            AupPrecisionMutationGuardBit(RuntimeStateBuffer) |
+            AupPrecisionMutationGuardBit(LocalOffsetsBuffer) |
+            AupPrecisionMutationGuardBit(ResultFlagsBuffer) |
+            AupPrecisionMutationGuardBit(TelemetryRingBuffer) |
+            AupPrecisionMutationGuardBit(FaultCounterBuffer);
 
         /// <summary>
         /// Opens or acquires owner-local Vault buffers and resolves transient owner-route views.
@@ -48,7 +50,7 @@ namespace Hecton8.Core
                 return false;
 
             int capacity = ResolveCapacity(requestedCapacity);
-            if (vault.IsAllocationLocked)
+            if (vault.IsAllocationLocked || vault.IsCompactionFenceActive)
             {
                 if (!TryResolveExistingBuffers(vault, capacity, out views))
                     return false;
@@ -193,7 +195,7 @@ namespace Hecton8.Core
                 vault.ReleaseWriteLock(in runtimeStateHandle, OwnerSystemId);
             }
 
-            if (!TryPinScheduledLocalizationBuffers(vault, out uint pinMask))
+            if (!TryAcquireScheduledLocalizationGuard(vault, out uint pinMask))
                 return false;
 
             if (!TryResolveExistingBuffers(vault, count, out views))
@@ -440,38 +442,13 @@ namespace Hecton8.Core
             return true;
         }
 
-        private static bool TryPinScheduledLocalizationBuffers(IDataVault vault, out uint pinMask)
+        private static bool TryAcquireScheduledLocalizationGuard(IDataVault vault, out uint pinMask)
         {
             pinMask = 0u;
-            bool pinned = false;
-            try
-            {
-                if (!TryPinScheduledLocalizationBuffer(vault, TargetAupsBuffer, SchedulePinTargetAups, ref pinMask) ||
-                    !TryPinScheduledLocalizationBuffer(vault, RuntimeStateBuffer, SchedulePinRuntimeState, ref pinMask) ||
-                    !TryPinScheduledLocalizationBuffer(vault, LocalOffsetsBuffer, SchedulePinLocalOffsets, ref pinMask) ||
-                    !TryPinScheduledLocalizationBuffer(vault, ResultFlagsBuffer, SchedulePinResultFlags, ref pinMask) ||
-                    !TryPinScheduledLocalizationBuffer(vault, TelemetryRingBuffer, SchedulePinTelemetryRing, ref pinMask) ||
-                    !TryPinScheduledLocalizationBuffer(vault, FaultCounterBuffer, SchedulePinFaultCounters, ref pinMask))
-                {
-                    return false;
-                }
-
-                pinned = true;
-                return true;
-            }
-            finally
-            {
-                if (!pinned)
-                    ReleaseScheduledLocalizationBuffers(vault, pinMask);
-            }
-        }
-
-        private static bool TryPinScheduledLocalizationBuffer(IDataVault vault, BufferID bufferId, uint pinBit, ref uint pinMask)
-        {
-            if (vault == null || !vault.TryLockBuffer(bufferId, OwnerSystemId))
+            if (vault == null || !vault.TryAcquireMutationGuard(ScheduledLocalizationMutationGuardMask))
                 return false;
 
-            pinMask |= pinBit;
+            pinMask = ScheduleGuardLeaseToken;
             return true;
         }
 
@@ -480,18 +457,12 @@ namespace Hecton8.Core
             if (vault == null || pinMask == 0u)
                 return;
 
-            ReleaseScheduledLocalizationBuffer(vault, pinMask, SchedulePinFaultCounters, FaultCounterBuffer);
-            ReleaseScheduledLocalizationBuffer(vault, pinMask, SchedulePinTelemetryRing, TelemetryRingBuffer);
-            ReleaseScheduledLocalizationBuffer(vault, pinMask, SchedulePinResultFlags, ResultFlagsBuffer);
-            ReleaseScheduledLocalizationBuffer(vault, pinMask, SchedulePinLocalOffsets, LocalOffsetsBuffer);
-            ReleaseScheduledLocalizationBuffer(vault, pinMask, SchedulePinRuntimeState, RuntimeStateBuffer);
-            ReleaseScheduledLocalizationBuffer(vault, pinMask, SchedulePinTargetAups, TargetAupsBuffer);
+            vault.ReleaseMutationGuard(ScheduledLocalizationMutationGuardMask);
         }
 
-        private static void ReleaseScheduledLocalizationBuffer(IDataVault vault, uint pinMask, uint pinBit, BufferID bufferId)
+        private static ulong AupPrecisionMutationGuardBit(BufferID bufferId)
         {
-            if ((pinMask & pinBit) != 0u)
-                vault.TryUnlockBuffer(bufferId, OwnerSystemId);
+            return 1UL << (unchecked((int)(uint)(int)bufferId) & 63);
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]

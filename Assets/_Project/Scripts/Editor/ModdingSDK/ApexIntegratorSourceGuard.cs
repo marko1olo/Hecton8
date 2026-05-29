@@ -14,11 +14,8 @@ namespace Hecton8.Editor.ModdingSDK
     {
         private static readonly string[] DefaultScope =
         {
-            "Assets/_Project/Scripts/Editor/ModdingSDK/ApexIntegratorSourceGuard.cs",
-            "Assets/_Project/Scripts/Editor/ModdingSDK/ExternalStarterKitWorkbenchWindow.cs",
-            "Assets/_Project/Scripts/Editor/ModdingSDK/ModBuilderWindow.cs",
-            "Assets/_Project/Scripts/Editor/ModdingSDK/ModdingSdkHubWindow.cs",
-            "Assets/_Project/Scripts/ModdingAPI/HectonAPI.cs"
+            "Assets/_Project/Scripts/ModdingAPI",
+            "Assets/_Project/Scripts/Editor/ModdingSDK"
         };
 
         private static readonly HashSet<string> HotMethodNames = new HashSet<string>(StringComparer.Ordinal)
@@ -80,6 +77,19 @@ namespace Hecton8.Editor.ModdingSDK
             ".SetVector("
         };
 
+        private static readonly string[] HotGcTokens =
+        {
+            "new Dictionary<",
+            "new HashSet<",
+            "new List<",
+            "new Queue<",
+            "new Stack<",
+            "Enumerable.",
+            ".ToArray(",
+            ".ToList(",
+            "string.Format("
+        };
+
         [MenuItem("Hecton/Modding/Run APEX Source Guard")]
         private static void RunFromMenu()
         {
@@ -104,12 +114,14 @@ namespace Hecton8.Editor.ModdingSDK
             int hotMethods = 0;
             int hotLookupViolations = 0;
             int phaseViolations = 0;
+            int hotGcViolations = 0;
             int vaultLockViolations = 0;
             int buildProcessTokens = 0;
+            List<string> sourceFiles = CollectScopeFiles(projectRoot, relativePaths, failures);
 
-            for (int i = 0; i < relativePaths.Count; i++)
+            for (int i = 0; i < sourceFiles.Count; i++)
             {
-                string relativePath = NormalizeRelativePath(relativePaths[i]);
+                string relativePath = NormalizeRelativePath(sourceFiles[i]);
                 string absolutePath = Path.Combine(projectRoot, relativePath.Replace('/', Path.DirectorySeparatorChar));
                 if (!File.Exists(absolutePath))
                 {
@@ -123,7 +135,7 @@ namespace Hecton8.Editor.ModdingSDK
 
                 parsedFiles++;
                 bool editorOnlyFile = IsEditorOnlyPath(relativePath);
-                buildProcessTokens += CountLiteralBuildTokens(source);
+                buildProcessTokens += CountLiteralBuildTokens(syntaxTree.MaskedSource);
                 parsedMethods += syntaxTree.Methods.Count;
 
                 for (int methodIndex = 0; methodIndex < syntaxTree.Methods.Count; methodIndex++)
@@ -136,7 +148,10 @@ namespace Hecton8.Editor.ModdingSDK
                         hotMethods++;
                         ScanHotLookups(relativePath, syntaxTree.MaskedSource, method, failures, ref hotLookupViolations);
                         if (!editorOnlyFile && !VisualPhaseMethodNames.Contains(method.Name))
+                        {
                             ScanPresentationWrites(relativePath, syntaxTree.MaskedSource, method, failures, ref phaseViolations);
+                            ScanHotGcTokens(relativePath, syntaxTree.MaskedSource, method, failures, ref hotGcViolations);
+                        }
                     }
 
                     ScanVaultWriteLocks(relativePath, syntaxTree.MaskedSource, method, failures, ref vaultLockViolations);
@@ -159,19 +174,58 @@ namespace Hecton8.Editor.ModdingSDK
                 .Append(hotLookupViolations)
                 .Append(", PhaseViolations=")
                 .Append(phaseViolations)
+                .Append(", HotGcViolations=")
+                .Append(hotGcViolations)
                 .Append(", VaultLockViolations=")
                 .Append(vaultLockViolations)
                 .Append(", BuildProcessTokens=")
                 .Append(buildProcessTokens)
                 .AppendLine(".");
             summary.AppendLine("Timing proof: guarded modding runtime/editor scope has no deferred presentation mutation outside LateFrameTick or VisualSyncTick.");
-            summary.AppendLine("Lock proof: guarded scope has no method that can hold more than one GlobalDataVault write lock, and lock methods must use finally-release.");
+            summary.AppendLine("Transfer proof: guarded runtime hot methods contain no managed growth/LINQ copy tokens; state transfer stays cold or native.");
+            summary.AppendLine("Lock proof: guarded scope has no method that can hold more than one GlobalDataVault write lock, and write-lock users must use finally-release.");
             summary.AppendLine("Compile throttle proof: this guard launches no external compiler process.");
 
             for (int i = 0; i < failures.Count; i++)
                 summary.AppendLine(failures[i]);
 
             return new ApexIntegratorSourceGuardResult(failures.Count != 0, summary.ToString());
+        }
+
+        private static List<string> CollectScopeFiles(string projectRoot, IReadOnlyList<string> scopeRoots, List<string> failures)
+        {
+            List<string> sourceFiles = new List<string>(64);
+            HashSet<string> seen = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+            for (int i = 0; i < scopeRoots.Count; i++)
+            {
+                string relativePath = NormalizeRelativePath(scopeRoots[i]);
+                string absolutePath = Path.Combine(projectRoot, relativePath.Replace('/', Path.DirectorySeparatorChar));
+                if (File.Exists(absolutePath))
+                {
+                    AddSourceFile(projectRoot, absolutePath, sourceFiles, seen);
+                    continue;
+                }
+
+                if (!Directory.Exists(absolutePath))
+                {
+                    AppendFailure(failures, relativePath, 0, "missing source scope");
+                    continue;
+                }
+
+                string[] files = Directory.GetFiles(absolutePath, "*.cs", SearchOption.AllDirectories);
+                Array.Sort(files, StringComparer.OrdinalIgnoreCase);
+                for (int fileIndex = 0; fileIndex < files.Length; fileIndex++)
+                    AddSourceFile(projectRoot, files[fileIndex], sourceFiles, seen);
+            }
+
+            return sourceFiles;
+        }
+
+        private static void AddSourceFile(string projectRoot, string absolutePath, List<string> sourceFiles, HashSet<string> seen)
+        {
+            string relativePath = NormalizeRelativePath(MakeRelativePath(projectRoot, absolutePath));
+            if (seen.Add(relativePath))
+                sourceFiles.Add(relativePath);
         }
 
         private static bool TryBuildSyntaxTree(
@@ -236,6 +290,24 @@ namespace Hecton8.Editor.ModdingSDK
             }
         }
 
+        private static void ScanHotGcTokens(
+            string relativePath,
+            string masked,
+            SourceMethod method,
+            List<string> failures,
+            ref int hotGcViolations)
+        {
+            for (int i = 0; i < HotGcTokens.Length; i++)
+            {
+                int hit = IndexOf(masked, HotGcTokens[i], method.BodyStartInclusive, method.BodyEndExclusive);
+                if (hit < 0)
+                    continue;
+
+                hotGcViolations++;
+                AppendFailure(failures, relativePath, GetLine(masked, hit), "hot method " + method.Name + " contains managed allocation/copy token " + HotGcTokens[i].Trim());
+            }
+        }
+
         private static void ScanVaultWriteLocks(
             string relativePath,
             string masked,
@@ -243,7 +315,9 @@ namespace Hecton8.Editor.ModdingSDK
             List<string> failures,
             ref int vaultLockViolations)
         {
-            int acquireCount = CountOccurrences(masked, "TryAcquireWriteLock", method.BodyStartInclusive, method.BodyEndExclusive);
+            int acquireCount =
+                CountOccurrences(masked, "TryAcquireWriteLock", method.BodyStartInclusive, method.BodyEndExclusive) +
+                CountOccurrences(masked, "TryAcquireVaultLaneWrite", method.BodyStartInclusive, method.BodyEndExclusive);
             if (acquireCount == 0)
                 return;
 
@@ -511,6 +585,22 @@ namespace Hecton8.Editor.ModdingSDK
         private static string NormalizeRelativePath(string path)
         {
             return path.Replace('\\', '/');
+        }
+
+        private static string MakeRelativePath(string root, string path)
+        {
+            Uri rootUri = new Uri(AppendDirectorySeparator(Path.GetFullPath(root)));
+            Uri pathUri = new Uri(Path.GetFullPath(path));
+            return Uri.UnescapeDataString(rootUri.MakeRelativeUri(pathUri).ToString());
+        }
+
+        private static string AppendDirectorySeparator(string path)
+        {
+            if (path.EndsWith(Path.DirectorySeparatorChar.ToString(), StringComparison.Ordinal) ||
+                path.EndsWith(Path.AltDirectorySeparatorChar.ToString(), StringComparison.Ordinal))
+                return path;
+
+            return path + Path.DirectorySeparatorChar;
         }
 
         private static string GetProjectRootPath()

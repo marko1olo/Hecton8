@@ -492,3 +492,132 @@ No `dotnet build` until source modifications require syntax proof and host CPU i
 - [x] Static syntax/diff proof | DOD: `ShinobuEcosystemBalancer.cs` braces/preprocessor `590/590`, `8/8`; `git diff --check` exit `0` except Git LF->CRLF warning. SHA-256 `1DD3858FD3D8409120B3785F9FDDD0BF6A869AD24AFEA4919B3DCE2CDD3FC25C`.
 - [BLOCKED_BY_POLICY] Compile proof | DOD: final build gate `CPU_SAMPLE_FINAL=100`, compiler process count `1`, active `dotnet` PID `69052`; no `dotnet build` launched.
 - [OPEN_RISK] Global one-lock proof still false | DOD: ecosystem frame jobs still hold a multi-bit mutation guard for 9 base live buffers plus optional debug; macro jobs still hold 4. Remaining truth/output buffers require a versioned staging/commit route or a DataVault job-lease transaction API.
+
+## Loop 48 / Debug Cell Fail-Closed Counter Gate
+
+- [x] Debug-cell publish no longer clears full buffer under lock | DOD: `WriteDebugCellsAfterRelease` now writes `CounterDebugCellCount=0`, copies only `publishedCount` debug cells under `ShinobuSpatialHashDebugCells` lock, then writes the final counter. Static proof: method lines `2769-2811`, `MEMCLEAR=0`, `MEMCPY=1`, `TRYLOCKBUFFER=1`, `TRYUNLOCKBUFFER=1`, `FINALLY=1`.
+- [x] Stale debug tail made counter-gated | DOD: `SpatialGridXRayWindow.DrawDebugCellsFallback` now locks and reads `ShinobuEcosystemCounters`, clamps `CounterDebugCellCount`, and iterates only `0..count-1`; method lines `295-322`, `FORBIDDEN_TOTAL=0`, `FINALLY=1`.
+- [x] Dead debug parameter removed | DOD: `TryLockFrameJobBuffers` signature is `TryLockFrameJobBuffers(IDataVault vault)` at line `1957`; call site is line `442`; `debugGridRequested` no longer appears in the lock acquisition path.
+- [x] Hot text and dependency proof | DOD: targeted definitions `WriteDebugCellsAfterRelease`, `ReadDebugCellScratchCount`, `TryLockFrameJobBuffers`, `BuildHashDebugCellsJob`, `DrawDebugCellsFallback`, and `ReadCounter` report `FORBIDDEN_TOTAL=0` for reference-style `new`, `string.Format`, `.ToString(`, LINQ `.Select/.Where/.OrderBy`, `foreach`, hot dependency lookups, and waits. Direct scan reports `HOT_DEP_LOOKUP_HITS=0`, `WAIT_SPIN_HITS=0`.
+- [x] Static syntax/diff proof | DOD: `ShinobuEcosystemBalancer.cs` braces/preprocessor `595/595`, `8/8`; `SpatialGridXRayWindow.cs` `49/49`, `1/1`; `git diff --check` reports only Git LF->CRLF normalization warnings.
+- [x] Source hashes | DOD: Ecosystem `CC429BDC61CC8C80BFB88D8A23C9EE9FEE497B2F50C4D30C42C9FEC6011354E6`; XRay editor `562DA7520E8083B27F9B3C244931B44D2F45A40BE001E36E131111EF5EE651F8`.
+- [BLOCKED_BY_POLICY] Compile proof | DOD: final build gate `CPU_SAMPLE=88`, compiler process count `0`; no `dotnet build` launched because CPU exceeded the 50% rule.
+- [OPEN_RISK] Global one-lock proof still false | DOD: this loop shortens optional debug presentation publish only. Ecosystem frame jobs still hold a multi-bit mutation guard for 9 base buffers; macro jobs still hold 4.
+
+## Loop 49 / Editor Debug Fallback Lock Flattening
+
+- [x] Editor fallback no longer draws while holding DataVault locks | DOD: `DrawDebugCellsFallback` now only reads a copied static scratch array and calls `Handles` after all vault locks are released. Static proof: method lines `292-311`, `LOCK_CALLS=0`, `UNLOCK_CALLS=0`, `FINALLY=0`, `HANDLES_OPS=2`, `FORBIDDEN_TOTAL=0`.
+- [x] Counter and debug-cell locks split into strict one-buffer windows | DOD: `ReadDebugCellCount` locks only `ShinobuEcosystemCounters` and releases in `finally`; `TryCopyDebugCells` locks only `ShinobuSpatialHashDebugCells` and releases in `finally`. Static proof: `ReadDebugCellCount LOCK_CALLS=1 UNLOCK_CALLS=1 FINALLY=1`; `TryCopyDebugCells LOCK_CALLS=1 UNLOCK_CALLS=1 FINALLY=1`.
+- [x] Managed allocation risk bounded to cold static editor scratch | DOD: fallback copies into `DebugCellScratch`, a static array allocated once at editor class load, not per paint call. The draw path uses `for` loops and value-type `Color.Lerp`; targeted method scan reports `FORBIDDEN_TOTAL=0`.
+- [x] Hot dependency and wait proof | DOD: direct scan over touched files reports `HOT_DEP_LOOKUP_HITS=0` for `GlobalRegistry.Get<`, `GetComponent(`, and `TryGetComponent(`; `DEAD_SET_AND_WAIT_HITS=0` for `Thread.Sleep`, `SpinWait`, `Task.Delay`, `.Wait(`, and `.Complete(` in touched windows.
+- [x] Static syntax/diff proof | DOD: `ShinobuEcosystemBalancer.cs` braces/preprocessor `595/595`, `8/8`; `SpatialGridXRayWindow.cs` `53/53`, `1/1`; `git diff --check` reports only Git LF->CRLF normalization warnings.
+- [x] Source hashes | DOD: Ecosystem `CC429BDC61CC8C80BFB88D8A23C9EE9FEE497B2F50C4D30C42C9FEC6011354E6`; XRay editor `4171FE2D8ED87023D37DFF3AF1CC8BBE5A09A6AEA0C23FE97D5E53042CD924B2`.
+- [BLOCKED_BY_POLICY] Compile proof | DOD: build gate `CPU_SAMPLE=100`, compiler process count `0`; no `dotnet build` launched because CPU exceeded the 50% rule.
+- [OPEN_RISK] Global one-lock proof still false | DOD: editor fallback is flattened, but ecosystem frame jobs still hold a multi-bit mutation guard for 9 base buffers plus optional debug; macro jobs still hold 4.
+
+## Loop 50 / Raw Spatial Grid Editor Snapshot Split
+
+- [x] Raw grid drawing removed from lock windows | DOD: `DrawRawSpatialGrid` now only draws from `RawGridDrawScratch`; method lines `226-240`, `LOCK_CALLS=0`, `UNLOCK_CALLS=0`, `FINALLY=0`, `HANDLES_OPS=2`, `FORBIDDEN_TOTAL=0`.
+- [x] Six-buffer read set eliminated | DOD: `RawGridReadSet` was removed; exact scan reports `REMOVED_READSET_HITS=0`. Raw diagnostic data is copied through sequential helpers, never a six-lock set.
+- [x] Sequential one-lock snapshot helpers installed | DOD: `TryReadRawGridTelemetry`, `TryCopyRawGridRanges`, `TryCopyRawGridEntries`, `TryCopyRawGridPositions`, and `TryCopyRawGridAups` each release in `finally`. Static lock-depth proof: max depth `1`, end depth `0` for every helper.
+- [x] Math hoisted outside DataVault ownership | DOD: `ShinobuSpatialGridMath.QuantizeCell`, AUP absolute conversion, center calculation, density color selection, and `Handles.DrawWireCube` run after all buffer locks are released.
+- [x] Zero-GC/dependency/wait proof | DOD: targeted method scan reports `FORBIDDEN_TOTAL=0` for reference-style `new`, `string.Format`, `.ToString(`, LINQ, `foreach`, hot dependency lookups, and waits. Direct scan reports `XRAY_DEP_LOOKUP_HITS=0`, `XRAY_WAIT_OR_COMPLETE_HITS=0`.
+- [x] Static syntax/diff proof | DOD: `SpatialGridXRayWindow.cs` braces/preprocessor `85/85`, `1/1`; `git diff --check` reports only Git LF->CRLF normalization warning.
+- [x] Source hashes | DOD: Ecosystem unchanged `CC429BDC61CC8C80BFB88D8A23C9EE9FEE497B2F50C4D30C42C9FEC6011354E6`; XRay editor `3521BFACD7301ECD1DFABD5F4FF31A39438625EEBEFC487075AA9F0078A95B73`.
+- [BLOCKED_BY_POLICY] Compile proof | DOD: build gate `CPU_SAMPLE=92`, compiler process count `0`; no `dotnet build` launched because CPU exceeded the 50% rule.
+- [OPEN_RISK] Global one-lock proof still false | DOD: editor raw/debug visualization is flattened, but ecosystem frame jobs still hold a multi-bit mutation guard for 9 base buffers plus optional debug; macro jobs still hold 4.
+
+## Loop 51 / Spatial Grid Frame Payload Staging
+
+- [x] Spatial grid query payload removed from scheduled frame guard | DOD: `FrameJobMutationGuardMask` lines `85-92` now has `BITS=7`, `GRID_BITS=0`; `ShinobuSpatialGridEntries` and `ShinobuSpatialGridBucketRanges` are no longer in the scheduled frame mutation guard.
+- [x] Owner-local spatial grid job scratch installed | DOD: `_spatialGridEntryJobScratch` and `_spatialGridBucketRangeJobScratch` are persistent cold `NativeArray` fields; allocated by `EnsureTelemetryMirrorsCold`; disposed by `DisposeTelemetryMirrorsCold`.
+- [x] Frame job resolver no longer opens DataVault query payload | DOD: `TryResolveFrameSpatialGridBuffers` lines `1918-1941` has `LOCKS=0`, `FORBIDDEN_TOTAL=0`, and returns owner-local entries/ranges/sort scratch.
+- [x] Query payload publication deferred after simulation release | DOD: `FinishFrameJobCompletion` releases the mutation guard in `finally`, then `WriteSpatialGridPayloadAfterRelease` publishes ranges and entries before spatial telemetry is written. Failed payload publish sets `hasSpatialTelemetry=false`, leaving readers without a new committed frame marker.
+- [x] Sequential one-lock publish proof | DOD: `TryWriteSpatialGridBucketRangesAfterRelease` lines `2714-2740` and `TryWriteSpatialGridEntriesAfterRelease` lines `2742-2768` each have `LOCKS=1`, `UNLOCKS=1`, `FINALLY=1`, `MEMCPY=1`, max static lock depth `1`, end depth `0`.
+- [x] Zero-GC/dependency/wait proof | DOD: targeted methods report `FORBIDDEN_TOTAL=0`; touched-file direct scan reports `TOUCHED_DEP_LOOKUP_HITS=0`, `TOUCHED_WAIT_OR_COMPLETE_HITS=0`.
+- [x] Static syntax/diff proof | DOD: Ecosystem braces/preprocessor `604/604`, `8/8`; XRay `85/85`, `1/1`; `git diff --check` reports only Git LF->CRLF normalization warnings.
+- [x] Source hashes | DOD: Ecosystem `83561B68DAA40030987F90CF3D29083C3E5BD2DBFC9080243CC400A9AFF19F54`; XRay editor `3521BFACD7301ECD1DFABD5F4FF31A39438625EEBEFC487075AA9F0078A95B73`.
+- [BLOCKED_BY_POLICY] Compile proof | DOD: build gate `CPU_SAMPLE=99`, compiler process count `0`; no `dotnet build` launched because CPU exceeded the 50% rule.
+- [OPEN_RISK] Global one-lock proof still false | DOD: frame guard is reduced to 7 base buffers, but frame still uses one multi-bit mutation guard and macro still uses 4. Full proof requires staging entity/AUP/boid truth plus counters, or a DataVault job-lease transaction API.
+
+## Loop 52 / Spatial Grid Two-Phase Publish Fix
+
+- [x] Direct-query consistency audit | DOD: inspected `ShinobuSpatialGridSolver.TryFindRange` and `BoidFlockingJob.TryFindSpatialRange`; both require `range.Flags == Frame`, so bucket ranges are the public validity gate for spatial entries. Rejected the previous ranges-first publish order because it could briefly expose new-frame ranges before entries were copied.
+- [x] Two-phase fail-closed publish implemented | DOD: `WriteSpatialGridPayloadAfterRelease` now runs `TryInvalidateSpatialGridBucketRangesAfterRelease` -> `TryWriteSpatialGridEntriesAfterRelease` -> `TryWriteSpatialGridBucketRangesAfterRelease`. During any failed or partial publish, ranges stay zeroed and old-frame/new-frame queries fail closed.
+- [x] Lock-depth proof repeated | DOD: invalidate, entry copy, and final range copy each use one `TryLockBuffer` and one `TryUnlockBuffer` inside `finally`; no method holds two DataVault locks at the same time.
+- [x] Static proof repeated | DOD: `WriteSpatialGridPayloadAfterRelease LINES=2695-2715 FORBIDDEN_TOTAL=0`; `TryInvalidateSpatialGridBucketRangesAfterRelease LINES=2717-2739 FORBIDDEN_TOTAL=0 LOCKS=1 UNLOCKS=1 FINALLY=1 MEMCLEAR=1`; `TryWriteSpatialGridBucketRangesAfterRelease LINES=2741-2767 FORBIDDEN_TOTAL=0 LOCKS=1 UNLOCKS=1 FINALLY=1 MEMCPY=1`; `TryWriteSpatialGridEntriesAfterRelease LINES=2769-2795 FORBIDDEN_TOTAL=0 LOCKS=1 UNLOCKS=1 FINALLY=1 MEMCPY=1`.
+- [x] Source hashes | DOD: Ecosystem `351B462524BA4F2B997B207568972240D6CDB1A7E1F10617239180F6BE9F18D9`; XRay editor `3521BFACD7301ECD1DFABD5F4FF31A39438625EEBEFC487075AA9F0078A95B73`.
+- [BLOCKED_BY_POLICY] Compile proof | DOD: build gate `CPU_SAMPLE=57`, compiler process count `0`; no `dotnet build` launched because CPU exceeded the 50% rule.
+- [OPEN_RISK] Global one-lock proof still false | DOD: frame guard remains 7 base buffers and macro remains 4; this loop fixes the spatial payload publication window only.
+
+## Loop 53 / Frame Snapshot Staging
+
+- [x] Snapshot buffers removed from scheduled frame guard | DOD: `FrameJobMutationGuardMask` lines `85-89` now has `BITS=4`; `ShinobuAmbientEntitySnapshot`, `ShinobuAmbientAupSnapshot`, and `ShinobuBoidStateSnapshot` are no longer pinned for the whole scheduled frame job.
+- [x] Owner-local frame snapshot scratch installed | DOD: `_entitySnapshotJobScratch`, `_aupSnapshotJobScratch`, and `_boidStateSnapshotJobScratch` are persistent `NativeArray` fields allocated in `EnsureTelemetryMirrorsCold` and disposed in `DisposeTelemetryMirrorsCold`.
+- [x] Frame resolver no longer opens DataVault snapshot views | DOD: `TryResolveFrameJobBuffers` lines `1788-1838` opens only live truth/counter buffers from the vault and returns owner-local snapshot/hash scratch; method scan reports `FORBIDDEN_TOTAL=0`, `LOCKS=0`.
+- [x] Phase-safe publish preserved | DOD: `Tick` schedules jobs only; `LateFrameTick` line `716-719` calls `TryFinalizeFrameJobNoWait`; `FinishFrameJobCompletion` lines `2474-2565` releases the scheduled mutation guard in `finally` before `WriteSpatialGridPayloadAfterRelease` publishes snapshots/entries/ranges.
+- [x] Ranges-last commit contract extended to snapshots | DOD: `WriteSpatialGridPayloadAfterRelease` lines `2716-2739` runs range invalidation, snapshot copies, entry copy, then final range copy. Public `SpatialHashQuery` resolves `entries/ranges/aupSnapshot` but accepts cells only when `range.Flags == Frame`, so new readers fail closed until final ranges publish.
+- [x] Sequential one-lock snapshot publish proof | DOD: generic `TryWriteFrameSnapshotAfterRelease` lines `2748-2780` has `LOCKS=1`, `UNLOCKS=1`, `FINALLY=1`, `MEMCPY=1`; each snapshot BufferID is copied through the same one-buffer window.
+- [x] Static proof repeated | DOD: touched methods report `FORBIDDEN_TOTAL=0`; whole ecosystem file scan reports `GlobalRegistry.Get<`, `GetComponent(`, `TryGetComponent(`, `Thread.Sleep`, `SpinWait`, `Task.Delay`, `.Wait(`, and `.Complete(` counts all `0`.
+- [x] Static syntax/diff proof | DOD: Ecosystem braces/preprocessor `613/613`, `8/8`; XRay `85/85`, `1/1`; `git diff --check` reports only Git LF->CRLF normalization warnings.
+- [x] Source hashes | DOD: Ecosystem `1E6307D6090C2DB42808830E2A822D0145A3C7E5942F42DD4CC47832C7843758`; XRay editor `3521BFACD7301ECD1DFABD5F4FF31A39438625EEBEFC487075AA9F0078A95B73`.
+- [BLOCKED_BY_POLICY] Compile proof | DOD: build gate `CPU_SAMPLE=88`, `COMPILER_DOTNET=0`, `COMPILER_CSC=0`, `COMPILER_VBC=0`; no `dotnet build` launched because CPU exceeded the 50% rule.
+- [OPEN_RISK] Global one-lock proof still false | DOD: scheduled frame mutation guard remains a 4-bit lease for live truth/counters, and macro guard remains 4. The new publish path itself is one-buffer-at-a-time; full global one-lock proof still requires staging counters plus live truth or a DataVault transaction/lease API.
+
+## Loop 54 / Spatial Range Bootstrap Clear Flattening
+
+- [x] Remaining range clear loop removed from DataVault lock | DOD: `ClearSpatialGridRangeTable` is now `unsafe` and uses one `UnsafeUtility.MemClear` after opening `ShinobuSpatialGridBucketRanges`. Static proof: method lines `3565-3590`, `LOCKS=1`, `UNLOCKS=1`, `FINALLY=1`, `FOR_LOOPS=0`, `FOREACH=0`, `MEMCLEAR=1`, `MEMCPY=0`.
+- [x] Fail-closed release semantics preserved | DOD: `vault == null` or failed `TryLockBuffer` returns immediately; failed view open, uncreated range view, or empty range view returns inside `try`; the successful lock is released only through `finally`.
+- [x] Live truth staging rejected for this loop | DOD: `ShinobuFloraFaunaSymbiosisSolver` borrows `ShinobuAmbientEntities` and `ShinobuAmbientAups` at lines `592` and `604`, snapshots them at `924-934`; `AbyssalSwarmTunerWindow` reads live ecosystem entities/AUPs at `692-693`. Removing live truth from the scheduled guard without a versioned commit route would be an unproven cross-domain contract change.
+- [x] Static dependency/wait proof repeated | DOD: whole ecosystem file scan reports `GlobalRegistry.Get<`, `GetComponent(`, `TryGetComponent(`, `FindObjectOfType`, `FindFirstObjectByType`, `Thread.Sleep`, `SpinWait`, `Task.Delay`, `.Wait(`, and `.Complete(` counts all `0`.
+- [x] Static syntax proof repeated | DOD: Ecosystem braces/preprocessor `614/614`, `8/8`; XRay `85/85`, `1/1`; `git diff --check` reports only Git LF->CRLF normalization warnings.
+- [x] Source hashes | DOD: Ecosystem `D89CB82A7477FF01DB456AC9ADD4EB292628816E5D78EBEF8B5DB3DD04087C02`; XRay editor `3521BFACD7301ECD1DFABD5F4FF31A39438625EEBEFC487075AA9F0078A95B73`.
+- [BLOCKED_BY_POLICY] Compile proof | DOD: final build gate `CPU_SAMPLE_FINAL2=96`, `COMPILER_DOTNET=0`, `COMPILER_CSC=0`, `COMPILER_VBC=0`; no `dotnet build` launched because CPU exceeded the 50% rule.
+- [OPEN_RISK] Global one-lock proof still false | DOD: scheduled frame mutation guard remains a 4-bit lease for live truth/counters, and macro guard remains 4. The bootstrap clear is now one-buffer and loop-free, but live truth/counter staging still needs a versioned transaction design.
+
+## Loop 55 / Symbiosis Link Publish Copy Flattening
+
+- [x] Symbiosis link publish loop removed from DataVault lock | DOD: `TryWriteSymbiosisLinks` is now `unsafe` and copies `SymbiosisChemicalLinkDTO` rows with one `UnsafeUtility.MemCpy`. Static proof: method lines `1399-1444`, `LOCKS=1`, `UNLOCKS=1`, `FINALLY=1`, `FOR_LOOPS=0`, `FOREACH=0`, `MEMCPY=1`, `MEMCLEAR=0`.
+- [x] Pre-lock no-work guard added | DOD: null `source` or `vault` still returns `false`; `requestedCount <= 0` returns before lock because the old implementation performed zero writes and did not clear stale tail rows either.
+- [x] Unmanaged layout proof referenced | DOD: `SymbiosisChemicalLinkDTO` is `[StructLayout(LayoutKind.Explicit, Size = 16)]` with primitive fields and existing cold verifier asserts size `16` plus offsets `0/4/8/12`; pointer copy therefore preserves exact row layout.
+- [x] Dependency/wait proof repeated | DOD: `ShinobuFloraFaunaSymbiosisSolver.cs` and `ShinobuEcosystemBalancer.cs` each report `DEP_WAIT_TOTAL=0` for hot registry/component lookups and waits.
+- [x] Static syntax proof repeated | DOD: Symbiosis braces/preprocessor `325/325`, `10/10`; Ecosystem `614/614`, `8/8`; XRay `85/85`, `1/1`; `git diff --check` reports only Git LF->CRLF normalization warnings.
+- [x] Source hashes | DOD: Symbiosis `CA42B1B73D05E27B73A287F1749A2E06BB8A221A6F4A61137807C8BE0CF8C040`; Ecosystem `D89CB82A7477FF01DB456AC9ADD4EB292628816E5D78EBEF8B5DB3DD04087C02`; XRay `3521BFACD7301ECD1DFABD5F4FF31A39438625EEBEFC487075AA9F0078A95B73`.
+- [BLOCKED_BY_POLICY] Compile proof | DOD: final build gate `CPU_SAMPLE_FINAL3=87`, `COMPILER_DOTNET=1`, `COMPILER_CSC=1`, `COMPILER_VBC=0`; no `dotnet build` launched because CPU exceeded the 50% rule and compiler processes were active.
+- [OPEN_RISK] Global one-lock proof still false | DOD: this loop flattens one symbiosis publish copy. Scheduled ecosystem frame/macro mutation guards remain multi-buffer leases pending versioned transaction design.
+
+## Loop 56 / Flocking Counter Publish Copy Flattening
+
+- [x] Flocking counter publish loop removed from DataVault lock | DOD: `WriteFlockingCountersAfterRelease` in `ShinobuEcosystemBalancer.FlockingAvoidance.cs` is now `unsafe` and copies `FlockingCounter64` rows with one `UnsafeUtility.MemCpy`. Static proof: method lines `165-193`, `TryLockBuffer=1`, `TryUnlockBuffer=1`, `finally=1`, `for (=0`, `foreach=0`, `MemCpy=1`, `MemClear=0`.
+- [x] Zero-GC scan repeated for modified hot window | DOD: targeted method scan counts `new =0`, `string.Format=0`, `.ToString(=0`, `.Where(=0`, `.Select(=0`, `.Any(=0`, `.FirstOrDefault(=0`, `.ToList(=0`, `foreach=0`.
+- [x] Unmanaged layout proof referenced | DOD: `FlockingCounter64` is `[StructLayout(LayoutKind.Explicit, Size = 64)]` with primitive 4-byte fields at offsets `0,4,8,...,60`; the copied byte count is `count * UnsafeUtility.SizeOf<FlockingCounter64>()`, preserving exact row layout.
+- [x] Dependency/wait proof repeated | DOD: direct scan of `ShinobuEcosystemBalancer.FlockingAvoidance.cs` reports no `GlobalRegistry.Get<`, `GetComponent(`, `TryGetComponent(`, `FindObjectOfType`, `FindFirstObjectByType`, `Thread.Sleep`, `SpinWait`, `Task.Delay`, `.Wait(`, or `.Complete(` hits.
+- [x] Static syntax/diff proof repeated | DOD: flocking partial braces/preprocessor `46/46`, `0/0`; `git diff --check` reports only Git LF->CRLF normalization warning.
+- [x] Source hash | DOD: `ShinobuEcosystemBalancer.FlockingAvoidance.cs` SHA-256 `D43D794FE2C82C405B9FEF1CECD44F35812C3548591E7CD2E5FB01C3A17961AE`.
+- [BLOCKED_BY_POLICY] Compile proof | DOD: build gate `CPU_SAMPLE_FINAL4=100`, `COMPILER_DOTNET=2`, `COMPILER_CSC=1`, `COMPILER_VBC=0`; no `dotnet build` launched because CPU exceeded the 50% rule and compiler processes were active.
+- [OPEN_RISK] Global one-lock proof still false | DOD: this loop flattens one post-release flocking counter copy. Scheduled ecosystem frame/macro mutation guards remain multi-buffer leases pending versioned transaction design.
+
+## Loop 57 / Construction Socket Lookup Clear Flattening
+
+- [x] Cross-domain critical justification recorded | DOD: touched `Construction/HabitatConstructionManager.cs` only because the prompt domain is GlobalDataVault lock duration across `Assets/_Project/Scripts`; edit is limited to one socket lookup clear helper and one required unsafe using.
+- [x] Socket lookup clear loop removed from DataVault lock | DOD: `ClearSocketLookup` is now `unsafe`, guards `!IsCreated || Length <= 0`, and clears the whole `NativeArray<SocketLookupSlot>` with one `UnsafeUtility.MemClear`. Static proof: method lines `657-665`, `for (=0`, `foreach=0`, `MemClear=1`, `MemCpy=0`.
+- [x] Lock release proof preserved | DOD: `ClearSocketLookupForInvalidation` still acquires `IntegritySocketLookupBufferId` through `_catalogVault.TryAcquireWriteLock` and releases in `finally` lines `639-647`. The helper no longer performs per-row writes while that lock is held.
+- [x] Unmanaged layout proof referenced | DOD: `SocketLookupSlot` is `[StructLayout(LayoutKind.Explicit, Size = 48)]` with primitive fields and padding at offsets `0..47`; clearing bytes is equivalent to the previous `default` assignment loop.
+- [x] No new hot dependency lookup | DOD: modified helper scan reports forbidden hot-window counts `0`. Whole-file scan has one existing `TryGetComponent` at line `1202` in `FindBuildableDataOnModule`; it is unchanged and not inside the modified DataVault lock window.
+- [x] Static syntax/diff proof repeated | DOD: construction file braces `167/167`; `git diff --check` reports only Git LF->CRLF normalization warning.
+- [x] Source hash | DOD: `HabitatConstructionManager.cs` SHA-256 `9DFDC8992F3EB3F3D44D9A872D34ECF74240E248FEFE2777B6BDF4870D320E09`.
+- [BLOCKED_BY_POLICY] Compile proof | DOD: build gate `CPU_SAMPLE_FINAL5=98`, `COMPILER_DOTNET=1`, `COMPILER_CSC=0`, `COMPILER_VBC=0`; no `dotnet build` launched because CPU exceeded the 50% rule and a dotnet process was active.
+- [OPEN_RISK] Broad scan warning | DOD: project-wide PCRE multiline scan produced match-limit warnings and is not accepted as a complete audit artifact. Manual patch was based on concrete candidate evidence from `HabitatConstructionManager.cs:635-662`.
+
+## Loop 58 / VR Somatic Comfort Import Lock Split
+
+- [x] Triple-lock editor import removed | DOD: `SomaticTunerWindow.ImportComfortCsv` no longer locks `ShinobuVRSomaticCsvScratch`, `ShinobuVRSomaticProfile`, and `ShinobuVRSomaticProfileLookup` together. CSV bytes now stage in a cold editor `byte[4096]`; profile and lookup commits happen in two separate `try/finally` lock windows.
+- [x] File IO moved outside DataVault ownership | DOD: `ReadFileIntoScratch` reads into `s_comfortCsvImportScratch` before any profile/lookup lock is acquired. Targeted import scan reports `File.OpenRead=0` inside `ImportComfortCsv`; file IO is isolated in `ReadFileIntoScratch`, outside DataVault locks.
+- [x] Lookup commit precomputed outside lock | DOD: `BuildComfortProfileLookupScratch` and `InsertComfortProfileLookup` build `VrComfortProfileLookupSlotDTO[8]` before acquiring `ShinobuVRSomaticProfileLookup`; the locked copy helper has `for (=0`, `foreach=0`, `MemClear=1`, `MemCpy=1`.
+- [x] Runtime parser compatibility preserved | DOD: existing `ParseComfortProfilesCsv(csv, profiles)` and `ParseComfortProfilesCsv(csv, profiles, lookup)` overloads remain; added hash-staging overload records profile hashes for the editor split path. Existing lookup-clear loop was replaced with `ClearComfortProfileLookup` using `UnsafeUtility.MemClear`.
+- [x] Unmanaged layout proof referenced | DOD: `VrComfortProfileLookupSlotDTO` is `[StructLayout(LayoutKind.Explicit, Size = 16)]` with primitive fields at offsets `0/4/8/12`; byte clear/copy is equivalent to default row semantics and exact row copy.
+- [x] Static dependency/wait proof repeated | DOD: direct scan over `SomaticTunerWindow.cs` and `VRSomaticProvider.Comfort.cs` reports no hot `GlobalRegistry.Get<`, `GetComponent(`, `TryGetComponent(`, waits, or `.Complete(` hits.
+- [x] Static syntax/diff proof repeated | DOD: `SomaticTunerWindow.cs` braces/preprocessor `53/53`, `1/1`; `VRSomaticProvider.Comfort.cs` `183/183`, `6/6`; `git diff --check` reports only Git LF->CRLF normalization warnings.
+- [x] Source hashes | DOD: Somatic editor `9D3FF6408F7CCE3BE690D2A9BDD728022C4D0D3E2D2360BB5713F923715D9254`; VRSomatic comfort `79F11F4F2BED28E69EDEA54624EC4A92595050ED0B29D0243C84BCAF42C69334`.
+- [BLOCKED_BY_POLICY] Compile proof | DOD: latest build gate `CPU_SAMPLE_FINAL6=82`, `COMPILER_DOTNET=0`, `COMPILER_CSC=0`, `COMPILER_VBC=0`; no `dotnet build` launched because CPU exceeded the 50% rule.
+- [OPEN_RISK] Full global one-lock proof still false | DOD: this loop removes a concrete triple-lock editor import path. Other systems still need individual audit; no project-wide complete proof is claimed.

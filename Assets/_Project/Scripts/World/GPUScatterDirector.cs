@@ -135,7 +135,6 @@ namespace Hecton8.World
         private static readonly int _DepthPyramidSourceId = Shader.PropertyToID("_HectonDepthPyramidSource");
         private static readonly int _DepthPyramidTargetId = Shader.PropertyToID("_HectonDepthPyramidTarget");
         private static readonly int _GlobalCameraDepthTextureId = Shader.PropertyToID("_CameraDepthTexture");
-        private static readonly int _GlobalZBufferParamsId = Shader.PropertyToID("_ZBufferParams");
         private static readonly int _FrustumPlanesId = Shader.PropertyToID("_HectonScatterFrustumPlanes");
         private static readonly int _ModInstanceMatricesId = Shader.PropertyToID("_HectonModInstanceMatrices");
         private static readonly int _ModInstanceCountId = Shader.PropertyToID("_HectonModInstanceCount");
@@ -287,6 +286,7 @@ namespace Hecton8.World
         private bool _registeredSlowTick;
         private bool _registeredHotSwapListener;
         private bool _coldSupportsComputeShaders;
+        private bool _coldUsesReversedZBuffer;
         private bool _runtimeDependencyResolveRequested;
         private int _clearDensityKernel = -1;
         private int _generateKernel = -1;
@@ -329,6 +329,7 @@ namespace Hecton8.World
         private int _depthPyramidDownsampleThreadGroupSizeX;
         private int _depthPyramidDownsampleThreadGroupSizeY;
         private int _depthPyramidInvalidatedFrame = -1;
+        private Texture _cameraDepthTextureSnapshot;
         private int _scatterFrameIndex;
         private Vector3 _lastFoveatedCenter;
         private Vector3 _lastFoveatedCameraForward;
@@ -397,6 +398,8 @@ namespace Hecton8.World
             EnsureScatterTelemetryResources();
             EnsureResources();
             EnsureModInstanceResources();
+            RefreshCameraDepthTextureSnapshotCold();
+            TryEnsureBiomeHeatmapTexture();
             RefreshAupGridOffsetFromOrigin();
             TryRegisterOriginShiftListener();
             TryRegister();
@@ -415,6 +418,8 @@ namespace Hecton8.World
             EnsureScatterTelemetryResources();
             EnsureResources();
             EnsureModInstanceResources();
+            RefreshCameraDepthTextureSnapshotCold();
+            TryEnsureBiomeHeatmapTexture();
             RefreshAupGridOffsetFromOrigin();
             TryRegisterOriginShiftListener();
             TryRegister();
@@ -484,27 +489,20 @@ namespace Hecton8.World
             if (HasMissingRuntimeDependencies())
                 _runtimeDependencyResolveRequested = true;
 
-            EnsureResources();
-            if (_modInstanceMatrices == null || _modInstanceMatrixBufferA == null || _modInstanceMatrixBufferB == null)
-                EnsureModInstanceResources();
-
-            FlushModInstanceLayer();
-            if (scatterCompute == null ||
-                _clearDensityKernel < 0 ||
-                _generateKernel < 0 ||
-                _compactKernel < 0 ||
-                scatterMesh == null ||
-                scatterMaterial == null ||
-                _instanceBuffer == null ||
-                _visibleIndicesBuffer == null ||
-                _visibilityCacheBuffer == null ||
-                _scatterDensityBuffer == null ||
-                _scatterBoundsLutBuffer == null ||
-                _argsBuffer == null ||
+            if (!HasScatterRuntimeResourcesReady() ||
                 viewCamera == null ||
                 playerTransform == null ||
-                vegetationBridge == null ||
-                !vegetationBridge.TryGetActiveHeightTexturePayload(out HectonMapMagicVegetationBridge.TerrainHeightTexturePayload heightPayload))
+                vegetationBridge == null)
+            {
+                _runtimeDependencyResolveRequested = true;
+                _debugVisibleCount = 0;
+                Vector3 fallbackCenter = playerTransform != null ? playerTransform.position : Vector3.zero;
+                RecordScatterTelemetry(fallbackCenter, 0f, 0f, _gridResolution, 0, _lastCurrentBiomeHash, 0u, ScatterTelemetryMissingDependencyFlag);
+                return;
+            }
+
+            FlushModInstanceLayer();
+            if (!vegetationBridge.TryGetActiveHeightTexturePayload(out HectonMapMagicVegetationBridge.TerrainHeightTexturePayload heightPayload))
             {
                 _debugVisibleCount = 0;
                 Vector3 fallbackCenter = playerTransform != null ? playerTransform.position : Vector3.zero;
@@ -535,7 +533,6 @@ namespace Hecton8.World
             Vector3 terrainSize = heightPayload.TerrainSize;
             float terrainSizeX = math.isfinite(terrainSize.x) ? math.max(terrainSize.x, 0.001f) : 0.001f;
             float terrainSizeZ = math.isfinite(terrainSize.z) ? math.max(terrainSize.z, 0.001f) : 0.001f;
-            TryEnsureBiomeHeatmapTexture();
             Color currentBiomeColor = PublishBiomeGlobals(in heightPayload, center);
             float configuredMinimumNormalY = math.isfinite(minimumNormalY) ? minimumNormalY : ScatterMinimumNormalY;
             float configuredMaxVisibleDistance = math.min(math.isfinite(maxVisibleDistance) ? maxVisibleDistance : 1f, microScatterCullDistance);
@@ -617,7 +614,7 @@ namespace Hecton8.World
             scatterCompute.SetInt(_ScatterDensityBinCountId, SargassumDensityBinCount);
             scatterCompute.SetVector(_ScatterDensityParamsId, densityParams);
             scatterCompute.SetInt(_ScatterBoundsLutCountId, ScatterBoundsLutCount);
-            scatterCompute.SetVector(_ScatterZBufferParamsId, Shader.GetGlobalVector(_GlobalZBufferParamsId));
+            scatterCompute.SetVector(_ScatterZBufferParamsId, ResolveZBufferParams(viewCamera));
             if (_depthPyramidTexture != null)
                 scatterCompute.SetTexture(_generateKernel, _ScatterDepthPyramidId, _depthPyramidTexture);
             scatterCompute.SetInt(_ScatterDepthPyramidMipCountId, depthPyramidReady ? _depthPyramidMipCount : 0);
@@ -674,6 +671,12 @@ namespace Hecton8.World
                 ResolveDependencies();
             }
 
+            _cachedGlobalQualityWeight01 = ResolveGlobalQualityWeight01();
+            RefreshCameraDepthTextureSnapshotCold();
+            TryEnsureBiomeHeatmapTexture();
+            EnsureResources();
+            EnsureModInstanceResources();
+
             if (!IsExactVaultHandle(in _scatterTelemetryRingHandle, ScatterTelemetryRingBufferId))
                 EnsureScatterTelemetryResources();
         }
@@ -693,6 +696,25 @@ namespace Hecton8.World
         private bool HasMissingRuntimeDependencies()
         {
             return vegetationBridge == null || playerTransform == null || viewCamera == null;
+        }
+
+        private bool HasScatterRuntimeResourcesReady()
+        {
+            return scatterCompute != null &&
+                   _clearDensityKernel >= 0 &&
+                   _generateKernel >= 0 &&
+                   _compactKernel >= 0 &&
+                   scatterMesh != null &&
+                   scatterMaterial != null &&
+                   _instanceBuffer != null &&
+                   _visibleIndicesBuffer != null &&
+                   _visibilityCacheBuffer != null &&
+                   _scatterDensityBuffer != null &&
+                   _scatterBoundsLutBuffer != null &&
+                   _argsBuffer != null &&
+                   _modInstanceMatrices != null &&
+                   _modInstanceMatrixBufferA != null &&
+                   _modInstanceMatrixBufferB != null;
         }
 
         private void ResolveDependencies()
@@ -764,6 +786,7 @@ namespace Hecton8.World
             EnsureScatterDensityBuffer();
             EnsureScatterBoundsLutBuffer();
             EnsureIndirectArgsBuffer();
+            EnsureDepthPyramidResourcesForCameraCold(viewCamera);
         }
 
         private void EnsureModInstanceResources()
@@ -779,8 +802,15 @@ namespace Hecton8.World
 
         private bool TrySubmitModInstanceMatrix(in float4x4 matrix)
         {
-            EnsureModInstanceResources();
-            if (_modInstanceMatrices == null || _modInstanceCount >= MaxModInstancesPerFrame)
+            if (_modInstanceMatrices == null ||
+                _modInstanceMatrixBufferA == null ||
+                _modInstanceMatrixBufferB == null)
+            {
+                _runtimeDependencyResolveRequested = true;
+                return false;
+            }
+
+            if (_modInstanceCount >= MaxModInstancesPerFrame)
                 return false;
 
             _modInstanceMatrices[_modInstanceCount] = matrix;
@@ -1534,15 +1564,13 @@ namespace Hecton8.World
             if (SystemDispatcher.CurrentFrameIndex <= _depthPyramidInvalidatedFrame)
                 return false;
 
-            ResolveDepthPyramidKernels();
-            Texture depthTexture = Shader.GetGlobalTexture(_GlobalCameraDepthTextureId);
+            Texture depthTexture = _cameraDepthTextureSnapshot;
             if (depthTexture == null)
                 return false;
 
             int targetWidth = math.max(1, cullCamera.pixelWidth);
             int targetHeight = math.max(1, cullCamera.pixelHeight);
-            EnsureDepthPyramidResources(targetWidth, targetHeight);
-            if (_depthPyramidTexture == null || _depthPyramidCopyKernel < 0 || _depthPyramidDownsampleKernel < 0)
+            if (!HasDepthPyramidResources(targetWidth, targetHeight))
                 return false;
 
             int copyGroupsX = CeilDividePositive(_depthPyramidWidth, _depthPyramidCopyThreadGroupSizeX);
@@ -1577,6 +1605,58 @@ namespace Hecton8.World
             }
 
             return true;
+        }
+
+        private void RefreshCameraDepthTextureSnapshotCold()
+        {
+            _cameraDepthTextureSnapshot = Shader.GetGlobalTexture(_GlobalCameraDepthTextureId);
+        }
+
+        private void EnsureDepthPyramidResourcesForCameraCold(Camera cullCamera)
+        {
+            if (!enableDepthOcclusion ||
+                depthPyramidCompute == null ||
+                cullCamera == null ||
+                !_coldSupportsComputeShaders)
+            {
+                return;
+            }
+
+            ResolveDepthPyramidKernels();
+            EnsureDepthPyramidResources(
+                math.max(1, cullCamera.pixelWidth),
+                math.max(1, cullCamera.pixelHeight));
+        }
+
+        private bool HasDepthPyramidResources(int targetWidth, int targetHeight)
+        {
+            return _depthPyramidTexture != null &&
+                   _depthPyramidWidth == targetWidth &&
+                   _depthPyramidHeight == targetHeight &&
+                   _depthPyramidCopyKernel >= 0 &&
+                   _depthPyramidDownsampleKernel >= 0;
+        }
+
+        private Vector4 ResolveZBufferParams(Camera cullCamera)
+        {
+            float nearClip = cullCamera != null ? cullCamera.nearClipPlane : 0.01f;
+            float farClip = cullCamera != null ? cullCamera.farClipPlane : 1000f;
+            nearClip = math.max(0.0001f, math.isfinite(nearClip) ? nearClip : 0.01f);
+            farClip = math.max(nearClip + 0.0001f, math.isfinite(farClip) ? farClip : 1000f);
+            float farOverNear = farClip * math.rcp(nearClip);
+
+            if (_coldUsesReversedZBuffer)
+            {
+                float x = farOverNear - 1f;
+                return new Vector4(x, 1f, x * math.rcp(farClip), math.rcp(farClip));
+            }
+
+            float forwardX = 1f - farOverNear;
+            return new Vector4(
+                forwardX,
+                farOverNear,
+                forwardX * math.rcp(farClip),
+                farOverNear * math.rcp(farClip));
         }
 
         private void EnsureDepthPyramidResources(int targetWidth, int targetHeight)
@@ -1680,6 +1760,7 @@ namespace Hecton8.World
         private void CacheGraphicsCapabilitiesCold()
         {
             _coldSupportsComputeShaders = SystemInfo.supportsComputeShaders;
+            _coldUsesReversedZBuffer = SystemInfo.usesReversedZBuffer;
         }
 
         private static int CeilDividePositive(int value, int divisor)
@@ -1729,12 +1810,23 @@ namespace Hecton8.World
                 return false;
             }
 
-            if (telemetryRing.Length >= ScatterTelemetryCapacity)
-                return true;
+            bool handedOff = false;
+            try
+            {
+                if (telemetryRing.Length < ScatterTelemetryCapacity)
+                    return false;
 
-            vault.ReleaseWriteLock(in _scatterTelemetryRingHandle, VaultOwnerSystemId);
-            telemetryRing = default;
-            return false;
+                handedOff = true;
+                return true;
+            }
+            finally
+            {
+                if (!handedOff)
+                {
+                    vault.ReleaseWriteLock(in _scatterTelemetryRingHandle, VaultOwnerSystemId);
+                    telemetryRing = default;
+                }
+            }
         }
 
         private void ReleaseScatterTelemetryRingWrite()

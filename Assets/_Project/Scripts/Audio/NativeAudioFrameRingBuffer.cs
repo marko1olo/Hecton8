@@ -24,6 +24,7 @@ namespace Hecton8.Audio
         private const int TelemetryStatusBridgeFailure = 1 << 19;
         private const int TelemetryStatusSharedStateInvalid = 1 << 20;
         private const SystemID VaultOwner = SystemID.AudioFrameRing;
+        private static readonly ulong TelemetryMutationGuardMask = AudioFrameRingMutationGuardBit(BufferID.AudioFrameRingTelemetry);
         private const int AudioBufferCapacityPowerOfTwoGuard =
             1 / ((AudioBufferCapacity > 1 &&
                   (AudioBufferCapacity & (AudioBufferCapacity - 1)) == 0) ? 1 : 0);
@@ -782,7 +783,7 @@ namespace Hecton8.Audio
         {
             NativeArray<AudioBridgeTelemetryEntry> source = views.Telemetry;
             if (!source.IsCreated ||
-                !TryAcquireTelemetryWriteView(out NativeArray<AudioBridgeTelemetryEntry> destination, out IDataVault vault))
+                !TryAcquireTelemetryMutationView(out NativeArray<AudioBridgeTelemetryEntry> destination, out IDataVault guardVault))
             {
                 return;
             }
@@ -804,26 +805,53 @@ namespace Hecton8.Audio
             }
             finally
             {
-                vault.ReleaseWriteLock(in _telemetryHandle, VaultOwner);
+                ReleaseTelemetryMutationGuard(guardVault);
             }
         }
 
-        private bool TryAcquireTelemetryWriteView(out NativeArray<AudioBridgeTelemetryEntry> telemetry, out IDataVault vault)
+        private bool TryAcquireTelemetryMutationView(out NativeArray<AudioBridgeTelemetryEntry> telemetry, out IDataVault guardVault)
         {
             telemetry = default;
-            vault = _dataVault;
-            if (vault == null ||
+            guardVault = _dataVault;
+            if (guardVault == null ||
                 _telemetryHandle.BufferID == 0u ||
-                !vault.TryAcquireWriteLock(in _telemetryHandle, VaultOwner, out telemetry))
+                guardVault.IsCompactionFenceActive ||
+                !guardVault.TryAcquireMutationGuard(TelemetryMutationGuardMask))
             {
                 return false;
             }
 
-            if (telemetry.IsCreated)
-                return true;
+            bool acquired = true;
+            try
+            {
+                if (guardVault.IsCompactionFenceActive ||
+                    _telemetryHandle.BufferID != (uint)BufferID.AudioFrameRingTelemetry ||
+                    _telemetryHandle.SystemID != (uint)VaultOwner ||
+                    _telemetryHandle.Generation == 0u ||
+                    !guardVault.TryResolveHandle(in _telemetryHandle, out telemetry) ||
+                    !telemetry.IsCreated)
+                {
+                    return false;
+                }
 
-            vault.ReleaseWriteLock(in _telemetryHandle, VaultOwner);
-            return false;
+                acquired = false;
+                return true;
+            }
+            finally
+            {
+                if (acquired)
+                    ReleaseTelemetryMutationGuard(guardVault);
+            }
+        }
+
+        private static void ReleaseTelemetryMutationGuard(IDataVault guardVault)
+        {
+            guardVault?.ReleaseMutationGuard(TelemetryMutationGuardMask);
+        }
+
+        private static ulong AudioFrameRingMutationGuardBit(BufferID bufferId)
+        {
+            return 1UL << (unchecked((int)(uint)(int)bufferId) & 31);
         }
 
         private void WriteTelemetrySnapshot(NativeArray<AudioBridgeTelemetryEntry> telemetry, byte* snapshotPtr, uint reason)

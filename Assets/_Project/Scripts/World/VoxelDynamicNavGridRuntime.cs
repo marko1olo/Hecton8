@@ -2679,18 +2679,45 @@ namespace Hecton8.World
             if (!EnsureNavGridTelemetryBuffers(vault))
                 return;
 
-            int slot = 0;
-            uint sequence = 0u;
-            if (vault.IsCompactionFenceActive ||
+            if (!TryAdvanceNavGridTelemetryCursor(vault, out int slot, out uint sequence))
+                return;
+
+            NavGridTelemetryEntry entry = new NavGridTelemetryEntry
+            {
+                StateHash = NavGridTelemetryStateHash,
+                BufferId = bufferId,
+                Generation = generation,
+                Frame = (uint)math.max(0, Time.frameCount),
+                ExpectedLength = expectedLength,
+                ActualLength = actualLength,
+                RecordSlot = recordSlot,
+                JobMicroseconds = jobMicroseconds,
+                QualityWeight = ResolveNavGridQualityWeight01(),
+                FailureCode = failureCode,
+                Phase = phase,
+                Flags = flags,
+                Position = position,
+                Sequence = sequence
+            };
+
+            TryWriteNavGridTelemetryRing(vault, slot, in entry);
+        }
+
+        private static bool TryAdvanceNavGridTelemetryCursor(IDataVault vault, out int slot, out uint sequence)
+        {
+            slot = 0;
+            sequence = 0u;
+            if (vault == null ||
+                vault.IsCompactionFenceActive ||
                 !vault.TryAcquireWriteLock(in _navGridTelemetryCursorHandle, NavGridVaultOwner, out NativeArray<int> cursor))
             {
-                return;
+                return false;
             }
 
             try
             {
                 if (!cursor.IsCreated || cursor.Length <= 0)
-                    return;
+                    return false;
 
                 slot = cursor[0];
                 if ((uint)slot >= (uint)NavGridTelemetryFrameCount)
@@ -2704,44 +2731,37 @@ namespace Hecton8.World
 
                 sequence = _navGridTelemetrySequence + 1u;
                 _navGridTelemetrySequence = sequence;
+                return true;
             }
             finally
             {
                 vault.ReleaseWriteLock(in _navGridTelemetryCursorHandle, NavGridVaultOwner);
             }
+        }
 
-            if (vault.IsCompactionFenceActive ||
+        private static bool TryWriteNavGridTelemetryRing(
+            IDataVault vault,
+            int slot,
+            in NavGridTelemetryEntry entry)
+        {
+            if (vault == null ||
+                vault.IsCompactionFenceActive ||
                 !vault.TryAcquireWriteLock(in _navGridTelemetryRingHandle, NavGridVaultOwner, out NativeArray<NavGridTelemetryEntry> ring))
             {
-                return;
+                return false;
             }
 
             try
             {
                 if (!ring.IsCreated || ring.Length <= 0)
-                    return;
+                    return false;
 
                 int ringSlot = slot;
                 if ((uint)ringSlot >= (uint)ring.Length)
                     ringSlot = 0;
 
-                ring[ringSlot] = new NavGridTelemetryEntry
-                {
-                    StateHash = NavGridTelemetryStateHash,
-                    BufferId = bufferId,
-                    Generation = generation,
-                    Frame = (uint)math.max(0, Time.frameCount),
-                    ExpectedLength = expectedLength,
-                    ActualLength = actualLength,
-                    RecordSlot = recordSlot,
-                    JobMicroseconds = jobMicroseconds,
-                    QualityWeight = ResolveNavGridQualityWeight01(),
-                    FailureCode = failureCode,
-                    Phase = phase,
-                    Flags = flags,
-                    Position = position,
-                    Sequence = sequence
-                };
+                ring[ringSlot] = entry;
+                return true;
             }
             finally
             {

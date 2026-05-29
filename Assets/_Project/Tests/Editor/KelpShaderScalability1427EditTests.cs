@@ -153,6 +153,20 @@ namespace Hecton8.Tests.Editor
         }
 
         [Test]
+        public void AcousticPortalPropagation_UsesSurvivalBudgetFallbackStatus()
+        {
+            string source = ReadProjectFile("Assets", "_Project", "Scripts", "Audio", "AcousticPortalPropagation.cs");
+            string enumBody = ExtractTypeBody(source, "public enum AcousticPathStatus");
+            string executeBody = ExtractTypeBody(source, "public struct AcousticPathJob");
+
+            Assert.That(enumBody, Does.Contain("SurvivalBudgetFallback = 1"));
+            Assert.That(enumBody, Does.Contain("LowTierFallback = SurvivalBudgetFallback"));
+            Assert.That(executeBody, Does.Contain("ResolvePortalBudget01(Query.GlobalQualityWeight)"));
+            Assert.That(executeBody, Does.Contain("AcousticPathStatus.SurvivalBudgetFallback"));
+            Assert.That(executeBody, Does.Not.Contain("AcousticPathStatus.LowTierFallback"));
+        }
+
+        [Test]
         public void VrSomaticGhostHands_UseContinuousQualityToleranceWithoutLowTierName()
         {
             string source = ReadProjectFile("Assets", "_Project", "Scripts", "Gameplay", "VRSomaticProvider.cs");
@@ -211,20 +225,203 @@ namespace Hecton8.Tests.Editor
         public void ThermalDynamicResolution_PrimaryDecisionsStayOnContinuousWeight()
         {
             string source = ReadProjectFile("Assets", "_Project", "Scripts", "Graphics", "Scalability", "ThermalDynamicResolutionAdapter.cs");
+            string contracts = ReadProjectFile("Assets", "_Project", "Scripts", "Core", "Contracts", "DrsContracts.cs");
 
             Assert.That(source, Does.Contain("ResolvePolicyScale(float qualityWeight01"));
             Assert.That(source, Does.Contain("ResolveMinScaleLimit(float qualityWeight01"));
             Assert.That(source, Does.Contain("ResolveUpscalerHash(float qualityWeight01"));
             Assert.That(source, Does.Contain("UpdateVisualBudget(float qualityWeight01"));
             Assert.That(source, Does.Contain("ResolveFsrUpscalerAllowed(float qualityWeight01)"));
+            Assert.That(source, Does.Contain("ResolveSurvivalPressureWeight01(float qualityWeight01)"));
             Assert.That(source, Does.Contain("ResolveTierEnvelope(float qualityWeight01"));
+            Assert.That(source, Does.Contain("ResolveCompatibilityQualityTierOrdinal(float qualityWeight01)"));
             Assert.That(source, Does.Contain("ApplyMinScaleLimitPreference(float value)"));
+            Assert.That(source, Does.Contain("SurvivalPressureFadeStart01"));
+            Assert.That(source, Does.Contain("SurvivalPressureFadeEnd01"));
+            Assert.That(source, Does.Contain("FlagSurvivalPressureEmergency"));
+            Assert.That(source, Does.Contain("ResolutionScaleStateFlags.SurvivalPressureEmergency"));
+            Assert.That(contracts, Does.Contain("SurvivalPressureEmergency = 1 << 0"));
+            Assert.That(contracts, Does.Contain("LowTierEmergency = SurvivalPressureEmergency"));
             Assert.That(source, Does.Not.Contain("ResolveHardwareTierWeight01"));
             Assert.That(source, Does.Not.Contain("ResolveLowTierWeight01"));
+            Assert.That(source, Does.Not.Contain("FlagLowTierEmergency"));
+            Assert.That(source, Does.Not.Contain("lowTierWeight01"));
+            Assert.That(source, Does.Not.Contain("ResolutionScaleStateFlags.LowTierEmergency"));
             Assert.That(source, Does.Not.Contain("ApplyMinScaleLimitForTier"));
             Assert.That(source, Does.Not.Contain("ResolveMinScaleLimit(HectonQualityTier"));
             Assert.That(source, Does.Not.Contain("ResolveUpscalerHash(HectonQualityTier"));
             Assert.That(source, Does.Not.Contain("UpdateVisualBudget(HectonQualityTier"));
+            Assert.That(source, Does.Not.Contain("quality >= 0.86f"));
+            Assert.That(source, Does.Not.Contain("quality < 0.18f"));
+            Assert.That(source, Does.Not.Contain("quality < 0.36f"));
+            Assert.That(source, Does.Not.Contain("quality < 0.62f"));
+            Assert.That(source, Does.Not.Contain("quality < 0.86f"));
+            Assert.That(source, Does.Not.Contain("graphicsMemoryMb >= 3000"));
+        }
+
+        [Test]
+        public void MathLodRuntimeConfig_PublishesContinuousQualityWeightsWithoutBinaryQualityFlags()
+        {
+            string source = ReadProjectFile("Assets", "_Project", "Scripts", "MathLodApproximation.cs");
+            string configDto = ExtractTypeBody(source, "public struct MathLodConfigDTO");
+            string publishBody = ExtractMethodBody(source, "public static bool PublishConfig(");
+            string defaultBody = ExtractMethodBody(source, "private static MathLodConfigDTO CreateDefaultConfig()");
+            string survivalBody = ExtractMethodBody(source, "private static float ResolveSurvivalPressureWeight01(");
+            string overkillBody = ExtractMethodBody(source, "private static float ResolveVisualOverkillWeight01(");
+
+            Assert.That(configDto, Does.Contain("[FieldOffset(52)] public float VisualOverkillWeight01;"));
+            Assert.That(publishBody, Does.Contain("float pressure = ResolveSurvivalPressureWeight01(quality);"));
+            Assert.That(publishBody, Does.Contain("float visualOverkillWeight = ResolveVisualOverkillWeight01(quality);"));
+            Assert.That(publishBody, Does.Contain("dto.VisualOverkillWeight01 = visualOverkillWeight;"));
+            Assert.That(publishBody, Does.Not.Contain("ConfigFlagMinimumSurvival"));
+            Assert.That(publishBody, Does.Not.Contain("ConfigFlagVisualOverkill"));
+            Assert.That(publishBody, Does.Not.Contain("quality <= 0.1001f"));
+            Assert.That(publishBody, Does.Not.Contain("quality >= 0.95f"));
+
+            Assert.That(defaultBody, Does.Contain("dto.Flags = 0u;"));
+            Assert.That(defaultBody, Does.Contain("dto.VisualOverkillWeight01 = 1f;"));
+            Assert.That(defaultBody, Does.Not.Contain("ConfigFlagVisualOverkill"));
+
+            Assert.That(survivalBody, Does.Contain("1f - quality"));
+            Assert.That(overkillBody, Does.Contain("SmoothRange01(0.72f, 1f, quality)"));
+        }
+
+        [Test]
+        public void AmbientBiota_UsesContinuousSpawnAndShaderQualitySignals()
+        {
+            string director = ReadProjectFile("Assets", "_Project", "Scripts", "AI", "Ambient", "AmbientBiotaDirector.cs");
+            string signalSource = ReadProjectFile("Assets", "_Project", "Scripts", "Core", "Signals", "GlobalSignalPayloads.DomainRemainder.cs");
+            string contracts = ReadProjectFile("Assets", "_Project", "Scripts", "Core", "GlobalRegistryContracts.cs");
+            string shader = ReadProjectFile("Assets", "_Project", "Scripts", "AI", "Ambient", "Hecton_AmbientBiotaIndirect.shader");
+            string hydrateBody = ExtractMethodBody(director, "public bool TryHydrateMacroSwarms(");
+            string recountBody = ExtractMethodBody(director, "private void RecountActiveBiota(");
+            string signalBody = ExtractTypeBody(signalSource, "public struct EntitySpawnSignal");
+            string stateBody = ExtractTypeBody(contracts, "public struct AmbientBiotaState");
+            string mutationFlags = ExtractTypeBody(contracts, "public static class FaunaGenomeMutationRequestFlags");
+
+            Assert.That(signalBody, Does.Contain("[FieldOffset(57)] public byte QualityWeightQ8;"));
+            Assert.That(signalBody, Does.Contain("[FieldOffset(57)] public byte QualityTier;"));
+            Assert.That(signalBody, Does.Contain("[FieldOffset(59)] public byte SurvivalPressureQ8;"));
+            Assert.That(signalBody, Does.Contain("[FieldOffset(59)] public byte Reserved;"));
+            Assert.That(signalBody, Does.Contain("FlagSurvivalPressureVisual = 1 << 1"));
+            Assert.That(signalBody, Does.Contain("FlagVisualOverkillCompatibility = 1 << 3"));
+            Assert.That(signalBody, Does.Contain("FlagLowTierVisual = FlagSurvivalPressureVisual"));
+            Assert.That(signalBody, Does.Contain("FlagHighTierOverkill = FlagVisualOverkillCompatibility"));
+
+            Assert.That(hydrateBody, Does.Contain("QualityWeightQ8 = spawnQualityByte"));
+            Assert.That(hydrateBody, Does.Contain("Flags = EntitySpawnSignal.FlagEcology"));
+            Assert.That(hydrateBody, Does.Contain("SurvivalPressureQ8 = EncodeMacroSurvivalPressureSignalByte(macroSurvivalPressure01)"));
+            Assert.That(hydrateBody, Does.Not.Contain("macroQualityWeight01 >= 0.95f"));
+            Assert.That(hydrateBody, Does.Not.Contain("EntitySpawnMinimumQualityVisualFlag"));
+            Assert.That(hydrateBody, Does.Not.Contain("EntitySpawnVisualOverkillFlag"));
+
+            Assert.That(director, Does.Contain("EncodeMacroSurvivalPressureSignalByte(float survivalPressure01)"));
+            Assert.That(director, Does.Contain("AmbientStateHeadlightReactiveFlag = AmbientBiotaState.FlagHeadlightReactive"));
+            Assert.That(director, Does.Not.Contain("TelemetryFlagVisualOverkill"));
+            Assert.That(director, Does.Not.Contain("_visualOverkillWeight01 >= 0.6f"));
+            Assert.That(director, Does.Not.Contain("AmbientStateMinimumQualityBillboardFlag"));
+            Assert.That(director, Does.Not.Contain("AmbientStateVisualOverkillReactiveFlag"));
+
+            Assert.That(recountBody, Does.Not.Contain("TelemetryFlagVisualOverkill"));
+            Assert.That(stateBody, Does.Contain("FlagSurvivalBillboardPressure = 1u << 1"));
+            Assert.That(stateBody, Does.Contain("FlagHeadlightReactive = 1u << 4"));
+            Assert.That(stateBody, Does.Contain("FlagLowTierBillboard = FlagSurvivalBillboardPressure"));
+            Assert.That(stateBody, Does.Contain("FlagHighTierReactive = FlagHeadlightReactive"));
+            Assert.That(mutationFlags, Does.Contain("SurvivalPressureMacroSkipped = 1 << 2"));
+            Assert.That(mutationFlags, Does.Contain("LowTierMacroSkipped = SurvivalPressureMacroSkipped"));
+
+            Assert.That(shader, Does.Contain("float survivalBillboardPressure = saturate(max(1.0 - _HectonBiotaQualityProfile, _HectonBiotaSystemStress01));"));
+            Assert.That(shader, Does.Contain("float2 ParallaxCheat(float2 uv, float hash, float overkill01)"));
+            Assert.That(shader, Does.Contain("uv = ParallaxCheat(uv, hash, _HectonBiotaOverkill01);"));
+            Assert.That(shader, Does.Not.Contain("HECTON_BIOTA_MINIMUM_QUALITY_BILLBOARD"));
+            Assert.That(shader, Does.Not.Contain("minimumQualityBillboard"));
+            Assert.That(shader, Does.Not.Contain("Parallax16"));
+            Assert.That(shader, Does.Not.Contain("if (_HectonBiotaOverkill01 >"));
+        }
+
+        [Test]
+        public void AudioLootAndSubOs_UseSurvivalScalarNamesWithoutQualityTierCuts()
+        {
+            string lootContracts = ReadProjectFile("Assets", "_Project", "Scripts", "Gameplay", "Loot", "Contracts", "LootMagnetContracts.cs");
+            string lootRuntime = ReadProjectFile("Assets", "_Project", "Scripts", "Gameplay", "Loot", "LootMagnetSystem.cs");
+            string lootJob = ReadProjectFile("Assets", "_Project", "Scripts", "Gameplay", "Loot", "Contracts", "LootMagnetPullJob.cs");
+            string spatial = ReadProjectFile("Assets", "_Project", "Scripts", "SpatialAudioManager.cs");
+            string audioContracts = ReadProjectFile("Assets", "_Project", "Scripts", "Audio", "Virtualization", "Contracts", "AudioVirtualizationContracts.cs");
+            string subOs = ReadProjectFile("Assets", "_Project", "Scripts", "Gameplay", "HectonSubmarineOS.cs");
+
+            Assert.That(lootContracts, Does.Contain("SurvivalAcousticSignalsPerFrame"));
+            Assert.That(lootContracts, Does.Contain("VisualOverkillWakeSignalsPerFrame"));
+            Assert.That(lootContracts, Does.Contain("SurvivalPressureLerp"));
+            Assert.That(lootRuntime, Does.Contain("SmoothRange01(quality, 0.42f, 0.74f)"));
+            Assert.That(lootRuntime, Does.Contain("HighFidelityFluidImpulseRadiusMeters"));
+            Assert.That(lootRuntime, Does.Not.Contain("LowTierAcousticSignalsPerFrame"));
+            Assert.That(lootRuntime, Does.Not.Contain("LowTierWakeSignalsPerFrame"));
+            Assert.That(lootJob, Does.Not.Contain("LowTierLerp"));
+
+            Assert.That(spatial, Does.Contain("SurvivalAmbientOutputSampleRate"));
+            Assert.That(spatial, Does.Contain("float occlusionWeight = math.lerp(0.25f, 1f, SmoothQuality01(qualityWeight));"));
+            Assert.That(spatial, Does.Contain("QualityWeightQ8 = EncodeVirtualVoiceQualityQ8(_virtualVoiceQualityWeight)"));
+            Assert.That(spatial, Does.Contain("private static ushort EncodeVirtualVoiceQualityQ8(float qualityWeight01)"));
+            Assert.That(spatial, Does.Not.Contain("qualityWeight > 0.02f"));
+            Assert.That(spatial, Does.Not.Contain("_cachedSpatialAudioQualityWeight01 <= 0.28f"));
+            Assert.That(spatial, Does.Not.Contain("_virtualVoiceLowTierApplied"));
+            Assert.That(spatial, Does.Not.Contain("_virtualVoiceSurvivalPressureApplied"));
+            Assert.That(audioContracts, Does.Contain("SurvivalPhysicalVoiceCount"));
+            Assert.That(
+                audioContracts.Contains("[FieldOffset(52)]\n        public ushort QualityWeightQ8;") ||
+                audioContracts.Contains("[FieldOffset(52)]\r\n        public ushort QualityWeightQ8;"),
+                Is.True);
+
+            Assert.That(subOs, Does.Contain("SurvivalSonarRefreshIntervalSeconds"));
+            Assert.That(subOs, Does.Contain("VisualOverkillSonarRefreshIntervalSeconds"));
+            Assert.That(subOs, Does.Not.Contain("LowTierSonarRefreshIntervalSeconds"));
+            Assert.That(subOs, Does.Not.Contain("MidTierSonarRefreshIntervalSeconds"));
+            Assert.That(subOs, Does.Not.Contain("HighTierSonarRefreshIntervalSeconds"));
+        }
+
+        [Test]
+        public void HomeostasisEmergencyMask_UsesSurvivalPressureBit()
+        {
+            string contracts = ReadProjectFile("Assets", "_Project", "Scripts", "Core", "HomeostasisBrain.cs");
+            string dictator = ReadProjectFile("Assets", "_Project", "Scripts", "Core", "HomeostasisBrain.ScalabilityDictator.cs");
+            string watchdog = ReadProjectFile("Assets", "_Project", "Scripts", "QA", "Headless", "Shinobu38QaWatchdogRuntime.cs");
+
+            Assert.That(contracts, Does.Contain("SurvivalPressureEmergency = 1UL << 24"));
+            Assert.That(contracts, Does.Contain("LowTierEmergency = SurvivalPressureEmergency"));
+            Assert.That(dictator, Does.Contain("SystemBit.SurvivalPressureEmergency"));
+            Assert.That(dictator, Does.Not.Contain("SystemBit.LowTierEmergency"));
+            Assert.That(watchdog, Does.Contain("VaultFlagSurvivalPressureEmergency"));
+            Assert.That(watchdog, Does.Contain("RichNormalFadeStart01"));
+            Assert.That(watchdog, Does.Contain("float3 richNormal = Shinobu38MockTerrainSdf.SampleNormal(ahead);"));
+            Assert.That(watchdog, Does.Contain("float normalBlend = richNormalGate * quality * quality"));
+            Assert.That(watchdog, Does.Not.Contain("VaultFlagLowTierEmergency"));
+            Assert.That(watchdog, Does.Not.Contain("LowQualityNormalCollapseThreshold"));
+            Assert.That(watchdog, Does.Not.Contain("richNormalGate > 0f ?"));
+        }
+
+        [Test]
+        public void RenderingShaderBridges_UseSurvivalPressureWeightNaming()
+        {
+            string dispatcher = ReadProjectFile("Assets", "_Project", "Scripts", "Rendering", "GlobalShaderDispatcher.cs");
+            string noirBridge = ReadProjectFile("Assets", "_Project", "Scripts", "Rendering", "HectonUberNoirRuntimeBridge.cs");
+
+            Assert.That(dispatcher, Does.Contain("ResolveSurvivalPressureWeight01"));
+            Assert.That(dispatcher, Does.Contain("ResolveSurvivalPressureFloor01"));
+            Assert.That(dispatcher, Does.Contain("SurvivalPressureWeight01"));
+            Assert.That(dispatcher, Does.Contain("_lastSurvivalPressureBucket"));
+            Assert.That(noirBridge, Does.Contain("ResolveSurvivalPressureWeight01"));
+            Assert.That(noirBridge, Does.Contain("ResolveSurvivalPressureFloor01"));
+            Assert.That(noirBridge, Does.Contain("survivalPressureWeight01"));
+            Assert.That(noirBridge, Does.Contain("FeatureSurvivalPressure"));
+
+            Assert.That(dispatcher, Does.Not.Contain("ResolveLowTierWeight01"));
+            Assert.That(dispatcher, Does.Not.Contain("ResolveLowTierFloor01"));
+            Assert.That(dispatcher, Does.Not.Contain("lowTierWeight01"));
+            Assert.That(dispatcher, Does.Not.Contain("LowTierWeight01"));
+            Assert.That(dispatcher, Does.Not.Contain("_lastLowTierWeightBucket"));
+            Assert.That(noirBridge, Does.Not.Contain("ResolveLowTierWeight01"));
+            Assert.That(noirBridge, Does.Not.Contain("ResolveLowTierFloor01"));
+            Assert.That(noirBridge, Does.Not.Contain("lowTierWeight01"));
         }
 
         [Test]
@@ -267,6 +464,116 @@ namespace Hecton8.Tests.Editor
             Assert.That(cadenceBody, Does.Not.Contain("midTierColdTickSeconds"));
             Assert.That(cadenceBody, Does.Not.Contain("highTierColdTickSeconds"));
             Assert.That(source, Does.Not.Contain("private float lowTierHibernationDistanceMeters"));
+        }
+
+        [Test]
+        public void WorldSampler_SurvivalSamplingPressureReplacesActiveMathLodLowFlag()
+        {
+            string source = ReadProjectFile("Assets", "_Project", "Scripts", "World", "GlobalWorldSampler.cs");
+            string sampleBody = ExtractMethodBody(source, "public static void SampleDistanceOnly(");
+            string normalBody = ExtractMethodBody(source, "public static void EstimateNormal(");
+            string flagBody = ExtractMethodBody(source, "private static byte ResolveSurvivalSamplingPressureFlag(");
+
+            Assert.That(source, Does.Contain("ForceSurvivalSamplingPressure = 1 << 0"));
+            Assert.That(source, Does.Contain("ForceMathLodLow = ForceSurvivalSamplingPressure"));
+            Assert.That(source, Does.Contain("SurvivalSamplingPressure = 1 << 3"));
+            Assert.That(source, Does.Contain("MathLodLow = SurvivalSamplingPressure"));
+            Assert.That(sampleBody, Does.Contain("ResolveSurvivalSamplingPressureFlag(qualityWeight)"));
+            Assert.That(normalBody, Does.Contain("GlobalWorldSamplerResultFlags.SurvivalSamplingPressure"));
+            Assert.That(flagBody, Does.Contain("ResolveExpensiveSamplingWeight(qualityWeight) <= 0.0001f"));
+            Assert.That(sampleBody, Does.Not.Contain("GlobalWorldSamplerResultFlags.MathLodLow"));
+            Assert.That(normalBody, Does.Not.Contain("GlobalWorldSamplerResultFlags.MathLodLow"));
+            Assert.That(source, Does.Not.Contain("qualityWeight <= 0.05f ?"));
+        }
+
+        [Test]
+        public void ToxicOutgassingTelemetry_DoesNotPublishBinaryFallbackQualityFlag()
+        {
+            string source = ReadProjectFile("Assets", "_Project", "Scripts", "Atmosphere", "ToxicOutgassingChemistryRuntime.cs");
+            string scheduleBody = ExtractMethodBody(source, "private void ScheduleSimulation(");
+            string headerBody = ExtractMethodBody(source, "private void UpdateGridHeader()");
+
+            Assert.That(source, Does.Not.Contain("TelemetryFlagFallbackRadial"));
+            Assert.That(scheduleBody, Does.Not.Contain("qualityWeight < 0.3f"));
+            Assert.That(headerBody, Does.Not.Contain("_activeResolution == LowResolution"));
+            Assert.That(scheduleBody, Does.Contain("Flags = (byte)(_mockChemistry ? TelemetryFlagMockChemistry : 0)"));
+            Assert.That(headerBody, Does.Contain("header.Flags = (byte)(_mockChemistry ? TelemetryFlagMockChemistry : 0);"));
+            Assert.That(source, Does.Contain("header.GlobalQualityWeight = _lastQualityWeight;"));
+            Assert.That(source, Does.Contain("header.Resolution = (ushort)math.clamp(_activeResolution"));
+        }
+
+        [Test]
+        public void MarauderOutpostDescriptor_UsesContinuousQualitySnapshotWithoutTierCuts()
+        {
+            string jobs = ReadProjectFile("Assets", "_Project", "Scripts", "World", "Outposts", "MarauderOutpostJobs.cs");
+            string service = ReadProjectFile("Assets", "_Project", "Scripts", "World", "Outposts", "MarauderOutpostGenerationService.cs");
+            string contracts = ReadProjectFile("Assets", "_Project", "Scripts", "World", "Contracts", "OutpostGenerationContracts.cs");
+            string descriptorBody = ExtractMethodBody(service, "private ushort ResolveDescriptorFlags()");
+            string compatibilityBody = ExtractMethodBody(service, "private static OutpostGenerationQualityTier ResolveCompatibilityQualityTier(");
+            string ordinalBody = ExtractMethodBody(service, "private static float ResolveCompatibilityQualityTierOrdinal(");
+            string snapshotBody = ExtractMethodBody(service, "private void UpdateSnapshot()");
+            string snapshotType = ExtractTypeBody(contracts, "public struct OutpostGenerationSnapshot");
+
+            Assert.That(jobs, Does.Contain("public const uint SurvivalBandFlag = WfcOutpostGridConstants.DescriptorFlagLowTier;"));
+            Assert.That(jobs, Does.Contain("public const uint LowTierFlag = SurvivalBandFlag;"));
+            Assert.That(descriptorBody, Does.Not.Contain("MarauderOutpostConstants.SurvivalBandFlag"));
+            Assert.That(descriptorBody, Does.Not.Contain("MarauderOutpostConstants.LowTierFlag"));
+            Assert.That(service, Does.Contain("_compatibilityQualityTier = ResolveCompatibilityQualityTier(_generationQualityWeight01);"));
+            Assert.That(service, Does.Contain("QualityWeightQ8 = EncodeQualityWeightQ8(_generationQualityWeight01)"));
+            Assert.That(service, Does.Contain("SurvivalBandWeightQ8 = EncodeSurvivalBandWeightQ8(_generationQualityWeight01)"));
+            Assert.That(service, Does.Contain("private static byte EncodeSurvivalBandWeightQ8(float qualityWeight01)"));
+            Assert.That(service, Does.Contain("private static float ResolveSurvivalBandWeight01(float qualityWeight01)"));
+            Assert.That(snapshotType, Does.Contain("[FieldOffset(56)] public byte QualityWeightQ8;"));
+            Assert.That(snapshotType, Does.Contain("[FieldOffset(57)] public byte SurvivalBandWeightQ8;"));
+            Assert.That(compatibilityBody, Does.Contain("ResolveCompatibilityQualityTierOrdinal(qualityWeight01)"));
+            Assert.That(ordinalBody, Does.Contain("MathLodApproximation.SmoothStep01(MathLodApproximation.SaturateFinite(qualityWeight01, 1f))"));
+            Assert.That(ordinalBody, Does.Contain("math.lerp("));
+            Assert.That(snapshotBody, Does.Not.Contain("ResolveQualityTier("));
+            Assert.That(descriptorBody, Does.Not.Contain("survivalBandWeight >"));
+            Assert.That(service, Does.Not.Contain("MiddleOutpostQualityThreshold01"));
+            Assert.That(service, Does.Not.Contain("HighOutpostQualityThreshold01"));
+            Assert.That(service, Does.Not.Contain("UltraOutpostQualityThreshold01"));
+            Assert.That(service, Does.Not.Contain("private OutpostGenerationQualityTier _qualityTier"));
+            Assert.That(service, Does.Not.Contain("private static OutpostGenerationQualityTier ResolveQualityTier("));
+            Assert.That(compatibilityBody, Does.Not.Contain("qualityWeight01 <"));
+            Assert.That(ordinalBody, Does.Not.Contain("qualityWeight01 <"));
+        }
+
+        [Test]
+        public void MarauderOutpostExtraction_UsesLocalScratchAndSingleWriterFlushes()
+        {
+            string jobs = ReadProjectFile("Assets", "_Project", "Scripts", "World", "Outposts", "MarauderOutpostJobs.cs");
+            string service = ReadProjectFile("Assets", "_Project", "Scripts", "World", "Outposts", "MarauderOutpostGenerationService.cs");
+            string scheduleBody = ExtractMethodBody(service, "private void ScheduleMatrixExtraction()");
+            string lateFrameBody = ExtractMethodBody(service, "public void LateFrameTick()");
+            string flushHelperBody = ExtractMethodBody(service, "private bool TryFlushScratchBuffer<T>(");
+            string flushBody = ExtractMethodBody(service, "private bool FlushExtractionScratchToVault()");
+
+            Assert.That(jobs, Does.Contain("[ReadOnly, NoAlias] public NativeArray<byte>.ReadOnly WfcGrid;"));
+            Assert.That(service, Does.Contain("TryPrepareSolveScratch"));
+            Assert.That(service, Does.Contain("FlushSolveScratchToVault"));
+            Assert.That(service, Does.Contain("TryPrepareExtractionScratch"));
+            Assert.That(service, Does.Contain("TryPrepareShiftScratch"));
+            Assert.That(service, Does.Contain("FlushShiftScratchToVault"));
+            Assert.That(service, Does.Contain("ReleaseExtractionScratchBuffers();"));
+            Assert.That(service, Does.Not.Contain("TryAcquireSolveJobBuffer"));
+            Assert.That(service, Does.Not.Contain("ReleaseSolveJobBufferLock"));
+            Assert.That(service, Does.Not.Contain("_extractionJobBuffersLocked"));
+            Assert.That(service, Does.Not.Contain("TryAcquireExtractionJobBuffers"));
+            Assert.That(service, Does.Not.Contain("ReleaseExtractionJobBufferLocks"));
+            Assert.That(service, Does.Not.Contain("TryAcquireShiftJobBuffer"));
+            Assert.That(service, Does.Not.Contain("ReleaseShiftJobBufferLock"));
+            Assert.That(lateFrameBody, Does.Contain("FlushSolveScratchToVault()"));
+            Assert.That(lateFrameBody, Does.Contain("FlushExtractionScratchToVault()"));
+            Assert.That(lateFrameBody, Does.Contain("FlushShiftScratchToVault()"));
+            Assert.That(scheduleBody, Does.Contain("TryReadFullWfcGrid(out NativeArray<byte>.ReadOnly wfcGrid)"));
+            Assert.That(scheduleBody, Does.Contain("TryPrepareExtractionScratch("));
+            Assert.That(scheduleBody, Does.Not.Contain("TryAcquireWriteBuffer"));
+            Assert.That(flushBody, Does.Contain("TryFlushScratchBuffer(in _wfcMutableStateGridHandle"));
+            Assert.That(flushBody, Does.Contain("TryFlushScratchBuffer(in _countersHandle"));
+            Assert.That(flushHelperBody, Does.Contain("TryAcquireWriteBuffer(in handle, bufferId, requiredLength"));
+            Assert.That(flushHelperBody, Does.Contain("finally"));
+            Assert.That(flushHelperBody, Does.Contain("ReleaseWriteBuffer(in handle, bufferId);"));
         }
 
         [Test]
@@ -537,6 +844,51 @@ namespace Hecton8.Tests.Editor
         }
 
         [Test]
+        public void UtilityAICognition_PublishesContinuousQualityQ8AndOverBudgetTelemetry()
+        {
+            string contracts = ReadProjectFile("Assets", "_Project", "Scripts", "AI", "Cognition", "UtilityAICognitionContracts.cs");
+            string jobs = ReadProjectFile("Assets", "_Project", "Scripts", "AI", "Cognition", "UtilityAICognitionJobs.cs");
+            string vault = ReadProjectFile("Assets", "_Project", "Scripts", "AI", "Cognition", "UtilityAICognitionVault.cs");
+
+            Assert.That(contracts, Does.Contain("public const byte VisualOverkillScoring = 1 << 6;"));
+            Assert.That(contracts, Does.Contain("public const byte OverBudget = VisualOverkillScoring;"));
+            Assert.That(contracts, Does.Contain("[FieldOffset(58)] public byte QualityWeightQ8;"));
+
+            string evaluationBody = ExtractTypeBody(jobs, "public struct EvaluateUtilityCognitionJob");
+            Assert.That(evaluationBody, Does.Contain("EncodeQualityWeightQ8(quality)"));
+            Assert.That(evaluationBody, Does.Contain("output.QualityWeightQ8 = qualityWeightQ8;"));
+            Assert.That(evaluationBody, Does.Not.Contain("UtilityAICognitionActionFlags.VisualOverkillScoring"));
+            Assert.That(evaluationBody, Does.Not.Contain("UtilityAICognitionActionFlags.HighQuality"));
+            Assert.That(evaluationBody, Does.Not.Contain("quality > 0.75f"));
+
+            string telemetryBody = ExtractTypeBody(jobs, "public struct RecordCognitionTelemetryJob");
+            Assert.That(telemetryBody, Does.Contain("UtilityAICognitionActionFlags.OverBudget"));
+            Assert.That(telemetryBody, Does.Not.Contain("UtilityAICognitionActionFlags.HighQuality"));
+
+            string mathBody = ExtractTypeBody(jobs, "public static class UtilityAICognitionJobMath");
+            Assert.That(mathBody, Does.Contain("public static byte EncodeQualityWeightQ8(float quality)"));
+            Assert.That(mathBody, Does.Contain("encodedQuality * 255f"));
+
+            Assert.That(vault, Does.Contain("UtilityAICognitionActionFlags.OverBudget"));
+            Assert.That(vault, Does.Not.Contain("UtilityAICognitionActionFlags.HighQuality"));
+        }
+
+        [Test]
+        public void ShinobuApexBrain_UsesSurvivalNodeBudgetPressureFlag()
+        {
+            string contracts = ReadProjectFile("Assets", "_Project", "Scripts", "AI", "Cognition", "ShinobuApexBrainContracts.cs");
+            string jobs = ReadProjectFile("Assets", "_Project", "Scripts", "AI", "Cognition", "ShinobuApexBrainJobs.cs");
+            string jobBody = ExtractTypeBody(jobs, "public struct ApexBrainJob");
+
+            Assert.That(contracts, Does.Contain("public const byte SurvivalNodeBudgetPressure = 1 << 4;"));
+            Assert.That(contracts, Does.Contain("public const byte ReducedQualityNodeBudget = SurvivalNodeBudgetPressure;"));
+            Assert.That(jobBody, Does.Contain("ResolveSurvivalNodeBudgetPressureFlag(quality)"));
+            Assert.That(jobBody, Does.Contain("ApexBrainFlags.SurvivalNodeBudgetPressure"));
+            Assert.That(jobBody, Does.Not.Contain("ResolveReducedQualityNodeBudgetFlag"));
+            Assert.That(jobBody, Does.Not.Contain("ApexBrainFlags.ReducedQualityNodeBudget"));
+        }
+
+        [Test]
         public void AtmosphereFluidAndEquipmentTelemetry_DoNotNestCursorAndRingWriteLocks()
         {
             string atmosphere = ReadProjectFile("Assets", "_Project", "Scripts", "SubmarineAtmosphereSystem.cs");
@@ -775,9 +1127,10 @@ namespace Hecton8.Tests.Editor
                 thermal.Contains("if (_stressEwmaScheduled)\n                return;") ||
                 thermal.Contains("if (_stressEwmaScheduled)\r\n                return;"),
                 Is.True);
-            Assert.That(thermal, Does.Contain("int graphicsMemoryMb = _coldGraphicsMemoryMb;"));
+            Assert.That(thermal, Does.Contain("_coldFsrCapabilityAllowed = !Application.isMobilePlatform && SystemInfo.supportsComputeShaders;"));
             Assert.That(thermal, Does.Not.Contain("private static bool ResolveFsrUpscalerAllowed"));
             Assert.That(thermal, Does.Not.Contain("int graphicsMemoryMb = SystemInfo.graphicsMemorySize;"));
+            Assert.That(thermal, Does.Not.Contain("_coldGraphicsMemoryMb"));
             Assert.That(thermal, Does.Not.Contain("Application.isMobilePlatform || !SystemInfo.supportsComputeShaders"));
 
             Assert.That(content, Does.Contain("s_coldGraphicsMemoryMb"));
@@ -1016,6 +1369,20 @@ namespace Hecton8.Tests.Editor
             string boidKernelBody = ExtractMethodBody(boids, "private bool EnsureComputeKernelBindings()");
             Assert.That(boidKernelBody, Does.Contain("boidCompute == null || !SystemInfo.supportsComputeShaders"));
             Assert.That(boidKernelBody, Does.Not.Contain("HardwareTierDetector.AllowHighResourceComputeShaders"));
+        }
+
+        [Test]
+        public void InstanceCulling_UsesSurvivalDistancePressureFlag()
+        {
+            string contracts = ReadProjectFile("Assets", "_Project", "Scripts", "World", "Contracts", "InstanceCullingContracts.cs");
+            string service = ReadProjectFile("Assets", "_Project", "Scripts", "Graphics", "Culling", "InstanceCullingService.cs");
+            string dispatchBody = ExtractMethodBody(service, "public bool Dispatch(");
+
+            Assert.That(contracts, Does.Contain("SurvivalDistancePressure = 1u << 2"));
+            Assert.That(contracts, Does.Contain("LowTierDistance = SurvivalDistancePressure"));
+            Assert.That(dispatchBody, Does.Contain("ResolveSurvivalDistanceWeight01(qualityWeight)"));
+            Assert.That(dispatchBody, Does.Contain("InstanceCullingDispatchFlags.SurvivalDistancePressure"));
+            Assert.That(dispatchBody, Does.Not.Contain("InstanceCullingDispatchFlags.LowTierDistance"));
         }
 
         [Test]
@@ -1263,6 +1630,11 @@ namespace Hecton8.Tests.Editor
             Assert.That(updateBody, Does.Not.Contain("constantsLocked"));
             Assert.That(updateBody, Does.Not.Contain("GetUnsafePtr()"));
             Assert.That(source, Does.Contain("vault.ReleaseWriteLock(in handle, SystemID.GraphicsScalability);"));
+
+            string featureFlagsBody = ExtractMethodBody(source, "private static uint ResolveNoirFeatureFlags(");
+            Assert.That(source, Does.Contain("entry.GlobalQualityWeight01 = input.GlobalQualityWeight01;"));
+            Assert.That(featureFlagsBody, Does.Not.Contain("quality < 0.34f"));
+            Assert.That(featureFlagsBody, Does.Not.Contain("QualityAndLimits.x"));
         }
 
         [Test]
@@ -1347,6 +1719,126 @@ namespace Hecton8.Tests.Editor
                 Assert.That(source, Does.Not.Contain("_MATH_LOD_LOW"), files[i]);
                 Assert.That(source, Does.Not.Contain("_MATH_LOD_HIGH"), files[i]);
             }
+        }
+
+        [Test]
+        public void KccVelocitySignal_UsesContinuousQualityPressureByte()
+        {
+            string signalSource = ReadProjectFile("Assets", "_Project", "Scripts", "Core", "Signals", "GlobalSignalPayloads.CoreFoundation.cs");
+            string somaticSource = ReadProjectFile("Assets", "_Project", "Scripts", "Gameplay", "SomaticKinematicsRuntime.cs");
+            string kccSource = ReadProjectFile("Assets", "_Project", "Scripts", "Physics", "KCC", "HydrodynamicKccRuntime.cs");
+            string playerSource = ReadProjectFile("Assets", "_Project", "Scripts", "Gameplay", "PlayerKinematicsRuntime.cs");
+            string physicsSignalSource = ReadProjectFile("Assets", "_Project", "Scripts", "Physics", "PhysicsDeterminismSignals.cs");
+
+            string signalBody = ExtractTypeBody(signalSource, "public struct KccVelocitySignal");
+            Assert.That(signalBody, Does.Contain("[FieldOffset(77)]"));
+            Assert.That(signalBody, Does.Contain("public byte QualityPressureQ8;"));
+            Assert.That(signalBody, Does.Not.Contain("FlagLowTier"));
+            Assert.That(signalBody, Does.Not.Contain("public byte Reserved0;"));
+
+            string somaticBuildBody = ExtractMethodBody(somaticSource, "private void BuildFrameInput(");
+            Assert.That(somaticBuildBody, Does.Contain("_frameContext.QualityPressureQ8 = qualityPressureQ8;"));
+            Assert.That(somaticBuildBody, Does.Contain("state.Flags &= ~StateFlagQualityPressureReserved;"));
+            Assert.That(somaticBuildBody, Does.Not.Contain("qualityPressureQ8 >= 128"));
+            Assert.That(somaticBuildBody, Does.Not.Contain("StateFlagLowTier"));
+
+            string somaticPublishBody = ExtractMethodBody(somaticSource, "private void PublishCompletedFrame()");
+            Assert.That(somaticPublishBody, Does.Contain("velocitySignal.QualityPressureQ8 = _frameContext.QualityPressureQ8;"));
+            Assert.That(somaticPublishBody, Does.Not.Contain("KccVelocitySignal.FlagLowTier"));
+            Assert.That(somaticPublishBody, Does.Not.Contain("StateFlagLowTier"));
+
+            string hydrodynamicPublishBody = ExtractMethodBody(kccSource, "private void PublishKccVelocitySnapshot(");
+            Assert.That(hydrodynamicPublishBody, Does.Contain("ResolveQualityPressureQ8(_globalQualityWeight)"));
+            Assert.That(hydrodynamicPublishBody, Does.Contain("signal.QualityPressureQ8 = qualityPressureQ8;"));
+            Assert.That(hydrodynamicPublishBody, Does.Not.Contain("ResolveLowQualitySignalFlag"));
+            Assert.That(hydrodynamicPublishBody, Does.Not.Contain("FlagLowTier"));
+
+            string hydrodynamicQualityBody = ExtractMethodBody(kccSource, "private static byte ResolveQualityPressureQ8(");
+            Assert.That(hydrodynamicQualityBody, Does.Contain("curvedPressure01"));
+            Assert.That(hydrodynamicQualityBody, Does.Contain("* 255f"));
+            Assert.That(hydrodynamicQualityBody, Does.Not.Contain("> 0.5f"));
+            Assert.That(hydrodynamicQualityBody, Does.Not.Contain("FlagLowTier"));
+
+            string playerPublishBody = ExtractMethodBody(playerSource, "private void PublishKccVelocitySignal(");
+            Assert.That(playerPublishBody, Does.Contain("signal.QualityPressureQ8 = ResolveQualityPressureQ8(ReadCachedGlobalQualityWeight01())"));
+            Assert.That(playerPublishBody, Does.Not.Contain("KccVelocityReducedQualityCompatibilityFlag"));
+
+            string playerFixedBody = ExtractMethodBody(playerSource, "public void FixedTick(");
+            Assert.That(playerFixedBody, Does.Not.Contain("KccVelocityReducedQualityCompatibilityFlag"));
+            Assert.That(playerFixedBody, Does.Not.Contain("<= 0.0001f ? 1 : 0"));
+
+            string bridgeBody = ExtractMethodBody(physicsSignalSource, "public static bool TryPublishKccVelocity(");
+            Assert.That(bridgeBody, Does.Contain("byte qualityPressureQ8 = 0"));
+            Assert.That(bridgeBody, Does.Contain("signal.QualityPressureQ8 = qualityPressureQ8;"));
+        }
+
+        [Test]
+        public void SomaticKinematics_FixedTickDoesNotHoldMultipleVaultWriteLocks()
+        {
+            string source = ReadProjectFile("Assets", "_Project", "Scripts", "Gameplay", "SomaticKinematicsRuntime.cs");
+
+            Assert.That(source, Does.Not.Contain("TryAcquireSimulationWriteBuffers"));
+            Assert.That(source, Does.Not.Contain("ReleaseSimulationWriteBuffers"));
+
+            string fixedTickBody = ExtractMethodBody(source, "public void FixedTick(");
+            Assert.That(fixedTickBody, Does.Contain("EnsureLocalSimulationScratch()"));
+            Assert.That(fixedTickBody, Does.Contain("HydrateLocalSimulationScratchFromVault()"));
+            Assert.That(fixedTickBody, Does.Contain("FlushLocalSimulationScratchToVault()"));
+            Assert.That(fixedTickBody, Does.Not.Contain("TryAcquire"));
+
+            string awakeBody = ExtractMethodBody(source, "private void Awake()");
+            Assert.That(awakeBody, Does.Contain("EnsureLocalSimulationScratch();"));
+
+            string slowTickBody = ExtractMethodBody(source, "public void SlowTick()");
+            Assert.That(slowTickBody, Does.Contain("TryApplyCsvOverrides();"));
+
+            string hydrateBody = ExtractMethodBody(source, "private bool HydrateLocalSimulationScratchFromVault()");
+            Assert.That(hydrateBody, Does.Not.Contain("TryReadBlackBoxBuffer"));
+            Assert.That(hydrateBody, Does.Not.Contain("CopyReadOnlyToLocal(blackBox"));
+
+            string flushBody = ExtractMethodBody(source, "private bool FlushLocalSimulationScratchToVault()");
+            Assert.That(flushBody, Does.Contain("TryFlushSignalScratch()"));
+            Assert.That(flushBody, Does.Contain("TryFlushStateScratch()"));
+            Assert.That(flushBody, Does.Not.Contain("TryAcquire"));
+
+            string[] singleWriterMethods =
+            {
+                "private bool TryFlushStateScratch()",
+                "private bool TryFlushSphereScratch()",
+                "private bool TryFlushHandHistoryScratch()",
+                "private bool TryFlushSignalScratch()",
+                "private bool TryFlushBlackBoxScratch()",
+                "private bool TryFlushBlackBoxCursorScratch()",
+                "private unsafe bool TryWriteCsvScratchChunk("
+            };
+
+            for (int i = 0; i < singleWriterMethods.Length; i++)
+            {
+                string body = ExtractMethodBody(source, singleWriterMethods[i]);
+                Assert.That(CountOccurrences(body, "TryAcquire"), Is.EqualTo(1), singleWriterMethods[i]);
+                Assert.That(body, Does.Contain("finally"), singleWriterMethods[i]);
+                Assert.That(body, Does.Contain("Release"), singleWriterMethods[i]);
+            }
+
+            string applyTuningBody = ExtractMethodBody(source, "private void ApplyTuning(");
+            int tuningAcquire = applyTuningBody.IndexOf("TryAcquireTuningWriteBuffer", System.StringComparison.Ordinal);
+            int tuningRelease = applyTuningBody.IndexOf("ReleaseTuningWriteBuffer", tuningAcquire, System.StringComparison.Ordinal);
+            int dragAcquire = applyTuningBody.IndexOf("TryAcquireDragLutWriteBuffer", tuningRelease, System.StringComparison.Ordinal);
+            Assert.That(tuningAcquire, Is.GreaterThanOrEqualTo(0));
+            Assert.That(tuningRelease, Is.GreaterThan(tuningAcquire));
+            Assert.That(dragAcquire, Is.GreaterThan(tuningRelease));
+
+            string csvApplyBody = ExtractMethodBody(source, "private unsafe bool TryApplyCsvScratchOverrides(");
+            int csvScratchAcquire = csvApplyBody.IndexOf("TryAcquireCsvScratchWriteBuffer", System.StringComparison.Ordinal);
+            int csvScratchRelease = csvApplyBody.IndexOf("ReleaseCsvScratchWriteBuffer", csvScratchAcquire, System.StringComparison.Ordinal);
+            int csvTuningAcquire = csvApplyBody.IndexOf("TryAcquireTuningWriteBuffer", csvScratchRelease, System.StringComparison.Ordinal);
+            int csvTuningRelease = csvApplyBody.IndexOf("ReleaseTuningWriteBuffer", csvTuningAcquire, System.StringComparison.Ordinal);
+            int csvDragAcquire = csvApplyBody.IndexOf("TryAcquireDragLutWriteBuffer", csvTuningRelease, System.StringComparison.Ordinal);
+            Assert.That(csvScratchAcquire, Is.GreaterThanOrEqualTo(0));
+            Assert.That(csvScratchRelease, Is.GreaterThan(csvScratchAcquire));
+            Assert.That(csvTuningAcquire, Is.GreaterThanOrEqualTo(0));
+            Assert.That(csvTuningRelease, Is.GreaterThan(csvTuningAcquire));
+            Assert.That(csvDragAcquire, Is.GreaterThan(csvTuningRelease));
         }
 
         [Test]

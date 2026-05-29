@@ -144,7 +144,6 @@ namespace Hecton8.Physics
         private SimulationPhaseSystem _simulationSystem;
         private PostSimulationPhaseSystem _postSimulationSystem;
         private VisualSyncPhaseSystem _visualSyncSystem;
-        private JobHandle _simulationHandle;
         private uint _frameIndex;
         private float _globalQualityWeight = 1f;
         private float _timeSeconds;
@@ -167,7 +166,6 @@ namespace Hecton8.Physics
         private bool _dumpRequested;
         private bool _dumpedFault;
         private bool _coreBlackboxWarmed;
-        private bool _simulationScheduled;
         private bool _kernelResolved;
         private bool _hotSwapRegistered;
         private bool _registeredOriginShiftListener;
@@ -183,12 +181,6 @@ namespace Hecton8.Physics
         private uint _publishedCameraFrame;
         private byte _hasPublishedCameraAup;
         private float _deadReckoningDecayOverride = -1f;
-        private bool _mockRingWriteLocked;
-        private bool _completedRequestsWriteLocked;
-        private bool _resolvedHeightsWriteLocked;
-        private bool _resultStatesWriteLocked;
-        private bool _counterWriteLocked;
-
 #if UNITY_EDITOR
         private static AsyncBuoyancyReadbackRuntime _activeRuntimeInstance;
         private bool _editorQualityOverrideActive;
@@ -342,8 +334,6 @@ namespace Hecton8.Physics
             TryUnregisterHotSwapListener();
             TryUnregisterOriginShiftListener();
             TryUnregisterDispatcherSystems();
-            CompleteSimulationForLifecycle();
-            ReleaseSimulationWriteLocks();
             ReleaseGpuBuffers();
             _coreBlackboxWarmed = false;
 #if UNITY_EDITOR
@@ -373,8 +363,6 @@ namespace Hecton8.Physics
             if (ReferenceEquals(_dataVault, nextVault))
                 return;
 
-            CompleteSimulationForLifecycle();
-            ReleaseSimulationWriteLocks();
             _dataVault = nextVault;
             _coldBootCompleted = false;
             _coreBlackboxWarmed = false;
@@ -416,42 +404,18 @@ namespace Hecton8.Physics
 
         private JobHandle ScheduleSimulation(in DispatcherTimingDTO timing, in DispatcherJobContext context, JobHandle dependsOn)
         {
-            if (_simulationScheduled)
-            {
-                if (!DispatcherJobFence.TryFinalizeCompleted(ref _simulationHandle))
-                    return JobHandle.CombineDependencies(dependsOn, _simulationHandle);
+            return dependsOn;
+        }
 
-                _simulationScheduled = false;
-                ReleaseSimulationWriteLocks();
-            }
-
+        private void ProcessReadbackSimulation(float fixedDelta)
+        {
             if (!IsRuntimeReady())
-                return dependsOn;
+                return;
 
-            float fixedDelta = ResolveSimulationFixedDelta(in timing);
-            JobHandle handle = dependsOn;
             if (_mockPathThisFrame && enableMockWhenGpuUnavailable)
             {
-                _completedRequestCount = _frameIndex >= AsyncBuoyancyReadbackConstants.MockLatencyFrames ? _dispatchRequestCount : 0;
-                if (TryAcquireMockJobWriteBuffers(
-                        out NativeArray<ReadbackRequestDTO> mockRing,
-                        out NativeArray<ReadbackRequestDTO> completedForMock,
-                        out NativeArray<AsyncReadbackCounterDTO> countersForMock))
+                if (RunMockReadbackSimulation())
                 {
-                    handle = new GenerateMockAsyncReadbackJob
-                    {
-                        Requests = ReadVaultBuffer(_dataVault, in _requestsHandle),
-                        MockRing = mockRing,
-                        CompletedRequests = completedForMock,
-                        Counters = countersForMock,
-                        RequestCount = _dispatchRequestCount,
-                        Capacity = AsyncBuoyancyReadbackConstants.RequestCapacity,
-                        RingSize = AsyncBuoyancyReadbackConstants.ReadbackRingSize,
-                        WriteSlot = _mockWriteSlot,
-                        LatencyFrames = AsyncBuoyancyReadbackConstants.MockLatencyFrames,
-                        FrameIndex = _frameIndex,
-                        TimeSeconds = _timeSeconds
-                    }.Schedule(handle);
                     _mockWriteSlot = (_mockWriteSlot + 1) % AsyncBuoyancyReadbackConstants.ReadbackRingSize;
                     _lastLatencyFrames = AsyncBuoyancyReadbackConstants.MockLatencyFrames;
                 }
@@ -466,84 +430,387 @@ namespace Hecton8.Physics
             if (activeStateCount <= 0)
             {
                 _lastApplyMicros = 0u;
-                RetainSimulationHandleIfLocked(handle);
-                return handle;
+                return;
             }
 
             int stateCount = math.min(activeStateCount, AsyncBuoyancyReadbackConstants.RequestCapacity);
-            if (!TryAcquireApplyJobWriteBuffers(
-                    out NativeArray<ReadbackResolvedHeightDTO> resolvedForApply,
-                    out NativeArray<ReadbackResultStateDTO> statesForApply,
-                    out NativeArray<AsyncReadbackCounterDTO> countersForApply))
+            long applyStart = System.Diagnostics.Stopwatch.GetTimestamp();
+            _lastApplyMicros = ApplyDelayedReadbackResults(stateCount, fixedDelta)
+                ? ElapsedMicroseconds(applyStart)
+                : 0u;
+        }
+
+        private bool RunMockReadbackSimulation()
+        {
+            NativeArray<ReadbackRequestDTO> requests = ReadVaultBuffer(_dataVault, in _requestsHandle);
+            NativeArray<ReadbackRequestDTO> completedRead = ReadVaultBuffer(_dataVault, in _completedRequestsHandle);
+            if (!requests.IsCreated || !completedRead.IsCreated)
+                return false;
+
+            int safeCapacity = math.min(
+                AsyncBuoyancyReadbackConstants.RequestCapacity,
+                math.min(requests.Length, completedRead.Length));
+            int ringSize = AsyncBuoyancyReadbackConstants.ReadbackRingSize;
+            if (safeCapacity <= 0 || ringSize <= 0)
+                return false;
+
+            int count = math.clamp(_dispatchRequestCount, 0, safeCapacity);
+            int safeWriteSlot = math.clamp(_mockWriteSlot, 0, ringSize - 1);
+            int latency = math.max(1, AsyncBuoyancyReadbackConstants.MockLatencyFrames);
+            NativeArray<ReadbackRequestDTO> mockRing = default;
+            bool mockLocked = false;
+            try
             {
-                _lastApplyMicros = 0u;
-                RetainSimulationHandleIfLocked(handle);
-                return handle;
+                mockRing = AcquireVaultWriteBuffer(_dataVault, in _mockRingHandle);
+                mockLocked = mockRing.IsCreated;
+                if (!mockLocked)
+                    return false;
+
+                int ringCapacity = math.min(mockRing.Length, safeCapacity * ringSize);
+                int writeBase = safeWriteSlot * safeCapacity;
+                int writable = math.max(0, math.min(count, ringCapacity - writeBase));
+                ReadbackRequestDTO* ringPtr = (ReadbackRequestDTO*)mockRing.GetUnsafePtr();
+                for (int i = 0; i < writable; i++)
+                {
+                    ReadbackRequestDTO request = requests[i];
+                    request.ResultHeight = AsyncBuoyancyReadbackMath.ResolveMockLocalHeight(
+                        request.LocalXZ,
+                        _frameIndex,
+                        _timeSeconds);
+                    ref ReadbackRequestDTO ringRef = ref UnsafeUtility.AsRef<ReadbackRequestDTO>(ringPtr + writeBase + i);
+                    ringRef = request;
+                }
+            }
+            finally
+            {
+                if (mockLocked)
+                    ReleaseVaultWriteBuffer(_dataVault, in _mockRingHandle);
             }
 
-            float smoothingAlpha = AsyncBuoyancyReadbackMath.ResolveSmoothingAlpha();
-            long applyStart = System.Diagnostics.Stopwatch.GetTimestamp();
-            handle = new ApplyDelayedBuoyancyReadbackJob
+            int completed = 0;
+            if (_frameIndex >= (uint)latency)
             {
-                CompletedRequests = ReadVaultBuffer(_dataVault, in _completedRequestsHandle),
-                ResolvedHeights = resolvedForApply,
-                ResultStates = statesForApply,
-                Counters = countersForApply,
-                CameraAupY = _cameraAup.y,
-                FixedDeltaTime = fixedDelta,
-                SmoothingAlpha = smoothingAlpha,
-                DeadReckoningDecayRate = ResolveDeadReckoningDecayRate(),
-                CompletedCount = _completedRequestCount,
-                MaxFreshAgeFrames = AsyncBuoyancyReadbackConstants.MaxFreshAgeFrames,
-                FrameIndex = _frameIndex
-            }.Schedule(stateCount, 64, handle);
-            _lastApplyMicros = ElapsedMicroseconds(applyStart);
-            RetainSimulationHandleIfLocked(handle);
-            return handle;
+                NativeArray<ReadbackRequestDTO> mockRingRead = ReadVaultBuffer(_dataVault, in _mockRingHandle);
+                NativeArray<ReadbackRequestDTO> completedWrite = default;
+                bool completedLocked = false;
+                try
+                {
+                    completedWrite = AcquireVaultWriteBuffer(_dataVault, in _completedRequestsHandle);
+                    completedLocked = completedWrite.IsCreated;
+                    if (!mockRingRead.IsCreated || !completedLocked)
+                        return false;
+
+                    int ringCapacity = math.min(mockRingRead.Length, safeCapacity * ringSize);
+                    int readSlot = safeWriteSlot - latency;
+                    while (readSlot < 0)
+                        readSlot += ringSize;
+                    readSlot %= ringSize;
+                    int readBase = readSlot * safeCapacity;
+                    int readable = math.max(0, math.min(count, math.min(ringCapacity - readBase, completedWrite.Length)));
+                    ReadbackRequestDTO* ringPtr = (ReadbackRequestDTO*)mockRingRead.GetUnsafeReadOnlyPtr();
+                    ReadbackRequestDTO* completedPtr = (ReadbackRequestDTO*)completedWrite.GetUnsafePtr();
+                    for (int i = 0; i < readable; i++)
+                    {
+                        ReadbackRequestDTO delayed = UnsafeUtility.AsRef<ReadbackRequestDTO>(ringPtr + readBase + i);
+                        ref ReadbackRequestDTO completedRef = ref UnsafeUtility.AsRef<ReadbackRequestDTO>(completedPtr + i);
+                        completedRef = delayed;
+                    }
+
+                    completed = readable;
+                }
+                finally
+                {
+                    if (completedLocked)
+                        ReleaseVaultWriteBuffer(_dataVault, in _completedRequestsHandle);
+                }
+            }
+
+            NativeArray<AsyncReadbackCounterDTO> counters = default;
+            bool counterLocked = false;
+            try
+            {
+                counters = AcquireVaultWriteBuffer(_dataVault, in _counterHandle);
+                counterLocked = counters.IsCreated;
+                if (!counterLocked || counters.Length <= 0)
+                    return false;
+
+                AsyncReadbackCounterDTO* counterPtr = (AsyncReadbackCounterDTO*)counters.GetUnsafePtr();
+                ref AsyncReadbackCounterDTO counter = ref UnsafeUtility.AsRef<AsyncReadbackCounterDTO>(counterPtr);
+                counter.DispatchCount = count;
+                counter.CompletedCount = completed;
+                counter.LastLatencyFrames = latency;
+                counter.FrameIndex = _frameIndex;
+                counter.Flags |= AsyncBuoyancyReadbackConstants.FlagMockPath;
+                _completedRequestCount = completed;
+                return true;
+            }
+            finally
+            {
+                if (counterLocked)
+                    ReleaseVaultWriteBuffer(_dataVault, in _counterHandle);
+            }
+        }
+
+        private bool ApplyDelayedReadbackResults(int stateCount, float fixedDelta)
+        {
+            if (stateCount <= 0)
+                return true;
+
+            float smoothingAlpha = AsyncBuoyancyReadbackMath.ResolveSmoothingAlpha();
+            float deadReckoningDecay = ResolveDeadReckoningDecayRate();
+            if (!WriteResolvedHeightsPass(stateCount, fixedDelta, smoothingAlpha, deadReckoningDecay))
+                return false;
+
+            if (!WriteResultStatesPass(
+                    stateCount,
+                    fixedDelta,
+                    smoothingAlpha,
+                    deadReckoningDecay,
+                    out int maxStaleFrames,
+                    out uint lastEntityHash,
+                    out float lastLocalHeight,
+                    out uint flags))
+            {
+                return false;
+            }
+
+            return WriteApplyCounter(maxStaleFrames, lastEntityHash, lastLocalHeight, flags);
+        }
+
+        private bool WriteResolvedHeightsPass(
+            int stateCount,
+            float fixedDelta,
+            float smoothingAlpha,
+            float deadReckoningDecay)
+        {
+            NativeArray<ReadbackRequestDTO> completed = ReadVaultBuffer(_dataVault, in _completedRequestsHandle);
+            NativeArray<ReadbackResultStateDTO> states = ReadVaultBuffer(_dataVault, in _resultStatesHandle);
+            if (!completed.IsCreated || !states.IsCreated)
+                return false;
+
+            NativeArray<ReadbackResolvedHeightDTO> resolved = default;
+            bool resolvedLocked = false;
+            try
+            {
+                resolved = AcquireVaultWriteBuffer(_dataVault, in _resolvedHeightsHandle);
+                resolvedLocked = resolved.IsCreated;
+                if (!resolvedLocked)
+                    return false;
+
+                int count = math.min(stateCount, math.min(resolved.Length, states.Length));
+                int freshCount = math.min(math.max(0, _completedRequestCount), completed.Length);
+                ReadbackResolvedHeightDTO* resolvedPtr = (ReadbackResolvedHeightDTO*)resolved.GetUnsafePtr();
+                for (int i = 0; i < count; i++)
+                {
+                    bool hasFresh = i < freshCount;
+                    ReadbackRequestDTO request = hasFresh ? completed[i] : default;
+                    ResolveAppliedReadbackState(
+                        states[i],
+                        request,
+                        hasFresh,
+                        _cameraAup.y,
+                        fixedDelta,
+                        smoothingAlpha,
+                        deadReckoningDecay,
+                        AsyncBuoyancyReadbackConstants.MaxFreshAgeFrames,
+                        _frameIndex,
+                        out _,
+                        out ReadbackResolvedHeightDTO resolvedValue);
+                    ref ReadbackResolvedHeightDTO resolvedRef = ref UnsafeUtility.AsRef<ReadbackResolvedHeightDTO>(resolvedPtr + i);
+                    resolvedRef = resolvedValue;
+                }
+
+                return true;
+            }
+            finally
+            {
+                if (resolvedLocked)
+                    ReleaseVaultWriteBuffer(_dataVault, in _resolvedHeightsHandle);
+            }
+        }
+
+        private bool WriteResultStatesPass(
+            int stateCount,
+            float fixedDelta,
+            float smoothingAlpha,
+            float deadReckoningDecay,
+            out int maxStaleFrames,
+            out uint lastEntityHash,
+            out float lastLocalHeight,
+            out uint flags)
+        {
+            maxStaleFrames = 0;
+            lastEntityHash = 0u;
+            lastLocalHeight = 0f;
+            flags = 0u;
+            NativeArray<ReadbackRequestDTO> completed = ReadVaultBuffer(_dataVault, in _completedRequestsHandle);
+            if (!completed.IsCreated)
+                return false;
+
+            NativeArray<ReadbackResultStateDTO> states = default;
+            bool statesLocked = false;
+            try
+            {
+                states = AcquireVaultWriteBuffer(_dataVault, in _resultStatesHandle);
+                statesLocked = states.IsCreated;
+                if (!statesLocked)
+                    return false;
+
+                int count = math.min(stateCount, states.Length);
+                int freshCount = math.min(math.max(0, _completedRequestCount), completed.Length);
+                ReadbackResultStateDTO* statePtr = (ReadbackResultStateDTO*)states.GetUnsafePtr();
+                for (int i = 0; i < count; i++)
+                {
+                    bool hasFresh = i < freshCount;
+                    ReadbackRequestDTO request = hasFresh ? completed[i] : default;
+                    ReadbackResultStateDTO previousState = UnsafeUtility.AsRef<ReadbackResultStateDTO>(statePtr + i);
+                    ResolveAppliedReadbackState(
+                        previousState,
+                        request,
+                        hasFresh,
+                        _cameraAup.y,
+                        fixedDelta,
+                        smoothingAlpha,
+                        deadReckoningDecay,
+                        AsyncBuoyancyReadbackConstants.MaxFreshAgeFrames,
+                        _frameIndex,
+                        out ReadbackResultStateDTO stateValue,
+                        out ReadbackResolvedHeightDTO resolvedValue);
+                    ref ReadbackResultStateDTO stateRef = ref UnsafeUtility.AsRef<ReadbackResultStateDTO>(statePtr + i);
+                    stateRef = stateValue;
+                    if (i == 0)
+                    {
+                        maxStaleFrames = stateValue.StaleFrames;
+                        lastEntityHash = resolvedValue.EntityHash;
+                        lastLocalHeight = resolvedValue.LocalHeight;
+                        flags = resolvedValue.Flags;
+                    }
+                }
+
+                return true;
+            }
+            finally
+            {
+                if (statesLocked)
+                    ReleaseVaultWriteBuffer(_dataVault, in _resultStatesHandle);
+            }
+        }
+
+        private bool WriteApplyCounter(int maxStaleFrames, uint lastEntityHash, float lastLocalHeight, uint flags)
+        {
+            NativeArray<AsyncReadbackCounterDTO> counters = default;
+            bool counterLocked = false;
+            try
+            {
+                counters = AcquireVaultWriteBuffer(_dataVault, in _counterHandle);
+                counterLocked = counters.IsCreated;
+                if (!counterLocked || counters.Length <= 0)
+                    return false;
+
+                AsyncReadbackCounterDTO* counterPtr = (AsyncReadbackCounterDTO*)counters.GetUnsafePtr();
+                ref AsyncReadbackCounterDTO counter = ref UnsafeUtility.AsRef<AsyncReadbackCounterDTO>(counterPtr);
+                counter.MaxStaleFrames = math.max(counter.MaxStaleFrames, maxStaleFrames);
+                counter.LastEntityHash = lastEntityHash;
+                counter.LastLocalHeight = lastLocalHeight;
+                counter.Flags |= flags;
+                return true;
+            }
+            finally
+            {
+                if (counterLocked)
+                    ReleaseVaultWriteBuffer(_dataVault, in _counterHandle);
+            }
+        }
+
+        private static void ResolveAppliedReadbackState(
+            in ReadbackResultStateDTO previousState,
+            in ReadbackRequestDTO request,
+            bool hasFresh,
+            double cameraAupY,
+            float fixedDeltaTime,
+            float smoothingAlpha,
+            float deadReckoningDecayRate,
+            int maxFreshAgeFrames,
+            uint frameIndex,
+            out ReadbackResultStateDTO state,
+            out ReadbackResolvedHeightDTO resolved)
+        {
+            state = previousState;
+            resolved = default;
+            float dt = math.max(0.0001f, fixedDeltaTime);
+            float invDt = math.rcp(math.max(dt, 0.0001f));
+            float alpha = math.saturate(smoothingAlpha);
+            float decay = math.saturate(deadReckoningDecayRate);
+            uint flags = AsyncBuoyancyReadbackConstants.FlagActive;
+            float localHeight;
+            uint entityHash = state.EntityHash;
+            if (hasFresh)
+            {
+                entityHash = request.EntityHash;
+                float observed = math.isfinite(request.ResultHeight) ? request.ResultHeight : state.LastLocalHeight;
+                float previous = math.isfinite(state.SmoothedLocalHeight) ? state.SmoothedLocalHeight : observed;
+                float predicted = previous + (state.VelocityY * dt);
+                localHeight = math.lerp(predicted, observed, alpha);
+                float velocity = (localHeight - previous) * invDt;
+
+                state.PreviousLocalHeight = previous;
+                state.LastLocalHeight = observed;
+                state.SmoothedLocalHeight = localHeight;
+                state.DeadReckonedLocalHeight = localHeight;
+                state.VelocityY = math.isfinite(velocity) ? velocity : 0f;
+                state.LastLocalX = request.LocalXZ.x;
+                state.LastLocalZ = request.LocalXZ.y;
+                state.EntityHash = entityHash;
+                state.LastFrameIndex = frameIndex;
+                state.StaleFrames = 0;
+                state.CameraAupY = cameraAupY;
+                state.Flags = flags;
+            }
+            else
+            {
+                int stale = math.max(0, state.StaleFrames + 1);
+                state.StaleFrames = stale;
+                float predicted = state.SmoothedLocalHeight + (state.VelocityY * dt * math.min(stale, math.max(1, maxFreshAgeFrames)));
+                float staleFactor = math.saturate((float)math.max(0, stale - maxFreshAgeFrames) * math.rcp(math.max(1f, maxFreshAgeFrames)));
+                localHeight = math.lerp(predicted, state.SmoothedLocalHeight, staleFactor * decay);
+                state.DeadReckonedLocalHeight = localHeight;
+                state.VelocityY *= math.lerp(1f, 0.65f, staleFactor);
+                flags |= AsyncBuoyancyReadbackConstants.FlagStale;
+                if (stale > maxFreshAgeFrames)
+                    flags |= AsyncBuoyancyReadbackConstants.FlagDeadReckoned;
+                state.Flags = flags;
+            }
+
+            double heightAupY = cameraAupY + localHeight;
+            bool finite = math.isfinite(localHeight) && math.isfinite(heightAupY);
+            if (!finite)
+            {
+                localHeight = 0f;
+                heightAupY = cameraAupY;
+                flags |= AsyncBuoyancyReadbackConstants.FlagNonFinite;
+            }
+
+            state.LastHeightAupY = heightAupY;
+            resolved.HeightAupY = heightAupY;
+            resolved.LocalHeight = localHeight;
+            resolved.VelocityY = state.VelocityY;
+            resolved.EntityHash = entityHash;
+            resolved.FrameIndex = frameIndex;
+            resolved.Flags = flags;
         }
 
         private void PostSimulationTick(in DispatcherTimingDTO timing)
         {
-            if (_simulationScheduled)
-            {
-                if (!DispatcherJobFence.TryFinalizeCompleted(ref _simulationHandle))
-                    return;
-
-                _simulationScheduled = false;
-            }
-
             if (!IsRuntimeReady())
-            {
-                ReleaseSimulationWriteLocks();
                 return;
-            }
 
-            ReleaseSimulationWriteLocks();
-            WriteTuningSnapshot(ResolveSimulationFixedDelta(in timing));
+            float fixedDelta = ResolveSimulationFixedDelta(in timing);
+            ProcessReadbackSimulation(fixedDelta);
+            WriteTuningSnapshot(fixedDelta);
             UpdateCounterPostSimulation();
             WriteTelemetryDirect();
             if (_dumpRequested || _lastLatencyFrames > 4)
                 _dumpRequested = true;
-        }
-
-        private void CompleteSimulationForLifecycle()
-        {
-            if (!_simulationScheduled)
-                return;
-
-            DispatcherJobFence.TryComplete(ref _simulationHandle, forceComplete: true);
-            _simulationScheduled = false;
-            ReleaseSimulationWriteLocks();
-        }
-
-        private void RetainSimulationHandleIfLocked(JobHandle handle)
-        {
-            if (!HasSimulationWriteLocks())
-                return;
-
-            _simulationHandle = handle;
-            _simulationScheduled = true;
-            H8Memory.RegisterActiveJob(SystemID.Physics, handle);
         }
 
         private void VisualSyncTick(in DispatcherTimingDTO timing)
@@ -752,7 +1019,10 @@ namespace Hecton8.Physics
                     return;
 
                 VehicleSamplingProfileDTO profile = ResolvePrimaryVehicleProfile();
-                int count = AsyncBuoyancyReadbackMath.ResolveSampleBudget(math.max(1, profile.MinSamples), math.max(profile.MinSamples, profile.MaxSamples));
+                int count = AsyncBuoyancyReadbackMath.ResolveSampleBudget(
+                    math.max(1, profile.MinSamples),
+                    math.max(profile.MinSamples, profile.MaxSamples),
+                    _globalQualityWeight);
                 count = math.min(count, math.min(requests.Length, AsyncBuoyancyReadbackConstants.RequestCapacity));
                 float length = math.max(1f, profile.LengthMeters);
                 float beam = math.max(1f, profile.BeamMeters);
@@ -1278,7 +1548,6 @@ namespace Hecton8.Physics
                 counter.DispatchMicros = _lastDispatchMicros;
                 if (_lastLatencyFrames > 4)
                     counter.Flags |= AsyncBuoyancyReadbackConstants.FlagDumpedLatency;
-                counter.Flags |= AsyncBuoyancyReadbackConstants.FlagApplyMicrosScheduleOnly;
                 counters[0] = counter;
             }
             finally
@@ -1290,10 +1559,51 @@ namespace Hecton8.Physics
 
         private void WriteTelemetryDirect()
         {
-            NativeArray<ReadbackTelemetryEntry> telemetry = default;
+            NativeArray<AsyncReadbackCounterDTO> counters = ReadVaultBuffer(_dataVault, in _counterHandle);
+            NativeArray<ReadbackTelemetryEntry> telemetryRead = ReadVaultBuffer(_dataVault, in _telemetryRingHandle);
+            if (!telemetryRead.IsCreated || telemetryRead.Length <= 0)
+                return;
+
+            AsyncReadbackCounterDTO counter = counters.IsCreated && counters.Length > 0 ? counters[0] : default;
+            int cursorValue;
             NativeArray<int> cursor = default;
-            bool telemetryLocked = false;
             bool cursorLocked = false;
+            try
+            {
+                cursor = AcquireVaultWriteBuffer(_dataVault, in _telemetryCursorHandle);
+                cursorLocked = cursor.IsCreated;
+                if (!cursorLocked || cursor.Length <= 0)
+                    return;
+
+                cursorValue = cursor[0];
+                cursor[0] = cursorValue + 1;
+            }
+            finally
+            {
+                if (cursorLocked)
+                    ReleaseVaultWriteBuffer(_dataVault, in _telemetryCursorHandle);
+            }
+
+            int write = math.max(0, cursorValue) % telemetryRead.Length;
+            ReadbackTelemetryEntry entry = default;
+            entry.FrameIndex = _frameIndex;
+            entry.RequestedSamples = counter.DispatchCount;
+            entry.CompletedSamples = counter.CompletedCount;
+            entry.ActiveRingSlots = counter.ActiveRingSlots;
+            entry.ReadbackLatencyFrames = counter.LastLatencyFrames;
+            entry.DroppedRequests = counter.DroppedRequests;
+            entry.FailedRequests = counter.FailedRequests;
+            entry.MaxStaleFrames = counter.MaxStaleFrames;
+            entry.GlobalQualityWeight = _globalQualityWeight;
+            entry.ApplyMicros = counter.ApplyMicros;
+            entry.DispatchMicros = counter.DispatchMicros;
+            entry.SmoothedAlpha = AsyncBuoyancyReadbackMath.ResolveSmoothingAlpha();
+            entry.Flags = counter.Flags;
+            entry.LastEntityHash = counter.LastEntityHash;
+            entry.LastLocalHeight = counter.LastLocalHeight;
+
+            NativeArray<ReadbackTelemetryEntry> telemetry = default;
+            bool telemetryLocked = false;
             try
             {
                 telemetry = AcquireVaultWriteBuffer(_dataVault, in _telemetryRingHandle);
@@ -1301,37 +1611,10 @@ namespace Hecton8.Physics
                 if (!telemetryLocked || telemetry.Length <= 0)
                     return;
 
-                cursor = AcquireVaultWriteBuffer(_dataVault, in _telemetryCursorHandle);
-                cursorLocked = cursor.IsCreated;
-                if (!cursorLocked || cursor.Length <= 0)
-                    return;
-
-                NativeArray<AsyncReadbackCounterDTO> counters = ReadVaultBuffer(_dataVault, in _counterHandle);
-                AsyncReadbackCounterDTO counter = counters.IsCreated && counters.Length > 0 ? counters[0] : default;
-                int write = math.max(0, cursor[0]) % telemetry.Length;
-                ReadbackTelemetryEntry entry = default;
-                entry.FrameIndex = _frameIndex;
-                entry.RequestedSamples = counter.DispatchCount;
-                entry.CompletedSamples = counter.CompletedCount;
-                entry.ActiveRingSlots = counter.ActiveRingSlots;
-                entry.ReadbackLatencyFrames = counter.LastLatencyFrames;
-                entry.DroppedRequests = counter.DroppedRequests;
-                entry.FailedRequests = counter.FailedRequests;
-                entry.MaxStaleFrames = counter.MaxStaleFrames;
-                entry.GlobalQualityWeight = _globalQualityWeight;
-                entry.ApplyMicros = counter.ApplyMicros;
-                entry.DispatchMicros = counter.DispatchMicros;
-                entry.SmoothedAlpha = AsyncBuoyancyReadbackMath.ResolveSmoothingAlpha();
-                entry.Flags = counter.Flags;
-                entry.LastEntityHash = counter.LastEntityHash;
-                entry.LastLocalHeight = counter.LastLocalHeight;
-                telemetry[write] = entry;
-                cursor[0] = cursor[0] + 1;
+                telemetry[math.min(write, telemetry.Length - 1)] = entry;
             }
             finally
             {
-                if (cursorLocked)
-                    ReleaseVaultWriteBuffer(_dataVault, in _telemetryCursorHandle);
                 if (telemetryLocked)
                     ReleaseVaultWriteBuffer(_dataVault, in _telemetryRingHandle);
             }
@@ -1400,23 +1683,16 @@ namespace Hecton8.Physics
             if (!File.Exists(path))
                 return;
 
-            NativeArray<VehicleSamplingProfileDTO> profiles = default;
             NativeArray<byte> scratch = default;
-            bool profilesLocked = false;
             bool scratchLocked = false;
+            int bytesRead = 0;
             try
             {
-                profiles = AcquireVaultWriteBuffer(_dataVault, in _vehicleProfilesHandle);
-                profilesLocked = profiles.IsCreated;
-                if (!profilesLocked || profiles.Length <= 0)
-                    return;
-
                 scratch = AcquireVaultWriteBuffer(_dataVault, in _csvScratchHandle);
                 scratchLocked = scratch.IsCreated;
                 if (!scratchLocked || scratch.Length <= 0)
                     return;
 
-                int bytesRead = 0;
                 using (FileStream stream = new FileStream(path, FileMode.Open, FileAccess.Read, FileShare.Read))
                 {
                     byte* scratchPtr = (byte*)scratch.GetUnsafePtr();
@@ -1430,11 +1706,31 @@ namespace Hecton8.Physics
                         bytesRead += read;
                     }
                 }
+            }
+            finally
+            {
+                if (scratchLocked)
+                    ReleaseVaultWriteBuffer(_dataVault, in _csvScratchHandle);
+            }
 
-                if (bytesRead <= 0)
+            if (bytesRead <= 0)
+                return;
+
+            NativeArray<byte> scratchRead = ReadVaultBuffer(_dataVault, in _csvScratchHandle);
+            if (!scratchRead.IsCreated || scratchRead.Length <= 0)
+                return;
+
+            bytesRead = math.min(bytesRead, scratchRead.Length);
+            NativeArray<VehicleSamplingProfileDTO> profiles = default;
+            bool profilesLocked = false;
+            try
+            {
+                profiles = AcquireVaultWriteBuffer(_dataVault, in _vehicleProfilesHandle);
+                profilesLocked = profiles.IsCreated;
+                if (!profilesLocked || profiles.Length <= 0)
                     return;
 
-                ReadOnlySpan<byte> bytes = new ReadOnlySpan<byte>((byte*)scratch.GetUnsafeReadOnlyPtr(), bytesRead);
+                ReadOnlySpan<byte> bytes = new ReadOnlySpan<byte>((byte*)scratchRead.GetUnsafeReadOnlyPtr(), bytesRead);
                 int write = 0;
                 int lineStart = 0;
                 for (int i = 0; i <= bytes.Length && write < profiles.Length; i++)
@@ -1450,8 +1746,6 @@ namespace Hecton8.Physics
             }
             finally
             {
-                if (scratchLocked)
-                    ReleaseVaultWriteBuffer(_dataVault, in _csvScratchHandle);
                 if (profilesLocked)
                     ReleaseVaultWriteBuffer(_dataVault, in _vehicleProfilesHandle);
             }
@@ -1832,144 +2126,6 @@ namespace Hecton8.Physics
         {
             if (vault != null && HasHandle(in handle))
                 vault.ReleaseWriteLock(in handle, SystemID.Physics);
-        }
-
-        private bool TryAcquireMockJobWriteBuffers(
-            out NativeArray<ReadbackRequestDTO> mockRing,
-            out NativeArray<ReadbackRequestDTO> completed,
-            out NativeArray<AsyncReadbackCounterDTO> counters)
-        {
-            mockRing = default;
-            completed = default;
-            counters = default;
-            if (_mockRingWriteLocked || _completedRequestsWriteLocked || _counterWriteLocked)
-                return false;
-
-            bool acquiredAll = false;
-            try
-            {
-                mockRing = AcquireVaultWriteBuffer(_dataVault, in _mockRingHandle);
-                _mockRingWriteLocked = mockRing.IsCreated;
-                completed = AcquireVaultWriteBuffer(_dataVault, in _completedRequestsHandle);
-                _completedRequestsWriteLocked = completed.IsCreated;
-                counters = AcquireVaultWriteBuffer(_dataVault, in _counterHandle);
-                _counterWriteLocked = counters.IsCreated;
-                acquiredAll = mockRing.IsCreated && completed.IsCreated && counters.IsCreated;
-                return acquiredAll;
-            }
-            finally
-            {
-                if (!acquiredAll)
-                {
-                    ReleaseSimulationWriteLocks();
-                    mockRing = default;
-                    completed = default;
-                    counters = default;
-                }
-            }
-        }
-
-        private bool TryAcquireApplyJobWriteBuffers(
-            out NativeArray<ReadbackResolvedHeightDTO> resolved,
-            out NativeArray<ReadbackResultStateDTO> states,
-            out NativeArray<AsyncReadbackCounterDTO> counters)
-        {
-            resolved = default;
-            states = default;
-            counters = default;
-            if (_resolvedHeightsWriteLocked || _resultStatesWriteLocked)
-                return false;
-
-            bool counterWasLocked = _counterWriteLocked;
-            bool acquiredAll = false;
-            try
-            {
-                resolved = AcquireVaultWriteBuffer(_dataVault, in _resolvedHeightsHandle);
-                _resolvedHeightsWriteLocked = resolved.IsCreated;
-                states = AcquireVaultWriteBuffer(_dataVault, in _resultStatesHandle);
-                _resultStatesWriteLocked = states.IsCreated;
-                if (_counterWriteLocked)
-                {
-                    counters = ReadVaultBuffer(_dataVault, in _counterHandle);
-                }
-                else
-                {
-                    counters = AcquireVaultWriteBuffer(_dataVault, in _counterHandle);
-                    _counterWriteLocked = counters.IsCreated;
-                }
-
-                acquiredAll = resolved.IsCreated && states.IsCreated && counters.IsCreated;
-                return acquiredAll;
-            }
-            finally
-            {
-                if (!acquiredAll)
-                {
-                    if (_resultStatesWriteLocked)
-                    {
-                        ReleaseVaultWriteBuffer(_dataVault, in _resultStatesHandle);
-                        _resultStatesWriteLocked = false;
-                    }
-
-                    if (_resolvedHeightsWriteLocked)
-                    {
-                        ReleaseVaultWriteBuffer(_dataVault, in _resolvedHeightsHandle);
-                        _resolvedHeightsWriteLocked = false;
-                    }
-
-                    if (!counterWasLocked && _counterWriteLocked)
-                    {
-                        ReleaseVaultWriteBuffer(_dataVault, in _counterHandle);
-                        _counterWriteLocked = false;
-                    }
-
-                    resolved = default;
-                    states = default;
-                    counters = default;
-                }
-            }
-        }
-
-        private bool HasSimulationWriteLocks()
-        {
-            return _counterWriteLocked ||
-                   _resultStatesWriteLocked ||
-                   _resolvedHeightsWriteLocked ||
-                   _completedRequestsWriteLocked ||
-                   _mockRingWriteLocked;
-        }
-
-        private void ReleaseSimulationWriteLocks()
-        {
-            if (_counterWriteLocked)
-            {
-                ReleaseVaultWriteBuffer(_dataVault, in _counterHandle);
-                _counterWriteLocked = false;
-            }
-
-            if (_resultStatesWriteLocked)
-            {
-                ReleaseVaultWriteBuffer(_dataVault, in _resultStatesHandle);
-                _resultStatesWriteLocked = false;
-            }
-
-            if (_resolvedHeightsWriteLocked)
-            {
-                ReleaseVaultWriteBuffer(_dataVault, in _resolvedHeightsHandle);
-                _resolvedHeightsWriteLocked = false;
-            }
-
-            if (_completedRequestsWriteLocked)
-            {
-                ReleaseVaultWriteBuffer(_dataVault, in _completedRequestsHandle);
-                _completedRequestsWriteLocked = false;
-            }
-
-            if (_mockRingWriteLocked)
-            {
-                ReleaseVaultWriteBuffer(_dataVault, in _mockRingHandle);
-                _mockRingWriteLocked = false;
-            }
         }
 
         private static bool HasHandle<T>(in VaultGenerationHandle<T> handle) where T : struct

@@ -33,6 +33,8 @@ namespace Hecton8.Core
 
         // COLD ALLOC: List<IPoolable>[8] — pooled component dispatch scratch — owner: ObjectPoolManager
         private static readonly List<IPoolable> s_poolableCache = new List<IPoolable>(8);
+        // COLD ALLOC: List<Component>[8] - pooled root component cache scratch - owner: ObjectPoolManager
+        private static readonly List<Component> s_componentCache = new List<Component>(8);
 
         private Dictionary<int, Pool> _pools;
         // COLD ALLOC: Dictionary<GameObject, PoolItemMarker>[256] - pooled instance metadata cache - owner: ObjectPoolManager
@@ -129,6 +131,7 @@ namespace Hecton8.Core
             _warmupPresetsStarted = false;
             _warmupPresetsCompleted = true;
             s_poolableCache.Clear();
+            s_componentCache.Clear();
 
             if (_pools != null)
             {
@@ -676,7 +679,7 @@ namespace Hecton8.Core
             if (instance == null || !_poolMarkerCache.TryGetValue(instance, out PoolItemMarker marker) || marker == null)
                 return false;
 
-            return marker.TryGetPoolable(out component);
+            return marker.TryGetCachedComponent(out component) || marker.TryGetPoolable(out component);
         }
 
         /// <summary>
@@ -900,8 +903,10 @@ namespace Hecton8.Core
             instance.TryGetComponent(out Rigidbody rootRigidbody);
             instance.TryGetComponent(out DespawnTimer rootDespawnTimer);
             instance.GetComponents(s_poolableCache);
-            marker.Initialize(prefabId, rootRenderer, rootRigidbody, rootDespawnTimer, s_poolableCache);
+            instance.GetComponents(s_componentCache);
+            marker.Initialize(prefabId, rootRenderer, rootRigidbody, rootDespawnTimer, s_poolableCache, s_componentCache);
             s_poolableCache.Clear();
+            s_componentCache.Clear();
             _poolMarkerCache[instance] = marker;
             pool.capacity++;
             return instance;
@@ -1007,6 +1012,7 @@ namespace Hecton8.Core
             private Rigidbody _rootRigidbody;
             private DespawnTimer _rootDespawnTimer;
             private IPoolable[] _poolables = Array.Empty<IPoolable>();
+            private Component[] _rootComponents = Array.Empty<Component>();
 
             /// <summary>
             /// Registered prefab identifier.
@@ -1052,6 +1058,26 @@ namespace Hecton8.Core
                 return false;
             }
 
+            public bool TryGetCachedComponent<T>(out T component) where T : class
+            {
+                int count = _rootComponents.Length;
+                for (int i = 0; i < count; i++)
+                {
+                    Component candidate = _rootComponents[i];
+                    if (candidate == null)
+                        continue;
+
+                    if (candidate is T typed)
+                    {
+                        component = typed;
+                        return true;
+                    }
+                }
+
+                component = null;
+                return false;
+            }
+
             /// <summary>
             /// Assigns the prefab id once for the pooled instance.
             /// </summary>
@@ -1060,7 +1086,8 @@ namespace Hecton8.Core
                 Renderer rootRenderer,
                 Rigidbody rootRigidbody,
                 DespawnTimer rootDespawnTimer,
-                List<IPoolable> poolables)
+                List<IPoolable> poolables,
+                List<Component> rootComponents)
             {
                 if (!_initialized)
                 {
@@ -1071,6 +1098,11 @@ namespace Hecton8.Core
                     _poolables = count > 0 ? new IPoolable[count] : Array.Empty<IPoolable>();
                     for (int i = 0; i < count; i++)
                         _poolables[i] = poolables[i];
+
+                    count = rootComponents != null ? rootComponents.Count : 0;
+                    _rootComponents = count > 0 ? new Component[count] : Array.Empty<Component>();
+                    for (int i = 0; i < count; i++)
+                        _rootComponents[i] = rootComponents[i];
                 }
 
                 if (_rootRenderer == null)

@@ -30,7 +30,6 @@ namespace Hecton8.Physics.Exosuit
 #if UNITY_EDITOR
         private const int CsvScratchCapacity = 4096;
 #endif
-        private const float DefaultCsvPollIntervalSeconds = 0.25f;
         private const uint ExoSourceHash = 0x53484E34u; // SHN4
         private const uint ExosuitFaultEventHash = 0x45584654u; // EXFT
         private const uint ExosuitFaultDumpHash = 0x45584450u; // EXDP
@@ -217,7 +216,6 @@ namespace Hecton8.Physics.Exosuit
         private string _projectRoot;
         private string _csvPath;
         private long _lastCsvWriteTicks;
-        private float _csvPollCountdown;
 #endif
         private uint _scheduledFrame;
         private uint _lastDumpFrame = uint.MaxValue;
@@ -289,13 +287,10 @@ namespace Hecton8.Physics.Exosuit
             if (_jobScheduled || !Application.isPlaying)
                 return;
 
-            if (!EnsureBuffers(true))
+            if (!EnsureBuffers(false))
                 return;
 
             float safeDeltaTime = math.clamp(math.isfinite(fixedDeltaTime) ? fixedDeltaTime : 0.02f, 0.0001f, 0.05f);
-#if UNITY_EDITOR
-            TryApplyCsvOverrides(safeDeltaTime, false);
-#endif
             uint frame = WriteFrameInputs();
             ScheduleSolver(safeDeltaTime, frame);
         }
@@ -542,7 +537,16 @@ namespace Hecton8.Physics.Exosuit
                 return false;
 
             if (!IsHandleCreated(in _stateHandle))
-                AllocateVaultBuffers(_dataVault);
+            {
+                if (!allowColdInitialization)
+                    return false;
+
+                if (_dataVault.IsAllocationLocked || _dataVault.IsCompactionFenceActive)
+                    return false;
+
+                if (!AllocateVaultBuffers(_dataVault))
+                    return false;
+            }
 
             if (!IsHandleCreated(in _stateHandle))
                 return false;
@@ -555,8 +559,11 @@ namespace Hecton8.Physics.Exosuit
             return true;
         }
 
-        private void AllocateVaultBuffers(IDataVault vault)
+        private bool AllocateVaultBuffers(IDataVault vault)
         {
+            if (vault == null || vault.IsAllocationLocked || vault.IsCompactionFenceActive)
+                return false;
+
             _stateHandle = vault.EnsureGenerationHandle<ExosuitStateDTO>(BufferID.ShinobuExosuitState, 1, SystemID.Physics, NativeArrayOptions.UninitializedMemory);
             _inputHandle = vault.EnsureGenerationHandle<ExosuitFrameInputDTO>(BufferID.ShinobuExosuitFrameInput, 1, SystemID.Physics, NativeArrayOptions.UninitializedMemory);
             _tuningHandle = vault.EnsureGenerationHandle<ExosuitTuningDTO>(BufferID.ShinobuExosuitTuning, 1, SystemID.Physics, NativeArrayOptions.UninitializedMemory);
@@ -575,6 +582,7 @@ namespace Hecton8.Physics.Exosuit
             _csvScratchHandle = vault.EnsureGenerationHandle<byte>(BufferID.ShinobuExosuitCsvScratch, CsvScratchCapacity, SystemID.Physics, NativeArrayOptions.UninitializedMemory);
 #endif
             ExosuitKinematicAuthority.Bind(vault, in _inputHandle);
+            return true;
         }
 
         private bool GenerateEmergencyMockExoData()
@@ -994,12 +1002,18 @@ namespace Hecton8.Physics.Exosuit
             if (_jobBuffersLocked || vault == null)
                 return false;
 
-            ulong guardMask = JobMutationGuardMask | VoxelSdfPayloadMutationGuardMask;
-            if (!vault.TryAcquireMutationGuard(guardMask))
+            ulong guardMask;
+            if (TryAcquireFullJobBufferGuard(vault))
+            {
+                guardMask = JobMutationGuardMask | VoxelSdfPayloadMutationGuardMask;
+            }
+            else if (TryAcquireFallbackJobBufferGuard(vault))
             {
                 guardMask = JobMutationGuardMask;
-                if (!vault.TryAcquireMutationGuard(guardMask))
-                    return false;
+            }
+            else
+            {
+                return false;
             }
 
             bool guardTransferred = false;
@@ -1035,6 +1049,18 @@ namespace Hecton8.Physics.Exosuit
                 if (!guardTransferred)
                     vault.ReleaseMutationGuard(guardMask);
             }
+        }
+
+        private static bool TryAcquireFullJobBufferGuard(IDataVault vault)
+        {
+            return vault != null &&
+                   vault.TryAcquireMutationGuard(JobMutationGuardMask | VoxelSdfPayloadMutationGuardMask);
+        }
+
+        private static bool TryAcquireFallbackJobBufferGuard(IDataVault vault)
+        {
+            return vault != null &&
+                   vault.TryAcquireMutationGuard(JobMutationGuardMask);
         }
 
         private bool TryAcquireVoxelSdfPayload(
@@ -1137,24 +1163,15 @@ namespace Hecton8.Physics.Exosuit
         }
 
 #if UNITY_EDITOR
-        private void TryApplyCsvOverrides(float deltaTime, bool force)
+        private void TryApplyCsvOverrides()
         {
-            if (!force)
-            {
-                _csvPollCountdown -= math.max(0.0f, deltaTime);
-                if (_csvPollCountdown > 0.0f)
-                    return;
-
-                _csvPollCountdown = DefaultCsvPollIntervalSeconds;
-            }
-
             if (string.IsNullOrEmpty(_csvPath))
                 return;
             if (!File.Exists(_csvPath))
                 return;
 
             long writeTicks = File.GetLastWriteTimeUtc(_csvPath).Ticks;
-            if (!force && writeTicks == _lastCsvWriteTicks)
+            if (writeTicks == _lastCsvWriteTicks)
                 return;
 
             IDataVault vault = _dataVault;
@@ -1162,55 +1179,72 @@ namespace Hecton8.Physics.Exosuit
                 !IsHandleCreated(in _csvScratchHandle) ||
                 !IsHandleCreated(in _tuningHandle) ||
                 !vault.TryReadOnlyHandle(in _tuningHandle, out NativeArray<ExosuitTuningDTO>.ReadOnly tuningRead) ||
-                tuningRead.Length <= 0 ||
-                !vault.TryAcquireWriteLock(in _csvScratchHandle, SystemID.Physics, out NativeArray<byte> scratch))
+                tuningRead.Length <= 0)
             {
                 return;
             }
 
-            bool commitWriteTicks = false;
-            bool parsedTuning = false;
             ExosuitTuningDTO tuning = tuningRead[0];
-            int csvByteCount = 0;
-            try
-            {
-                csvByteCount = ReadCsvBytes(_csvPath, scratch);
-                if (csvByteCount > 0)
-                    parsedTuning = ParseCsvIntoTuning(scratch, csvByteCount, ref tuning);
-
-            }
-            finally
-            {
-                vault.ReleaseWriteLock(in _csvScratchHandle, SystemID.Physics);
-            }
-
+            int csvByteCount = TryReadCsvTuningOverride(vault, ref tuning, out bool parsedTuning);
             if (csvByteCount <= 0)
             {
                 _lastCsvWriteTicks = writeTicks;
                 return;
             }
 
-            if (!vault.TryAcquireWriteLock(in _tuningHandle, SystemID.Physics, out NativeArray<ExosuitTuningDTO> tuningBuffer))
+            if (!parsedTuning)
+            {
+                _lastCsvWriteTicks = writeTicks;
                 return;
+            }
+
+            tuning.CsvVersion++;
+            if (TryCommitCsvTuningOverride(vault, in tuning))
+                _lastCsvWriteTicks = writeTicks;
+        }
+
+        private int TryReadCsvTuningOverride(IDataVault vault, ref ExosuitTuningDTO tuning, out bool parsedTuning)
+        {
+            parsedTuning = false;
+            if (vault == null ||
+                !vault.TryAcquireWriteLock(in _csvScratchHandle, SystemID.Physics, out NativeArray<byte> scratch))
+            {
+                return 0;
+            }
+
+            try
+            {
+                int csvByteCount = ReadCsvBytes(_csvPath, scratch);
+                if (csvByteCount > 0)
+                    parsedTuning = ParseCsvIntoTuning(scratch, csvByteCount, ref tuning);
+
+                return csvByteCount;
+            }
+            finally
+            {
+                vault.ReleaseWriteLock(in _csvScratchHandle, SystemID.Physics);
+            }
+        }
+
+        private bool TryCommitCsvTuningOverride(IDataVault vault, in ExosuitTuningDTO tuning)
+        {
+            if (vault == null ||
+                !vault.TryAcquireWriteLock(in _tuningHandle, SystemID.Physics, out NativeArray<ExosuitTuningDTO> tuningBuffer))
+            {
+                return false;
+            }
 
             try
             {
                 if (!tuningBuffer.IsCreated || tuningBuffer.Length <= 0)
-                    return;
+                    return false;
 
-                if (parsedTuning)
-                {
-                    tuning.CsvVersion++;
-                    tuningBuffer[0] = SanitizeManagedTuning(tuning);
-                }
-
-                commitWriteTicks = true;
+                tuningBuffer[0] = SanitizeManagedTuning(tuning);
+                return true;
             }
             finally
             {
                 vault.ReleaseWriteLock(in _tuningHandle, SystemID.Physics);
-                if (commitWriteTicks)
-                    _lastCsvWriteTicks = writeTicks;
             }
         }
 
@@ -1219,7 +1253,7 @@ namespace Hecton8.Physics.Exosuit
             if (_coldCsvApplied || !_buffersInitialized)
                 return;
 
-            TryApplyCsvOverrides(DefaultCsvPollIntervalSeconds, true);
+            TryApplyCsvOverrides();
             _coldCsvApplied = true;
         }
 

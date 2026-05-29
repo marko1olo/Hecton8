@@ -18,6 +18,7 @@ namespace Hecton8.Core.Bridge.EditorTools
         private VisualElement entriesContainer;
         private Label entriesLabel;
         private Label vramLabel;
+        private Label validationLabel;
 
         [MenuItem("Hecton-8/Bridge/Prefab Registry Binder")]
         public static void Open()
@@ -80,8 +81,10 @@ namespace Hecton8.Core.Bridge.EditorTools
 
             entriesLabel = new Label();
             vramLabel = new Label();
+            validationLabel = new Label();
             root.Add(entriesLabel);
             root.Add(vramLabel);
+            root.Add(validationLabel);
 
             ScrollView scrollView = new ScrollView();
             scrollView.style.flexGrow = 1f;
@@ -92,7 +95,7 @@ namespace Hecton8.Core.Bridge.EditorTools
 
         private void RefreshEntries()
         {
-            if (entriesLabel == null || vramLabel == null || entriesContainer == null)
+            if (entriesLabel == null || vramLabel == null || validationLabel == null || entriesContainer == null)
                 return;
 
             entriesContainer.Clear();
@@ -100,16 +103,27 @@ namespace Hecton8.Core.Bridge.EditorTools
             {
                 entriesLabel.text = "Entries: 0";
                 vramLabel.text = "VRAM Estimate MB: 0";
+                validationLabel.text = "Validation: no registry";
                 return;
             }
 
             entriesLabel.text = "Entries: " + registry.EntryCount.ToString(CultureInfo.InvariantCulture);
             vramLabel.text = "VRAM Estimate MB: " + (registry.EstimateTotalVramBytes() >> 20).ToString(CultureInfo.InvariantCulture);
+            validationLabel.text = BuildValidationSummary(registry);
             for (int i = 0; i < registry.EntryCount; i++)
             {
                 H8PrefabRegistry.Entry entry = registry.GetEntry(i);
                 if (entry == null)
+                {
+                    Box nullBox = new Box();
+                    nullBox.style.marginTop = 4f;
+                    nullBox.style.marginBottom = 4f;
+                    Label nullLabel = new Label("Null entry slot: " + i.ToString(CultureInfo.InvariantCulture));
+                    nullLabel.style.color = Color.yellow;
+                    nullBox.Add(nullLabel);
+                    entriesContainer.Add(nullBox);
                     continue;
+                }
 
                 Box box = new Box();
                 box.style.marginTop = 4f;
@@ -130,6 +144,26 @@ namespace Hecton8.Core.Bridge.EditorTools
             }
         }
 
+        private static string BuildValidationSummary(H8PrefabRegistry registry)
+        {
+            if (registry == null)
+                return "Validation: no registry";
+
+            string runtimeCount = registry.ValidationRuntimeBindableCount.ToString(CultureInfo.InvariantCulture);
+            if (!registry.HasValidationErrors)
+                return "Validation: OK, runtime bindable " + runtimeCount;
+
+            string nullRows = registry.ValidationNullEntryCount.ToString(CultureInfo.InvariantCulture);
+            string firstNull = registry.ValidationFirstNullEntryIndex.ToString(CultureInfo.InvariantCulture);
+            string duplicateRows = registry.ValidationDuplicateHashCount.ToString(CultureInfo.InvariantCulture);
+            string firstDuplicate = registry.ValidationFirstDuplicateHashIndex.ToString(CultureInfo.InvariantCulture);
+            return "Validation: ERRORS, runtime bindable " + runtimeCount +
+                   ", null rows " + nullRows +
+                   " first " + firstNull +
+                   ", duplicate hashes " + duplicateRows +
+                   " first " + firstDuplicate;
+        }
+
         private void RebuildHashes()
         {
             if (registry == null)
@@ -146,7 +180,13 @@ namespace Hecton8.Core.Bridge.EditorTools
             if (registry == null)
                 return;
 
-            H8PrefabRegistryRuntimeBinder.Bind(registry, Hecton8.Core.GlobalRegistry.DataVault);
+            if (!H8PrefabRegistryRuntimeBinder.Bind(
+                registry,
+                Hecton8.Core.GlobalRegistry.DataVault,
+                Hecton8.Core.GlobalRegistry.PrefabRegistryRuntime))
+            {
+                Debug.LogError("[H8Bridge] Prefab registry bind failed. Fix duplicate prefab hashes or wait for DataVault allocation fences to clear.");
+            }
         }
 
         private void OnDragUpdated(DragUpdatedEvent evt)
@@ -208,12 +248,34 @@ namespace Hecton8.Core.Bridge.EditorTools
             H8PrefabRegistry registry = (H8PrefabRegistry)target;
             EditorGUILayout.Space(6f);
             EditorGUILayout.LabelField("VRAM Cost Meter", (registry.EstimateTotalVramBytes() >> 20) + " MB");
+            EditorGUILayout.LabelField("Validation", registry.HasValidationErrors ? "ERRORS" : "OK");
+            EditorGUILayout.LabelField("Runtime Bindable", registry.ValidationRuntimeBindableCount.ToString(CultureInfo.InvariantCulture));
+            if (registry.HasValidationErrors)
+            {
+                EditorGUILayout.LabelField("Null Rows", registry.ValidationNullEntryCount + " first " + registry.ValidationFirstNullEntryIndex);
+                EditorGUILayout.LabelField("Duplicate Hash Rows", registry.ValidationDuplicateHashCount + " first " + registry.ValidationFirstDuplicateHashIndex);
+            }
+
             using (new EditorGUILayout.HorizontalScope())
             {
                 if (GUILayout.Button("Open Binder"))
                     H8PrefabRegistryWindow.Open();
                 if (GUILayout.Button("Bind Runtime Vault"))
-                    H8PrefabRegistryRuntimeBinder.Bind(registry, Hecton8.Core.GlobalRegistry.DataVault);
+                    TryBindRuntimeVault(registry);
+            }
+        }
+
+        private static void TryBindRuntimeVault(H8PrefabRegistry registry)
+        {
+            if (registry == null)
+                return;
+
+            if (!H8PrefabRegistryRuntimeBinder.Bind(
+                registry,
+                Hecton8.Core.GlobalRegistry.DataVault,
+                Hecton8.Core.GlobalRegistry.PrefabRegistryRuntime))
+            {
+                Debug.LogError("[H8Bridge] Prefab registry bind failed. Fix duplicate prefab hashes or wait for DataVault allocation fences to clear.");
             }
         }
     }

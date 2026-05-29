@@ -58,7 +58,7 @@ namespace Hecton8.Gameplay.Loot.Contracts
                     out float maxVelocityMetersPerSecond))
             {
                 EntityVelocities[index] = float3.zero;
-                EntityFlags[index] = (flags & ~(LootEntityFlags.Pulling | LootEntityFlags.LowTierLerp)) |
+                EntityFlags[index] = (flags & ~(LootEntityFlags.Pulling | LootEntityFlags.SurvivalPressureLerp)) |
                                      LootEntityFlags.NonFinite;
                 return;
             }
@@ -66,7 +66,7 @@ namespace Hecton8.Gameplay.Loot.Contracts
             if (pullRadiusSq <= LootMagnetConstants.AupCellSizeSq &&
                 IsOutsideAdjacentAupCells(in lootAup, in PlayerAup))
             {
-                EntityFlags[index] = flags & ~(LootEntityFlags.Pulling | LootEntityFlags.LowTierLerp);
+                EntityFlags[index] = flags & ~(LootEntityFlags.Pulling | LootEntityFlags.SurvivalPressureLerp);
                 return;
             }
 
@@ -80,7 +80,7 @@ namespace Hecton8.Gameplay.Loot.Contracts
 
             if (distSq > pullRadiusSq)
             {
-                EntityFlags[index] = flags & ~(LootEntityFlags.Pulling | LootEntityFlags.LowTierLerp);
+                EntityFlags[index] = flags & ~(LootEntityFlags.Pulling | LootEntityFlags.SurvivalPressureLerp);
                 return;
             }
 
@@ -127,7 +127,7 @@ namespace Hecton8.Gameplay.Loot.Contracts
 
             EntityVelocities[index] = velocity;
             EntityAups[index] = nextAup;
-            EntityFlags[index] = (flags | LootEntityFlags.Pulling) & ~LootEntityFlags.LowTierLerp;
+            EntityFlags[index] = (flags | LootEntityFlags.Pulling) & ~LootEntityFlags.SurvivalPressureLerp;
             if ((index & (LootMagnetConstants.PresentationSignalStride - 1)) == 0)
             {
                 WriteSignalEvent(

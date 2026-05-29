@@ -34,18 +34,19 @@ namespace Hecton8.Physics.Vehicles
         private const uint HashAddedMassMultiplier = 0x0EA616D0u;
         private const uint HashFloodVolumeScalar = 0xE0BF9C4Fu;
         private const uint HashTargetDepthM = 0xA4492116u;
-        private const ulong SimulationPinStates = 1UL << 0;
-        private const ulong SimulationPinControls = 1UL << 1;
-        private const ulong SimulationPinPidStates = 1UL << 2;
-        private const ulong SimulationPinMasses = 1UL << 3;
-        private const ulong SimulationPinForces = 1UL << 4;
-        private const ulong SimulationPinTelemetry = 1UL << 5;
-        private const ulong SimulationPinAddedMass = 1UL << 6;
-        private const ulong SimulationPinHydrodynamicsTelemetry = 1UL << 7;
-        private const ulong SimulationPinHullProfiles = 1UL << 8;
-        private const ulong SimulationPinTuning = 1UL << 9;
-        private const ulong SimulationPinDragLut = 1UL << 10;
-        private const ulong SimulationPinConfig = 1UL << 11;
+        private static readonly ulong SimulationCoreMutationGuardMask =
+            VaultMutationGuardBit(BufferID.SubmarineKinematicStates) |
+            VaultMutationGuardBit(BufferID.SubmarineKinematicControls) |
+            VaultMutationGuardBit(BufferID.SubmarineKinematicPidStates) |
+            VaultMutationGuardBit(BufferID.SubmarineKinematicMassProperties) |
+            VaultMutationGuardBit(BufferID.SubmarineKinematicForces) |
+            VaultMutationGuardBit(BufferID.SubmarineKinematicTelemetry) |
+            VaultMutationGuardBit(BufferID.Shinobu251AddedMassProfiles) |
+            VaultMutationGuardBit(BufferID.Shinobu251HydrodynamicsTelemetry) |
+            VaultMutationGuardBit(BufferID.Shinobu251HullProfiles) |
+            VaultMutationGuardBit(BufferID.Shinobu251AddedMassTuning) |
+            VaultMutationGuardBit(BufferID.SubmarineKinematicDragLut) |
+            VaultMutationGuardBit(BufferID.SubmarineKinematicConfig);
         private static readonly ulong BootProfileMutationGuardMask =
             VaultMutationGuardBit(BufferID.SubmarineKinematicConfig) |
             VaultMutationGuardBit(BufferID.SubmarineKinematicDragLut) |
@@ -118,7 +119,8 @@ namespace Hecton8.Physics.Vehicles
         private JobHandle _integratorHandle;
         private bool _integratorPending;
         private bool _buffersLocked;
-        private ulong _simulationPinMask;
+        private IDataVault _simulationGuardVault;
+        private ulong _simulationGuardMask;
         private bool _buffersReady;
         private bool _registeredFixed;
         private bool _registeredPostFixed;
@@ -176,11 +178,16 @@ namespace Hecton8.Physics.Vehicles
             EnsureSignalLanes();
             RefreshCommandTargetIds();
             VehicleCommandSignalBus.Register(this);
-            EnsureDataVault();
+            TryRegisterHotSwapListener();
+            CacheDataVaultCold();
             EnsureVaultBuffers();
             WarmCoreBlackboxRoute();
+#if UNITY_EDITOR
+            TryApplyCsvOverrides();
+            TryApplyHullProfilesCsv();
+            TryApplyGyroProfilesCsv();
+#endif
 
-            TryRegisterHotSwapListener();
             TryRegisterRuntimeLanes();
         }
 
@@ -351,7 +358,7 @@ namespace Hecton8.Physics.Vehicles
             if (!_integratorPending)
                 return;
 
-            if (!DispatcherJobFence.TryComplete(ref _integratorHandle, forceComplete: false))
+            if (!DispatcherJobFence.TryFinalizeCompleted(ref _integratorHandle))
                 return;
 
             _integratorPending = false;
@@ -464,11 +471,6 @@ namespace Hecton8.Physics.Vehicles
                 EnsureVaultBuffers();
             TryRefreshVehicleDamageStateReadHandle();
             RefreshCommandTargetIds();
-#if UNITY_EDITOR
-            TryApplyCsvOverrides();
-            TryApplyHullProfilesCsv();
-            TryApplyGyroProfilesCsv();
-#endif
         }
 
         public void OnVehicleCommandSignal(in VehicleCommandSignal signal)
@@ -490,10 +492,14 @@ namespace Hecton8.Physics.Vehicles
 
         private bool EnsureDataVault()
         {
+            return _dataVault != null;
+        }
+
+        private void CacheDataVaultCold()
+        {
             IDataVault currentVault = GlobalRegistry.DataVault;
             if (!ReferenceEquals(_dataVault, currentVault))
                 RebindDataVaultForLifecycle(currentVault);
-            return _dataVault != null;
         }
 
         private void TryRegisterRuntimeLanes()
@@ -656,61 +662,11 @@ namespace Hecton8.Physics.Vehicles
             }
         }
 
-        private bool TryAcquireVaultBufferPin<T>(
-            in VaultGenerationHandle<T> handle,
-            BufferID bufferId,
-            int requiredLength,
-            out NativeArray<T> buffer)
-            where T : struct
-        {
-            buffer = default;
-            if (_dataVault == null ||
-                _dataVault.IsCompactionFenceActive ||
-                requiredLength <= 0 ||
-                !IsVehiclesPhysicsHandle(in handle, bufferId))
-            {
-                return false;
-            }
-
-            bool pinAcquired = false;
-            try
-            {
-                if (!_dataVault.TryLockBuffer(bufferId, SystemID.VehiclesPhysics))
-                    return false;
-
-                pinAcquired = true;
-                if (!_dataVault.TryResolveHandle(in handle, out buffer) ||
-                    !buffer.IsCreated ||
-                    buffer.Length < requiredLength ||
-                    _dataVault.IsCompactionFenceActive)
-                {
-                    return false;
-                }
-
-                pinAcquired = false;
-                return true;
-            }
-            finally
-            {
-                if (pinAcquired)
-                {
-                    _dataVault.TryUnlockBuffer(bufferId, SystemID.VehiclesPhysics);
-                    buffer = default;
-                }
-            }
-        }
-
         private void ReleaseVaultWriteLock<T>(in VaultGenerationHandle<T> handle)
             where T : struct
         {
             if (_dataVault != null && IsGenerationHandleCreated(in handle))
                 _dataVault.ReleaseWriteLock(in handle, SystemID.VehiclesPhysics);
-        }
-
-        private void ReleaseVaultBufferPin(BufferID bufferId)
-        {
-            if (_dataVault != null)
-                _dataVault.TryUnlockBuffer(bufferId, SystemID.VehiclesPhysics);
         }
 
         private static bool IsGenerationHandleCreated<T>(in VaultGenerationHandle<T> handle)
@@ -732,9 +688,17 @@ namespace Hecton8.Physics.Vehicles
             return 1UL << ((int)bufferId & 63);
         }
 
+        private static ulong GetSimulationMutationGuardMask()
+        {
+            return SimulationCoreMutationGuardMask | GyroScheduleMutationGuardMask;
+        }
+
         private bool EnsureVaultBuffers()
         {
             if (!EnsureDataVault())
+                return false;
+
+            if (_dataVault.IsAllocationLocked || _dataVault.IsCompactionFenceActive)
                 return false;
 
             int capacity = math.clamp(vehicleCapacity, 1, SubmarineDynamicsConstants.MaxVehicles);
@@ -1176,22 +1140,24 @@ namespace Hecton8.Physics.Vehicles
 
             bool locked = false;
             int capacity = math.clamp(vehicleCapacity, 1, SubmarineDynamicsConstants.MaxVehicles);
+            if (!TryAcquireSimulationBufferGuard(GetSimulationMutationGuardMask()))
+                return false;
+
             try
             {
-                _simulationPinMask = 0UL;
-                if (!TryPinSimulationBuffer(in _stateHandle, BufferID.SubmarineKinematicStates, capacity, SimulationPinStates) ||
-                    !TryPinSimulationBuffer(in _controlHandle, BufferID.SubmarineKinematicControls, capacity, SimulationPinControls) ||
-                    !TryPinSimulationBuffer(in _pidHandle, BufferID.SubmarineKinematicPidStates, capacity, SimulationPinPidStates) ||
-                    !TryPinSimulationBuffer(in _massHandle, BufferID.SubmarineKinematicMassProperties, capacity, SimulationPinMasses) ||
-                    !TryPinSimulationBuffer(in _forceHandle, BufferID.SubmarineKinematicForces, capacity, SimulationPinForces) ||
-                    !TryPinSimulationBuffer(in _telemetryHandle, BufferID.SubmarineKinematicTelemetry, capacity * SubmarineDynamicsConstants.BlackBoxFrames, SimulationPinTelemetry) ||
-                    !TryPinSimulationBuffer(in _addedMassHandle, BufferID.Shinobu251AddedMassProfiles, capacity, SimulationPinAddedMass) ||
-                    !TryPinSimulationBuffer(in _hydrodynamicsTelemetryHandle, BufferID.Shinobu251HydrodynamicsTelemetry, capacity * SubmarineDynamicsConstants.BlackBoxFrames, SimulationPinHydrodynamicsTelemetry) ||
-                    !TryPinSimulationBuffer(in _configHandle, BufferID.SubmarineKinematicConfig, 1, SimulationPinConfig) ||
-                    !TryPinSimulationBuffer(in _hullProfileHandle, BufferID.Shinobu251HullProfiles, capacity, SimulationPinHullProfiles) ||
-                    !TryPinSimulationBuffer(in _addedMassTuningHandle, BufferID.Shinobu251AddedMassTuning, 1, SimulationPinTuning) ||
-                    !TryPinSimulationBuffer(in _dragLutHandle, BufferID.SubmarineKinematicDragLut, SubmarineDynamicsConstants.DragLutSamples, SimulationPinDragLut) ||
-                    !TryLockGyroBuffers())
+                if (!TryValidateSimulationBuffer(in _stateHandle, BufferID.SubmarineKinematicStates, capacity) ||
+                    !TryValidateSimulationBuffer(in _controlHandle, BufferID.SubmarineKinematicControls, capacity) ||
+                    !TryValidateSimulationBuffer(in _pidHandle, BufferID.SubmarineKinematicPidStates, capacity) ||
+                    !TryValidateSimulationBuffer(in _massHandle, BufferID.SubmarineKinematicMassProperties, capacity) ||
+                    !TryValidateSimulationBuffer(in _forceHandle, BufferID.SubmarineKinematicForces, capacity) ||
+                    !TryValidateSimulationBuffer(in _telemetryHandle, BufferID.SubmarineKinematicTelemetry, capacity * SubmarineDynamicsConstants.BlackBoxFrames) ||
+                    !TryValidateSimulationBuffer(in _addedMassHandle, BufferID.Shinobu251AddedMassProfiles, capacity) ||
+                    !TryValidateSimulationBuffer(in _hydrodynamicsTelemetryHandle, BufferID.Shinobu251HydrodynamicsTelemetry, capacity * SubmarineDynamicsConstants.BlackBoxFrames) ||
+                    !TryValidateSimulationBuffer(in _configHandle, BufferID.SubmarineKinematicConfig, 1) ||
+                    !TryValidateSimulationBuffer(in _hullProfileHandle, BufferID.Shinobu251HullProfiles, capacity) ||
+                    !TryValidateSimulationBuffer(in _addedMassTuningHandle, BufferID.Shinobu251AddedMassTuning, 1) ||
+                    !TryValidateSimulationBuffer(in _dragLutHandle, BufferID.SubmarineKinematicDragLut, SubmarineDynamicsConstants.DragLutSamples) ||
+                    !ValidateGyroScheduleBuffers(capacity))
                 {
                     return false;
                 }
@@ -1210,53 +1176,49 @@ namespace Hecton8.Physics.Vehicles
             }
         }
 
-        private bool TryPinSimulationBuffer<T>(
+        private bool TryAcquireSimulationBufferGuard(ulong guardMask)
+        {
+            IDataVault vault = _dataVault;
+            if (_buffersLocked ||
+                _simulationGuardMask != 0UL ||
+                vault == null ||
+                vault.IsCompactionFenceActive ||
+                !vault.TryAcquireMutationGuard(guardMask))
+            {
+                return false;
+            }
+
+            _simulationGuardVault = vault;
+            _simulationGuardMask = guardMask;
+            return true;
+        }
+
+        private bool TryValidateSimulationBuffer<T>(
             in VaultGenerationHandle<T> handle,
             BufferID bufferId,
-            int requiredLength,
-            ulong pinBit)
+            int requiredLength)
             where T : struct
         {
-            if (!TryAcquireVaultBufferPin(in handle, bufferId, requiredLength, out _))
-                return false;
-
-            _simulationPinMask |= pinBit;
-            return true;
+            return _dataVault != null &&
+                   !_dataVault.IsCompactionFenceActive &&
+                   requiredLength > 0 &&
+                   IsVehiclesPhysicsHandle(in handle, bufferId) &&
+                   _dataVault.TryResolveHandle(in handle, out NativeArray<T> buffer) &&
+                   buffer.IsCreated &&
+                   buffer.Length >= requiredLength;
         }
 
         private void UnlockSimulationBuffers()
         {
-            if (!_buffersLocked || _dataVault == null)
+            if (!_buffersLocked && _simulationGuardMask == 0UL)
                 return;
 
-            ulong pinMask = _simulationPinMask;
-            if ((pinMask & SimulationPinDragLut) != 0UL)
-                ReleaseVaultBufferPin(BufferID.SubmarineKinematicDragLut);
-            if ((pinMask & SimulationPinTuning) != 0UL)
-                ReleaseVaultBufferPin(BufferID.Shinobu251AddedMassTuning);
-            if ((pinMask & SimulationPinHullProfiles) != 0UL)
-                ReleaseVaultBufferPin(BufferID.Shinobu251HullProfiles);
-            if ((pinMask & SimulationPinConfig) != 0UL)
-                ReleaseVaultBufferPin(BufferID.SubmarineKinematicConfig);
-            if ((pinMask & SimulationPinHydrodynamicsTelemetry) != 0UL)
-                ReleaseVaultBufferPin(BufferID.Shinobu251HydrodynamicsTelemetry);
-            if ((pinMask & SimulationPinAddedMass) != 0UL)
-                ReleaseVaultBufferPin(BufferID.Shinobu251AddedMassProfiles);
-            if ((pinMask & SimulationPinTelemetry) != 0UL)
-                ReleaseVaultBufferPin(BufferID.SubmarineKinematicTelemetry);
-            if ((pinMask & SimulationPinForces) != 0UL)
-                ReleaseVaultBufferPin(BufferID.SubmarineKinematicForces);
-            if ((pinMask & SimulationPinMasses) != 0UL)
-                ReleaseVaultBufferPin(BufferID.SubmarineKinematicMassProperties);
-            if ((pinMask & SimulationPinPidStates) != 0UL)
-                ReleaseVaultBufferPin(BufferID.SubmarineKinematicPidStates);
-            if ((pinMask & SimulationPinControls) != 0UL)
-                ReleaseVaultBufferPin(BufferID.SubmarineKinematicControls);
-            if ((pinMask & SimulationPinStates) != 0UL)
-                ReleaseVaultBufferPin(BufferID.SubmarineKinematicStates);
-            _simulationPinMask = 0UL;
-            UnlockGyroBuffers();
+            IDataVault vault = _simulationGuardVault ?? _dataVault;
+            ulong guardMask = _simulationGuardMask;
+            _simulationGuardVault = null;
+            _simulationGuardMask = 0UL;
             _buffersLocked = false;
+            vault?.ReleaseMutationGuard(guardMask);
         }
 
 #if UNITY_EDITOR

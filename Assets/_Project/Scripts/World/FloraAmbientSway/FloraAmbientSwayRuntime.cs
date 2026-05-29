@@ -288,6 +288,12 @@ namespace Hecton8.World.FloraAmbientSway
         private const BufferID FloraAmbientSwayTuningBufferId = (BufferID)72904;
         private const BufferID FloraAmbientSwayBiomeProfilesBufferId = (BufferID)72905;
         private const BufferID FloraAmbientSwayCsvScratchBufferId = (BufferID)72906;
+        private static readonly ulong TelemetryMutationGuardMask =
+            FloraAmbientSwayMutationGuardBit(FloraAmbientSwayTelemetryRingBufferId) |
+            FloraAmbientSwayMutationGuardBit(FloraAmbientSwayTelemetryCursorBufferId);
+        private static readonly ulong ProfileCsvMutationGuardMask =
+            FloraAmbientSwayMutationGuardBit(FloraAmbientSwayBiomeProfilesBufferId) |
+            FloraAmbientSwayMutationGuardBit(FloraAmbientSwayCsvScratchBufferId);
 
         private const uint TuningFlagMockFlowEnabled = 1u << 0;
         private const uint TelemetryFlagVaultMissing = 1u << 0;
@@ -418,6 +424,11 @@ namespace Hecton8.World.FloraAmbientSway
         }
 
         private void OnDisable()
+        {
+            OnServiceShutdown();
+        }
+
+        private void OnDestroy()
         {
             OnServiceShutdown();
         }
@@ -961,13 +972,21 @@ namespace Hecton8.World.FloraAmbientSway
             if (vault == null)
                 return false;
 
-            if (!TryAcquireWrite(vault, in _csvScratchHandle, out NativeArray<byte> scratch) ||
-                !scratch.IsCreated)
+            if (!TryAcquireFloraAmbientSwayMutationGuard(vault, ProfileCsvMutationGuardMask))
                 return false;
 
-            bool profileLocked = false;
             try
             {
+                if (!TryResolveGuardedMutable(
+                    vault,
+                    in _csvScratchHandle,
+                    FloraAmbientSwayCsvScratchBufferId,
+                    CsvScratchBytes,
+                    out NativeArray<byte> scratch))
+                {
+                    return false;
+                }
+
                 string path = Path.Combine(Directory.GetCurrentDirectory(), "Docs", "Data", "Profiles", "flora_biome_sway_profiles.csv");
                 if (!File.Exists(path))
                     return false;
@@ -996,13 +1015,16 @@ namespace Hecton8.World.FloraAmbientSway
                 if (bytesRead <= 0)
                     return false;
 
-                if (!TryAcquireWrite(vault, in _profileHandle, out NativeArray<FloraBiomeSwayProfileDTO> profiles) ||
-                    !profiles.IsCreated)
+                if (!TryResolveGuardedMutable(
+                    vault,
+                    in _profileHandle,
+                    FloraAmbientSwayBiomeProfilesBufferId,
+                    BiomeProfileCapacity,
+                    out NativeArray<FloraBiomeSwayProfileDTO> profiles))
                 {
                     return false;
                 }
 
-                profileLocked = true;
                 ClearNativeArray(profiles);
 
                 void* readPtr = NativeArrayUnsafeUtility.GetUnsafeReadOnlyPtr(scratch);
@@ -1010,9 +1032,7 @@ namespace Hecton8.World.FloraAmbientSway
             }
             finally
             {
-                if (profileLocked)
-                    vault.ReleaseWriteLock(in _profileHandle, SystemID.FloraGenomics);
-                vault.ReleaseWriteLock(in _csvScratchHandle, SystemID.FloraGenomics);
+                ReleaseFloraAmbientSwayMutationGuard(vault, ProfileCsvMutationGuardMask);
             }
         }
 #endif
@@ -1023,24 +1043,28 @@ namespace Hecton8.World.FloraAmbientSway
             if (vault == null)
                 return;
 
-            if (!TryAcquireWrite(vault, in _telemetryHandle, out NativeArray<SwayTelemetryEntry> ring) ||
-                !ring.IsCreated)
+            if (!TryAcquireFloraAmbientSwayMutationGuard(vault, TelemetryMutationGuardMask))
                 return;
 
-            bool cursorLocked = false;
             try
             {
-                if (ring.Length == 0)
-                    return;
-
-                if (!TryAcquireWrite(vault, in _telemetryCursorHandle, out NativeArray<int> cursorArray) ||
-                    !cursorArray.IsCreated)
+                if (!TryResolveGuardedMutable(
+                    vault,
+                    in _telemetryHandle,
+                    FloraAmbientSwayTelemetryRingBufferId,
+                    SwayTelemetryCapacity,
+                    out NativeArray<SwayTelemetryEntry> ring) ||
+                    !TryResolveGuardedMutable(
+                        vault,
+                        in _telemetryCursorHandle,
+                        FloraAmbientSwayTelemetryCursorBufferId,
+                        1,
+                        out NativeArray<int> cursorArray))
                 {
                     return;
                 }
 
-                cursorLocked = true;
-                if (cursorArray.Length == 0)
+                if (ring.Length == 0 || cursorArray.Length == 0)
                     return;
 
                 int cursor = cursorArray[0];
@@ -1079,9 +1103,7 @@ namespace Hecton8.World.FloraAmbientSway
             }
             finally
             {
-                if (cursorLocked)
-                    vault.ReleaseWriteLock(in _telemetryCursorHandle, SystemID.FloraGenomics);
-                vault.ReleaseWriteLock(in _telemetryHandle, SystemID.FloraGenomics);
+                ReleaseFloraAmbientSwayMutationGuard(vault, TelemetryMutationGuardMask);
             }
         }
 
@@ -1309,6 +1331,44 @@ namespace Hecton8.World.FloraAmbientSway
             }
 
             return true;
+        }
+
+        private static bool TryAcquireFloraAmbientSwayMutationGuard(IDataVault vault, ulong guardMask)
+        {
+            return guardMask != 0UL &&
+                   vault != null &&
+                   !vault.IsCompactionFenceActive &&
+                   vault.TryAcquireMutationGuard(guardMask);
+        }
+
+        private static void ReleaseFloraAmbientSwayMutationGuard(IDataVault vault, ulong guardMask)
+        {
+            if (vault != null && guardMask != 0UL)
+                vault.ReleaseMutationGuard(guardMask);
+        }
+
+        private static bool TryResolveGuardedMutable<T>(
+            IDataVault vault,
+            in VaultGenerationHandle<T> handle,
+            BufferID expectedBufferId,
+            int requiredLength,
+            out NativeArray<T> buffer)
+            where T : struct
+        {
+            buffer = default;
+            return vault != null &&
+                   handle.BufferID == expectedBufferId &&
+                   !vault.IsCompactionFenceActive &&
+                   vault.TryResolveHandle(in handle, out buffer) &&
+                   buffer.IsCreated &&
+                   buffer.Length >= requiredLength &&
+                   !vault.IsCompactionFenceActive;
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private static ulong FloraAmbientSwayMutationGuardBit(BufferID bufferId)
+        {
+            return 1UL << ((int)bufferId & 63);
         }
 
         private void ReleaseOwnedVaultBuffers(IDataVault vault)

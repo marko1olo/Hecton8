@@ -146,6 +146,22 @@ function Validate-ManifestCapabilities([object]$Value) {
     }
 }
 
+function Validate-DependencyList([object]$Value, [string]$OwnerId, [string]$Label) {
+    [void](Validate-JsonArray $Value $Label)
+    $dependencies = @($Value)
+    if ($dependencies.Count -gt 32) { Fail ($Label + ' exceeds 32 entries.') }
+    $seen = @{}
+    $result = @()
+    for ($i = 0; $i -lt $dependencies.Count; $i++) {
+        $dependencyId = Validate-ModId ([string]$dependencies[$i]) ($Label + '[' + $i + ']')
+        if ($dependencyId -eq $OwnerId) { Fail ($Label + ' must not contain self dependency: ' + $dependencyId) }
+        if ($seen.ContainsKey($dependencyId)) { Fail ($Label + ' contains duplicate dependency: ' + $dependencyId) }
+        $seen[$dependencyId] = $true
+        $result += $dependencyId
+    }
+    return @($result)
+}
+
 function Validate-JsonArray([object]$Value, [string]$Label) {
     if ($null -eq $Value -or -not $Value.GetType().IsArray) {
         Fail ($Label + ' must be a JSON array.')
@@ -376,9 +392,16 @@ function Validate-VsCodeTasks([object]$TasksJson) {
 
     $requiredTaskLabels = @(
         'HECTON-8: setup identity',
+        'HECTON-8: create first playable mod',
         'HECTON-8: validate starter',
         'HECTON-8: prepare review manifest',
         'HECTON-8: build submission zip',
+        'HECTON-8: install local discovery copy',
+        'HECTON-8: diagnose local Mods folder',
+        'HECTON-8: list dependencies',
+        'HECTON-8: add dependency',
+        'HECTON-8: remove dependency',
+        'HECTON-8: clear dependencies',
         'HECTON-8: show capabilities',
         'HECTON-8: show opcodes',
         'HECTON-8: create graph node snippet',
@@ -430,13 +453,61 @@ function Validate-VsCodeTasks([object]$TasksJson) {
         }
     }
 
+    $firstModTask = $taskByLabel['HECTON-8: create first playable mod']
+    $firstModArgs = @($firstModTask.args | ForEach-Object { [string]$_ })
+    if ($firstModArgs -notcontains 'first-mod') {
+        Fail '.vscode/tasks.json first playable mod task must pass -Action first-mod.'
+    }
+    if ($firstModArgs -notcontains '-Replace') {
+        Fail '.vscode/tasks.json first playable mod task must pass -Replace for rerunnable starter onboarding.'
+    }
+
+    $installLocalTask = $taskByLabel['HECTON-8: install local discovery copy']
+    $installLocalArgs = @($installLocalTask.args | ForEach-Object { [string]$_ })
+    if ($installLocalArgs -notcontains 'install-local') {
+        Fail '.vscode/tasks.json local install task must pass -Action install-local.'
+    }
+    if ($installLocalArgs -notcontains '-ProjectRoot') {
+        Fail '.vscode/tasks.json local install task must pass -ProjectRoot so copied starter folders have an explicit destination.'
+    }
+    if ($installLocalArgs -notcontains '-Replace') {
+        Fail '.vscode/tasks.json local install task must pass -Replace for rerunnable discovery-copy updates.'
+    }
+
+    $diagnoseLocalTask = $taskByLabel['HECTON-8: diagnose local Mods folder']
+    $diagnoseLocalArgs = @($diagnoseLocalTask.args | ForEach-Object { [string]$_ })
+    if ($diagnoseLocalArgs -notcontains 'diagnose-local') {
+        Fail '.vscode/tasks.json local diagnose task must pass -Action diagnose-local.'
+    }
+    if ($diagnoseLocalArgs -notcontains '-ProjectRoot') {
+        Fail '.vscode/tasks.json local diagnose task must pass -ProjectRoot so copied starter folders inspect an explicit Mods root.'
+    }
+
+    foreach ($dependencyTaskLabel in @('HECTON-8: list dependencies','HECTON-8: add dependency','HECTON-8: remove dependency','HECTON-8: clear dependencies')) {
+        $dependencyTask = $taskByLabel[$dependencyTaskLabel]
+        $dependencyArgs = @($dependencyTask.args | ForEach-Object { [string]$_ })
+        if ($dependencyArgs -notcontains 'dependencies') {
+            Fail ('.vscode/tasks.json dependency task must pass -Action dependencies: ' + $dependencyTaskLabel)
+        }
+        if ($dependencyArgs -notcontains '-DependencyAction') {
+            Fail ('.vscode/tasks.json dependency task must pass -DependencyAction: ' + $dependencyTaskLabel)
+        }
+    }
+
+    foreach ($dependencyIdTaskLabel in @('HECTON-8: add dependency','HECTON-8: remove dependency')) {
+        $dependencyTask = $taskByLabel[$dependencyIdTaskLabel]
+        if (@($dependencyTask.args | ForEach-Object { [string]$_ }) -notcontains '-DependencyId') {
+            Fail ('.vscode/tasks.json dependency id task must pass -DependencyId: ' + $dependencyIdTaskLabel)
+        }
+    }
+
     $inputIds = @{}
     foreach ($input in @($TasksJson.inputs)) {
         if ($null -eq $input) { Fail '.vscode/tasks.json inputs must not contain null entries.' }
         $inputId = Validate-RequiredText ([string]$input.id) '.vscode/tasks.json input id'
         $inputIds[$inputId] = $true
     }
-    foreach ($requiredInputId in @('modId','displayName','author','version','nodeId','opcode','nodeParametersJson','settingId','settingKind','settingDefault','localeKey','localeValue','assetId','assetKind','assetPath','capability','capabilityState','maxEnvelopesPerFrame','maxAssetBytes')) {
+    foreach ($requiredInputId in @('modId','displayName','author','version','projectRoot','dependencyId','nodeId','opcode','nodeParametersJson','settingId','settingKind','settingDefault','localeKey','localeValue','assetId','assetKind','assetPath','capability','capabilityState','maxEnvelopesPerFrame','maxAssetBytes')) {
         if (-not $inputIds.ContainsKey($requiredInputId)) {
             Fail ('.vscode/tasks.json missing input: ' + $requiredInputId)
         }
@@ -471,6 +542,10 @@ function Validate-VsCodeTasks([object]$TasksJson) {
     'Tools/apply_asset_entry_snippet.ps1',
     'Tools/build_review_manifest.ps1',
     'Tools/build_submission_package.ps1',
+    'Tools/configure_dependencies.ps1',
+    'Tools/create_first_mod.ps1',
+    'Tools/install_local_mod.ps1',
+    'Tools/diagnose_local_mods.ps1',
     'Tools/apply_graph_node_snippet.ps1',
     'Tools/apply_locale_entry_snippet.ps1',
     'Tools/apply_settings_row_snippet.ps1',
@@ -488,7 +563,7 @@ function Validate-VsCodeTasks([object]$TasksJson) {
 ) | ForEach-Object { [void](Require-File $_) }
 
 $capabilitiesText = Get-Content -Raw -LiteralPath (Require-File 'Docs/capabilities.md')
-foreach ($requiredCapabilityText in @('Supported now','Not public rights','envelope-only','FutureCommandEnvelope','Harmony','BepInEx','h8mod.ps1 -Action capabilities','h8mod.ps1 -Action manifest-contract','configure_manifest_contract.ps1','h8mod.ps1 -Action node-snippet','h8mod.ps1 -Action apply-node-snippet','h8mod.ps1 -Action setting-snippet','h8mod.ps1 -Action locale-snippet','h8mod.ps1 -Action apply-setting-snippet','h8mod.ps1 -Action apply-locale-snippet','h8mod.ps1 -Action asset-snippet','h8mod.ps1 -Action apply-asset-snippet')) {
+foreach ($requiredCapabilityText in @('Supported now','Not public rights','envelope-only','FutureCommandEnvelope','Harmony','BepInEx','h8mod.ps1 -Action capabilities','h8mod.ps1 -Action manifest-contract','configure_manifest_contract.ps1','h8mod.ps1 -Action dependencies','configure_dependencies.ps1','h8mod.ps1 -Action install-local','install_local_mod.ps1','h8mod.ps1 -Action diagnose-local','diagnose_local_mods.ps1','recursive manifest discovery','dependency cycles','load order','h8mod.ps1 -Action node-snippet','h8mod.ps1 -Action apply-node-snippet','h8mod.ps1 -Action setting-snippet','h8mod.ps1 -Action locale-snippet','h8mod.ps1 -Action apply-setting-snippet','h8mod.ps1 -Action apply-locale-snippet','h8mod.ps1 -Action asset-snippet','h8mod.ps1 -Action apply-asset-snippet')) {
     if (-not $capabilitiesText.Contains($requiredCapabilityText)) {
         Fail ('Docs/capabilities.md missing required capability text: ' + $requiredCapabilityText)
     }
@@ -523,6 +598,7 @@ $authoringAuthor = Validate-RequiredText ([string]$authoring.Author) 'mod.h8mani
 $authoringVersion = Validate-Version ([string]$authoring.Version) 'mod.h8manifest.json Version'
 if ([string]$authoring.Compatibility.Runtime -ne 'envelope-only') { Fail 'mod.h8manifest.json Compatibility.Runtime must be envelope-only.' }
 if ([int]$authoring.RequiredAPIVersion -lt 2) { Fail 'mod.h8manifest.json RequiredAPIVersion must be >= 2.' }
+$authoringDependencies = @(Validate-DependencyList $authoring.Dependencies $authoringId 'mod.h8manifest.json Dependencies')
 Validate-ManifestCapabilities $authoring.Capabilities
 if ([int]$authoring.Budgets.MaxEnvelopesPerFrame -lt 0) { Fail 'mod.h8manifest.json Budgets.MaxEnvelopesPerFrame must be >= 0.' }
 if ([int]$authoring.Budgets.MaxEnvelopesPerFrame -gt 256) { Fail 'mod.h8manifest.json Budgets.MaxEnvelopesPerFrame exceeds 256.' }
@@ -536,12 +612,12 @@ $runtimeVersion = Validate-Version ([string]$runtime.Version) 'mod.json Version'
 if ($authoringDisplayName -ne $runtimeName) { Fail 'mod.h8manifest.json DisplayName must match mod.json Name.' }
 if ($authoringAuthor -ne $runtimeAuthor) { Fail 'mod.h8manifest.json Author must match mod.json Author.' }
 if ($authoringVersion -ne $runtimeVersion) { Fail 'mod.h8manifest.json Version must match mod.json Version.' }
-if ($null -ne $runtime.Dependencies) {
-    foreach ($dependencyId in @($runtime.Dependencies)) {
-        if (-not [string]::IsNullOrWhiteSpace([string]$dependencyId)) {
-            [void](Validate-ModId ([string]$dependencyId) 'mod.json Dependencies item')
-        }
-    }
+if ($null -eq $runtime.PSObject.Properties['Dependencies']) {
+    Fail 'mod.json Dependencies is required.'
+}
+$runtimeDependencies = @(Validate-DependencyList $runtime.Dependencies $runtimeId 'mod.json Dependencies')
+if (($authoringDependencies -join "`n") -ne ($runtimeDependencies -join "`n")) {
+    Fail 'mod.h8manifest.json Dependencies must match mod.json Dependencies in the same order.'
 }
 if (-not [string]::IsNullOrWhiteSpace([string]$runtime.EntryAssembly)) { Fail 'mod.json EntryAssembly must stay empty in envelope-only starter kits.' }
 if (-not [string]::IsNullOrWhiteSpace([string]$runtime.EntryType)) { Fail 'mod.json EntryType must stay empty in envelope-only starter kits.' }

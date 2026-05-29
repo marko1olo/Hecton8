@@ -32,11 +32,17 @@ namespace Crest
         Mesh _mesh;
         Bounds _boundsLocal;
 
+        private void OnEnable()
+        {
+            EnsurePropertyWrapper();
+        }
+
         private void Start()
         {
             _rend = GetComponent<Renderer>();
             _mesh = GetComponent<MeshFilter>().sharedMesh;
             _boundsLocal = _mesh.bounds;
+            EnsurePropertyWrapper();
 
             if (OceanRenderer.Instance != null)
             {
@@ -59,7 +65,7 @@ namespace Crest
             {
                 if (_mpb == null)
                 {
-                    _mpb = new PropertyWrapperMPB();
+                    return;
                 }
 
                 _rend.GetPropertyBlock(_mpb.materialPropertyBlock);
@@ -68,6 +74,14 @@ namespace Crest
             }
 
             LateUpdateBounds();
+        }
+
+        void EnsurePropertyWrapper()
+        {
+            if (_mpb == null)
+            {
+                _mpb = new PropertyWrapperMPB();
+            }
         }
 
         void LateUpdateBounds()

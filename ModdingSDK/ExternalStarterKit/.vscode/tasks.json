@@ -25,6 +25,31 @@
       "problemMatcher": []
     },
     {
+      "label": "HECTON-8: create first playable mod",
+      "type": "shell",
+      "command": "${config:hecton8.powerShellExecutable}",
+      "args": [
+        "-NoProfile",
+        "-ExecutionPolicy",
+        "Bypass",
+        "-File",
+        "h8mod.ps1",
+        "-Action",
+        "first-mod",
+        "-Id",
+        "${input:modId}",
+        "-DisplayName",
+        "${input:displayName}",
+        "-Author",
+        "${input:author}",
+        "-Version",
+        "${input:version}",
+        "-Replace"
+      ],
+      "problemMatcher": [],
+      "group": "build"
+    },
+    {
       "label": "HECTON-8: validate starter",
       "type": "shell",
       "command": "${config:hecton8.powerShellExecutable}",
@@ -47,6 +72,115 @@
       "args": ["-NoProfile", "-ExecutionPolicy", "Bypass", "-File", "h8mod.ps1", "-Action", "submission"],
       "problemMatcher": [],
       "group": "build"
+    },
+    {
+      "label": "HECTON-8: install local discovery copy",
+      "type": "shell",
+      "command": "${config:hecton8.powerShellExecutable}",
+      "args": [
+        "-NoProfile",
+        "-ExecutionPolicy",
+        "Bypass",
+        "-File",
+        "h8mod.ps1",
+        "-Action",
+        "install-local",
+        "-ProjectRoot",
+        "${input:projectRoot}",
+        "-Replace"
+      ],
+      "problemMatcher": [],
+      "group": "build"
+    },
+    {
+      "label": "HECTON-8: diagnose local Mods folder",
+      "type": "shell",
+      "command": "${config:hecton8.powerShellExecutable}",
+      "args": [
+        "-NoProfile",
+        "-ExecutionPolicy",
+        "Bypass",
+        "-File",
+        "h8mod.ps1",
+        "-Action",
+        "diagnose-local",
+        "-ProjectRoot",
+        "${input:projectRoot}"
+      ],
+      "problemMatcher": [],
+      "group": "test"
+    },
+    {
+      "label": "HECTON-8: list dependencies",
+      "type": "shell",
+      "command": "${config:hecton8.powerShellExecutable}",
+      "args": [
+        "-NoProfile",
+        "-ExecutionPolicy",
+        "Bypass",
+        "-File",
+        "h8mod.ps1",
+        "-Action",
+        "dependencies",
+        "-DependencyAction",
+        "list"
+      ],
+      "problemMatcher": []
+    },
+    {
+      "label": "HECTON-8: add dependency",
+      "type": "shell",
+      "command": "${config:hecton8.powerShellExecutable}",
+      "args": [
+        "-NoProfile",
+        "-ExecutionPolicy",
+        "Bypass",
+        "-File",
+        "h8mod.ps1",
+        "-Action",
+        "dependencies",
+        "-DependencyAction",
+        "add",
+        "-DependencyId",
+        "${input:dependencyId}"
+      ],
+      "problemMatcher": []
+    },
+    {
+      "label": "HECTON-8: remove dependency",
+      "type": "shell",
+      "command": "${config:hecton8.powerShellExecutable}",
+      "args": [
+        "-NoProfile",
+        "-ExecutionPolicy",
+        "Bypass",
+        "-File",
+        "h8mod.ps1",
+        "-Action",
+        "dependencies",
+        "-DependencyAction",
+        "remove",
+        "-DependencyId",
+        "${input:dependencyId}"
+      ],
+      "problemMatcher": []
+    },
+    {
+      "label": "HECTON-8: clear dependencies",
+      "type": "shell",
+      "command": "${config:hecton8.powerShellExecutable}",
+      "args": [
+        "-NoProfile",
+        "-ExecutionPolicy",
+        "Bypass",
+        "-File",
+        "h8mod.ps1",
+        "-Action",
+        "dependencies",
+        "-DependencyAction",
+        "clear"
+      ],
+      "problemMatcher": []
     },
     {
       "label": "HECTON-8: show capabilities",
@@ -255,6 +389,8 @@
     { "id": "displayName", "type": "promptString", "description": "Display name", "default": "Your Mod" },
     { "id": "author", "type": "promptString", "description": "Author", "default": "YourName" },
     { "id": "version", "type": "promptString", "description": "Semantic version", "default": "0.1.0" },
+    { "id": "projectRoot", "type": "promptString", "description": "HECTON-8 Unity project root for local Mods/<id> discovery copy", "default": "../.." },
+    { "id": "dependencyId", "type": "promptString", "description": "Dependency mod id", "default": "com.example.library" },
     { "id": "nodeId", "type": "promptString", "description": "Graph node id", "default": "node.spawn_item" },
     {
       "id": "opcode",

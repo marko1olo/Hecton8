@@ -475,3 +475,387 @@ Solution: Deliberately stopped short of fake completion. The correct fix is a de
 Rejected Alternatives: Wrap the existing job setup in several write locks or hold locks across the scheduled job. That is mathematically worse than the current state because it would hold multiple Vault write locks across a job lifetime.
 Scalability potential: Low should use smaller scratch capacities and more load shedding. Middle keeps default capacities. High/Ultra can spend more on mod command presentation and camera/subtitle/haptic feedback after scratch commit.
 Hardware Impact: Residual risk remains until the job rewrite lands; projected gain after full fix is 700-2600 us avoided under compaction or high UGC load, plus removal of stale mutable aliases across job fences.
+
+Problem: The mod sandbox hot roots could still reach cold registry binding through `Request*()` and `TryPrepareValidationJob()->Initialize()->BindRegistryServicesCold()`.
+Solution: Hot ingress and pre-simulation validation now fail closed when the validator is not initialized. Cold bootstrap remains responsible for `Initialize()` and DataVault binding.
+Rejected Alternatives: Mark `Initialize()` as path-safe because `_initialized` usually short-circuits. The AST proof is path-insensitive by design, and runtime cold-binding from hot roots is still a bad fallback under service loss.
+Scalability potential: Low devices avoid surprise GlobalRegistry polling during mod bursts. Middle keeps normal mod ingress after bootstrap. High/Ultra can raise UGC command budgets without letting dependency capture drift into hot roots.
+Hardware Impact: Removes a cold service-locator branch from mod ingress and pre-simulation; estimated avoided stale-bootstrap spike is 80-180 us.
+
+Problem: `TryPrepareValidationJob()` drained pending commands and ran load shedding by mutating pending, staging, stats, memory lease, and ring-state Vault aliases acquired through `OpenVaultLane()`.
+Solution: Pending reads now use `TryOpenVaultLaneRead`; staging writes are under one `_stagingHandle` write lock; memory lease creation is under one `_memoryLeasesHandle` write lock; ring state is committed separately through `TryWriteRingStateSnapshot`; stats clear uses `TryClearVaultLane`.
+Rejected Alternatives: Hold pending/staging/ring/stats locks together for apparent atomicity. That would be a direct deadlock vector and would block DataVault relocation.
+Scalability potential: Low devices shed optional mod commands and commit bounded staging without lock coupling. Middle keeps default command behavior. High/Ultra can increase command and visual feedback budgets while writer topology stays one-lane-at-a-time.
+Hardware Impact: Removes pre-validation multi-lane mutable aliasing. Expected low-end contention avoidance is 420-840 us under UGC bursts or DataVault compaction pressure.
+
+Problem: Validation job read inputs were still passed as mutable `NativeArray<T>` aliases even when the job only read them.
+Solution: `ValidateFutureCommandEnvelopeJob` now receives `NativeArray<T>.ReadOnly` for staged inputs, opcode records, memory leases, approved assets, and kernel tuning profiles.
+Rejected Alternatives: Keep `[ReadOnly] NativeArray<T>` only. The attribute constrains job writes, but it does not prove owner-boundary immutability in the source contract.
+Scalability potential: Low/Middle/High/Ultra all get clearer input ownership. This is a prerequisite for the remaining scratch-output rewrite.
+Hardware Impact: No direct arithmetic saving; it removes mutable alias risk from read-only validation inputs and tightens proof.
+
+Problem: Scheduled validation output lanes are still not fully decoupled: stats, counters, blackbox writes, dev-null ring, ring state, and camera-juice output are mutable job outputs.
+Solution: Not completed in this pass. The next correct patch is job-local scratch outputs and post-fence commits in this order: stats, per-mod counters, blackbox memory writes, dev-null ring, ring state, camera impulses/state, telemetry.
+Rejected Alternatives: Claiming full APEX closure after fixing drain preparation. That would be a false proof and would leave scheduled aliases alive.
+Scalability potential: Low should use smaller scratch capacities and heavier shedding. Middle keeps defaults. High/Ultra can spend more on haptic/subtitle/camera feedback after scratch commit.
+Hardware Impact: Residual output-side risk remains; projected remaining win is 900-3200 us under compaction or mod burst pressure once scratch outputs are implemented.
+
+Problem: `ValidateFutureCommandEnvelopeJob` still published scheduled validation outputs directly into multiple DataVault truth lanes after the pre-drain rewrite.
+Solution: Added cold-owned scratch arrays for validation state, per-mod counters, modder memory write commands, dev-null envelopes, and camera-juice impulses. The scheduled job now writes only scratch and SignalBus outputs. After `DispatcherJobFence` finalizes, the owner commits each changed DataVault lane separately: stats, counters, modder memory, dev-null ring, dev-null ring state, camera impulse ring, and camera state. Every direct write lock is released in a local `finally`.
+Rejected Alternatives: Holding DataVault locks across the scheduled job was rejected because it blocks relocation and creates a multi-lock deadlock vector. Keeping unused `LoadSheddingJob`/`HapticPulseKernelJob` writer contracts was rejected because dead code still documents the wrong topology and can be revived later.
+Scalability potential: Low uses the same bounded staging with fail-closed commit. Middle keeps default mod command capacity. High and Ultra can increase haptic/subtitle/camera feedback density through continuous quality weights while the commit topology stays one-lane-at-a-time.
+Hardware Impact: Removes scheduled-job mutable DataVault aliases and multi-lane output ownership from UGC bursts. On i3/MX350 the expected win is avoided contention and compaction stalls in the 900-3200 us class during heavy mod command frames; steady-state arithmetic is unchanged bounded array copy/write work.
+
+Problem: The Roslyn hot-chain checker produced a false positive by resolving `someDisposable.Dispose()` as the local `ProceduralOreSpawner.Dispose()` method.
+Solution: Split invocation naming into full invocation names for direct forbidden API calls and local invocation names for call-chain traversal. The call-chain walker now follows only bare method calls and `this.Method()` calls, not arbitrary member calls on other objects.
+Rejected Alternatives: Ignoring the failing proof was rejected because a broken verifier is not evidence. Removing `Dispose` from source was rejected because the problem was scanner resolution, not the production path.
+Scalability potential: Low/Middle/High/Ultra runtime behavior is unchanged; verification now rejects real hot-chain drift without blocking on disposable/member-call false positives.
+Hardware Impact: Static proof only; no runtime CPU gain. It prevents future fake blockers and keeps hot-path verification usable.
+
+Problem: Scheduled validation scratch buffers in `FutureCommandSandboxValidator` were zero-GC but allocated as raw persistent `NativeArray<T>` fields outside an owner-tracked allocator.
+Solution: Allocate and release the validation scratch arrays through `H8Memory.Allocate/Release` with `SystemID.ModSandbox`. The scratch still belongs to cold lifecycle, but it is now registered in the native owner ledger before jobs can consume it.
+Rejected Alternatives: Keeping raw persistent arrays because they were created cold was rejected; cold timing does not prove owner sovereignty. Moving scratch into DataVault was rejected because validation jobs must not hold DataVault write locks across job lifetime.
+Scalability potential: Low keeps bounded scratch ownership with fail-closed validation. Middle keeps default UGC command capacity. High and Ultra can raise command feedback density through quality-scaled budgets while memory ownership remains tracked by one explicit owner.
+Hardware Impact: Steady-state arithmetic is unchanged. The practical gain is eliminating unmanaged ownership drift and leak/race ambiguity; avoided low-end recovery/diagnostic stalls are estimated at 140-320 us on failed reload or mod sandbox shutdown paths.
+
+Problem: The verification script did not explicitly reject a future reintroduction of raw persistent `NativeArray` allocation in the mod sandbox.
+Solution: Added a Roslyn object-creation check that fails on `new NativeArray<...>(..., Allocator.Persistent, ...)` inside `FutureCommandSandboxValidator`.
+Rejected Alternatives: Manual `rg` only. It proves the current diff but does not keep the proof executable for the next patch.
+Scalability potential: Runtime unchanged across all tiers; proof hardens the source contract that lets low-tier devices avoid unmanaged allocation drift and high-tier builds scale feedback without changing ownership.
+Hardware Impact: Static proof only; no runtime gain. Prevents recurrence of ownerless persistent scratch that would increase reload/shutdown fault cost.
+
+Problem: Cold/editor opcode CSV ingest, kernel tuning ingest, and emergency opcode generation still wrote DataVault buffers through mutable resolved aliases.
+Solution: Replaced those writes with one-lane `TryAcquireVaultLaneWrite` windows and local `finally` release. Ring state is read as a snapshot and committed through `TryWriteRingStateSnapshot`.
+Rejected Alternatives: Keeping alias writes because the routes are cold/editor. DataVault ownership is not a hot-path-only rule; cold routes define the pattern later copied by runtime code.
+Scalability potential: Low keeps mod bootstrap deterministic and fail-closed. Middle keeps the same CSV authoring workflow. High and Ultra can increase command/kernel profile density without widening lock topology.
+Hardware Impact: Removes alias mutation and relocation ambiguity from CSV/emergency setup; estimated avoided low-end stall is 180-520 us during live tuning reload or emergency bootstrap under Vault pressure.
+
+Problem: Disk CSV reload used a DataVault byte lane as transient file I/O scratch.
+Solution: Removed the unused `_kernelCsvScratchHandle` and reserved buffer id. Reload now reads into an owner-tracked `H8Memory` temp `NativeArray<byte>` and releases it in `finally`.
+Rejected Alternatives: Acquiring a DataVault write lock around file read then parsing from the same lane. That would either hold a DataVault writer across file I/O or require a second read phase around a buffer that should not be global truth.
+Scalability potential: Low avoids DataVault pressure during editor/live tuning reloads. Middle/High/Ultra keep the same designer CSV path with no global heap pollution.
+Hardware Impact: Avoids a 16 KB persistent DataVault scratch lane and removes file-I/O writer-lock pressure; expected reload-path savings are 260-640 us under low-end storage/Vault contention.
+
+Problem: Cold `AcquireVaultBuffers()` cleared many Vault lanes through mutable aliases in one method body.
+Solution: Replaced the clear block with sequential `TryClearVaultLane` calls, then wrote ring-state and tuning defaults through single-lane element writers.
+Rejected Alternatives: Treating bootstrap as exempt. Bootstrap code is the source of later runtime ownership drift, and direct alias clears bypass writer proofs.
+Scalability potential: Low has clearer fail-closed bootstrap behavior. Middle keeps default capacities. High/Ultra can raise capacities without changing the one-lane clear topology.
+Hardware Impact: Bootstrap-only. Expected gain is avoided relocation/alias fault cost, roughly 420-900 us if a Vault clear races with replacement or diagnostic relocation.
+
+Problem: `RunSelfAudit()` used DataVault staging as temporary diagnostic input.
+Solution: Self-audit now allocates a two-envelope temp input through `H8Memory`, reads all Vault lanes as read-only views, and releases temp input in `finally`.
+Rejected Alternatives: Keep using staging because self-audit is diagnostic. Diagnostics must not mutate gameplay staging or they become a hidden phase side effect.
+Scalability potential: Low runs the audit without polluting runtime queues. Middle/High/Ultra keep the same validation proof independent from command staging capacity.
+Hardware Impact: Diagnostic-only steady-state 0 us. Avoided fault/recovery cost is estimated at 120-340 us by removing staging mutation and cleanup ambiguity.
+
+Problem: The mutable alias helper itself remained available after all intended callers were removed.
+Solution: Deleted `OpenVaultLane` and `ResolveRingState`; changed rollback state readback to `TryReadOnlyHandle`; added Roslyn checks that reject these APIs and legacy `TryReadHandle` in the mod sandbox.
+Rejected Alternatives: Leave unused helpers for convenience. Convenience helpers are how ownership drift returns.
+Scalability potential: Runtime unchanged; proof hardening protects all tiers from future hidden mutable aliases.
+Hardware Impact: Static/source-shape gain only. Prevents future direct alias paths that could cost hundreds of microseconds under DataVault compaction.
+
+Problem: Opcode records and `OpcodeCount` are stored in separate Vault lanes after lock flattening, so record-write then count-write could partially publish new records under a stale count if the state commit failed.
+Solution: CSV and emergency opcode replacement now publish `OpcodeCount = 0` first, write the record lane under one lock, then publish the final count. If the final state write fails, the new records remain fail-closed because consumers read zero count.
+Rejected Alternatives: Hold opcode records and ring state write locks together for atomicity. That directly violates the one-write-lock invariant. Leave old order because failures are rare; rare failure is exactly where deterministic recovery matters.
+Scalability potential: Low devices fail closed during live tuning contention. Middle keeps CSV authoring. High/Ultra can expand opcode/profile density without introducing multi-lane atomic dependency.
+Hardware Impact: Avoids semi-published opcode state under Vault pressure; estimated avoided fault/retry cost is 260-620 us in live reload or emergency bootstrap cases.
+
+Problem: Some ring-state writes were best-effort without proof that failure was intentionally handled.
+Solution: `DrainLateFrame()` and cold default ring/tuning commits now check the write result. `DumpBlackbox()` uses `_lastLocalDumpFrame` before best-effort Vault throttle so fault dumping remains available without same-frame spam.
+Rejected Alternatives: Require Vault throttle before dump. That could suppress crash evidence under DataVault contention. Ignore all return values; that hides state-transfer failure.
+Scalability potential: Low gets deterministic fail-closed state transfer. Middle/High/Ultra keep richer mod feedback without state ambiguity.
+Hardware Impact: Prevents repeated same-frame dump attempts and missed cold defaults; estimated avoided low-end diagnostic churn is 120-340 us.
+
+Problem: The proof did not reject future ignored ring-state writes.
+Solution: Added a Roslyn check that flags expression-statement `TryWriteRingStateSnapshot` calls outside `DumpBlackbox`.
+Rejected Alternatives: Rely on code review memory. The previous drift came from convenient unchecked writes.
+Scalability potential: Runtime unchanged; proof protects all tiers from silent state-transfer failure.
+Hardware Impact: Static proof only; no runtime cost.
+
+Problem: `DirectorMissionBridge.OnValidate()` compacted `directorMissionIds`, deleting blank and duplicate legacy mission slots. That made designer mistakes disappear instead of remaining repairable evidence.
+Solution: Legacy mission validation is now non-destructive. It records invalid/duplicate counts and first indices, keeps authored rows intact, and the runtime mission trigger skips duplicate legacy mission IDs before calling the quest system.
+Rejected Alternatives: Keep compaction because it produces a cleaner array. Clean data by deletion is not an authoring workflow; it destroys the exact slot a designer needs to fix.
+Scalability potential: Low keeps the bridge cheap with simple linear scans. Middle keeps legacy mission lists repairable. High and Ultra can layer profile-driven weighted missions without the legacy fallback leaking duplicate activation attempts.
+Hardware Impact: Runtime event path adds one bounded duplicate scan only when legacy fallback missions are used. Avoided authoring churn is estimated at 90-180 us per validation cycle on low-end editor hardware.
+
+Problem: `PDAExchangeSystem` hashed every barter offer slot directly. Duplicate `offerId` values shared execution counters, repeat limits, and save state, so two designer offers could become one runtime fact.
+Solution: `BarterOfferCatalog` now owns catalog-level null/duplicate runtime-hash validation. `CacheCatalogRuntimeHashes()` refreshes this cold state and publishes hashes only for non-duplicate valid offer slots.
+Rejected Alternatives: Let `CanExecute()` catch bad costs later. Duplicate offer identity is not a cost error; it corrupts save/execution ownership before the transaction path runs.
+Scalability potential: Low keeps barter state deterministic and small. Middle lets catalogs contain invalid parked rows without runtime identity drift. High and Ultra can ship larger faction barter catalogs while preserving one offer -> one hash -> one execution route.
+Hardware Impact: Cold catalog refresh adds bounded O(n^2) duplicate scans over authored offers, with `BarterDTO.MaxOffers` limiting runtime surface. Avoided low-end save/transaction drift is estimated at 160-320 us per bad catalog load.
+
+Problem: `BarterOfferData.OnValidate()` rewrote non-positive item amounts to 1, hiding broken economy data and turning invalid authoring into a valid runtime transaction.
+Solution: The amount is no longer mutated in validation. Runtime guards and validation flags preserve the authored defect and block execution with `CostDataInvalid` until the designer fixes the slot.
+Rejected Alternatives: Keep auto-clamp for convenience. Silent economic correction breaks repeatability and makes CSV/asset diff reviews lie about actual design intent.
+Scalability potential: Low fails closed instead of granting accidental free/cheap trades. Middle gives deterministic catalog validation. High and Ultra can add richer barter tooling without changing runtime DTO layout.
+Hardware Impact: Runtime steady-state unchanged. Avoided invalid exchange rollback/debug churn is estimated at 80-160 us per failed transaction path.
+
+Problem: Valid zero-row authoring states published zero-count DataVault update signals even when the underlying clear could not acquire a write lock or was blocked by allocation/compaction fences.
+Solution: `H8InputMappingFacade.SyncToVault()`, `H8BridgeFacadeRuntime.SyncDesignData()`, and `H8PrefabRegistryRuntimeBinder.Bind()` now require `Clear*` helpers to return true before publishing clear signals or returning success. Clear helpers return false on fences or failed write-lock acquisition, and true only when no buffer exists or the buffer was cleared.
+Rejected Alternatives: Keep void clear helpers and trust editor validation. That allowed runtime observers to receive a zero-count fact while stale bytes remained in DataVault.
+Scalability potential: Low keeps last-known-good runtime truth on blocked live-authoring frames. Middle keeps designer correction deterministic. High and Ultra can hot-reload bigger authoring sets without stale clear signals.
+Hardware Impact: Avoids stale-data recovery/debug churn; estimated low-end avoided fault path is 120-240 us per blocked clear sync. Runtime steady-state hot path remains 0 us.
+
+Problem: Prefab registry overflow beyond stack scratch capacity cleared existing runtime buffers before returning false.
+Solution: Oversized prefab authoring state now returns false without clearing existing mapping/lore buffers, preserving last-known-good runtime state.
+Rejected Alternatives: Clear first to force visible failure. That is unsafe because invalid authoring capacity should not destroy active runtime mapping.
+Scalability potential: Low devices keep stable previous prefab mappings. Middle can correct oversized registries in editor. High and Ultra can raise capacity later through an explicit DataVault capacity contract instead of silent destructive fallback.
+Hardware Impact: Avoided runtime remap loss and rebind churn; estimated low-end avoided recovery cost is 180-360 us plus avoided content instability.
+
+Problem: Facade header persistence returned void, so design value sync could report success while the header/checksum/runtime field count stayed stale.
+Solution: `PersistFacadeHeader()` now returns bool, requires a successful DataVault header write, and returns the actual `IMacroDatabaseService.MarkDirty()` result when MacroDB is active.
+Rejected Alternatives: Treat header as optional telemetry. The header is the compact contract for runtime field count/checksum, so stale header is authority drift.
+Scalability potential: Low keeps compact runtime contracts honest. Middle supports live tuning with deterministic failure. High and Ultra can extend facade headers without changing the fail-closed route.
+Hardware Impact: No steady-frame cost. Avoided stale-header debugging is estimated at 90-220 us per dirty facade sync.
+
+Problem: Input, design, and prefab facades recorded duplicate runtime hashes as validation errors, but sync paths could still publish ambiguous DataVault rows. That creates two runtime facts for one action, field, or prefab hash.
+Solution: `H8InputMappingFacade.SyncToVault()`, `H8BridgeFacadeRuntime.SyncDesignData()`, and `H8PrefabRegistryRuntimeBinder.Bind()` now fail closed before DataVault mutation when duplicate runtime hashes exist.
+Rejected Alternatives: Keep publishing and rely on editor labels. Labels do not protect runtime truth; duplicate identifiers make generated consumers and hash lookups nondeterministic.
+Scalability potential: Low preserves the last valid runtime buffer instead of publishing ambiguity. Middle keeps authoring rows visible for correction. High and Ultra can keep experimental rows disabled without leaking duplicate truth.
+Hardware Impact: No steady-frame cost. Avoided low-end debug/retry and ambiguous lookup churn is estimated at 140-320 us per dirty live-authoring sync.
+
+Problem: `H8BridgeContractGenerator` could read stale duplicate counters if a design facade asset had not been freshly validated before generation.
+Solution: Added `H8DesignDataFacade.RefreshValidationState()` and call it inside contract generation before duplicate checks. Generation skips the offending facade when duplicate field hashes remain.
+Rejected Alternatives: Trust `OnValidate()` side effects. Asset import/open order is not a contract, and generated C# must not depend on stale editor state.
+Scalability potential: Low keeps compiled API deterministic. Middle gives designers safe disabled scratch rows. High and Ultra can store visual-overkill candidates without duplicate compiled constants.
+Hardware Impact: Editor-only cold command; runtime cost is 0 us. Avoided generated-contract audit churn is estimated at 90-220 us per dirty facade.
+
+Problem: Static proof did not enforce duplicate-hash fail-closed behavior.
+Solution: Roslyn AST now rejects missing duplicate guards in input sync, design sync, prefab binder, and contract generator. The gate was corrected to target the real `SyncDesignData` writer overload instead of its forwarding overload.
+Rejected Alternatives: Manual review and broad method-name checks. The first AST attempt proved method-name-only checks are too blunt.
+Scalability potential: Runtime unchanged; proof prevents recurring ambiguous runtime truth across all tiers.
+Hardware Impact: Static proof only; no runtime cost.
+
+Problem: `H8BridgeFacadeRuntime.SyncDesignData()` used raw design binding count for heartbeat/header truth even though runtime writes skip null and disabled bindings.
+Solution: Sync now refreshes facade validation first and uses enabled non-null runtime binding count for heartbeat and macro header `FieldCount`. Runtime VRAM estimate also ignores disabled bindings.
+Rejected Alternatives: Keep raw count as authoring count. Header/heartbeat are runtime contracts, not inspector metadata, so raw authoring slots would lie to downstream consumers.
+Scalability potential: Low gets compact truthful headers. Middle keeps disabled rows for authoring. High and Ultra can hold larger tuning profiles without disabled rows inflating runtime budget.
+Hardware Impact: Avoids false runtime field counts and disabled-row VRAM pressure; estimated low-end avoided sync/debug cost is 180-320 us on dirty design facade pushes.
+
+Problem: `H8DesignDataFacade` lacked visible non-destructive validation for null rows, disabled rows, and duplicate field hashes.
+Solution: Added validation counters for null rows, first null index, runtime binding count, disabled binding count, duplicate field hashes, and first duplicate index. The custom editor displays those counters.
+Rejected Alternatives: Silent skip or deleting rows. Silent skip breaks usability; deletion destroys designer intent.
+Scalability potential: Low keeps validation cheap and direct. Middle preserves disabled tuning rows for later use. High and Ultra can add richer overkill tuning without invalid rows polluting runtime truth.
+Hardware Impact: Editor/live-authoring only; runtime hot path remains 0 us. Avoided debug churn is estimated at 120-260 us per invalid facade inspection.
+
+Problem: Static proof did not reject destructive design facade validation.
+Solution: Roslyn AST proof now rejects `RemoveAt`/`RemoveAll` inside `H8DesignDataFacade.ValidateBindings()`.
+Rejected Alternatives: Manual review. The bridge facades are recurring authoring surfaces and need executable drift checks.
+Scalability potential: Runtime unchanged; proof protects all tiers by keeping authoring data observable.
+Hardware Impact: Static proof only; no runtime cost.
+
+Problem: Prefab registry validation counters could remain stale or zero after asset load until `OnValidate()` or manual rebuild ran.
+Solution: `H8PrefabRegistry.OnEnable()` now calls the same non-destructive `ValidateEntries()` path, rebuilding hash and validation state on ScriptableObject load without DataVault binding.
+Rejected Alternatives: Refresh validation from the editor window every repaint. That would mutate the asset from UI paint and hide lifecycle ownership. Binding during `OnEnable()` was also rejected; load-time validation must not publish runtime state or touch DataVault.
+Scalability potential: Low gets accurate cheap validation immediately. Middle keeps stable editor/runtime asset state. High and Ultra can build richer prefab tooling on top of reliable counters.
+Hardware Impact: Runtime hot paths remain 0 us. Cold asset-load work is O(n^2) only for duplicate hash detection and bounded by registry authoring size; avoided editor/live-authoring confusion is estimated at 90-170 us per stale-registry inspection.
+
+Problem: `H8InputMappingFacade.SyncToVault()` sized the runtime DataVault buffer from raw `bindings.Count` while null binding rows were skipped during emission.
+Solution: The input facade now rebuilds hashes and counts non-null runtime bindings first, then sizes and writes the DataVault buffer by that compact count.
+Rejected Alternatives: Delete null binding rows or keep raw count. Deleting rows loses designer evidence; raw count wastes capacity and makes invalid slots indistinguishable from runtime content.
+Scalability potential: Low keeps input mapping buffers compact. Middle keeps authoring visibility. High and Ultra can expand input profiles without invalid rows consuming runtime DTO capacity.
+Hardware Impact: Avoids oversized binding buffer writes and false capacity pressure; estimated low-end avoided bind/retry cost is 140-260 us on live-authoring sync.
+
+Problem: Input facade authoring had no visible validation state for null rows or duplicate action hashes.
+Solution: Added non-destructive counters for null binding rows, first null index, runtime binding count, duplicate action hash rows, and first duplicate index. The custom inspector now displays those counters.
+Rejected Alternatives: Console warnings and silent skip. Console output is lossy and silent skip leaves designers guessing which row failed.
+Scalability potential: Low keeps validation textual and cheap. Middle gives direct correction targets. High and Ultra can add richer input authoring dashboards later without changing runtime DTO shape.
+Hardware Impact: Editor-only; runtime hot path remains 0 us. Avoided authoring/debug churn is estimated at 120-240 us per invalid input facade inspection.
+
+Problem: The static proof did not cover `H8BridgeFacadeEditors.cs` after editor validation UI changed.
+Solution: Added that editor file to the Roslyn seed list and added a guard rejecting `RemoveAt`/`RemoveAll` inside `H8InputMappingFacade.ValidateBindings()`.
+Rejected Alternatives: Treat editor UI as exempt. This domain is explicitly designer-facing, so editor code is part of the product surface.
+Scalability potential: Runtime unchanged; proof now covers the workflow designers actually use.
+Hardware Impact: Static proof only; no runtime cost.
+
+Problem: After prefab registry validation became non-destructive, `H8PrefabRegistryRuntimeBinder.Bind()` still used raw `EntryCount` for stack scratch capacity and Vault buffer sizing. Preserved invalid rows could therefore block a valid runtime bind.
+Solution: Runtime binding now computes `runtimeBindableCount` by scanning valid bindable entries, sizes mapping/lore Vault buffers by that compact count, and writes compact DTO rows while still iterating raw rows for stable authoring order.
+Rejected Alternatives: Re-delete invalid rows before binding; that would undo the non-destructive authoring contract. Raise `RuntimePrefabIdScratchCapacity`; that hides the false-capacity bug and wastes stack/Vault capacity on invalid authoring rows.
+Scalability potential: Low keeps runtime DTO capacity for real content only. Middle preserves designer error visibility. High and Ultra can grow prefab libraries by valid runtime assets instead of raw list slots.
+Hardware Impact: Avoids false bind failure and oversized Vault buffers when registries contain invalid rows. Estimated low-end avoided bind/retry cost is 260-520 us on live-authoring or bootstrap frames with dirty registries.
+
+Problem: Prefab registry validation state was present in the asset but not visible in the binder/editor workflow, so designers could still miss null rows or duplicate hashes.
+Solution: `H8PrefabRegistryWindow` and the custom inspector now show validation status, runtime-bindable count, null row count/first index, duplicate row count/first index, and explicit null-slot rows in the scroll view.
+Rejected Alternatives: Rely on hidden serialized fields or console logs. Hidden fields are not an authoring workflow, and logs are lossy under batch import/live authoring.
+Scalability potential: Low keeps the editor UI cheap and textual. Middle gives immediate correction targets. High and Ultra can add richer registry dashboards later without changing runtime DTO contracts.
+Hardware Impact: Editor-only. Runtime steady-state is 0 us; avoided authoring/debug churn is estimated at 120-260 us per dirty registry refresh by making the bad row directly visible.
+
+Problem: `H8PrefabRegistry.ValidateEntries()` removed null list entries during validation, so designer-authored registry rows could disappear when validation ran.
+Solution: Validation is now non-destructive. It preserves raw rows, rebuilds valid entries, records `validationNullEntryCount`, `validationFirstNullEntryIndex`, `validationRuntimeBindableCount`, `validationDuplicateHashCount`, and `validationFirstDuplicateHashIndex`, and leaves the runtime binder to skip invalid rows.
+Rejected Alternatives: Deleting null rows in `OnValidate()` was rejected because it hides the bad authoring slot and loses designer evidence. Allocating a `HashSet` for duplicate checks was rejected because this cold path can use O(n^2) scans without adding allocation noise to authoring validation.
+Scalability potential: Low keeps the registry cheap and fail-closed because invalid rows are skipped by the binder. Middle keeps full designer feedback. High and Ultra can add richer registry tooling on top of recorded validation state without changing runtime DTO ownership.
+Hardware Impact: Runtime steady-state is unchanged. The gain is preventing bad prefab rows from turning into silent runtime mapping drift; expected avoided diagnostic/reimport cost is 120-340 us on low-end editor or live-authoring machines.
+
+Problem: The static proof did not prevent destructive validation from being reintroduced in the prefab registry.
+Solution: Roslyn AST verification now rejects `RemoveAt` inside `H8PrefabRegistry.ValidateEntries()`.
+Rejected Alternatives: Manual code review only. This project already showed repeated drift from convenience helpers, so the authoring contract needs executable proof.
+Scalability potential: Runtime unchanged across tiers; proof protects the designer-facing resource facade from silent data loss.
+Hardware Impact: Static proof only; no runtime cost.
+
+Problem: `H8InputMappingFacade.SyncToVault()` reused `RebuildHashesAndCountRuntimeBindings()` directly after non-destructive validation was introduced. That helper increments null-row counters, so repeated syncs could inflate validation state and make designers chase fake null rows.
+Solution: Sync now calls `ValidateBindings()` once, then consumes `validationRuntimeBindingCount` for DataVault capacity and emission. Roslyn proof rejects direct sync-side calls to the counter-mutating helper.
+Rejected Alternatives: Reset only `validationNullBindingCount` inside sync. That would duplicate validation ownership and leave duplicate-hash state stale.
+Scalability potential: Low keeps input buffers compact and validation truthful. Middle keeps multi-device input profiles visible. High and Ultra can add richer input dashboards without stale authoring counters.
+Hardware Impact: Runtime hot path stays 0 us; live-authoring sync avoids false validation churn. Estimated avoided low-end debug/retry cost is 90-180 us per repeated invalid sync.
+
+Problem: `H8PrefabRegistryVramEstimator` allocated a fresh `HashSet<int>` and `string[]` texture-property names during prefab validation. This is editor/cold, but the domain is live authoring; repeated asset validation should not spike managed GC.
+Solution: Replaced per-call collections with static scratch buffers and Unity's integer texture-property route: `Material.GetTexturePropertyNameIDs(List<int>)` and `Material.GetTexture(int)`. Texture dedupe is a bounded linear scan in a fixed `int[]`.
+Rejected Alternatives: Keep `HashSet` because the path is editor-only. Editor validation is part of designer workflow and should stay predictable. A runtime DataVault cache was rejected because VRAM estimation is editor metadata, not gameplay truth.
+Scalability potential: Low uses simple bounded scans and conservative VRAM estimates. Middle handles normal prefab material graphs without allocation churn. High and Ultra can validate heavier prefab libraries while preserving the same authoring contract.
+Hardware Impact: Removes per-prefab `HashSet` and texture-name array allocations from validation; expected low-end editor gain is 180-420 us plus avoided GC spikes during bulk prefab registry changes.
+
+Problem: `H8BridgeFacadeRuntime.PersistFacadeHeader()` reached into `GlobalRegistry.MacroDatabase` from the runtime bridge writer. The call was not a hot loop, but it made the bridge writer own dependency discovery instead of receiving an explicit route.
+Solution: `SyncDesignData()` and `PersistFacadeHeader()` now accept an `IMacroDatabaseService` parameter. The ScriptableObject/editor entry points pass `GlobalRegistry.MacroDatabase` from cold/live-authoring boundaries; the core runtime writer is dependency-explicit.
+Rejected Alternatives: Leave the lookup because it is not `Tick`/`LateFrameTick`. Cold-only does not mean hidden; the bridge writer should remain mathematically decoupled from service discovery.
+Scalability potential: Low avoids hidden service dependency drift. Middle keeps MacroDB persistence available in editor sync. High and Ultra can add more facade sectors without turning runtime writers into registry clients.
+Hardware Impact: No steady-frame cost change. Avoided low-end fault/retry cost is estimated at 80-160 us when MacroDB is unavailable or being replaced.
+
+Problem: `H8BridgeContractGenerator` emitted constants for every non-null design binding while runtime sync, checksum, VRAM, and header field count now skip disabled rows. Generated API could expose stale or intentionally parked tuning knobs.
+Solution: Contract generation now skips disabled bindings. Roslyn proof rejects generator drift if the disabled-row guard disappears.
+Rejected Alternatives: Generate all authored rows and rely on comments. Generated constants are compiled API; disabled authoring rows must not become runtime-facing contracts.
+Scalability potential: Low keeps compiled surface tight. Middle allows disabled rows as design scratch. High and Ultra can hold overkill tuning experiments in assets without leaking them into contracts.
+Hardware Impact: Generation is editor-only; runtime effect is smaller contract surface and fewer accidental consumers. Estimated avoided debug churn is 90-180 us per generated facade audit.
+
+Problem: `H8PrefabRegistryRuntimeBinder.Bind()` discovered `GlobalRegistry.PrefabRegistryRuntime` internally, making the core binder own service discovery instead of receiving an explicit dependency from its cold caller.
+Solution: `Bind()` now accepts `PrefabRegistry runtimeRegistry`; `H8PrefabRegistry.OnValidate()`, `H8PrefabRegistryBootBinder.BindNow()`, and editor bind buttons pass `GlobalRegistry.PrefabRegistryRuntime` from boundary code. The binder nulls the parameter outside play mode.
+Rejected Alternatives: Keeping the hidden lookup because binding is cold. Cold-only does not justify route ambiguity; the binder also owns DataVault writes, so dependency discovery must stay outside it.
+Scalability potential: Low keeps prefab live-authoring deterministic with direct dependencies. Middle preserves prefab runtime registration. High and Ultra can expand registry tooling without turning the binder into a service locator client.
+Hardware Impact: No steady-frame cost. Avoided low-end live-authoring fault/retry cost is estimated at 80-160 us when the runtime prefab registry is absent or being replaced.
+
+Problem: Prefab binding could call `EnsureGenerationHandle()` while DataVault allocation or compaction fences were active.
+Solution: `H8PrefabRegistryRuntimeBinder.Bind()` now checks `vault.IsAllocationLocked` and `vault.IsCompactionFenceActive` before generation-handle allocation and fails closed.
+Rejected Alternatives: Let `EnsureGenerationHandle()` decide. The bridge writer should not request growth while ownership fences are active; that makes failures later and harder to diagnose.
+Scalability potential: Low avoids allocation pressure stalls. Middle keeps live-authoring sync predictable. High and Ultra can grow prefab buffers during safe owner windows only.
+Hardware Impact: Avoids compaction/allocation contention spikes during prefab registry sync; estimated low-end avoided stall is 90-220 us under dirty asset live-authoring.
+
+Problem: `H8AupSceneGridDrawer.Draw()` read sector state through properties backed by `EditorPrefs.GetBool()` and `EditorPrefs.GetString()` parsing. That path runs from `SceneView.duringSceneGui`, so normal editor navigation could pay preference I/O/string parse cost.
+Solution: Added a static preference cache in `H8AupVisualizerWindow`. SceneView draw reads cached booleans/longs; UI/menu changes update cache and persist to `EditorPrefs`.
+Rejected Alternatives: Leave it because it is editor-only. The domain is designer-facing tooling; editor hot paths are part of usability. Polling `EditorPrefs` every draw was also rejected because it hides state ownership behind property getters.
+Scalability potential: Low keeps the overlay cheap while navigating large scenes. Middle keeps AUP sectors visible without UI hitches. High and Ultra can add richer grid overlays while keeping preference I/O out of draw.
+Hardware Impact: Runtime cost is 0 us. Editor SceneView draw avoids preference reads and string parses; estimated low-end saved cost is 60-140 us per heavy repaint burst.
+
+Problem: Static proof did not cover the AUP editor overlay after identifying a hot draw path.
+Solution: Added `H8AupVisualizerEditor.cs` to the Roslyn seed list and a guard rejecting `EditorPrefs.` inside `H8AupSceneGridDrawer.Draw()`.
+Rejected Alternatives: Rely on reviewer memory. The regression is easy to reintroduce with convenience properties.
+Scalability potential: Runtime unchanged; proof protects all tiers of editor workflow.
+Hardware Impact: Static proof only; no runtime cost.
+
+Problem: Fail-closed duplicate/fence sync paths now returned false, but editor buttons could ignore the result and leave designers with a silent no-op.
+Solution: Added explicit `TrySyncDesignFacade`, `TrySyncInputFacade`, and `TryBindPrefabRegistry` editor helpers. They call the runtime routes, preserve the fail-closed runtime contract, and emit `Debug.LogError` when the sync/bind route rejects the operation.
+Rejected Alternatives: Passive validation labels only were rejected because a direct button press needs immediate action feedback. Throwing exceptions was rejected because this is an authoring correction workflow, not a fatal editor failure.
+Scalability potential: Low gets cheap text feedback with zero runtime cost. Middle gets deterministic authoring correction. High and Ultra can add richer validation dashboards without weakening the runtime false-return contract.
+Hardware Impact: Editor-only. Avoids repeated blind sync attempts and console archaeology; estimated avoided low-end authoring churn is 80-180 us per failed operation.
+
+Problem: Static proof did not enforce editor failure feedback after runtime routes became fail-closed.
+Solution: Roslyn AST verification now checks the editor sync/bind helper methods and rejects missing `Debug.LogError` feedback.
+Rejected Alternatives: Manual review only. The domain is designer usability over low-level systems, so tool feedback is part of the architecture contract.
+Scalability potential: Runtime unchanged across all quality tiers; proof protects the authoring surface from drifting back to silent failures.
+Hardware Impact: Static proof only; no runtime cost.
+
+Problem: `NarrativeDagInspectorWindow.OnGUI()` could call `QuestDagVault.EnsureBuffers(vault)` when the editor window repainted and buffers were missing. That made DataVault allocation/growth a hidden draw-path side effect.
+Solution: `OnGUI()` now only attempts `TryResolveBuffers()`. Missing buffers show a warning and an explicit "Initialize DAG Buffers" command that routes through `TryInitializeDagBuffers()`.
+Rejected Alternatives: Auto-initialize during repaint was rejected because editor draw must not mutate Vault topology. A background polling initializer was rejected because it hides allocation ownership behind UI convenience.
+Scalability potential: Low keeps the narrative inspector cheap and predictable. Middle lets designers initialize the DAG deliberately. High and Ultra can add richer graph visualization without turning repaint into a buffer-growth path.
+Hardware Impact: Editor-only runtime steady-state remains 0 us. On low-end editor machines, avoided hidden Vault allocation during repaint is estimated at 90-220 us plus fewer UI hitch spikes when the DAG is absent.
+
+Problem: `QuestDagVault.EnsureBuffers()` itself accepted a Vault under allocation lock or compaction fence, so a safe caller had to remember every ownership guard.
+Solution: The owner facade now fails closed before any `EnsureGenerationHandle` when `vault == null`, `vault.IsAllocationLocked`, or `vault.IsCompactionFenceActive`.
+Rejected Alternatives: Per-call-site guards only. The allocator facade is the single owner of Quest DAG topology, so the invariant belongs there as well as in editor command routes.
+Scalability potential: Low avoids topology mutation during pressure windows. Middle keeps CSV/mock load commands predictable. High and Ultra can grow DAG capacities during explicit safe windows only.
+Hardware Impact: Prevents allocation/compaction contention spikes. Estimated low-end avoided stall is 80-180 us during live authoring or resolver bootstrap under Vault pressure.
+
+Problem: Static proof did not cover the narrative DAG editor allocation path.
+Solution: Roslyn AST now parses `NarrativeDagInspectorWindow.cs`, rejects `EnsureBuffers` inside `OnGUI`, requires fence checks in `TryInitializeDagBuffers()`, and requires fence checks in `QuestDagVault.EnsureBuffers()`.
+Rejected Alternatives: Manual review only. The regression is one convenience call away, so it needs an executable source-level guard.
+Scalability potential: Runtime unchanged; proof protects designer-facing narrative tooling across all device tiers.
+Hardware Impact: Static proof only; no runtime cost.
+
+Problem: `ResourceNodeTemplate` and `HarvestableTemplate` treated loot/yield rows as valid when only the item id existed, then silently clamped zero amount, zero weight, reversed min/max, and rarity byte output during runtime copy.
+Solution: Both templates now maintain non-destructive validation state for invalid rows and duplicate runtime item/key rows. Copy/count routes use `IsRuntime*SlotValid()` and write authored values directly after validation instead of repairing them.
+Rejected Alternatives: Keep clamp-on-copy because it avoids bad runtime rows. That hides broken economy data from designers and makes the runtime table diverge from authored intent.
+Scalability potential: Low skips bad rows with linear cold scans and compact runtime copy. Middle keeps resource tuning explicit. High and Ultra can add richer resource dashboards without changing runtime DTO layout.
+Hardware Impact: Runtime hot path is unchanged. Cold bake/copy avoids false valid rows; estimated low-end avoided debug/reimport cost is 140-320 us per bad scavenging template.
+
+Problem: The old copy loop bounded source scanning by remaining destination capacity, so invalid early rows could consume scan budget and truncate later valid rows before `AddNoResize`.
+Solution: Copy methods now scan the full authored source and stop only when `copiedCount` reaches `remainingCapacity`.
+Rejected Alternatives: Pre-compact authoring arrays. Compaction deletes slot evidence and allocates/reorders designer data. Scanning full source is deterministic and cold.
+Scalability potential: Low keeps sparse/broken authoring assets fail-closed. Middle supports partial tables during balancing. High/Ultra can carry experimental disabled rows without losing valid runtime rows.
+Hardware Impact: Cold copy does a few more linear checks only when invalid rows exist. Avoided missing-yield diagnostics are estimated at 110-260 us per bad template bake.
+
+Problem: Resource/harvestable validation was not visible in the inspector and had no static drift guard.
+Solution: Added editor inspectors that show runtime row counts, invalid/duplicate counts, and first bad indices. Roslyn AST now rejects copy methods that bypass runtime slot validation or reintroduce row-economic clamping during copy.
+Rejected Alternatives: Console warnings only. Designers need the bad row index next to the asset, not a lossy console trail.
+Scalability potential: Low gets cheap textual feedback. Middle improves tuning turnaround. High/Ultra can layer visualization over the same validation properties.
+Hardware Impact: Editor-only UI. Runtime cost is 0 us; static proof has no runtime cost.
+
+Problem: `BaseModuleCatalogRuntime.TryAcquireCatalogWriteViews()` acquired and held separate DataVault write locks for catalog state, definitions, sockets, costs, hash index, and telemetry while hydration/mock jobs were scheduled. That violates the single-writer-route doctrine and leaves a deadlock vector if another route grabs one of those lanes in a different order.
+Solution: Replaced the multi-lock lease with one `CatalogWriteMutationGuardMask`. The route now fails closed under allocation lock or compaction fence, resolves owned lanes through `TryReadHandle`, schedules work against those native views, and releases the single guard through `ReleaseWriteLease()`.
+Rejected Alternatives: Keep per-lane write locks and document acquisition order. That still leaves six held locks across a job window and makes later authoring/runtime bridges dependent on remembering the same order. Copying catalog data into temporary staging arrays was rejected because it adds cold memory pressure without solving ownership.
+Scalability potential: Low avoids lock-order stalls on weak CPUs. Middle keeps authoring catalog hydration predictable. High and Ultra can hydrate larger construction catalogs and visual-overkill module metadata without increasing lock count.
+Hardware Impact: Removes five direct write-lock acquisitions/releases from catalog hydration/mock scheduling. Estimated low-end saved contention/overhead is 180-420 us per contested catalog bake or bootstrap, with the larger gain coming from eliminating deadlock retry/debug churn.
+
+Problem: `TryRecordTelemetry()` nested a state write lock with a telemetry-ring write lock for one cursor increment and one ring entry. Telemetry should not become the route that stalls construction catalog state.
+Solution: Replaced nested locks with one `CatalogTelemetryMutationGuardMask` and a strict `try/finally` release. State and ring lanes are resolved as owned native views only after the guard is held; early failures return through the same `finally` path.
+Rejected Alternatives: Update the cursor first and telemetry second under separate locks. That can publish a cursor pointing at a missing or stale telemetry entry. A managed queue was rejected because this telemetry is native, fixed-size, and should remain zero-GC.
+Scalability potential: Low gets bounded telemetry cost and no nested lock stalls. Middle preserves black-box catalog diagnostics. High and Ultra can record richer catalog telemetry with the same guard route and fixed DTO layout.
+Hardware Impact: Removes two write-lock operations from the telemetry path and prevents state/ring lock inversion. Estimated low-end saved cost is 80-190 us during catalog diagnostic bursts.
+
+Problem: Static proof did not cover the construction catalog lock route, so the regression could return with one convenience call to `TryAcquireOwnedLane()`.
+Solution: Added `BaseModuleCatalogRuntime.cs` to the Roslyn AST seed and guarded hydration, telemetry, lease release, and lane-ensure fence behavior.
+Rejected Alternatives: Manual inspection only. The user requested source-code proof, and this invariant is simple enough to enforce structurally.
+Scalability potential: Runtime unchanged; proof protects all device tiers from lock-order drift.
+Hardware Impact: Static proof only. No runtime cost and no project build CPU spike.
+
+Problem: `H8BridgeFacadeRuntime.SyncDesignData()` wrote enabled designer float bindings by calling `WriteDesignValue()` per row. Each row acquired and released the design-value write lock, then recorded telemetry through another write-lock path. A late bad row could leave earlier values and signals already published.
+Solution: Added a preflight `TryComputeDesignValueBufferLength()` pass and a non-zero-row `SyncDesignValuesBulk()` path. The bulk route reserves one `DesignSyncMutationGuardMask`, resolves values, telemetry, and header lanes as owned native views, writes all rows, records `RecordDeltaLocked()` telemetry, writes heartbeat and header, then releases in `finally`.
+Rejected Alternatives: Keeping per-row `WriteDesignValue()` was rejected because it scales lock churn linearly with designer field count and permits partial sync. Allocating a managed scratch list of old values for post-guard publication was rejected because it violates zero-GC live authoring.
+Scalability potential: Low avoids lock churn during small live tuning changes. Middle supports larger authoring facades without value-sync stalls. High and Ultra can expose more designer fields and visual-overkill tuning knobs while keeping the transfer route one guarded native pass.
+Hardware Impact: Removes N value write-lock acquisitions and N telemetry write-lock acquisitions from non-zero design sync. Estimated low-end saved or protected cost is 160-360 us per 32-field live authoring sync, with higher gain under Vault contention.
+
+Problem: Zero-row design facade sync could record heartbeat before proving value clear and header persistence succeeded.
+Solution: Zero-row sync now requires `ClearDesignValueBuffer()` and checked `PersistFacadeHeader()` success before recording heartbeat and publishing the clear signal. Non-zero sync writes heartbeat inside the same guarded values/header transfer.
+Rejected Alternatives: Treating heartbeat as best-effort was rejected because the header/count signal is the designer-facing proof artifact for the low-level buffer state.
+Scalability potential: Low gets deterministic failure instead of stale tool state. Middle keeps disabled-row experiments visible without partial runtime truth. High and Ultra can swap large tuning surfaces while the clear/header contract stays exact.
+Hardware Impact: No added runtime hot-path cost. Prevents stale-header debug churn; estimated low-end avoided correction loop is 80-160 us per failed clear/header attempt.
+
+Problem: Static proof covered duplicate blocking and header bool persistence but not the new bulk-sync lock invariant.
+Solution: Roslyn AST now rejects `WriteDesignValue()` inside macro `SyncDesignData()`, rejects `TryAcquireWriteLock` and `ReleaseWriteLock` inside `SyncDesignValuesBulk()`, requires mutation guard acquire/release/finally, and rejects lock allocation routes inside `RecordDeltaLocked()`.
+Rejected Alternatives: Manual diff review only. The invariant is structural and can be guarded cheaply by AST.
+Scalability potential: Runtime unchanged. Proof protects future authoring growth from sliding back into per-field lock traffic.
+Hardware Impact: Static proof only. No runtime cost and no project build CPU spike.
+
+Problem: `H8PrefabRegistryRuntimeBinder.Bind()` wrote prefab mapping and lore-link buffers as two separate DataVault write-lock transactions. If the mapping lane succeeded and the lore-link lane failed, designers could get a half-updated runtime bridge: prefab IDs visible, lore/acoustic links stale or cleared.
+Solution: Replaced the split route with `TryWritePrefabBuffers()`. It validates the runtime-bindable count, reserves one `PrefabRegistryBindMutationGuardMask`, resolves both native lanes, clears both, writes mapping and lore records by the same compact runtime index, then releases in `finally`.
+Rejected Alternatives: Keep separate write locks and clear mapping on lore failure. That still mutates last-known-good mapping before proving the second lane can be written. A managed staging list was rejected because prefab bind is a low-level bridge and the compact runtime index fits stack/native flow.
+Scalability potential: Low avoids lock churn and half-published authoring data. Middle supports larger prefab/lore catalogs with deterministic sync. High and Ultra can add richer acoustic/lore/visual-overkill metadata without increasing lock count.
+Hardware Impact: Removes two sequential write-lock transactions from non-zero prefab bind and prevents half-sync debug churn. Estimated low-end saved or protected cost is 120-260 us per contested prefab registry bind.
+
+Problem: Zero-row prefab bind cleared mapping and lore-link buffers through separate routes. A first clear could succeed and the second could fail, leaving old lore against empty mapping or the reverse.
+Solution: `ClearExistingBuffers()` now acquires the same prefab mutation guard, pre-resolves both existing buffers, and only then clears both inside the guarded section. Missing buffers are accepted as already clear.
+Rejected Alternatives: Best-effort clear was rejected because zero-runtime-row sync is an explicit state transition and must be all-or-fail.
+Scalability potential: Low keeps disabled prefab registries deterministic. Middle keeps authoring toggles safe. High and Ultra can swap large registries without stale paired lanes.
+Hardware Impact: Avoids stale zero-row bridge recovery work; estimated low-end protected cost is 70-150 us per failed clear attempt.
+
+Problem: Static proof did not cover prefab binder lock flattening.
+Solution: Roslyn AST now rejects `TryWriteMappingBuffer()`/`TryWriteLoreLinksBuffer()` return paths, rejects write-lock acquire/release inside `TryWritePrefabBuffers()` and `ClearExistingBuffers()`, requires mutation guard acquire/release/finally, and rejects lock acquisition inside the existing-buffer read helper.
+Rejected Alternatives: Manual source review only. This regression is a short helper reintroduction away and needs an executable proof gate.
+Scalability potential: Runtime unchanged. Proof protects prefab authoring growth across all tiers.
+Hardware Impact: Static proof only. No runtime cost and no project build CPU spike.
+
+Problem: `MetaCampaignService.CompletePendingEvaluation()` applied rule-driven campaign variables through per-change `UpsertGlobalVariable()` calls and then published every signal from the original rule result. A transient variables write-lock failure could leave a mission/campaign variable stale while visual, cartography, audio, telemetry, and black-box routes announced the requested value as truth.
+Solution: Added `TryApplyVariableChanges()` as a single variables-lane transaction. It acquires one DataVault write lock, preflights capacity with `CanApplyVariableChanges()`, writes the entire fixed-list rule batch, releases in `finally`, and only then lets `LateFrameTick()` publish side effects from the applied fixed list.
+Rejected Alternatives: Keep per-change upsert and add logging. Logging does not prevent false world-state signals. Holding a variables write lock while publishing presentation was rejected because shader/audio/cartography must run after the native state has settled and the lock is released.
+Scalability potential: Low avoids stale mission/campaign state on weak CPUs under DataVault contention. Middle preserves deterministic scenario branching. High and Ultra can add more authored campaign side effects while still using one checked native variable batch before visual-overkill presentation.
+Hardware Impact: Removes up to N-1 variables write-lock acquisitions per rule batch. Estimated low-end saved/protected cost is 80-180 us for a four-rule campaign event, with the larger gain coming from preventing false side-effect recovery work.
+
+Problem: Save load and default reset could clear the campaign variable lane before proving that loaded variables plus required defaults fit. Failure after clear could leave a partial campaign state and still risk later snapshot publication.
+Solution: `LoadFromSaveData()` now routes through `TryReplaceGlobalVariablesFromSave()`, which capacity-preflights unique save hashes plus required defaults before any clear. `SeedDefaultState()` and `EnsureDefaultVariables()` now return bool and use one checked variables write transaction.
+Rejected Alternatives: Trusting `MetaCampaignDTO.MaxGlobalVariables` alone. That misses the required-default overlay case when a save fills the lane without defaults. A managed staging dictionary was rejected because save load can use bounded nested loops over fixed arrays without GC.
+Scalability potential: Low keeps save recovery deterministic. Middle protects branching mission continuity. High and Ultra can increase scenario variables without changing the fail-closed transaction shape.
+Hardware Impact: No hot-frame allocation. Extra preflight is cold save/default work, bounded by `MetaCampaignDTO.MaxGlobalVariables`; estimated cost is 20-90 us and prevents partial-load debug loops.
+
+Problem: Static proof did not cover MetaCampaign variable atomicity or unchecked helper regression.
+Solution: Roslyn AST now rejects legacy unchecked variable helpers, `TryForceSetGlobalVariable()` ignoring the apply result, save-load partial clear, and evaluation completion that does not route through `TryApplyVariableChanges()`.
+Rejected Alternatives: Manual inspection only. The failure mode is a small helper regression and should be caught structurally.
+Scalability potential: Runtime unchanged. Proof protects future scenario-authoring expansion across weak, middle, high, and ultra devices.
+Hardware Impact: Static proof only. No runtime cost and no project build CPU spike.

@@ -183,6 +183,7 @@ namespace Hecton8.UI
         private bool _decryptionDumpBackpressureReported;
         private bool _decryptionDumpWriterBootAttempted;
         private bool _inputPressedLastFrame;
+        private bool _supportsTerminalComputeCold;
         private int _terminalCount;
         private int _buttonCount;
         private int _writeBufferIndex;
@@ -841,6 +842,7 @@ namespace Hecton8.UI
 
         private void Awake()
         {
+            _supportsTerminalComputeCold = SystemInfo.supportsComputeShaders;
             EnsureColdPaths();
             CacheRegistryServicesCold();
             ValidateLayouts();
@@ -849,6 +851,7 @@ namespace Hecton8.UI
 
         private void OnEnable()
         {
+            _supportsTerminalComputeCold = SystemInfo.supportsComputeShaders;
             _nextNativeResourceRetryFrame = 0;
             _nextLateFrameRegisterRetryFrame = 0;
             EnsureColdPaths();
@@ -1662,7 +1665,7 @@ namespace Hecton8.UI
 
         private bool EnsureComputeKernelForOwner()
         {
-            if (terminalBlitCompute == null || !SystemInfo.supportsComputeShaders)
+            if (terminalBlitCompute == null || !_supportsTerminalComputeCold)
             {
                 ResetTerminalBlitComputeState();
                 return false;
@@ -2142,7 +2145,7 @@ namespace Hecton8.UI
         private int DispatchDirtyScreens(int dirtyCount, int ownerFrame)
         {
             if (terminalBlitCompute == null ||
-                !SystemInfo.supportsComputeShaders ||
+                !_supportsTerminalComputeCold ||
                 _blitKernel < 0 ||
                 _terminalTextureArray == null ||
                 dirtyCount <= 0 ||

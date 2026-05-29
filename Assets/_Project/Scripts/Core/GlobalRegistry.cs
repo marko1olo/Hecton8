@@ -386,6 +386,9 @@ namespace Hecton8.Core
         public static uint CelestialRuntimeSnapshotSequence =>
             unchecked((uint)Volatile.Read(ref _celestialRuntimeSnapshotSequence));
 
+        public static ICelestialRuntimeSnapshotReadModel CelestialRuntimeSnapshotReadModel =>
+            CelestialRuntimeSnapshotReadModelAdapter.Instance;
+
         internal static void PublishCelestialRuntimeSnapshot(in CelestialRuntimeSnapshot snapshot)
         {
             _celestialRuntimeSnapshot = snapshot;
@@ -460,6 +463,19 @@ namespace Hecton8.Core
         private static ISeismicDirector _seismicDirectorRuntime;
         private static CelestialRuntimeSnapshot _celestialRuntimeSnapshot;
         private static int _celestialRuntimeSnapshotSequence;
+        private sealed class CelestialRuntimeSnapshotReadModelAdapter : ICelestialRuntimeSnapshotReadModel
+        {
+            internal static readonly CelestialRuntimeSnapshotReadModelAdapter Instance = new CelestialRuntimeSnapshotReadModelAdapter();
+
+            private CelestialRuntimeSnapshotReadModelAdapter()
+            {
+            }
+
+            public CelestialRuntimeSnapshot RuntimeSnapshot => _celestialRuntimeSnapshot;
+
+            public uint RuntimeSnapshotSequence => unchecked((uint)Volatile.Read(ref _celestialRuntimeSnapshotSequence));
+        }
+
         private static IHectonOceanKinematicsService _oceanKinematics;
         private static IPowerGridService _powerGrid;
         private static ISubmarineRuntimeContext _submarine;
@@ -3459,6 +3475,11 @@ namespace Hecton8.Core
         public static void RegisterGIRelayRuntime(IGIRelaySystem instance)
         {
             RegisterServiceAllowSameInstance(ref _giRelayRuntime, instance);
+            if (instance != null && ReferenceEquals(_giRelayRuntime, instance))
+            {
+                RenderDispatcher.BindGIRelayCold(instance);
+                RenderSettingsLifecycleGuard.BindGIRelayCold(instance);
+            }
         }
 
         /// <summary>
@@ -3829,6 +3850,8 @@ namespace Hecton8.Core
         public static void RegisterAtmosphereRuntime(HectonAtmosphereManager instance)
         {
             RegisterServiceAllowSameInstance(ref _atmosphereRuntime, instance);
+            if (instance != null && ReferenceEquals(_atmosphereRuntime, instance))
+                RenderSettingsLifecycleGuard.BindAtmosphereCold(instance);
         }
 
         /// <summary>
@@ -5252,6 +5275,12 @@ namespace Hecton8.Core
         /// </summary>
         public static void UnregisterGIRelayRuntime(IGIRelaySystem instance)
         {
+            if (ReferenceEquals(_giRelayRuntime, instance))
+            {
+                RenderDispatcher.BindGIRelayCold(null);
+                RenderSettingsLifecycleGuard.BindGIRelayCold(null);
+            }
+
             UnregisterService(ref _giRelayRuntime, instance);
         }
 
@@ -5573,6 +5602,9 @@ namespace Hecton8.Core
         /// </summary>
         public static void UnregisterAtmosphereRuntime(HectonAtmosphereManager instance)
         {
+            if (ReferenceEquals(_atmosphereRuntime, instance))
+                RenderSettingsLifecycleGuard.BindAtmosphereCold(null);
+
             UnregisterService(ref _atmosphereRuntime, instance);
         }
 

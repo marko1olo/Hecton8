@@ -42,7 +42,9 @@ namespace Hecton8.AI.Cognition
         public const byte DueTick = 1 << 3;
         public const byte ReducedCandidateBudget = 1 << 4;
         public const byte EmergencyMock = 1 << 5;
-        public const byte HighQuality = 1 << 6;
+        public const byte VisualOverkillScoring = 1 << 6;
+        public const byte OverBudget = VisualOverkillScoring;
+        public const byte HighQuality = VisualOverkillScoring;
         public const byte Reserved = 1 << 7;
     }
 
@@ -122,12 +124,12 @@ namespace Hecton8.AI.Cognition
         [FieldOffset(52)] public uint Frame;
         [FieldOffset(56)] public byte Flags;
         [FieldOffset(57)] public byte CandidateCount;
-        [FieldOffset(58)] private byte _pad0;
-        [FieldOffset(59)] private byte _pad1;
-        [FieldOffset(60)] private byte _pad2;
-        [FieldOffset(61)] private byte _pad3;
-        [FieldOffset(62)] private byte _pad4;
-        [FieldOffset(63)] private byte _pad5;
+        [FieldOffset(58)] public byte QualityWeightQ8;
+        [FieldOffset(59)] private byte _pad0;
+        [FieldOffset(60)] private byte _pad1;
+        [FieldOffset(61)] private byte _pad2;
+        [FieldOffset(62)] private byte _pad3;
+        [FieldOffset(63)] private byte _pad4;
     }
 
     [StructLayout(LayoutKind.Explicit, Size = 96)]

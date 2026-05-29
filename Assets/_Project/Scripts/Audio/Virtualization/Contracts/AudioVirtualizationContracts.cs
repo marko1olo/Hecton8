@@ -463,7 +463,9 @@ namespace Hecton8.Audio.Virtualization
         [FieldOffset(50)]
         public ushort DelayedVoices;
         [FieldOffset(52)]
-        private uint _reserved1;
+        public ushort QualityWeightQ8;
+        [FieldOffset(54)]
+        private ushort _reserved1;
         [FieldOffset(56)]
         private uint _reserved2;
         [FieldOffset(60)]
@@ -733,7 +735,8 @@ namespace Hecton8.Audio.Virtualization
     {
         public const int MaxVirtualVoiceCount = 1000;
         public const int MaxPhysicalVoiceCount = 64;
-        public const int LowTierPhysicalVoiceCount = 12;
+        public const int SurvivalPhysicalVoiceCount = 12;
+        public const int LowTierPhysicalVoiceCount = SurvivalPhysicalVoiceCount;
         public const int FoveatedTierFrozen = 2;
         public const float MinimumAudibleEnergy = 0.01f;
         public const float MinimumDopplerRatio = 0.1f;
@@ -873,8 +876,8 @@ namespace Hecton8.Audio.Virtualization
         {
             float quality = math.saturate(SanitizeFinite(globalQualityWeight, 0f));
             return math.clamp(
-                (int)math.lerp((float)LowTierPhysicalVoiceCount, (float)MaxPhysicalVoiceCount, quality),
-                LowTierPhysicalVoiceCount,
+                (int)math.lerp((float)SurvivalPhysicalVoiceCount, (float)MaxPhysicalVoiceCount, quality),
+                SurvivalPhysicalVoiceCount,
                 MaxPhysicalVoiceCount);
         }
 

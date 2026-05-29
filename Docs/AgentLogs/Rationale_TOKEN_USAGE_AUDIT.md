@@ -220,3 +220,11 @@ Solution: Verify current official GPT-5.5 pricing/cache context, regenerate the 
 Rejected Alternatives: Reusing the 2026-05-28 report was rejected because the new report shows a 2,950,209,170-token delta. Running `dotnet build` was rejected because TOKEN_USAGE_AUDIT changed offline docs/tools only and CPU sample was 83 percent, above the mandated compile threshold.
 Scalability potential: Runtime Low/Middle/High/Ultra tiers unaffected; this is offline telemetry and evidence accounting. Reporting scalability improves because the same 41-chart pipeline now produces dated 2026-05-29 surfaces.
 Hardware Impact: 0 us runtime gain. Audit evidence gain: current total is 116,242,717,214 tokens, GPT-5.5 base API-equivalent cost is 90,317.418027 USD, and apex proof is hash-backed with no missing charts.
+
+## Decision 36 - 2026-05-29 text-only token refresh
+
+Problem: The operator requested a fresh token update and commit/push, explicitly without image/chart generation.
+Solution: Recheck the official GPT-5.5 pricing/model boundary, run only the fast token refresh, and validate the persisted JSON plus ledger without invoking the dashboard/chart pipeline.
+Rejected Alternatives: Running `ProjectMetricsDashboard_20260528.py` was rejected because it regenerates chart PNGs. Running `dotnet build` was rejected because this pass touched offline telemetry/docs only and the request was a token-data checkpoint, not runtime validation.
+Scalability potential: Runtime Low/Middle/High/Ultra tiers unaffected. Reporting scalability improves because text-only refreshes can update current token economics quickly without churn in generated image artifacts.
+Hardware Impact: 0 us runtime gain. Audit evidence gain: current total is 117,684,788,669 tokens, delta is 1,442,071,455 tokens, GPT-5.5 base API-equivalent cost is 91,354.58078 USD, and ledger presence was machine-checked.

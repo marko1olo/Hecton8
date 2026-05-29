@@ -375,6 +375,16 @@ namespace Hecton8.Equipment.Auxiliary
 
         private void OnDisable()
         {
+            ShutdownForLifecycle();
+        }
+
+        private void OnDestroy()
+        {
+            ShutdownForLifecycle();
+        }
+
+        private void ShutdownForLifecycle()
+        {
             CompletePendingJobForTeardown();
             TryUnregisterHotSwapListener();
             TryUnregisterDispatcherTicks();

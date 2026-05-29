@@ -663,6 +663,30 @@ namespace Hecton8.Gameplay
             FinalizeDisableCleanupAndUnregisterLateFrame();
         }
 
+        private void OnDestroy()
+        {
+            scanActive = false;
+            _disableCleanupPending = true;
+
+            if (_registeredFast)
+                GlobalRegistry.UnregisterFastTickable(this, PriorityLayer.Player);
+            if (_registeredSlow)
+                GlobalRegistry.UnregisterSlowTickable(this, PriorityLayer.Player);
+
+            _registeredFast = false;
+            _registeredSlow = false;
+            TryUnregisterHotSwapListener();
+
+            if (_queryScheduled)
+            {
+                DispatcherJobFence.TryComplete(ref _queryHandle, forceComplete: true);
+                _queryScheduled = false;
+                ReleaseQueryMutationGuard();
+            }
+
+            FinalizeDisableCleanupAndUnregisterLateFrame();
+        }
+
 #if UNITY_EDITOR
         private void OnDrawGizmos()
         {

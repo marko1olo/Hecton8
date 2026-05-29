@@ -5,6 +5,9 @@
     "Author":  "YourName",
     "Version":  "0.1.0",
     "RequiredAPIVersion":  2,
+    "Dependencies":  [
+
+                     ],
     "Capabilities":  [
 
                      ],

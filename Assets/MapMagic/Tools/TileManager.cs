@@ -440,20 +440,29 @@ namespace Den.Tools
 				EnsureDeployRectCapacity(activeCamCoordCount);
 				FillDeployRects(camCoords, activeCamCoordCount, generateRange);
 
-				//it would be easier to create new grid and fill it then, but 
-				//no change should be made in original grid because of multithreading
 				int rectSide = generateRange*2 + 1;
-				int expectedGridCapacity = Math.Max(grid.Count, activeCamCoordCount*rectSide*rectSide + (pinned != null ? pinned.Count : 0));
-				Dictionary<Coord,T> dstGrid = new Dictionary<Coord,T>(expectedGridCapacity);
+				Dictionary<Coord,T> currentGrid;
+				int expectedGridCapacity;
 
 				Dictionary<Coord,T> srcGrid = deploySrcGrid;
 				srcGrid.Clear();
-				Dictionary<Coord,T>.Enumerator gridEnumerator = grid.GetEnumerator();
-				while (gridEnumerator.MoveNext())
+
+				lock (gridLocker)
 				{
-					KeyValuePair<Coord,T> kvp = gridEnumerator.Current;
-					srcGrid.Add(kvp.Key, kvp.Value);
+					currentGrid = grid;
+					expectedGridCapacity = Math.Max(currentGrid.Count, activeCamCoordCount*rectSide*rectSide + (pinned != null ? pinned.Count : 0));
+
+					Dictionary<Coord,T>.Enumerator gridEnumerator = currentGrid.GetEnumerator();
+					while (gridEnumerator.MoveNext())
+					{
+						KeyValuePair<Coord,T> kvp = gridEnumerator.Current;
+						srcGrid.Add(kvp.Key, kvp.Value);
+					}
 				}
+
+				// A replacement grid is intentionally allocated per deploy. The previous public grid may
+				// still be observed by generation/progress readers and must not be recycled as scratch.
+				Dictionary<Coord,T> dstGrid = new Dictionary<Coord,T>(expectedGridCapacity);
 
 				//transferring pinned tiles to new grid
 				Profiler.BeginSample("Transf Pin To New");
@@ -640,20 +649,43 @@ namespace Den.Tools
 			{
 				removedCoordsScratch.Clear();
 
-				Dictionary<Coord,T>.Enumerator enumerator = grid.GetEnumerator();
-				while (enumerator.MoveNext())
+				try
 				{
-					KeyValuePair<Coord,T> kvp = enumerator.Current;
-					T tile = kvp.Value;
+					lock (gridLocker)
+					{
+						Dictionary<Coord,T> currentGrid = grid;
+						Dictionary<Coord,T>.Enumerator enumerator = currentGrid.GetEnumerator();
+						while (enumerator.MoveNext())
+						{
+							KeyValuePair<Coord,T> kvp = enumerator.Current;
+							T tile = kvp.Value;
 
-					if (tile == null || tile.IsNull) 
-						removedCoordsScratch.Add(kvp.Key);
-				}
+							if (tile == null || tile.IsNull)
+								removedCoordsScratch.Add(kvp.Key);
+						}
+
+						if (removedCoordsScratch.Count == 0)
+							return;
 			
-				for (int i=0; i<removedCoordsScratch.Count; i++)
-					grid.Remove(removedCoordsScratch[i]);
+						Dictionary<Coord,T> dstGrid = new Dictionary<Coord,T>(currentGrid.Count);
 
-				removedCoordsScratch.Clear();
+						enumerator = currentGrid.GetEnumerator();
+						while (enumerator.MoveNext())
+						{
+							KeyValuePair<Coord,T> kvp = enumerator.Current;
+							T tile = kvp.Value;
+
+							if (tile != null && !tile.IsNull)
+								dstGrid.Add(kvp.Key, tile);
+						}
+
+						grid = dstGrid;
+					}
+				}
+				finally
+				{
+					removedCoordsScratch.Clear();
+				}
 			}
 
 
@@ -724,13 +756,36 @@ namespace Den.Tools
 		public void Pin (Coord coord, MonoBehaviour holder=null)
 		/// Creates new tile at the coord if it's empty and pin it
 		{
-			grid.TryGetValue(coord, out T tile);
+			T tile;
+			bool created = false;
+			lock (gridLocker)
+			{
+				if (!grid.TryGetValue(coord, out tile))
+					tile = default;
+			}
 
 			if (tile == null)
 			{
-				tile = ConstructTile(holder);
-				grid.Add(coord, tile);
+				T constructedTile = ConstructTile(holder);
 
+				lock (gridLocker)
+				{
+					if (!grid.TryGetValue(coord, out tile))
+					{
+						Dictionary<Coord,T> newGrid = new Dictionary<Coord,T>(grid);
+						newGrid.Add(coord, constructedTile);
+						grid = newGrid;
+						tile = constructedTile;
+						created = true;
+					}
+				}
+
+				if (!created && constructedTile != null)
+					constructedTile.Remove();
+			}
+
+			if (created)
+			{
 				tile.Pin();
 				tile.Move(coord, camCoords != null ? GetRemoteness(coord, camCoords, camCoordsCount) : 0);
 			}
@@ -757,8 +812,18 @@ namespace Den.Tools
 			//no deploy was performed - removing pinned
 			else
 			{
-				grid[coord].Remove();
-				grid.Remove(coord);
+				T tile;
+				lock (gridLocker)
+				{
+					if (!grid.TryGetValue(coord, out tile))
+						return;
+
+					Dictionary<Coord,T> newGrid = new Dictionary<Coord,T>(grid);
+					newGrid.Remove(coord);
+					grid = newGrid;
+				}
+
+				tile.Remove();
 			}
 		}
 

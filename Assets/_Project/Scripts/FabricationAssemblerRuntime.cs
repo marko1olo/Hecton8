@@ -679,21 +679,15 @@ namespace Hecton8.Crafting
                 return false;
 
             IDataVault vault = runtime.ResolveVault();
+            if (vault == null)
+                return false;
+
+            int readLength;
             if (!runtime.TryOpenWriteArray(BufferID.ShinobuFabricationCsvScratch, in runtime._csvScratchHandle, OwnerSystemId, CsvScratchByteCapacity, out NativeArray<byte> scratch))
                 return false;
 
-            bool timingsLocked = false;
-            if (!runtime.TryOpenWriteArray(BufferID.ShinobuFabricationTimingLookup, in runtime._timingHandle, OwnerSystemId, TimingLookupCapacity, out NativeArray<FabricationTimingDTO> timings))
-            {
-                vault.ReleaseWriteLock(in runtime._csvScratchHandle, OwnerSystemId);
-                return false;
-            }
-
-            timingsLocked = true;
-            bool tuningLocked = false;
             try
             {
-                int readLength;
                 using (FileStream stream = new FileStream(absolutePath, FileMode.Open, FileAccess.Read, FileShare.ReadWrite))
                 {
                     long streamLength = stream.Length;
@@ -701,27 +695,46 @@ namespace Hecton8.Crafting
                     Span<byte> span = new Span<byte>(scratch.GetUnsafePtr(), cappedLength);
                     readLength = stream.Read(span);
                 }
-
-                bool parsed = ParseTimingCsv(scratch, readLength, timings, out parsedRows);
-                if (parsed &&
-                    runtime.TryOpenWriteArray(BufferID.ShinobuFabricationTuning, in runtime._tuningHandle, OwnerSystemId, 1, out NativeArray<FabricationTuningDTO> tuning))
-                {
-                    tuningLocked = true;
-                    FabricationTuningDTO next = tuning[0];
-                    next.CsvTimingsVersion++;
-                    tuning[0] = next;
-                }
-
-                return parsed;
             }
             finally
             {
-                if (tuningLocked)
-                    vault.ReleaseWriteLock(in runtime._tuningHandle, OwnerSystemId);
-                if (timingsLocked)
-                    vault.ReleaseWriteLock(in runtime._timingHandle, OwnerSystemId);
                 vault.ReleaseWriteLock(in runtime._csvScratchHandle, OwnerSystemId);
             }
+
+            if (!runtime.TryOpenReadArray(BufferID.ShinobuFabricationCsvScratch, in runtime._csvScratchHandle, CsvScratchByteCapacity, out NativeArray<byte> scratchRead) ||
+                !runtime.TryOpenWriteArray(BufferID.ShinobuFabricationTimingLookup, in runtime._timingHandle, OwnerSystemId, TimingLookupCapacity, out NativeArray<FabricationTimingDTO> timings))
+            {
+                return false;
+            }
+
+            bool parsed;
+            try
+            {
+                parsed = ParseTimingCsv(scratchRead, readLength, timings, out parsedRows);
+            }
+            finally
+            {
+                vault.ReleaseWriteLock(in runtime._timingHandle, OwnerSystemId);
+            }
+
+            if (!parsed)
+                return false;
+
+            if (!runtime.TryOpenWriteArray(BufferID.ShinobuFabricationTuning, in runtime._tuningHandle, OwnerSystemId, 1, out NativeArray<FabricationTuningDTO> tuning))
+                return true;
+
+            try
+            {
+                FabricationTuningDTO next = tuning[0];
+                next.CsvTimingsVersion++;
+                tuning[0] = next;
+            }
+            finally
+            {
+                vault.ReleaseWriteLock(in runtime._tuningHandle, OwnerSystemId);
+            }
+
+            return true;
         }
 #endif
 
@@ -898,12 +911,23 @@ namespace Hecton8.Crafting
             if (vault == null || !vault.TryAcquireWriteLock(in handle, writerSystem, out buffer))
                 return false;
 
-            if (buffer.IsCreated && buffer.Length >= requiredLength)
-                return true;
+            bool ownershipTransferred = false;
+            try
+            {
+                if (buffer.IsCreated && buffer.Length >= requiredLength)
+                {
+                    ownershipTransferred = true;
+                    return true;
+                }
 
-            vault.ReleaseWriteLock(in handle, writerSystem);
-            buffer = default;
-            return false;
+                buffer = default;
+                return false;
+            }
+            finally
+            {
+                if (!ownershipTransferred)
+                    vault.ReleaseWriteLock(in handle, writerSystem);
+            }
         }
 
         private void ReleaseVaultHandles(IDataVault vault)

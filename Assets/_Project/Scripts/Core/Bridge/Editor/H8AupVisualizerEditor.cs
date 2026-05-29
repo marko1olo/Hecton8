@@ -13,6 +13,11 @@ namespace Hecton8.Core.Bridge.EditorTools
         private const string SectorYKey = "H8.Bridge.AUP.SectorY";
         private const string SectorZKey = "H8.Bridge.AUP.SectorZ";
         internal const int CellSizeMeters = HectonPhysicsContract.AupSectorSizeMetersInt;
+        private static bool s_prefsLoaded;
+        private static bool s_enabled;
+        private static long s_sectorX;
+        private static long s_sectorY;
+        private static long s_sectorZ;
 
         [MenuItem("Hecton-8/Bridge/AUP Visualizer")]
         public static void Open()
@@ -23,8 +28,8 @@ namespace Hecton8.Core.Bridge.EditorTools
         [MenuItem("Hecton-8/Bridge/AUP Visualizer/Toggle Grid")]
         public static void Toggle()
         {
-            EditorPrefs.SetBool(EnabledKey, !EditorPrefs.GetBool(EnabledKey, true));
-            SceneView.RepaintAll();
+            EnsurePrefsLoaded();
+            SetEnabledAndRepaint(!s_enabled);
         }
 
         [MenuItem("Hecton-8/Bridge/AUP Visualizer/Zero Camera To Sector")]
@@ -44,32 +49,31 @@ namespace Hecton8.Core.Bridge.EditorTools
 
             UnityEngine.UIElements.Toggle enabled = new UnityEngine.UIElements.Toggle("Draw Sector Grid")
             {
-                value = EditorPrefs.GetBool(EnabledKey, true)
+                value = Enabled
             };
             enabled.RegisterValueChangedCallback(evt =>
             {
-                EditorPrefs.SetBool(EnabledKey, evt.newValue);
-                SceneView.RepaintAll();
+                SetEnabledAndRepaint(evt.newValue);
             });
             root.Add(enabled);
 
             LongField sectorX = new LongField("Sector X")
             {
-                value = GetLong(SectorXKey)
+                value = SectorX
             };
             sectorX.RegisterValueChangedCallback(evt => SetLongAndRepaint(SectorXKey, evt.newValue));
             root.Add(sectorX);
 
             LongField sectorY = new LongField("Sector Y")
             {
-                value = GetLong(SectorYKey)
+                value = SectorY
             };
             sectorY.RegisterValueChangedCallback(evt => SetLongAndRepaint(SectorYKey, evt.newValue));
             root.Add(sectorY);
 
             LongField sectorZ = new LongField("Sector Z")
             {
-                value = GetLong(SectorZKey)
+                value = SectorZ
             };
             sectorZ.RegisterValueChangedCallback(evt => SetLongAndRepaint(SectorZKey, evt.newValue));
             root.Add(sectorZ);
@@ -82,10 +86,41 @@ namespace Hecton8.Core.Bridge.EditorTools
             root.Add(zeroCameraButton);
         }
 
-        internal static bool Enabled => EditorPrefs.GetBool(EnabledKey, true);
-        internal static long SectorX => GetLong(SectorXKey);
-        internal static long SectorY => GetLong(SectorYKey);
-        internal static long SectorZ => GetLong(SectorZKey);
+        internal static bool Enabled
+        {
+            get
+            {
+                EnsurePrefsLoaded();
+                return s_enabled;
+            }
+        }
+
+        internal static long SectorX
+        {
+            get
+            {
+                EnsurePrefsLoaded();
+                return s_sectorX;
+            }
+        }
+
+        internal static long SectorY
+        {
+            get
+            {
+                EnsurePrefsLoaded();
+                return s_sectorY;
+            }
+        }
+
+        internal static long SectorZ
+        {
+            get
+            {
+                EnsurePrefsLoaded();
+                return s_sectorZ;
+            }
+        }
 
         internal static void ZeroSceneCamera()
         {
@@ -124,8 +159,36 @@ namespace Hecton8.Core.Bridge.EditorTools
 
         private static void SetLongAndRepaint(string key, long value)
         {
+            EnsurePrefsLoaded();
+            if (key == SectorXKey)
+                s_sectorX = value;
+            else if (key == SectorYKey)
+                s_sectorY = value;
+            else if (key == SectorZKey)
+                s_sectorZ = value;
+
             SetLong(key, value);
             SceneView.RepaintAll();
+        }
+
+        private static void SetEnabledAndRepaint(bool value)
+        {
+            EnsurePrefsLoaded();
+            s_enabled = value;
+            EditorPrefs.SetBool(EnabledKey, value);
+            SceneView.RepaintAll();
+        }
+
+        private static void EnsurePrefsLoaded()
+        {
+            if (s_prefsLoaded)
+                return;
+
+            s_enabled = EditorPrefs.GetBool(EnabledKey, true);
+            s_sectorX = GetLong(SectorXKey);
+            s_sectorY = GetLong(SectorYKey);
+            s_sectorZ = GetLong(SectorZKey);
+            s_prefsLoaded = true;
         }
 
         private static long GetLong(string key)

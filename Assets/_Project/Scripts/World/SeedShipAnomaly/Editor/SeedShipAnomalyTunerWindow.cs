@@ -13,6 +13,9 @@ namespace Hecton8.World.SeedShipAnomaly.Editor
     {
         private static readonly Color s_outerColor = new Color(1f, 0.05f, 0.02f, 0.75f);
         private static readonly Color s_innerColor = new Color(1f, 0.85f, 0.05f, 0.9f);
+        private static readonly ulong FieldAndTuningMutationGuardMask =
+            SeedShipAnomalyMutationGuardBit(BufferID.ShinobuSeedShipAnomalyField) |
+            SeedShipAnomalyMutationGuardBit(BufferID.ShinobuSeedShipAnomalyTuning);
 
         [MenuItem("Hecton8/Seed Ship Anomaly Tuner")]
         public static void Open()
@@ -119,13 +122,11 @@ namespace Hecton8.World.SeedShipAnomaly.Editor
                 return;
             }
 
-            if (!vault.TryLockBuffer(BufferID.ShinobuSeedShipAnomalyField, SystemID.EndgameAnomaly))
+            if (!vault.TryAcquireMutationGuard(FieldAndTuningMutationGuardMask))
                 return;
 
-            bool tuningLocked = false;
             try
             {
-                tuningLocked = vault.TryLockBuffer(BufferID.ShinobuSeedShipAnomalyTuning, SystemID.EndgameAnomaly);
                 if (TryOpenExistingView(vault, in fieldHandle, out NativeArray<AnomalyFieldDTO> fieldArray))
                 {
                     field.Radius = math.max(0f, field.Radius);
@@ -133,17 +134,14 @@ namespace Hecton8.World.SeedShipAnomaly.Editor
                     fieldArray[0] = field;
                 }
 
-                if (tuningLocked &&
-                    TryOpenExistingView(vault, in tuningHandle, out NativeArray<AnomalyTuningDTO> tuningArray))
+                if (TryOpenExistingView(vault, in tuningHandle, out NativeArray<AnomalyTuningDTO> tuningArray))
                 {
                     tuningArray[0] = SeedShipAnomalyMath.SanitizeTuning(tuning);
                 }
             }
             finally
             {
-                if (tuningLocked)
-                    vault.TryUnlockBuffer(BufferID.ShinobuSeedShipAnomalyTuning, SystemID.EndgameAnomaly);
-                vault.TryUnlockBuffer(BufferID.ShinobuSeedShipAnomalyField, SystemID.EndgameAnomaly);
+                vault.ReleaseMutationGuard(FieldAndTuningMutationGuardMask);
             }
         }
 
@@ -194,6 +192,11 @@ namespace Hecton8.World.SeedShipAnomaly.Editor
                    vault.TryResolveHandle(in handle, out buffer) &&
                    buffer.IsCreated &&
                    buffer.Length > 0;
+        }
+
+        private static ulong SeedShipAnomalyMutationGuardBit(BufferID bufferId)
+        {
+            return 1UL << ((int)bufferId & 31);
         }
     }
 }

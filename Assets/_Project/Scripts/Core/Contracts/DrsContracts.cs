@@ -97,7 +97,8 @@ namespace Hecton8.Core.Contracts
     /// </summary>
     public static class ResolutionScaleStateFlags
     {
-        public const byte LowTierEmergency = 1 << 0;
+        public const byte SurvivalPressureEmergency = 1 << 0;
+        public const byte LowTierEmergency = SurvivalPressureEmergency;
         public const byte FramePressure = 1 << 1;
         public const byte ThermalPressure = 1 << 2;
         public const byte AupLocked = 1 << 3;

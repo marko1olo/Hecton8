@@ -339,6 +339,9 @@ namespace Hecton8.AI.Ecosystem
         [FieldOffset(132)] public int MaxResults;
         [FieldOffset(136)] public int MaxProbeCount;
         [FieldOffset(140)] private uint _pad0;
+        private static readonly ulong TelemetryMutationGuardMask =
+            SpatialGridMutationGuardBit(BufferID.ShinobuSpatialGridTelemetryCursor) |
+            SpatialGridMutationGuardBit(BufferID.ShinobuSpatialGridTelemetryRing);
 
         public int CollectEntitiesInRadius(IDataVault vault, double3 centerAup, float radiusMeters, NativeArray<uint> results)
         {
@@ -649,15 +652,17 @@ namespace Hecton8.AI.Ecosystem
                 !ValidateVaultHandle(in TelemetryCursorHandle, BufferID.ShinobuSpatialGridTelemetryCursor))
                 return;
 
-            int slotCursor = 0;
-            if (!vault.TryLockBuffer(BufferID.ShinobuSpatialGridTelemetryCursor, SystemID.AIEcology))
+            if (!vault.TryAcquireMutationGuard(TelemetryMutationGuardMask))
                 return;
 
             try
             {
                 if (!vault.TryResolveHandle(in TelemetryCursorHandle, out NativeArray<int> telemetryCursor) ||
                     !telemetryCursor.IsCreated ||
-                    telemetryCursor.Length <= 0)
+                    telemetryCursor.Length <= 0 ||
+                    !vault.TryResolveHandle(in TelemetryHandle, out NativeArray<SpatialGridTelemetryEntry> telemetry) ||
+                    !telemetry.IsCreated ||
+                    telemetry.Length <= 0)
                 {
                     return;
                 }
@@ -669,27 +674,9 @@ namespace Hecton8.AI.Ecosystem
                     cursor = 0;
                 }
 
-                slotCursor = cursor;
                 telemetryCursor[0] = cursor + 1;
-            }
-            finally
-            {
-                vault.TryUnlockBuffer(BufferID.ShinobuSpatialGridTelemetryCursor, SystemID.AIEcology);
-            }
 
-            if (!vault.TryLockBuffer(BufferID.ShinobuSpatialGridTelemetryRing, SystemID.AIEcology))
-                return;
-
-            try
-            {
-                if (!vault.TryResolveHandle(in TelemetryHandle, out NativeArray<SpatialGridTelemetryEntry> telemetry) ||
-                    !telemetry.IsCreated ||
-                    telemetry.Length <= 0)
-                {
-                    return;
-                }
-
-                int slot = slotCursor % telemetry.Length;
+                int slot = cursor % telemetry.Length;
 
                 SpatialGridTelemetryEntry entry = default;
                 entry.Frame = Frame;
@@ -714,8 +701,13 @@ namespace Hecton8.AI.Ecosystem
             }
             finally
             {
-                vault.TryUnlockBuffer(BufferID.ShinobuSpatialGridTelemetryRing, SystemID.AIEcology);
+                vault.ReleaseMutationGuard(TelemetryMutationGuardMask);
             }
+        }
+
+        private static ulong SpatialGridMutationGuardBit(BufferID bufferId)
+        {
+            return 1UL << ((int)bufferId & 31);
         }
     }
 

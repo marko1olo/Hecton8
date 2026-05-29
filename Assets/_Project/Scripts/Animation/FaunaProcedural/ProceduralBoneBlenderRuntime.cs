@@ -86,6 +86,7 @@ namespace Hecton8.Animation.FaunaProcedural
         private bool _gpuShaderConstantsDirty;
         private bool _gpuBufferDataValid;
         private bool _globalGpuSkinningPublished;
+        private bool _supportsConstantBufferBinding;
         private bool _disposed;
         private bool _dumpedFault;
 
@@ -589,6 +590,7 @@ namespace Hecton8.Animation.FaunaProcedural
 
         private void RefreshColdDependencies()
         {
+            _supportsConstantBufferBinding = SystemInfo.supportsSetConstantBuffer;
             BindDataVaultForLifecycle(GlobalRegistry.DataVault, null);
         }
 
@@ -1136,7 +1138,7 @@ namespace Hecton8.Animation.FaunaProcedural
         private bool PublishProceduralBoneGlobals(in ProceduralBoneShaderGlobalsDTO globals)
         {
             if (!ValidateProceduralBoneShaderGlobalsLayout() ||
-                !SystemInfo.supportsSetConstantBuffer ||
+                !_supportsConstantBufferBinding ||
                 !HasShaderGlobalsBuffersReady())
                 return false;
 
@@ -1159,6 +1161,13 @@ namespace Hecton8.Animation.FaunaProcedural
 
         private bool EnsureShaderGlobalsBuffers()
         {
+            if (!_supportsConstantBufferBinding)
+            {
+                ReleaseGraphicsBuffer(ref _shaderGlobalsBufferA);
+                ReleaseGraphicsBuffer(ref _shaderGlobalsBufferB);
+                return false;
+            }
+
             if (!HasValidShaderGlobalsBuffer(_shaderGlobalsBufferA))
             {
                 ReleaseGraphicsBuffer(ref _shaderGlobalsBufferA);

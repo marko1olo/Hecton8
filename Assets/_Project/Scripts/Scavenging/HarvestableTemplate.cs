@@ -135,6 +135,12 @@ namespace Hecton8.Scavenging
         [Tooltip("Primary weighted loot table resolved by the Burst entropy yield job.")]
         private LootAuthoringEntry[] lootTable;
 
+        [SerializeField, HideInInspector] private int validationInvalidLootEntryCount;
+        [SerializeField, HideInInspector] private int validationFirstInvalidLootEntryIndex = -1;
+        [SerializeField, HideInInspector] private int validationDuplicateLootItemHashCount;
+        [SerializeField, HideInInspector] private int validationFirstDuplicateLootItemHashIndex = -1;
+        [SerializeField, HideInInspector] private int validationRuntimeLootEntryCount;
+
         /// <summary>Stable identifier used by runtime and persistence.</summary>
         public string StableId => stableId;
 
@@ -143,6 +149,13 @@ namespace Hecton8.Scavenging
 
         /// <summary>Configured material class consumed by the entropy runtime.</summary>
         public MaterialClass TemplateMaterialClass => materialClass;
+
+        public int ValidationInvalidLootEntryCount => validationInvalidLootEntryCount;
+        public int ValidationFirstInvalidLootEntryIndex => validationFirstInvalidLootEntryIndex;
+        public int ValidationDuplicateLootItemHashCount => validationDuplicateLootItemHashCount;
+        public int ValidationFirstDuplicateLootItemHashIndex => validationFirstDuplicateLootItemHashIndex;
+        public int ValidationRuntimeLootEntryCount => validationRuntimeLootEntryCount;
+        public bool HasValidationErrors => validationInvalidLootEntryCount > 0 || validationDuplicateLootItemHashCount > 0;
 
         /// <summary>Builds the blittable runtime descriptor consumed by the organic entropy runtime.</summary>
         public RuntimeDescriptor BuildRuntimeDescriptor(int lootStartIndex)
@@ -167,19 +180,22 @@ namespace Hecton8.Scavenging
                 return 0;
 
             int copiedCount = 0;
-            int maxEntries = math.min(lootTable.Length, destination.Capacity - destination.Length);
-            for (int i = 0; i < maxEntries; i++)
+            int remainingCapacity = destination.Capacity - destination.Length;
+            if (remainingCapacity <= 0)
+                return 0;
+
+            for (int i = 0; i < lootTable.Length && copiedCount < remainingCapacity; i++)
             {
                 LootAuthoringEntry source = lootTable[i];
-                if (!IsValidLootEntry(in source))
+                if (!IsRuntimeLootSlotValid(i))
                     continue;
 
                 destination.AddNoResize(new LootRuntimeEntry
                 {
                     ItemHashId = LocHash.Compute(source.item.PersistentId),
-                    MinimumAmount = (ushort)math.max(1, (int)source.minimumAmount),
-                    MaximumAmount = (ushort)math.max(math.max(1, (int)source.minimumAmount), (int)source.maximumAmount),
-                    Weight = (byte)math.max(1, (int)source.weight)
+                    MinimumAmount = source.minimumAmount,
+                    MaximumAmount = source.maximumAmount,
+                    Weight = source.weight
                 });
                 copiedCount++;
             }
@@ -196,16 +212,91 @@ namespace Hecton8.Scavenging
             int scanCount = math.min(lootTable.Length, maxCount);
             for (int i = 0; i < scanCount; i++)
             {
-                if (IsValidLootEntry(in lootTable[i]))
+                if (IsRuntimeLootSlotValid(i))
                     count++;
             }
 
             return count;
         }
 
+        public void RefreshValidationState()
+        {
+            RebuildValidationState();
+        }
+
+        private void OnEnable()
+        {
+            RebuildValidationState();
+        }
+
+        private void RebuildValidationState()
+        {
+            validationInvalidLootEntryCount = 0;
+            validationFirstInvalidLootEntryIndex = -1;
+            validationDuplicateLootItemHashCount = 0;
+            validationFirstDuplicateLootItemHashIndex = -1;
+            validationRuntimeLootEntryCount = 0;
+
+            if (lootTable == null)
+                return;
+
+            for (int i = 0; i < lootTable.Length; i++)
+            {
+                if (!IsValidLootEntry(in lootTable[i]))
+                {
+                    validationInvalidLootEntryCount++;
+                    if (validationFirstInvalidLootEntryIndex < 0)
+                        validationFirstInvalidLootEntryIndex = i;
+                    continue;
+                }
+
+                if (HasDuplicateLootEntryBefore(i))
+                {
+                    validationDuplicateLootItemHashCount++;
+                    if (validationFirstDuplicateLootItemHashIndex < 0)
+                        validationFirstDuplicateLootItemHashIndex = i;
+                    continue;
+                }
+
+                validationRuntimeLootEntryCount++;
+            }
+        }
+
+        private bool IsRuntimeLootSlotValid(int index)
+        {
+            return lootTable != null &&
+                   (uint)index < (uint)lootTable.Length &&
+                   IsValidLootEntry(in lootTable[index]) &&
+                   !HasDuplicateLootEntryBefore(index);
+        }
+
+        private bool HasDuplicateLootEntryBefore(int index)
+        {
+            if (lootTable == null || (uint)index >= (uint)lootTable.Length)
+                return false;
+
+            LootAuthoringEntry current = lootTable[index];
+            if (!IsValidLootEntry(in current))
+                return false;
+
+            int currentHash = LocHash.Compute(current.item.PersistentId);
+            for (int i = 0; i < index; i++)
+            {
+                LootAuthoringEntry previous = lootTable[i];
+                if (IsValidLootEntry(in previous) && LocHash.Compute(previous.item.PersistentId) == currentHash)
+                    return true;
+            }
+
+            return false;
+        }
+
         private static bool IsValidLootEntry(in LootAuthoringEntry entry)
         {
-            return entry.item != null && !string.IsNullOrWhiteSpace(entry.item.PersistentId);
+            return entry.item != null &&
+                   !string.IsNullOrWhiteSpace(entry.item.PersistentId) &&
+                   entry.minimumAmount > 0 &&
+                   entry.maximumAmount >= entry.minimumAmount &&
+                   entry.weight > 0;
         }
 
 #if UNITY_EDITOR
@@ -216,6 +307,7 @@ namespace Hecton8.Scavenging
 
             baseHealth = math.max(0.1f, baseHealth);
             toolResistance = math.max(0.01f, toolResistance);
+            RebuildValidationState();
         }
 #endif
     }

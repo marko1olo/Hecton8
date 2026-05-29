@@ -64,6 +64,11 @@ namespace Crest
 
         bool _hasCopiedMaterial;
 
+        private void OnEnable()
+        {
+            EnsurePropertyWrapper();
+        }
+
         private void Start()
         {
             if (!TryGetComponent(out _rend))
@@ -74,6 +79,7 @@ namespace Crest
 
             // Render before the surface mesh
             _rend.sortingOrder = _overrideSortingOrder ? _overridenSortingOrder : -LodDataMgr.MAX_LOD_COUNT - 1;
+            EnsurePropertyWrapper();
             GetComponent<MeshFilter>().sharedMesh = Mesh2DGrid(0, 2, -0.5f, -0.5f, 1f, 1f, GEOM_HORIZ_DIVISIONS, 1);
 
             isMeniscus = _rend.sharedMaterial.shader.name.Contains("Meniscus");
@@ -96,6 +102,14 @@ namespace Crest
         void OnDisable()
         {
             Shader.DisableKeyword("CREST_UNDERWATER_BEFORE_TRANSPARENT");
+        }
+
+        void EnsurePropertyWrapper()
+        {
+            if (_mpb == null)
+            {
+                _mpb = new PropertyWrapperMPB();
+            }
         }
 
 #if UNITY_EDITOR
@@ -172,7 +186,7 @@ namespace Crest
                 // Assign lod0 shape - trivial but bound every frame because lod transform comes from here
                 if (_mpb == null)
                 {
-                    _mpb = new PropertyWrapperMPB();
+                    return;
                 }
                 _rend.GetPropertyBlock(_mpb.materialPropertyBlock);
 
@@ -204,8 +218,11 @@ namespace Crest
             {
                 var inOne = false;
                 float x = transform.position.x, z = transform.position.z;
-                foreach (var body in WaterBody.WaterBodies)
+                var waterBodies = WaterBody.WaterBodies;
+                var waterBodyCount = waterBodies.Count;
+                for (var i = 0; i < waterBodyCount; i++)
                 {
+                    var body = waterBodies[i];
                     var bounds = body.AABB;
                     if (x >= bounds.min.x && x <= bounds.max.x &&
                         z >= bounds.min.z && z <= bounds.max.z)

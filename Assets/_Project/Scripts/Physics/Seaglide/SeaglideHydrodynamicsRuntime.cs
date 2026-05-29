@@ -20,17 +20,18 @@ namespace Hecton8.Physics
     {
         private static int s_x001DirectSignalPushDropCount_SeaglideHydrodynamicsRuntime;
 
-        private const int LockStates = 1 << 0;
-        private const int LockRequests = 1 << 1;
-        private const int LockForcePackets = 1 << 2;
-        private const int LockFlowSamples = 1 << 3;
-        private const int LockTuning = 1 << 4;
-        private const int LockTelemetry = 1 << 5;
-        private const int LockTelemetryCursor = 1 << 6;
-        private const int LockCounters = 1 << 7;
-        private const int LockVisualStates = 1 << 8;
-        private const int LockAudioSignals = 1 << 9;
-        private const int LockCavitationSignals = 1 << 10;
+        private static readonly ulong JobMutationGuardMask =
+            SeaglideMutationGuardBit(SeaglideHydrodynamicsBufferIds.States) |
+            SeaglideMutationGuardBit(SeaglideHydrodynamicsBufferIds.Requests) |
+            SeaglideMutationGuardBit(SeaglideHydrodynamicsBufferIds.ForcePackets) |
+            SeaglideMutationGuardBit(SeaglideHydrodynamicsBufferIds.FlowSamples) |
+            SeaglideMutationGuardBit(SeaglideHydrodynamicsBufferIds.Tuning) |
+            SeaglideMutationGuardBit(SeaglideHydrodynamicsBufferIds.TelemetryRing) |
+            SeaglideMutationGuardBit(SeaglideHydrodynamicsBufferIds.TelemetryCursor) |
+            SeaglideMutationGuardBit(SeaglideHydrodynamicsBufferIds.Counters) |
+            SeaglideMutationGuardBit(SeaglideHydrodynamicsBufferIds.VisualStates) |
+            SeaglideMutationGuardBit(SeaglideHydrodynamicsBufferIds.AudioSignals) |
+            SeaglideMutationGuardBit(SeaglideHydrodynamicsBufferIds.CavitationSignals);
         private const float MinimumSignalIntensity = 0.01f;
         private const byte ToolAcousticStateSeaglidePropeller = 4;
         private const uint SeaglideFaultEventHash = 0x53474654u; // SGFT
@@ -59,7 +60,8 @@ namespace Hecton8.Physics
         private long _scheduleTimestamp;
         private uint _simulationFrame;
         private int _activeRequestCount;
-        private int _lockedBuffers;
+        private IDataVault _jobGuardVault;
+        private bool _jobGuardHeld;
         private float _metabolismAccumulator;
         private float _thrustCadenceAccumulator;
         private bool _jobScheduled;
@@ -315,7 +317,7 @@ namespace Hecton8.Physics
             tuningDto.FrameIndex = _simulationFrame;
             tuning[0] = tuningDto;
 
-            if (!TryLockJobBuffers(vault))
+            if (!TryAcquireJobBufferGuard(vault))
             {
                 WriteTelemetryHeartbeat(
                     telemetry,
@@ -472,7 +474,7 @@ namespace Hecton8.Physics
                 ReleaseVaultHandles(previousVault);
             _dataVault = currentVault;
             _coldBootCompleted = false;
-            if (currentVault != null && !currentVault.IsAllocationLocked)
+            if (currentVault != null && !currentVault.IsAllocationLocked && !currentVault.IsCompactionFenceActive)
                 EnsureColdBooted();
         }
 
@@ -480,7 +482,7 @@ namespace Hecton8.Physics
         public bool GenerateMockPropulsionRequests()
         {
             IDataVault vault = _dataVault;
-            if (vault == null || vault.IsAllocationLocked || _jobScheduled || !EnsureVaultBuffers())
+            if (vault == null || vault.IsAllocationLocked || vault.IsCompactionFenceActive || _jobScheduled || !EnsureVaultBuffers())
                 return false;
 
             NativeArray<SeaglideStateDTO> states = ResolveVaultBuffer(vault, in _statesHandle);
@@ -762,7 +764,7 @@ namespace Hecton8.Physics
                 return true;
             }
 
-            if (vault.IsAllocationLocked)
+            if (vault.IsAllocationLocked || vault.IsCompactionFenceActive)
                 return false;
 
             handle = vault.EnsureGenerationHandle<T>(bufferId, requiredLength, SystemID.VehiclesPhysics, options);
@@ -1305,61 +1307,34 @@ namespace Hecton8.Physics
             return quality;
         }
 
-        private bool TryLockJobBuffers(IDataVault vault)
+        private bool TryAcquireJobBufferGuard(IDataVault vault)
         {
-            _lockedBuffers = 0;
-            return TryLock(vault, SeaglideHydrodynamicsBufferIds.States, LockStates) &&
-                   TryLock(vault, SeaglideHydrodynamicsBufferIds.Requests, LockRequests) &&
-                   TryLock(vault, SeaglideHydrodynamicsBufferIds.ForcePackets, LockForcePackets) &&
-                   TryLock(vault, SeaglideHydrodynamicsBufferIds.FlowSamples, LockFlowSamples) &&
-                   TryLock(vault, SeaglideHydrodynamicsBufferIds.Tuning, LockTuning) &&
-                   TryLock(vault, SeaglideHydrodynamicsBufferIds.TelemetryRing, LockTelemetry) &&
-                   TryLock(vault, SeaglideHydrodynamicsBufferIds.TelemetryCursor, LockTelemetryCursor) &&
-                   TryLock(vault, SeaglideHydrodynamicsBufferIds.Counters, LockCounters) &&
-                   TryLock(vault, SeaglideHydrodynamicsBufferIds.VisualStates, LockVisualStates) &&
-                   TryLock(vault, SeaglideHydrodynamicsBufferIds.AudioSignals, LockAudioSignals) &&
-                   TryLock(vault, SeaglideHydrodynamicsBufferIds.CavitationSignals, LockCavitationSignals);
-        }
+            if (vault == null || _jobGuardHeld)
+                return false;
 
-        private bool TryLock(IDataVault vault, BufferID bufferId, int bit)
-        {
-            if (vault != null && vault.TryLockBuffer(bufferId, SystemID.VehiclesPhysics))
-            {
-                _lockedBuffers |= bit;
-                return true;
-            }
+            if (!vault.TryAcquireMutationGuard(JobMutationGuardMask))
+                return false;
 
-            UnlockJobBuffers();
-            return false;
+            _jobGuardVault = vault;
+            _jobGuardHeld = true;
+            return true;
         }
 
         private void UnlockJobBuffers()
         {
-            IDataVault vault = _dataVault;
-            if (vault == null || _lockedBuffers == 0)
-            {
-                _lockedBuffers = 0;
+            if (!_jobGuardHeld)
                 return;
-            }
 
-            Unlock(vault, SeaglideHydrodynamicsBufferIds.States, LockStates);
-            Unlock(vault, SeaglideHydrodynamicsBufferIds.Requests, LockRequests);
-            Unlock(vault, SeaglideHydrodynamicsBufferIds.ForcePackets, LockForcePackets);
-            Unlock(vault, SeaglideHydrodynamicsBufferIds.FlowSamples, LockFlowSamples);
-            Unlock(vault, SeaglideHydrodynamicsBufferIds.Tuning, LockTuning);
-            Unlock(vault, SeaglideHydrodynamicsBufferIds.TelemetryRing, LockTelemetry);
-            Unlock(vault, SeaglideHydrodynamicsBufferIds.TelemetryCursor, LockTelemetryCursor);
-            Unlock(vault, SeaglideHydrodynamicsBufferIds.Counters, LockCounters);
-            Unlock(vault, SeaglideHydrodynamicsBufferIds.VisualStates, LockVisualStates);
-            Unlock(vault, SeaglideHydrodynamicsBufferIds.AudioSignals, LockAudioSignals);
-            Unlock(vault, SeaglideHydrodynamicsBufferIds.CavitationSignals, LockCavitationSignals);
-            _lockedBuffers = 0;
+            IDataVault vault = _jobGuardVault ?? _dataVault;
+            _jobGuardVault = null;
+            _jobGuardHeld = false;
+            if (vault != null)
+                vault.ReleaseMutationGuard(JobMutationGuardMask);
         }
 
-        private void Unlock(IDataVault vault, BufferID bufferId, int bit)
+        private static ulong SeaglideMutationGuardBit(BufferID bufferId)
         {
-            if ((_lockedBuffers & bit) != 0)
-                vault.TryUnlockBuffer(bufferId, SystemID.VehiclesPhysics);
+            return 1UL << (unchecked((int)(uint)(int)bufferId) & 63);
         }
 
         private void TryRegister()

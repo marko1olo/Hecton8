@@ -30,6 +30,18 @@ namespace Hecton8.EditorTools
                 if (catalog == null)
                     continue;
 
+                catalog.RefreshValidationState();
+                if (catalog.ValidationNullOfferCount > 0)
+                {
+                    Hecton8.Core.H8Debug.LogError($"[BarterValidation] Catalog has null offer slots: count={catalog.ValidationNullOfferCount} first={catalog.ValidationFirstNullOfferIndex} path={path}", catalog);
+                }
+
+                if (catalog.ValidationDuplicateOfferHashCount > 0)
+                {
+                    Hecton8.Core.H8Debug.LogError($"[BarterValidation] Catalog has duplicate runtime offer hashes: count={catalog.ValidationDuplicateOfferHashCount} first={catalog.ValidationFirstDuplicateOfferHashIndex} path={path}", catalog);
+                    errors += catalog.ValidationDuplicateOfferHashCount;
+                }
+
                 for (int j = 0; j < catalog.Count; j++)
                 {
                     BarterOfferData offer = catalog.GetAt(j);
@@ -40,7 +52,8 @@ namespace Hecton8.EditorTools
                         continue;
                     }
 
-                    if (string.IsNullOrWhiteSpace(offer.offerId))
+                    offer.RefreshValidationState();
+                    if ((offer.ValidationFlags & BarterOfferValidationFlags.MissingOfferId) != 0)
                     {
                         Hecton8.Core.H8Debug.LogError($"[BarterValidation] Offer missing offerId: {offer.name}", offer);
                         errors++;

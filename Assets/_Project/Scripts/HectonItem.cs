@@ -34,7 +34,7 @@ namespace Hecton8.Items
     [RequireComponent(typeof(Collider))]
     [RequireComponent(typeof(InteractionHighlighter))]
     [DisallowMultipleComponent]
-    public class HectonItem : MonoBehaviour, IInteractable, IInteractableTextProvider, ITickable, IUpdatable, IInventoryPickupSource, IInventoryPickupPreviewSource, IInteractionVulnerabilitySource, Hecton8.Core.Contracts.IPhysicsImpactMaterialProvider, ILocalizationLanguageChangedListener
+    public class HectonItem : MonoBehaviour, IInteractable, IInteractableTextProvider, ITickable, IUpdatable, IFixedTickable, IInventoryPickupSource, IInventoryPickupPreviewSource, IInteractionVulnerabilitySource, Hecton8.Core.Contracts.IPhysicsImpactMaterialProvider, ILocalizationLanguageChangedListener
     {
         private static int s_x001HectonItemSignalPushDropCount;
         private const float OverflowScatterImpulse = 2.5f;
@@ -48,6 +48,7 @@ namespace Hecton8.Items
         private static IPhysicsService s_physicsService;
         private static IPhysicsStateEventService s_physicsStateEvents;
         private static IObjectPoolService s_objectPool;
+        private static ILocalizationTextReadModel s_localizationText;
         // COLD ALLOC: StaticRegistryHotSwapListener[1] - shared pickup service cache rebind bridge - owner: HectonItem
         private static readonly StaticRegistryHotSwapListener s_hotSwapListener = new StaticRegistryHotSwapListener();
         private static bool s_hotSwapListenerRegistered;
@@ -108,6 +109,7 @@ namespace Hecton8.Items
             s_physicsService = null;
             s_physicsStateEvents = null;
             s_objectPool = null;
+            s_localizationText = null;
             s_hotSwapListenerRegistered = false;
         }
 
@@ -170,6 +172,18 @@ namespace Hecton8.Items
         // ITickable
         public void Tick(float deltaTime)
         {
+        }
+
+        public void FixedTick(float fixedDeltaTime)
+        {
+            if (_settlePhase == SettlePhase.Idle || _settlePhase == SettlePhase.Done)
+                return;
+
+            TickSettle(fixedDeltaTime);
+        }
+
+        private void TickSettle(float deltaTime)
+        {
             switch (_settlePhase)
             {
                 case SettlePhase.Waiting:
@@ -199,8 +213,7 @@ namespace Hecton8.Items
                     break;
 
                 default:
-                    // Idle or Done should not tick, but unregister defensively.
-                    StopSettle();
+                    _settleTimer = 0f;
                     break;
             }
         }
@@ -233,7 +246,6 @@ namespace Hecton8.Items
         {
             _settlePhase = SettlePhase.Done;
             _settleTimer = 0f;
-            StopTicking();
         }
 
         private void StopSettle()
@@ -248,14 +260,14 @@ namespace Hecton8.Items
             if (_isTickRegistered) return;
             if (!Application.isPlaying || GlobalRegistry.Dispatcher == null) return;
 
-            _isTickRegistered = GlobalRegistry.TryRegisterUpdatable(this, PriorityLayer.Environment);
+            _isTickRegistered = GlobalRegistry.TryRegisterFixedTickable(this, PriorityLayer.Environment);
         }
 
         private void StopTicking()
         {
             if (!_isTickRegistered) return;
 
-            GlobalRegistry.UnregisterUpdatable(this, PriorityLayer.Environment);
+            GlobalRegistry.UnregisterFixedTickable(this, PriorityLayer.Environment);
             _isTickRegistered = false;
         }
 
@@ -522,6 +534,7 @@ namespace Hecton8.Items
             s_physicsService = GlobalRegistry.Physics;
             s_physicsStateEvents = GlobalRegistry.PhysicsStateEvents;
             s_objectPool = GlobalRegistry.ObjectPoolService;
+            s_localizationText = GlobalRegistry.LocalizationText;
             TryRegisterStaticHotSwapListener();
         }
 
@@ -557,6 +570,9 @@ namespace Hecton8.Items
                     case GlobalRegistryServiceSlot.ObjectPool:
                         s_objectPool = currentService as IObjectPoolService;
                         break;
+                    case GlobalRegistryServiceSlot.LocalizationRuntime:
+                        s_localizationText = currentService as ILocalizationTextReadModel;
+                        break;
                 }
             }
         }
@@ -591,7 +607,7 @@ namespace Hecton8.Items
                 return;
             }
 
-            if (!itemData.TryWriteInteractText(Hecton8.Core.GlobalRegistry.LocalizationText, _cachedInteractTextBuffer, out _cachedInteractTextLength))
+            if (!itemData.TryWriteInteractText(s_localizationText, _cachedInteractTextBuffer, out _cachedInteractTextLength))
                 _cachedInteractTextLength = CopySpanToInteractBuffer(UnknownInteractText);
         }
 

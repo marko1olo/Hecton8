@@ -1495,9 +1495,6 @@ namespace Hecton8.Visor
         private static uint ResolveNoirFeatureFlags(in NoirPostProcessDTO constants)
         {
             uint flags = 0u;
-            float quality = Sanitize01(constants.QualityAndLimits.x);
-            if (quality < 0.34f)
-                flags |= 1u;
             if (constants.AberrationParams.x > 0.0001f)
                 flags |= 1u << 1;
             if (math.max(math.abs(constants.AberrationParams.y), math.abs(constants.AberrationParams.z)) > 0.001f)

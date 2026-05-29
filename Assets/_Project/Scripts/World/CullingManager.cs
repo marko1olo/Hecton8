@@ -482,7 +482,7 @@ namespace Hecton8.World
             {
                 CullableObject obj = _cullableObjects[i];
                 if (obj.GameObject != null)
-                    obj.Bounds = CalculateBounds(obj.GameObject, obj.ManagedRenderers);
+                    obj.Bounds = CalculateCachedRendererBounds(obj.GameObject, obj.ManagedRenderers);
 
                 if (obj.ForceRenderingOffDirty)
                 {
@@ -737,10 +737,32 @@ namespace Hecton8.World
 
         private Bounds CalculateBounds(GameObject obj, Renderer[] renderers)
         {
+            if (TryCalculateRendererBounds(renderers, out Bounds rendererBounds))
+                return rendererBounds;
+
+            // Fallback: try to get bounds from Collider (cold registration only)
+            Collider collider = obj.GetComponent<Collider>();
+            if (collider != null)
+                return collider.bounds;
+
+            // Last resort: use transform position with small bounds
+            return new Bounds(obj.transform.position, Vector3.one);
+        }
+
+        private static Bounds CalculateCachedRendererBounds(GameObject obj, Renderer[] renderers)
+        {
+            if (TryCalculateRendererBounds(renderers, out Bounds rendererBounds))
+                return rendererBounds;
+
+            return new Bounds(obj.transform.position, Vector3.one);
+        }
+
+        private static bool TryCalculateRendererBounds(Renderer[] renderers, out Bounds bounds)
+        {
+            bounds = default;
             if (renderers != null)
             {
                 bool boundsInitialized = false;
-                Bounds combinedBounds = default;
 
                 for (int i = 0; i < renderers.Length; i++)
                 {
@@ -750,25 +772,19 @@ namespace Hecton8.World
 
                     if (!boundsInitialized)
                     {
-                        combinedBounds = renderer.bounds;
+                        bounds = renderer.bounds;
                         boundsInitialized = true;
                         continue;
                     }
 
-                    combinedBounds.Encapsulate(renderer.bounds);
+                    bounds.Encapsulate(renderer.bounds);
                 }
 
                 if (boundsInitialized)
-                    return combinedBounds;
+                    return true;
             }
 
-            // Fallback: try to get bounds from Collider (no allocation)
-            Collider collider = obj.GetComponent<Collider>();
-            if (collider != null)
-                return collider.bounds;
-
-            // Last resort: use transform position with small bounds
-            return new Bounds(obj.transform.position, Vector3.one);
+            return false;
         }
 
         private bool TryCacheManagedRenderers(GameObject obj, Renderer renderer, out Renderer[] managedRenderers, out bool[] originalForceRenderingOffStates)

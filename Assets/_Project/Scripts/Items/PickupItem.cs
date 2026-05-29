@@ -34,6 +34,7 @@ namespace Hecton8.Interaction
         private static IPhysicsStateEventService s_physicsStateEvents;
         private static IAmbientCurrentReadModel s_ambientCurrentReadModel;
         private static IObjectPoolService s_objectPool;
+        private static ILocalizationTextReadModel s_localizationText;
         private static readonly StaticRegistryHotSwapListener s_hotSwapListener = new StaticRegistryHotSwapListener();
         private static bool s_hotSwapListenerRegistered;
 
@@ -48,6 +49,7 @@ namespace Hecton8.Interaction
             s_physicsStateEvents = null;
             s_ambientCurrentReadModel = null;
             s_objectPool = null;
+            s_localizationText = null;
             s_hotSwapListenerRegistered = false;
         }
 
@@ -407,18 +409,6 @@ namespace Hecton8.Interaction
                     wake: false);
             }
 
-            if (_spatialHandle != 0)
-            {
-                Vector3 currentPosition = transform.position;
-                if (IsFiniteVector(currentPosition))
-                {
-                    WorldSpatialHashGrid.Refresh(_spatialHandle);
-                    _lastSpatialPosition = currentPosition;
-                }
-            }
-
-            if (_faunaSpatialHandle != 0)
-                FaunaSpatialHashRegistry.Refresh(_faunaSpatialHandle);
         }
 
         internal bool TryGetWorldStatePersistenceIdentity(out long persistenceKey, out long chunkKey)
@@ -662,7 +652,7 @@ namespace Hecton8.Interaction
                 return;
             }
 
-            if (!itemData.TryWriteInteractText(Hecton8.Core.GlobalRegistry.LocalizationText, _cachedInteractTextBuffer, out _cachedInteractTextLength))
+            if (!itemData.TryWriteInteractText(s_localizationText, _cachedInteractTextBuffer, out _cachedInteractTextLength))
                 _cachedInteractTextLength = CopySpanToInteractBuffer(UnknownInteractText);
         }
 
@@ -894,6 +884,7 @@ namespace Hecton8.Interaction
             s_physicsStateEvents = Hecton8.Core.GlobalRegistry.PhysicsStateEvents;
             s_ambientCurrentReadModel = Hecton8.Core.GlobalRegistry.AmbientCurrent;
             s_objectPool = Hecton8.Core.GlobalRegistry.ObjectPoolService;
+            s_localizationText = Hecton8.Core.GlobalRegistry.LocalizationText;
             TryRegisterStaticHotSwapListener();
             RefreshCachedPlayerMovement();
         }
@@ -932,6 +923,9 @@ namespace Hecton8.Interaction
                         break;
                     case GlobalRegistryServiceSlot.ObjectPool:
                         s_objectPool = currentService as IObjectPoolService;
+                        break;
+                    case GlobalRegistryServiceSlot.LocalizationRuntime:
+                        s_localizationText = currentService as ILocalizationTextReadModel;
                         break;
                 }
             }

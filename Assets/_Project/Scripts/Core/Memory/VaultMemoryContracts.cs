@@ -248,7 +248,7 @@ namespace Hecton8.Core.Memory
             {
                 return true;
             }
-            if (vault.IsAllocationLocked)
+            if (vault.IsAllocationLocked || vault.IsCompactionFenceActive)
                 return false;
 
             _ringHandle = vault.EnsureGenerationHandle<VaultSovereigntyTelemetryEntry>(
@@ -649,7 +649,7 @@ namespace Hecton8.Core.Memory
 
         public static bool PrewarmBuffers(IDataVault vault, int hotEntityCapacity)
         {
-            if (vault == null || vault.IsAllocationLocked)
+            if (vault == null || vault.IsAllocationLocked || vault.IsCompactionFenceActive)
                 return false;
 
             int capacity = ResolvePrewarmCapacity(hotEntityCapacity);

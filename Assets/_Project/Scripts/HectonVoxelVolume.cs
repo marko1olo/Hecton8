@@ -336,6 +336,10 @@ namespace Hecton8.Caves
         private const int PublishedSonarMaxGridDimension = 129;
         private const int PublishedSonarMaxPointCount = PublishedSonarMaxGridDimension * PublishedSonarMaxGridDimension * PublishedSonarMaxGridDimension;
         private const int PublishedSonarVaultPayloadCapacity = PublishedSonarMaxPointCount;
+        internal const ulong PublishedSonarPayloadReadGuardMask =
+            (1UL << ((int)BufferID.VoxelSdfPayloadDescriptor & 31)) |
+            (1UL << ((int)BufferID.VoxelSdfTexture3D & 31)) |
+            (1UL << ((int)BufferID.VoxelSdfAudioMaterialIds & 31));
         private static readonly int _CollapseImpulseLayerMask = HectonLayerMasks.MountedSweepLayerMask;
         private const float OrganicRootMoundMinimumOverlapMeters = 0.25f;
         private const float OrganicRootMoundSeabedProbeStepMeters = 0.5f;
@@ -347,6 +351,10 @@ namespace Hecton8.Caves
         private static HectonVoxelVolume s_activePublishedHead;
         private static int s_activePublishedVolumeCount;
         private static int s_publishedSonarVaultPublishInFlight;
+        private static int s_publishedSonarPayloadReadGuardGate;
+        private static IDataVault s_publishedSonarPayloadReadGuardVault;
+        private static ulong s_publishedSonarPayloadReadGuardMask;
+        private static int s_publishedSonarPayloadReadGuardRefCount;
 
         private HectonVoxelVolume _publishedNext;
         private HectonVoxelVolume _publishedPrev;
@@ -369,17 +377,25 @@ namespace Hecton8.Caves
             internal readonly int Version;
             internal readonly uint SdfGeneration;
             internal readonly uint AudioMaterialGeneration;
+            internal readonly ulong MutationGuardMask;
 
-            internal PublishedSonarSdfReadLease(HectonVoxelVolume owner, IDataVault vault, int version, uint sdfGeneration, uint audioMaterialGeneration)
+            internal PublishedSonarSdfReadLease(
+                HectonVoxelVolume owner,
+                IDataVault vault,
+                int version,
+                uint sdfGeneration,
+                uint audioMaterialGeneration,
+                ulong mutationGuardMask)
             {
                 Owner = owner;
                 Vault = vault;
                 Version = version;
                 SdfGeneration = sdfGeneration;
                 AudioMaterialGeneration = audioMaterialGeneration;
+                MutationGuardMask = mutationGuardMask;
             }
 
-            internal bool IsValid => Owner != null && Vault != null && Version > 0 && SdfGeneration != 0u;
+            internal bool IsValid => Owner != null && Vault != null && Version > 0 && SdfGeneration != 0u && MutationGuardMask != 0UL;
             internal bool HasAudioMaterialLock => AudioMaterialGeneration != 0u;
         }
 
@@ -885,7 +901,7 @@ namespace Hecton8.Caves
             density01 = 0f;
 
             IDataVault vault = _cachedDataVault;
-            if (!TryLockPublishedSonarSdfReadBuffer(vault))
+            if (!TryAcquirePublishedSonarPayloadReadGuard(vault, out ulong readGuardMask))
             {
                 return false;
             }
@@ -917,7 +933,7 @@ namespace Hecton8.Caves
             }
             finally
             {
-                vault.TryUnlockBuffer(BufferID.VoxelSdfTexture3D, SystemID.TerrainSeams);
+                ReleasePublishedSonarPayloadReadGuard(vault, readGuardMask);
             }
         }
 
@@ -951,7 +967,7 @@ namespace Hecton8.Caves
             audioMaterialId = DefaultPublishedSonarAudioMaterialId;
 
             IDataVault vault = _cachedDataVault;
-            if (!TryLockPublishedSonarAudioMaterialReadBuffer(vault))
+            if (!TryAcquirePublishedSonarPayloadReadGuard(vault, out ulong readGuardMask))
             {
                 return false;
             }
@@ -992,7 +1008,7 @@ namespace Hecton8.Caves
             }
             finally
             {
-                vault.TryUnlockBuffer(BufferID.VoxelSdfAudioMaterialIds, SystemID.TerrainSeams);
+                ReleasePublishedSonarPayloadReadGuard(vault, readGuardMask);
             }
         }
 
@@ -1014,7 +1030,7 @@ namespace Hecton8.Caves
             }
 
             IDataVault vault = _cachedDataVault;
-            if (!TryLockPublishedSonarSdfReadBuffer(vault))
+            if (!TryAcquirePublishedSonarPayloadReadGuard(vault, out ulong readGuardMask))
             {
                 return false;
             }
@@ -1115,7 +1131,7 @@ namespace Hecton8.Caves
             }
             finally
             {
-                vault.TryUnlockBuffer(BufferID.VoxelSdfTexture3D, SystemID.TerrainSeams);
+                ReleasePublishedSonarPayloadReadGuard(vault, readGuardMask);
             }
         }
 
@@ -1234,7 +1250,7 @@ namespace Hecton8.Caves
             gradient = Vector3.zero;
 
             IDataVault vault = _cachedDataVault;
-            if (!TryLockPublishedSonarSdfReadBuffer(vault))
+            if (!TryAcquirePublishedSonarPayloadReadGuard(vault, out ulong readGuardMask))
             {
                 return false;
             }
@@ -1279,7 +1295,7 @@ namespace Hecton8.Caves
             }
             finally
             {
-                vault.TryUnlockBuffer(BufferID.VoxelSdfTexture3D, SystemID.TerrainSeams);
+                ReleasePublishedSonarPayloadReadGuard(vault, readGuardMask);
             }
         }
 
@@ -2225,9 +2241,8 @@ namespace Hecton8.Caves
             VaultGenerationHandle<byte> sdfHandle = default;
             VaultGenerationHandle<byte> audioMaterialHandle = default;
             JobHandle encodeHandle = default;
-            bool sdfLocked = false;
-            bool audioLocked = false;
             bool encodeScheduled = false;
+            ulong writeGuardMask = 0UL;
             try
             {
                 if (!TryResolvePublishedSonarDescriptorOrigin(volumeOrigin, out Vector3 descriptorOrigin))
@@ -2245,15 +2260,12 @@ namespace Hecton8.Caves
                     return false;
                 }
 
-                if (!TryAcquirePublishedSonarWriteLock(vault, in sdfHandle, out NativeArray<byte> vaultSdf))
+                if (!TryAcquirePublishedSonarPayloadWriteGuard(vault, out writeGuardMask))
                     return false;
 
-                sdfLocked = true;
-                if (!TryAcquirePublishedSonarWriteLock(vault, in audioMaterialHandle, out NativeArray<byte> vaultAudioMaterialIds))
-                    return false;
-
-                audioLocked = true;
-                if (!vaultSdf.IsCreated ||
+                if (!vault.TryResolveHandle(in sdfHandle, out NativeArray<byte> vaultSdf) ||
+                    !vault.TryResolveHandle(in audioMaterialHandle, out NativeArray<byte> vaultAudioMaterialIds) ||
+                    !vaultSdf.IsCreated ||
                     !vaultAudioMaterialIds.IsCreated ||
                     vaultSdf.Length < totalPointCount ||
                     vaultAudioMaterialIds.Length < totalPointCount)
@@ -2261,7 +2273,7 @@ namespace Hecton8.Caves
                     return false;
                 }
 
-                if (!TryInvalidatePublishedSonarVaultDescriptor(vault, in descriptorHandle))
+                if (!TryInvalidatePublishedSonarVaultDescriptorGuarded(vault, in descriptorHandle))
                     return false;
 
                 float inverseRange = 1f / sdfRange;
@@ -2296,50 +2308,40 @@ namespace Hecton8.Caves
                     return false;
                 }
 
-                if (!TryAcquirePublishedSonarWriteLock(vault, in descriptorHandle, out NativeArray<VoxelSdfPayloadDescriptorDTO> descriptors))
+                if (!vault.TryResolveHandle(in descriptorHandle, out NativeArray<VoxelSdfPayloadDescriptorDTO> descriptors))
                     return false;
 
-                try
+                if (descriptors.IsCreated && descriptors.Length > 0)
                 {
-                    if (descriptors.IsCreated && descriptors.Length > 0)
-                    {
-                        VoxelSdfPayloadDescriptorDTO descriptor = default;
-                        descriptor.VolumeOrigin = new float3(descriptorOrigin.x, descriptorOrigin.y, descriptorOrigin.z);
-                        descriptor.GridDimensions = new int3(gridDimensions.x, gridDimensions.y, gridDimensions.z);
-                        descriptor.VoxelCellSize = new float3(
-                            math.max(0.0001f, math.abs(voxelCellSize.x)),
-                            math.max(0.0001f, math.abs(voxelCellSize.y)),
-                            math.max(0.0001f, math.abs(voxelCellSize.z)));
-                        descriptor.SdfRangeMeters = math.max(0.0001f, math.isfinite(sdfRange) ? sdfRange : 0f);
-                        descriptor.ByteCount = totalPointCount;
-                        descriptor.BufferId = unchecked((uint)(int)BufferID.VoxelSdfTexture3D);
-                        descriptor.BufferGeneration = sdfGeneration;
-                        descriptor.SdfVersion = unchecked((uint)math.max(0, version));
-                        descriptor.OwnerSystemId = (uint)SystemID.WorldStreaming;
-                        descriptor.Flags = VoxelSdfPayloadDescriptorDTO.FlagValid;
-                        descriptor.AudioMaterialByteCount = totalPointCount;
-                        descriptor.AudioMaterialBufferId = unchecked((uint)(int)BufferID.VoxelSdfAudioMaterialIds);
-                        descriptor.AudioMaterialBufferGeneration = audioMaterialGeneration;
-                        descriptors[0] = descriptor;
-                    }
+                    VoxelSdfPayloadDescriptorDTO descriptor = default;
+                    descriptor.VolumeOrigin = new float3(descriptorOrigin.x, descriptorOrigin.y, descriptorOrigin.z);
+                    descriptor.GridDimensions = new int3(gridDimensions.x, gridDimensions.y, gridDimensions.z);
+                    descriptor.VoxelCellSize = new float3(
+                        math.max(0.0001f, math.abs(voxelCellSize.x)),
+                        math.max(0.0001f, math.abs(voxelCellSize.y)),
+                        math.max(0.0001f, math.abs(voxelCellSize.z)));
+                    descriptor.SdfRangeMeters = math.max(0.0001f, math.isfinite(sdfRange) ? sdfRange : 0f);
+                    descriptor.ByteCount = totalPointCount;
+                    descriptor.BufferId = unchecked((uint)(int)BufferID.VoxelSdfTexture3D);
+                    descriptor.BufferGeneration = sdfGeneration;
+                    descriptor.SdfVersion = unchecked((uint)math.max(0, version));
+                    descriptor.OwnerSystemId = (uint)SystemID.WorldStreaming;
+                    descriptor.Flags = VoxelSdfPayloadDescriptorDTO.FlagValid;
+                    descriptor.AudioMaterialByteCount = totalPointCount;
+                    descriptor.AudioMaterialBufferId = unchecked((uint)(int)BufferID.VoxelSdfAudioMaterialIds);
+                    descriptor.AudioMaterialBufferGeneration = audioMaterialGeneration;
+                    descriptors[0] = descriptor;
+                }
 
-                    return true;
-                }
-                finally
-                {
-                    vault.ReleaseWriteLock(in descriptorHandle, SystemID.WorldStreaming);
-                }
+                return true;
             }
             finally
             {
                 if (encodeScheduled && !encodeHandle.IsCompleted)
                     DispatcherJobFence.TryComplete(ref encodeHandle, forceComplete: true);
 
-                if (audioLocked)
-                    vault.ReleaseWriteLock(in audioMaterialHandle, SystemID.WorldStreaming);
-
-                if (sdfLocked)
-                    vault.ReleaseWriteLock(in sdfHandle, SystemID.WorldStreaming);
+                if (writeGuardMask != 0UL)
+                    ReleasePublishedSonarPayloadWriteGuard(vault, writeGuardMask);
 
                 Interlocked.Exchange(ref s_publishedSonarVaultPublishInFlight, 0);
             }
@@ -2366,6 +2368,51 @@ namespace Hecton8.Caves
             {
                 vault.ReleaseWriteLock(in descriptorHandle, SystemID.WorldStreaming);
             }
+        }
+
+        private static bool TryInvalidatePublishedSonarVaultDescriptorGuarded(
+            IDataVault vault,
+            in VaultGenerationHandle<VoxelSdfPayloadDescriptorDTO> descriptorHandle)
+        {
+            if (vault == null ||
+                vault.IsCompactionFenceActive ||
+                !vault.TryResolveHandle(in descriptorHandle, out NativeArray<VoxelSdfPayloadDescriptorDTO> descriptors))
+            {
+                return false;
+            }
+
+            if (descriptors.IsCreated && descriptors.Length > 0)
+                descriptors[0] = default;
+
+            return !vault.IsCompactionFenceActive;
+        }
+
+        private static bool TryAcquirePublishedSonarPayloadWriteGuard(IDataVault vault, out ulong guardMask)
+        {
+            guardMask = PublishedSonarPayloadReadGuardMask;
+            if (vault == null ||
+                vault.IsCompactionFenceActive ||
+                guardMask == 0UL ||
+                !vault.TryAcquireMutationGuard(guardMask))
+            {
+                guardMask = 0UL;
+                return false;
+            }
+
+            if (!vault.IsCompactionFenceActive)
+                return true;
+
+            vault.ReleaseMutationGuard(guardMask);
+            guardMask = 0UL;
+            return false;
+        }
+
+        private static void ReleasePublishedSonarPayloadWriteGuard(IDataVault vault, ulong guardMask)
+        {
+            if (vault == null || guardMask == 0UL)
+                return;
+
+            vault.ReleaseMutationGuard(guardMask);
         }
 
         private static bool TryAcquirePublishedSonarWriteLock<T>(
@@ -2500,101 +2547,93 @@ namespace Hecton8.Caves
             IDataVault vault = _cachedDataVault;
             if (!_runtimeDataReady ||
                 vault == null ||
-                vault.IsCompactionFenceActive ||
-                !vault.TryLockBuffer(BufferID.VoxelSdfPayloadDescriptor, SystemID.TerrainSeams))
+                vault.IsCompactionFenceActive)
             {
                 return false;
             }
 
-            try
+            if (vault.IsCompactionFenceActive ||
+                !vault.TryGetGenerationHandle<VoxelSdfPayloadDescriptorDTO>(
+                    BufferID.VoxelSdfPayloadDescriptor,
+                    out VaultGenerationHandle<VoxelSdfPayloadDescriptorDTO> descriptorHandle) ||
+                descriptorHandle.BufferID != unchecked((uint)(int)BufferID.VoxelSdfPayloadDescriptor) ||
+                !vault.TryReadOnlyHandle(in descriptorHandle, out NativeArray<VoxelSdfPayloadDescriptorDTO>.ReadOnly descriptors) ||
+                !descriptors.IsCreated ||
+                descriptors.Length <= 0)
             {
-                if (vault.IsCompactionFenceActive ||
-                    !vault.TryGetGenerationHandle<VoxelSdfPayloadDescriptorDTO>(
-                        BufferID.VoxelSdfPayloadDescriptor,
-                        out VaultGenerationHandle<VoxelSdfPayloadDescriptorDTO> descriptorHandle) ||
-                    descriptorHandle.BufferID != unchecked((uint)(int)BufferID.VoxelSdfPayloadDescriptor) ||
-                    !vault.TryReadOnlyHandle(in descriptorHandle, out NativeArray<VoxelSdfPayloadDescriptorDTO>.ReadOnly descriptors) ||
-                    !descriptors.IsCreated ||
-                    descriptors.Length <= 0)
-                {
-                    return false;
-                }
-
-                VoxelSdfPayloadDescriptorDTO descriptor = descriptors[0];
-                if (vault.IsCompactionFenceActive ||
-                    (descriptor.Flags & VoxelSdfPayloadDescriptorDTO.FlagValid) == 0u ||
-                    descriptor.BufferId != unchecked((uint)(int)BufferID.VoxelSdfTexture3D) ||
-                    descriptor.AudioMaterialBufferId != unchecked((uint)(int)BufferID.VoxelSdfAudioMaterialIds) ||
-                    descriptor.ByteCount <= 0 ||
-                    descriptor.AudioMaterialByteCount <= 0 ||
-                    descriptor.GridDimensions.x <= 1 ||
-                    descriptor.GridDimensions.y <= 1 ||
-                    descriptor.GridDimensions.z <= 1 ||
-                    descriptor.SdfRangeMeters <= 0f ||
-                    !math.all(math.isfinite(descriptor.VolumeOrigin)) ||
-                    !math.all(math.isfinite(descriptor.VoxelCellSize)) ||
-                    !math.isfinite(descriptor.SdfRangeMeters))
-                {
-                    return false;
-                }
-
-                int expectedCount = descriptor.GridDimensions.x *
-                                    descriptor.GridDimensions.y *
-                                    descriptor.GridDimensions.z;
-                if (expectedCount <= 0 ||
-                    descriptor.ByteCount < expectedCount ||
-                    descriptor.AudioMaterialByteCount < expectedCount)
-                {
-                    return false;
-                }
-
-                if (requireSdf &&
-                    (vault.IsCompactionFenceActive ||
-                     !vault.TryGetGenerationHandle<byte>(BufferID.VoxelSdfTexture3D, out VaultGenerationHandle<byte> sdfHandle) ||
-                     sdfHandle.BufferID != unchecked((uint)(int)BufferID.VoxelSdfTexture3D) ||
-                     sdfHandle.Generation != descriptor.BufferGeneration ||
-                     !vault.TryReadOnlyHandle(in sdfHandle, out encodedSdf) ||
-                     !encodedSdf.IsCreated ||
-                     encodedSdf.Length < expectedCount))
-                {
-                    encodedSdf = default;
-                    return false;
-                }
-
-                if (requireAudioMaterial &&
-                    (vault.IsCompactionFenceActive ||
-                     !vault.TryGetGenerationHandle<byte>(BufferID.VoxelSdfAudioMaterialIds, out VaultGenerationHandle<byte> audioMaterialHandle) ||
-                     audioMaterialHandle.BufferID != unchecked((uint)(int)BufferID.VoxelSdfAudioMaterialIds) ||
-                     audioMaterialHandle.Generation != descriptor.AudioMaterialBufferGeneration ||
-                     !vault.TryReadOnlyHandle(in audioMaterialHandle, out audioMaterialIds) ||
-                     !audioMaterialIds.IsCreated ||
-                     audioMaterialIds.Length < expectedCount))
-                {
-                    encodedSdf = default;
-                    audioMaterialIds = default;
-                    return false;
-                }
-
-                gridDimensions = new Vector3Int(
-                    descriptor.GridDimensions.x,
-                    descriptor.GridDimensions.y,
-                    descriptor.GridDimensions.z);
-                volumeOrigin = new Vector3(
-                    descriptor.VolumeOrigin.x,
-                    descriptor.VolumeOrigin.y,
-                    descriptor.VolumeOrigin.z);
-                voxelCellSize = new Vector3(
-                    math.max(0.0001f, descriptor.VoxelCellSize.x),
-                    math.max(0.0001f, descriptor.VoxelCellSize.y),
-                    math.max(0.0001f, descriptor.VoxelCellSize.z));
-                sdfRange = descriptor.SdfRangeMeters;
-                version = descriptor.SdfVersion > int.MaxValue ? int.MaxValue : (int)descriptor.SdfVersion;
-                return !vault.IsCompactionFenceActive;
+                return false;
             }
-            finally
+
+            VoxelSdfPayloadDescriptorDTO descriptor = descriptors[0];
+            if (vault.IsCompactionFenceActive ||
+                (descriptor.Flags & VoxelSdfPayloadDescriptorDTO.FlagValid) == 0u ||
+                descriptor.BufferId != unchecked((uint)(int)BufferID.VoxelSdfTexture3D) ||
+                descriptor.AudioMaterialBufferId != unchecked((uint)(int)BufferID.VoxelSdfAudioMaterialIds) ||
+                descriptor.ByteCount <= 0 ||
+                descriptor.AudioMaterialByteCount <= 0 ||
+                descriptor.GridDimensions.x <= 1 ||
+                descriptor.GridDimensions.y <= 1 ||
+                descriptor.GridDimensions.z <= 1 ||
+                descriptor.SdfRangeMeters <= 0f ||
+                !math.all(math.isfinite(descriptor.VolumeOrigin)) ||
+                !math.all(math.isfinite(descriptor.VoxelCellSize)) ||
+                !math.isfinite(descriptor.SdfRangeMeters))
             {
-                vault.TryUnlockBuffer(BufferID.VoxelSdfPayloadDescriptor, SystemID.TerrainSeams);
+                return false;
             }
+
+            int expectedCount = descriptor.GridDimensions.x *
+                                descriptor.GridDimensions.y *
+                                descriptor.GridDimensions.z;
+            if (expectedCount <= 0 ||
+                descriptor.ByteCount < expectedCount ||
+                descriptor.AudioMaterialByteCount < expectedCount)
+            {
+                return false;
+            }
+
+            if (requireSdf &&
+                (vault.IsCompactionFenceActive ||
+                 !vault.TryGetGenerationHandle<byte>(BufferID.VoxelSdfTexture3D, out VaultGenerationHandle<byte> sdfHandle) ||
+                 sdfHandle.BufferID != unchecked((uint)(int)BufferID.VoxelSdfTexture3D) ||
+                 sdfHandle.Generation != descriptor.BufferGeneration ||
+                 !vault.TryReadOnlyHandle(in sdfHandle, out encodedSdf) ||
+                 !encodedSdf.IsCreated ||
+                 encodedSdf.Length < expectedCount))
+            {
+                encodedSdf = default;
+                return false;
+            }
+
+            if (requireAudioMaterial &&
+                (vault.IsCompactionFenceActive ||
+                 !vault.TryGetGenerationHandle<byte>(BufferID.VoxelSdfAudioMaterialIds, out VaultGenerationHandle<byte> audioMaterialHandle) ||
+                 audioMaterialHandle.BufferID != unchecked((uint)(int)BufferID.VoxelSdfAudioMaterialIds) ||
+                 audioMaterialHandle.Generation != descriptor.AudioMaterialBufferGeneration ||
+                 !vault.TryReadOnlyHandle(in audioMaterialHandle, out audioMaterialIds) ||
+                 !audioMaterialIds.IsCreated ||
+                 audioMaterialIds.Length < expectedCount))
+            {
+                encodedSdf = default;
+                audioMaterialIds = default;
+                return false;
+            }
+
+            gridDimensions = new Vector3Int(
+                descriptor.GridDimensions.x,
+                descriptor.GridDimensions.y,
+                descriptor.GridDimensions.z);
+            volumeOrigin = new Vector3(
+                descriptor.VolumeOrigin.x,
+                descriptor.VolumeOrigin.y,
+                descriptor.VolumeOrigin.z);
+            voxelCellSize = new Vector3(
+                math.max(0.0001f, descriptor.VoxelCellSize.x),
+                math.max(0.0001f, descriptor.VoxelCellSize.y),
+                math.max(0.0001f, descriptor.VoxelCellSize.z));
+            sdfRange = descriptor.SdfRangeMeters;
+            version = descriptor.SdfVersion > int.MaxValue ? int.MaxValue : (int)descriptor.SdfVersion;
+            return !vault.IsCompactionFenceActive;
         }
 
         private bool TryResolvePublishedSonarDescriptorOrigin(Vector3 capturedRuntimeOrigin, out Vector3 runtimeOrigin)
@@ -2658,7 +2697,7 @@ namespace Hecton8.Caves
             IDataVault vault = _cachedDataVault;
             if (!_runtimeDataReady ||
                 vault == null ||
-                !TryLockPublishedSonarSdfReadBuffer(vault))
+                !TryAcquirePublishedSonarPayloadReadGuard(vault, out ulong readGuardMask))
             {
                 return false;
             }
@@ -2683,13 +2722,19 @@ namespace Hecton8.Caves
                     return false;
                 }
 
-                lease = new PublishedSonarSdfReadLease(this, vault, version, sdfGeneration, 0u);
+                lease = new PublishedSonarSdfReadLease(
+                    this,
+                    vault,
+                    version,
+                    sdfGeneration,
+                    0u,
+                    readGuardMask);
                 return true;
             }
             finally
             {
                 if (!acquired)
-                    vault.TryUnlockBuffer(BufferID.VoxelSdfTexture3D, SystemID.TerrainSeams);
+                    ReleasePublishedSonarPayloadReadGuard(vault, readGuardMask);
             }
         }
 
@@ -2715,20 +2760,14 @@ namespace Hecton8.Caves
             IDataVault vault = _cachedDataVault;
             if (!_runtimeDataReady ||
                 vault == null ||
-                !TryLockPublishedSonarSdfReadBuffer(vault))
+                !TryAcquirePublishedSonarPayloadReadGuard(vault, out ulong readGuardMask))
             {
                 return false;
             }
 
-            bool sdfLocked = true;
-            bool audioLocked = false;
             bool acquired = false;
             try
             {
-                if (!TryLockPublishedSonarAudioMaterialReadBuffer(vault))
-                    return false;
-
-                audioLocked = true;
                 acquired = TryGetPublishedSonarSdfPayload(
                     out encodedSdf,
                     out audioMaterialIds,
@@ -2749,19 +2788,19 @@ namespace Hecton8.Caves
                     return false;
                 }
 
-                lease = new PublishedSonarSdfReadLease(this, vault, version, sdfGeneration, audioMaterialGeneration);
+                lease = new PublishedSonarSdfReadLease(
+                    this,
+                    vault,
+                    version,
+                    sdfGeneration,
+                    audioMaterialGeneration,
+                    readGuardMask);
                 return true;
             }
             finally
             {
                 if (!acquired)
-                {
-                    if (audioLocked)
-                        vault.TryUnlockBuffer(BufferID.VoxelSdfAudioMaterialIds, SystemID.TerrainSeams);
-
-                    if (sdfLocked)
-                        vault.TryUnlockBuffer(BufferID.VoxelSdfTexture3D, SystemID.TerrainSeams);
-                }
+                    ReleasePublishedSonarPayloadReadGuard(vault, readGuardMask);
             }
         }
 
@@ -2770,42 +2809,122 @@ namespace Hecton8.Caves
             if (!lease.IsValid || !ReferenceEquals(lease.Owner, this))
                 return;
 
-            if (lease.HasAudioMaterialLock)
-                lease.Vault.TryUnlockBuffer(BufferID.VoxelSdfAudioMaterialIds, SystemID.TerrainSeams);
-
-            lease.Vault.TryUnlockBuffer(BufferID.VoxelSdfTexture3D, SystemID.TerrainSeams);
+            ReleasePublishedSonarPayloadReadGuard(lease.Vault, lease.MutationGuardMask);
         }
 
-        private static bool TryLockPublishedSonarSdfReadBuffer(IDataVault vault)
+        private static bool TryAcquirePublishedSonarPayloadReadGuard(IDataVault vault, out ulong guardMask)
         {
-            if (vault == null ||
-                vault.IsCompactionFenceActive ||
-                !vault.TryLockBuffer(BufferID.VoxelSdfTexture3D, SystemID.TerrainSeams))
+            guardMask = PublishedSonarPayloadReadGuardMask;
+            if (vault == null || vault.IsCompactionFenceActive || guardMask == 0UL)
             {
+                guardMask = 0UL;
                 return false;
             }
 
-            if (!vault.IsCompactionFenceActive)
-                return true;
-
-            vault.TryUnlockBuffer(BufferID.VoxelSdfTexture3D, SystemID.TerrainSeams);
-            return false;
-        }
-
-        private static bool TryLockPublishedSonarAudioMaterialReadBuffer(IDataVault vault)
-        {
-            if (vault == null ||
-                vault.IsCompactionFenceActive ||
-                !vault.TryLockBuffer(BufferID.VoxelSdfAudioMaterialIds, SystemID.TerrainSeams))
+            if (!TryEnterPublishedSonarPayloadReadGuardGate())
             {
+                guardMask = 0UL;
                 return false;
             }
 
-            if (!vault.IsCompactionFenceActive)
-                return true;
+            try
+            {
+                int refCount = s_publishedSonarPayloadReadGuardRefCount;
+                if (refCount > 0)
+                {
+                    if (!ReferenceEquals(s_publishedSonarPayloadReadGuardVault, vault) ||
+                        s_publishedSonarPayloadReadGuardMask != guardMask ||
+                        refCount == int.MaxValue ||
+                        vault.IsCompactionFenceActive)
+                    {
+                        guardMask = 0UL;
+                        return false;
+                    }
 
-            vault.TryUnlockBuffer(BufferID.VoxelSdfAudioMaterialIds, SystemID.TerrainSeams);
-            return false;
+                    s_publishedSonarPayloadReadGuardRefCount = refCount + 1;
+                    Thread.MemoryBarrier();
+                    return true;
+                }
+
+                if (!vault.TryAcquireMutationGuard(guardMask))
+                {
+                    guardMask = 0UL;
+                    return false;
+                }
+
+                if (vault.IsCompactionFenceActive)
+                {
+                    vault.ReleaseMutationGuard(guardMask);
+                    guardMask = 0UL;
+                    return false;
+                }
+
+                s_publishedSonarPayloadReadGuardVault = vault;
+                s_publishedSonarPayloadReadGuardMask = guardMask;
+                s_publishedSonarPayloadReadGuardRefCount = 1;
+                Thread.MemoryBarrier();
+                return true;
+            }
+            finally
+            {
+                ReleasePublishedSonarPayloadReadGuardGate();
+            }
+        }
+
+        internal static void ReleasePublishedSonarPayloadReadGuard(IDataVault vault, ulong guardMask)
+        {
+            if (vault == null || guardMask == 0UL)
+                return;
+
+            EnterPublishedSonarPayloadReadGuardGate();
+            try
+            {
+                int refCount = s_publishedSonarPayloadReadGuardRefCount;
+                if (refCount <= 0 ||
+                    !ReferenceEquals(s_publishedSonarPayloadReadGuardVault, vault) ||
+                    s_publishedSonarPayloadReadGuardMask != guardMask)
+                {
+                    return;
+                }
+
+                int nextRefCount = refCount - 1;
+                s_publishedSonarPayloadReadGuardRefCount = nextRefCount;
+                if (nextRefCount > 0)
+                    return;
+
+                s_publishedSonarPayloadReadGuardVault = null;
+                s_publishedSonarPayloadReadGuardMask = 0UL;
+                Thread.MemoryBarrier();
+                vault.ReleaseMutationGuard(guardMask);
+            }
+            finally
+            {
+                ReleasePublishedSonarPayloadReadGuardGate();
+            }
+        }
+
+        private static bool TryEnterPublishedSonarPayloadReadGuardGate()
+        {
+            if (Interlocked.CompareExchange(ref s_publishedSonarPayloadReadGuardGate, 1, 0) != 0)
+                return false;
+
+            Thread.MemoryBarrier();
+            return true;
+        }
+
+        private static void EnterPublishedSonarPayloadReadGuardGate()
+        {
+            SpinWait spin = default;
+            while (Interlocked.CompareExchange(ref s_publishedSonarPayloadReadGuardGate, 1, 0) != 0)
+                spin.SpinOnce();
+
+            Thread.MemoryBarrier();
+        }
+
+        private static void ReleasePublishedSonarPayloadReadGuardGate()
+        {
+            Thread.MemoryBarrier();
+            Volatile.Write(ref s_publishedSonarPayloadReadGuardGate, 0);
         }
 
         private bool TryGetPublishedSonarSdfPayload(

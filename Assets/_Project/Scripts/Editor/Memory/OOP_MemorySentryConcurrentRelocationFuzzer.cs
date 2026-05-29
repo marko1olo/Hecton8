@@ -189,10 +189,18 @@ namespace Hecton8.EditorValidation
                 while (TryBeginFrame(targetFrames, ref completedFrames, ref stop))
                 {
                     BufferID id = (BufferID)(StableBufferBase + (cursor++ & (StableBufferCount - 1)));
-                    if (vault.TryLockBuffer(id, SystemID.CoreDataVault))
+                    ulong mutationGuardMask = LegacyFuzzerMutationGuardBit(id);
+                    if (vault.TryAcquireMutationGuard(mutationGuardMask))
                     {
-                        Thread.SpinWait(32);
-                        vault.TryUnlockBuffer(id, SystemID.CoreDataVault);
+                        try
+                        {
+                            Thread.SpinWait(32);
+                        }
+                        finally
+                        {
+                            vault.ReleaseMutationGuard(mutationGuardMask);
+                        }
+
                         Interlocked.Increment(ref pinPasses);
                     }
                     else
@@ -206,6 +214,11 @@ namespace Hecton8.EditorValidation
                 RecordWorkerFailure(ex, ref workerFailures, ref firstFailure, failureLock);
                 Volatile.Write(ref stop, 1);
             }
+        }
+
+        private static ulong LegacyFuzzerMutationGuardBit(BufferID bufferId)
+        {
+            return 1UL << ((int)bufferId & 31);
         }
 
         private static void RunAllocationWorker(

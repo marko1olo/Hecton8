@@ -321,6 +321,25 @@ namespace Hecton8.Modding
         [FieldOffset(60)] public uint _pad0;
     }
 
+    [StructLayout(LayoutKind.Explicit, Size = 16)]
+    internal struct ModSandboxMemoryWriteCommand
+    {
+        [FieldOffset(0)] public int OffsetBytes;
+        [FieldOffset(4)] public uint RawValue;
+        [FieldOffset(8)] public uint ByteCount;
+        [FieldOffset(12)] public uint Reserved;
+    }
+
+    [StructLayout(LayoutKind.Sequential)]
+    internal struct ModSandboxValidationScratchState
+    {
+        public FutureCommandValidationStats Stats;
+        public int MemoryWriteCount;
+        public int DevNullCount;
+        public int CameraImpulseCount;
+        public int Reserved;
+    }
+
     internal static class FutureCommandSandboxConstants
     {
         public const int EnvelopeSizeBytes = 64;
@@ -463,7 +482,6 @@ namespace Hecton8.Modding
         private const uint KernelCameraJuiceImpulseBufferId = 70917u;
         private const uint KernelCameraJuiceStateBufferId = 70918u;
         private const uint KernelTuningProfilesBufferId = 70919u;
-        private const uint KernelCsvScratchBufferId = 70920u;
         private const long KernelSpikeTicksNumerator = 5L;
         private const long KernelSpikeTicksDenominator = 10000L;
 
@@ -494,12 +512,17 @@ namespace Hecton8.Modding
         private static VaultLane<ModKernelCameraJuiceImpulse> _kernelCameraJuiceImpulseHandle;
         private static VaultLane<ModKernelCameraJuiceState> _kernelCameraJuiceStateHandle;
         private static VaultLane<ModKernelTuningProfile> _kernelTuningProfilesHandle;
-        private static VaultLane<byte> _kernelCsvScratchHandle;
+        private static NativeArray<ModSandboxValidationScratchState> _validationScratchState;
+        private static NativeArray<ModderFrameCounter> _validationCounterScratch;
+        private static NativeArray<ModSandboxMemoryWriteCommand> _validationMemoryWriteScratch;
+        private static NativeArray<FutureCommandEnvelope> _validationDevNullScratch;
+        private static NativeArray<ModKernelCameraJuiceImpulse> _validationCameraImpulseScratch;
         private static JobHandle _scheduledValidationHandle;
         private static ModSandboxScheduledValidationState _scheduledValidationState;
         private static bool _scheduledValidationActive;
         private static bool _initialized;
         private static bool _rollbackFreezeOverride;
+        private static int _lastLocalDumpFrame = -1;
 
         internal static int GetPendingEnvelopeCount()
         {
@@ -537,6 +560,7 @@ namespace Hecton8.Modding
 
             ConfigureSignalLanes();
             AcquireVaultBuffers();
+            EnsureValidationScratchBuffersCold();
             GenerateEmergencyMockOpcodes();
 
             _rollbackFreezeOverride = false;
@@ -547,10 +571,12 @@ namespace Hecton8.Modding
         {
             CompleteScheduledPreSimulationForBarrier();
             ReleaseVaultHandles(_dataVault);
+            ReleaseValidationScratchBuffers();
             _dataVault = null;
             _scheduledValidationHandle = default;
             _scheduledValidationState = default;
             _scheduledValidationActive = false;
+            _lastLocalDumpFrame = -1;
             _initialized = false;
         }
 
@@ -569,7 +595,9 @@ namespace Hecton8.Modding
 
         internal static bool Request(in FutureCommandEnvelope envelope)
         {
-            Initialize();
+            if (!_initialized)
+                return false;
+
             AcquireVaultBuffers();
             if (!TryReadRingStateSnapshot(out ModSandboxRingState state))
                 return false;
@@ -587,7 +615,9 @@ namespace Hecton8.Modding
 
         internal static int RequestRawEnvelopeStream(NativeArray<byte> bytes, int byteLength, bool sourceBigEndian)
         {
-            Initialize();
+            if (!_initialized)
+                return 0;
+
             if (!bytes.IsCreated || byteLength < FutureCommandSandboxConstants.EnvelopeSizeBytes)
                 return 0;
 
@@ -600,8 +630,7 @@ namespace Hecton8.Modding
             int accepted = 0;
             byte* ptr = (byte*)NativeArrayUnsafeUtility.GetUnsafeReadOnlyPtr(bytes);
             IDataVault lockedVault = null;
-            if (!TryAcquireVaultLaneWrite(ref _pendingRingHandle, out NativeArray<FutureCommandEnvelope> pendingRing, out lockedVault) ||
-                pendingRing.Length == 0)
+            if (!TryAcquireVaultLaneWrite(ref _pendingRingHandle, out NativeArray<FutureCommandEnvelope> pendingRing, out lockedVault))
             {
                 return 0;
             }
@@ -628,7 +657,9 @@ namespace Hecton8.Modding
 
         internal static int RequestFromExternalQueue(NativeQueue<FutureCommandEnvelope> sourceQueue, int maxEnvelopeCount)
         {
-            Initialize();
+            if (!_initialized)
+                return 0;
+
             if (!sourceQueue.IsCreated || maxEnvelopeCount <= 0)
                 return 0;
 
@@ -638,8 +669,7 @@ namespace Hecton8.Modding
 
             int accepted = 0;
             IDataVault lockedVault = null;
-            if (!TryAcquireVaultLaneWrite(ref _pendingRingHandle, out NativeArray<FutureCommandEnvelope> pendingRing, out lockedVault) ||
-                pendingRing.Length == 0)
+            if (!TryAcquireVaultLaneWrite(ref _pendingRingHandle, out NativeArray<FutureCommandEnvelope> pendingRing, out lockedVault))
             {
                 return 0;
             }
@@ -724,10 +754,169 @@ namespace Hecton8.Modding
 
         private static bool CommitScheduledValidation()
         {
+            if (!CommitScheduledValidationOutputs())
+                return false;
+
             FinalizeValidationTelemetry(in _scheduledValidationState);
             _scheduledValidationState = default;
             _scheduledValidationActive = false;
             return true;
+        }
+
+        private static bool CommitScheduledValidationOutputs()
+        {
+            if (!_validationScratchState.IsCreated || _validationScratchState.Length == 0)
+                return false;
+
+            ModSandboxValidationScratchState output = _validationScratchState[0];
+            if (!TryWriteVaultLaneElement(ref _statsHandle, 0, in output.Stats))
+                return false;
+            if (!TryCommitCounterScratch())
+                return false;
+            if (!TryCommitMemoryWriteScratch(output.MemoryWriteCount))
+                return false;
+            if (!TryCommitDevNullScratch(output.DevNullCount))
+                return false;
+            if (!TryCommitCameraImpulseScratch(output.CameraImpulseCount))
+                return false;
+
+            return true;
+        }
+
+        private static bool TryCommitCounterScratch()
+        {
+            if (!_validationCounterScratch.IsCreated)
+                return false;
+
+            IDataVault lockedVault = null;
+            if (!TryAcquireVaultLaneWrite(ref _perModCountersHandle, out NativeArray<ModderFrameCounter> counters, out lockedVault))
+                return false;
+
+            try
+            {
+                int count = math.min(counters.Length, _validationCounterScratch.Length);
+                for (int i = 0; i < count; i++)
+                    counters[i] = _validationCounterScratch[i];
+                return true;
+            }
+            finally
+            {
+                lockedVault.ReleaseWriteLock(in _perModCountersHandle.Handle, SystemID.ModSandbox);
+            }
+        }
+
+        private static bool TryCommitMemoryWriteScratch(int memoryWriteCount)
+        {
+            if (memoryWriteCount <= 0)
+                return true;
+            if (!_validationMemoryWriteScratch.IsCreated)
+                return false;
+
+            IDataVault lockedVault = null;
+            if (!TryAcquireVaultLaneWrite(ref _modderBlackboxMemoryHandle, out NativeArray<byte> blackboxMemory, out lockedVault))
+                return false;
+
+            try
+            {
+                int count = math.min(memoryWriteCount, _validationMemoryWriteScratch.Length);
+                for (int i = 0; i < count; i++)
+                {
+                    ModSandboxMemoryWriteCommand command = _validationMemoryWriteScratch[i];
+                    int byteCount = (int)math.min(command.ByteCount, 4u);
+                    if (command.OffsetBytes < 0 ||
+                        byteCount <= 0 ||
+                        command.OffsetBytes > blackboxMemory.Length - byteCount)
+                    {
+                        continue;
+                    }
+
+                    for (int byteIndex = 0; byteIndex < byteCount; byteIndex++)
+                        blackboxMemory[command.OffsetBytes + byteIndex] = (byte)(command.RawValue >> (byteIndex * 8));
+                }
+
+                return true;
+            }
+            finally
+            {
+                lockedVault.ReleaseWriteLock(in _modderBlackboxMemoryHandle.Handle, SystemID.ModSandbox);
+            }
+        }
+
+        private static bool TryCommitDevNullScratch(int devNullCount)
+        {
+            if (devNullCount <= 0)
+                return true;
+            if (!_validationDevNullScratch.IsCreated ||
+                !TryReadRingStateSnapshot(out ModSandboxRingState state))
+            {
+                return false;
+            }
+
+            IDataVault lockedVault = null;
+            if (!TryAcquireVaultLaneWrite(ref _devNullRingHandle, out NativeArray<FutureCommandEnvelope> devNullRing, out lockedVault))
+                return false;
+
+            try
+            {
+                int count = math.min(devNullCount, _validationDevNullScratch.Length);
+                for (int i = 0; i < count; i++)
+                {
+                    if (state.DevNullCount >= devNullRing.Length)
+                    {
+                        state.DevNullHead = AdvanceRingIndex(state.DevNullHead, devNullRing.Length);
+                        state.DevNullCount = math.max(0, state.DevNullCount - 1);
+                    }
+
+                    devNullRing[state.DevNullTail] = _validationDevNullScratch[i];
+                    state.DevNullTail = AdvanceRingIndex(state.DevNullTail, devNullRing.Length);
+                    state.DevNullCount = math.min(devNullRing.Length, state.DevNullCount + 1);
+                }
+            }
+            finally
+            {
+                lockedVault.ReleaseWriteLock(in _devNullRingHandle.Handle, SystemID.ModSandbox);
+            }
+
+            return TryWriteRingStateSnapshot(in state);
+        }
+
+        private static bool TryCommitCameraImpulseScratch(int cameraImpulseCount)
+        {
+            if (cameraImpulseCount <= 0)
+                return true;
+            if (!_validationCameraImpulseScratch.IsCreated ||
+                !TryOpenVaultLaneRead(ref _kernelCameraJuiceStateHandle, out NativeArray<ModKernelCameraJuiceState>.ReadOnly cameraStateRead) ||
+                cameraStateRead.Length == 0)
+            {
+                return false;
+            }
+
+            ModKernelCameraJuiceState state = cameraStateRead[0];
+            IDataVault lockedVault = null;
+            if (!TryAcquireVaultLaneWrite(ref _kernelCameraJuiceImpulseHandle, out NativeArray<ModKernelCameraJuiceImpulse> cameraImpulses, out lockedVault))
+                return false;
+
+            try
+            {
+                int count = math.min(cameraImpulseCount, math.min(_validationCameraImpulseScratch.Length, cameraImpulses.Length));
+                for (int i = 0; i < count; i++)
+                {
+                    int head = state.Head;
+                    if ((uint)head >= (uint)cameraImpulses.Length)
+                        head = 0;
+
+                    cameraImpulses[head] = _validationCameraImpulseScratch[i];
+                    state.Head = AdvanceRingIndex(head, cameraImpulses.Length);
+                    state.Count = math.min(cameraImpulses.Length, state.Count + 1);
+                    state.LastFrame = _validationCameraImpulseScratch[i].Frame;
+                }
+            }
+            finally
+            {
+                lockedVault.ReleaseWriteLock(in _kernelCameraJuiceImpulseHandle.Handle, SystemID.ModSandbox);
+            }
+
+            return TryWriteVaultLaneElement(ref _kernelCameraJuiceStateHandle, 0, in state);
         }
 
         internal static void DrainLateFrame()
@@ -744,7 +933,8 @@ namespace Hecton8.Modding
 
             state.DevNullHead = state.DevNullTail;
             state.DevNullCount = 0;
-            TryWriteRingStateSnapshot(in state);
+            if (!TryWriteRingStateSnapshot(in state))
+                return;
         }
 
         internal static bool RegisterApprovedAsset(uint assetHash, uint crc32)
@@ -960,43 +1150,55 @@ namespace Hecton8.Modding
             if (!csvBytes.IsCreated || byteLength <= 0)
                 return false;
 
-            NativeArray<FutureCommandOpcodeRecord> opcodeRecords = OpenVaultLane(ref _opcodeRecordsHandle);
-            NativeArray<ModSandboxRingState> ringState = ResolveRingState();
-            if (!opcodeRecords.IsCreated || !ringState.IsCreated || ringState.Length == 0)
+            AcquireVaultBuffers();
+            int opcodeCapacity = IsLaneCreated(in _opcodeRecordsHandle) ? _opcodeRecordsHandle.Length : 0;
+            if (opcodeCapacity <= 0 || !TryReadRingStateSnapshot(out ModSandboxRingState state))
                 return false;
 
             int length = math.min(byteLength, csvBytes.Length);
-            if (!TryValidateAllowedOpcodesCsv(csvBytes, length, opcodeRecords.Length, out int expectedAccepted))
+            if (!TryValidateAllowedOpcodesCsv(csvBytes, length, opcodeCapacity, out int expectedAccepted))
                 return false;
 
-            MemClearArray(opcodeRecords);
-            ModSandboxRingState state = ringState[0];
             state.OpcodeCount = 0;
+            if (!TryWriteRingStateSnapshot(in state))
+                return false;
+
+            IDataVault lockedVault = null;
+            if (!TryAcquireVaultLaneWrite(ref _opcodeRecordsHandle, out NativeArray<FutureCommandOpcodeRecord> opcodeRecords, out lockedVault))
+                return false;
+
             int accepted = 0;
-            int tokenStart = 0;
-            for (int cursor = 0; cursor <= length; cursor++)
+            try
             {
-                byte b = cursor < length ? csvBytes[cursor] : (byte)'\n';
-                if (b != (byte)'\n' && b != (byte)'\r')
-                    continue;
-
-                int lineLength = cursor - tokenStart;
-                if (!IsOpcodeCsvMetadataLine(csvBytes, tokenStart, lineLength) &&
-                    TryParseOpcodeCsvLine(csvBytes, tokenStart, lineLength, out uint opcodeHash) &&
-                    opcodeHash != 0u &&
-                    AddOpcodeRecord(opcodeRecords, ref state, opcodeHash, 1u))
+                MemClearArray(opcodeRecords);
+                int tokenStart = 0;
+                for (int cursor = 0; cursor <= length; cursor++)
                 {
-                    accepted++;
-                }
+                    byte b = cursor < length ? csvBytes[cursor] : (byte)'\n';
+                    if (b != (byte)'\n' && b != (byte)'\r')
+                        continue;
 
-                tokenStart = cursor + 1;
+                    int lineLength = cursor - tokenStart;
+                    if (!IsOpcodeCsvMetadataLine(csvBytes, tokenStart, lineLength) &&
+                        TryParseOpcodeCsvLine(csvBytes, tokenStart, lineLength, out uint opcodeHash) &&
+                        opcodeHash != 0u &&
+                        AddOpcodeRecord(opcodeRecords, ref state, opcodeHash, 1u))
+                    {
+                        accepted++;
+                    }
+
+                    tokenStart = cursor + 1;
+                }
+            }
+            finally
+            {
+                lockedVault.ReleaseWriteLock(in _opcodeRecordsHandle.Handle, SystemID.ModSandbox);
             }
 
             if (accepted != expectedAccepted)
                 return false;
 
-            ringState[0] = state;
-            return true;
+            return TryWriteRingStateSnapshot(in state);
         }
 #endif
 
@@ -1007,26 +1209,36 @@ namespace Hecton8.Modding
             if (!File.Exists(path))
                 return false;
 
-            AcquireVaultBuffers();
-            NativeArray<byte> scratch = OpenVaultLane(ref _kernelCsvScratchHandle);
-            if (!scratch.IsCreated || scratch.Length == 0)
-                return false;
-
             try
             {
                 using (FileStream stream = new FileStream(path, FileMode.Open, FileAccess.Read, FileShare.ReadWrite))
                 {
                     long fileLength = stream.Length;
-                    if (fileLength <= 0L || fileLength > scratch.Length)
+                    if (fileLength <= 0L || fileLength > FutureCommandSandboxConstants.KernelCsvScratchBytes)
                         return false;
 
                     int readLength = (int)fileLength;
-                    byte* ptr = (byte*)NativeArrayUnsafeUtility.GetUnsafeBufferPointerWithoutChecks(scratch);
-                    int read = stream.Read(new Span<byte>(ptr, readLength));
-                    if (read != readLength)
+                    NativeArray<byte> fileBytes = H8Memory.Allocate<byte>(
+                        readLength,
+                        SystemID.ModSandbox,
+                        Allocator.Temp,
+                        NativeArrayOptions.UninitializedMemory);
+                    if (!fileBytes.IsCreated)
                         return false;
 
-                    return TryIngestAllowedOpcodesCsv(scratch, read);
+                    try
+                    {
+                        byte* ptr = (byte*)NativeArrayUnsafeUtility.GetUnsafeBufferPointerWithoutChecks(fileBytes);
+                        int read = stream.Read(new Span<byte>(ptr, readLength));
+                        if (read != readLength)
+                            return false;
+
+                        return TryIngestAllowedOpcodesCsv(fileBytes, read);
+                    }
+                    finally
+                    {
+                        H8Memory.Release(ref fileBytes, SystemID.ModSandbox);
+                    }
                 }
             }
             catch (Exception)
@@ -1041,26 +1253,36 @@ namespace Hecton8.Modding
             if (!File.Exists(path))
                 return false;
 
-            AcquireVaultBuffers();
-            NativeArray<byte> scratch = OpenVaultLane(ref _kernelCsvScratchHandle);
-            if (!scratch.IsCreated || scratch.Length == 0)
-                return false;
-
             try
             {
                 using (FileStream stream = new FileStream(path, FileMode.Open, FileAccess.Read, FileShare.ReadWrite))
                 {
                     long fileLength = stream.Length;
-                    if (fileLength <= 0L || fileLength > scratch.Length)
+                    if (fileLength <= 0L || fileLength > FutureCommandSandboxConstants.KernelCsvScratchBytes)
                         return false;
 
                     int readLength = (int)fileLength;
-                    byte* ptr = (byte*)NativeArrayUnsafeUtility.GetUnsafeBufferPointerWithoutChecks(scratch);
-                    int read = stream.Read(new Span<byte>(ptr, readLength));
-                    if (read != readLength)
+                    NativeArray<byte> fileBytes = H8Memory.Allocate<byte>(
+                        readLength,
+                        SystemID.ModSandbox,
+                        Allocator.Temp,
+                        NativeArrayOptions.UninitializedMemory);
+                    if (!fileBytes.IsCreated)
                         return false;
 
-                    return TryIngestKernelTuningProfilesCsv(new ReadOnlySpan<byte>(ptr, read));
+                    try
+                    {
+                        byte* ptr = (byte*)NativeArrayUnsafeUtility.GetUnsafeBufferPointerWithoutChecks(fileBytes);
+                        int read = stream.Read(new Span<byte>(ptr, readLength));
+                        if (read != readLength)
+                            return false;
+
+                        return TryIngestKernelTuningProfilesCsv(new ReadOnlySpan<byte>(ptr, read));
+                    }
+                    finally
+                    {
+                        H8Memory.Release(ref fileBytes, SystemID.ModSandbox);
+                    }
                 }
             }
             catch (Exception)
@@ -1074,32 +1296,43 @@ namespace Hecton8.Modding
         internal static bool TryIngestKernelTuningProfilesCsv(ReadOnlySpan<byte> csvBytes)
         {
             AcquireVaultBuffers();
-            NativeArray<ModKernelTuningProfile> profiles = OpenVaultLane(ref _kernelTuningProfilesHandle);
-            if (!profiles.IsCreated || profiles.Length == 0 || csvBytes.Length == 0)
+            int profileCapacity = IsLaneCreated(in _kernelTuningProfilesHandle) ? _kernelTuningProfilesHandle.Length : 0;
+            if (profileCapacity <= 0 || csvBytes.Length == 0)
                 return false;
 
-            if (!TryValidateKernelTuningProfilesCsv(csvBytes, profiles.Length, out int profileCount))
+            if (!TryValidateKernelTuningProfilesCsv(csvBytes, profileCapacity, out int profileCount))
                 return false;
 
-            MemClearArray(profiles);
+            IDataVault lockedVault = null;
+            if (!TryAcquireVaultLaneWrite(ref _kernelTuningProfilesHandle, out NativeArray<ModKernelTuningProfile> profiles, out lockedVault))
+                return false;
+
             int accepted = 0;
-            int lineStart = 0;
-            for (int cursor = 0; cursor <= csvBytes.Length; cursor++)
+            try
             {
-                byte b = cursor < csvBytes.Length ? csvBytes[cursor] : (byte)'\n';
-                if (b != (byte)'\n' && b != (byte)'\r')
-                    continue;
-
-                int length = cursor - lineStart;
-                ReadOnlySpan<byte> line = csvBytes.Slice(lineStart, length);
-                if (!IsKernelTuningCsvMetadataLine(line) &&
-                    TryParseKernelTuningCsvLine(line, out ModKernelTuningProfile profile))
+                MemClearArray(profiles);
+                int lineStart = 0;
+                for (int cursor = 0; cursor <= csvBytes.Length; cursor++)
                 {
-                    profiles[accepted] = profile;
-                    accepted++;
-                }
+                    byte b = cursor < csvBytes.Length ? csvBytes[cursor] : (byte)'\n';
+                    if (b != (byte)'\n' && b != (byte)'\r')
+                        continue;
 
-                lineStart = cursor + 1;
+                    int length = cursor - lineStart;
+                    ReadOnlySpan<byte> line = csvBytes.Slice(lineStart, length);
+                    if (!IsKernelTuningCsvMetadataLine(line) &&
+                        TryParseKernelTuningCsvLine(line, out ModKernelTuningProfile profile))
+                    {
+                        profiles[accepted] = profile;
+                        accepted++;
+                    }
+
+                    lineStart = cursor + 1;
+                }
+            }
+            finally
+            {
+                lockedVault.ReleaseWriteLock(in _kernelTuningProfilesHandle.Handle, SystemID.ModSandbox);
             }
 
             return accepted == profileCount;
@@ -1125,135 +1358,127 @@ namespace Hecton8.Modding
                 return false;
 
             AcquireVaultBuffers();
-            NativeArray<FutureCommandEnvelope> staging = OpenVaultLane(ref _stagingHandle);
-            NativeArray<FutureCommandValidationStats> statsBuffer = OpenVaultLane(ref _statsHandle);
-            NativeArray<FutureCommandOpcodeRecord> opcodeRecords = OpenVaultLane(ref _opcodeRecordsHandle);
-            NativeArray<ModderFrameCounter> perModCounters = OpenVaultLane(ref _perModCountersHandle);
-            NativeArray<ModderMemoryLease> memoryLeases = OpenVaultLane(ref _memoryLeasesHandle);
-            NativeArray<ApprovedAssetRecord> approvedAssets = OpenVaultLane(ref _approvedAssetManifestHandle);
-            NativeArray<byte> modderBlackboxMemory = OpenVaultLane(ref _modderBlackboxMemoryHandle);
-            NativeArray<FutureCommandEnvelope> devNullRing = OpenVaultLane(ref _devNullRingHandle);
-            NativeArray<ModSandboxRingState> ringState = ResolveRingState();
-            NativeArray<ModKernelCameraJuiceImpulse> cameraJuiceImpulses = OpenVaultLane(ref _kernelCameraJuiceImpulseHandle);
-            NativeArray<ModKernelCameraJuiceState> cameraJuiceState = OpenVaultLane(ref _kernelCameraJuiceStateHandle);
-            NativeArray<ModKernelTuningProfile> kernelProfiles = OpenVaultLane(ref _kernelTuningProfilesHandle);
-            NativeArray<FutureCommandSandboxTuning> tuningBuffer = OpenVaultLane(ref _tuningHandle);
-            if (!staging.IsCreated ||
-                staging.Length < 2 ||
-                !statsBuffer.IsCreated ||
-                statsBuffer.Length == 0 ||
-                !opcodeRecords.IsCreated ||
-                !perModCounters.IsCreated ||
-                !memoryLeases.IsCreated ||
-                !approvedAssets.IsCreated ||
-                !modderBlackboxMemory.IsCreated ||
-                !devNullRing.IsCreated ||
-                !ringState.IsCreated ||
-                !cameraJuiceImpulses.IsCreated ||
-                !cameraJuiceState.IsCreated ||
-                !kernelProfiles.IsCreated ||
-                !tuningBuffer.IsCreated ||
-                ringState.Length == 0)
-            {
+            EnsureValidationScratchBuffersCold();
+            NativeArray<FutureCommandEnvelope> auditInputs = H8Memory.Allocate<FutureCommandEnvelope>(
+                2,
+                SystemID.ModSandbox,
+                Allocator.Temp,
+                NativeArrayOptions.ClearMemory);
+            if (!auditInputs.IsCreated)
                 return false;
-            }
 
-            FutureCommandEnvelope maliciousAup = default;
-            maliciousAup.OpcodeHash = FutureCommandOpcodes.SpawnItem;
-            maliciousAup.ModderSignature = 0x51554152u;
-            maliciousAup.TargetAUP = new double3(double.NaN, 0d, 0d);
-            maliciousAup.PayloadData = new float4(1f, 2f, 3f, 4f);
-            maliciousAup.IntegrityHash = ComputeIntegrityHash(in maliciousAup);
-
-            FutureCommandEnvelope maliciousPayload = default;
-            maliciousPayload.OpcodeHash = FutureCommandOpcodes.FaunaAcousticStimulus;
-            maliciousPayload.ModderSignature = 0x51554153u;
-            maliciousPayload.TargetAUP = new double3(0d, 0d, 0d);
-            maliciousPayload.PayloadData = new float4(float.NaN, 12f, 0f, 0f);
-            maliciousPayload.IntegrityHash = ComputeIntegrityHash(in maliciousPayload);
-
-            float quality = ResolveGlobalQualityWeight(tuningBuffer);
-            FutureCommandSandboxTuning tuning = ResolveTuning(tuningBuffer);
-            int maxPerSignature = ResolveScaledCommandBudget(tuning.MaxCommandsPerFrame, quality);
-            ModSandboxRingState state = ringState[0];
-            MemClearArray(statsBuffer);
-            staging[0] = maliciousAup;
-            staging[1] = maliciousPayload;
-
-            ValidateFutureCommandEnvelopeJob job = new ValidateFutureCommandEnvelopeJob
+            try
             {
-                Inputs = staging,
-                Stats = statsBuffer,
-                OpcodeRecords = opcodeRecords,
-                PerModCounters = perModCounters,
-                MemoryLeases = memoryLeases,
-                ApprovedAssetManifest = approvedAssets,
-                ModderBlackboxMemory = modderBlackboxMemory,
-                DevNullRing = devNullRing,
-                RingState = ringState,
-                SpawnWriter = SignalBus<ModSpawnRequestSignal>.ParallelWriter,
-                AssetWriter = SignalBus<ModAssetReferenceSignal>.ParallelWriter,
-                AcousticWriter = SignalBus<SandboxMockAcousticSignal>.ParallelWriter,
-                DamageWriter = SignalBus<MockDamageSignal>.ParallelWriter,
-                DevNullSignalWriter = SignalBus<ModFutureDevNullSignal>.ParallelWriter,
-                SurvivalWriter = SignalBus<SurvivalOverrideSignal>.ParallelWriter,
-                HapticWriter = SignalBus<ModHapticPulseSignal>.ParallelWriter,
-                SubtitleWriter = SignalBus<ModSubtitleCueSignal>.ParallelWriter,
-                RejectionWriter = SignalBus<ModInteractionRejectedPayload>.ParallelWriter,
-                CameraJuiceImpulses = cameraJuiceImpulses,
-                CameraJuiceState = cameraJuiceState,
-                KernelProfiles = kernelProfiles,
-                Count = 2,
-                Frame = Hecton8.Core.SystemDispatcher.CurrentFrameId,
-                OpcodeRecordCount = state.OpcodeCount,
-                MaxCommandsPerSignature = maxPerSignature,
-                GlobalQualityWeight = quality,
-                MaxAssetBytes = tuning.MaxAssetBytes,
-                TuningFlags = tuning.Flags,
-                RollbackActive = IsRollbackFrozen() ? 1u : 0u,
-                ObserverAUP = ResolveObserverAup()
-            };
+                if (!TryOpenVaultLaneRead(ref _opcodeRecordsHandle, out NativeArray<FutureCommandOpcodeRecord>.ReadOnly opcodeRecords) ||
+                    !TryOpenVaultLaneRead(ref _memoryLeasesHandle, out NativeArray<ModderMemoryLease>.ReadOnly memoryLeases) ||
+                    !TryOpenVaultLaneRead(ref _approvedAssetManifestHandle, out NativeArray<ApprovedAssetRecord>.ReadOnly approvedAssets) ||
+                    !TryOpenVaultLaneRead(ref _modderBlackboxMemoryHandle, out NativeArray<byte>.ReadOnly modderBlackboxMemory) ||
+                    !TryOpenVaultLaneRead(ref _kernelTuningProfilesHandle, out NativeArray<ModKernelTuningProfile>.ReadOnly kernelProfiles) ||
+                    !TryOpenVaultLaneRead(ref _tuningHandle, out NativeArray<FutureCommandSandboxTuning>.ReadOnly tuningBuffer) ||
+                    !TryReadRingStateSnapshot(out ModSandboxRingState state) ||
+                    !TryPrepareValidationScratchOutputs())
+                {
+                    return false;
+                }
 
-            job.Execute();
-            FutureCommandValidationStats stats = statsBuffer[0];
-            bool rejectedInvalidPackets =
-                stats.Incoming == 2u &&
-                stats.Valid == 0u &&
-                stats.Rejected == 2u &&
-                (stats.RejectionMask & (uint)FutureCommandRejectReason.InvalidAup) != 0u &&
-                (stats.RejectionMask & (uint)FutureCommandRejectReason.InvalidPayload) != 0u;
-            bool exactAupTelemetry = stats.AupViolations == 1u;
-            ModSandboxRingState overflowProbe = default;
-            overflowProbe.PendingCount = staging.Length;
-            overflowProbe.PendingHead = 0;
-            overflowProbe.PendingTail = 0;
-            EnqueuePendingEnvelope(staging, ref overflowProbe, in maliciousPayload);
-            bool overflowCounterWorked =
-                overflowProbe.PendingOverflowDropped == 1u &&
-                overflowProbe.PendingCount == staging.Length &&
-                overflowProbe.PendingHead == 1;
-            bool selfAuditPassed = rejectedInvalidPackets && exactAupTelemetry && overflowCounterWorked;
-            uint auditFaultHash = rejectedInvalidPackets
-                ? FutureCommandSandboxConstants.FaultHashLayout
-                : FutureCommandSandboxConstants.FaultHashInvalidPayload;
-            RecordTelemetry(
-                Hecton8.Core.SystemDispatcher.CurrentFrameId,
-                stats.Incoming,
-                stats.Valid,
-                stats.Rejected,
-                stats.Dropped,
-                stats.DevNull,
-                0UL,
-                quality,
-                stats.RejectionMask,
-                selfAuditPassed ? 0u : auditFaultHash,
-                (uint)state.PendingCount,
-                stats.PeakCommandsForSignature,
-                (uint)maxPerSignature);
+                FutureCommandEnvelope maliciousAup = default;
+                maliciousAup.OpcodeHash = FutureCommandOpcodes.SpawnItem;
+                maliciousAup.ModderSignature = 0x51554152u;
+                maliciousAup.TargetAUP = new double3(double.NaN, 0d, 0d);
+                maliciousAup.PayloadData = new float4(1f, 2f, 3f, 4f);
+                maliciousAup.IntegrityHash = ComputeIntegrityHash(in maliciousAup);
 
-            if (!selfAuditPassed)
-                DumpBlackbox(auditFaultHash);
-            return selfAuditPassed;
+                FutureCommandEnvelope maliciousPayload = default;
+                maliciousPayload.OpcodeHash = FutureCommandOpcodes.FaunaAcousticStimulus;
+                maliciousPayload.ModderSignature = 0x51554153u;
+                maliciousPayload.TargetAUP = new double3(0d, 0d, 0d);
+                maliciousPayload.PayloadData = new float4(float.NaN, 12f, 0f, 0f);
+                maliciousPayload.IntegrityHash = ComputeIntegrityHash(in maliciousPayload);
+
+                float quality = ResolveGlobalQualityWeight(tuningBuffer);
+                FutureCommandSandboxTuning tuning = ResolveTuning(tuningBuffer);
+                int maxPerSignature = ResolveScaledCommandBudget(tuning.MaxCommandsPerFrame, quality);
+                auditInputs[0] = maliciousAup;
+                auditInputs[1] = maliciousPayload;
+
+                ValidateFutureCommandEnvelopeJob job = new ValidateFutureCommandEnvelopeJob
+                {
+                    Inputs = auditInputs.AsReadOnly(),
+                    ScratchState = _validationScratchState,
+                    OpcodeRecords = opcodeRecords,
+                    PerModCounters = _validationCounterScratch,
+                    MemoryLeases = memoryLeases,
+                    ApprovedAssetManifest = approvedAssets,
+                    MemoryWriteCommands = _validationMemoryWriteScratch,
+                    ModderBlackboxMemoryLength = modderBlackboxMemory.Length,
+                    DevNullScratch = _validationDevNullScratch,
+                    SpawnWriter = SignalBus<ModSpawnRequestSignal>.ParallelWriter,
+                    AssetWriter = SignalBus<ModAssetReferenceSignal>.ParallelWriter,
+                    AcousticWriter = SignalBus<SandboxMockAcousticSignal>.ParallelWriter,
+                    DamageWriter = SignalBus<MockDamageSignal>.ParallelWriter,
+                    DevNullSignalWriter = SignalBus<ModFutureDevNullSignal>.ParallelWriter,
+                    SurvivalWriter = SignalBus<SurvivalOverrideSignal>.ParallelWriter,
+                    HapticWriter = SignalBus<ModHapticPulseSignal>.ParallelWriter,
+                    SubtitleWriter = SignalBus<ModSubtitleCueSignal>.ParallelWriter,
+                    RejectionWriter = SignalBus<ModInteractionRejectedPayload>.ParallelWriter,
+                    CameraJuiceScratch = _validationCameraImpulseScratch,
+                    KernelProfiles = kernelProfiles,
+                    Count = 2,
+                    Frame = Hecton8.Core.SystemDispatcher.CurrentFrameId,
+                    OpcodeRecordCount = state.OpcodeCount,
+                    MaxCommandsPerSignature = maxPerSignature,
+                    GlobalQualityWeight = quality,
+                    MaxAssetBytes = tuning.MaxAssetBytes,
+                    TuningFlags = tuning.Flags,
+                    RollbackActive = IsRollbackFrozen() ? 1u : 0u,
+                    ObserverAUP = ResolveObserverAup()
+                };
+
+                job.Execute();
+                FutureCommandValidationStats stats = _validationScratchState[0].Stats;
+                bool rejectedInvalidPackets =
+                    stats.Incoming == 2u &&
+                    stats.Valid == 0u &&
+                    stats.Rejected == 2u &&
+                    (stats.RejectionMask & (uint)FutureCommandRejectReason.InvalidAup) != 0u &&
+                    (stats.RejectionMask & (uint)FutureCommandRejectReason.InvalidPayload) != 0u;
+                bool exactAupTelemetry = stats.AupViolations == 1u;
+                ModSandboxRingState overflowProbe = default;
+                overflowProbe.PendingCount = auditInputs.Length;
+                overflowProbe.PendingHead = 0;
+                overflowProbe.PendingTail = 0;
+                EnqueuePendingEnvelope(auditInputs, ref overflowProbe, in maliciousPayload);
+                bool overflowCounterWorked =
+                    overflowProbe.PendingOverflowDropped == 1u &&
+                    overflowProbe.PendingCount == auditInputs.Length &&
+                    overflowProbe.PendingHead == 1;
+                bool selfAuditPassed = rejectedInvalidPackets && exactAupTelemetry && overflowCounterWorked;
+                uint auditFaultHash = rejectedInvalidPackets
+                    ? FutureCommandSandboxConstants.FaultHashLayout
+                    : FutureCommandSandboxConstants.FaultHashInvalidPayload;
+                RecordTelemetry(
+                    Hecton8.Core.SystemDispatcher.CurrentFrameId,
+                    stats.Incoming,
+                    stats.Valid,
+                    stats.Rejected,
+                    stats.Dropped,
+                    stats.DevNull,
+                    0UL,
+                    quality,
+                    stats.RejectionMask,
+                    selfAuditPassed ? 0u : auditFaultHash,
+                    (uint)state.PendingCount,
+                    stats.PeakCommandsForSignature,
+                    (uint)maxPerSignature);
+
+                if (!selfAuditPassed)
+                    DumpBlackbox(auditFaultHash);
+                return selfAuditPassed;
+            }
+            finally
+            {
+                H8Memory.Release(ref auditInputs, SystemID.ModSandbox);
+            }
         }
 
         internal static ulong ComputeIntegrityHash(in FutureCommandEnvelope envelope)
@@ -1811,38 +2036,57 @@ namespace Hecton8.Modding
 
         private static void GenerateEmergencyMockOpcodes()
         {
-            NativeArray<FutureCommandOpcodeRecord> opcodeRecords = OpenVaultLane(ref _opcodeRecordsHandle);
-            NativeArray<ModSandboxRingState> ringState = ResolveRingState();
-            if (!opcodeRecords.IsCreated || !ringState.IsCreated || ringState.Length == 0)
+            if (!TryReadRingStateSnapshot(out ModSandboxRingState state))
                 return;
 
-            MemClearArray(opcodeRecords);
-            ModSandboxRingState state = ringState[0];
             state.OpcodeCount = 0;
-            AddEmergencyOpcode(opcodeRecords, ref state, FutureCommandOpcodes.SpawnItem, 1u);
-            AddEmergencyOpcode(opcodeRecords, ref state, FutureCommandOpcodes.AlterHealth, 1u);
-            AddEmergencyOpcode(opcodeRecords, ref state, FutureCommandOpcodes.AlterGravity, 1u);
-            AddEmergencyOpcode(opcodeRecords, ref state, FutureCommandOpcodes.AssetReference, 1u);
-            AddEmergencyOpcode(opcodeRecords, ref state, FutureCommandOpcodes.ModMemoryRead, 1u);
-            AddEmergencyOpcode(opcodeRecords, ref state, FutureCommandOpcodes.ModMemoryWrite, 1u);
-            AddEmergencyOpcode(opcodeRecords, ref state, FutureCommandOpcodes.FaunaAcousticStimulus, 1u);
-            AddEmergencyOpcode(opcodeRecords, ref state, FutureCommandOpcodes.FaunaDamageStimulus, 1u);
-            ringState[0] = state;
-            GenerateEmergencyOpcodeMap();
+            if (!TryWriteRingStateSnapshot(in state))
+                return;
+
+            IDataVault lockedVault = null;
+            if (!TryAcquireVaultLaneWrite(ref _opcodeRecordsHandle, out NativeArray<FutureCommandOpcodeRecord> opcodeRecords, out lockedVault))
+                return;
+
+            try
+            {
+                MemClearArray(opcodeRecords);
+                AddEmergencyOpcode(opcodeRecords, ref state, FutureCommandOpcodes.SpawnItem, 1u);
+                AddEmergencyOpcode(opcodeRecords, ref state, FutureCommandOpcodes.AlterHealth, 1u);
+                AddEmergencyOpcode(opcodeRecords, ref state, FutureCommandOpcodes.AlterGravity, 1u);
+                AddEmergencyOpcode(opcodeRecords, ref state, FutureCommandOpcodes.AssetReference, 1u);
+                AddEmergencyOpcode(opcodeRecords, ref state, FutureCommandOpcodes.ModMemoryRead, 1u);
+                AddEmergencyOpcode(opcodeRecords, ref state, FutureCommandOpcodes.ModMemoryWrite, 1u);
+                AddEmergencyOpcode(opcodeRecords, ref state, FutureCommandOpcodes.FaunaAcousticStimulus, 1u);
+                AddEmergencyOpcode(opcodeRecords, ref state, FutureCommandOpcodes.FaunaDamageStimulus, 1u);
+            }
+            finally
+            {
+                lockedVault.ReleaseWriteLock(in _opcodeRecordsHandle.Handle, SystemID.ModSandbox);
+            }
+
+            if (TryWriteRingStateSnapshot(in state))
+                GenerateEmergencyOpcodeMap();
         }
 
         internal static void GenerateEmergencyOpcodeMap()
         {
-            NativeArray<ModCommandKernelOpcodeRecord> kernelMap = OpenVaultLane(ref _kernelOpcodeMapHandle);
-            NativeArray<FutureCommandOpcodeRecord> opcodeRecords = OpenVaultLane(ref _opcodeRecordsHandle);
-            NativeArray<ModSandboxRingState> ringState = ResolveRingState();
-            if (!kernelMap.IsCreated || !opcodeRecords.IsCreated || !ringState.IsCreated || ringState.Length == 0)
+            if (!TryOpenVaultLaneRead(ref _opcodeRecordsHandle, out NativeArray<FutureCommandOpcodeRecord>.ReadOnly opcodeRecords) ||
+                !TryReadRingStateSnapshot(out _))
                 return;
 
-            MemClearArray(kernelMap);
-            ModSandboxRingState state = ringState[0];
-            // Reserved command kernels remain dormant until an owning runtime system makes them public.
-            ringState[0] = state;
+            IDataVault lockedVault = null;
+            if (!TryAcquireVaultLaneWrite(ref _kernelOpcodeMapHandle, out NativeArray<ModCommandKernelOpcodeRecord> kernelMap, out lockedVault))
+                return;
+
+            try
+            {
+                MemClearArray(kernelMap);
+                // Reserved command kernels remain dormant until an owning runtime system makes them public.
+            }
+            finally
+            {
+                lockedVault.ReleaseWriteLock(in _kernelOpcodeMapHandle.Handle, SystemID.ModSandbox);
+            }
         }
 
         private static bool IsRuntimeAllowedFutureCommandOpcode(uint opcodeHash)
@@ -1913,11 +2157,24 @@ namespace Hecton8.Modding
             if (signature == 0u || !memoryLeases.IsCreated || !modderBlackboxMemory.IsCreated)
                 return;
 
+            EnsureModderLease(signature, maxMemoryMb, modderBlackboxMemory.Length, memoryLeases, ref state, frame);
+        }
+
+        private static void EnsureModderLease(
+            uint signature,
+            int maxMemoryMb,
+            int memoryBytes,
+            NativeArray<ModderMemoryLease> memoryLeases,
+            ref ModSandboxRingState state,
+            uint frame)
+        {
+            if (signature == 0u || !memoryLeases.IsCreated || memoryBytes <= 0)
+                return;
+
             int slot = FindModderLeaseSlot(memoryLeases, signature, out bool found);
             if (slot < 0 || found)
                 return;
 
-            int memoryBytes = modderBlackboxMemory.Length;
             int maxMb = math.clamp(maxMemoryMb, 1, 256);
             int requestedBytes = math.min(memoryBytes, maxMb * 1024 * 1024);
             int chunkBytes = math.max(1024, requestedBytes / FutureCommandSandboxConstants.MaxTrackedModders);
@@ -2079,7 +2336,50 @@ namespace Hecton8.Modding
             return math.clamp(sum, FutureCommandSandboxConstants.LowTierMinCommandsPerSignature, fallbackBudget);
         }
 
+        private static int ResolveKernelProfileFrameBudget(NativeArray<ModKernelTuningProfile>.ReadOnly profiles, int fallbackBudget)
+        {
+            if (!profiles.IsCreated || profiles.Length == 0)
+                return fallbackBudget;
+
+            int sum = 0;
+            for (int i = 0; i < profiles.Length; i++)
+            {
+                ModKernelTuningProfile profile = profiles[i];
+                if (profile.OpcodeHash == 0u)
+                    continue;
+                if (profile.MaxPerFrame > 0)
+                {
+                    int profileBudget = math.min(profile.MaxPerFrame, FutureCommandSandboxConstants.KernelMaxProfileCommandsPerFrame);
+                    int remainingBudget = math.max(0, FutureCommandSandboxConstants.KernelMaxProfileCommandsPerFrame - sum);
+                    sum += math.min(profileBudget, remainingBudget);
+                }
+            }
+
+            if (sum <= 0)
+                return fallbackBudget;
+
+            return math.clamp(sum, FutureCommandSandboxConstants.LowTierMinCommandsPerSignature, fallbackBudget);
+        }
+
         private static int ResolveSmallestKernelProfileFrameBudget(NativeArray<ModKernelTuningProfile> profiles, int fallbackBudget)
+        {
+            if (!profiles.IsCreated || profiles.Length == 0)
+                return fallbackBudget;
+
+            int smallest = fallbackBudget;
+            for (int i = 0; i < profiles.Length; i++)
+            {
+                ModKernelTuningProfile profile = profiles[i];
+                if (profile.OpcodeHash == 0u)
+                    continue;
+                if (profile.MaxPerFrame > 0)
+                    smallest = math.min(smallest, math.min(profile.MaxPerFrame, FutureCommandSandboxConstants.KernelMaxProfileCommandsPerFrame));
+            }
+
+            return smallest;
+        }
+
+        private static int ResolveSmallestKernelProfileFrameBudget(NativeArray<ModKernelTuningProfile>.ReadOnly profiles, int fallbackBudget)
         {
             if (!profiles.IsCreated || profiles.Length == 0)
                 return fallbackBudget;
@@ -2131,7 +2431,63 @@ namespace Hecton8.Modding
             ReleaseVaultLane(vault, ref _kernelCameraJuiceImpulseHandle);
             ReleaseVaultLane(vault, ref _kernelCameraJuiceStateHandle);
             ReleaseVaultLane(vault, ref _kernelTuningProfilesHandle);
-            ReleaseVaultLane(vault, ref _kernelCsvScratchHandle);
+        }
+
+        private static void EnsureValidationScratchBuffersCold()
+        {
+            if (!_validationScratchState.IsCreated)
+            {
+                _validationScratchState = H8Memory.Allocate<ModSandboxValidationScratchState>(
+                    1,
+                    SystemID.ModSandbox,
+                    Allocator.Persistent,
+                    NativeArrayOptions.ClearMemory); // COLD ALLOC: tracked validation output state, owner: ModSandbox
+            }
+
+            if (!_validationCounterScratch.IsCreated)
+            {
+                _validationCounterScratch = H8Memory.Allocate<ModderFrameCounter>(
+                    FutureCommandSandboxConstants.MaxTrackedModders,
+                    SystemID.ModSandbox,
+                    Allocator.Persistent,
+                    NativeArrayOptions.ClearMemory); // COLD ALLOC: tracked mod counter scratch, owner: ModSandbox
+            }
+
+            if (!_validationMemoryWriteScratch.IsCreated)
+            {
+                _validationMemoryWriteScratch = H8Memory.Allocate<ModSandboxMemoryWriteCommand>(
+                    FutureCommandSandboxConstants.StagingCapacity,
+                    SystemID.ModSandbox,
+                    Allocator.Persistent,
+                    NativeArrayOptions.UninitializedMemory); // COLD ALLOC: tracked memory write command scratch, owner: ModSandbox
+            }
+
+            if (!_validationDevNullScratch.IsCreated)
+            {
+                _validationDevNullScratch = H8Memory.Allocate<FutureCommandEnvelope>(
+                    FutureCommandSandboxConstants.StagingCapacity,
+                    SystemID.ModSandbox,
+                    Allocator.Persistent,
+                    NativeArrayOptions.UninitializedMemory); // COLD ALLOC: tracked dev-null output scratch, owner: ModSandbox
+            }
+
+            if (!_validationCameraImpulseScratch.IsCreated)
+            {
+                _validationCameraImpulseScratch = H8Memory.Allocate<ModKernelCameraJuiceImpulse>(
+                    FutureCommandSandboxConstants.CameraJuiceImpulseCapacity,
+                    SystemID.ModSandbox,
+                    Allocator.Persistent,
+                    NativeArrayOptions.UninitializedMemory); // COLD ALLOC: tracked haptic fallback camera scratch, owner: ModSandbox
+            }
+        }
+
+        private static void ReleaseValidationScratchBuffers()
+        {
+            H8Memory.Release(ref _validationScratchState, SystemID.ModSandbox);
+            H8Memory.Release(ref _validationCounterScratch, SystemID.ModSandbox);
+            H8Memory.Release(ref _validationMemoryWriteScratch, SystemID.ModSandbox);
+            H8Memory.Release(ref _validationDevNullScratch, SystemID.ModSandbox);
+            H8Memory.Release(ref _validationCameraImpulseScratch, SystemID.ModSandbox);
         }
 
         private static void ReleaseVaultLane<T>(IDataVault vault, ref VaultLane<T> lane) where T : struct
@@ -2152,7 +2508,7 @@ namespace Hecton8.Modding
                 !TryReadVaultBuffer(
                     vault,
                     (BufferID)RollbackRuntimeStateBufferId,
-                    out NativeArray<RollbackRuntimeStateFlagView> rollback) ||
+                    out NativeArray<RollbackRuntimeStateFlagView>.ReadOnly rollback) ||
                 !rollback.IsCreated ||
                 rollback.Length <= 0)
             {
@@ -2284,74 +2640,49 @@ namespace Hecton8.Modding
                 FutureCommandSandboxConstants.KernelTuningCapacity,
                 SystemID.ModSandbox,
                 NativeArrayOptions.UninitializedMemory);
-            _kernelCsvScratchHandle = AcquireVaultLane<byte>(
-                vault,
-                (BufferID)KernelCsvScratchBufferId,
-                FutureCommandSandboxConstants.KernelCsvScratchBytes,
-                SystemID.ModSandbox,
-                NativeArrayOptions.UninitializedMemory);
-
             if (!coldAcquire)
                 return;
 
-            NativeArray<FutureCommandEnvelope> pendingRing = OpenVaultLane(ref _pendingRingHandle);
-            NativeArray<FutureCommandEnvelope> devNullRing = OpenVaultLane(ref _devNullRingHandle);
-            NativeArray<FutureCommandEnvelope> staging = OpenVaultLane(ref _stagingHandle);
-            NativeArray<FutureCommandValidationStats> stats = OpenVaultLane(ref _statsHandle);
-            NativeArray<FutureCommandOpcodeRecord> opcodeRecords = OpenVaultLane(ref _opcodeRecordsHandle);
-            NativeArray<ModderFrameCounter> counters = OpenVaultLane(ref _perModCountersHandle);
-            NativeArray<ModderMemoryLease> leases = OpenVaultLane(ref _memoryLeasesHandle);
-            NativeArray<ApprovedAssetRecord> approvedAssets = OpenVaultLane(ref _approvedAssetManifestHandle);
-            NativeArray<byte> modderBlackboxMemory = OpenVaultLane(ref _modderBlackboxMemoryHandle);
-            NativeArray<ModSandboxTelemetryEntry> telemetryRing = OpenVaultLane(ref _telemetryRingHandle);
-            NativeArray<int> telemetryCursor = OpenVaultLane(ref _telemetryCursorHandle);
-            NativeArray<FutureCommandSandboxTuning> tuning = OpenVaultLane(ref _tuningHandle);
-            NativeArray<ModSandboxRingState> ringState = OpenVaultLane(ref _ringStateHandle);
-            NativeArray<ModCommandKernelOpcodeRecord> kernelOpcodeMap = OpenVaultLane(ref _kernelOpcodeMapHandle);
-            NativeArray<KernelExecutionTelemetryEntry> kernelTelemetryRing = OpenVaultLane(ref _kernelTelemetryRingHandle);
-            NativeArray<int> kernelTelemetryCursor = OpenVaultLane(ref _kernelTelemetryCursorHandle);
-            NativeArray<ModKernelCameraJuiceState> cameraJuiceState = OpenVaultLane(ref _kernelCameraJuiceStateHandle);
-            NativeArray<ModKernelTuningProfile> kernelTuningProfiles = OpenVaultLane(ref _kernelTuningProfilesHandle);
-
-            MemClearArray(pendingRing);
-            MemClearArray(devNullRing);
-            MemClearArray(staging);
-            MemClearArray(stats);
-            MemClearArray(opcodeRecords);
-            MemClearArray(counters);
-            MemClearArray(leases);
-            MemClearArray(approvedAssets);
-            MemClearArray(modderBlackboxMemory);
-            MemClearArray(telemetryRing);
-            MemClearArray(telemetryCursor);
-            MemClearArray(ringState);
-            MemClearArray(kernelOpcodeMap);
-            MemClearArray(kernelTelemetryRing);
-            MemClearArray(kernelTelemetryCursor);
-            MemClearArray(cameraJuiceState);
-            MemClearArray(kernelTuningProfiles);
-
-            if (ringState.IsCreated && ringState.Length > 0)
+            if (!TryClearVaultLane(ref _pendingRingHandle) ||
+                !TryClearVaultLane(ref _devNullRingHandle) ||
+                !TryClearVaultLane(ref _stagingHandle) ||
+                !TryClearVaultLane(ref _statsHandle) ||
+                !TryClearVaultLane(ref _opcodeRecordsHandle) ||
+                !TryClearVaultLane(ref _perModCountersHandle) ||
+                !TryClearVaultLane(ref _memoryLeasesHandle) ||
+                !TryClearVaultLane(ref _approvedAssetManifestHandle) ||
+                !TryClearVaultLane(ref _modderBlackboxMemoryHandle) ||
+                !TryClearVaultLane(ref _telemetryRingHandle) ||
+                !TryClearVaultLane(ref _telemetryCursorHandle) ||
+                !TryClearVaultLane(ref _tuningHandle) ||
+                !TryClearVaultLane(ref _ringStateHandle) ||
+                !TryClearVaultLane(ref _kernelOpcodeMapHandle) ||
+                !TryClearVaultLane(ref _kernelTelemetryRingHandle) ||
+                !TryClearVaultLane(ref _kernelTelemetryCursorHandle) ||
+                !TryClearVaultLane(ref _kernelCameraJuiceStateHandle) ||
+                !TryClearVaultLane(ref _kernelTuningProfilesHandle))
             {
-                ModSandboxRingState state = default;
-                state.LastDumpFrame = -1;
-                ringState[0] = state;
+                return;
             }
 
-            if (tuning.IsCreated && tuning.Length > 0)
+            ModSandboxRingState state = default;
+            state.LastDumpFrame = -1;
+            if (!TryWriteRingStateSnapshot(in state))
+                return;
+
+            FutureCommandSandboxTuning tuning = new FutureCommandSandboxTuning
             {
-                tuning[0] = new FutureCommandSandboxTuning
-                {
-                    MaxCommandsPerFrame = FutureCommandSandboxConstants.DefaultMaxCommandsPerSignature,
-                    MaxModMemoryMb = FutureCommandSandboxConstants.DefaultMaxModMemoryMb,
-                    GlobalQualityWeightOverride = -1f,
-                    EnabledOpcodeMaskLo = EnabledAllEmergencyOpcodes,
-                    MaxAssetBytes = FutureCommandSandboxConstants.DefaultMaxAssetBytes,
-                    Flags = 0u,
-                    CpuThermalPressure01 = 0f,
-                    Reserved = 0u
-                };
-            }
+                MaxCommandsPerFrame = FutureCommandSandboxConstants.DefaultMaxCommandsPerSignature,
+                MaxModMemoryMb = FutureCommandSandboxConstants.DefaultMaxModMemoryMb,
+                GlobalQualityWeightOverride = -1f,
+                EnabledOpcodeMaskLo = EnabledAllEmergencyOpcodes,
+                MaxAssetBytes = FutureCommandSandboxConstants.DefaultMaxAssetBytes,
+                Flags = 0u,
+                CpuThermalPressure01 = 0f,
+                Reserved = 0u
+            };
+            if (!TryWriteVaultLaneElement(ref _tuningHandle, 0, in tuning))
+                return;
         }
 
         private static void RecordTelemetry(
@@ -2377,8 +2708,7 @@ namespace Hecton8.Modding
             int nextCursor = cursor;
             ModSandboxTelemetryEntry entry;
             IDataVault lockedVault = null;
-            if (!TryAcquireVaultLaneWrite(ref _telemetryRingHandle, out NativeArray<ModSandboxTelemetryEntry> telemetryRing, out lockedVault) ||
-                telemetryRing.Length == 0)
+            if (!TryAcquireVaultLaneWrite(ref _telemetryRingHandle, out NativeArray<ModSandboxTelemetryEntry> telemetryRing, out lockedVault))
             {
                 return;
             }
@@ -2448,8 +2778,7 @@ namespace Hecton8.Modding
             int nextCursor = cursor;
             KernelExecutionTelemetryEntry entry;
             IDataVault lockedVault = null;
-            if (!TryAcquireVaultLaneWrite(ref _kernelTelemetryRingHandle, out NativeArray<KernelExecutionTelemetryEntry> telemetryRing, out lockedVault) ||
-                telemetryRing.Length == 0)
+            if (!TryAcquireVaultLaneWrite(ref _kernelTelemetryRingHandle, out NativeArray<KernelExecutionTelemetryEntry> telemetryRing, out lockedVault))
             {
                 return;
             }
@@ -2532,11 +2861,15 @@ namespace Hecton8.Modding
         internal static void DumpBlackbox(uint faultHash)
         {
             int frame = SystemDispatcher.CurrentFrameIndex;
+            if (_lastLocalDumpFrame == frame)
+                return;
+
             TryReadRingStateSnapshot(out ModSandboxRingState state);
             if (state.LastDumpFrame == frame)
                 return;
 
             state.LastDumpFrame = frame;
+            _lastLocalDumpFrame = frame;
             TryWriteRingStateSnapshot(in state);
 
             bool hasTelemetryRing = TryOpenVaultLaneRead(ref _telemetryRingHandle, out NativeArray<ModSandboxTelemetryEntry>.ReadOnly telemetryRing);
@@ -2648,21 +2981,6 @@ namespace Hecton8.Modding
                    lane.Length > 0;
         }
 
-        private static NativeArray<T> OpenVaultLane<T>(ref VaultLane<T> lane) where T : struct
-        {
-            IDataVault vault = _dataVault;
-            if (vault == null ||
-                !IsLaneCreated(in lane) ||
-                !vault.TryResolveHandle(in lane.Handle, out NativeArray<T> buffer) ||
-                !buffer.IsCreated ||
-                buffer.Length < lane.Length)
-            {
-                return default;
-            }
-
-            return buffer;
-        }
-
         private static bool TryOpenVaultLaneRead<T>(
             ref VaultLane<T> lane,
             out NativeArray<T>.ReadOnly buffer) where T : struct
@@ -2697,15 +3015,24 @@ namespace Hecton8.Modding
                 return false;
             }
 
-            if (!buffer.IsCreated || buffer.Length < lane.Length)
+            bool releaseOnExit = true;
+            try
             {
-                vault.ReleaseWriteLock(in lane.Handle, SystemID.ModSandbox);
-                buffer = default;
-                return false;
-            }
+                if (!buffer.IsCreated || buffer.Length < lane.Length)
+                {
+                    buffer = default;
+                    return false;
+                }
 
-            lockedVault = vault;
-            return true;
+                lockedVault = vault;
+                releaseOnExit = false;
+                return true;
+            }
+            finally
+            {
+                if (releaseOnExit)
+                    vault.ReleaseWriteLock(in lane.Handle, SystemID.ModSandbox);
+            }
         }
 
         private static bool TryReadRingStateSnapshot(out ModSandboxRingState state)
@@ -2754,8 +3081,7 @@ namespace Hecton8.Modding
             ref ModSandboxRingState state)
         {
             IDataVault lockedVault = null;
-            if (!TryAcquireVaultLaneWrite(ref _pendingRingHandle, out NativeArray<FutureCommandEnvelope> pendingRing, out lockedVault) ||
-                pendingRing.Length == 0)
+            if (!TryAcquireVaultLaneWrite(ref _pendingRingHandle, out NativeArray<FutureCommandEnvelope> pendingRing, out lockedVault))
             {
                 return false;
             }
@@ -2774,7 +3100,7 @@ namespace Hecton8.Modding
         private static bool TryReadVaultBuffer<T>(
             IDataVault vault,
             BufferID bufferId,
-            out NativeArray<T> buffer) where T : struct
+            out NativeArray<T>.ReadOnly buffer) where T : struct
         {
             buffer = default;
             if (vault == null ||
@@ -2785,12 +3111,7 @@ namespace Hecton8.Modding
                 return false;
             }
 
-            return vault.TryReadHandle(in handle, out buffer) && buffer.IsCreated;
-        }
-
-        private static NativeArray<ModSandboxRingState> ResolveRingState()
-        {
-            return OpenVaultLane(ref _ringStateHandle);
+            return vault.TryReadOnlyHandle(in handle, out buffer) && buffer.Length > 0;
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -2939,38 +3260,17 @@ namespace Hecton8.Modding
             job = default;
             validationState = default;
 
-            Initialize();
+            if (!_initialized)
+                return false;
+
             AcquireVaultBuffers();
 
-            NativeArray<FutureCommandEnvelope> pendingRing = OpenVaultLane(ref _pendingRingHandle);
-            NativeArray<FutureCommandEnvelope> devNullRing = OpenVaultLane(ref _devNullRingHandle);
-            NativeArray<FutureCommandEnvelope> staging = OpenVaultLane(ref _stagingHandle);
-            NativeArray<FutureCommandValidationStats> statsBuffer = OpenVaultLane(ref _statsHandle);
-            NativeArray<FutureCommandOpcodeRecord> opcodeRecords = OpenVaultLane(ref _opcodeRecordsHandle);
-            NativeArray<ModderFrameCounter> perModCounters = OpenVaultLane(ref _perModCountersHandle);
-            NativeArray<ModderMemoryLease> memoryLeases = OpenVaultLane(ref _memoryLeasesHandle);
-            NativeArray<ApprovedAssetRecord> approvedAssets = OpenVaultLane(ref _approvedAssetManifestHandle);
-            NativeArray<byte> modderBlackboxMemory = OpenVaultLane(ref _modderBlackboxMemoryHandle);
-            NativeArray<ModSandboxRingState> ringState = OpenVaultLane(ref _ringStateHandle);
-            NativeArray<ModKernelCameraJuiceImpulse> cameraJuiceImpulses = OpenVaultLane(ref _kernelCameraJuiceImpulseHandle);
-            NativeArray<ModKernelCameraJuiceState> cameraJuiceState = OpenVaultLane(ref _kernelCameraJuiceStateHandle);
-            NativeArray<ModKernelTuningProfile> kernelProfiles = OpenVaultLane(ref _kernelTuningProfilesHandle);
-            NativeArray<FutureCommandSandboxTuning> tuningBuffer = OpenVaultLane(ref _tuningHandle);
-            if (!pendingRing.IsCreated ||
-                !devNullRing.IsCreated ||
-                !staging.IsCreated ||
-                !statsBuffer.IsCreated ||
-                !opcodeRecords.IsCreated ||
-                !perModCounters.IsCreated ||
-                !memoryLeases.IsCreated ||
-                !approvedAssets.IsCreated ||
-                !modderBlackboxMemory.IsCreated ||
-                !ringState.IsCreated ||
-                !cameraJuiceImpulses.IsCreated ||
-                !cameraJuiceState.IsCreated ||
-                !kernelProfiles.IsCreated ||
-                !tuningBuffer.IsCreated ||
-                ringState.Length == 0)
+            if (!TryOpenVaultLaneRead(ref _pendingRingHandle, out NativeArray<FutureCommandEnvelope>.ReadOnly pendingRing) ||
+                !TryOpenVaultLaneRead(ref _opcodeRecordsHandle, out NativeArray<FutureCommandOpcodeRecord>.ReadOnly opcodeRecords) ||
+                !TryOpenVaultLaneRead(ref _approvedAssetManifestHandle, out NativeArray<ApprovedAssetRecord>.ReadOnly approvedAssets) ||
+                !TryOpenVaultLaneRead(ref _kernelTuningProfilesHandle, out NativeArray<ModKernelTuningProfile>.ReadOnly kernelProfiles) ||
+                !TryOpenVaultLaneRead(ref _tuningHandle, out NativeArray<FutureCommandSandboxTuning>.ReadOnly tuningBuffer) ||
+                !TryReadRingStateSnapshot(out ModSandboxRingState state))
             {
                 return false;
             }
@@ -2979,52 +3279,36 @@ namespace Hecton8.Modding
             FutureCommandSandboxTuning tuning = ResolveTuning(tuningBuffer);
             int maxPerSignature = ResolveScaledCommandBudget(tuning.MaxCommandsPerFrame, quality);
             maxPerSignature = ResolveKernelProfileFrameBudget(kernelProfiles, maxPerSignature);
+            int stagingCapacity = IsLaneCreated(in _stagingHandle) ? _stagingHandle.Length : 0;
+            if (stagingCapacity <= 0)
+                return false;
+
             int globalBudget = math.min(
-                staging.Length,
+                stagingCapacity,
                 maxPerSignature);
 
             uint frame = Hecton8.Core.SystemDispatcher.CurrentFrameId;
             uint rollbackActive = IsRollbackFrozen() ? 1u : 0u;
-            ModSandboxRingState state = ringState[0];
             uint enqueueOverflowDropped = state.PendingOverflowDropped;
-            if (enqueueOverflowDropped != 0u)
-            {
-                state.PendingOverflowDropped = 0u;
-                ringState[0] = state;
-            }
+            state.PendingOverflowDropped = 0u;
 
-            MemClearArray(statsBuffer);
             int smallestProfileBudget = ResolveSmallestKernelProfileFrameBudget(kernelProfiles, int.MaxValue);
             bool profileCapMayTrip = smallestProfileBudget != int.MaxValue && state.PendingCount > smallestProfileBudget;
-            if (state.PendingCount > globalBudget || profileCapMayTrip)
-            {
-                LoadSheddingJob shedJob = new LoadSheddingJob
-                {
-                    PendingRing = pendingRing,
-                    Scratch = staging,
-                    RingState = ringState,
-                    Stats = statsBuffer,
-                    KernelProfiles = kernelProfiles,
-                    DynamicBudget = globalBudget
-                };
-                shedJob.Execute();
-                state = ringState[0];
-            }
+            if (!TryDrainPendingToValidationStaging(
+                    pendingRing,
+                    kernelProfiles,
+                    ref state,
+                    globalBudget,
+                    profileCapMayTrip,
+                    out NativeArray<FutureCommandEnvelope>.ReadOnly staging,
+                    out int drainCount,
+                    out uint shedDropped))
+                return false;
 
-            uint shedDropped = statsBuffer[0].Dropped;
             uint thermalDropped = SaturatingAdd(enqueueOverflowDropped, shedDropped);
-            int drainCount = 0;
-            MemClearElements(staging, 0, math.min(globalBudget, staging.Length));
-            while (drainCount < globalBudget && state.PendingCount > 0)
-            {
-                FutureCommandEnvelope envelope = pendingRing[state.PendingHead];
-                state.PendingHead = AdvanceRingIndex(state.PendingHead, pendingRing.Length);
-                state.PendingCount = math.max(0, state.PendingCount - 1);
-                staging[drainCount] = envelope;
-                EnsureModderLease(envelope.ModderSignature, tuning.MaxModMemoryMb, modderBlackboxMemory, memoryLeases, ref state, frame);
-                drainCount++;
-            }
-            ringState[0] = state;
+            if (!TryEnsureModderLeasesForInputs(staging, drainCount, tuning.MaxModMemoryMb, ref state, frame) ||
+                !TryWriteRingStateSnapshot(in state))
+                return false;
 
             if (drainCount == 0)
             {
@@ -3061,7 +3345,21 @@ namespace Hecton8.Modding
                 return false;
             }
 
-            MemClearArray(statsBuffer);
+            if (!TryClearVaultLane(ref _statsHandle))
+                return false;
+
+            if (!TryPrepareValidationScratchOutputs())
+                return false;
+
+            if (!TryOpenVaultLaneRead(ref _memoryLeasesHandle, out NativeArray<ModderMemoryLease>.ReadOnly memoryLeases))
+                return false;
+
+            int modderBlackboxMemoryLength = IsLaneCreated(in _modderBlackboxMemoryHandle)
+                ? _modderBlackboxMemoryHandle.Length
+                : 0;
+            if (modderBlackboxMemoryLength <= 0)
+                return false;
+
             validationState = new ModSandboxScheduledValidationState
             {
                 Frame = frame,
@@ -3076,14 +3374,14 @@ namespace Hecton8.Modding
             job = new ValidateFutureCommandEnvelopeJob
             {
                 Inputs = staging,
-                Stats = statsBuffer,
+                ScratchState = _validationScratchState,
                 OpcodeRecords = opcodeRecords,
-                PerModCounters = perModCounters,
+                PerModCounters = _validationCounterScratch,
                 MemoryLeases = memoryLeases,
                 ApprovedAssetManifest = approvedAssets,
-                ModderBlackboxMemory = modderBlackboxMemory,
-                DevNullRing = devNullRing,
-                RingState = ringState,
+                MemoryWriteCommands = _validationMemoryWriteScratch,
+                ModderBlackboxMemoryLength = modderBlackboxMemoryLength,
+                DevNullScratch = _validationDevNullScratch,
                 SpawnWriter = SignalBus<ModSpawnRequestSignal>.ParallelWriter,
                 AssetWriter = SignalBus<ModAssetReferenceSignal>.ParallelWriter,
                 AcousticWriter = SignalBus<SandboxMockAcousticSignal>.ParallelWriter,
@@ -3093,8 +3391,7 @@ namespace Hecton8.Modding
                 HapticWriter = SignalBus<ModHapticPulseSignal>.ParallelWriter,
                 SubtitleWriter = SignalBus<ModSubtitleCueSignal>.ParallelWriter,
                 RejectionWriter = SignalBus<ModInteractionRejectedPayload>.ParallelWriter,
-                CameraJuiceImpulses = cameraJuiceImpulses,
-                CameraJuiceState = cameraJuiceState,
+                CameraJuiceScratch = _validationCameraImpulseScratch,
                 KernelProfiles = kernelProfiles,
                 Count = drainCount,
                 Frame = frame,
@@ -3107,6 +3404,316 @@ namespace Hecton8.Modding
                 ObserverAUP = ResolveObserverAup()
             };
             return true;
+        }
+
+        private static bool TryPrepareValidationScratchOutputs()
+        {
+            if (!_validationScratchState.IsCreated ||
+                !_validationCounterScratch.IsCreated ||
+                !_validationMemoryWriteScratch.IsCreated ||
+                !_validationDevNullScratch.IsCreated ||
+                !_validationCameraImpulseScratch.IsCreated ||
+                _validationScratchState.Length == 0)
+            {
+                return false;
+            }
+
+            if (!TryOpenVaultLaneRead(ref _perModCountersHandle, out NativeArray<ModderFrameCounter>.ReadOnly counters))
+                return false;
+
+            int count = math.min(_validationCounterScratch.Length, counters.Length);
+            for (int i = 0; i < count; i++)
+                _validationCounterScratch[i] = counters[i];
+            for (int i = count; i < _validationCounterScratch.Length; i++)
+                _validationCounterScratch[i] = default;
+
+            _validationScratchState[0] = default;
+            return true;
+        }
+
+        private static bool TryDrainPendingToValidationStaging(
+            NativeArray<FutureCommandEnvelope>.ReadOnly pendingRing,
+            NativeArray<ModKernelTuningProfile>.ReadOnly kernelProfiles,
+            ref ModSandboxRingState state,
+            int globalBudget,
+            bool profileCapMayTrip,
+            out NativeArray<FutureCommandEnvelope>.ReadOnly stagingRead,
+            out int drainCount,
+            out uint shedDropped)
+        {
+            stagingRead = default;
+            drainCount = 0;
+            shedDropped = 0u;
+
+            IDataVault lockedVault = null;
+            if (!TryAcquireVaultLaneWrite(ref _stagingHandle, out NativeArray<FutureCommandEnvelope> stagingWrite, out lockedVault))
+                return false;
+
+            try
+            {
+                int budget = math.clamp(globalBudget, 0, stagingWrite.Length);
+                MemClearElements(stagingWrite, 0, budget);
+                if (!pendingRing.IsCreated || pendingRing.Length == 0 || state.PendingCount <= 0 || budget <= 0)
+                    return true;
+
+                bool shouldShed = state.PendingCount > budget || profileCapMayTrip;
+                if (shouldShed)
+                {
+                    DrainPendingWithLoadShedding(pendingRing, kernelProfiles, stagingWrite, ref state, budget, out drainCount, out shedDropped);
+                }
+                else
+                {
+                    int count = math.min(state.PendingCount, math.min(pendingRing.Length, budget));
+                    for (int i = 0; i < count; i++)
+                    {
+                        int index = RingIndex(state.PendingHead, i, pendingRing.Length);
+                        stagingWrite[i] = pendingRing[index];
+                    }
+
+                    state.PendingHead = AdvanceRingIndexBy(state.PendingHead, count, pendingRing.Length);
+                    state.PendingCount = math.max(0, state.PendingCount - count);
+                    drainCount = count;
+                }
+            }
+            finally
+            {
+                lockedVault.ReleaseWriteLock(in _stagingHandle.Handle, SystemID.ModSandbox);
+            }
+
+            return TryOpenVaultLaneRead(ref _stagingHandle, out stagingRead);
+        }
+
+        private static void DrainPendingWithLoadShedding(
+            NativeArray<FutureCommandEnvelope>.ReadOnly pendingRing,
+            NativeArray<ModKernelTuningProfile>.ReadOnly kernelProfiles,
+            NativeArray<FutureCommandEnvelope> stagingWrite,
+            ref ModSandboxRingState state,
+            int budget,
+            out int kept,
+            out uint dropped)
+        {
+            kept = 0;
+            dropped = 0u;
+            int count = math.min(state.PendingCount, pendingRing.Length);
+            int safeBudget = math.clamp(budget, 0, math.min(count, stagingWrite.Length));
+            int overflow = math.max(0, count - safeBudget);
+            int survivalCap = ResolveKernelOpcodeFrameBudget(kernelProfiles, FutureCommandOpcodes.SurvivalOverride);
+            int hapticCap = ResolveKernelOpcodeFrameBudget(kernelProfiles, FutureCommandOpcodes.HapticPulse);
+            int subtitleCap = ResolveKernelOpcodeFrameBudget(kernelProfiles, FutureCommandOpcodes.SubtitleCue);
+
+            int optionalCount = 0;
+            int standardCount = 0;
+            int survivalCount = 0;
+            for (int i = 0; i < count; i++)
+            {
+                int index = RingIndex(state.PendingHead, i, pendingRing.Length);
+                int priority = ResolveKernelDropPriority(kernelProfiles, pendingRing[index].OpcodeHash);
+                if (priority == 0)
+                    optionalCount++;
+                else if (priority == 1)
+                    standardCount++;
+                else
+                    survivalCount++;
+            }
+
+            int dropOptional = math.min(overflow, optionalCount);
+            int remaining = overflow - dropOptional;
+            int dropStandard = math.min(remaining, standardCount);
+            remaining -= dropStandard;
+            int dropSurvival = math.min(remaining, survivalCount);
+            int optionalDropped = 0;
+            int standardDropped = 0;
+            int survivalDropped = 0;
+            int survivalKept = 0;
+            int hapticKept = 0;
+            int subtitleKept = 0;
+
+            for (int i = 0; i < count; i++)
+            {
+                int index = RingIndex(state.PendingHead, i, pendingRing.Length);
+                FutureCommandEnvelope envelope = pendingRing[index];
+                int priority = ResolveKernelDropPriority(kernelProfiles, envelope.OpcodeHash);
+                if (priority == 0 && optionalDropped < dropOptional)
+                {
+                    optionalDropped++;
+                    continue;
+                }
+
+                if (priority == 1 && standardDropped < dropStandard)
+                {
+                    standardDropped++;
+                    continue;
+                }
+
+                if (priority > 1 && survivalDropped < dropSurvival)
+                {
+                    survivalDropped++;
+                    continue;
+                }
+
+                uint normalizedOpcode = NormalizeKernelProfileOpcode(envelope.OpcodeHash);
+                if (normalizedOpcode == FutureCommandOpcodes.SurvivalOverride)
+                {
+                    if (survivalKept >= survivalCap)
+                        continue;
+                    survivalKept++;
+                }
+                else if (normalizedOpcode == FutureCommandOpcodes.HapticPulse)
+                {
+                    if (hapticKept >= hapticCap)
+                        continue;
+                    hapticKept++;
+                }
+                else if (normalizedOpcode == FutureCommandOpcodes.SubtitleCue)
+                {
+                    if (subtitleKept >= subtitleCap)
+                        continue;
+                    subtitleKept++;
+                }
+
+                if (kept >= safeBudget)
+                    continue;
+
+                stagingWrite[kept] = envelope;
+                kept++;
+            }
+
+            dropped = (uint)math.max(0, count - kept);
+            state.PendingHead = state.PendingTail;
+            state.PendingCount = 0;
+        }
+
+        private static bool TryEnsureModderLeasesForInputs(
+            NativeArray<FutureCommandEnvelope>.ReadOnly inputs,
+            int inputCount,
+            int maxMemoryMb,
+            ref ModSandboxRingState state,
+            uint frame)
+        {
+            if (inputCount <= 0)
+                return true;
+
+            if (!inputs.IsCreated ||
+                !TryOpenVaultLaneRead(ref _modderBlackboxMemoryHandle, out NativeArray<byte>.ReadOnly modderBlackboxMemory))
+                return false;
+
+            IDataVault lockedVault = null;
+            if (!TryAcquireVaultLaneWrite(ref _memoryLeasesHandle, out NativeArray<ModderMemoryLease> memoryLeases, out lockedVault))
+                return false;
+
+            try
+            {
+                int count = math.min(inputCount, inputs.Length);
+                for (int i = 0; i < count; i++)
+                    EnsureModderLease(inputs[i].ModderSignature, maxMemoryMb, modderBlackboxMemory.Length, memoryLeases, ref state, frame);
+                return true;
+            }
+            finally
+            {
+                lockedVault.ReleaseWriteLock(in _memoryLeasesHandle.Handle, SystemID.ModSandbox);
+            }
+        }
+
+        private static bool TryClearVaultLane<T>(ref VaultLane<T> lane) where T : struct
+        {
+            IDataVault lockedVault = null;
+            if (!TryAcquireVaultLaneWrite(ref lane, out NativeArray<T> buffer, out lockedVault))
+                return false;
+
+            try
+            {
+                MemClearArray(buffer);
+                return true;
+            }
+            finally
+            {
+                lockedVault.ReleaseWriteLock(in lane.Handle, SystemID.ModSandbox);
+            }
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private static int RingIndex(int head, int offset, int capacity)
+        {
+            int index = head + offset;
+            while (index >= capacity)
+                index -= capacity;
+            return index;
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private static int AdvanceRingIndexBy(int index, int count, int capacity)
+        {
+            for (int i = 0; i < count; i++)
+                index = AdvanceRingIndex(index, capacity);
+            return index;
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private static uint NormalizeKernelProfileOpcode(uint opcodeHash)
+        {
+            return opcodeHash == FutureCommandOpcodes.TriggerSubtitleCue
+                ? FutureCommandOpcodes.SubtitleCue
+                : opcodeHash;
+        }
+
+        private static int ResolveKernelDropPriority(NativeArray<ModKernelTuningProfile>.ReadOnly kernelProfiles, uint opcodeHash)
+        {
+            float profileWeight = ResolveKernelPriorityWeight(kernelProfiles, opcodeHash);
+            if (profileWeight >= 0f)
+            {
+                if (profileWeight <= FutureCommandSandboxConstants.KernelOptionalPriorityMax)
+                    return 0;
+                if (profileWeight >= FutureCommandSandboxConstants.KernelSurvivalPriorityMin)
+                    return 2;
+                return 1;
+            }
+
+            if (opcodeHash == FutureCommandOpcodes.HapticPulse ||
+                opcodeHash == FutureCommandOpcodes.SubtitleCue ||
+                opcodeHash == FutureCommandOpcodes.TriggerSubtitleCue)
+            {
+                return 0;
+            }
+
+            return opcodeHash == FutureCommandOpcodes.SurvivalOverride ? 2 : 1;
+        }
+
+        private static int ResolveKernelOpcodeFrameBudget(NativeArray<ModKernelTuningProfile>.ReadOnly kernelProfiles, uint opcodeHash)
+        {
+            uint normalizedOpcode = NormalizeKernelProfileOpcode(opcodeHash);
+            if (!kernelProfiles.IsCreated || normalizedOpcode == 0u)
+                return int.MaxValue;
+
+            for (int i = 0; i < kernelProfiles.Length; i++)
+            {
+                ModKernelTuningProfile profile = kernelProfiles[i];
+                if (profile.OpcodeHash == normalizedOpcode)
+                    return profile.MaxPerFrame > 0
+                        ? math.min(profile.MaxPerFrame, FutureCommandSandboxConstants.KernelMaxProfileCommandsPerFrame)
+                        : int.MaxValue;
+                if (profile.OpcodeHash == 0u)
+                    return int.MaxValue;
+            }
+
+            return int.MaxValue;
+        }
+
+        private static float ResolveKernelPriorityWeight(NativeArray<ModKernelTuningProfile>.ReadOnly kernelProfiles, uint opcodeHash)
+        {
+            uint normalizedOpcode = NormalizeKernelProfileOpcode(opcodeHash);
+            if (!kernelProfiles.IsCreated || normalizedOpcode == 0u)
+                return -1f;
+
+            for (int i = 0; i < kernelProfiles.Length; i++)
+            {
+                ModKernelTuningProfile profile = kernelProfiles[i];
+                if (profile.OpcodeHash == normalizedOpcode)
+                    return profile.PriorityWeight;
+                if (profile.OpcodeHash == 0u)
+                    return -1f;
+            }
+
+            return -1f;
         }
 
         private static void FinalizeValidationTelemetry(in ModSandboxScheduledValidationState validationState)
@@ -3190,258 +3797,17 @@ namespace Hecton8.Modding
         }
 
         [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Deterministic, FloatPrecision = FloatPrecision.Standard)]
-        private struct LoadSheddingJob : IJob
-        {
-            [NoAlias] public NativeArray<FutureCommandEnvelope> PendingRing;
-            [NoAlias] public NativeArray<FutureCommandEnvelope> Scratch;
-            [NoAlias] public NativeArray<ModSandboxRingState> RingState;
-            [NoAlias] [WriteOnly] public NativeArray<FutureCommandValidationStats> Stats;
-            [NoAlias] [ReadOnly] public NativeArray<ModKernelTuningProfile> KernelProfiles;
-            public int DynamicBudget;
-
-            public void Execute()
-            {
-                if (!PendingRing.IsCreated ||
-                    !Scratch.IsCreated ||
-                    !RingState.IsCreated ||
-                    !Stats.IsCreated ||
-                    RingState.Length == 0 ||
-                    Stats.Length == 0 ||
-                    PendingRing.Length == 0)
-                {
-                    return;
-                }
-
-                ModSandboxRingState state = RingState[0];
-                int count = math.min(state.PendingCount, math.min(PendingRing.Length, Scratch.Length));
-                int safeBudget = math.clamp(DynamicBudget, 0, count);
-                int overflow = math.max(0, count - safeBudget);
-
-                int survivalCap = ResolveOpcodeFrameBudget(FutureCommandOpcodes.SurvivalOverride);
-                int hapticCap = ResolveOpcodeFrameBudget(FutureCommandOpcodes.HapticPulse);
-                int subtitleCap = ResolveOpcodeFrameBudget(FutureCommandOpcodes.SubtitleCue);
-
-                int optionalCount = 0;
-                int standardCount = 0;
-                int survivalCount = 0;
-                int survivalOpcodeCount = 0;
-                int hapticOpcodeCount = 0;
-                int subtitleOpcodeCount = 0;
-                for (int i = 0; i < count; i++)
-                {
-                    int index = RingIndex(state.PendingHead, i, PendingRing.Length);
-                    uint opcodeHash = PendingRing[index].OpcodeHash;
-                    int priority = ResolveDropPriority(opcodeHash);
-                    if (priority == 0)
-                        optionalCount++;
-                    else if (priority == 1)
-                        standardCount++;
-                    else
-                        survivalCount++;
-
-                    uint normalizedOpcode = NormalizeProfileOpcode(opcodeHash);
-                    if (normalizedOpcode == FutureCommandOpcodes.SurvivalOverride)
-                        survivalOpcodeCount++;
-                    else if (normalizedOpcode == FutureCommandOpcodes.HapticPulse)
-                        hapticOpcodeCount++;
-                    else if (normalizedOpcode == FutureCommandOpcodes.SubtitleCue)
-                        subtitleOpcodeCount++;
-                }
-
-                if (overflow <= 0 &&
-                    survivalOpcodeCount <= survivalCap &&
-                    hapticOpcodeCount <= hapticCap &&
-                    subtitleOpcodeCount <= subtitleCap)
-                {
-                    return;
-                }
-
-                int dropOptional = math.min(overflow, optionalCount);
-                int remaining = overflow - dropOptional;
-                int dropStandard = math.min(remaining, standardCount);
-                remaining -= dropStandard;
-                int dropSurvival = math.min(remaining, survivalCount);
-
-                int kept = 0;
-                int optionalDropped = 0;
-                int standardDropped = 0;
-                int survivalDropped = 0;
-                int profileDropped = 0;
-                int survivalKept = 0;
-                int hapticKept = 0;
-                int subtitleKept = 0;
-                for (int i = 0; i < count; i++)
-                {
-                    int index = RingIndex(state.PendingHead, i, PendingRing.Length);
-                    FutureCommandEnvelope envelope = PendingRing[index];
-                    int priority = ResolveDropPriority(envelope.OpcodeHash);
-                    if (priority == 0 && optionalDropped < dropOptional)
-                    {
-                        optionalDropped++;
-                        continue;
-                    }
-
-                    if (priority == 1 && standardDropped < dropStandard)
-                    {
-                        standardDropped++;
-                        continue;
-                    }
-
-                    if (priority > 1 && survivalDropped < dropSurvival)
-                    {
-                        survivalDropped++;
-                        continue;
-                    }
-
-                    uint normalizedOpcode = NormalizeProfileOpcode(envelope.OpcodeHash);
-                    if (normalizedOpcode == FutureCommandOpcodes.SurvivalOverride)
-                    {
-                        if (survivalKept >= survivalCap)
-                        {
-                            profileDropped++;
-                            continue;
-                        }
-
-                        survivalKept++;
-                    }
-                    else if (normalizedOpcode == FutureCommandOpcodes.HapticPulse)
-                    {
-                        if (hapticKept >= hapticCap)
-                        {
-                            profileDropped++;
-                            continue;
-                        }
-
-                        hapticKept++;
-                    }
-                    else if (normalizedOpcode == FutureCommandOpcodes.SubtitleCue)
-                    {
-                        if (subtitleKept >= subtitleCap)
-                        {
-                            profileDropped++;
-                            continue;
-                        }
-
-                        subtitleKept++;
-                    }
-
-                    Scratch[kept] = envelope;
-                    kept++;
-                }
-
-                for (int i = 0; i < kept; i++)
-                    PendingRing[i] = Scratch[i];
-
-                state.PendingHead = 0;
-                state.PendingTail = kept >= PendingRing.Length ? 0 : kept;
-                state.PendingCount = kept;
-                RingState[0] = state;
-
-                int totalDropped = optionalDropped + standardDropped + survivalDropped + profileDropped;
-                if (totalDropped > 0)
-                {
-                    FutureCommandValidationStats stats = default;
-                    stats.Dropped = (uint)totalDropped;
-                    stats.RejectionMask = (uint)FutureCommandRejectReason.ThermalShed;
-                    Stats[0] = stats;
-                }
-            }
-
-            [MethodImpl(MethodImplOptions.AggressiveInlining)]
-            private static int RingIndex(int head, int offset, int capacity)
-            {
-                int index = head + offset;
-                while (index >= capacity)
-                    index -= capacity;
-                return index;
-            }
-
-            [MethodImpl(MethodImplOptions.AggressiveInlining)]
-            private int ResolveDropPriority(uint opcodeHash)
-            {
-                float profileWeight = ResolvePriorityWeight(opcodeHash);
-                if (profileWeight >= 0f)
-                {
-                    if (profileWeight <= FutureCommandSandboxConstants.KernelOptionalPriorityMax)
-                        return 0;
-                    if (profileWeight >= FutureCommandSandboxConstants.KernelSurvivalPriorityMin)
-                        return 2;
-                    return 1;
-                }
-
-                if (opcodeHash == FutureCommandOpcodes.HapticPulse ||
-                    opcodeHash == FutureCommandOpcodes.SubtitleCue ||
-                    opcodeHash == FutureCommandOpcodes.TriggerSubtitleCue)
-                {
-                    return 0;
-                }
-
-                return opcodeHash == FutureCommandOpcodes.SurvivalOverride ? 2 : 1;
-            }
-
-            [MethodImpl(MethodImplOptions.AggressiveInlining)]
-            private int ResolveOpcodeFrameBudget(uint opcodeHash)
-            {
-                uint normalizedOpcode = NormalizeProfileOpcode(opcodeHash);
-                if (!KernelProfiles.IsCreated || normalizedOpcode == 0u)
-                    return int.MaxValue;
-
-                for (int i = 0; i < KernelProfiles.Length; i++)
-                {
-                    ModKernelTuningProfile profile = KernelProfiles[i];
-                    if (profile.OpcodeHash == normalizedOpcode)
-                        return profile.MaxPerFrame > 0
-                            ? math.min(profile.MaxPerFrame, FutureCommandSandboxConstants.KernelMaxProfileCommandsPerFrame)
-                            : int.MaxValue;
-                    if (profile.OpcodeHash == 0u)
-                        return int.MaxValue;
-                }
-
-                return int.MaxValue;
-            }
-
-            [MethodImpl(MethodImplOptions.AggressiveInlining)]
-            private static uint NormalizeProfileOpcode(uint opcodeHash)
-            {
-                return opcodeHash == FutureCommandOpcodes.TriggerSubtitleCue
-                    ? FutureCommandOpcodes.SubtitleCue
-                    : opcodeHash;
-            }
-
-            [MethodImpl(MethodImplOptions.AggressiveInlining)]
-            private float ResolvePriorityWeight(uint opcodeHash)
-            {
-                uint normalizedOpcode = NormalizeProfileOpcode(opcodeHash);
-                if (!KernelProfiles.IsCreated || normalizedOpcode == 0u)
-                    return -1f;
-
-                for (int i = 0; i < KernelProfiles.Length; i++)
-                {
-                    ModKernelTuningProfile profile = KernelProfiles[i];
-                    if (profile.OpcodeHash == normalizedOpcode)
-                        return profile.PriorityWeight;
-                    if (profile.OpcodeHash == 0u)
-                        return -1f;
-                }
-
-                return -1f;
-            }
-        }
-
-        [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Deterministic, FloatPrecision = FloatPrecision.Standard)]
         private unsafe struct ValidateFutureCommandEnvelopeJob : IJob
         {
-            [NoAlias] [ReadOnly] public NativeArray<FutureCommandEnvelope> Inputs;
-            [NoAlias] [WriteOnly] public NativeArray<FutureCommandValidationStats> Stats;
-            [NoAlias] [ReadOnly] public NativeArray<FutureCommandOpcodeRecord> OpcodeRecords;
+            [NoAlias] [ReadOnly] public NativeArray<FutureCommandEnvelope>.ReadOnly Inputs;
+            [NoAlias] public NativeArray<ModSandboxValidationScratchState> ScratchState;
+            [NoAlias] [ReadOnly] public NativeArray<FutureCommandOpcodeRecord>.ReadOnly OpcodeRecords;
             [NoAlias] public NativeArray<ModderFrameCounter> PerModCounters;
-            [NoAlias] [ReadOnly] public NativeArray<ModderMemoryLease> MemoryLeases;
-            [NoAlias] [ReadOnly] public NativeArray<ApprovedAssetRecord> ApprovedAssetManifest;
-            [NoAlias] public NativeArray<byte> ModderBlackboxMemory;
-            [NoAlias] [WriteOnly] public NativeArray<FutureCommandEnvelope> DevNullRing;
-            [NoAlias] public NativeArray<ModSandboxRingState> RingState;
-            [NoAlias] public NativeArray<ModKernelCameraJuiceImpulse> CameraJuiceImpulses;
-            [NoAlias] public NativeArray<ModKernelCameraJuiceState> CameraJuiceState;
+            [NoAlias] [ReadOnly] public NativeArray<ModderMemoryLease>.ReadOnly MemoryLeases;
+            [NoAlias] [ReadOnly] public NativeArray<ApprovedAssetRecord>.ReadOnly ApprovedAssetManifest;
+            [NoAlias] public NativeArray<ModSandboxMemoryWriteCommand> MemoryWriteCommands;
+            [NoAlias] public NativeArray<FutureCommandEnvelope> DevNullScratch;
+            [NoAlias] public NativeArray<ModKernelCameraJuiceImpulse> CameraJuiceScratch;
             [NoAlias] [WriteOnly] public global::Hecton8.Core.MpscSignalRingBuffer<ModSpawnRequestSignal>.ParallelWriter SpawnWriter;
             [NoAlias] [WriteOnly] public global::Hecton8.Core.MpscSignalRingBuffer<ModAssetReferenceSignal>.ParallelWriter AssetWriter;
             [NoAlias] [WriteOnly] public global::Hecton8.Core.MpscSignalRingBuffer<SandboxMockAcousticSignal>.ParallelWriter AcousticWriter;
@@ -3451,7 +3817,7 @@ namespace Hecton8.Modding
             [NoAlias] [WriteOnly] public global::Hecton8.Core.MpscSignalRingBuffer<ModHapticPulseSignal>.ParallelWriter HapticWriter;
             [NoAlias] [WriteOnly] public global::Hecton8.Core.MpscSignalRingBuffer<ModSubtitleCueSignal>.ParallelWriter SubtitleWriter;
             [NoAlias] [WriteOnly] public global::Hecton8.Core.MpscSignalRingBuffer<ModInteractionRejectedPayload>.ParallelWriter RejectionWriter;
-            [NoAlias] [ReadOnly] public NativeArray<ModKernelTuningProfile> KernelProfiles;
+            [NoAlias] [ReadOnly] public NativeArray<ModKernelTuningProfile>.ReadOnly KernelProfiles;
             public int Count;
             public int OpcodeRecordCount;
             public int MaxCommandsPerSignature;
@@ -3460,10 +3826,14 @@ namespace Hecton8.Modding
             public uint MaxAssetBytes;
             public uint TuningFlags;
             public uint RollbackActive;
+            public int ModderBlackboxMemoryLength;
             public double3 ObserverAUP;
 
             public void Execute()
             {
+                if (!ScratchState.IsCreated || ScratchState.Length == 0)
+                    return;
+
                 FutureCommandValidationStats stats = default;
                 int count = math.min(Count, Inputs.Length);
                 for (int i = 0; i < count; i++)
@@ -3476,7 +3846,9 @@ namespace Hecton8.Modding
                     RouteEnvelope(in envelope, ref stats);
                 }
 
-                Stats[0] = stats;
+                ModSandboxValidationScratchState output = ScratchState[0];
+                output.Stats = stats;
+                ScratchState[0] = output;
             }
 
             private bool TryValidateEnvelope(in FutureCommandEnvelope envelope, ref FutureCommandValidationStats stats)
@@ -3752,24 +4124,22 @@ namespace Hecton8.Modding
 
             private void WriteCameraJuiceImpulse(double3 targetAup, float scalar, ref FutureCommandValidationStats stats)
             {
-                if (!CameraJuiceImpulses.IsCreated || !CameraJuiceState.IsCreated || CameraJuiceImpulses.Length == 0 || CameraJuiceState.Length == 0)
+                if (!CameraJuiceScratch.IsCreated || CameraJuiceScratch.Length == 0)
                     return;
 
-                ModKernelCameraJuiceState state = CameraJuiceState[0];
-                int head = state.Head;
-                if ((uint)head >= (uint)CameraJuiceImpulses.Length)
-                    head = 0;
+                ModSandboxValidationScratchState output = ScratchState[0];
+                int index = output.CameraImpulseCount;
+                if ((uint)index >= (uint)CameraJuiceScratch.Length)
+                    return;
 
-                CameraJuiceImpulses[head] = new ModKernelCameraJuiceImpulse
+                CameraJuiceScratch[index] = new ModKernelCameraJuiceImpulse
                 {
                     TargetAUP = targetAup,
                     Scalar = math.saturate(scalar),
                     Frame = Frame
                 };
-                state.Head = AdvanceRingIndex(head, CameraJuiceImpulses.Length);
-                state.Count = math.min(CameraJuiceImpulses.Length, state.Count + 1);
-                state.LastFrame = Frame;
-                CameraJuiceState[0] = state;
+                output.CameraImpulseCount = index + 1;
+                ScratchState[0] = output;
                 stats.KernelSuppressed++;
                 stats.HapticFallbacks++;
             }
@@ -3817,7 +4187,7 @@ namespace Hecton8.Modding
 
             private bool TryWriteModMemory(in FutureCommandEnvelope envelope, ref FutureCommandValidationStats stats)
             {
-                if (!ModderBlackboxMemory.IsCreated)
+                if (!MemoryWriteCommands.IsCreated || ModderBlackboxMemoryLength <= 0)
                 {
                     RejectEnvelope(in envelope, ref stats, FutureCommandRejectReason.MissingMemoryLease, 0u);
                     return false;
@@ -3835,22 +4205,37 @@ namespace Hecton8.Modding
                 if (relativeOffset > (uint)lease.ByteLength ||
                     byteCount > (uint)lease.ByteLength - relativeOffset ||
                     lease.OffsetBytes < 0 ||
-                    lease.OffsetBytes > ModderBlackboxMemory.Length - lease.ByteLength)
+                    lease.OffsetBytes > ModderBlackboxMemoryLength - lease.ByteLength)
                 {
                     RejectEnvelope(in envelope, ref stats, FutureCommandRejectReason.MemoryViolation, FutureCommandSandboxConstants.FaultHashMemoryViolation);
                     return false;
                 }
 
+                ModSandboxValidationScratchState output = ScratchState[0];
+                int commandIndex = output.MemoryWriteCount;
+                if ((uint)commandIndex >= (uint)MemoryWriteCommands.Length)
+                {
+                    RejectEnvelope(in envelope, ref stats, FutureCommandRejectReason.CommandFlood, 0u);
+                    return false;
+                }
+
                 int absolute = lease.OffsetBytes + (int)relativeOffset;
-                for (uint i = 0; i < byteCount; i++)
-                    ModderBlackboxMemory[absolute + (int)i] = (byte)(rawValue >> ((int)i * 8));
+                MemoryWriteCommands[commandIndex] = new ModSandboxMemoryWriteCommand
+                {
+                    OffsetBytes = absolute,
+                    RawValue = rawValue,
+                    ByteCount = byteCount,
+                    Reserved = 0u
+                };
+                output.MemoryWriteCount = commandIndex + 1;
+                ScratchState[0] = output;
 
                 return true;
             }
 
             private bool TryValidateModMemoryRange(in FutureCommandEnvelope envelope, ref FutureCommandValidationStats stats)
             {
-                if (!ModderBlackboxMemory.IsCreated)
+                if (ModderBlackboxMemoryLength <= 0)
                 {
                     RejectEnvelope(in envelope, ref stats, FutureCommandRejectReason.MissingMemoryLease, 0u);
                     return false;
@@ -3867,7 +4252,7 @@ namespace Hecton8.Modding
                 if (relativeOffset > (uint)lease.ByteLength ||
                     byteCount > (uint)lease.ByteLength - relativeOffset ||
                     lease.OffsetBytes < 0 ||
-                    lease.OffsetBytes > ModderBlackboxMemory.Length - lease.ByteLength)
+                    lease.OffsetBytes > ModderBlackboxMemoryLength - lease.ByteLength)
                 {
                     RejectEnvelope(in envelope, ref stats, FutureCommandRejectReason.MemoryViolation, FutureCommandSandboxConstants.FaultHashMemoryViolation);
                     return false;
@@ -3914,19 +4299,16 @@ namespace Hecton8.Modding
 
             private void EnqueueDevNull(in FutureCommandEnvelope envelope, ref FutureCommandValidationStats stats)
             {
-                if (DevNullRing.IsCreated && RingState.IsCreated && RingState.Length > 0 && DevNullRing.Length > 0)
+                if (DevNullScratch.IsCreated && DevNullScratch.Length > 0)
                 {
-                    ModSandboxRingState state = RingState[0];
-                    if (state.DevNullCount >= DevNullRing.Length)
+                    ModSandboxValidationScratchState output = ScratchState[0];
+                    int index = output.DevNullCount;
+                    if ((uint)index < (uint)DevNullScratch.Length)
                     {
-                        state.DevNullHead = AdvanceRingIndex(state.DevNullHead, DevNullRing.Length);
-                        state.DevNullCount = math.max(0, state.DevNullCount - 1);
+                        DevNullScratch[index] = envelope;
+                        output.DevNullCount = index + 1;
+                        ScratchState[0] = output;
                     }
-
-                    DevNullRing[state.DevNullTail] = envelope;
-                    state.DevNullTail = AdvanceRingIndex(state.DevNullTail, DevNullRing.Length);
-                    state.DevNullCount = math.min(DevNullRing.Length, state.DevNullCount + 1);
-                    RingState[0] = state;
                 }
                 DevNullSignalWriter.TryEnqueue(new ModFutureDevNullSignal
                 {
@@ -4238,121 +4620,6 @@ namespace Hecton8.Modding
                         _pad1 = 0UL
                     });
                 }
-            }
-        }
-
-        [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Deterministic, FloatPrecision = FloatPrecision.Standard)]
-        internal struct HapticPulseKernelJob : IJob
-        {
-            [NoAlias] [ReadOnly] public NativeArray<FutureCommandEnvelope> Inputs;
-            [NoAlias] public NativeArray<ModKernelCameraJuiceImpulse> CameraJuiceImpulses;
-            [NoAlias] public NativeArray<ModKernelCameraJuiceState> CameraJuiceState;
-            [NoAlias] [ReadOnly] public NativeArray<ModKernelTuningProfile> KernelProfiles;
-            [NoAlias] [WriteOnly] public global::Hecton8.Core.MpscSignalRingBuffer<ModHapticPulseSignal>.ParallelWriter Output;
-            public int Count;
-            public uint Frame;
-            public uint RollbackActive;
-            public uint TuningFlags;
-            public float GlobalQualityWeight;
-            public double3 ObserverAUP;
-
-            public void Execute()
-            {
-                int count = math.min(Count, Inputs.Length);
-                for (int i = 0; i < count; i++)
-                {
-                    FutureCommandEnvelope envelope = Inputs[i];
-                    double3 absAup = math.abs(envelope.TargetAUP);
-                    if (envelope.OpcodeHash != FutureCommandOpcodes.HapticPulse ||
-                        RollbackActive != 0u ||
-                        !math.all(math.isfinite(envelope.TargetAUP)) ||
-                        !math.all(absAup <= new double3(FutureCommandSandboxConstants.KernelMaxAupMagnitudeMeters)) ||
-                        !math.all(math.isfinite(new float3(envelope.PayloadData.y, envelope.PayloadData.z, envelope.PayloadData.w))) ||
-                        envelope.PayloadData.y < 0f ||
-                        envelope.PayloadData.z <= 0f)
-                    {
-                        continue;
-                    }
-
-                    double3 localDeltaD = envelope.TargetAUP - ObserverAUP;
-                    float3 localDelta = (float3)localDeltaD;
-                    if (!math.all(math.isfinite(localDelta)))
-                        continue;
-
-                    bool hasProfile = TryResolveKernelProfile(FutureCommandOpcodes.HapticPulse, out ModKernelTuningProfile profile);
-                    float rangeMax = hasProfile ? math.max(1f, profile.RangeMeters) : 32f;
-                    float range = math.clamp(envelope.PayloadData.w > 0f ? envelope.PayloadData.w : rangeMax, 1f, rangeMax);
-                    float rangeSq = math.max(1f, range * range);
-                    float distanceSq = math.max(1f, math.lengthsq(localDelta));
-                    if (distanceSq > rangeSq)
-                        continue;
-
-                    float intensityScale = hasProfile ? math.max(0f, profile.IntensityScale) : 1f;
-                    float scaledIntensity = math.saturate(math.saturate(envelope.PayloadData.y * intensityScale) * rangeSq * math.rcp(distanceSq));
-                    float fallback01 = math.saturate((0.35f - math.saturate(GlobalQualityWeight)) * 2.8571429f);
-                    uint hapticFlags = TuningFlags | (hasProfile ? profile.Flags : 0u);
-                    float fallbackScalar = (hapticFlags & FutureCommandSandboxConstants.KernelFlagForceHapticCameraFallback) != 0u ? 1f : fallback01;
-                    if (fallbackScalar > 0.0001f)
-                    {
-                        WriteFallbackImpulse(envelope.TargetAUP, scaledIntensity * fallbackScalar);
-                        continue;
-                    }
-
-                    uint waveformHash = math.asuint(envelope.PayloadData.x);
-                    Output.TryEnqueue(new ModHapticPulseSignal
-                    {
-                        TargetAUP = envelope.TargetAUP,
-                        WaveformHash = waveformHash == 0u ? (envelope.ModderSignature ^ FutureCommandOpcodes.HapticPulse) : waveformHash,
-                        Intensity = scaledIntensity,
-                        Duration = math.clamp(envelope.PayloadData.z, 0.01f, hasProfile ? math.max(0.01f, profile.MaxDurationSeconds) : 5f),
-                        Flags = 0u,
-                        _pad0 = 0UL
-                    });
-                }
-            }
-
-            private bool TryResolveKernelProfile(uint opcodeHash, out ModKernelTuningProfile profile)
-            {
-                profile = default;
-                if (!KernelProfiles.IsCreated || opcodeHash == 0u || KernelProfiles.Length == 0)
-                    return false;
-
-                for (int i = 0; i < KernelProfiles.Length; i++)
-                {
-                    ModKernelTuningProfile candidate = KernelProfiles[i];
-                    if (candidate.OpcodeHash == opcodeHash)
-                    {
-                        profile = candidate;
-                        return true;
-                    }
-
-                    if (candidate.OpcodeHash == 0u)
-                        return false;
-                }
-
-                return false;
-            }
-
-            private void WriteFallbackImpulse(double3 targetAup, float scalar)
-            {
-                if (!CameraJuiceImpulses.IsCreated || !CameraJuiceState.IsCreated || CameraJuiceImpulses.Length == 0 || CameraJuiceState.Length == 0)
-                    return;
-
-                ModKernelCameraJuiceState state = CameraJuiceState[0];
-                int head = state.Head;
-                if ((uint)head >= (uint)CameraJuiceImpulses.Length)
-                    head = 0;
-
-                CameraJuiceImpulses[head] = new ModKernelCameraJuiceImpulse
-                {
-                    TargetAUP = targetAup,
-                    Scalar = math.saturate(scalar),
-                    Frame = Frame
-                };
-                state.Head = head + 1 >= CameraJuiceImpulses.Length ? 0 : head + 1;
-                state.Count = math.min(CameraJuiceImpulses.Length, state.Count + 1);
-                state.LastFrame = Frame;
-                CameraJuiceState[0] = state;
             }
         }
 

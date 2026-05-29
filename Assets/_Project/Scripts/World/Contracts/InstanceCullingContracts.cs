@@ -24,7 +24,8 @@ namespace Hecton8.World
         None = 0u,
         VoxelSdfCull = 1u << 0,
         VramDownsample = 1u << 1,
-        LowTierDistance = 1u << 2,
+        SurvivalDistancePressure = 1u << 2,
+        LowTierDistance = SurvivalDistancePressure,
         CameraStateFromSignals = 1u << 3
     }
 

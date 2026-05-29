@@ -407,6 +407,9 @@ namespace Hecton8.Gameplay
 
         public void LateFrameTick()
         {
+            if (!HasPendingLateFrameWork())
+                return;
+
             if (_pendingRendererStateDirty)
             {
                 _pendingRendererStateDirty = false;
@@ -456,8 +459,17 @@ namespace Hecton8.Gameplay
                 _pendingDisableComponent = false;
                 enabled = false;
             }
+        }
 
-            StopLateFrameTicking();
+        private bool HasPendingLateFrameWork()
+        {
+            return _pendingRendererStateDirty ||
+                   _pendingHitAudio ||
+                   _pendingHitParticle ||
+                   _pendingBreakAudio ||
+                   _pendingBreakParticle ||
+                   _pendingDebrisSignal ||
+                   _pendingDisableComponent;
         }
 
         private void QueueComponentDisable()

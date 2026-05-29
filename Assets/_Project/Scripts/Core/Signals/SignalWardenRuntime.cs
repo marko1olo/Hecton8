@@ -273,6 +273,9 @@ namespace Hecton8.Core.Contracts.Signals
                 _initialized = 0;
             }
 
+            if (vault.IsAllocationLocked || vault.IsCompactionFenceActive)
+                return;
+
             _vault = vault;
             _profilesHandle = vault.EnsureGenerationHandle<SignalTuningProfile>(
                 ProfileBufferId,
@@ -816,6 +819,9 @@ namespace Hecton8.Core.Contracts.Signals
 
                 _initialized = 0;
             }
+
+            if (vault.IsAllocationLocked || vault.IsCompactionFenceActive)
+                return;
 
             _vault = vault;
             _ringHandle = vault.EnsureGenerationHandle<SignalTelemetryFrame>(
@@ -2458,6 +2464,9 @@ namespace Hecton8.Core.Contracts.Signals
 
                 _initialized = 0;
             }
+
+            if (vault.IsAllocationLocked || vault.IsCompactionFenceActive)
+                return false;
 
 #if UNITY_EDITOR
             if (!SignalThreadContentionLayoutGuard.Validate())

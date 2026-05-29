@@ -61,8 +61,19 @@ namespace Hecton8.Core.Bridge
 
         [SerializeField] private List<Binding> bindings = new List<Binding>(32);
         [SerializeField] private bool pushOnValidateInPlayMode = true;
+        [SerializeField, HideInInspector] private int validationNullBindingCount;
+        [SerializeField, HideInInspector] private int validationFirstNullBindingIndex = -1;
+        [SerializeField, HideInInspector] private int validationRuntimeBindingCount;
+        [SerializeField, HideInInspector] private int validationDuplicateActionHashCount;
+        [SerializeField, HideInInspector] private int validationFirstDuplicateActionHashIndex = -1;
 
         public int BindingCount => bindings != null ? bindings.Count : 0;
+        public bool HasValidationErrors => validationNullBindingCount > 0 || validationDuplicateActionHashCount > 0;
+        public int ValidationNullBindingCount => validationNullBindingCount;
+        public int ValidationFirstNullBindingIndex => validationFirstNullBindingIndex;
+        public int ValidationRuntimeBindingCount => validationRuntimeBindingCount;
+        public int ValidationDuplicateActionHashCount => validationDuplicateActionHashCount;
+        public int ValidationFirstDuplicateActionHashIndex => validationFirstDuplicateActionHashIndex;
 
         public Binding GetBinding(int index)
         {
@@ -75,25 +86,28 @@ namespace Hecton8.Core.Bridge
                 return false;
 
             EnsureBindingList();
-            int count = bindings.Count;
-            if (count <= 0)
+            ValidateBindings();
+            int rawCount = bindings.Count;
+            int runtimeBindingCount = validationRuntimeBindingCount;
+            if (validationDuplicateActionHashCount > 0)
+                return false;
+
+            if (runtimeBindingCount <= 0)
             {
-                ClearExistingBuffer(vault);
+                if (!ClearExistingBuffer(vault))
+                    return false;
+
                 PublishInputUpdateSignal(0);
                 GlobalTelemetryBus.PublishModTelemetry(H8BridgeHashes.InputFacade, H8BridgeHashes.InputFacade, 0f);
                 return true;
             }
 
-            for (int i = 0; i < count; i++)
-            {
-                Binding binding = bindings[i];
-                if (binding != null)
-                    binding.RebuildHashes();
-            }
+            if (vault.IsAllocationLocked || vault.IsCompactionFenceActive)
+                return false;
 
             VaultGenerationHandle<H8InputFacadeBindingEntry> handle = vault.EnsureGenerationHandle<H8InputFacadeBindingEntry>(
                 BufferID.BridgeInputFacadeBindings,
-                count,
+                runtimeBindingCount,
                 SystemID.CoreBridge,
                 NativeArrayOptions.ClearMemory);
 
@@ -106,13 +120,13 @@ namespace Hecton8.Core.Bridge
             int activeCount = 0;
             try
             {
-                if (!buffer.IsCreated || buffer.Length < count)
+                if (!buffer.IsCreated || buffer.Length < runtimeBindingCount)
                     return false;
 
                 Thread.MemoryBarrier();
                 ClearBuffer(buffer);
 
-                for (int i = 0; i < count; i++)
+                for (int i = 0; i < rawCount; i++)
                 {
                     Binding binding = bindings[i];
                     if (binding == null)
@@ -133,24 +147,30 @@ namespace Hecton8.Core.Bridge
             return true;
         }
 
-        private static unsafe void ClearExistingBuffer(IDataVault vault)
+        private static unsafe bool ClearExistingBuffer(IDataVault vault)
         {
-            if (vault == null ||
-                !vault.TryGetGenerationHandle<H8InputFacadeBindingEntry>(BufferID.BridgeInputFacadeBindings, out VaultGenerationHandle<H8InputFacadeBindingEntry> handle) ||
-                handle.BufferID == 0u ||
-                !vault.TryAcquireWriteLock(in handle, SystemID.CoreBridge, out NativeArray<H8InputFacadeBindingEntry> buffer))
-            {
-                return;
-            }
+            if (vault == null)
+                return false;
+
+            if (vault.IsAllocationLocked || vault.IsCompactionFenceActive)
+                return false;
+
+            if (!vault.TryGetGenerationHandle<H8InputFacadeBindingEntry>(BufferID.BridgeInputFacadeBindings, out VaultGenerationHandle<H8InputFacadeBindingEntry> handle) ||
+                handle.BufferID == 0u)
+                return true;
+
+            if (!vault.TryAcquireWriteLock(in handle, SystemID.CoreBridge, out NativeArray<H8InputFacadeBindingEntry> buffer))
+                return false;
 
             try
             {
                 if (!buffer.IsCreated)
-                    return;
+                    return true;
 
                 Thread.MemoryBarrier();
                 ClearBuffer(buffer);
                 Thread.MemoryBarrier();
+                return true;
             }
             finally
             {
@@ -189,26 +209,27 @@ namespace Hecton8.Core.Bridge
         private void Reset()
         {
             EnsureDefaultBindings();
+            ValidateBindings();
         }
 
         private void OnValidate()
         {
-            EnsureBindingList();
-            for (int i = 0; i < bindings.Count; i++)
-            {
-                Binding binding = bindings[i];
-                if (binding != null)
-                    binding.RebuildHashes();
-            }
+            ValidateBindings();
 
             if (pushOnValidateInPlayMode && Application.isPlaying)
                 SyncToVault(GlobalRegistry.DataVault);
+        }
+
+        private void OnEnable()
+        {
+            ValidateBindings();
         }
 
         [ContextMenu("Seed Default Input Bindings")]
         private void SeedDefaultBindings()
         {
             EnsureDefaultBindings();
+            ValidateBindings();
         }
 
         private void EnsureBindingList()
@@ -234,6 +255,84 @@ namespace Hecton8.Core.Bridge
             Binding binding = new Binding();
             binding.Configure(buttonName, mask, command);
             bindings.Add(binding);
+        }
+
+        private void ValidateBindings()
+        {
+            EnsureBindingList();
+            ResetValidationState();
+            validationRuntimeBindingCount = RebuildHashesAndCountRuntimeBindings(bindings.Count);
+            validationDuplicateActionHashCount = CountDuplicateActionHashes(out validationFirstDuplicateActionHashIndex);
+        }
+
+        private void ResetValidationState()
+        {
+            validationNullBindingCount = 0;
+            validationFirstNullBindingIndex = -1;
+            validationRuntimeBindingCount = 0;
+            validationDuplicateActionHashCount = 0;
+            validationFirstDuplicateActionHashIndex = -1;
+        }
+
+        private int RebuildHashesAndCountRuntimeBindings(int rawCount)
+        {
+            int runtimeCount = 0;
+            for (int i = 0; i < rawCount; i++)
+            {
+                Binding binding = bindings[i];
+                if (binding == null)
+                {
+                    validationNullBindingCount++;
+                    if (validationFirstNullBindingIndex < 0)
+                        validationFirstNullBindingIndex = i;
+                    continue;
+                }
+
+                binding.RebuildHashes();
+                runtimeCount++;
+            }
+
+            return runtimeCount;
+        }
+
+        private int CountDuplicateActionHashes(out int firstDuplicateIndex)
+        {
+            firstDuplicateIndex = -1;
+            if (bindings == null || bindings.Count <= 1)
+                return 0;
+
+            int duplicateRows = 0;
+            for (int i = 0; i < bindings.Count; i++)
+            {
+                Binding binding = bindings[i];
+                if (!IsRuntimeHashCandidate(binding))
+                    continue;
+
+                bool duplicatesEarlierRow = false;
+                for (int j = 0; j < i; j++)
+                {
+                    Binding previous = bindings[j];
+                    if (IsRuntimeHashCandidate(previous) && previous.ActionNameHash == binding.ActionNameHash)
+                    {
+                        duplicatesEarlierRow = true;
+                        break;
+                    }
+                }
+
+                if (!duplicatesEarlierRow)
+                    continue;
+
+                duplicateRows++;
+                if (firstDuplicateIndex < 0)
+                    firstDuplicateIndex = i;
+            }
+
+            return duplicateRows;
+        }
+
+        private static bool IsRuntimeHashCandidate(Binding binding)
+        {
+            return binding != null && binding.ActionNameHash != 0u;
         }
     }
 }

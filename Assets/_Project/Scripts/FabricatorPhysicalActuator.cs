@@ -7,7 +7,7 @@ namespace Hecton8.Crafting
 {
     [DisallowMultipleComponent]
     [AddComponentMenu("Hecton8/Crafting/Fabricator Physical Actuator")]
-    public sealed class FabricatorPhysicalActuator : MonoBehaviour, IPanelInteractable, IUpdatable, IGlobalRegistryHotSwapListener
+    public sealed class FabricatorPhysicalActuator : MonoBehaviour, IPanelInteractable, IUpdatable, ILateFrameTickable, IGlobalRegistryHotSwapListener
     {
         private const float MechanicalStartThreshold01 = 0.85f;
         private const float Pi = 3.14159265359f;
@@ -49,7 +49,11 @@ namespace Hecton8.Crafting
         private bool _leverLockedDown;
         private bool _emergencyStopPressed;
         private bool _registeredTick;
+        private bool _registeredLateFrame;
         private bool _hotSwapRegistered;
+        private bool _leverVisualDirty;
+        private bool _emergencyStopVisualDirty;
+        private Vector3 _pendingEmergencyStopVisualPosition;
 
         public float Lever01 => _lever01;
         public bool LeverLockedDown => _leverLockedDown;
@@ -77,6 +81,7 @@ namespace Hecton8.Crafting
                 ReleaseLeverLock();
 
             CacheScalarConfig();
+            TryRegisterLateFrame();
             ApplyLeverVisual();
             ApplyEmergencyStopVisual();
         }
@@ -88,6 +93,9 @@ namespace Hecton8.Crafting
         {
             if (serviceSlot != GlobalRegistryServiceSlot.Dispatcher || currentService == null || !isActiveAndEnabled)
                 return;
+
+            TryUnregisterLateFrame();
+            TryRegisterLateFrame();
 
             if (!_leverLockedDown && !_emergencyStopPressed)
                 return;
@@ -158,8 +166,6 @@ namespace Hecton8.Crafting
 
             if (_emergencyStopPressed)
                 UpdateEmergencyStopReturn(safeDeltaSeconds);
-
-            TryUnregisterTickIfIdle();
         }
 
         private void ReleaseLeverLock()
@@ -215,6 +221,14 @@ namespace Hecton8.Crafting
             _registeredTick = GlobalRegistry.TryRegisterUpdatable(this, PriorityLayer.Player);
         }
 
+        private void TryRegisterLateFrame()
+        {
+            if (_registeredLateFrame || !Application.isPlaying || GlobalRegistry.Dispatcher == null)
+                return;
+
+            _registeredLateFrame = GlobalRegistry.TryRegisterLateFrameTickable(this, PriorityLayer.Player);
+        }
+
         private void TryUnregisterTick()
         {
             if (!_registeredTick)
@@ -222,6 +236,15 @@ namespace Hecton8.Crafting
 
             GlobalRegistry.UnregisterUpdatable(this, PriorityLayer.Player);
             _registeredTick = false;
+        }
+
+        private void TryUnregisterLateFrame()
+        {
+            if (!_registeredLateFrame)
+                return;
+
+            GlobalRegistry.UnregisterLateFrameTickable(this, PriorityLayer.Player);
+            _registeredLateFrame = false;
         }
 
         private void TryRegisterHotSwapListener()
@@ -249,19 +272,38 @@ namespace Hecton8.Crafting
 
         private void ApplyLeverVisual()
         {
-            if (leverVisual == null)
-                return;
-
-            Vector3 axis = ResolveLeverAxis();
-            leverVisual.localRotation = _leverRestRotation * ApproximateAngleAxisDegreesNoTrig(_resolvedLeverTravelDegrees * _lever01, axis);
+            _leverVisualDirty = true;
         }
 
         private void ApplyEmergencyStopVisual()
         {
-            if (emergencyStopVisual == null)
-                return;
+            QueueEmergencyStopVisual(_emergencyStopPressed ? _emergencyStopPressedPosition : _emergencyStopRestPosition);
+        }
 
-            emergencyStopVisual.localPosition = _emergencyStopPressed ? _emergencyStopPressedPosition : _emergencyStopRestPosition;
+        public void LateFrameTick()
+        {
+            if (_leverVisualDirty)
+            {
+                _leverVisualDirty = false;
+                if (leverVisual != null)
+                {
+                    Vector3 axis = ResolveLeverAxis();
+                    leverVisual.localRotation = _leverRestRotation * ApproximateAngleAxisDegreesNoTrig(_resolvedLeverTravelDegrees * _lever01, axis);
+                }
+            }
+
+            if (_emergencyStopVisualDirty)
+            {
+                _emergencyStopVisualDirty = false;
+                if (emergencyStopVisual != null)
+                    emergencyStopVisual.localPosition = _pendingEmergencyStopVisualPosition;
+            }
+        }
+
+        private void QueueEmergencyStopVisual(Vector3 position)
+        {
+            _pendingEmergencyStopVisualPosition = position;
+            _emergencyStopVisualDirty = true;
         }
 
         private void UpdateEmergencyStopReturn(float deltaSeconds)
@@ -279,7 +321,7 @@ namespace Hecton8.Crafting
                 float3 from = new float3(_emergencyStopPressedPosition.x, _emergencyStopPressedPosition.y, _emergencyStopPressedPosition.z);
                 float3 to = new float3(_emergencyStopRestPosition.x, _emergencyStopRestPosition.y, _emergencyStopRestPosition.z);
                 float3 position = math.lerp(from, to, t);
-                emergencyStopVisual.localPosition = new Vector3(position.x, position.y, position.z);
+                QueueEmergencyStopVisual(new Vector3(position.x, position.y, position.z));
                 return;
             }
 
@@ -391,6 +433,7 @@ namespace Hecton8.Crafting
                 ReleaseLeverLock();
             ApplyEmergencyStopVisual();
             TryUnregisterTick();
+            TryUnregisterLateFrame();
             TryUnregisterHotSwapListener();
         }
 

@@ -315,6 +315,7 @@ namespace Hecton8.Power
 
         private static bool TryResolveSlot(int slot, out NativeArray<byte> cells)
         {
+            cells = default;
             return TryResolveVault(out IDataVault vault) && TryResolveSlot(vault, slot, out cells);
         }
 

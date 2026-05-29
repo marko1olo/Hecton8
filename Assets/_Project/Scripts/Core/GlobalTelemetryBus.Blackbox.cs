@@ -318,7 +318,7 @@ namespace Hecton8.Core
         private static int _blackboxMockPhysicsWritten;
         private static int _blackboxMockOriginWritten;
         private static bool _blackboxVaultBacked;
-        private static int _blackboxVaultLocksHeld;
+        private static bool _blackboxVaultGuardHeld;
         private static string _blackboxAgentLogDirectory;
         private static string _blackboxMmfPath;
         private static Thread _blackboxMmfThread;
@@ -332,6 +332,18 @@ namespace Hecton8.Core
         private static readonly object _blackboxDumpGate = new object();
         // COLD ALLOC: object[1] - SHINOBU watchdog lifecycle gate - owner: GlobalTelemetryBus
         private static readonly object _blackboxWatchdogGate = new object();
+        private static readonly ulong BlackboxVaultMutationGuardMask =
+            BlackboxVaultMutationGuardBit(BufferID.ShinobuCrashBlackboxBytes) |
+            BlackboxVaultMutationGuardBit(BufferID.ShinobuCrashMmfScratch) |
+            BlackboxVaultMutationGuardBit(BufferID.ShinobuCrashDumpHeader) |
+            BlackboxVaultMutationGuardBit(BufferID.ShinobuCrashTelemetryEvents) |
+            BlackboxVaultMutationGuardBit(BufferID.ShinobuCrashSourceSlots) |
+            BlackboxVaultMutationGuardBit(BufferID.ShinobuCrashLoggingMasks) |
+            BlackboxVaultMutationGuardBit(BufferID.ShinobuCrashAtomicState) |
+            BlackboxVaultMutationGuardBit(BufferID.ShinobuCrashWatchdogCounters) |
+            BlackboxVaultMutationGuardBit(BufferID.ShinobuCrashWatchdogSamples) |
+            BlackboxVaultMutationGuardBit(BufferID.ShinobuCrashWatchdogStaleProbes) |
+            BlackboxVaultMutationGuardBit(BufferID.ShinobuCrashWatchdogActive);
 
         public static bool IsCatastrophicFailure => ReadBlackboxAtomic(0) != 0;
 
@@ -718,6 +730,9 @@ namespace Hecton8.Core
             if (vault == null)
                 return false;
 
+            if (vault.IsAllocationLocked || vault.IsCompactionFenceActive)
+                return false;
+
             int mmfFrames = math.min(BlackboxMmfFlushFrameCount, desiredFrameCount);
             int mmfByteCount = mmfFrames * BlackboxFrameStrideBytes;
 
@@ -842,7 +857,7 @@ namespace Hecton8.Core
             _blackboxWatchdogStaleProbesHandle = watchdogStaleProbesHandle;
             _blackboxWatchdogActiveHandle = watchdogActiveHandle;
             _blackboxVaultBacked = true;
-            _blackboxVaultLocksHeld = 0;
+            _blackboxVaultGuardHeld = false;
 
             if (TryLockBlackboxVaultBuffersNoLock(vault))
                 return true;
@@ -873,55 +888,21 @@ namespace Hecton8.Core
 
         private static bool TryLockBlackboxVaultBuffersNoLock(IDataVault vault)
         {
-            if (!TryLockBlackboxVaultBufferNoLock(vault, BufferID.ShinobuCrashBlackboxBytes))
-                return false;
-            if (!TryLockBlackboxVaultBufferNoLock(vault, BufferID.ShinobuCrashMmfScratch))
-                return false;
-            if (!TryLockBlackboxVaultBufferNoLock(vault, BufferID.ShinobuCrashDumpHeader))
-                return false;
-            if (!TryLockBlackboxVaultBufferNoLock(vault, BufferID.ShinobuCrashTelemetryEvents))
-                return false;
-            if (!TryLockBlackboxVaultBufferNoLock(vault, BufferID.ShinobuCrashSourceSlots))
-                return false;
-            if (!TryLockBlackboxVaultBufferNoLock(vault, BufferID.ShinobuCrashLoggingMasks))
-                return false;
-            if (!TryLockBlackboxVaultBufferNoLock(vault, BufferID.ShinobuCrashAtomicState))
-                return false;
-            if (!TryLockBlackboxVaultBufferNoLock(vault, BufferID.ShinobuCrashWatchdogCounters))
-                return false;
-            if (!TryLockBlackboxVaultBufferNoLock(vault, BufferID.ShinobuCrashWatchdogSamples))
-                return false;
-            if (!TryLockBlackboxVaultBufferNoLock(vault, BufferID.ShinobuCrashWatchdogStaleProbes))
-                return false;
-            return TryLockBlackboxVaultBufferNoLock(vault, BufferID.ShinobuCrashWatchdogActive);
-        }
+            if (_blackboxVaultGuardHeld)
+                return true;
 
-        private static bool TryLockBlackboxVaultBufferNoLock(IDataVault vault, BufferID bufferId)
-        {
-            if (vault == null || !vault.TryLockBuffer(bufferId, SystemID.CoreDiagnostics))
+            if (vault == null || !vault.TryAcquireMutationGuard(BlackboxVaultMutationGuardMask))
                 return false;
 
-            _blackboxVaultLocksHeld++;
+            _blackboxVaultGuardHeld = true;
             return true;
         }
 
         private static void ReleaseBlackboxVaultBindingsNoLock()
         {
             IDataVault vault = _blackboxVault;
-            if (vault != null && _blackboxVaultLocksHeld > 0)
-            {
-                TryUnlockBlackboxVaultBufferNoThrow(vault, BufferID.ShinobuCrashBlackboxBytes);
-                TryUnlockBlackboxVaultBufferNoThrow(vault, BufferID.ShinobuCrashMmfScratch);
-                TryUnlockBlackboxVaultBufferNoThrow(vault, BufferID.ShinobuCrashDumpHeader);
-                TryUnlockBlackboxVaultBufferNoThrow(vault, BufferID.ShinobuCrashTelemetryEvents);
-                TryUnlockBlackboxVaultBufferNoThrow(vault, BufferID.ShinobuCrashSourceSlots);
-                TryUnlockBlackboxVaultBufferNoThrow(vault, BufferID.ShinobuCrashLoggingMasks);
-                TryUnlockBlackboxVaultBufferNoThrow(vault, BufferID.ShinobuCrashAtomicState);
-                TryUnlockBlackboxVaultBufferNoThrow(vault, BufferID.ShinobuCrashWatchdogCounters);
-                TryUnlockBlackboxVaultBufferNoThrow(vault, BufferID.ShinobuCrashWatchdogSamples);
-                TryUnlockBlackboxVaultBufferNoThrow(vault, BufferID.ShinobuCrashWatchdogStaleProbes);
-                TryUnlockBlackboxVaultBufferNoThrow(vault, BufferID.ShinobuCrashWatchdogActive);
-            }
+            if (vault != null && _blackboxVaultGuardHeld)
+                TryReleaseBlackboxVaultGuardNoThrow(vault);
 
             if (vault != null)
             {
@@ -941,11 +922,11 @@ namespace Hecton8.Core
             ClearBlackboxVaultBindingsNoLock();
         }
 
-        private static void TryUnlockBlackboxVaultBufferNoThrow(IDataVault vault, BufferID bufferId)
+        private static void TryReleaseBlackboxVaultGuardNoThrow(IDataVault vault)
         {
             try
             {
-                vault.TryUnlockBuffer(bufferId, SystemID.CoreDiagnostics);
+                vault.ReleaseMutationGuard(BlackboxVaultMutationGuardMask);
             }
             catch (Exception)
             {
@@ -981,7 +962,12 @@ namespace Hecton8.Core
             _blackboxWatchdogStaleProbesHandle = default;
             _blackboxWatchdogActiveHandle = default;
             _blackboxVaultBacked = false;
-            _blackboxVaultLocksHeld = 0;
+            _blackboxVaultGuardHeld = false;
+        }
+
+        private static ulong BlackboxVaultMutationGuardBit(BufferID bufferId)
+        {
+            return 1UL << (unchecked((int)(uint)(int)bufferId) & 63);
         }
 
         private static void DisposeBlackboxState()

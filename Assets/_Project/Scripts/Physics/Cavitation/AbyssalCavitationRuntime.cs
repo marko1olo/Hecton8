@@ -27,16 +27,17 @@ namespace Hecton8.Physics
         private static readonly int _shockwavesShaderId = Shader.PropertyToID("_H8CavitationShockwaves");
         private static readonly int _shockwaveCountShaderId = Shader.PropertyToID("_H8CavitationShockwaveCount");
         private static readonly int _shockwaveParamsShaderId = Shader.PropertyToID("_H8CavitationShockwaveParams");
-        private const int LockShockwaves = 1 << 0;
-        private const int LockCounters = 1 << 1;
-        private const int LockEntities = 1 << 2;
-        private const int LockForcePackets = 1 << 3;
-        private const int LockForceTransport = 1 << 4;
-        private const int LockVisuals = 1 << 5;
-        private const int LockTelemetry = 1 << 6;
-        private const int LockTuning = 1 << 7;
-        private const int LockSdfDescriptor = 1 << 8;
-        private const int LockSdfVoxels = 1 << 9;
+        private static readonly ulong SimulationMutationGuardMask =
+            VaultMutationGuardBit(AbyssalCavitationVaultBufferIds.ShockwaveEvents) |
+            VaultMutationGuardBit(AbyssalCavitationVaultBufferIds.ShockwaveCounters) |
+            VaultMutationGuardBit(AbyssalCavitationVaultBufferIds.EntitySnapshots) |
+            VaultMutationGuardBit(AbyssalCavitationVaultBufferIds.ForcePackets) |
+            VaultMutationGuardBit(AbyssalCavitationVaultBufferIds.ForceTransportPackets) |
+            VaultMutationGuardBit(AbyssalCavitationVaultBufferIds.VisualSpheres) |
+            VaultMutationGuardBit(AbyssalCavitationVaultBufferIds.TelemetryRing) |
+            VaultMutationGuardBit(AbyssalCavitationVaultBufferIds.Tuning) |
+            VaultMutationGuardBit(AbyssalCavitationVaultBufferIds.SdfDescriptor) |
+            VaultMutationGuardBit(AbyssalCavitationVaultBufferIds.SdfVoxels);
         private static readonly ulong TelemetryMutationGuardMask =
             VaultMutationGuardBit(AbyssalCavitationVaultBufferIds.TelemetryRing) |
             VaultMutationGuardBit(AbyssalCavitationVaultBufferIds.ShockwaveCounters);
@@ -76,7 +77,8 @@ namespace Hecton8.Physics
         private static long _scheduleTimestamp;
         private static float _lastSolveMicroseconds;
         private static int _droppedSignalCount;
-        private static int _lockedBuffers;
+        private static IDataVault _simulationGuardVault;
+        private static bool _simulationGuardHeld;
         private static uint _frameIndex;
 
         private static VaultGenerationHandle<ShockwaveEventDTO> _shockwaveHandle;
@@ -137,13 +139,16 @@ namespace Hecton8.Physics
             if (_jobScheduled && !CompleteScheduledForTeardown())
                 return false;
 
-            UnlockSimulationBuffers();
+            ReleaseSimulationGuard();
 
             IDataVault vault = explicitVault;
             if (vault == null)
                 vault = GlobalRegistry.DataVault;
 
             if (vault == null)
+                return false;
+
+            if (vault.IsAllocationLocked || vault.IsCompactionFenceActive)
                 return false;
 
             ValidateLayoutColdOnce();
@@ -333,57 +338,26 @@ namespace Hecton8.Physics
             return buffer;
         }
 
-        private static bool TryLockSimulationBuffers(IDataVault vault)
+        private static bool TryAcquireSimulationGuard(IDataVault vault)
         {
-            _lockedBuffers = 0;
-            return TryLockSimulationBuffer(vault, AbyssalCavitationVaultBufferIds.ShockwaveEvents, LockShockwaves) &&
-                   TryLockSimulationBuffer(vault, AbyssalCavitationVaultBufferIds.ShockwaveCounters, LockCounters) &&
-                   TryLockSimulationBuffer(vault, AbyssalCavitationVaultBufferIds.EntitySnapshots, LockEntities) &&
-                   TryLockSimulationBuffer(vault, AbyssalCavitationVaultBufferIds.ForcePackets, LockForcePackets) &&
-                   TryLockSimulationBuffer(vault, AbyssalCavitationVaultBufferIds.ForceTransportPackets, LockForceTransport) &&
-                   TryLockSimulationBuffer(vault, AbyssalCavitationVaultBufferIds.VisualSpheres, LockVisuals) &&
-                   TryLockSimulationBuffer(vault, AbyssalCavitationVaultBufferIds.TelemetryRing, LockTelemetry) &&
-                   TryLockSimulationBuffer(vault, AbyssalCavitationVaultBufferIds.Tuning, LockTuning) &&
-                   TryLockSimulationBuffer(vault, AbyssalCavitationVaultBufferIds.SdfDescriptor, LockSdfDescriptor) &&
-                   TryLockSimulationBuffer(vault, AbyssalCavitationVaultBufferIds.SdfVoxels, LockSdfVoxels);
-        }
-
-        private static bool TryLockSimulationBuffer(IDataVault vault, BufferID bufferId, int bit)
-        {
-            if (vault != null && vault.TryLockBuffer(bufferId, OwnerSystem))
+            if (_simulationGuardHeld ||
+                !TryAcquireCavitationMutationGuard(vault, SimulationMutationGuardMask))
             {
-                _lockedBuffers |= bit;
-                return true;
+                return false;
             }
 
-            UnlockSimulationBuffers();
-            return false;
+            _simulationGuardVault = vault;
+            _simulationGuardHeld = true;
+            return true;
         }
 
-        private static void UnlockSimulationBuffers()
+        private static void ReleaseSimulationGuard()
         {
-            IDataVault vault = _vault;
-            if (vault != null && _lockedBuffers != 0)
-            {
-                UnlockSimulationBuffer(vault, AbyssalCavitationVaultBufferIds.SdfVoxels, LockSdfVoxels);
-                UnlockSimulationBuffer(vault, AbyssalCavitationVaultBufferIds.SdfDescriptor, LockSdfDescriptor);
-                UnlockSimulationBuffer(vault, AbyssalCavitationVaultBufferIds.Tuning, LockTuning);
-                UnlockSimulationBuffer(vault, AbyssalCavitationVaultBufferIds.TelemetryRing, LockTelemetry);
-                UnlockSimulationBuffer(vault, AbyssalCavitationVaultBufferIds.VisualSpheres, LockVisuals);
-                UnlockSimulationBuffer(vault, AbyssalCavitationVaultBufferIds.ForceTransportPackets, LockForceTransport);
-                UnlockSimulationBuffer(vault, AbyssalCavitationVaultBufferIds.ForcePackets, LockForcePackets);
-                UnlockSimulationBuffer(vault, AbyssalCavitationVaultBufferIds.EntitySnapshots, LockEntities);
-                UnlockSimulationBuffer(vault, AbyssalCavitationVaultBufferIds.ShockwaveCounters, LockCounters);
-                UnlockSimulationBuffer(vault, AbyssalCavitationVaultBufferIds.ShockwaveEvents, LockShockwaves);
-            }
+            if (_simulationGuardHeld && _simulationGuardVault != null)
+                _simulationGuardVault.ReleaseMutationGuard(SimulationMutationGuardMask);
 
-            _lockedBuffers = 0;
-        }
-
-        private static void UnlockSimulationBuffer(IDataVault vault, BufferID bufferId, int bit)
-        {
-            if ((_lockedBuffers & bit) != 0)
-                vault.TryUnlockBuffer(bufferId, OwnerSystem);
+            _simulationGuardHeld = false;
+            _simulationGuardVault = null;
         }
 
         private static bool TryAcquireCavitationMutationGuard(IDataVault vault, ulong mask)
@@ -703,7 +677,7 @@ namespace Hecton8.Physics
                 return inputDependency;
 
             IDataVault vault = _vault;
-            if (!TryLockSimulationBuffers(vault))
+            if (!TryAcquireSimulationGuard(vault))
                 return inputDependency;
 
             bool scheduled = false;
@@ -806,7 +780,7 @@ namespace Hecton8.Physics
             finally
             {
                 if (!scheduled)
-                    UnlockSimulationBuffers();
+                    ReleaseSimulationGuard();
             }
         }
 
@@ -840,7 +814,7 @@ namespace Hecton8.Physics
             _jobScheduled = false;
             long elapsed = System.Diagnostics.Stopwatch.GetTimestamp() - _scheduleTimestamp;
             _lastSolveMicroseconds = (float)math.max(0.0, elapsed * 1000000.0 / System.Diagnostics.Stopwatch.Frequency);
-            UnlockSimulationBuffers();
+            ReleaseSimulationGuard();
             PatchLatestTelemetryCpu(_lastSolveMicroseconds);
 
             if (TrySampleLatestTelemetry(out ShockwaveTelemetryEntry entry) &&

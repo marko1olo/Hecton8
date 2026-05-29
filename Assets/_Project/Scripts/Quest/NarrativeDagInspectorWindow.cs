@@ -53,18 +53,40 @@ namespace Hecton8.Quest
 
             if (!QuestDagVault.TryResolveBuffers(vault, ref _handles, out QuestDagBuffers buffers))
             {
-                _handles = QuestDagVault.EnsureBuffers(vault);
-                if (!QuestDagVault.TryResolveBuffers(vault, ref _handles, out buffers))
+                EditorGUILayout.HelpBox("Quest DAG buffers are unavailable. Initialize them explicitly during a safe Vault window.", MessageType.Warning);
+                using (new EditorGUILayout.HorizontalScope())
                 {
-                    EditorGUILayout.HelpBox("Quest DAG buffers are unavailable.", MessageType.Error);
-                    return;
+                    if (GUILayout.Button("Initialize DAG Buffers", GUILayout.Width(170f)))
+                    {
+                        if (!TryInitializeDagBuffers(vault))
+                            Debug.LogError("Narrative DAG buffers were not initialized because the DataVault is unavailable or fenced.");
+                    }
+
+                    if (GUILayout.Button("Reload node_names.csv", GUILayout.Width(150f)))
+                        LoadNodeNames();
                 }
+
+                return;
             }
 
             DrawToolbar(vault, buffers);
             DrawTelemetry(buffers);
             DrawNodes(vault, buffers);
             PollCsvIfNeeded(vault);
+        }
+
+        private bool TryInitializeDagBuffers(IDataVault vault)
+        {
+            if (vault == null || vault.IsAllocationLocked || vault.IsCompactionFenceActive)
+                return false;
+
+            QuestDagBufferHandles handles = QuestDagVault.EnsureBuffers(vault);
+            if (!QuestDagVault.TryResolveBuffers(vault, ref handles, out _))
+                return false;
+
+            _handles = handles;
+            Repaint();
+            return true;
         }
 
         private void DrawToolbar(IDataVault vault, in QuestDagBuffers buffers)

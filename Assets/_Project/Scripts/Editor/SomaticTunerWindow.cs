@@ -17,9 +17,18 @@ namespace Hecton8.EditorTools
     {
         private const float VectorScale = 0.35f;
         private const string ComfortCsvPath = "Data/UX/vr_comfort_profiles.csv";
+        private const int ComfortCsvScratchBytes = 4096;
+        private const int ComfortProfileHashScratchCapacity = 4;
+        private const int ComfortProfileLookupScratchCapacity = 8;
 
         // COLD ALLOC: Vector3[300] - editor-only comfort telemetry graph scratch - owner: SomaticTunerWindow
         private static readonly Vector3[] s_graphPoints = new Vector3[300];
+        // COLD ALLOC: byte[4096] - editor-only VR comfort CSV import scratch - owner: SomaticTunerWindow
+        private static readonly byte[] s_comfortCsvImportScratch = new byte[ComfortCsvScratchBytes];
+        // COLD ALLOC: uint[4] - editor-only VR comfort profile hash staging - owner: SomaticTunerWindow
+        private static readonly uint[] s_comfortProfileHashScratch = new uint[ComfortProfileHashScratchCapacity];
+        // COLD ALLOC: VrComfortProfileLookupSlotDTO[8] - editor-only lookup staging - owner: SomaticTunerWindow
+        private static readonly VrComfortProfileLookupSlotDTO[] s_comfortProfileLookupScratch = new VrComfortProfileLookupSlotDTO[ComfortProfileLookupScratchCapacity];
         private IMGUIContainer _uiToolkitComfortPanel;
 
         [MenuItem("HECTON-8/Somatic Tuner")]
@@ -158,28 +167,26 @@ namespace Hecton8.EditorTools
             }
         }
 
-        private static unsafe void ImportComfortCsv(IDataVault vault)
+        private static void ImportComfortCsv(IDataVault vault)
         {
-            VaultGenerationHandle<byte> scratchHandle = default;
             VaultGenerationHandle<VrComfortProfileDTO> profilesHandle = default;
             VaultGenerationHandle<VrComfortProfileLookupSlotDTO> lookupHandle = default;
-            bool scratchLocked = false;
             bool profilesLocked = false;
             bool lookupLocked = false;
             if (vault == null ||
-                !File.Exists(ComfortCsvPath) ||
-                !TryAcquireEditorWriteView(vault, BufferID.ShinobuVRSomaticCsvScratch, out scratchHandle, out NativeArray<byte> scratch))
+                !File.Exists(ComfortCsvPath))
             {
                 return;
             }
 
-            scratchLocked = true;
+            int byteCount = ReadFileIntoScratch(ComfortCsvPath, s_comfortCsvImportScratch);
+            if (byteCount <= 0)
+                return;
+
+            ReadOnlySpan<byte> csv = new ReadOnlySpan<byte>(s_comfortCsvImportScratch, 0, byteCount);
+            int profileCount = 0;
             try
             {
-                int byteCount = ReadFileIntoScratch(ComfortCsvPath, scratch);
-                if (byteCount <= 0)
-                    return;
-
                 if (!TryAcquireEditorWriteView(vault, BufferID.ShinobuVRSomaticProfile, out profilesHandle, out NativeArray<VrComfortProfileDTO> profiles) ||
                     profiles.Length == 0)
                 {
@@ -187,29 +194,91 @@ namespace Hecton8.EditorTools
                 }
 
                 profilesLocked = true;
-                void* source = NativeArrayUnsafeUtility.GetUnsafeReadOnlyPtr(scratch);
-                ReadOnlySpan<byte> csv = new ReadOnlySpan<byte>(source, byteCount);
+                profileCount = VRSomaticProvider.ParseComfortProfilesCsv(csv, profiles, s_comfortProfileHashScratch);
+            }
+            finally
+            {
+                if (profilesLocked)
+                    vault.ReleaseWriteLock(in profilesHandle, SystemID.CoreDiagnostics);
+            }
+
+            if (profileCount <= 0)
+                return;
+
+            BuildComfortProfileLookupScratch(s_comfortProfileHashScratch, profileCount, s_comfortProfileLookupScratch);
+            try
+            {
                 if (TryAcquireEditorWriteView(vault, BufferID.ShinobuVRSomaticProfileLookup, out lookupHandle, out NativeArray<VrComfortProfileLookupSlotDTO> lookup))
                 {
                     lookupLocked = true;
-                    VRSomaticProvider.ParseComfortProfilesCsv(csv, profiles, lookup);
-                    return;
+                    CopyComfortProfileLookupScratchToVault(lookup, s_comfortProfileLookupScratch);
                 }
-
-                VRSomaticProvider.ParseComfortProfilesCsv(csv, profiles);
             }
             finally
             {
                 if (lookupLocked)
                     vault.ReleaseWriteLock(in lookupHandle, SystemID.CoreDiagnostics);
-                if (profilesLocked)
-                    vault.ReleaseWriteLock(in profilesHandle, SystemID.CoreDiagnostics);
-                if (scratchLocked)
-                    vault.ReleaseWriteLock(in scratchHandle, SystemID.CoreDiagnostics);
             }
         }
 
-        private static unsafe int ReadFileIntoScratch(string path, NativeArray<byte> scratch)
+        private static void BuildComfortProfileLookupScratch(
+            uint[] profileHashes,
+            int profileCount,
+            VrComfortProfileLookupSlotDTO[] lookup)
+        {
+            Array.Clear(lookup, 0, lookup.Length);
+
+            int count = Math.Min(Math.Max(0, profileCount), profileHashes.Length);
+            for (int i = 0; i < count; i++)
+                InsertComfortProfileLookup(lookup, profileHashes[i], i);
+        }
+
+        private static void InsertComfortProfileLookup(
+            VrComfortProfileLookupSlotDTO[] lookup,
+            uint profileHash,
+            int profileIndex)
+        {
+            if (lookup == null || lookup.Length == 0 || profileHash == 0u)
+                return;
+
+            int start = (int)(profileHash % (uint)lookup.Length);
+            for (int i = 0; i < lookup.Length; i++)
+            {
+                int slotIndex = (start + i) % lookup.Length;
+                VrComfortProfileLookupSlotDTO slot = lookup[slotIndex];
+                if (slot.Occupied == 0u || slot.ProfileHash == profileHash)
+                {
+                    lookup[slotIndex] = new VrComfortProfileLookupSlotDTO
+                    {
+                        ProfileHash = profileHash,
+                        ProfileIndex = profileIndex,
+                        Occupied = 1u
+                    };
+                    return;
+                }
+            }
+        }
+
+        private static unsafe void CopyComfortProfileLookupScratchToVault(
+            NativeArray<VrComfortProfileLookupSlotDTO> lookup,
+            VrComfortProfileLookupSlotDTO[] source)
+        {
+            if (!lookup.IsCreated || lookup.Length <= 0 || source == null)
+                return;
+
+            int copyCount = Math.Min(lookup.Length, source.Length);
+            void* targetPtr = NativeArrayUnsafeUtility.GetUnsafePtr(lookup);
+            UnsafeUtility.MemClear(targetPtr, (long)lookup.Length * UnsafeUtility.SizeOf<VrComfortProfileLookupSlotDTO>());
+            if (copyCount <= 0)
+                return;
+
+            fixed (VrComfortProfileLookupSlotDTO* sourcePtr = source)
+            {
+                UnsafeUtility.MemCpy(targetPtr, sourcePtr, (long)copyCount * UnsafeUtility.SizeOf<VrComfortProfileLookupSlotDTO>());
+            }
+        }
+
+        private static int ReadFileIntoScratch(string path, byte[] scratch)
         {
             try
             {
@@ -219,8 +288,7 @@ namespace Hecton8.EditorTools
                         return -1;
 
                     int length = (int)stream.Length;
-                    void* destination = NativeArrayUnsafeUtility.GetUnsafePtr(scratch);
-                    Span<byte> target = new Span<byte>(destination, length);
+                    Span<byte> target = scratch.AsSpan(0, length);
                     int totalRead = 0;
                     while (totalRead < length)
                     {

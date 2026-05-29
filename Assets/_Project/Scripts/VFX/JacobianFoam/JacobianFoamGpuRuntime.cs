@@ -1153,6 +1153,12 @@ namespace Hecton8.VFX
                 handle.Generation != 0u;
         }
 
+        private static ulong VaultMutationGuardBit(BufferID bufferId)
+        {
+            int bitIndex = unchecked((int)((uint)(int)bufferId & 63u));
+            return 1UL << bitIndex;
+        }
+
         private bool TryResolveHandle<T>(
             in VaultGenerationHandle<T> handle,
             BufferID bufferId,
@@ -1204,10 +1210,11 @@ namespace Hecton8.VFX
             out NativeArray<T> buffer) where T : struct
         {
             buffer = default;
+            ulong guardMask = VaultMutationGuardBit(bufferId);
             if (_vault == null ||
                 requiredLength <= 0 ||
                 !IsOwnedHandle(in handle, bufferId) ||
-                !_vault.TryLockBuffer(bufferId, OwnerSystemId))
+                !_vault.TryAcquireMutationGuard(guardMask))
             {
                 return false;
             }
@@ -1215,7 +1222,7 @@ namespace Hecton8.VFX
             if (TryResolveHandle(in handle, bufferId, requiredLength, out buffer))
                 return true;
 
-            _vault.TryUnlockBuffer(bufferId, OwnerSystemId);
+            _vault.ReleaseMutationGuard(guardMask);
             buffer = default;
             return false;
         }
@@ -1223,7 +1230,7 @@ namespace Hecton8.VFX
         private void ReleaseReadPin(BufferID bufferId)
         {
             if (_vault != null)
-                _vault.TryUnlockBuffer(bufferId, OwnerSystemId);
+                _vault.ReleaseMutationGuard(VaultMutationGuardBit(bufferId));
         }
 
         private bool TrySeedDefaultTuning()

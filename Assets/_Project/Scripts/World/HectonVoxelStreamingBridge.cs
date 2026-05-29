@@ -193,7 +193,6 @@ namespace Hecton8.World
         public void LateFrameTick()
         {
             FlushPendingDespawns();
-            FlushPendingChunkFadeRegistrations();
             if (_chunkFadeDeltaAccumulator > 0f)
             {
                 float dt = _chunkFadeDeltaAccumulator;
@@ -207,6 +206,7 @@ namespace Hecton8.World
         /// </summary>
         public void SlowTick()
         {
+            FlushPendingChunkFadeRegistrations();
             RebuildDesiredRequests();
             CancelStalePendingRequests();
             DespawnStaleVolumes();
@@ -252,7 +252,7 @@ namespace Hecton8.World
 
                 RegisterChunkFade(request.Key, volume);
                 if (vegetationBridge != null)
-                    vegetationBridge.RegisterArtificialStructure(ResolveVolumeBounds(volume, caveCenter, request.Radius), StructureType.VoxelCave);
+                    vegetationBridge.RegisterArtificialStructure(ResolveVolumeBounds(caveCenter, request.Radius), StructureType.VoxelCave);
             }
             catch (OperationCanceledException)
             {
@@ -1159,11 +1159,8 @@ namespace Hecton8.World
             _pendingChunkFadeKeys.Clear();
         }
 
-        private Bounds ResolveVolumeBounds(GameObject volume, Vector3 center, float radius)
+        private Bounds ResolveVolumeBounds(Vector3 center, float radius)
         {
-            if (volume != null && volume.TryGetComponent(out Renderer renderer))
-                return renderer.bounds;
-
             return new Bounds(center, new Vector3(radius * 2f, fallbackCaveHeight, radius * 2f));
         }
 

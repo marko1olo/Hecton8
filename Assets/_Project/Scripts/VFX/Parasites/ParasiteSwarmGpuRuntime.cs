@@ -6,7 +6,6 @@ using Hecton8.Core.Contracts.Signals;
 using Hecton8.Core.Memory;
 using Unity.Collections;
 using Unity.Collections.LowLevel.Unsafe;
-using Unity.Jobs;
 using Unity.Mathematics;
 using UnityEngine;
 using UnityEngine.Rendering;
@@ -67,9 +66,6 @@ namespace Hecton8.VFX.Parasites
         private uint _visualFrameCounter;
         private float3 _pendingAupShift;
         private string _dumpRootPath;
-        private bool _targetSelectionPending;
-        private bool _targetSelectionGuardHeld;
-        private JobHandle _targetSelectionHandle;
         private int _lastResolvedTargetCount;
         private IPlayerRuntimeContext _playerContext;
         private bool _renderCameraRuntimeResolved;
@@ -224,13 +220,11 @@ namespace Hecton8.VFX.Parasites
                 math.min(configuredMaxParticles > 0 ? configuredMaxParticles : ParasiteSwarmContracts.MaxGpuParticleCapacity, gpuParticleCapacity),
                 ParasiteSwarmContracts.ResolveParticleBudget(globalQuality, in tuning));
 
-            int resolvedTargetCount = ResolveCompletedTargetSelection(targetCount);
-            bool targetArrayReadable = !_targetSelectionPending;
-            if (targetArrayReadable)
-                UploadTargets(targets, resolvedTargetCount);
+            uint visualFrame = AdvanceVisualFrame(out float visualPhaseRadians);
+            int resolvedTargetCount = ResolveTargetSelectionInline(cameraAup, globalQuality, visualPhaseRadians, in tuning);
+            UploadTargets(targets, resolvedTargetCount);
 
             int dispatchedParticleBudget = resolvedTargetCount > 0 ? particleBudget : 0;
-            uint visualFrame = AdvanceVisualFrame(out float visualPhaseRadians);
             uint flags = DispatchAndRender(cameraPosition, dispatchedParticleBudget, resolvedTargetCount, globalQuality, visualPhaseRadians, in tuning);
             if (!gpuParticleCapacityValid)
                 flags |= ParasiteSwarmContracts.TelemetryFlagNoCompute;
@@ -249,7 +243,7 @@ namespace Hecton8.VFX.Parasites
             {
                 try
                 {
-                    if (RecordTelemetry(telemetry, telemetryCursor, targets, targetArrayReadable, visualFrame, resolvedTargetCount, dispatchedParticleBudget, estimatedGpuUs, globalQuality, in tuning, ref flags) &&
+                    if (RecordTelemetry(telemetry, telemetryCursor, targets, true, visualFrame, resolvedTargetCount, dispatchedParticleBudget, estimatedGpuUs, globalQuality, in tuning, ref flags) &&
                         ((flags & (ParasiteSwarmContracts.TelemetryFlagTargetOverflow | ParasiteSwarmContracts.TelemetryFlagGpuBudgetSpike | ParasiteSwarmContracts.TelemetryFlagInvalidMath)) != 0u) &&
                         !_blackBoxDumped)
                     {
@@ -267,8 +261,6 @@ namespace Hecton8.VFX.Parasites
 
             if (shouldWriteDump)
                 _blackBoxDumped = ParasiteSwarmContracts.TryWriteTelemetryDump(_dumpRootPath, dumpTelemetry, dumpCursor);
-
-            ScheduleTargetExtraction(cameraAup, globalQuality, visualPhaseRadians, in tuning);
         }
 
         private void BindVaultDescriptors(IDataVault vault)
@@ -309,7 +301,6 @@ namespace Hecton8.VFX.Parasites
 
         private void ResetVaultEpochState()
         {
-            _targetSelectionPending = false;
             _lastResolvedTargetCount = 0;
             _telemetryCursor = 0;
             _lastCandidateOverflowCount = 0;
@@ -348,7 +339,6 @@ namespace Hecton8.VFX.Parasites
             if (ReferenceEquals(_vault, vault))
                 return;
 
-            CompleteTargetSelectionForLifecycle();
             ReleaseVaultHandles(_vault);
             ClearVaultDescriptors();
             _vault = vault;
@@ -360,33 +350,6 @@ namespace Hecton8.VFX.Parasites
             ParasiteSwarmContracts.EnsureVaultBuffers(_vault);
             BindVaultDescriptors(_vault);
             SeedTuningIfEmpty();
-        }
-
-        private void CompleteTargetSelectionForLifecycle()
-        {
-            if (!_targetSelectionPending)
-            {
-                ReleaseTargetSelectionGuard();
-                return;
-            }
-
-            // Lifecycle-only fence. The hot path consumes target extraction one frame late.
-            ForceCompleteTargetSelectionInPostSimulationWindow(ref _targetSelectionHandle);
-            _targetSelectionPending = false;
-            ReleaseTargetSelectionGuard();
-        }
-
-        private static void ForceCompleteTargetSelectionInPostSimulationWindow(ref JobHandle targetSelectionHandle)
-        {
-            DispatcherJobFence.BeginPostSimulationSwapWindow();
-            try
-            {
-                DispatcherJobFence.TryComplete(ref targetSelectionHandle, forceComplete: true);
-            }
-            finally
-            {
-                DispatcherJobFence.EndPostSimulationSwapWindow();
-            }
         }
 
 #if UNITY_EDITOR
@@ -650,57 +613,30 @@ namespace Hecton8.VFX.Parasites
                        out tuning);
         }
 
-        private int ResolveCompletedTargetSelection(NativeArray<int> targetCount)
-        {
-            if (!_targetSelectionPending)
-                return _lastResolvedTargetCount;
-
-            if (!_targetSelectionHandle.IsCompleted)
-                return _lastResolvedTargetCount;
-
-            try
-            {
-                // Safety fence after IsCompleted, so LateFrame never waits on target extraction.
-                DispatcherJobFence.TryFinalizeCompleted(ref _targetSelectionHandle);
-                _lastResolvedTargetCount = targetCount.IsCreated && targetCount.Length > 0
-                    ? math.clamp(targetCount[0], 0, ParasiteSwarmContracts.MaxTargetCount)
-                    : 0;
-                return _lastResolvedTargetCount;
-            }
-            finally
-            {
-                _targetSelectionPending = false;
-                ReleaseTargetSelectionGuard();
-            }
-        }
-
-        private void ScheduleTargetExtraction(
+        private int ResolveTargetSelectionInline(
             double3 cameraAup,
             float quality,
             float visualPhaseRadians,
             in ParasiteSwarmTuningDTO tuning)
         {
-            if (_targetSelectionPending)
-                return;
+            IDataVault vault = _vault;
+            if (vault == null || !vault.TryAcquireMutationGuard(TargetSelectionMutationGuardMask))
+                return _lastResolvedTargetCount;
 
-            if (!TryAcquireTargetSelectionGuard())
-                return;
-
-            bool guardTransferredToJob = false;
             try
             {
                 if (!TryResolveTargetOwnerViews(
                         out NativeArray<ParasiteTargetDTO> targets,
                         out NativeArray<ParasiteTargetCandidateDTO> candidates,
                         out NativeArray<int> targetCount))
-                    return;
+                    return _lastResolvedTargetCount;
 
                 bool useMock = forceMockTargets || (tuning.Flags & ParasiteSwarmContracts.TuningFlagMockTargets) != 0u;
                 if (useMock)
                 {
                     _lastCandidateOverflowCount = 0;
                     int mockCount = math.min(ParasiteSwarmContracts.MaxTargetCount, targets.Length);
-                    JobHandle mock = new GenerateMockThermalTargetsJob
+                    GenerateMockThermalTargetsJob mock = new GenerateMockThermalTargetsJob
                     {
                         Targets = targets,
                         Candidates = candidates,
@@ -709,9 +645,11 @@ namespace Hecton8.VFX.Parasites
                         PhaseRadians = visualPhaseRadians,
                         GlobalQualityWeight = quality,
                         Tuning = tuning
-                    }.Schedule(mockCount, 4);
+                    };
+                    for (int i = 0; i < mockCount; i++)
+                        mock.Execute(i);
 
-                    _targetSelectionHandle = new SelectTopParasiteTargetsJob
+                    SelectTopParasiteTargetsJob select = new SelectTopParasiteTargetsJob
                     {
                         Candidates = candidates,
                         CandidateCount = mockCount,
@@ -719,10 +657,10 @@ namespace Hecton8.VFX.Parasites
                         TargetCount = targetCount,
                         CameraAup = cameraAup,
                         Tuning = tuning
-                    }.Schedule(mock);
-                    _targetSelectionPending = true;
-                    guardTransferredToJob = true;
-                    return;
+                    };
+                    select.Execute();
+                    _lastResolvedTargetCount = ReadTargetCount(targetCount);
+                    return _lastResolvedTargetCount;
                 }
 
                 int candidateCount = StageThermalSourceSignals(cameraAup, in tuning, candidates, out int eligibleSignalCount);
@@ -731,19 +669,21 @@ namespace Hecton8.VFX.Parasites
                 {
                     ClearTargets(targets, targetCount);
                     _lastResolvedTargetCount = 0;
-                    return;
+                    return _lastResolvedTargetCount;
                 }
 
-                JobHandle extraction = new ExtractParasiteTargetsJob
+                ExtractParasiteTargetsJob extraction = new ExtractParasiteTargetsJob
                 {
                     Candidates = candidates,
                     CandidateCount = targetCount,
                     StagedCount = candidateCount,
                     CameraAup = cameraAup,
                     Tuning = tuning
-                }.Schedule(candidateCount, 32);
+                };
+                for (int i = 0; i < candidateCount; i++)
+                    extraction.Execute(i);
 
-                _targetSelectionHandle = new SelectTopParasiteTargetsJob
+                SelectTopParasiteTargetsJob topTargets = new SelectTopParasiteTargetsJob
                 {
                     Candidates = candidates,
                     CandidateCount = candidateCount,
@@ -751,14 +691,14 @@ namespace Hecton8.VFX.Parasites
                     TargetCount = targetCount,
                     CameraAup = cameraAup,
                     Tuning = tuning
-                }.Schedule(extraction);
-                _targetSelectionPending = true;
-                guardTransferredToJob = true;
+                };
+                topTargets.Execute();
+                _lastResolvedTargetCount = ReadTargetCount(targetCount);
+                return _lastResolvedTargetCount;
             }
             finally
             {
-                if (!guardTransferredToJob)
-                    ReleaseTargetSelectionGuard();
+                vault.ReleaseMutationGuard(TargetSelectionMutationGuardMask);
             }
         }
 
@@ -776,26 +716,11 @@ namespace Hecton8.VFX.Parasites
             _renderCameraRuntimeResolved = true;
         }
 
-        private bool TryAcquireTargetSelectionGuard()
+        private static int ReadTargetCount(NativeArray<int> targetCount)
         {
-            if (_vault == null || _targetSelectionGuardHeld)
-                return false;
-
-            if (!_vault.TryAcquireMutationGuard(TargetSelectionMutationGuardMask))
-                return false;
-
-            _targetSelectionGuardHeld = true;
-            return true;
-        }
-
-        private void ReleaseTargetSelectionGuard()
-        {
-            if (!_targetSelectionGuardHeld)
-                return;
-
-            IDataVault vault = _vault;
-            _targetSelectionGuardHeld = false;
-            vault?.ReleaseMutationGuard(TargetSelectionMutationGuardMask);
+            return targetCount.IsCreated && targetCount.Length > 0
+                ? math.clamp(targetCount[0], 0, ParasiteSwarmContracts.MaxTargetCount)
+                : 0;
         }
 
         private bool TryResolveTargetOwnerViews(

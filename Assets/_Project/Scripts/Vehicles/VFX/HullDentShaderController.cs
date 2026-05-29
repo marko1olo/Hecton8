@@ -176,14 +176,24 @@ namespace Hecton8.Vehicles.VFX
 
         private void ResolveRoot()
         {
-            _cachedRoot = submarineRoot != null ? submarineRoot : transform;
+            if (submarineRoot != null)
+            {
+                _cachedRoot = submarineRoot;
+                return;
+            }
+
+            if (_cachedRoot == null)
+                _cachedRoot = transform;
         }
 
         private void ResolveBreachReadModel()
         {
             _breachReadModel = breachReadModelSource as ISubmarineHullBreachReadModel;
-            if (_breachReadModel == null)
-                _breachReadModel = GetComponent(typeof(ISubmarineHullBreachReadModel)) as ISubmarineHullBreachReadModel;
+            if (_breachReadModel == null &&
+                TryGetComponent(typeof(ISubmarineHullBreachReadModel), out Component component))
+            {
+                _breachReadModel = component as ISubmarineHullBreachReadModel;
+            }
         }
 
         private void ResolveTickDispatcher()

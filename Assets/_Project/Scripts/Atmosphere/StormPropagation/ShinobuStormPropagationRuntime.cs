@@ -264,10 +264,7 @@ namespace Hecton8.Atmosphere
         public void SlowTick()
         {
             if (!_vaultReady)
-            {
-                EnsureVaultBuffersCold();
                 return;
-            }
 
             if (_attenuationScheduled)
                 return;
@@ -644,6 +641,24 @@ namespace Hecton8.Atmosphere
                    handle.SystemID == (uint)OwnerSystem;
         }
 
+        private static ulong StormPropagationMutationGuardBit(BufferID bufferId)
+        {
+            return 1UL << (unchecked((int)(uint)(int)bufferId) & 31);
+        }
+
+        private bool TryAcquireStormBufferGuard(BufferID bufferId)
+        {
+            IDataVault vault = _vault;
+            return vault != null && vault.TryAcquireMutationGuard(StormPropagationMutationGuardBit(bufferId));
+        }
+
+        private void ReleaseStormBufferGuard(BufferID bufferId)
+        {
+            IDataVault vault = _vault;
+            if (vault != null)
+                vault.ReleaseMutationGuard(StormPropagationMutationGuardBit(bufferId));
+        }
+
         private void ResetRuntimeStateForVaultRebind()
         {
             _scheduleAccumulatorSeconds = 0f;
@@ -676,7 +691,7 @@ namespace Hecton8.Atmosphere
             bool tuningLocked = false;
             try
             {
-                tuningLocked = _vault.TryLockBuffer(BufferID.ShinobuStormPropagationTuning, OwnerSystem);
+                tuningLocked = TryAcquireStormBufferGuard(BufferID.ShinobuStormPropagationTuning);
                 if (!tuningLocked)
                     return;
 
@@ -688,7 +703,7 @@ namespace Hecton8.Atmosphere
             }
             finally
             {
-                if (tuningLocked) _vault.TryUnlockBuffer(BufferID.ShinobuStormPropagationTuning, OwnerSystem);
+                if (tuningLocked) ReleaseStormBufferGuard(BufferID.ShinobuStormPropagationTuning);
             }
 
             if (hasTuningRow)
@@ -697,7 +712,7 @@ namespace Hecton8.Atmosphere
                 tuningLocked = false;
                 try
                 {
-                    tuningLocked = _vault.TryLockBuffer(BufferID.ShinobuStormPropagationTuning, OwnerSystem);
+                    tuningLocked = TryAcquireStormBufferGuard(BufferID.ShinobuStormPropagationTuning);
                     if (!tuningLocked)
                         return;
 
@@ -706,7 +721,7 @@ namespace Hecton8.Atmosphere
                 }
                 finally
                 {
-                    if (tuningLocked) _vault.TryUnlockBuffer(BufferID.ShinobuStormPropagationTuning, OwnerSystem);
+                    if (tuningLocked) ReleaseStormBufferGuard(BufferID.ShinobuStormPropagationTuning);
                 }
 
                 if (math.isfinite(tuningRow.PublicationCadenceHz) && tuningRow.PublicationCadenceHz > 0.001f)
@@ -718,7 +733,7 @@ namespace Hecton8.Atmosphere
             bool profilesLocked = false;
             try
             {
-                profilesLocked = _vault.TryLockBuffer(BufferID.ShinobuStormPropagationImpactProfiles, OwnerSystem);
+                profilesLocked = TryAcquireStormBufferGuard(BufferID.ShinobuStormPropagationImpactProfiles);
                 if (!profilesLocked)
                     return;
 
@@ -730,7 +745,7 @@ namespace Hecton8.Atmosphere
             }
             finally
             {
-                if (profilesLocked) _vault.TryUnlockBuffer(BufferID.ShinobuStormPropagationImpactProfiles, OwnerSystem);
+                if (profilesLocked) ReleaseStormBufferGuard(BufferID.ShinobuStormPropagationImpactProfiles);
             }
 
             if (hasProfileRow && profileRow.ProfileHash == 0u)
@@ -739,7 +754,7 @@ namespace Hecton8.Atmosphere
                 profilesLocked = false;
                 try
                 {
-                    profilesLocked = _vault.TryLockBuffer(BufferID.ShinobuStormPropagationImpactProfiles, OwnerSystem);
+                    profilesLocked = TryAcquireStormBufferGuard(BufferID.ShinobuStormPropagationImpactProfiles);
                     if (!profilesLocked)
                         return;
 
@@ -748,7 +763,7 @@ namespace Hecton8.Atmosphere
                 }
                 finally
                 {
-                    if (profilesLocked) _vault.TryUnlockBuffer(BufferID.ShinobuStormPropagationImpactProfiles, OwnerSystem);
+                    if (profilesLocked) ReleaseStormBufferGuard(BufferID.ShinobuStormPropagationImpactProfiles);
                 }
             }
         }
@@ -799,7 +814,7 @@ namespace Hecton8.Atmosphere
             bool profilesLocked = false;
             try
             {
-                profilesLocked = _vault.TryLockBuffer(BufferID.ShinobuStormPropagationImpactProfiles, OwnerSystem);
+                profilesLocked = TryAcquireStormBufferGuard(BufferID.ShinobuStormPropagationImpactProfiles);
                 if (!profilesLocked)
                     return;
 
@@ -817,13 +832,13 @@ namespace Hecton8.Atmosphere
             }
             finally
             {
-                if (profilesLocked) _vault.TryUnlockBuffer(BufferID.ShinobuStormPropagationImpactProfiles, OwnerSystem);
+                if (profilesLocked) ReleaseStormBufferGuard(BufferID.ShinobuStormPropagationImpactProfiles);
             }
 
             bool tuningLocked = false;
             try
             {
-                tuningLocked = _vault.TryLockBuffer(BufferID.ShinobuStormPropagationTuning, OwnerSystem);
+                tuningLocked = TryAcquireStormBufferGuard(BufferID.ShinobuStormPropagationTuning);
                 if (!tuningLocked)
                     return;
 
@@ -836,7 +851,7 @@ namespace Hecton8.Atmosphere
             }
             finally
             {
-                if (tuningLocked) _vault.TryUnlockBuffer(BufferID.ShinobuStormPropagationTuning, OwnerSystem);
+                if (tuningLocked) ReleaseStormBufferGuard(BufferID.ShinobuStormPropagationTuning);
             }
 
             _impactProfilesLoaded = true;
@@ -961,7 +976,7 @@ namespace Hecton8.Atmosphere
 
         private bool TryPublishCompletedStateRow(in StormPropagationDTO state)
         {
-            if (_vault == null || !_vault.TryLockBuffer(BufferID.ShinobuStormPropagationState, OwnerSystem))
+            if (_vault == null || !TryAcquireStormBufferGuard(BufferID.ShinobuStormPropagationState))
                 return false;
 
             try
@@ -980,13 +995,13 @@ namespace Hecton8.Atmosphere
             }
             finally
             {
-                _vault.TryUnlockBuffer(BufferID.ShinobuStormPropagationState, OwnerSystem);
+                ReleaseStormBufferGuard(BufferID.ShinobuStormPropagationState);
             }
         }
 
         private bool TryPublishScalarRow(BufferID bufferId, in VaultGenerationHandle<float4> handle, in float4 value)
         {
-            if (_vault == null || !_vault.TryLockBuffer(bufferId, OwnerSystem))
+            if (_vault == null || !TryAcquireStormBufferGuard(bufferId))
                 return false;
 
             try
@@ -999,7 +1014,7 @@ namespace Hecton8.Atmosphere
             }
             finally
             {
-                _vault.TryUnlockBuffer(bufferId, OwnerSystem);
+                ReleaseStormBufferGuard(bufferId);
             }
         }
 
@@ -1045,7 +1060,7 @@ namespace Hecton8.Atmosphere
             where T : unmanaged
         {
             value = default;
-            if (_vault == null || !_vault.TryLockBuffer(bufferId, OwnerSystem))
+            if (_vault == null || !TryAcquireStormBufferGuard(bufferId))
                 return false;
 
             try
@@ -1058,14 +1073,14 @@ namespace Hecton8.Atmosphere
             }
             finally
             {
-                _vault.TryUnlockBuffer(bufferId, OwnerSystem);
+                ReleaseStormBufferGuard(bufferId);
             }
         }
 
         private bool TryWriteSingleVaultRow<T>(BufferID bufferId, in VaultGenerationHandle<T> handle, in T value)
             where T : unmanaged
         {
-            if (_vault == null || !_vault.TryLockBuffer(bufferId, OwnerSystem))
+            if (_vault == null || !TryAcquireStormBufferGuard(bufferId))
                 return false;
 
             try
@@ -1078,13 +1093,13 @@ namespace Hecton8.Atmosphere
             }
             finally
             {
-                _vault.TryUnlockBuffer(bufferId, OwnerSystem);
+                ReleaseStormBufferGuard(bufferId);
             }
         }
 
         private bool TryCopyImpactProfilesToJobSnapshot()
         {
-            if (_vault == null || !_vault.TryLockBuffer(BufferID.ShinobuStormPropagationImpactProfiles, OwnerSystem))
+            if (_vault == null || !TryAcquireStormBufferGuard(BufferID.ShinobuStormPropagationImpactProfiles))
                 return false;
 
             try
@@ -1105,7 +1120,7 @@ namespace Hecton8.Atmosphere
             }
             finally
             {
-                _vault.TryUnlockBuffer(BufferID.ShinobuStormPropagationImpactProfiles, OwnerSystem);
+                ReleaseStormBufferGuard(BufferID.ShinobuStormPropagationImpactProfiles);
             }
         }
 
@@ -1153,7 +1168,7 @@ namespace Hecton8.Atmosphere
 
         private bool TryWriteTelemetryEntryAt(int index, in StormPropagationTelemetryEntry entry)
         {
-            if (_vault == null || !_vault.TryLockBuffer(BufferID.ShinobuStormPropagationTelemetryRing, OwnerSystem))
+            if (_vault == null || !TryAcquireStormBufferGuard(BufferID.ShinobuStormPropagationTelemetryRing))
                 return false;
 
             try
@@ -1170,7 +1185,7 @@ namespace Hecton8.Atmosphere
             }
             finally
             {
-                _vault.TryUnlockBuffer(BufferID.ShinobuStormPropagationTelemetryRing, OwnerSystem);
+                ReleaseStormBufferGuard(BufferID.ShinobuStormPropagationTelemetryRing);
             }
         }
 
@@ -1200,7 +1215,7 @@ namespace Hecton8.Atmosphere
             bool cursorLocked = false;
             try
             {
-                if (!_vault.TryLockBuffer(BufferID.ShinobuStormPropagationTelemetryCursor, OwnerSystem))
+                if (!TryAcquireStormBufferGuard(BufferID.ShinobuStormPropagationTelemetryCursor))
                     return false;
 
                 cursorLocked = true;
@@ -1213,12 +1228,12 @@ namespace Hecton8.Atmosphere
 
                 int writeCursor = ShinobuStormPropagationNative.ReadElement(cursor, 0);
                 cursorLocked = false;
-                _vault.TryUnlockBuffer(BufferID.ShinobuStormPropagationTelemetryCursor, OwnerSystem);
+                ReleaseStormBufferGuard(BufferID.ShinobuStormPropagationTelemetryCursor);
 
                 bool telemetryLocked = false;
                 try
                 {
-                    if (!_vault.TryLockBuffer(BufferID.ShinobuStormPropagationTelemetryRing, OwnerSystem))
+                    if (!TryAcquireStormBufferGuard(BufferID.ShinobuStormPropagationTelemetryRing))
                         return false;
 
                     telemetryLocked = true;
@@ -1264,12 +1279,12 @@ namespace Hecton8.Atmosphere
                 finally
                 {
                     if (telemetryLocked)
-                        _vault.TryUnlockBuffer(BufferID.ShinobuStormPropagationTelemetryRing, OwnerSystem);
+                        ReleaseStormBufferGuard(BufferID.ShinobuStormPropagationTelemetryRing);
                 }
             }
             finally
             {
-                if (cursorLocked) _vault.TryUnlockBuffer(BufferID.ShinobuStormPropagationTelemetryCursor, OwnerSystem);
+                if (cursorLocked) ReleaseStormBufferGuard(BufferID.ShinobuStormPropagationTelemetryCursor);
             }
         }
 
@@ -1342,7 +1357,7 @@ namespace Hecton8.Atmosphere
             if (_vault == null || _vault.IsCompactionFenceActive)
                 return;
 
-            if (!_vault.TryLockBuffer(BufferID.ShinobuStormPropagationTuning, OwnerSystem))
+            if (!TryAcquireStormBufferGuard(BufferID.ShinobuStormPropagationTuning))
                 return;
 
             try
@@ -1356,7 +1371,7 @@ namespace Hecton8.Atmosphere
             }
             finally
             {
-                _vault.TryUnlockBuffer(BufferID.ShinobuStormPropagationTuning, OwnerSystem);
+                ReleaseStormBufferGuard(BufferID.ShinobuStormPropagationTuning);
             }
         }
 

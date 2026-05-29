@@ -7,11 +7,8 @@ using Hecton8.Core;
 using Hecton8.Core.Memory;
 using Hecton8.Core.Contracts;
 using Hecton8.Core.Contracts.Signals;
-using Unity.Burst;
-using Unity.Burst.CompilerServices;
 using Unity.Collections;
 using Unity.Collections.LowLevel.Unsafe;
-using Unity.Jobs;
 using Unity.Mathematics;
 using UnityEngine;
 
@@ -294,6 +291,7 @@ namespace Hecton8.Core.Determinism
         private const int DumpHeaderBytes = 8;
         private const int DumpPayloadBytes = DumpHeaderBytes + (TelemetryFrameCapacity * TelemetryEntryBytes);
         private const int MaxHashElements = 8192;
+        private const int RoomWaterLevelsMirrorCapacity = 256;
         private const int MaxGhostReplayBlocks = 128;
         private const int ReplayBlockBytes = ReplayHeaderBytes + (ReplayInputFrameCapacity * ReplayInputBytes);
         private const ulong ReplayMagic = 0x48384C4F434B5354ul;
@@ -390,6 +388,8 @@ namespace Hecton8.Core.Determinism
             if (_binaryLayoutInvalid != 0)
                 GlobalTelemetryBus.PublishModTelemetry(ReasonDesyncHash, 0x4C41594Fu, 0u);
             EnsureNativeState();
+            EnsureHashNativeState();
+            EnsurePostFixedMirrorState();
             RestoreTelemetryCursorFromVault();
             EnsureReplayWriterCold();
             TryRegisterHotSwapListener();
@@ -435,6 +435,10 @@ namespace Hecton8.Core.Determinism
                     break;
                 case GlobalRegistryServiceSlot.DataVault:
                     _dataVault = currentService as IDataVault;
+                    EnsureNativeState();
+                    EnsureHashNativeState();
+                    EnsurePostFixedMirrorState();
+                    RestoreTelemetryCursorFromVault();
                     break;
                 case GlobalRegistryServiceSlot.Player:
                     _player = currentService as IPlayerRuntimeContext;
@@ -442,7 +446,10 @@ namespace Hecton8.Core.Determinism
                 case GlobalRegistryServiceSlot.Logistics:
                     IHabitatGraphService habitat = currentService as IHabitatGraphService;
                     if (habitat != null)
+                    {
                         _habitat = habitat;
+                        EnsurePostFixedMirrorState();
+                    }
                     break;
             }
         }
@@ -644,7 +651,8 @@ namespace Hecton8.Core.Determinism
             NativeArray<LockstepReplayInputFrame> inputRing = OpenOrAcquireVaultBufferView<LockstepReplayInputFrame>(
                 BufferID.LockstepReplayInputRing,
                 ReplayInputFrameCapacity,
-                NativeArrayOptions.ClearMemory);
+                NativeArrayOptions.ClearMemory,
+                allowColdInitialization: false);
             if (!inputRing.IsCreated)
                 return false;
 
@@ -727,7 +735,8 @@ namespace Hecton8.Core.Determinism
             NativeArray<LockstepPlayerKinematicState> buffer = OpenOrAcquireVaultBufferView<LockstepPlayerKinematicState>(
                 BufferID.PlayerKinematicState,
                 1,
-                NativeArrayOptions.ClearMemory);
+                NativeArrayOptions.ClearMemory,
+                allowColdInitialization: false);
             if (!buffer.IsCreated)
                 return;
 
@@ -812,14 +821,15 @@ namespace Hecton8.Core.Determinism
                 return false;
 
             NativeArray<float>.ReadOnly source = habitat.RoomWaterLevels;
-            int count = math.min(habitat.RoomCount, source.Length);
+            int count = math.min(math.min(habitat.RoomCount, source.Length), RoomWaterLevelsMirrorCapacity);
             if (count <= 0)
                 return false;
 
             NativeArray<float> destination = OpenOrAcquireVaultBufferView<float>(
                 BufferID.RoomWaterLevels,
-                count,
-                NativeArrayOptions.ClearMemory);
+                RoomWaterLevelsMirrorCapacity,
+                NativeArrayOptions.ClearMemory,
+                allowColdInitialization: false);
             if (!destination.IsCreated)
                 return false;
 
@@ -837,20 +847,17 @@ namespace Hecton8.Core.Determinism
 
         private void ExecuteHashJobs(uint frame, int hashCadenceFrames, bool roomWaterHadNonFinite, ref uint telemetryFlags)
         {
-            EnsureNativeState();
-            EnsureHashNativeState();
-
-            NativeArray<uint> rigidbodyElementHashes = OpenOrAcquireVaultBufferView<uint>(BufferID.LockstepRigidbodyElementHashes, MaxHashElements, NativeArrayOptions.UninitializedMemory);
-            NativeArray<uint> playerElementHashes = OpenOrAcquireVaultBufferView<uint>(BufferID.LockstepPlayerElementHashes, MaxHashElements, NativeArrayOptions.UninitializedMemory);
-            NativeArray<uint> roomElementHashes = OpenOrAcquireVaultBufferView<uint>(BufferID.LockstepRoomElementHashes, MaxHashElements, NativeArrayOptions.UninitializedMemory);
-            NativeArray<uint> entityElementHashes = OpenOrAcquireVaultBufferView<uint>(BufferID.LockstepEntityElementHashes, MaxHashElements, NativeArrayOptions.UninitializedMemory);
-            NativeArray<byte> rigidbodyElementFlags = OpenOrAcquireVaultBufferView<byte>(BufferID.LockstepRigidbodyElementFlags, MaxHashElements, NativeArrayOptions.UninitializedMemory);
-            NativeArray<byte> playerElementFlags = OpenOrAcquireVaultBufferView<byte>(BufferID.LockstepPlayerElementFlags, MaxHashElements, NativeArrayOptions.UninitializedMemory);
-            NativeArray<byte> roomElementFlags = OpenOrAcquireVaultBufferView<byte>(BufferID.LockstepRoomElementFlags, MaxHashElements, NativeArrayOptions.UninitializedMemory);
-            NativeArray<byte> entityElementFlags = OpenOrAcquireVaultBufferView<byte>(BufferID.LockstepEntityElementFlags, MaxHashElements, NativeArrayOptions.UninitializedMemory);
-            NativeArray<LockstepArrayHash> arrayHashes = OpenOrAcquireVaultBufferView<LockstepArrayHash>(BufferID.LockstepArrayHashes, (int)LockstepHashCategory.Count, NativeArrayOptions.ClearMemory);
-            NativeArray<ulong> masterHash = OpenOrAcquireVaultBufferView<ulong>(BufferID.LockstepMasterStateHash, 1, NativeArrayOptions.ClearMemory);
-            NativeArray<uint> masterFlags = OpenOrAcquireVaultBufferView<uint>(BufferID.LockstepMasterFlags, 1, NativeArrayOptions.ClearMemory);
+            NativeArray<uint> rigidbodyElementHashes = OpenOrAcquireVaultBufferView<uint>(BufferID.LockstepRigidbodyElementHashes, MaxHashElements, NativeArrayOptions.UninitializedMemory, allowColdInitialization: false);
+            NativeArray<uint> playerElementHashes = OpenOrAcquireVaultBufferView<uint>(BufferID.LockstepPlayerElementHashes, MaxHashElements, NativeArrayOptions.UninitializedMemory, allowColdInitialization: false);
+            NativeArray<uint> roomElementHashes = OpenOrAcquireVaultBufferView<uint>(BufferID.LockstepRoomElementHashes, MaxHashElements, NativeArrayOptions.UninitializedMemory, allowColdInitialization: false);
+            NativeArray<uint> entityElementHashes = OpenOrAcquireVaultBufferView<uint>(BufferID.LockstepEntityElementHashes, MaxHashElements, NativeArrayOptions.UninitializedMemory, allowColdInitialization: false);
+            NativeArray<byte> rigidbodyElementFlags = OpenOrAcquireVaultBufferView<byte>(BufferID.LockstepRigidbodyElementFlags, MaxHashElements, NativeArrayOptions.UninitializedMemory, allowColdInitialization: false);
+            NativeArray<byte> playerElementFlags = OpenOrAcquireVaultBufferView<byte>(BufferID.LockstepPlayerElementFlags, MaxHashElements, NativeArrayOptions.UninitializedMemory, allowColdInitialization: false);
+            NativeArray<byte> roomElementFlags = OpenOrAcquireVaultBufferView<byte>(BufferID.LockstepRoomElementFlags, MaxHashElements, NativeArrayOptions.UninitializedMemory, allowColdInitialization: false);
+            NativeArray<byte> entityElementFlags = OpenOrAcquireVaultBufferView<byte>(BufferID.LockstepEntityElementFlags, MaxHashElements, NativeArrayOptions.UninitializedMemory, allowColdInitialization: false);
+            NativeArray<LockstepArrayHash> arrayHashes = OpenOrAcquireVaultBufferView<LockstepArrayHash>(BufferID.LockstepArrayHashes, (int)LockstepHashCategory.Count, NativeArrayOptions.ClearMemory, allowColdInitialization: false);
+            NativeArray<ulong> masterHash = OpenOrAcquireVaultBufferView<ulong>(BufferID.LockstepMasterStateHash, 1, NativeArrayOptions.ClearMemory, allowColdInitialization: false);
+            NativeArray<uint> masterFlags = OpenOrAcquireVaultBufferView<uint>(BufferID.LockstepMasterFlags, 1, NativeArrayOptions.ClearMemory, allowColdInitialization: false);
 
             if (!HashNativeStateReady(
                 rigidbodyElementHashes,
@@ -906,44 +913,23 @@ namespace Hecton8.Core.Determinism
                 arrayHashes[(int)LockstepHashCategory.RoomWaterLevels] = roomHash;
             }
 
-            JobHandle combineHandle = default;
-            combineHandle = ScheduleDouble3Hash(
+            HashDouble3ArrayDirect(
                 rigidbodyAups,
                 rigidbodyElementHashes,
                 rigidbodyElementFlags,
                 arrayHashes,
                 LockstepHashCategory.RigidbodyAups,
-                rigidbodyCount,
-                combineHandle);
-            combineHandle = SchedulePlayerHash(playerStates, playerElementHashes, playerElementFlags, arrayHashes, playerCount, combineHandle);
-            combineHandle = ScheduleFloatHash(roomWaterLevels, roomElementHashes, roomElementFlags, arrayHashes, roomCount, combineHandle);
-            combineHandle = ScheduleFloat3Hash(
+                rigidbodyCount);
+            HashPlayerKinematicArrayDirect(playerStates, playerElementHashes, playerElementFlags, arrayHashes, playerCount);
+            HashFloatArrayDirect(roomWaterLevels, roomElementHashes, roomElementFlags, arrayHashes, roomCount);
+            HashFloat3ArrayDirect(
                 entityAups,
                 entityElementHashes,
                 entityElementFlags,
                 arrayHashes,
                 LockstepHashCategory.EntityAups,
-                entityCount,
-                combineHandle);
-            JobHandle masterHandle = new MasterStateHashJob
-            {
-                ArrayHashes = arrayHashes,
-                MasterHash = masterHash,
-                MasterFlags = masterFlags,
-                Frame = frame
-            }.Schedule(combineHandle);
-
-            // [BLOCKING_SYNC_POINT] 300-frame POST_SIMULATION hash fence.
-            // The replay block must contain frame-N truth before any owner can mutate the sampled DataVault arrays.
-            Hecton8.Core.DispatcherJobFence.BeginPostSimulationSwapWindow();
-            try
-            {
-                Hecton8.Core.DispatcherJobFence.TryComplete(ref masterHandle, forceComplete: true);
-            }
-            finally
-            {
-                Hecton8.Core.DispatcherJobFence.EndPostSimulationSwapWindow();
-            }
+                entityCount);
+            BuildMasterStateHashDirect(arrayHashes, masterHash, masterFlags, frame);
 
             uint flags = masterFlags[0];
             if ((flags & ArrayFlagMissing) != 0u)
@@ -992,10 +978,19 @@ namespace Hecton8.Core.Determinism
                 return 0;
             }
 
-            int count = source.Length;
             IHabitatGraphService habitat = _habitat;
-            if (habitat != null && habitat.IsInitialized && habitat.RoomCount > 0)
-                count = math.min(count, habitat.RoomCount);
+            if (habitat == null || !habitat.IsInitialized || habitat.RoomCount <= 0)
+            {
+                telemetryFlags |= TelemetryFlagMissingData;
+                return 0;
+            }
+
+            int count = math.min(math.min(source.Length, habitat.RoomCount), RoomWaterLevelsMirrorCapacity);
+            if (habitat.RoomCount > RoomWaterLevelsMirrorCapacity)
+            {
+                truncated = true;
+                telemetryFlags |= TelemetryFlagTruncated;
+            }
 
             if (count > MaxHashElements)
             {
@@ -1006,7 +1001,7 @@ namespace Hecton8.Core.Determinism
             return math.select(count, MaxHashElements, count > MaxHashElements);
         }
 
-        private static int ResolveScheduleCount<T>(NativeArray<T> source, int count)
+        private static int ResolveDirectHashCount<T>(NativeArray<T> source, int count)
             where T : struct
         {
             int sourceLength = source.IsCreated ? source.Length : 0;
@@ -1015,126 +1010,151 @@ namespace Hecton8.Core.Determinism
             return math.select(0, boundedCount, source.IsCreated && boundedCount > 0);
         }
 
-        private JobHandle ScheduleFloat3Hash(
+        private static void HashFloat3ArrayDirect(
             NativeArray<float3> source,
             NativeArray<uint> elementHashes,
             NativeArray<byte> elementFlags,
             NativeArray<LockstepArrayHash> arrayHashes,
             LockstepHashCategory category,
-            int count,
-            JobHandle combineDependency)
+            int count)
         {
-            int scheduleCount = ResolveScheduleCount(source, count);
-            if (scheduleCount == 0)
-                return combineDependency;
-
-            JobHandle hashHandle = new HashFloat3ArrayJob
+            int hashCount = ResolveDirectHashCount(source, count);
+            for (int i = 0; i < hashCount; i++)
             {
-                Source = source,
-                ElementHashes = elementHashes,
-                ElementFlags = elementFlags,
-                CategorySalt = (uint)category
-            }.Schedule(scheduleCount, 64);
+                float3 value = source[i];
+                bool finite = math.all(math.isfinite(value));
+                uint hash = LockstepHashMath.Fnv1A(LockstepHashMath.FnvOffset32, (uint)category);
+                hash = LockstepHashMath.Fnv1A(hash, i);
+                hash = finite ? LockstepHashMath.Fnv1AFloat3(hash, value) : LockstepHashMath.Fnv1A(hash, 0xBADF10A7u);
+                elementHashes[i] = hash;
+                elementFlags[i] = finite ? (byte)0 : (byte)1;
+            }
 
-            return new CombineElementHashesJob
-            {
-                ElementHashes = elementHashes,
-                ElementFlags = elementFlags,
-                ArrayHashes = arrayHashes,
-                CategoryIndex = (int)category,
-                Count = scheduleCount
-            }.Schedule(JobHandle.CombineDependencies(hashHandle, combineDependency));
+            CombineElementHashesDirect(elementHashes, elementFlags, arrayHashes, (int)category, hashCount);
         }
 
-        private JobHandle ScheduleDouble3Hash(
+        private static void HashDouble3ArrayDirect(
             NativeArray<double3> source,
             NativeArray<uint> elementHashes,
             NativeArray<byte> elementFlags,
             NativeArray<LockstepArrayHash> arrayHashes,
             LockstepHashCategory category,
-            int count,
-            JobHandle combineDependency)
+            int count)
         {
-            int scheduleCount = ResolveScheduleCount(source, count);
-            if (scheduleCount == 0)
-                return combineDependency;
-
-            JobHandle hashHandle = new HashDouble3ArrayJob
+            int hashCount = ResolveDirectHashCount(source, count);
+            for (int i = 0; i < hashCount; i++)
             {
-                Source = source,
-                ElementHashes = elementHashes,
-                ElementFlags = elementFlags,
-                CategorySalt = (uint)category
-            }.Schedule(scheduleCount, 64);
+                double3 value = source[i];
+                bool finite = math.all(math.isfinite(value));
+                uint hash = LockstepHashMath.Fnv1A(LockstepHashMath.FnvOffset32, (uint)category);
+                hash = LockstepHashMath.Fnv1A(hash, i);
+                hash = finite ? LockstepHashMath.Fnv1ADouble3(hash, value) : LockstepHashMath.Fnv1A(hash, 0xBADF10A7u);
+                elementHashes[i] = hash;
+                elementFlags[i] = finite ? (byte)0 : (byte)1;
+            }
 
-            return new CombineElementHashesJob
-            {
-                ElementHashes = elementHashes,
-                ElementFlags = elementFlags,
-                ArrayHashes = arrayHashes,
-                CategoryIndex = (int)category,
-                Count = scheduleCount
-            }.Schedule(JobHandle.CombineDependencies(hashHandle, combineDependency));
+            CombineElementHashesDirect(elementHashes, elementFlags, arrayHashes, (int)category, hashCount);
         }
 
-        private JobHandle ScheduleFloatHash(
+        private static void HashFloatArrayDirect(
             NativeArray<float> source,
             NativeArray<uint> elementHashes,
             NativeArray<byte> elementFlags,
             NativeArray<LockstepArrayHash> arrayHashes,
-            int count,
-            JobHandle combineDependency)
+            int count)
         {
-            int scheduleCount = ResolveScheduleCount(source, count);
-            if (scheduleCount == 0)
-                return combineDependency;
-
-            JobHandle hashHandle = new HashFloatArrayJob
+            int hashCount = ResolveDirectHashCount(source, count);
+            for (int i = 0; i < hashCount; i++)
             {
-                Source = source,
-                ElementHashes = elementHashes,
-                ElementFlags = elementFlags,
-                CategorySalt = (uint)LockstepHashCategory.RoomWaterLevels
-            }.Schedule(scheduleCount, 64);
+                float value = source[i];
+                bool finite = math.isfinite(value);
+                uint hash = LockstepHashMath.Fnv1A(LockstepHashMath.FnvOffset32, (uint)LockstepHashCategory.RoomWaterLevels);
+                hash = LockstepHashMath.Fnv1A(hash, i);
+                hash = LockstepHashMath.Fnv1A(hash, finite ? LockstepHashMath.QuantizeWaterLevel(value) : 0xBADF10A7u);
+                elementHashes[i] = hash;
+                elementFlags[i] = finite ? (byte)0 : (byte)1;
+            }
 
-            return new CombineElementHashesJob
-            {
-                ElementHashes = elementHashes,
-                ElementFlags = elementFlags,
-                ArrayHashes = arrayHashes,
-                CategoryIndex = (int)LockstepHashCategory.RoomWaterLevels,
-                Count = scheduleCount
-            }.Schedule(JobHandle.CombineDependencies(hashHandle, combineDependency));
+            CombineElementHashesDirect(elementHashes, elementFlags, arrayHashes, (int)LockstepHashCategory.RoomWaterLevels, hashCount);
         }
 
-        private JobHandle SchedulePlayerHash(
+        private static void HashPlayerKinematicArrayDirect(
             NativeArray<LockstepPlayerKinematicState> source,
             NativeArray<uint> elementHashes,
             NativeArray<byte> elementFlags,
             NativeArray<LockstepArrayHash> arrayHashes,
-            int count,
-            JobHandle combineDependency)
+            int count)
         {
-            int scheduleCount = ResolveScheduleCount(source, count);
-            if (scheduleCount == 0)
-                return combineDependency;
-
-            JobHandle hashHandle = new HashPlayerKinematicArrayJob
+            int hashCount = ResolveDirectHashCount(source, count);
+            for (int i = 0; i < hashCount; i++)
             {
-                Source = source,
-                ElementHashes = elementHashes,
-                ElementFlags = elementFlags,
-                CategorySalt = (uint)LockstepHashCategory.PlayerKinematicState
-            }.Schedule(scheduleCount, 32);
+                LockstepPlayerKinematicState state = source[i];
+                bool finite =
+                    math.all(math.isfinite(state.PositionAup)) &&
+                    math.all(math.isfinite(state.Velocity)) &&
+                    math.all(math.isfinite(state.InputVector)) &&
+                    (state.Flags & LockstepHashMath.NonFiniteSourceFlag) == 0u;
 
-            return new CombineElementHashesJob
+                uint hash = LockstepHashMath.Fnv1A(LockstepHashMath.FnvOffset32, (uint)LockstepHashCategory.PlayerKinematicState);
+                hash = LockstepHashMath.Fnv1A(hash, i);
+                hash = finite ? LockstepHashMath.Fnv1ADouble3(hash, state.PositionAup) : LockstepHashMath.Fnv1A(hash, 0xBADF10A7u);
+                hash = finite ? LockstepHashMath.Fnv1AFloat3(hash, state.Velocity) : hash;
+                hash = finite ? LockstepHashMath.Fnv1AFloat3(hash, state.InputVector) : hash;
+                hash = LockstepHashMath.Fnv1A(hash, state.Frame);
+                hash = LockstepHashMath.Fnv1A(hash, state.Flags);
+                hash = LockstepHashMath.Fnv1A(hash, state.InputActions);
+                hash = LockstepHashMath.Fnv1A(hash, state.StableId);
+                elementHashes[i] = hash;
+                elementFlags[i] = finite ? (byte)0 : (byte)1;
+            }
+
+            CombineElementHashesDirect(elementHashes, elementFlags, arrayHashes, (int)LockstepHashCategory.PlayerKinematicState, hashCount);
+        }
+
+        private static void CombineElementHashesDirect(
+            NativeArray<uint> elementHashes,
+            NativeArray<byte> elementFlags,
+            NativeArray<LockstepArrayHash> arrayHashes,
+            int categoryIndex,
+            int count)
+        {
+            uint hash = LockstepHashMath.Fnv1A(LockstepHashMath.FnvOffset32, (uint)categoryIndex);
+            uint flags = 0u;
+            uint first = 0u;
+            uint last = 0u;
+            for (int i = 0; i < count; i++)
             {
-                ElementHashes = elementHashes,
-                ElementFlags = elementFlags,
-                ArrayHashes = arrayHashes,
-                CategoryIndex = (int)LockstepHashCategory.PlayerKinematicState,
-                Count = scheduleCount
-            }.Schedule(JobHandle.CombineDependencies(hashHandle, combineDependency));
+                uint elementHash = elementHashes[i];
+                if (i == 0)
+                    first = elementHash;
+                last = elementHash;
+                hash = LockstepHashMath.Fnv1A(hash, elementHash);
+                if (elementFlags[i] != 0)
+                    flags |= 1u;
+            }
+
+            LockstepArrayHash arrayHash = arrayHashes[categoryIndex];
+            arrayHash.Hash = hash;
+            arrayHash.Count = (uint)count;
+            arrayHash.FirstElementHash = first;
+            arrayHash.LastElementHash = last;
+            if (flags != 0u)
+                arrayHash.Flags |= ArrayFlagNonFinite;
+            arrayHashes[categoryIndex] = arrayHash;
+        }
+
+        private static void BuildMasterStateHashDirect(
+            NativeArray<LockstepArrayHash> arrayHashes,
+            NativeArray<ulong> masterHash,
+            NativeArray<uint> masterFlags,
+            uint frame)
+        {
+            uint flags = 0u;
+            for (int i = 0; i < (int)LockstepHashCategory.Count; i++)
+                flags |= arrayHashes[i].Flags;
+
+            masterHash[0] = LockstepHashMath.BuildMasterHash(arrayHashes, frame);
+            masterFlags[0] = flags;
         }
 
         private void SetDefaultArrayHash(NativeArray<LockstepArrayHash> arrayHashes, LockstepHashCategory category, int count, bool present, bool truncated)
@@ -1180,11 +1200,13 @@ namespace Hecton8.Core.Determinism
             NativeArray<LockstepMasterHashHistoryEntry> history = OpenOrAcquireVaultBufferView<LockstepMasterHashHistoryEntry>(
                 BufferID.LockstepMasterHashHistory,
                 MasterHashHistoryCapacity,
-                NativeArrayOptions.ClearMemory);
+                NativeArrayOptions.ClearMemory,
+                allowColdInitialization: false);
             NativeArray<int> cursor = OpenOrAcquireVaultBufferView<int>(
                 BufferID.LockstepMasterHashHistoryCursor,
                 1,
-                NativeArrayOptions.ClearMemory);
+                NativeArrayOptions.ClearMemory,
+                allowColdInitialization: false);
             if (!HasRequiredLength(history, MasterHashHistoryCapacity) || !HasRequiredLength(cursor, 1))
                 return;
 
@@ -1423,14 +1445,16 @@ namespace Hecton8.Core.Determinism
             NativeArray<LockstepTelemetryEntry> telemetryRing = OpenOrAcquireVaultBufferView<LockstepTelemetryEntry>(
                 BufferID.LockstepTelemetryRing,
                 TelemetryFrameCapacity,
-                NativeArrayOptions.ClearMemory);
+                NativeArrayOptions.ClearMemory,
+                allowColdInitialization: false);
             if (!telemetryRing.IsCreated)
                 return;
 
             NativeArray<LockstepArrayHash> arrayHashes = OpenOrAcquireVaultBufferView<LockstepArrayHash>(
                 BufferID.LockstepArrayHashes,
                 (int)LockstepHashCategory.Count,
-                NativeArrayOptions.ClearMemory);
+                NativeArrayOptions.ClearMemory,
+                allowColdInitialization: false);
             LockstepArrayHash rigidbody = ReadArrayHash(arrayHashes, LockstepHashCategory.RigidbodyAups);
             LockstepArrayHash player = ReadArrayHash(arrayHashes, LockstepHashCategory.PlayerKinematicState);
             LockstepArrayHash room = ReadArrayHash(arrayHashes, LockstepHashCategory.RoomWaterLevels);
@@ -1724,10 +1748,11 @@ namespace Hecton8.Core.Determinism
         private NativeArray<T> OpenOrAcquireVaultBufferView<T>(
             BufferID bufferId,
             int requiredLength,
-            NativeArrayOptions options = NativeArrayOptions.ClearMemory)
+            NativeArrayOptions options = NativeArrayOptions.ClearMemory,
+            bool allowColdInitialization = true)
             where T : struct
         {
-            if (!OpenOrAcquireVaultBuffer(bufferId, requiredLength, options, out NativeArray<T> buffer))
+            if (!OpenOrAcquireVaultBuffer(bufferId, requiredLength, options, out NativeArray<T> buffer, allowColdInitialization))
                 return default;
 
             return HasRequiredLength(buffer, requiredLength) ? buffer : default;
@@ -1767,7 +1792,8 @@ namespace Hecton8.Core.Determinism
             BufferID bufferId,
             int requiredLength,
             NativeArrayOptions options,
-            out NativeArray<T> buffer)
+            out NativeArray<T> buffer,
+            bool allowColdInitialization = true)
             where T : struct
         {
             buffer = default;
@@ -1778,6 +1804,9 @@ namespace Hecton8.Core.Determinism
             if (!vault.TryGetGenerationHandle<T>(bufferId, out VaultGenerationHandle<T> handle) ||
                 !IsMatchingVaultHandle(in handle, bufferId))
             {
+                if (!allowColdInitialization || vault.IsAllocationLocked || vault.IsCompactionFenceActive)
+                    return false;
+
                 handle = vault.EnsureGenerationHandle<T>(bufferId, requiredLength, SystemID.CoreDeterminism, options);
             }
 
@@ -1877,6 +1906,14 @@ namespace Hecton8.Core.Determinism
             OpenOrAcquireVaultBufferView<byte>(BufferID.LockstepPlayerElementFlags, MaxHashElements, NativeArrayOptions.UninitializedMemory);
             OpenOrAcquireVaultBufferView<byte>(BufferID.LockstepRoomElementFlags, MaxHashElements, NativeArrayOptions.UninitializedMemory);
             OpenOrAcquireVaultBufferView<byte>(BufferID.LockstepEntityElementFlags, MaxHashElements, NativeArrayOptions.UninitializedMemory);
+        }
+
+        private void EnsurePostFixedMirrorState()
+        {
+            OpenOrAcquireVaultBufferView<LockstepPlayerKinematicState>(BufferID.PlayerKinematicState, 1, NativeArrayOptions.ClearMemory);
+            IHabitatGraphService habitat = _habitat;
+            if (habitat != null && habitat.IsInitialized)
+                OpenOrAcquireVaultBufferView<float>(BufferID.RoomWaterLevels, RoomWaterLevelsMirrorCapacity, NativeArrayOptions.ClearMemory);
         }
 
         private static bool HashNativeStateReady(
@@ -2151,153 +2188,6 @@ namespace Hecton8.Core.Determinism
             }
 
             return hash;
-        }
-    }
-
-    [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Deterministic, FloatPrecision = FloatPrecision.Standard)]
-    internal struct HashFloat3ArrayJob : IJobParallelFor
-    {
-        [ReadOnly, NoAlias] public NativeArray<float3> Source;
-        [WriteOnly, NoAlias] public NativeArray<uint> ElementHashes;
-        [WriteOnly, NoAlias] public NativeArray<byte> ElementFlags;
-        public uint CategorySalt;
-
-        public void Execute(int index)
-        {
-            float3 value = Source[index];
-            bool finite = math.all(math.isfinite(value));
-            uint hash = LockstepHashMath.Fnv1A(LockstepHashMath.FnvOffset32, CategorySalt);
-            hash = LockstepHashMath.Fnv1A(hash, index);
-            hash = finite ? LockstepHashMath.Fnv1AFloat3(hash, value) : LockstepHashMath.Fnv1A(hash, 0xBADF10A7u);
-            ElementHashes[index] = hash;
-            ElementFlags[index] = finite ? (byte)0 : (byte)1;
-        }
-    }
-
-    [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Deterministic, FloatPrecision = FloatPrecision.Standard)]
-    internal struct HashDouble3ArrayJob : IJobParallelFor
-    {
-        [ReadOnly, NoAlias] public NativeArray<double3> Source;
-        [WriteOnly, NoAlias] public NativeArray<uint> ElementHashes;
-        [WriteOnly, NoAlias] public NativeArray<byte> ElementFlags;
-        public uint CategorySalt;
-
-        public void Execute(int index)
-        {
-            double3 value = Source[index];
-            bool finite = math.all(math.isfinite(value));
-            uint hash = LockstepHashMath.Fnv1A(LockstepHashMath.FnvOffset32, CategorySalt);
-            hash = LockstepHashMath.Fnv1A(hash, index);
-            hash = finite ? LockstepHashMath.Fnv1ADouble3(hash, value) : LockstepHashMath.Fnv1A(hash, 0xBADF10A7u);
-            ElementHashes[index] = hash;
-            ElementFlags[index] = finite ? (byte)0 : (byte)1;
-        }
-    }
-
-    [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Deterministic, FloatPrecision = FloatPrecision.Standard)]
-    internal struct HashFloatArrayJob : IJobParallelFor
-    {
-        [ReadOnly, NoAlias] public NativeArray<float> Source;
-        [WriteOnly, NoAlias] public NativeArray<uint> ElementHashes;
-        [WriteOnly, NoAlias] public NativeArray<byte> ElementFlags;
-        public uint CategorySalt;
-
-        public void Execute(int index)
-        {
-            float value = Source[index];
-            bool finite = math.isfinite(value);
-            uint hash = LockstepHashMath.Fnv1A(LockstepHashMath.FnvOffset32, CategorySalt);
-            hash = LockstepHashMath.Fnv1A(hash, index);
-            hash = LockstepHashMath.Fnv1A(hash, finite ? LockstepHashMath.QuantizeWaterLevel(value) : 0xBADF10A7u);
-            ElementHashes[index] = hash;
-            ElementFlags[index] = finite ? (byte)0 : (byte)1;
-        }
-    }
-
-    [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Deterministic, FloatPrecision = FloatPrecision.Standard)]
-    internal struct HashPlayerKinematicArrayJob : IJobParallelFor
-    {
-        [ReadOnly, NoAlias] public NativeArray<LockstepPlayerKinematicState> Source;
-        [WriteOnly, NoAlias] public NativeArray<uint> ElementHashes;
-        [WriteOnly, NoAlias] public NativeArray<byte> ElementFlags;
-        public uint CategorySalt;
-
-        public void Execute(int index)
-        {
-            LockstepPlayerKinematicState state = Source[index];
-            bool finite =
-                math.all(math.isfinite(state.PositionAup)) &&
-                math.all(math.isfinite(state.Velocity)) &&
-                math.all(math.isfinite(state.InputVector)) &&
-                (state.Flags & LockstepHashMath.NonFiniteSourceFlag) == 0u;
-
-            uint hash = LockstepHashMath.Fnv1A(LockstepHashMath.FnvOffset32, CategorySalt);
-            hash = LockstepHashMath.Fnv1A(hash, index);
-            hash = finite ? LockstepHashMath.Fnv1ADouble3(hash, state.PositionAup) : LockstepHashMath.Fnv1A(hash, 0xBADF10A7u);
-            hash = finite ? LockstepHashMath.Fnv1AFloat3(hash, state.Velocity) : hash;
-            hash = finite ? LockstepHashMath.Fnv1AFloat3(hash, state.InputVector) : hash;
-            hash = LockstepHashMath.Fnv1A(hash, state.Frame);
-            hash = LockstepHashMath.Fnv1A(hash, state.Flags);
-            hash = LockstepHashMath.Fnv1A(hash, state.InputActions);
-            hash = LockstepHashMath.Fnv1A(hash, state.StableId);
-            ElementHashes[index] = hash;
-            ElementFlags[index] = finite ? (byte)0 : (byte)1;
-        }
-    }
-
-    [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Deterministic, FloatPrecision = FloatPrecision.Standard)]
-    internal struct CombineElementHashesJob : IJob
-    {
-        [ReadOnly, NoAlias] public NativeArray<uint> ElementHashes;
-        [ReadOnly, NoAlias] public NativeArray<byte> ElementFlags;
-        [NoAlias] public NativeArray<LockstepArrayHash> ArrayHashes;
-        public int CategoryIndex;
-        public int Count;
-
-        public void Execute()
-        {
-            uint hash = LockstepHashMath.Fnv1A(LockstepHashMath.FnvOffset32, (uint)CategoryIndex);
-            uint flags = 0u;
-            uint first = 0u;
-            uint last = 0u;
-            for (int i = 0; i < Count; i++)
-            {
-                uint elementHash = ElementHashes[i];
-                if (i == 0)
-                    first = elementHash;
-                last = elementHash;
-                hash = LockstepHashMath.Fnv1A(hash, elementHash);
-                if (ElementFlags[i] != 0)
-                    flags |= 1u;
-            }
-
-            LockstepArrayHash arrayHash = ArrayHashes[CategoryIndex];
-            arrayHash.Hash = hash;
-            arrayHash.Count = (uint)Count;
-            arrayHash.FirstElementHash = first;
-            arrayHash.LastElementHash = last;
-            if (flags != 0u)
-                arrayHash.Flags |= 4u;
-            ArrayHashes[CategoryIndex] = arrayHash;
-        }
-    }
-
-    [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Deterministic, FloatPrecision = FloatPrecision.Standard)]
-    internal struct MasterStateHashJob : IJob
-    {
-        [ReadOnly, NoAlias] public NativeArray<LockstepArrayHash> ArrayHashes;
-        [NoAlias] public NativeArray<ulong> MasterHash;
-        [NoAlias] public NativeArray<uint> MasterFlags;
-        public uint Frame;
-
-        public void Execute()
-        {
-            uint flags = 0u;
-            for (int i = 0; i < (int)LockstepHashCategory.Count; i++)
-                flags |= ArrayHashes[i].Flags;
-
-            MasterHash[0] = LockstepHashMath.BuildMasterHash(ArrayHashes, Frame);
-            MasterFlags[0] = flags;
         }
     }
 }

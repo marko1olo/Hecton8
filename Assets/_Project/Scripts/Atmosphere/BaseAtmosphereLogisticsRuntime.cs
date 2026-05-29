@@ -195,8 +195,9 @@ namespace Hecton8.Atmosphere
             }
 
             IDataVault vault = active.ResolveVault();
+            ulong tuningGuardMask = AtmosphereLogisticsMutationGuardBit(AtmosphereLogisticsBufferIds.Tuning);
             if (vault == null || vault.IsCompactionFenceActive ||
-                !vault.TryLockBuffer(AtmosphereLogisticsBufferIds.Tuning, OwnerSystemId))
+                !vault.TryAcquireMutationGuard(tuningGuardMask))
                 return;
 
             try
@@ -214,7 +215,7 @@ namespace Hecton8.Atmosphere
             }
             finally
             {
-                vault.TryUnlockBuffer(AtmosphereLogisticsBufferIds.Tuning, OwnerSystemId);
+                vault.ReleaseMutationGuard(tuningGuardMask);
             }
         }
 

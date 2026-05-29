@@ -15,7 +15,7 @@ namespace Hecton8.Tools.ToolKinematics
 {
     [DisallowMultipleComponent]
     [DefaultExecutionOrder(-9917)]
-    public sealed class ToolKinematicsRuntime : MonoBehaviour, IFixedTickable, IPostFixedTickable, ISlowTickable, IGlobalRegistryHotSwapListener
+    public sealed class ToolKinematicsRuntime : MonoBehaviour, IFixedTickable, IPostFixedTickable, IGlobalRegistryHotSwapListener
     {
         private static int _signalPushDropCount;
         public const int MaxToolCapacity = 8;
@@ -26,6 +26,9 @@ namespace Hecton8.Tools.ToolKinematics
 #endif
         private const string BlackBoxDumpFileName = "Dump_13US.bin";
         private const int MaxBlackBoxDumpEntries = MaxToolCapacity * ToolKinematicsMath.BlackBoxCapacity;
+        private const int BlackBoxDumpHeaderBytes = 20;
+        private const int BlackBoxDumpEntryBytes = 64;
+        private const uint BlackBoxDumpMagic = 0x544B4242u;
         private const int BlackBoxDumpWorkerJoinMilliseconds = 50;
         private const int BlackBoxDumpWorkerPollMilliseconds = 250;
         private const int DumpStateIdle = 0;
@@ -50,12 +53,6 @@ namespace Hecton8.Tools.ToolKinematics
         [SerializeField] private float collisionSpring = 0.42f;
         [SerializeField] private float beamRadius = 0.018f;
 
-#if UNITY_EDITOR
-        private readonly byte[] _csvIoBuffer = new byte[CsvBufferBytes]; // COLD ALLOC: byte[4096] - background CSV read buffer - owner: ToolKinematicsRuntime
-        private readonly byte[] _csvPendingBuffer = new byte[CsvBufferBytes]; // COLD ALLOC: byte[4096] - worker/main handoff buffer - owner: ToolKinematicsRuntime
-        private readonly byte[] _csvConsumeBuffer = new byte[CsvBufferBytes]; // COLD ALLOC: byte[4096] - main-thread parse buffer - owner: ToolKinematicsRuntime
-        private readonly object _csvGate = new object(); // COLD ALLOC: object[1] - background-to-main CSV handoff lock - owner: ToolKinematicsRuntime
-#endif
         private readonly ToolKinematicsTelemetryEntry[] _blackBoxDumpEntries = new ToolKinematicsTelemetryEntry[MaxBlackBoxDumpEntries]; // COLD ALLOC: ToolKinematicsTelemetryEntry[2400] - fault snapshot handoff buffer - owner: ToolKinematicsRuntime
 
         private IDataVault _dataVault;
@@ -77,14 +74,8 @@ namespace Hecton8.Tools.ToolKinematics
 
         private JobHandle _pendingHandle;
 #if UNITY_EDITOR
-        private Thread _csvThread;
         private string _equipmentStatsPath;
-        private long _equipmentStatsStampUtcTicks;
-        private int _csvThreadRun;
-        private int _csvPendingBytes;
-        private int _csvPendingSequence;
-        private int _csvConsumedSequence;
-        private int _csvThreadFaultCode;
+        private int _csvReadFaultCode;
 #endif
         private AutoResetEvent _blackBoxDumpSignal;
         private Thread _blackBoxDumpThread;
@@ -103,7 +94,6 @@ namespace Hecton8.Tools.ToolKinematics
         private bool _frameScheduled;
         private bool _fixedRegistered;
         private bool _postFixedRegistered;
-        private bool _slowRegistered;
         private bool _registeredHotSwap;
         private bool _pendingDataVaultRebind;
         private bool _abiValid;
@@ -157,12 +147,8 @@ namespace Hecton8.Tools.ToolKinematics
         {
             CompletePendingFrameForTeardown();
             StopBlackBoxDumpWorker();
-#if UNITY_EDITOR
-            StopCsvWatcher();
-#endif
             TryUnregisterFixed();
             TryUnregisterPostFixed();
-            TryUnregisterSlow();
             TryUnregisterHotSwap();
             ReleaseVaultHandles();
             ClearHandles();
@@ -173,9 +159,6 @@ namespace Hecton8.Tools.ToolKinematics
             CompletePendingFrameForTeardown();
             StopBlackBoxDumpWorker();
             TryUnregisterHotSwap();
-#if UNITY_EDITOR
-            StopCsvWatcher();
-#endif
             ReleaseVaultHandles();
             ClearHandles();
         }
@@ -249,20 +232,6 @@ namespace Hecton8.Tools.ToolKinematics
         {
             TryFinalizePendingFrameNoWait();
             ApplyPendingDataVaultRebindIfIdle();
-        }
-
-        public void SlowTick()
-        {
-            if (!_abiValid)
-                return;
-
-#if UNITY_EDITOR
-            TryConsumeEquipmentStatsCsv();
-#endif
-            if (!TryResolveTuning(out NativeArray<ToolKinematicsTuningDTO> tuning))
-                return;
-
-            WriteTuning(tuning);
         }
 
         public bool TryReadState(int index, out ToolStateDTO state)
@@ -700,7 +669,7 @@ namespace Hecton8.Tools.ToolKinematics
             }
         }
 
-        private bool TryWriteQueuedBlackBoxDump()
+        private unsafe bool TryWriteQueuedBlackBoxDump()
         {
             string dumpPath = _blackBoxDumpPath;
             if (string.IsNullOrEmpty(dumpPath))
@@ -710,41 +679,77 @@ namespace Hecton8.Tools.ToolKinematics
             if (!string.IsNullOrEmpty(logDirectory))
                 Directory.CreateDirectory(logDirectory);
 
-            using FileStream stream = new FileStream(dumpPath, FileMode.Create, FileAccess.Write, FileShare.Read, 4096, FileOptions.WriteThrough);
-            using BinaryWriter writer = new BinaryWriter(stream);
-            writer.Write(0x544B4242u);
-            writer.Write(_blackBoxDumpFrameIndex);
-            writer.Write(_blackBoxDumpToolCapacity);
-            writer.Write(_blackBoxDumpTelemetryCursor);
             int max = math.min(Volatile.Read(ref _blackBoxDumpEntryCount), MaxBlackBoxDumpEntries);
-            writer.Write(max);
-            for (int i = 0; i < max; i++)
-                WriteTelemetryEntry(writer, _blackBoxDumpEntries[i]);
+            int entrySize = UnsafeUtility.SizeOf<ToolKinematicsTelemetryEntry>();
+            if (entrySize != BlackBoxDumpEntryBytes || max <= 0)
+                return false;
 
-            return true;
+            int totalBytes = BlackBoxDumpHeaderBytes + max * entrySize;
+            NativeArray<byte> dumpBytes = new NativeArray<byte>(
+                totalBytes,
+                Allocator.Temp,
+                NativeArrayOptions.UninitializedMemory);
+            try
+            {
+                byte* destination = (byte*)NativeArrayUnsafeUtility.GetUnsafePtr(dumpBytes);
+                int cursor = 0;
+                WriteUInt32LittleEndian(destination, ref cursor, BlackBoxDumpMagic);
+                WriteUInt32LittleEndian(destination, ref cursor, _blackBoxDumpFrameIndex);
+                WriteInt32LittleEndian(destination, ref cursor, _blackBoxDumpToolCapacity);
+                WriteInt32LittleEndian(destination, ref cursor, _blackBoxDumpTelemetryCursor);
+                WriteInt32LittleEndian(destination, ref cursor, max);
+                for (int i = 0; i < max; i++)
+                    WriteTelemetryEntry(destination, ref cursor, in _blackBoxDumpEntries[i]);
+
+                return cursor == totalBytes &&
+                       Hecton8.SaveSystem.AsyncWriteManager.WriteAll(dumpPath, destination, totalBytes, out _);
+            }
+            finally
+            {
+                if (dumpBytes.IsCreated)
+                    dumpBytes.Dispose();
+            }
         }
 
-        private static void WriteTelemetryEntry(BinaryWriter writer, in ToolKinematicsTelemetryEntry entry)
+        private static unsafe void WriteTelemetryEntry(byte* destination, ref int cursor, in ToolKinematicsTelemetryEntry entry)
         {
-            writer.Write(entry.FrameIndex);
-            writer.Write(entry.ToolHash);
-            writer.Write(entry.ToolHeatLevel);
-            writer.Write(entry.EnergyRemaining);
-            writer.Write(entry.HitDistance);
-            writer.Write(entry.RaymarchStepCount);
-            writer.Write(entry.IkComputeTimeMicroseconds);
-            writer.Write(entry.Flags);
-            WriteFloat3(writer, entry.ToolLocalPosition);
-            WriteFloat3(writer, entry.HitPoint);
-            writer.Write(entry.MaterialHash);
-            writer.Write(entry._pad0);
+            WriteUInt32LittleEndian(destination, ref cursor, entry.FrameIndex);
+            WriteUInt32LittleEndian(destination, ref cursor, entry.ToolHash);
+            WriteFloatLittleEndian(destination, ref cursor, entry.ToolHeatLevel);
+            WriteFloatLittleEndian(destination, ref cursor, entry.EnergyRemaining);
+            WriteFloatLittleEndian(destination, ref cursor, entry.HitDistance);
+            WriteInt32LittleEndian(destination, ref cursor, entry.RaymarchStepCount);
+            WriteFloatLittleEndian(destination, ref cursor, entry.IkComputeTimeMicroseconds);
+            WriteUInt32LittleEndian(destination, ref cursor, entry.Flags);
+            WriteFloat3LittleEndian(destination, ref cursor, entry.ToolLocalPosition);
+            WriteFloat3LittleEndian(destination, ref cursor, entry.HitPoint);
+            WriteUInt32LittleEndian(destination, ref cursor, entry.MaterialHash);
+            WriteUInt32LittleEndian(destination, ref cursor, entry._pad0);
         }
 
-        private static void WriteFloat3(BinaryWriter writer, float3 value)
+        private static unsafe void WriteFloat3LittleEndian(byte* destination, ref int cursor, float3 value)
         {
-            writer.Write(value.x);
-            writer.Write(value.y);
-            writer.Write(value.z);
+            WriteFloatLittleEndian(destination, ref cursor, value.x);
+            WriteFloatLittleEndian(destination, ref cursor, value.y);
+            WriteFloatLittleEndian(destination, ref cursor, value.z);
+        }
+
+        private static unsafe void WriteFloatLittleEndian(byte* destination, ref int cursor, float value)
+        {
+            WriteUInt32LittleEndian(destination, ref cursor, math.asuint(value));
+        }
+
+        private static unsafe void WriteInt32LittleEndian(byte* destination, ref int cursor, int value)
+        {
+            WriteUInt32LittleEndian(destination, ref cursor, unchecked((uint)value));
+        }
+
+        private static unsafe void WriteUInt32LittleEndian(byte* destination, ref int cursor, uint value)
+        {
+            destination[cursor++] = (byte)value;
+            destination[cursor++] = (byte)(value >> 8);
+            destination[cursor++] = (byte)(value >> 16);
+            destination[cursor++] = (byte)(value >> 24);
         }
 
         private bool TryResolveAllBuffers(bool allowCreate, out ToolKinematicsBufferSet buffers)
@@ -808,16 +813,15 @@ namespace Hecton8.Tools.ToolKinematics
             if (!TryResolveAllBuffers(true, out ToolKinematicsBufferSet buffers))
                 return false;
 
+#if UNITY_EDITOR
+            TryApplyEquipmentStatsCsvCold();
+#endif
             WriteTuning(buffers.Tuning);
             SeedEmergencyMockTools(buffers.States, buffers.RecoilStates);
             EnsureSignalLanesReady();
             EnsureBlackBoxDumpWorkerCold();
-#if UNITY_EDITOR
-            StartCsvWatcher();
-#endif
             TryRegisterFixed();
             TryRegisterPostFixed();
-            TryRegisterSlow();
             return true;
         }
 
@@ -872,12 +876,10 @@ namespace Hecton8.Tools.ToolKinematics
                 case GlobalRegistryServiceSlot.Dispatcher:
                     _fixedRegistered = false;
                     _postFixedRegistered = false;
-                    _slowRegistered = false;
                     if (currentService != null && isActiveAndEnabled)
                     {
                         TryRegisterFixed();
                         TryRegisterPostFixed();
-                        TryRegisterSlow();
                     }
 
                     break;
@@ -944,15 +946,19 @@ namespace Hecton8.Tools.ToolKinematics
                 return;
 
 #if UNITY_EDITOR
-            uint csvFaultFlag = Volatile.Read(ref _csvThreadFaultCode) != 0 ? (uint)ToolKinematicsFlags.CsvIoFault : 0u;
+            uint csvFaultFlag = Volatile.Read(ref _csvReadFaultCode) != 0 ? (uint)ToolKinematicsFlags.CsvIoFault : 0u;
 #else
             const uint csvFaultFlag = 0u;
 #endif
             ToolKinematicsTuningDTO current = tuning[0];
             bool existingValid = current.LaserRange > 0.0001f && current.MaxHeat > 0.0001f;
+            uint desiredFlags = (current.Flags & ~(uint)ToolKinematicsFlags.CsvIoFault) | csvFaultFlag;
             if (Volatile.Read(ref _tuningDirty) == 0 && existingValid)
             {
-                current.Flags = (current.Flags & ~(uint)ToolKinematicsFlags.CsvIoFault) | csvFaultFlag;
+                if (current.Flags == desiredFlags && current._pad0 == 0u)
+                    return;
+
+                current.Flags = desiredFlags;
                 current._pad0 = 0u;
                 tuning[0] = current;
                 return;
@@ -1089,124 +1095,47 @@ namespace Hecton8.Tools.ToolKinematics
         }
 
 #if UNITY_EDITOR
-        private void StartCsvWatcher()
+        private void TryApplyEquipmentStatsCsvCold()
         {
-            if (string.IsNullOrEmpty(_equipmentStatsPath))
+            string path = _equipmentStatsPath;
+            if (string.IsNullOrEmpty(path))
                 return;
 
-            if (_csvThread != null)
-            {
-                if (_csvThread.IsAlive)
-                    return;
+            if (!Hecton8.SaveSystem.AsyncWriteManager.TryGetFileLength(path, out long fileLength, out _))
+                return;
 
-                _csvThread = null;
-            }
+            long clampedLength = fileLength > CsvBufferBytes ? CsvBufferBytes : fileLength;
+            if (clampedLength <= 0L)
+                return;
 
-            Volatile.Write(ref _csvThreadRun, 1);
-            _csvThread = new Thread(CsvWatcherLoop)
-            {
-                IsBackground = true,
-                Name = "SHINOBU_22_ToolCsvWatcher"
-            };
-            _csvThread.Start();
-        }
-
-        private void StopCsvWatcher()
-        {
-            Volatile.Write(ref _csvThreadRun, 0);
-            Thread thread = _csvThread;
-            if (thread != null && thread.IsAlive)
-            {
-                thread.Join(250);
-                if (thread.IsAlive)
-                    return;
-            }
-
-            _csvThread = null;
-        }
-
-        private void CsvWatcherLoop()
-        {
-            while (Volatile.Read(ref _csvThreadRun) != 0)
-            {
-                TryReadEquipmentStatsCsvOnWorker();
-                Thread.Sleep(250);
-            }
-        }
-
-        private void TryReadEquipmentStatsCsvOnWorker()
-        {
+            int bytesRead = (int)clampedLength;
+            NativeArray<byte> bytes = new NativeArray<byte>(
+                bytesRead,
+                Allocator.Temp,
+                NativeArrayOptions.UninitializedMemory);
             try
             {
-                string path = _equipmentStatsPath;
-                if (string.IsNullOrEmpty(path) || !File.Exists(path))
-                    return;
-
-                long stamp = File.GetLastWriteTimeUtc(path).Ticks;
-                if (stamp == _equipmentStatsStampUtcTicks)
-                    return;
-
-                int bytesRead;
-                using (FileStream stream = new FileStream(path, FileMode.Open, FileAccess.Read, FileShare.ReadWrite))
+                if (!Hecton8.SaveSystem.AsyncWriteManager.TryCopyFileRangeToNativeArray(path, 0L, bytes, bytesRead, out _))
                 {
-                    bytesRead = stream.Read(_csvIoBuffer, 0, _csvIoBuffer.Length);
+                    Interlocked.Exchange(ref _csvReadFaultCode, 1);
+                    return;
                 }
 
-                if (bytesRead <= 0)
-                    return;
-
-                lock (_csvGate)
-                {
-                    for (int i = 0; i < bytesRead; i++)
-                        _csvPendingBuffer[i] = _csvIoBuffer[i];
-
-                    _csvPendingBytes = bytesRead;
-                    _equipmentStatsStampUtcTicks = stamp;
-                    _csvPendingSequence++;
-                }
-            }
-            catch (IOException)
-            {
-                Interlocked.Exchange(ref _csvThreadFaultCode, 1);
-            }
-            catch (UnauthorizedAccessException)
-            {
-                Interlocked.Exchange(ref _csvThreadFaultCode, 2);
+                ParseEquipmentStatsCsv(bytes, bytesRead);
+                Interlocked.Exchange(ref _csvReadFaultCode, 0);
             }
             catch (Exception)
             {
-                Interlocked.Exchange(ref _csvThreadFaultCode, 3);
+                Interlocked.Exchange(ref _csvReadFaultCode, 3);
             }
-        }
-
-        private bool TryConsumeEquipmentStatsCsv()
-        {
-            int pendingSequence = Volatile.Read(ref _csvPendingSequence);
-            if (pendingSequence == _csvConsumedSequence)
-                return false;
-
-            int bytesRead;
-            lock (_csvGate)
+            finally
             {
-                pendingSequence = _csvPendingSequence;
-                if (pendingSequence == _csvConsumedSequence)
-                    return false;
-
-                bytesRead = math.clamp(_csvPendingBytes, 0, CsvBufferBytes);
-                for (int i = 0; i < bytesRead; i++)
-                    _csvConsumeBuffer[i] = _csvPendingBuffer[i];
-
-                _csvConsumedSequence = pendingSequence;
+                if (bytes.IsCreated)
+                    bytes.Dispose();
             }
-
-            if (bytesRead <= 0)
-                return false;
-
-            ParseEquipmentStatsCsv(_csvConsumeBuffer, bytesRead);
-            return true;
         }
 
-        private void ParseEquipmentStatsCsv(byte[] bytes, int length)
+        private void ParseEquipmentStatsCsv(NativeArray<byte> bytes, int length)
         {
             int lineStart = 0;
             for (int i = 0; i <= length; i++)
@@ -1222,7 +1151,7 @@ namespace Hecton8.Tools.ToolKinematics
             }
         }
 
-        private void ParseEquipmentStatsLine(byte[] bytes, int start, int end)
+        private void ParseEquipmentStatsLine(NativeArray<byte> bytes, int start, int end)
         {
             if (end <= start)
                 return;
@@ -1298,7 +1227,7 @@ namespace Hecton8.Tools.ToolKinematics
             }
         }
 
-        private static uint HashCsvKey(byte[] bytes, int start, int end)
+        private static uint HashCsvKey(NativeArray<byte> bytes, int start, int end)
         {
             uint hash = 2166136261u;
             for (int i = start; i < end; i++)
@@ -1317,7 +1246,7 @@ namespace Hecton8.Tools.ToolKinematics
             return hash;
         }
 
-        private static bool TryParseFloatAscii(byte[] bytes, int start, int end, out float value)
+        private static bool TryParseFloatAscii(NativeArray<byte> bytes, int start, int end, out float value)
         {
             value = 0f;
             while (start < end && (bytes[start] == (byte)' ' || bytes[start] == (byte)'\t'))
@@ -1380,14 +1309,6 @@ namespace Hecton8.Tools.ToolKinematics
             _postFixedRegistered = GlobalRegistry.TryRegisterPostFixedTickable(this, PriorityLayer.Player);
         }
 
-        private void TryRegisterSlow()
-        {
-            if (_slowRegistered || !Application.isPlaying || GlobalRegistry.Dispatcher == null)
-                return;
-
-            _slowRegistered = GlobalRegistry.TryRegisterSlowTickable(this, PriorityLayer.Player);
-        }
-
         private void TryRegisterHotSwap()
         {
             if (_registeredHotSwap || !Application.isPlaying)
@@ -1421,15 +1342,6 @@ namespace Hecton8.Tools.ToolKinematics
 
             GlobalRegistry.UnregisterPostFixedTickable(this, PriorityLayer.Player);
             _postFixedRegistered = false;
-        }
-
-        private void TryUnregisterSlow()
-        {
-            if (!_slowRegistered)
-                return;
-
-            GlobalRegistry.UnregisterSlowTickable(this, PriorityLayer.Player);
-            _slowRegistered = false;
         }
 
         private static bool ValidateAbiLayout()

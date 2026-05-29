@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.Rendering;
 using UnityEngine.Rendering.Universal;
@@ -23,6 +24,8 @@ namespace Hecton8.Core
         private static TextureRequirementPolicy s_textureRequirementPolicy;
         private static readonly int[] s_cameraInstanceIdCache = new int[CameraDataCacheCapacity];
         private static readonly UniversalAdditionalCameraData[] s_cameraDataCache = new UniversalAdditionalCameraData[CameraDataCacheCapacity];
+        private static readonly List<GameObject> s_sceneRootScratch = new List<GameObject>(64); // COLD ALLOC: List<GameObject>[64] - scene camera prewarm roots - owner: HectonUrpTextureRequirementsGuard
+        private static readonly List<Camera> s_cameraScratch = new List<Camera>(32); // COLD ALLOC: List<Camera>[32] - scene camera prewarm cameras - owner: HectonUrpTextureRequirementsGuard
         private static int s_cameraDataCacheCount;
         private static int s_cameraDataCacheCursor;
 
@@ -34,6 +37,7 @@ namespace Hecton8.Core
         {
             ResetCameraDataCache();
             ValidateActiveUrpRequirements();
+            PrewarmLoadedSceneCameraData();
             SceneManager.sceneLoaded -= HandleSceneLoaded;
             SceneManager.sceneLoaded += HandleSceneLoaded;
             RenderPipelineManager.beginCameraRendering -= HandleBeginCameraRendering;
@@ -44,6 +48,7 @@ namespace Hecton8.Core
         {
             ResetCameraDataCache();
             ValidateActiveUrpRequirements();
+            PrewarmSceneCameraData(scene);
         }
 
         private static void HandleBeginCameraRendering(ScriptableRenderContext context, Camera camera)
@@ -137,7 +142,47 @@ namespace Hecton8.Core
                 return cameraData != null;
             }
 
-            if (!camera.TryGetComponent(out cameraData) || cameraData == null)
+            cameraData = null;
+            return false;
+        }
+
+        private static void PrewarmLoadedSceneCameraData()
+        {
+            int sceneCount = SceneManager.sceneCount;
+            for (int sceneIndex = 0; sceneIndex < sceneCount; sceneIndex++)
+                PrewarmSceneCameraData(SceneManager.GetSceneAt(sceneIndex));
+        }
+
+        private static void PrewarmSceneCameraData(Scene scene)
+        {
+            if (!scene.IsValid() || !scene.isLoaded)
+                return;
+
+            s_sceneRootScratch.Clear();
+            scene.GetRootGameObjects(s_sceneRootScratch);
+            for (int rootIndex = 0; rootIndex < s_sceneRootScratch.Count; rootIndex++)
+            {
+                GameObject root = s_sceneRootScratch[rootIndex];
+                if (root == null)
+                    continue;
+
+                s_cameraScratch.Clear();
+                root.GetComponentsInChildren(true, s_cameraScratch);
+                for (int cameraIndex = 0; cameraIndex < s_cameraScratch.Count; cameraIndex++)
+                    TryCacheCameraDataCold(s_cameraScratch[cameraIndex]);
+            }
+
+            s_cameraScratch.Clear();
+            s_sceneRootScratch.Clear();
+        }
+
+        private static bool TryCacheCameraDataCold(Camera camera)
+        {
+            if (camera == null)
+                return false;
+
+            int instanceId = unchecked((int)UnityEngine.EntityId.ToULong(camera.GetEntityId()));
+            if (!camera.TryGetComponent(out UniversalAdditionalCameraData cameraData) || cameraData == null)
             {
                 StoreCameraDataCacheEntry(instanceId, null);
                 return false;
@@ -149,6 +194,15 @@ namespace Hecton8.Core
 
         private static void StoreCameraDataCacheEntry(int instanceId, UniversalAdditionalCameraData cameraData)
         {
+            for (int index = 0; index < s_cameraDataCacheCount; index++)
+            {
+                if (s_cameraInstanceIdCache[index] != instanceId)
+                    continue;
+
+                s_cameraDataCache[index] = cameraData;
+                return;
+            }
+
             if (s_cameraDataCacheCount < CameraDataCacheCapacity)
             {
                 s_cameraInstanceIdCache[s_cameraDataCacheCount] = instanceId;

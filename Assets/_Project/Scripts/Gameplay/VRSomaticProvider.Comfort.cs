@@ -295,16 +295,30 @@ namespace Hecton8.Gameplay
         public static int ParseComfortProfilesCsv(
             ReadOnlySpan<byte> csv,
             NativeArray<VrComfortProfileDTO> profiles,
+            Span<uint> profileHashes)
+        {
+            return ParseComfortProfilesCsv(csv, profiles, default(NativeArray<VrComfortProfileLookupSlotDTO>), profileHashes);
+        }
+
+        public static int ParseComfortProfilesCsv(
+            ReadOnlySpan<byte> csv,
+            NativeArray<VrComfortProfileDTO> profiles,
             NativeArray<VrComfortProfileLookupSlotDTO> lookup)
+        {
+            return ParseComfortProfilesCsv(csv, profiles, lookup, default);
+        }
+
+        private static int ParseComfortProfilesCsv(
+            ReadOnlySpan<byte> csv,
+            NativeArray<VrComfortProfileDTO> profiles,
+            NativeArray<VrComfortProfileLookupSlotDTO> lookup,
+            Span<uint> profileHashes)
         {
             if (!profiles.IsCreated || profiles.Length == 0)
                 return 0;
 
-            if (lookup.IsCreated)
-            {
-                for (int i = 0; i < lookup.Length; i++)
-                    lookup[i] = default;
-            }
+            if (lookup.IsCreated && lookup.Length > 0)
+                ClearComfortProfileLookup(lookup);
 
             int count = 0;
             int rowStart = 0;
@@ -319,6 +333,8 @@ namespace Hecton8.Gameplay
                 {
                     profile = SanitizeProfile(profile);
                     profiles[count] = profile;
+                    if (count < profileHashes.Length)
+                        profileHashes[count] = profile.ProfileHash;
                     if (lookup.IsCreated && lookup.Length > 0)
                         InsertProfileLookup(lookup, profile.ProfileHash, count);
                     count++;
@@ -330,6 +346,12 @@ namespace Hecton8.Gameplay
             }
 
             return count;
+        }
+
+        private static unsafe void ClearComfortProfileLookup(NativeArray<VrComfortProfileLookupSlotDTO> lookup)
+        {
+            void* lookupPtr = NativeArrayUnsafeUtility.GetUnsafePtr(lookup);
+            UnsafeUtility.MemClear(lookupPtr, (long)lookup.Length * UnsafeUtility.SizeOf<VrComfortProfileLookupSlotDTO>());
         }
 #endif
 

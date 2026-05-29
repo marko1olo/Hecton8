@@ -123,7 +123,7 @@ namespace Hecton8.World.VoxelSurfaceNets
             if (_uploadInFlight)
                 return false;
 
-            if (!VoxelSurfaceNetsVault.TryAcquireStatesWriteLock(in buffers, out NativeArray<ChunkMeshingStateDTO> states))
+            if (!VoxelSurfaceNetsVault.TryResolveStatesOwnerView(in buffers, out NativeArray<ChunkMeshingStateDTO> states))
                 return false;
 
             VoxelSurfaceNetsGpuUploadSourceLease sourceLease = default;
@@ -255,8 +255,6 @@ namespace Hecton8.World.VoxelSurfaceNets
             {
                 if (sourceLeaseHeld)
                     VoxelSurfaceNetsVault.ReleaseGpuUploadSourceLease(ref sourceLease);
-
-                VoxelSurfaceNetsVault.ReleaseStatesWriteLock(in buffers);
             }
         }
 
@@ -290,28 +288,21 @@ namespace Hecton8.World.VoxelSurfaceNets
             }
 
             _activeSet = _pendingUploadSet;
-            if (!VoxelSurfaceNetsVault.TryAcquireStatesWriteLock(in buffers, out NativeArray<ChunkMeshingStateDTO> states))
+            if (!VoxelSurfaceNetsVault.TryResolveStatesOwnerView(in buffers, out NativeArray<ChunkMeshingStateDTO> states))
             {
                 ClearPendingUploadState();
                 return false;
             }
 
-            try
+            if (states.IsCreated && (uint)_pendingChunkIndex < (uint)states.Length)
             {
-                if (states.IsCreated && (uint)_pendingChunkIndex < (uint)states.Length)
+                ChunkMeshingStateDTO state = states[_pendingChunkIndex];
+                if (state.ChunkHash == _pendingChunkHash && state.Version == _pendingVersion)
                 {
-                    ChunkMeshingStateDTO state = states[_pendingChunkIndex];
-                    if (state.ChunkHash == _pendingChunkHash && state.Version == _pendingVersion)
-                    {
-                        state.Stage = (byte)VoxelMeshingStage.Uploaded;
-                        state.Flags = (byte)(state.Flags & ~VoxelMeshingFlags.Dirty);
-                        states[_pendingChunkIndex] = state;
-                    }
+                    state.Stage = (byte)VoxelMeshingStage.Uploaded;
+                    state.Flags = (byte)(state.Flags & ~VoxelMeshingFlags.Dirty);
+                    states[_pendingChunkIndex] = state;
                 }
-            }
-            finally
-            {
-                VoxelSurfaceNetsVault.ReleaseStatesWriteLock(in buffers);
             }
 
             uploadState.VertexBuffer = _pendingVertexBuffer;
@@ -420,26 +411,19 @@ namespace Hecton8.World.VoxelSurfaceNets
 
         private void MarkPendingChunkFault(VoxelSurfaceNetsVaultBuffers buffers, byte flags)
         {
-            if (!VoxelSurfaceNetsVault.TryAcquireStatesWriteLock(in buffers, out NativeArray<ChunkMeshingStateDTO> states))
+            if (!VoxelSurfaceNetsVault.TryResolveStatesOwnerView(in buffers, out NativeArray<ChunkMeshingStateDTO> states))
                 return;
 
-            try
-            {
-                if (!states.IsCreated || (uint)_pendingChunkIndex >= (uint)states.Length)
-                    return;
+            if (!states.IsCreated || (uint)_pendingChunkIndex >= (uint)states.Length)
+                return;
 
-                ChunkMeshingStateDTO state = states[_pendingChunkIndex];
-                if (state.ChunkHash != _pendingChunkHash || state.Version != _pendingVersion)
-                    return;
+            ChunkMeshingStateDTO state = states[_pendingChunkIndex];
+            if (state.ChunkHash != _pendingChunkHash || state.Version != _pendingVersion)
+                return;
 
-                state.Stage = (byte)VoxelMeshingStage.Fault;
-                state.Flags = (byte)(state.Flags | flags);
-                states[_pendingChunkIndex] = state;
-            }
-            finally
-            {
-                VoxelSurfaceNetsVault.ReleaseStatesWriteLock(in buffers);
-            }
+            state.Stage = (byte)VoxelMeshingStage.Fault;
+            state.Flags = (byte)(state.Flags | flags);
+            states[_pendingChunkIndex] = state;
         }
 
         private void UnlockPendingUploadBuffers()

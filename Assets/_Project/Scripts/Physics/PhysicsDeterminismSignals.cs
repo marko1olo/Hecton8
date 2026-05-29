@@ -88,13 +88,13 @@ namespace Hecton8.Physics
             return CoreDeterminismSignals.TryPublish(in signal);
         }
 
-        [Obsolete("Use TryPublishKccVelocity(in AbsoluteUniversePosition,float3,uint,uint,byte) so overflow/drop semantics stay visible at the producer.", true)]
-        public static void PublishKccVelocity(in AbsoluteUniversePosition bodyAup, float3 velocity, uint frame, uint sourceId, byte flags = 0)
+        [Obsolete("Use TryPublishKccVelocity(in AbsoluteUniversePosition,float3,uint,uint,byte,byte) so overflow/drop semantics stay visible at the producer.", true)]
+        public static void PublishKccVelocity(in AbsoluteUniversePosition bodyAup, float3 velocity, uint frame, uint sourceId, byte flags = 0, byte qualityPressureQ8 = 0)
         {
-            TryPublishKccVelocity(in bodyAup, velocity, frame, sourceId, flags);
+            TryPublishKccVelocity(in bodyAup, velocity, frame, sourceId, flags, qualityPressureQ8);
         }
 
-        public static bool TryPublishKccVelocity(in AbsoluteUniversePosition bodyAup, float3 velocity, uint frame, uint sourceId, byte flags = 0)
+        public static bool TryPublishKccVelocity(in AbsoluteUniversePosition bodyAup, float3 velocity, uint frame, uint sourceId, byte flags = 0, byte qualityPressureQ8 = 0)
         {
             KccVelocitySignal signal = default;
             signal.BodyAup = bodyAup;
@@ -103,6 +103,7 @@ namespace Hecton8.Physics
             signal.Frame = frame;
             signal.SourceId = sourceId;
             signal.Flags = flags;
+            signal.QualityPressureQ8 = qualityPressureQ8;
             return CoreDeterminismSignals.TryPublishKccVelocity(in signal);
         }
 

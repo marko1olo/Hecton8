@@ -180,21 +180,22 @@ namespace Hecton8.Physics
 
     public unsafe static class HarpoonTensionSolver328
     {
-        private const int ScheduledLockTetherStates = 1 << 0;
-        private const int ScheduledLockStressStates = 1 << 1;
-        private const int ScheduledLockTetherNodes = 1 << 2;
-        private const int ScheduledLockPreviousNodes = 1 << 3;
-        private const int ScheduledLockConstraints = 1 << 4;
-        private const int ScheduledLockForcePackets = 1 << 5;
-        private const int ScheduledLockPhysicsEvents = 1 << 6;
-        private const int ScheduledLockSplineVertices = 1 << 7;
-        private const int ScheduledLockTelemetryRing = 1 << 8;
-        private const int ScheduledLockTelemetryHead = 1 << 9;
-        private const int ScheduledLockTuning = 1 << 10;
-        private const int ScheduledLockFaultFlags = 1 << 11;
+        private static readonly ulong ScheduledMockMutationGuardMask =
+            HarpoonMutationGuardBit(HarpoonTensionSolver328BufferIds.TetherStates) |
+            HarpoonMutationGuardBit(HarpoonTensionSolver328BufferIds.StressStates) |
+            HarpoonMutationGuardBit(HarpoonTensionSolver328BufferIds.TetherNodes) |
+            HarpoonMutationGuardBit(HarpoonTensionSolver328BufferIds.TetherPreviousNodes) |
+            HarpoonMutationGuardBit(HarpoonTensionSolver328BufferIds.TetherConstraints) |
+            HarpoonMutationGuardBit(HarpoonTensionSolver328BufferIds.ForcePackets) |
+            HarpoonMutationGuardBit(HarpoonTensionSolver328BufferIds.PhysicsEvents) |
+            HarpoonMutationGuardBit(HarpoonTensionSolver328BufferIds.SplineVertices) |
+            HarpoonMutationGuardBit(HarpoonTensionSolver328BufferIds.TelemetryRing) |
+            HarpoonMutationGuardBit(HarpoonTensionSolver328BufferIds.TelemetryHead) |
+            HarpoonMutationGuardBit(HarpoonTensionSolver328BufferIds.Tuning) |
+            HarpoonMutationGuardBit(HarpoonTensionSolver328BufferIds.FaultFlags);
 
         private static int s_x001DirectSignalPushDropCount_HarpoonTensionSolver328;
-        private static int _scheduledMockBufferLocks;
+        private static bool _scheduledMockGuardHeld;
 
 #if UNITY_EDITOR
         public static bool ValidateLayout()
@@ -321,7 +322,7 @@ namespace Hecton8.Physics
                 !bootstrap.IsCreated ||
                 bootstrap.Length <= 0)
             {
-                if (vault.IsAllocationLocked)
+                if (vault.IsAllocationLocked || vault.IsCompactionFenceActive)
                     return;
 
                 VaultGenerationHandle<int> bootstrapHandle = vault.EnsureGenerationHandle<int>(
@@ -341,8 +342,6 @@ namespace Hecton8.Physics
 
             if (IsMockBootstrapValid(vault, bootstrap))
                 return;
-            if (bootstrap.IsCreated && bootstrap.Length > 0)
-                bootstrap[0] = 0;
 
             if (!TryOpenOrAcquireVaultView(vault, HarpoonTensionSolver328BufferIds.TetherStates, HarpoonTensionSolver328Constants.MockTetherCount, NativeArrayOptions.UninitializedMemory, out NativeArray<TetherStateDTO> states) ||
                 !TryOpenOrAcquireVaultView(vault, HarpoonTensionSolver328BufferIds.StressStates, HarpoonTensionSolver328Constants.MockStressStateCapacity, NativeArrayOptions.UninitializedMemory, out NativeArray<TetherStressStateDTO> stressStates) ||
@@ -361,39 +360,35 @@ namespace Hecton8.Physics
                 return;
             }
 
-            JobHandle initHandle = new InitializeHarpoonTensionBuffersJob
-            {
-                ForcePackets = forcePackets,
-                StressStates = stressStates,
-                PhysicsEvents = physicsEvents,
-                SplineVertices = splineVertices,
-                TelemetryRing = telemetryRing,
-                TelemetryHead = telemetryHead,
-                Tuning = tuning,
-                MaterialProfiles = materialProfiles,
-                FaultFlags = faultFlags
-            }.Schedule();
+            if (!vault.TryAcquireMutationGuard(ScheduledMockMutationGuardMask))
+                return;
 
-            JobHandle mockHandle = new GenerateMockHarpoonTensionJob
+            try
             {
-                States = (TetherStateDTO*)NativeArrayUnsafeUtility.GetUnsafeBufferPointerWithoutChecks(states),
-                Nodes = (float3*)NativeArrayUnsafeUtility.GetUnsafeBufferPointerWithoutChecks(nodes),
-                PreviousNodes = (float3*)NativeArrayUnsafeUtility.GetUnsafeBufferPointerWithoutChecks(previousNodes),
-                Constraints = (TetherConstraintDTO*)NativeArrayUnsafeUtility.GetUnsafeBufferPointerWithoutChecks(constraints),
-                BootstrapState = bootstrap,
-                StateCount = states.Length,
-                NodeCount = nodes.Length,
-                ConstraintCount = constraints.Length,
-                NodesPerTether = HarpoonTensionSolver328Constants.MockNodesPerTether,
-                FrameIndex = frameIndex,
-                SimulationTime = frameIndex * 0.016666667f,
-                BaseAUP = new double3(100000.0, -420.0, 100000.0),
-                RestLengthMeters = HarpoonTensionSolver328Constants.DefaultRestLength,
-                PullSpeedMetersPerSecond = 100f,
-                GlobalQualityWeight = globalQualityWeight
-            }.Schedule(HarpoonTensionSolver328Constants.MockTetherCount, 1, initHandle);
+                InitializeHarpoonTensionBuffersDirect(
+                    forcePackets,
+                    stressStates,
+                    physicsEvents,
+                    splineVertices,
+                    telemetryRing,
+                    telemetryHead,
+                    tuning,
+                    materialProfiles,
+                    faultFlags);
 
-            DispatcherJobFence.TryComplete(ref mockHandle, forceComplete: true);
+                GenerateMockHarpoonTensionDirect(
+                    states,
+                    nodes,
+                    previousNodes,
+                    constraints,
+                    bootstrap,
+                    frameIndex,
+                    globalQualityWeight);
+            }
+            finally
+            {
+                vault.ReleaseMutationGuard(ScheduledMockMutationGuardMask);
+            }
         }
 
         private static bool IsMockBootstrapValid(IDataVault vault, NativeArray<int> bootstrap)
@@ -470,7 +465,7 @@ namespace Hecton8.Physics
             out HarpoonTensionSchedule328 schedule)
         {
             schedule = default;
-            if (!TryLockMockScheduleBuffers(vault))
+            if (!TryAcquireMockScheduleBufferGuard(vault))
                 return false;
 
             bool scheduled = false;
@@ -543,25 +538,12 @@ namespace Hecton8.Physics
 
         public static void ReleaseMockScheduleBufferPins(IDataVault vault)
         {
-            if (vault == null || _scheduledMockBufferLocks == 0)
-            {
-                _scheduledMockBufferLocks = 0;
+            if (!_scheduledMockGuardHeld)
                 return;
-            }
 
-            UnlockMockScheduleBuffer(vault, HarpoonTensionSolver328BufferIds.TetherStates, ScheduledLockTetherStates);
-            UnlockMockScheduleBuffer(vault, HarpoonTensionSolver328BufferIds.StressStates, ScheduledLockStressStates);
-            UnlockMockScheduleBuffer(vault, HarpoonTensionSolver328BufferIds.TetherNodes, ScheduledLockTetherNodes);
-            UnlockMockScheduleBuffer(vault, HarpoonTensionSolver328BufferIds.TetherPreviousNodes, ScheduledLockPreviousNodes);
-            UnlockMockScheduleBuffer(vault, HarpoonTensionSolver328BufferIds.TetherConstraints, ScheduledLockConstraints);
-            UnlockMockScheduleBuffer(vault, HarpoonTensionSolver328BufferIds.ForcePackets, ScheduledLockForcePackets);
-            UnlockMockScheduleBuffer(vault, HarpoonTensionSolver328BufferIds.PhysicsEvents, ScheduledLockPhysicsEvents);
-            UnlockMockScheduleBuffer(vault, HarpoonTensionSolver328BufferIds.SplineVertices, ScheduledLockSplineVertices);
-            UnlockMockScheduleBuffer(vault, HarpoonTensionSolver328BufferIds.TelemetryRing, ScheduledLockTelemetryRing);
-            UnlockMockScheduleBuffer(vault, HarpoonTensionSolver328BufferIds.TelemetryHead, ScheduledLockTelemetryHead);
-            UnlockMockScheduleBuffer(vault, HarpoonTensionSolver328BufferIds.Tuning, ScheduledLockTuning);
-            UnlockMockScheduleBuffer(vault, HarpoonTensionSolver328BufferIds.FaultFlags, ScheduledLockFaultFlags);
-            _scheduledMockBufferLocks = 0;
+            _scheduledMockGuardHeld = false;
+            if (vault != null)
+                vault.ReleaseMutationGuard(ScheduledMockMutationGuardMask);
         }
 
         public static bool TryHasMockBuffers(IDataVault vault)
@@ -962,7 +944,7 @@ namespace Hecton8.Physics
             builder.AppendLine("    <TASK id=\"02\" status=\"PASS\">Runtime cable presentation writes GPU spline vertices and introduces no LineRenderer authority.</TASK>");
             builder.AppendLine("    <TASK id=\"03\" status=\"PASS\">TetherStateDTO, tuning, and material rows use raw unmanaged fields, no hot-path properties.</TASK>");
             builder.AppendLine("    <TASK id=\"04\" status=\"PASS\">TryValidateLayout verifies TetherStateDTO size 64 and offsets 0/24/48/52/56/60.</TASK>");
-            builder.AppendLine("    <TASK id=\"05\" status=\"PASS\">GenerateMockHarpoonTensionJob injects deterministic AUP mock anchors and 100 m/s pull separation.</TASK>");
+            builder.AppendLine("    <TASK id=\"05\" status=\"PASS\">GenerateMockHarpoonTensionDirect seeds deterministic AUP mock anchors and 100 m/s pull separation without a bootstrap job fence.</TASK>");
             builder.AppendLine("    <TASK id=\"06\" status=\"PASS\">SimulateTetherNodesJob performs flat float3 Verlet integration with fixed SimulationTickDelta.</TASK>");
             builder.AppendLine("    <TASK id=\"07\" status=\"PASS\">SolveTetherConstraintsJob performs deterministic serial relaxation with guarded rsqrt and serialized fault recovery.</TASK>");
             builder.AppendLine("    <TASK id=\"08\" status=\"PASS\">BuildDearLieGpuSplineJob uploads sparse node/tangent/tension rows for shader Catmull-Rom smoothing.</TASK>");
@@ -1113,41 +1095,146 @@ namespace Hecton8.Physics
                    TryOpenExistingVaultView(vault, HarpoonTensionSolver328BufferIds.FaultFlags, out faultFlags);
         }
 
-        private static bool TryLockMockScheduleBuffers(IDataVault vault)
+        private static bool TryAcquireMockScheduleBufferGuard(IDataVault vault)
         {
-            if (vault == null || _scheduledMockBufferLocks != 0)
+            if (vault == null || _scheduledMockGuardHeld)
                 return false;
 
-            return TryLockMockScheduleBuffer(vault, HarpoonTensionSolver328BufferIds.TetherStates, ScheduledLockTetherStates) &&
-                   TryLockMockScheduleBuffer(vault, HarpoonTensionSolver328BufferIds.StressStates, ScheduledLockStressStates) &&
-                   TryLockMockScheduleBuffer(vault, HarpoonTensionSolver328BufferIds.TetherNodes, ScheduledLockTetherNodes) &&
-                   TryLockMockScheduleBuffer(vault, HarpoonTensionSolver328BufferIds.TetherPreviousNodes, ScheduledLockPreviousNodes) &&
-                   TryLockMockScheduleBuffer(vault, HarpoonTensionSolver328BufferIds.TetherConstraints, ScheduledLockConstraints) &&
-                   TryLockMockScheduleBuffer(vault, HarpoonTensionSolver328BufferIds.ForcePackets, ScheduledLockForcePackets) &&
-                   TryLockMockScheduleBuffer(vault, HarpoonTensionSolver328BufferIds.PhysicsEvents, ScheduledLockPhysicsEvents) &&
-                   TryLockMockScheduleBuffer(vault, HarpoonTensionSolver328BufferIds.SplineVertices, ScheduledLockSplineVertices) &&
-                   TryLockMockScheduleBuffer(vault, HarpoonTensionSolver328BufferIds.TelemetryRing, ScheduledLockTelemetryRing) &&
-                   TryLockMockScheduleBuffer(vault, HarpoonTensionSolver328BufferIds.TelemetryHead, ScheduledLockTelemetryHead) &&
-                   TryLockMockScheduleBuffer(vault, HarpoonTensionSolver328BufferIds.Tuning, ScheduledLockTuning) &&
-                   TryLockMockScheduleBuffer(vault, HarpoonTensionSolver328BufferIds.FaultFlags, ScheduledLockFaultFlags);
+            if (!vault.TryAcquireMutationGuard(ScheduledMockMutationGuardMask))
+                return false;
+
+            _scheduledMockGuardHeld = true;
+            return true;
         }
 
-        private static bool TryLockMockScheduleBuffer(IDataVault vault, BufferID bufferId, int bit)
+        private static ulong HarpoonMutationGuardBit(BufferID bufferId)
         {
-            if (vault != null && vault.TryLockBuffer(bufferId, SystemID.Physics))
+            return 1UL << (unchecked((int)(uint)(int)bufferId) & 63);
+        }
+
+        private static void InitializeHarpoonTensionBuffersDirect(
+            NativeArray<TetherForcePacketDTO> forcePackets,
+            NativeArray<TetherStressStateDTO> stressStates,
+            NativeArray<HarpoonTensionPhysicsEventMirrorDTO> physicsEvents,
+            NativeArray<TetherSplineVertexDTO> splineVertices,
+            NativeArray<TetherTelemetryEntry> telemetryRing,
+            NativeArray<int> telemetryHead,
+            NativeArray<HarpoonTensionTuningDTO> tuning,
+            NativeArray<TetherMaterialProfileDTO> materialProfiles,
+            NativeArray<uint> faultFlags)
+        {
+            for (int i = 0; i < forcePackets.Length; i++)
+                forcePackets[i] = default;
+            for (int i = 0; i < stressStates.Length; i++)
+                stressStates[i] = default;
+            for (int i = 0; i < physicsEvents.Length; i++)
+                physicsEvents[i] = default;
+            for (int i = 0; i < splineVertices.Length; i++)
+                splineVertices[i] = default;
+            for (int i = 0; i < telemetryRing.Length; i++)
+                telemetryRing[i] = default;
+            if (telemetryHead.IsCreated && telemetryHead.Length > 0)
+                telemetryHead[0] = 0;
+            if (faultFlags.IsCreated && faultFlags.Length > 0)
+                faultFlags[0] = 0u;
+            if (tuning.IsCreated && tuning.Length > 0)
+                tuning[0] = DefaultTuning();
+            for (int i = 0; i < materialProfiles.Length; i++)
+                materialProfiles[i] = DefaultProfile((uint)i);
+        }
+
+        private static void GenerateMockHarpoonTensionDirect(
+            NativeArray<TetherStateDTO> states,
+            NativeArray<float3> nodes,
+            NativeArray<float3> previousNodes,
+            NativeArray<TetherConstraintDTO> constraints,
+            NativeArray<int> bootstrap,
+            uint frameIndex,
+            float globalQualityWeight)
+        {
+            int stateCount = states.IsCreated ? states.Length : 0;
+            int nodeCount = nodes.IsCreated ? nodes.Length : 0;
+            int constraintCount = constraints.IsCreated ? constraints.Length : 0;
+            int nodesPerTether = HarpoonTensionSolver328Constants.MockNodesPerTether;
+            float q = math.saturate(math.isfinite(globalQualityWeight) ? globalQualityWeight : 1f);
+            float simulationTime = frameIndex * 0.016666667f;
+            double3 baseAup = new double3(100000.0, -420.0, 100000.0);
+            float restLengthMeters = HarpoonTensionSolver328Constants.DefaultRestLength;
+            float pullSpeedMetersPerSecond = 100f;
+
+            for (int index = 0; index < HarpoonTensionSolver328Constants.MockTetherCount; index++)
             {
-                _scheduledMockBufferLocks |= bit;
-                return true;
+                if ((uint)index >= (uint)stateCount)
+                    break;
+
+                int nodeOffset = index * nodesPerTether;
+                int constraintOffset = index * math.max(0, nodesPerTether - 1);
+                if (nodeOffset < 0 || nodeOffset + nodesPerTether > nodeCount)
+                    continue;
+
+                float oscillation = Sin7(simulationTime * (0.8f + q * 1.7f) + index * 0.43f) * 6f;
+                double spacing = 18.0 + index * 9.0;
+                double3 anchorA = baseAup + new double3(index * spacing, 0.0, 0.0);
+                double3 anchorB = anchorA + new double3(restLengthMeters + oscillation + simulationTime * pullSpeedMetersPerSecond, 0.0, 12.0 + index * 2.0);
+
+                states[index] = new TetherStateDTO
+                {
+                    AnchorA_AUP = anchorA,
+                    AnchorB_AUP = anchorB,
+                    RestLength = math.max(HarpoonTensionSolver328Constants.Epsilon, restLengthMeters),
+                    CurrentTension = 0f,
+                    Flags = TetherStateFlags328.Active | TetherStateFlags328.NetcodeFence | TetherStateFlags328.MockGenerated
+                };
+
+                double3 localDelta = anchorB - anchorA;
+                float3 localB = AupDeltaToLocalFloat3(localDelta);
+                for (int n = 0; n < nodesPerTether; n++)
+                {
+                    float u = nodesPerTether <= 1 ? 0f : n / (float)(nodesPerTether - 1);
+                    float sag = -Sin0PiApprox(u * math.PI) * math.lerp(0.35f, 2.5f, q);
+                    float3 p = localB * u + new float3(0f, sag, 0f);
+                    int nodeIndex = nodeOffset + n;
+                    nodes[nodeIndex] = p;
+                    previousNodes[nodeIndex] = p - new float3(pullSpeedMetersPerSecond * 0.016666667f * u, 0f, 0f);
+                }
+
+                float segmentRest = math.max(HarpoonTensionSolver328Constants.Epsilon, restLengthMeters / math.max(1, nodesPerTether - 1));
+                for (int c = 0; c < nodesPerTether - 1; c++)
+                {
+                    int constraintIndex = constraintOffset + c;
+                    if ((uint)constraintIndex >= (uint)constraintCount)
+                        break;
+
+                    constraints[constraintIndex] = new TetherConstraintDTO
+                    {
+                        NodeA = nodeOffset + c,
+                        NodeB = nodeOffset + c + 1,
+                        RestLength = segmentRest,
+                        Stiffness = 1f,
+                        Flags = TetherStateFlags328.Active,
+                        CableId = (uint)index
+                    };
+                }
             }
 
-            ReleaseMockScheduleBufferPins(vault);
-            return false;
+            if (bootstrap.IsCreated && bootstrap.Length > 0)
+                bootstrap[0] = HarpoonTensionSolver328Constants.BootstrapMagic;
         }
 
-        private static void UnlockMockScheduleBuffer(IDataVault vault, BufferID bufferId, int bit)
+        private static TetherMaterialProfileDTO DefaultProfile(uint index)
         {
-            if ((_scheduledMockBufferLocks & bit) != 0)
-                vault.TryUnlockBuffer(bufferId, SystemID.Physics);
+            return new TetherMaterialProfileDTO
+            {
+                MaterialHash = 0x54485452u + index,
+                TensionConstant = HarpoonTensionSolver328Constants.DefaultTensionConstant,
+                MaxTensileStrength = HarpoonTensionSolver328Constants.DefaultMaxTensileStrength,
+                LinearDensity = 1.2f,
+                Elasticity01 = 0.16f,
+                NodeGravityScale = 1f,
+                VisualRadiusMeters = 0.035f,
+                Flags = 1u,
+                VisualTuning = new float4(0.035f, 0.16f, 1.2f, 0f)
+            };
         }
 
         private static bool TryOpenOrAcquireVaultView<T>(
@@ -1170,7 +1257,7 @@ namespace Hecton8.Physics
                 return true;
             }
 
-            if (vault.IsAllocationLocked)
+            if (vault.IsAllocationLocked || vault.IsCompactionFenceActive)
                 return false;
 
             VaultGenerationHandle<T> acquired = vault.EnsureGenerationHandle<T>(bufferId, required, SystemID.Physics, options);
@@ -1397,158 +1484,6 @@ namespace Hecton8.Physics
             data[offset + 3] = (byte)(value >> 24);
         }
 #endif
-
-        [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Deterministic, FloatPrecision = FloatPrecision.Standard)]
-        private struct InitializeHarpoonTensionBuffersJob : IJob
-        {
-            [NoAlias] public NativeArray<TetherForcePacketDTO> ForcePackets;
-            [NoAlias] public NativeArray<TetherStressStateDTO> StressStates;
-            [NoAlias] public NativeArray<HarpoonTensionPhysicsEventMirrorDTO> PhysicsEvents;
-            [NoAlias] public NativeArray<TetherSplineVertexDTO> SplineVertices;
-            [NoAlias] public NativeArray<TetherTelemetryEntry> TelemetryRing;
-            [NoAlias] public NativeArray<int> TelemetryHead;
-            [NoAlias] public NativeArray<HarpoonTensionTuningDTO> Tuning;
-            [NoAlias] public NativeArray<TetherMaterialProfileDTO> MaterialProfiles;
-            [NoAlias] public NativeArray<uint> FaultFlags;
-
-            public void Execute()
-            {
-                for (int i = 0; i < ForcePackets.Length; i++)
-                    ForcePackets[i] = default;
-                for (int i = 0; i < StressStates.Length; i++)
-                    StressStates[i] = default;
-                for (int i = 0; i < PhysicsEvents.Length; i++)
-                    PhysicsEvents[i] = default;
-                for (int i = 0; i < SplineVertices.Length; i++)
-                    SplineVertices[i] = default;
-                for (int i = 0; i < TelemetryRing.Length; i++)
-                    TelemetryRing[i] = default;
-                if (TelemetryHead.IsCreated && TelemetryHead.Length > 0)
-                    TelemetryHead[0] = 0;
-                if (FaultFlags.IsCreated && FaultFlags.Length > 0)
-                    FaultFlags[0] = 0u;
-                if (Tuning.IsCreated && Tuning.Length > 0)
-                    Tuning[0] = DefaultTuningBurst();
-                for (int i = 0; i < MaterialProfiles.Length; i++)
-                    MaterialProfiles[i] = DefaultProfileBurst((uint)i);
-            }
-
-            private static HarpoonTensionTuningDTO DefaultTuningBurst()
-            {
-                return new HarpoonTensionTuningDTO
-                {
-                    NodeGravity = new float3(0f, -9.81f, 0f),
-                    VelocityDamping = 0.985f,
-                    TensionConstant = HarpoonTensionSolver328Constants.DefaultTensionConstant,
-                    MaxTensileStrength = HarpoonTensionSolver328Constants.DefaultMaxTensileStrength,
-                    ConstraintStiffness = 0.92f,
-                    MaxNodeStepMeters = 6f,
-                    GlobalQualityWeightOverride = -1f,
-                    NodesPerTether = HarpoonTensionSolver328Constants.MockNodesPerTether,
-                    MaxConstraintIterations = 8,
-                    Flags = 1u,
-                    VisualRadiusMeters = 0.035f,
-                    VisualCrystalDensity = 0.2f,
-                    SnapStressSeconds = HarpoonTensionSolver328Constants.DefaultSnapStressSeconds
-                };
-            }
-
-            private static TetherMaterialProfileDTO DefaultProfileBurst(uint index)
-            {
-                return new TetherMaterialProfileDTO
-                {
-                    MaterialHash = 0x54485452u + index,
-                    TensionConstant = HarpoonTensionSolver328Constants.DefaultTensionConstant,
-                    MaxTensileStrength = HarpoonTensionSolver328Constants.DefaultMaxTensileStrength,
-                    LinearDensity = 1.2f,
-                    Elasticity01 = 0.16f,
-                    NodeGravityScale = 1f,
-                    VisualRadiusMeters = 0.035f,
-                    Flags = 1u,
-                    VisualTuning = new float4(0.035f, 0.16f, 1.2f, 0f)
-                };
-            }
-        }
-
-        [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Deterministic, FloatPrecision = FloatPrecision.Standard)]
-        public struct GenerateMockHarpoonTensionJob : IJobParallelFor
-        {
-            [NoAlias, NativeDisableUnsafePtrRestriction] public TetherStateDTO* States;
-            [NoAlias, NativeDisableUnsafePtrRestriction] public float3* Nodes;
-            [NoAlias, NativeDisableUnsafePtrRestriction] public float3* PreviousNodes;
-            [NoAlias, NativeDisableUnsafePtrRestriction] public TetherConstraintDTO* Constraints;
-            [NoAlias] public NativeArray<int> BootstrapState;
-            public int StateCount;
-            public int NodeCount;
-            public int ConstraintCount;
-            public int NodesPerTether;
-            public uint FrameIndex;
-            public float SimulationTime;
-            public double3 BaseAUP;
-            public float RestLengthMeters;
-            public float PullSpeedMetersPerSecond;
-            public float GlobalQualityWeight;
-
-            public void Execute(int index)
-            {
-                if (States == null || Nodes == null || PreviousNodes == null || Constraints == null || (uint)index >= (uint)StateCount)
-                    return;
-
-                int nodesPerTether = math.clamp(NodesPerTether, 2, 64);
-                int nodeOffset = index * nodesPerTether;
-                int constraintOffset = index * math.max(0, nodesPerTether - 1);
-                if (nodeOffset < 0 || nodeOffset + nodesPerTether > NodeCount)
-                    return;
-
-                float q = math.saturate(math.isfinite(GlobalQualityWeight) ? GlobalQualityWeight : 1f);
-                float oscillation = Sin7(SimulationTime * (0.8f + q * 1.7f) + index * 0.43f) * 6f;
-                double spacing = 18.0 + index * 9.0;
-                double3 anchorA = BaseAUP + new double3(index * spacing, 0.0, 0.0);
-                double3 anchorB = anchorA + new double3(RestLengthMeters + oscillation + SimulationTime * PullSpeedMetersPerSecond, 0.0, 12.0 + index * 2.0);
-
-                TetherStateDTO state = new TetherStateDTO
-                {
-                    AnchorA_AUP = anchorA,
-                    AnchorB_AUP = anchorB,
-                    RestLength = math.max(HarpoonTensionSolver328Constants.Epsilon, RestLengthMeters),
-                    CurrentTension = 0f,
-                    Flags = TetherStateFlags328.Active | TetherStateFlags328.NetcodeFence | TetherStateFlags328.MockGenerated
-                };
-                States[index] = state;
-
-                double3 localDelta = anchorB - anchorA;
-                float3 localB = AupDeltaToLocalFloat3(localDelta);
-                for (int n = 0; n < nodesPerTether; n++)
-                {
-                    float u = nodesPerTether <= 1 ? 0f : n / (float)(nodesPerTether - 1);
-                    float sag = -Sin0PiApprox(u * math.PI) * math.lerp(0.35f, 2.5f, q);
-                    float3 p = localB * u + new float3(0f, sag, 0f);
-                    int nodeIndex = nodeOffset + n;
-                    Nodes[nodeIndex] = p;
-                    PreviousNodes[nodeIndex] = p - new float3(PullSpeedMetersPerSecond * 0.016666667f * u, 0f, 0f);
-                }
-
-                float segmentRest = math.max(HarpoonTensionSolver328Constants.Epsilon, RestLengthMeters / math.max(1, nodesPerTether - 1));
-                for (int c = 0; c < nodesPerTether - 1; c++)
-                {
-                    int constraintIndex = constraintOffset + c;
-                    if ((uint)constraintIndex >= (uint)ConstraintCount)
-                        break;
-                    Constraints[constraintIndex] = new TetherConstraintDTO
-                    {
-                        NodeA = nodeOffset + c,
-                        NodeB = nodeOffset + c + 1,
-                        RestLength = segmentRest,
-                        Stiffness = 1f,
-                        Flags = TetherStateFlags328.Active,
-                        CableId = (uint)index
-                    };
-                }
-
-                if (index == 0 && BootstrapState.IsCreated && BootstrapState.Length > 0)
-                    BootstrapState[0] = HarpoonTensionSolver328Constants.BootstrapMagic;
-            }
-        }
 
         [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Deterministic, FloatPrecision = FloatPrecision.Standard)]
         public struct SimulateTetherNodesJob : IJobParallelFor

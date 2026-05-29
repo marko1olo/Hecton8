@@ -23,7 +23,7 @@ namespace Hecton8.World
     /// </summary>
     [DisallowMultipleComponent]
     [DefaultExecutionOrder(-90)]
-    public class HectonIndirectVegetationRenderer : MonoBehaviour, ILateFrameTickable, IOriginShiftListener, IGlobalRegistryHotSwapListener
+    public class HectonIndirectVegetationRenderer : MonoBehaviour, ILateFrameTickable, ISlowTickable, IOriginShiftListener, IGlobalRegistryHotSwapListener
     {
         /// <summary>Stride of one Matrix4x4 entry expected in the external instance matrix buffer.</summary>
         public const int InstanceMatrixStride = 64;
@@ -381,6 +381,7 @@ namespace Hecton8.World
         private Bounds _explicitBounds;
         private bool _hasBoundsOverride;
         private bool _isLateFrameRegistered;
+        private bool _isSlowTickRegistered;
         private bool _originShiftRegistered;
         private bool _hotSwapRegistered;
         private bool _legacyDataDirty = true;
@@ -534,6 +535,14 @@ namespace Hecton8.World
         private bool _scatterCullTelemetryDumped;
         private bool _lastCullOverdrawWarning;
         private bool _supportsComputeShadersCold;
+        private bool _usesReversedZBufferCold;
+        private Texture _cachedCameraDepthTexture;
+        private Vector4 _cachedZBufferParams = new Vector4(0f, 1f, 0f, 1f);
+        private Vector4 _cachedSubmarineWashVelocity;
+        private Vector4 _cachedSubmarineWashSphere;
+        private float _cachedFloorBiolumStrength;
+        private float _cachedOceanBiolumStrength;
+        private float _cachedBiolumIntensityScalar;
         private const byte BindingFlagFalse = 0;
         private const byte BindingFlagTrue = 1;
 
@@ -2271,9 +2280,23 @@ namespace Hecton8.World
             RunVisualTick();
         }
 
+        public void SlowTick()
+        {
+            CacheGraphicsCapabilitiesCold();
+            CachePlayerContextCold();
+            CacheRuntimeServicesCold();
+            RefreshCullCameraCacheCold();
+            SyncSourceBinding();
+            ConsumeScatterRuntimeSignals();
+
+            Camera cullCamera = ResolveCullCamera();
+            RefreshExternalShaderGlobalsCold(cullCamera);
+            CreateAuxiliaryMaterials();
+            PrepareGpuIndirectResourcesCold(cullCamera);
+        }
+
         private void RunVisualTick()
         {
-            SyncSourceBinding();
             ConsumeScatterRuntimeSignals();
             PollCullTelemetryReadback();
 
@@ -2296,7 +2319,6 @@ namespace Hecton8.World
                 _cachedCullCameraForward = cullCameraForward;
             }
 
-            CreateAuxiliaryMaterials();
             Mesh farMesh = FrameTimeWatchdog.IsDistantFloraRenderingEnabled && _farLodDistance > _nearLodDistance
                 ? ResolveImpostorRenderMesh()
                 : null;
@@ -2306,6 +2328,59 @@ namespace Hecton8.World
                 return;
 
             ReleaseBatchRendererGroupResources();
+        }
+
+        private void PrepareGpuIndirectResourcesCold(Camera cullCamera)
+        {
+            if (!_preferGpuIndirectRendering ||
+                !_supportsComputeShadersCold ||
+                _cullingCompute == null ||
+                _clearIndirectArgsKernel < 0 ||
+                _instanceMatrixBuffer == null ||
+                _instanceCount <= 0)
+            {
+                return;
+            }
+
+            Mesh nearMesh = ResolveNearRenderMesh();
+            if (nearMesh == null)
+                return;
+
+            Mesh farMesh = FrameTimeWatchdog.IsDistantFloraRenderingEnabled && _farLodDistance > _nearLodDistance
+                ? ResolveImpostorRenderMesh()
+                : null;
+
+            GraphicsBuffer activeInstanceDataBuffer = ResolveActiveInstanceDataBuffer();
+            if (activeInstanceDataBuffer == null)
+                return;
+
+            EnsureGpuIndirectResources(_instanceCount, nearMesh, farMesh);
+            _ = ResolveFloraAgeBuffer();
+            EnsureDepthPyramidResourcesForCameraCold(cullCamera);
+        }
+
+        private void RefreshExternalShaderGlobalsCold(Camera cullCamera)
+        {
+            _cachedCameraDepthTexture = Shader.GetGlobalTexture(_GlobalCameraDepthTextureId);
+            _cachedZBufferParams = cullCamera != null
+                ? ResolveZBufferParams(cullCamera)
+                : Shader.GetGlobalVector(_GlobalZBufferParamsId);
+            _cachedFloorBiolumStrength = SanitizeNonNegative(Shader.GetGlobalFloat(_FloorBiolumStrengthId));
+            _cachedOceanBiolumStrength = SanitizeNonNegative(Shader.GetGlobalFloat(_OceanBiolumStrengthId));
+            _cachedBiolumIntensityScalar = ResolveBiolumIntensityScalarCold();
+            _cachedSubmarineWashVelocity = Shader.GetGlobalVector(_SubmarineWashVelocityId);
+            _cachedSubmarineWashSphere = Shader.GetGlobalVector(_SubmarineWashSphereId);
+        }
+
+        private static float SanitizeNonNegative(float value)
+        {
+            return math.isfinite(value) ? math.max(0f, value) : 0f;
+        }
+
+        private float ResolveBiolumIntensityScalarCold()
+        {
+            Vector4 intensity = Shader.GetGlobalVector(_BiolumIntensityVectorId);
+            return SanitizeNonNegative(intensity.x);
         }
 
         private void ConsumeScatterRuntimeSignals()
@@ -2468,7 +2543,9 @@ namespace Hecton8.World
             if (sourceMaterial == null)
                 return false;
 
-            EnsureIndirectPropertyBlocks();
+            if (!HasIndirectPropertyBlocks())
+                return false;
+
             _nearBrgMaterial = sourceMaterial;
             if (_nearBrgMaterial == null)
                 return false;
@@ -2538,7 +2615,7 @@ namespace Hecton8.World
                 return;
             }
 
-            GraphicsBuffer floraAgeBuffer = ResolveFloraAgeBuffer();
+            GraphicsBuffer floraAgeBuffer = TryResolveFloraAgeBufferHot();
             if (MaterialBindingStateMatches(
                     in state,
                     material,
@@ -2751,7 +2828,7 @@ namespace Hecton8.World
                 return false;
             }
 
-            GraphicsBuffer activeInstanceDataBuffer = ResolveActiveInstanceDataBuffer();
+            GraphicsBuffer activeInstanceDataBuffer = TryResolveActiveInstanceDataBufferHot();
             if (activeInstanceDataBuffer == null)
                 return false;
 
@@ -2766,8 +2843,7 @@ namespace Hecton8.World
             if (_instanceCount <= 0)
                 return true;
 
-            EnsureGpuIndirectResources(_instanceCount, nearMesh, farMesh);
-            if (_visibleIndicesLod0Buffer == null || _indirectArgsLod0Buffer == null)
+            if (!HasGpuIndirectResources(_instanceCount))
                 return false;
 
             if (!TryBindGpuIndirectMaterials(activeInstanceDataBuffer, farMesh))
@@ -2859,7 +2935,6 @@ namespace Hecton8.World
             float densityKeepProbability01 = ResolveDensityKeepProbability01();
             int densityDecimationStep = ResolveDensityDecimationStep(densityKeepProbability01);
             _resolvedDensityDecimationStep = densityDecimationStep;
-            EnsureCullTelemetryCounterBuffer();
             bool sampleCullTelemetry = BeginCullTelemetrySample();
             bool hasFarLod = farMesh != null && _visibleIndicesLod1Buffer != null && _indirectArgsLod1Buffer != null;
             bool farCadenceEligible = hasFarLod &&
@@ -2886,7 +2961,7 @@ namespace Hecton8.World
                 return;
             }
 
-            GraphicsBuffer floraAgeBuffer = ResolveFloraAgeBuffer();
+            GraphicsBuffer floraAgeBuffer = TryResolveFloraAgeBufferHot();
             if (floraAgeBuffer == null)
                 return;
 
@@ -2924,7 +2999,7 @@ namespace Hecton8.World
             _cullingCompute.SetFloat(_PeripheralCullDistanceSqId, peripheralCullDistanceSq);
             _cullingCompute.SetFloat(_OcclusionDepthBiasId, _occlusionDepthBias);
             _cullingCompute.SetInt(_OcclusionEnabledId, depthPyramidReady && _enableDepthOcclusion ? 1 : 0);
-            _cullingCompute.SetVector(_OcclusionZBufferParamsId, Shader.GetGlobalVector(_GlobalZBufferParamsId));
+            _cullingCompute.SetVector(_OcclusionZBufferParamsId, _cachedZBufferParams);
             _cullingCompute.SetInt(_DarknessCullEnabledId, _enableDarknessCulling ? 1 : 0);
             _cullingCompute.SetFloat(_DarknessBiolumThresholdId, _darknessBiolumThreshold);
             _cullingCompute.SetVectorArray(_FrustumPlanesId, _frustumPlaneVectors);
@@ -2939,8 +3014,8 @@ namespace Hecton8.World
 
             int headlightCount = CopyScooterHeadlightPayload();
             ApplyScooterHeadlightPayloadToCullCompute(headlightCount, uploadPayloadArrays: true);
-            _cullingCompute.SetFloat(_FloorBiolumStrengthId, Shader.GetGlobalFloat(_FloorBiolumStrengthId));
-            _cullingCompute.SetFloat(_OceanBiolumStrengthId, Shader.GetGlobalFloat(_OceanBiolumStrengthId));
+            _cullingCompute.SetFloat(_FloorBiolumStrengthId, _cachedFloorBiolumStrength);
+            _cullingCompute.SetFloat(_OceanBiolumStrengthId, _cachedOceanBiolumStrength);
             _cullingCompute.SetFloat(_BiolumIntensityVectorId, ResolveBiolumIntensityScalar());
 
             DispatchFloraSnapFlagUpdate(activeInstanceDataBuffer, globalFloatingOffset);
@@ -3015,8 +3090,8 @@ namespace Hecton8.World
                 _floraSnapFlagBufferRequiresClear = false;
             }
 
-            Vector4 washVelocity = Shader.GetGlobalVector(_SubmarineWashVelocityId);
-            Vector4 washSphere = Shader.GetGlobalVector(_SubmarineWashSphereId);
+            Vector4 washVelocity = _cachedSubmarineWashVelocity;
+            Vector4 washSphere = _cachedSubmarineWashSphere;
             if (washVelocity.w <= 10f || washSphere.w <= 0f)
                 return;
 
@@ -3075,14 +3150,13 @@ namespace Hecton8.World
             if (!_enableDepthOcclusion || _depthPyramidCompute == null || cullCamera == null)
                 return false;
 
-            Texture depthTexture = Shader.GetGlobalTexture(_GlobalCameraDepthTextureId);
+            Texture depthTexture = _cachedCameraDepthTexture;
             if (depthTexture == null)
                 return false;
 
             int targetWidth = Mathf.Max(1, cullCamera.pixelWidth);
             int targetHeight = Mathf.Max(1, cullCamera.pixelHeight);
-            EnsureDepthPyramidResources(targetWidth, targetHeight);
-            if (_depthPyramidTexture == null || _depthPyramidCopyKernel < 0 || _depthPyramidDownsampleKernel < 0)
+            if (!HasDepthPyramidResources(targetWidth, targetHeight))
                 return false;
 
             int copyGroupsX = CeilDividePositive(_depthPyramidWidth, _depthPyramidCopyThreadGroupSizeX);
@@ -3228,11 +3302,9 @@ namespace Hecton8.World
             return groups <= MaxDispatchGroupsPerDimension ? (int)groups : 0;
         }
 
-        private static float ResolveBiolumIntensityScalar()
+        private float ResolveBiolumIntensityScalar()
         {
-            Vector4 intensity = Shader.GetGlobalVector(_BiolumIntensityVectorId);
-            float scalar = intensity.x;
-            return math.isfinite(scalar) ? math.max(0f, scalar) : 0f;
+            return _cachedBiolumIntensityScalar;
         }
 
         private void EnsureGpuIndirectResources(int instanceCount, Mesh nearMesh, Mesh farMesh)
@@ -3259,6 +3331,40 @@ namespace Hecton8.World
                 EnsureFloraSnapFlagBufferCapacity(requiredCapacity);
             else
                 ReleaseFloraSnapFlagBuffer();
+        }
+
+        private bool HasGpuIndirectResources(int instanceCount)
+        {
+            int requiredCapacity = Mathf.NextPowerOfTwo(Mathf.Max(1, instanceCount));
+            bool hasVisibleIndexBuffers =
+                _gpuVisibleIndexCapacity >= requiredCapacity &&
+                IsValidBuffer(_visibleIndicesLod0Buffer) &&
+                IsValidBuffer(_visibleIndicesLod1Buffer) &&
+                IsValidBuffer(_visibleIndicesShadowBuffer);
+            bool hasIndirectArgsBuffers =
+                IsValidBuffer(_indirectArgsLod0Buffer) &&
+                IsValidBuffer(_indirectArgsLod1Buffer) &&
+                IsValidBuffer(_indirectArgsShadowBuffer);
+            bool hasTelemetryBuffers =
+                IsValidBuffer(_cullTelemetryCountersBuffer) &&
+                IsValidBuffer(_cullTelemetryCountersUploadBuffer);
+            bool needsFloraSnapFlags =
+                _abyssalFlowFieldCompute != null &&
+                _clearFloraSnapFlagsKernel >= 0 &&
+                _flagSnappedFloraKernel >= 0;
+            bool hasFloraSnapFlags =
+                !needsFloraSnapFlags ||
+                (IsValidBuffer(_floraSnapFlagBuffer) && _floraSnapFlagCapacity >= requiredCapacity);
+
+            return hasVisibleIndexBuffers &&
+                   hasIndirectArgsBuffers &&
+                   hasTelemetryBuffers &&
+                   hasFloraSnapFlags;
+        }
+
+        private static bool IsValidBuffer(GraphicsBuffer buffer)
+        {
+            return buffer != null && buffer.IsValid();
         }
 
         private void EnsureIndirectArgsBuffer(ref GraphicsBuffer argsBuffer)
@@ -3349,6 +3455,21 @@ namespace Hecton8.World
             }
 
             return _floraAgeBuffer;
+        }
+
+        private GraphicsBuffer TryResolveFloraAgeBufferHot()
+        {
+            if (_instanceCount <= 0 ||
+                _floraAgeBufferDirty ||
+                !IsValidBuffer(_floraAgeBuffer) ||
+                _floraAgeCapacity < _instanceCount)
+            {
+                return null;
+            }
+
+            return TryReadFloraAges(out NativeArray<float> floraAges) && floraAges.Length >= _instanceCount
+                ? _floraAgeBuffer
+                : null;
         }
 
         private void EnsureFloraAgeCapacity(int requiredCount)
@@ -3629,6 +3750,7 @@ namespace Hecton8.World
         {
             if (!_enableCullTelemetry ||
                 _cullTelemetryCountersBuffer == null ||
+                _cullTelemetryCountersUploadBuffer == null ||
                 _cullTelemetryClearPayload == null ||
                 _scatterCullTelemetryReadbackPending)
             {
@@ -3649,6 +3771,53 @@ namespace Hecton8.World
                 _cullTelemetryClearPayload,
                 ScatterCullTelemetryCounterCount);
             return true;
+        }
+
+        private void EnsureDepthPyramidResourcesForCameraCold(Camera cullCamera)
+        {
+            if (!_enableDepthOcclusion ||
+                _depthPyramidCompute == null ||
+                cullCamera == null ||
+                !_supportsComputeShadersCold ||
+                _cachedCameraDepthTexture == null)
+            {
+                return;
+            }
+
+            EnsureDepthPyramidResources(
+                Mathf.Max(1, cullCamera.pixelWidth),
+                Mathf.Max(1, cullCamera.pixelHeight));
+        }
+
+        private bool HasDepthPyramidResources(int targetWidth, int targetHeight)
+        {
+            return _depthPyramidTexture != null &&
+                   _depthPyramidWidth == targetWidth &&
+                   _depthPyramidHeight == targetHeight &&
+                   _depthPyramidCopyKernel >= 0 &&
+                   _depthPyramidDownsampleKernel >= 0;
+        }
+
+        private Vector4 ResolveZBufferParams(Camera cullCamera)
+        {
+            float nearClip = cullCamera != null ? cullCamera.nearClipPlane : 0.01f;
+            float farClip = cullCamera != null ? cullCamera.farClipPlane : 1000f;
+            nearClip = math.max(0.0001f, math.isfinite(nearClip) ? nearClip : 0.01f);
+            farClip = math.max(nearClip + 0.0001f, math.isfinite(farClip) ? farClip : 1000f);
+            float farOverNear = farClip * math.rcp(nearClip);
+
+            if (_usesReversedZBufferCold)
+            {
+                float reversedX = farOverNear - 1f;
+                return new Vector4(reversedX, 1f, reversedX * math.rcp(farClip), math.rcp(farClip));
+            }
+
+            float forwardX = 1f - farOverNear;
+            return new Vector4(
+                forwardX,
+                farOverNear,
+                forwardX * math.rcp(farClip),
+                farOverNear * math.rcp(farClip));
         }
 
         private void RequestCullTelemetryReadback(bool sampleCullTelemetry)
@@ -4271,6 +4440,17 @@ namespace Hecton8.World
                 _motionFarIndirectProperties = new MaterialPropertyBlock(); // COLD ALLOC: MaterialPropertyBlock[1] - motion far indirect vegetation pass property payload - owner: HectonIndirectVegetationRenderer
         }
 
+        private bool HasIndirectPropertyBlocks()
+        {
+            return _nearIndirectProperties != null &&
+                   _farIndirectProperties != null &&
+                   _depthNearIndirectProperties != null &&
+                   _depthFarIndirectProperties != null &&
+                   _shadowIndirectProperties != null &&
+                   _motionNearIndirectProperties != null &&
+                   _motionFarIndirectProperties != null;
+        }
+
         private void ReleaseDepthPyramidTexture()
         {
             if (_depthPyramidTexture == null)
@@ -4701,8 +4881,8 @@ namespace Hecton8.World
             float globalBiolum = Mathf.Max(
                 ResolveBiolumIntensityScalar(),
                 Mathf.Max(
-                    Shader.GetGlobalFloat(_FloorBiolumStrengthId),
-                    Shader.GetGlobalFloat(_OceanBiolumStrengthId)));
+                    _cachedFloorBiolumStrength,
+                    _cachedOceanBiolumStrength));
             if (globalBiolum >= _darknessBiolumThreshold)
                 return true;
 
@@ -4852,8 +5032,8 @@ namespace Hecton8.World
                     float globalBiolum = Mathf.Max(
                         ResolveBiolumIntensityScalar(),
                         Mathf.Max(
-                            Shader.GetGlobalFloat(_FloorBiolumStrengthId),
-                            Shader.GetGlobalFloat(_OceanBiolumStrengthId)));
+                            _cachedFloorBiolumStrength,
+                            _cachedOceanBiolumStrength));
                     if (globalBiolum >= _darknessBiolumThreshold)
                     {
                         bypassDarknessCulling = true;
@@ -5436,6 +5616,24 @@ namespace Hecton8.World
                 FillLegacyInstanceData(_instanceCount);
                 GraphicsBufferUploadUtility.UploadArray(_legacyInstanceDataBuffer, _legacyInstanceData, _instanceCount);
                 _legacyDataDirty = false;
+            }
+
+            return _legacyInstanceDataBuffer;
+        }
+
+        private GraphicsBuffer TryResolveActiveInstanceDataBufferHot()
+        {
+            if (_instanceDataBuffer != null)
+                return _instanceDataBuffer;
+
+            if (_instanceCount <= 0 ||
+                _legacyDataDirty ||
+                _legacyInstanceData == null ||
+                !IsValidBuffer(_legacyInstanceDataBuffer) ||
+                _legacyInstanceData.Length < _instanceCount ||
+                _legacyInstanceDataBuffer.count < _instanceCount)
+            {
+                return null;
             }
 
             return _legacyInstanceDataBuffer;
@@ -6103,6 +6301,7 @@ namespace Hecton8.World
                 return;
 
             TryRegisterLateFrameTickable();
+            TryRegisterSlowTickable();
         }
 
         private IPlayerRuntimeContext CachePlayerContextCold()
@@ -6125,6 +6324,7 @@ namespace Hecton8.World
         private void CacheGraphicsCapabilitiesCold()
         {
             _supportsComputeShadersCold = SystemInfo.supportsComputeShaders;
+            _usesReversedZBufferCold = SystemInfo.usesReversedZBuffer;
         }
 
         private IDataVault CacheDataVaultCold()
@@ -6152,14 +6352,27 @@ namespace Hecton8.World
             _isLateFrameRegistered = GlobalRegistry.TryRegisterLateFrameTickable(this, PriorityLayer.Environment);
         }
 
+        private void TryRegisterSlowTickable()
+        {
+            if (_isSlowTickRegistered || !Application.isPlaying || GlobalRegistry.Dispatcher == null)
+                return;
+
+            _isSlowTickRegistered = GlobalRegistry.TryRegisterSlowTickable(this, PriorityLayer.Environment);
+        }
+
         private void TryUnregister()
         {
+            if (_isSlowTickRegistered)
+            {
+                GlobalRegistry.UnregisterSlowTickable(this, PriorityLayer.Environment);
+                _isSlowTickRegistered = false;
+            }
+
             if (_isLateFrameRegistered)
             {
                 GlobalRegistry.UnregisterLateFrameTickable(this, PriorityLayer.Environment);
                 _isLateFrameRegistered = false;
             }
-
         }
 
         private void TryRegisterOriginShiftListener()

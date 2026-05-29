@@ -80,6 +80,8 @@ namespace Hecton8.Gameplay
         private const int RepairBlackBoxFrameCount = 300;
         private const int RepairBlackBoxEntrySizeBytes = 64;
         private const string RepairBlackBoxDumpPath = "Docs/AgentLogs/Dump_SHINOBU_224_RepairTool.bin";
+        private static readonly ulong HullDentsMutationGuardMask = MutationGuardBit(BufferID.HullDents);
+        private static readonly ulong RepairBlackBoxMutationGuardMask = MutationGuardBit(BufferID.RepairToolBlackBox);
         private const byte RepairBlackBoxFlagEquipped = 1 << 0;
         private const byte RepairBlackBoxFlagRepairing = 1 << 1;
         private const byte RepairBlackBoxFlagDentTouched = 1 << 2;
@@ -1592,7 +1594,7 @@ namespace Hecton8.Gameplay
             if (repairDelta <= 0f || !math.isfinite(repairDelta))
                 return false;
 
-            if (!vault.TryLockBuffer(BufferID.HullDents, SystemID.GameplayTools))
+            if (!vault.TryAcquireMutationGuard(HullDentsMutationGuardMask))
                 return false;
 
             bool changed = false;
@@ -1659,7 +1661,7 @@ namespace Hecton8.Gameplay
             }
             finally
             {
-                vault.TryUnlockBuffer(BufferID.HullDents, SystemID.GameplayTools);
+                vault.ReleaseMutationGuard(HullDentsMutationGuardMask);
             }
 
             if (repairedDentMask != 0)
@@ -1717,7 +1719,7 @@ namespace Hecton8.Gameplay
                 return false;
             }
 
-            if (IsVaultHandleCreated(in _hullDentsHandle) &&
+            if (IsHullDentsHandle(in _hullDentsHandle) &&
                 vault.TryResolveHandle(in _hullDentsHandle, out NativeArray<float4> currentDents) &&
                 currentDents.IsCreated &&
                 currentDents.Length >= HullDentVaultCapacity)
@@ -1730,6 +1732,7 @@ namespace Hecton8.Gameplay
                 return false;
 
             if (!vault.TryGetGenerationHandle(BufferID.HullDents, out VaultGenerationHandle<float4> borrowed) ||
+                !IsHullDentsHandle(in borrowed) ||
                 !vault.TryResolveHandle(in borrowed, out NativeArray<float4> dents) ||
                 !dents.IsCreated ||
                 dents.Length < HullDentVaultCapacity)
@@ -1751,7 +1754,7 @@ namespace Hecton8.Gameplay
                 return false;
             }
 
-            if (IsVaultHandleCreated(in _repairBlackBoxHandle) &&
+            if (IsRepairBlackBoxHandle(in _repairBlackBoxHandle) &&
                 vault.TryResolveHandle(in _repairBlackBoxHandle, out NativeArray<RepairToolBlackBoxEntry> currentBlackBox) &&
                 currentBlackBox.IsCreated &&
                 currentBlackBox.Length >= RepairBlackBoxFrameCount)
@@ -1764,6 +1767,7 @@ namespace Hecton8.Gameplay
 
             ClearRepairBlackBoxDescriptor();
             if (vault.TryGetGenerationHandle(BufferID.RepairToolBlackBox, out VaultGenerationHandle<RepairToolBlackBoxEntry> existing) &&
+                IsRepairBlackBoxHandle(in existing) &&
                 vault.TryResolveHandle(in existing, out NativeArray<RepairToolBlackBoxEntry> existingBlackBox) &&
                 existingBlackBox.IsCreated &&
                 existingBlackBox.Length >= RepairBlackBoxFrameCount)
@@ -1781,7 +1785,7 @@ namespace Hecton8.Gameplay
                 RepairBlackBoxFrameCount,
                 SystemID.GameplayTools,
                 NativeArrayOptions.ClearMemory);
-            if (!IsVaultHandleCreated(in acquired) ||
+            if (!IsRepairBlackBoxHandle(in acquired) ||
                 !vault.TryResolveHandle(in acquired, out NativeArray<RepairToolBlackBoxEntry> acquiredBlackBox) ||
                 !acquiredBlackBox.IsCreated ||
                 acquiredBlackBox.Length < RepairBlackBoxFrameCount)
@@ -1806,7 +1810,7 @@ namespace Hecton8.Gameplay
             if (allowEnsure && !EnsureHullDentsHandle(vault, allowBorrow: true))
                 return false;
 
-            if (!IsVaultHandleCreated(in _hullDentsHandle))
+            if (!IsHullDentsHandle(in _hullDentsHandle))
                 return false;
 
             if (!vault.TryResolveHandle(in _hullDentsHandle, out dents) ||
@@ -1834,7 +1838,7 @@ namespace Hecton8.Gameplay
             if (allowEnsure && !EnsureRepairBlackBoxHandle(vault, createIfMissing: true))
                 return false;
 
-            if (!IsVaultHandleCreated(in _repairBlackBoxHandle))
+            if (!IsRepairBlackBoxHandle(in _repairBlackBoxHandle))
                 return false;
 
             if (!vault.TryResolveHandle(in _repairBlackBoxHandle, out blackBox) ||
@@ -1877,6 +1881,25 @@ namespace Hecton8.Gameplay
         private static bool IsVaultHandleCreated<T>(in VaultGenerationHandle<T> handle) where T : struct
         {
             return handle.BufferID != 0u && handle.Generation != 0u;
+        }
+
+        private static bool IsHullDentsHandle(in VaultGenerationHandle<float4> handle)
+        {
+            return handle.BufferID == unchecked((uint)(int)BufferID.HullDents) &&
+                   handle.SystemID == (uint)SystemID.Vfx &&
+                   handle.Generation != 0u;
+        }
+
+        private static bool IsRepairBlackBoxHandle(in VaultGenerationHandle<RepairToolBlackBoxEntry> handle)
+        {
+            return handle.BufferID == unchecked((uint)(int)BufferID.RepairToolBlackBox) &&
+                   handle.SystemID == (uint)SystemID.GameplayTools &&
+                   handle.Generation != 0u;
+        }
+
+        private static ulong MutationGuardBit(BufferID bufferId)
+        {
+            return 1UL << ((int)bufferId & 31);
         }
 
         private static void ReleaseVaultBuffer<T>(
@@ -1924,7 +1947,7 @@ namespace Hecton8.Gameplay
             if (invalid)
                 flags |= RepairBlackBoxFlagInvalidMath;
 
-            if (!vault.TryLockBuffer(BufferID.RepairToolBlackBox, SystemID.GameplayTools))
+            if (!vault.TryAcquireMutationGuard(RepairBlackBoxMutationGuardMask))
                 return;
 
             try
@@ -1952,7 +1975,7 @@ namespace Hecton8.Gameplay
             }
             finally
             {
-                vault.TryUnlockBuffer(BufferID.RepairToolBlackBox, SystemID.GameplayTools);
+                vault.ReleaseMutationGuard(RepairBlackBoxMutationGuardMask);
             }
 
             if ((flags & RepairBlackBoxFlagInvalidMath) == 0)
@@ -1981,7 +2004,7 @@ namespace Hecton8.Gameplay
         {
             if (vault == null || !EnsureRepairBlackBoxHandle(vault))
                 return false;
-            if (!vault.TryLockBuffer(BufferID.RepairToolBlackBox, SystemID.GameplayTools))
+            if (!vault.TryAcquireMutationGuard(RepairBlackBoxMutationGuardMask))
                 return false;
 
             try
@@ -2035,7 +2058,7 @@ namespace Hecton8.Gameplay
             }
             finally
             {
-                vault.TryUnlockBuffer(BufferID.RepairToolBlackBox, SystemID.GameplayTools);
+                vault.ReleaseMutationGuard(RepairBlackBoxMutationGuardMask);
             }
         }
 

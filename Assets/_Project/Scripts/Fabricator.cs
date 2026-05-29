@@ -241,6 +241,8 @@ namespace Hecton8.Crafting
         private int _sparkProxyLightKey;
         private float _sparkProxyLightRemainingSeconds;
         private bool _sparkProxyLightRegistered;
+        private bool _sparkProxyLightDirty;
+        private bool _sparkProxyLightUnregisterPending;
         private bool _sparkLightTickRegistered;
         private bool _sparkLightTickSleeping;
         private float _weldingLoopNextPitchUpdateTime;
@@ -325,6 +327,10 @@ namespace Hecton8.Crafting
         private const string FabricatorMemoryDumpPath = "Docs/AgentLogs/Dump_1329_Fabricator.bin";
         private const uint FabricatorVaultFailureEnsure = 1u << 0;
         private const uint FabricatorVaultFailureAcquire = 1u << 1;
+        private static readonly ulong FabricatorMemoryTelemetryRingMutationGuardMask =
+            FabricatorMutationGuardBit(BufferID.ShinobuFabricatorMemoryTelemetryRing);
+        private static readonly ulong FabricatorUnlockedRecipesMutationGuardMask =
+            FabricatorMutationGuardBit(BufferID.ShinobuFabricatorUnlockedRecipes);
 
         [StructLayout(LayoutKind.Explicit, Size = FabricatorMemoryTelemetryEntrySizeBytes)]
         public struct FabricatorMemoryTelemetryEntry
@@ -938,7 +944,7 @@ namespace Hecton8.Crafting
 
             if (!(_sparkProxyLightRemainingSeconds > 0f))
             {
-                UnregisterSparkProxyLight();
+                QueueUnregisterSparkProxyLight();
                 _sparkLightTickSleeping = true;
                 return;
             }
@@ -946,11 +952,11 @@ namespace Hecton8.Crafting
             _sparkProxyLightRemainingSeconds = Mathf.Max(0f, _sparkProxyLightRemainingSeconds - Mathf.Max(0f, deltaTime));
             if (_sparkProxyLightRemainingSeconds > 0f)
             {
-                UpdateSparkProxyLightRegistration();
+                _sparkProxyLightDirty = true;
                 return;
             }
 
-            UnregisterSparkProxyLight();
+            QueueUnregisterSparkProxyLight();
             _sparkLightTickSleeping = true;
         }
 
@@ -985,6 +991,7 @@ namespace Hecton8.Crafting
             FlushPendingAudio();
             FlushPendingProceduralAudioPings();
             FlushPendingProgressHaptics();
+            FlushSparkProxyLightRegistration();
         }
 
         public void SlowTick()
@@ -1823,22 +1830,34 @@ namespace Hecton8.Crafting
                 return false;
             }
 
-            bool lockAcquired = vault.TryAcquireWriteLock(in handle, SystemID.Crafting, out buffer);
-            if (lockAcquired &&
-                buffer.IsCreated &&
-                buffer.Length >= requiredLength)
+            if (!vault.TryAcquireWriteLock(in handle, SystemID.Crafting, out buffer))
             {
-                _fabricatorVaultFailureStreak = 0;
-                lockedVault = vault;
-                return true;
+                RecordFabricatorVaultFailure(bufferId, handle.Generation, FabricatorVaultFailureAcquire, requiredLength);
+                buffer = default;
+                return false;
             }
 
-            if (lockAcquired)
-                vault.ReleaseWriteLock(in handle, SystemID.Crafting);
+            bool ownershipTransferred = false;
+            try
+            {
+                if (buffer.IsCreated &&
+                    buffer.Length >= requiredLength)
+                {
+                    _fabricatorVaultFailureStreak = 0;
+                    lockedVault = vault;
+                    ownershipTransferred = true;
+                    return true;
+                }
 
-            RecordFabricatorVaultFailure(bufferId, handle.Generation, FabricatorVaultFailureAcquire, requiredLength);
-            buffer = default;
-            return false;
+                RecordFabricatorVaultFailure(bufferId, handle.Generation, FabricatorVaultFailureAcquire, requiredLength);
+                buffer = default;
+                return false;
+            }
+            finally
+            {
+                if (!ownershipTransferred)
+                    vault.ReleaseWriteLock(in handle, SystemID.Crafting);
+            }
         }
 
         private static void ReleaseFabricatorWrite<T>(IDataVault lockedVault, in VaultGenerationHandle<T> handle) where T : struct
@@ -1933,8 +1952,7 @@ namespace Hecton8.Crafting
                 return;
             }
 
-            bool pinned = vault.TryLockBuffer(BufferID.ShinobuFabricatorMemoryTelemetryRing, SystemID.Crafting);
-            if (!pinned)
+            if (!vault.TryAcquireMutationGuard(FabricatorMemoryTelemetryRingMutationGuardMask))
             {
                 ResetFabricatorMemoryDumpQueue();
                 return;
@@ -1963,7 +1981,7 @@ namespace Hecton8.Crafting
             }
             finally
             {
-                vault.TryUnlockBuffer(BufferID.ShinobuFabricatorMemoryTelemetryRing, SystemID.Crafting);
+                vault.ReleaseMutationGuard(FabricatorMemoryTelemetryRingMutationGuardMask);
             }
 
             if (!snapshotReady)
@@ -2901,7 +2919,28 @@ namespace Hecton8.Crafting
         {
             _sparkProxyLightRemainingSeconds = Mathf.Max(_sparkProxyLightRemainingSeconds, Mathf.Max(0.01f, sparkProxyLightDurationSeconds));
             _sparkLightTickSleeping = false;
-            UpdateSparkProxyLightRegistration();
+            _sparkProxyLightDirty = true;
+        }
+
+        private void FlushSparkProxyLightRegistration()
+        {
+            if (_sparkProxyLightDirty)
+            {
+                _sparkProxyLightDirty = false;
+                UpdateSparkProxyLightRegistration();
+            }
+
+            if (!_sparkProxyLightUnregisterPending)
+                return;
+
+            _sparkProxyLightUnregisterPending = false;
+            if (!(_sparkProxyLightRemainingSeconds > 0f))
+                UnregisterSparkProxyLight();
+        }
+
+        private void QueueUnregisterSparkProxyLight()
+        {
+            _sparkProxyLightUnregisterPending = true;
         }
 
         private void UpdateSparkProxyLightRegistration()
@@ -3631,7 +3670,7 @@ namespace Hecton8.Crafting
 
             IDataVault vault = _dataVault;
             if (vault == null ||
-                !vault.TryLockBuffer(BufferID.ShinobuFabricatorUnlockedRecipes, SystemID.Crafting))
+                !vault.TryAcquireMutationGuard(FabricatorUnlockedRecipesMutationGuardMask))
             {
                 RecordFabricatorVaultFailure(
                     BufferID.ShinobuFabricatorUnlockedRecipes,
@@ -3654,7 +3693,7 @@ namespace Hecton8.Crafting
             }
             finally
             {
-                vault.TryUnlockBuffer(BufferID.ShinobuFabricatorUnlockedRecipes, SystemID.Crafting);
+                vault.ReleaseMutationGuard(FabricatorUnlockedRecipesMutationGuardMask);
             }
 
             if (!cacheBuilt)
@@ -3813,7 +3852,7 @@ namespace Hecton8.Crafting
 
             IDataVault vault = _dataVault;
             if (vault == null ||
-                !vault.TryLockBuffer(BufferID.ShinobuFabricatorUnlockedRecipes, SystemID.Crafting))
+                !vault.TryAcquireMutationGuard(FabricatorUnlockedRecipesMutationGuardMask))
             {
                 return false;
             }
@@ -3828,8 +3867,13 @@ namespace Hecton8.Crafting
             }
             finally
             {
-                vault.TryUnlockBuffer(BufferID.ShinobuFabricatorUnlockedRecipes, SystemID.Crafting);
+                vault.ReleaseMutationGuard(FabricatorUnlockedRecipesMutationGuardMask);
             }
+        }
+
+        private static ulong FabricatorMutationGuardBit(BufferID bufferId)
+        {
+            return 1UL << (unchecked((int)(uint)(int)bufferId) & 63);
         }
 
         private static bool IsRecipeUnlockBitSet(int unlockIndex, NativeArray<ulong>.ReadOnly unlockedRecipes)

@@ -73,19 +73,20 @@ namespace Hecton8.Physics
 
     public static unsafe class CablePhysicsSolver132
     {
-        private const int ScheduledLockNodes = 1 << 0;
-        private const int ScheduledLockConstraints = 1 << 1;
-        private const int ScheduledLockEndpoints = 1 << 2;
-        private const int ScheduledLockVertices = 1 << 3;
-        private const int ScheduledLockSegmentTensions = 1 << 4;
-        private const int ScheduledLockPhysicsEvents = 1 << 5;
-        private const int ScheduledLockTelemetryRing = 1 << 6;
-        private const int ScheduledLockTelemetryHead = 1 << 7;
-        private const int ScheduledLockPinnedAups = 1 << 8;
-        private const int ScheduledLockPinnedMask = 1 << 9;
-        private const int ScheduledLockTuning = 1 << 10;
+        private static readonly ulong ScheduledMockMutationGuardMask =
+            VaultMutationGuardBit(CablePhysics132BufferIds.CableNodes) |
+            VaultMutationGuardBit(CablePhysics132BufferIds.CableConstraints) |
+            VaultMutationGuardBit(CablePhysics132BufferIds.Endpoints) |
+            VaultMutationGuardBit(CablePhysics132BufferIds.SplineVertices) |
+            VaultMutationGuardBit(CablePhysics132BufferIds.SegmentTensions) |
+            VaultMutationGuardBit(CablePhysics132BufferIds.PhysicsEvents) |
+            VaultMutationGuardBit(CablePhysics132BufferIds.TelemetryRing) |
+            VaultMutationGuardBit(CablePhysics132BufferIds.TelemetryHead) |
+            VaultMutationGuardBit(CablePhysics132BufferIds.PinnedAups) |
+            VaultMutationGuardBit(CablePhysics132BufferIds.PinnedMask) |
+            VaultMutationGuardBit(CablePhysics132BufferIds.Tuning);
 
-        private static int _scheduledMockBufferLocks;
+        private static bool _scheduledMockGuardHeld;
 
         private static readonly ulong BootstrapMutationGuardMask =
             VaultMutationGuardBit(CablePhysics132BufferIds.BootstrapState) |
@@ -229,31 +230,16 @@ namespace Hecton8.Physics
                 return;
             }
 
-            JobHandle zeroHandle = new ZeroInitCableBuffersJob
-            {
-                Vertices = vertices,
-                SegmentTensions = tensions,
-                PhysicsEvents = events,
-                TelemetryRing = telemetryRing,
-                TelemetryHead = telemetryHead,
-                Tuning = tuning
-            }.Schedule();
-
-            JobHandle mockHandle = new GenerateMockTethersJob
-            {
-                Nodes = (CableNodeDTO*)NativeArrayUnsafeUtility.GetUnsafeBufferPointerWithoutChecks(nodes),
-                NodeCount = nodes.IsCreated ? nodes.Length : 0,
-                Constraints = constraints,
-                Endpoints = endpoints,
-                Materials = materials,
-                BootstrapState = bootstrap,
-                PinnedAUPs = pinnedAups,
-                PinnedMask = pinnedMask,
-                FrameIndex = frameIndex,
-                SectorHash = 0x5348494Eu,
-                GlobalQualityWeight = globalQualityWeight
-            }.Schedule(zeroHandle);
-            DispatcherJobFence.TryComplete(ref mockHandle, forceComplete: true);
+            ZeroInitCableBuffersDirect(vertices, tensions, events, telemetryRing, telemetryHead, tuning);
+            GenerateMockTethersDirect(
+                nodes,
+                constraints,
+                endpoints,
+                materials,
+                bootstrap,
+                pinnedAups,
+                pinnedMask,
+                globalQualityWeight);
             }
             finally
             {
@@ -330,7 +316,7 @@ namespace Hecton8.Physics
             out JobHandle handle)
         {
             handle = dependency;
-            if (!TryLockMockScheduleBuffers(vault))
+            if (!TryAcquireMockScheduleBufferGuard(vault))
                 return false;
 
             bool scheduled = false;
@@ -387,24 +373,12 @@ namespace Hecton8.Physics
 
         public static void ReleaseMockScheduleBufferPins(IDataVault vault)
         {
-            if (vault == null || _scheduledMockBufferLocks == 0)
-            {
-                _scheduledMockBufferLocks = 0;
+            if (!_scheduledMockGuardHeld)
                 return;
-            }
 
-            UnlockMockScheduleBuffer(vault, CablePhysics132BufferIds.CableNodes, ScheduledLockNodes);
-            UnlockMockScheduleBuffer(vault, CablePhysics132BufferIds.CableConstraints, ScheduledLockConstraints);
-            UnlockMockScheduleBuffer(vault, CablePhysics132BufferIds.Endpoints, ScheduledLockEndpoints);
-            UnlockMockScheduleBuffer(vault, CablePhysics132BufferIds.SplineVertices, ScheduledLockVertices);
-            UnlockMockScheduleBuffer(vault, CablePhysics132BufferIds.SegmentTensions, ScheduledLockSegmentTensions);
-            UnlockMockScheduleBuffer(vault, CablePhysics132BufferIds.PhysicsEvents, ScheduledLockPhysicsEvents);
-            UnlockMockScheduleBuffer(vault, CablePhysics132BufferIds.TelemetryRing, ScheduledLockTelemetryRing);
-            UnlockMockScheduleBuffer(vault, CablePhysics132BufferIds.TelemetryHead, ScheduledLockTelemetryHead);
-            UnlockMockScheduleBuffer(vault, CablePhysics132BufferIds.PinnedAups, ScheduledLockPinnedAups);
-            UnlockMockScheduleBuffer(vault, CablePhysics132BufferIds.PinnedMask, ScheduledLockPinnedMask);
-            UnlockMockScheduleBuffer(vault, CablePhysics132BufferIds.Tuning, ScheduledLockTuning);
-            _scheduledMockBufferLocks = 0;
+            _scheduledMockGuardHeld = false;
+            if (vault != null)
+                vault.ReleaseMutationGuard(ScheduledMockMutationGuardMask);
         }
 
         public static JobHandle ScheduleMock(
@@ -708,7 +682,7 @@ namespace Hecton8.Physics
                 return true;
             }
 
-            if (vault.IsAllocationLocked)
+            if (vault.IsAllocationLocked || vault.IsCompactionFenceActive)
             {
                 buffer = default;
                 return false;
@@ -732,46 +706,142 @@ namespace Hecton8.Physics
                    vault.TryAcquireMutationGuard(mask);
         }
 
-        private static bool TryLockMockScheduleBuffers(IDataVault vault)
+        private static bool TryAcquireMockScheduleBufferGuard(IDataVault vault)
         {
-            if (vault == null || _scheduledMockBufferLocks != 0)
+            if (vault == null || _scheduledMockGuardHeld)
                 return false;
 
-            return TryLockMockScheduleBuffer(vault, CablePhysics132BufferIds.CableNodes, ScheduledLockNodes) &&
-                   TryLockMockScheduleBuffer(vault, CablePhysics132BufferIds.CableConstraints, ScheduledLockConstraints) &&
-                   TryLockMockScheduleBuffer(vault, CablePhysics132BufferIds.Endpoints, ScheduledLockEndpoints) &&
-                   TryLockMockScheduleBuffer(vault, CablePhysics132BufferIds.SplineVertices, ScheduledLockVertices) &&
-                   TryLockMockScheduleBuffer(vault, CablePhysics132BufferIds.SegmentTensions, ScheduledLockSegmentTensions) &&
-                   TryLockMockScheduleBuffer(vault, CablePhysics132BufferIds.PhysicsEvents, ScheduledLockPhysicsEvents) &&
-                   TryLockMockScheduleBuffer(vault, CablePhysics132BufferIds.TelemetryRing, ScheduledLockTelemetryRing) &&
-                   TryLockMockScheduleBuffer(vault, CablePhysics132BufferIds.TelemetryHead, ScheduledLockTelemetryHead) &&
-                   TryLockMockScheduleBuffer(vault, CablePhysics132BufferIds.PinnedAups, ScheduledLockPinnedAups) &&
-                   TryLockMockScheduleBuffer(vault, CablePhysics132BufferIds.PinnedMask, ScheduledLockPinnedMask) &&
-                   TryLockMockScheduleBuffer(vault, CablePhysics132BufferIds.Tuning, ScheduledLockTuning);
-        }
+            if (!TryAcquireCableMutationGuard(vault, ScheduledMockMutationGuardMask))
+                return false;
 
-        private static bool TryLockMockScheduleBuffer(IDataVault vault, BufferID bufferId, int bit)
-        {
-            if (vault != null && vault.TryLockBuffer(bufferId, SystemID.Physics))
-            {
-                _scheduledMockBufferLocks |= bit;
-                return true;
-            }
-
-            ReleaseMockScheduleBufferPins(vault);
-            return false;
-        }
-
-        private static void UnlockMockScheduleBuffer(IDataVault vault, BufferID bufferId, int bit)
-        {
-            if ((_scheduledMockBufferLocks & bit) != 0)
-                vault.TryUnlockBuffer(bufferId, SystemID.Physics);
+            _scheduledMockGuardHeld = true;
+            return true;
         }
 
         private static ulong VaultMutationGuardBit(BufferID bufferId)
         {
             int bitIndex = unchecked((int)((uint)(int)bufferId & 63u));
             return 1UL << bitIndex;
+        }
+
+        private static void ZeroInitCableBuffersDirect(
+            NativeArray<TetherSplineVertexDTO> vertices,
+            NativeArray<float> segmentTensions,
+            NativeArray<PhysicsEventPayload> physicsEvents,
+            NativeArray<TetherTelemetryEntry> telemetryRing,
+            NativeArray<int> telemetryHead,
+            NativeArray<VerletCableTuningDTO> tuning)
+        {
+            for (int i = 0; i < vertices.Length; i++)
+                vertices[i] = default;
+            for (int i = 0; i < segmentTensions.Length; i++)
+                segmentTensions[i] = 0f;
+            for (int i = 0; i < physicsEvents.Length; i++)
+                physicsEvents[i] = default;
+            for (int i = 0; i < telemetryRing.Length; i++)
+                telemetryRing[i] = default;
+            if (telemetryHead.IsCreated && telemetryHead.Length > 0)
+                telemetryHead[0] = 0;
+            if (tuning.IsCreated && tuning.Length > 0)
+                tuning[0] = DefaultCableTuning();
+        }
+
+        private static void GenerateMockTethersDirect(
+            NativeArray<CableNodeDTO> nodes,
+            NativeArray<TetherConstraintDTO> constraints,
+            NativeArray<TetherEndpointAupDTO> endpoints,
+            NativeArray<CableMaterialDTO> materials,
+            NativeArray<int> bootstrap,
+            NativeArray<double3> pinnedAups,
+            NativeArray<byte> pinnedMask,
+            float globalQualityWeight)
+        {
+            int tetherCount = math.min(CablePhysics132Constants.MockTetherCount, endpoints.IsCreated ? endpoints.Length : 0);
+            int nodesPerTether = CablePhysics132Constants.MockNodesPerTether;
+            int nodeCount = nodes.IsCreated ? nodes.Length : 0;
+            float q = math.saturate(math.isfinite(globalQualityWeight) ? globalQualityWeight : 1f);
+
+            for (int cable = 0; cable < tetherCount; cable++)
+            {
+                double3 anchor = new double3(cable * 4.0, -24.0 - cable * 0.25, cable * 2.25);
+                double3 payload = anchor + new double3(18.0 + cable * 0.5, -2.0, 7.5);
+                float3 current = new float3(0.045f * (1f + cable), -0.018f, 0.035f * (1f + q));
+                endpoints[cable] = new TetherEndpointAupDTO
+                {
+                    AnchorAUP = anchor,
+                    PayloadAUP = payload,
+                    AbyssalCurrentAcceleration = current,
+                    GlobalQualityWeight = q
+                };
+
+                int nodeOffset = cable * nodesPerTether;
+                int constraintOffset = cable * (nodesPerTether - 1);
+                for (int i = 0; i < nodesPerTether; i++)
+                {
+                    int nodeIndex = nodeOffset + i;
+                    if ((uint)nodeIndex >= (uint)nodeCount)
+                        continue;
+
+                    float t = i * math.rcp(math.max(1, nodesPerTether - 1));
+                    double3 sag = new double3(0.0, -VerletCableSimdMath.SinPolynomial7(t * math.PI) * math.lerp(0.35f, 2.25f, q), 0.0);
+                    double3 position = anchor + (payload - anchor) * (double)t + sag;
+                    CableNodeDTO node = nodes[nodeIndex];
+                    node.CurrentAUP = position;
+                    node.PreviousAUP = position - new double3(current.x, current.y, current.z) * 0.016;
+                    node.InverseMass = (i == 0 || i == nodesPerTether - 1) ? 0f : 1f;
+                    node.Flags = (i == 0 || i == nodesPerTether - 1)
+                        ? CableNodeFlags132.Pinned | CableNodeFlags132.NetcodeFence
+                        : 0u;
+                    nodes[nodeIndex] = node;
+                    if (pinnedAups.IsCreated && nodeIndex < pinnedAups.Length)
+                        pinnedAups[nodeIndex] = position;
+                    if (pinnedMask.IsCreated && nodeIndex < pinnedMask.Length)
+                        pinnedMask[nodeIndex] = node.InverseMass <= 0f ? (byte)1 : (byte)0;
+                }
+
+                for (int i = 0; i < nodesPerTether - 1; i++)
+                {
+                    int constraintIndex = constraintOffset + i;
+                    if ((uint)constraintIndex >= (uint)constraints.Length)
+                        continue;
+
+                    int nodeA = nodeOffset + i;
+                    int nodeB = nodeA + 1;
+                    if ((uint)nodeA >= (uint)nodeCount || (uint)nodeB >= (uint)nodeCount)
+                        continue;
+
+                    double3 restDeltaAup = nodes[nodeB].CurrentAUP - nodes[nodeA].CurrentAUP;
+                    float3 restLocal = AupPrecisionMath.DowncastLocalDelta(restDeltaAup, float3.zero);
+                    float restLength = VerletCableSimdMath.LengthFromSq(math.lengthsq(restLocal));
+                    constraints[constraintIndex] = new TetherConstraintDTO
+                    {
+                        NodeA = nodeA,
+                        NodeB = nodeB,
+                        RestLength = math.max(VerletCableLayout.MinConstraintLength, restLength),
+                        Stiffness = math.lerp(0.72f, 0.98f, q),
+                        Flags = CableNodeFlags132.NetcodeFence,
+                        CableId = (uint)cable
+                    };
+                }
+            }
+
+            CableMaterialDTO.GenerateEmergencyMockCables(materials);
+            if (bootstrap.IsCreated && bootstrap.Length > 0)
+                bootstrap[0] = CablePhysics132Constants.BootstrapMagic;
+        }
+
+        private static VerletCableTuningDTO DefaultCableTuning()
+        {
+            return new VerletCableTuningDTO
+            {
+                Gravity = new float3(0f, -9.80665f, 0f),
+                FluidFriction = 0.975f,
+                ConstraintIterations = 0,
+                StretchThreshold01 = 0.18f,
+                BreakForce = 18000f,
+                RockFriction01 = 0.58f,
+                ReelSpeedMetersPerSecond = 18f
+            };
         }
 
         private static bool TryOpenExistingVaultView<T>(
@@ -1075,141 +1145,6 @@ namespace Hecton8.Physics
         {
             float q = math.saturate(math.isfinite(value) ? value : 1f);
             return q * q * (3f - 2f * q);
-        }
-    }
-
-    [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Deterministic, FloatPrecision = FloatPrecision.Standard)]
-    internal struct ZeroInitCableBuffersJob : IJob
-    {
-        [NoAlias] public NativeArray<TetherSplineVertexDTO> Vertices;
-        [NoAlias] public NativeArray<float> SegmentTensions;
-        [NoAlias] public NativeArray<PhysicsEventPayload> PhysicsEvents;
-        [NoAlias] public NativeArray<TetherTelemetryEntry> TelemetryRing;
-        [NoAlias] public NativeArray<int> TelemetryHead;
-        [NoAlias] public NativeArray<VerletCableTuningDTO> Tuning;
-
-        public void Execute()
-        {
-            for (int i = 0; i < Vertices.Length; i++)
-                Vertices[i] = default;
-            for (int i = 0; i < SegmentTensions.Length; i++)
-                SegmentTensions[i] = 0f;
-            for (int i = 0; i < PhysicsEvents.Length; i++)
-                PhysicsEvents[i] = default;
-            for (int i = 0; i < TelemetryRing.Length; i++)
-                TelemetryRing[i] = default;
-            if (TelemetryHead.IsCreated && TelemetryHead.Length > 0)
-                TelemetryHead[0] = 0;
-            if (Tuning.IsCreated && Tuning.Length > 0)
-            {
-                Tuning[0] = new VerletCableTuningDTO
-                {
-                    Gravity = new float3(0f, -9.80665f, 0f),
-                    FluidFriction = 0.975f,
-                    ConstraintIterations = 0,
-                    StretchThreshold01 = 0.18f,
-                    BreakForce = 18000f,
-                    RockFriction01 = 0.58f,
-                    ReelSpeedMetersPerSecond = 18f
-                };
-            }
-        }
-    }
-
-    [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Deterministic, FloatPrecision = FloatPrecision.Standard)]
-    internal unsafe struct GenerateMockTethersJob : IJob
-    {
-        // SAFETY_JUSTIFICATION_PARAGRAPH_1:
-        // Nodes is a preallocated owner pointer lane filled deterministically during mock bootstrap. The job bounds writes
-        // by NodeCount and writes each row in a single sequential bootstrap phase.
-        // SAFETY_JUSTIFICATION_PARAGRAPH_2:
-        // Managed cable-node objects were rejected for GC and virtual dispatch. A temporary NativeArray node set was
-        // rejected because it would require a second copy into the owner lane.
-        // SAFETY_JUSTIFICATION_PARAGRAPH_3:
-        // The invariant is exclusive bootstrap ownership: no cable simulation job reads Nodes until this generation handle is fenced.
-        [NoAlias, NativeDisableUnsafePtrRestriction] public CableNodeDTO* Nodes;
-        public int NodeCount;
-        [NoAlias] public NativeArray<TetherConstraintDTO> Constraints;
-        [NoAlias] public NativeArray<TetherEndpointAupDTO> Endpoints;
-        [NoAlias] public NativeArray<CableMaterialDTO> Materials;
-        [NoAlias] public NativeArray<int> BootstrapState;
-        [NoAlias] public NativeArray<double3> PinnedAUPs;
-        [NoAlias] public NativeArray<byte> PinnedMask;
-
-        public uint FrameIndex;
-        public uint SectorHash;
-        public float GlobalQualityWeight;
-
-        public void Execute()
-        {
-            int tetherCount = math.min(CablePhysics132Constants.MockTetherCount, Endpoints.IsCreated ? Endpoints.Length : 0);
-            int nodesPerTether = CablePhysics132Constants.MockNodesPerTether;
-            float q = math.saturate(math.isfinite(GlobalQualityWeight) ? GlobalQualityWeight : 1f);
-            for (int cable = 0; cable < tetherCount; cable++)
-            {
-                double3 anchor = new double3(cable * 4.0, -24.0 - cable * 0.25, cable * 2.25);
-                double3 payload = anchor + new double3(18.0 + cable * 0.5, -2.0, 7.5);
-                float3 current = new float3(0.045f * (1f + cable), -0.018f, 0.035f * (1f + q));
-                Endpoints[cable] = new TetherEndpointAupDTO
-                {
-                    AnchorAUP = anchor,
-                    PayloadAUP = payload,
-                    AbyssalCurrentAcceleration = current,
-                    GlobalQualityWeight = q
-                };
-
-                int nodeOffset = cable * nodesPerTether;
-                int constraintOffset = cable * (nodesPerTether - 1);
-                for (int i = 0; i < nodesPerTether; i++)
-                {
-                    int nodeIndex = nodeOffset + i;
-                    if ((uint)nodeIndex >= (uint)NodeCount)
-                        continue;
-
-                    float t = i * math.rcp(math.max(1, nodesPerTether - 1));
-                    double3 sag = new double3(0.0, -VerletCableSimdMath.SinPolynomial7(t * math.PI) * math.lerp(0.35f, 2.25f, q), 0.0);
-                    double3 position = anchor + (payload - anchor) * (double)t + sag;
-                    ref CableNodeDTO node = ref UnsafeUtility.AsRef<CableNodeDTO>((byte*)Nodes + nodeIndex * VerletCableLayout.CableNodeStrideBytes);
-                    node.CurrentAUP = position;
-                    node.PreviousAUP = position - new double3(current.x, current.y, current.z) * 0.016;
-                    node.InverseMass = (i == 0 || i == nodesPerTether - 1) ? 0f : 1f;
-                    node.Flags = (i == 0 || i == nodesPerTether - 1)
-                        ? CableNodeFlags132.Pinned | CableNodeFlags132.NetcodeFence
-                        : 0u;
-                    if (PinnedAUPs.IsCreated && nodeIndex < PinnedAUPs.Length)
-                        PinnedAUPs[nodeIndex] = position;
-                    if (PinnedMask.IsCreated && nodeIndex < PinnedMask.Length)
-                        PinnedMask[nodeIndex] = node.InverseMass <= 0f ? (byte)1 : (byte)0;
-                }
-
-                for (int i = 0; i < nodesPerTether - 1; i++)
-                {
-                    int constraintIndex = constraintOffset + i;
-                    if ((uint)constraintIndex >= (uint)Constraints.Length)
-                        continue;
-
-                    int nodeA = nodeOffset + i;
-                    int nodeB = nodeA + 1;
-                    ref CableNodeDTO a = ref UnsafeUtility.AsRef<CableNodeDTO>((byte*)Nodes + nodeA * VerletCableLayout.CableNodeStrideBytes);
-                    ref CableNodeDTO b = ref UnsafeUtility.AsRef<CableNodeDTO>((byte*)Nodes + nodeB * VerletCableLayout.CableNodeStrideBytes);
-                    double3 restDeltaAup = b.CurrentAUP - a.CurrentAUP;
-                    float3 restLocal = AupPrecisionMath.DowncastLocalDelta(restDeltaAup, float3.zero);
-                    float restLength = VerletCableSimdMath.LengthFromSq(math.lengthsq(restLocal));
-                    Constraints[constraintIndex] = new TetherConstraintDTO
-                    {
-                        NodeA = nodeA,
-                        NodeB = nodeB,
-                        RestLength = math.max(VerletCableLayout.MinConstraintLength, restLength),
-                        Stiffness = math.lerp(0.72f, 0.98f, q),
-                        Flags = CableNodeFlags132.NetcodeFence,
-                        CableId = (uint)cable
-                    };
-                }
-            }
-
-            CableMaterialDTO.GenerateEmergencyMockCables(Materials);
-            if (BootstrapState.IsCreated && BootstrapState.Length > 0)
-                BootstrapState[0] = CablePhysics132Constants.BootstrapMagic;
         }
     }
 

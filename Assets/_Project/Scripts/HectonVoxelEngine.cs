@@ -5680,7 +5680,11 @@ public class HectonVoxelEngine : MonoBehaviour, Hecton8.Core.Contracts.IVoxelSon
                 return false;
             }
 
-            if (!TryTrackNearestSonarSdfReadLease(volumeLease.Vault, volumeLease.SdfGeneration, version))
+            if (!TryTrackNearestSonarSdfReadLease(
+                    volumeLease.Vault,
+                    volumeLease.SdfGeneration,
+                    version,
+                    volumeLease.MutationGuardMask))
                 return false;
 
             encodedSdf = payload;
@@ -5713,9 +5717,12 @@ public class HectonVoxelEngine : MonoBehaviour, Hecton8.Core.Contracts.IVoxelSon
         TryReleaseTrackedNearestSonarSdfReadLease(in lease);
     }
 
-    bool TryTrackNearestSonarSdfReadLease(IDataVault vault, uint sdfGeneration, int version)
+    bool TryTrackNearestSonarSdfReadLease(IDataVault vault, uint sdfGeneration, int version, ulong guardMask)
     {
-        if (vault == null || sdfGeneration == 0u || version <= 0)
+        if (vault == null ||
+            sdfGeneration == 0u ||
+            version <= 0 ||
+            guardMask != HectonVoxelVolume.PublishedSonarPayloadReadGuardMask)
             return false;
 
         for (int i = 0; i < NearestSonarSdfReadLeaseTrackerCapacity; i++)
@@ -5775,9 +5782,9 @@ public class HectonVoxelEngine : MonoBehaviour, Hecton8.Core.Contracts.IVoxelSon
                 return false;
             }
 
-            bool unlocked = vault.TryUnlockBuffer(BufferID.VoxelSdfTexture3D, SystemID.TerrainSeams);
-            if (!unlocked)
-                return false;
+            HectonVoxelVolume.ReleasePublishedSonarPayloadReadGuard(
+                vault,
+                HectonVoxelVolume.PublishedSonarPayloadReadGuardMask);
 
             ushort refCount = _nearestSonarSdfReadLeaseRefCounts[i];
             if (refCount <= 1)
@@ -5809,7 +5816,11 @@ public class HectonVoxelEngine : MonoBehaviour, Hecton8.Core.Contracts.IVoxelSon
             ushort refCount = _nearestSonarSdfReadLeaseRefCounts[i];
             IDataVault vault = _nearestSonarSdfReadLeaseVaults[i];
             for (int releaseIndex = 0; releaseIndex < refCount && vault != null; releaseIndex++)
-                vault.TryUnlockBuffer(BufferID.VoxelSdfTexture3D, SystemID.TerrainSeams);
+            {
+                HectonVoxelVolume.ReleasePublishedSonarPayloadReadGuard(
+                    vault,
+                    HectonVoxelVolume.PublishedSonarPayloadReadGuardMask);
+            }
 
             ClearNearestSonarSdfReadLeaseTrackerSlot(i);
         }

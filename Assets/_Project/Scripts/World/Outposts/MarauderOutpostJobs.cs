@@ -48,7 +48,8 @@ namespace Hecton8.World.Outposts
         public const byte MutableStateMask = 0x0F;
 
         public const uint FaultFlag = 1u << 31;
-        public const uint LowTierFlag = WfcOutpostGridConstants.DescriptorFlagLowTier;
+        public const uint SurvivalBandFlag = WfcOutpostGridConstants.DescriptorFlagLowTier;
+        public const uint LowTierFlag = SurvivalBandFlag;
         public const uint HeightmapFallbackFlag = WfcOutpostGridConstants.DescriptorFlagHeightmapFallback;
         public const uint AupShiftFlag = 1u << 2;
 
@@ -301,7 +302,7 @@ namespace Hecton8.World.Outposts
     [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
     internal struct MarauderOutpostMatrixExtractionJob : IJob
     {
-        [ReadOnly, NoAlias] public NativeArray<byte> WfcGrid;
+        [ReadOnly, NoAlias] public NativeArray<byte>.ReadOnly WfcGrid;
         [NoAlias] public NativeArray<byte> MutableGrid;
         [ReadOnly, NoAlias] public NativeArray<ushort> HeightSamples;
         [NoAlias] public NativeArray<float4x4> ShellMatrices;

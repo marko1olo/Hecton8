@@ -49,7 +49,6 @@ namespace Hecton8.Atmosphere
         private const byte SignalFlagsCorrosion = 4;
         private const byte TelemetryFlagMockChemistry = 1;
         private const float ToxicCorrosionStatusDurationSeconds = 2.0f;
-        private const byte TelemetryFlagFallbackRadial = 2;
         private const byte TelemetryFlagBinaryProbeFailure = 32;
         private const byte TelemetryFlagDumpFailure = 64;
         private const byte TelemetryFlagNaN = 128;
@@ -1135,7 +1134,7 @@ namespace Hecton8.Atmosphere
                 EntityCount = _entityCount,
                 GlobalQualityWeight = qualityWeight,
                 Frame = simulationFrame,
-                Flags = (byte)((_mockChemistry ? TelemetryFlagMockChemistry : 0) | (qualityWeight < 0.3f ? TelemetryFlagFallbackRadial : 0))
+                Flags = (byte)(_mockChemistry ? TelemetryFlagMockChemistry : 0)
             };
             dependency = telemetryJob.Schedule(dependency);
 
@@ -1295,7 +1294,7 @@ namespace Hecton8.Atmosphere
             header.Resolution = (ushort)math.clamp(_activeResolution, 0, ushort.MaxValue);
             header.ActiveSources = (ushort)math.clamp(_sourceCount, 0, ushort.MaxValue);
             header.ActiveEntities = (ushort)math.clamp(_entityCount, 0, ushort.MaxValue);
-            header.Flags = (byte)((_mockChemistry ? TelemetryFlagMockChemistry : 0) | (_activeResolution == LowResolution ? TelemetryFlagFallbackRadial : 0));
+            header.Flags = (byte)(_mockChemistry ? TelemetryFlagMockChemistry : 0);
             header._pad0 = 0;
             header._pad1 = 0ul;
             headers[0] = header;

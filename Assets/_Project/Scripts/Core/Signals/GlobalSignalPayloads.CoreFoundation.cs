@@ -648,7 +648,7 @@ namespace Hecton8.Core.Contracts.Signals
     [StructLayout(LayoutKind.Explicit, Size = 128)]
     public struct KccVelocitySignal : ISignal
     {
-        public const byte FlagLowTier = 1 << 0;
+        public const byte FlagQualityPressureLegacy = 1 << 0;
         public const byte FlagMovementAuthorityExternal = 1 << 1;
 
         [FieldOffset(0)]
@@ -666,7 +666,7 @@ namespace Hecton8.Core.Contracts.Signals
         [FieldOffset(76)]
         public byte Flags;
         [FieldOffset(77)]
-        public byte Reserved0;
+        public byte QualityPressureQ8;
         [FieldOffset(78)]
         public ushort Reserved1;
         [FieldOffset(80)]

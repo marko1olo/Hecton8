@@ -938,7 +938,6 @@ namespace Hecton8.Gameplay
         private const float RollSignalEpsilonDegrees = 0.01f;
         private const uint AupWatchdogDumpMagic = 0x41555044u;
         private const uint SdfSqueezeDumpMagic = 0x5344464Bu;
-        private const byte KccVelocityReducedQualityCompatibilityFlag = 1 << 0;
         private const byte PlayerStateReducedGradientCompatibilityFlag = 1 << 2;
         private const string AupWatchdogDumpFileName = "Dump_AUP_DETERMINISM_WATCHDOG.bin";
         private const string SdfSqueezeDumpFileName = "Dump_KCC_SDF_SQUEEZE_RESOLVER.bin";
@@ -1132,7 +1131,6 @@ namespace Hecton8.Gameplay
             if (MovementOwnsKinematicAuthority())
             {
                 byte externalFlags = KccVelocitySignal.FlagMovementAuthorityExternal;
-                externalFlags |= (byte)(KccVelocityReducedQualityCompatibilityFlag * (byte)(SmoothQuality01(qualityWeight01) <= 0.0001f ? 1 : 0));
 
                 float3 rawAuthorityPosition = ToFloat3(ResolveBodyRuntimePosition());
                 float3 rawAuthorityVelocity = ReadVelocitySnapshot(float3.zero);
@@ -1300,7 +1298,7 @@ namespace Hecton8.Gameplay
             PublishKccVelocitySignal(
                 resolvedPosition3,
                 resolvedVelocity3,
-                (byte)(KccVelocityReducedQualityCompatibilityFlag * (byte)(SmoothQuality01(qualityWeight01) <= 0.0001f ? 1 : 0)));
+                0);
             if (SdfSqueezeResult.IsResultActive(in sdfSqueezeResult))
                 PublishSdfSqueezeSignals(in sdfSqueezeResult, resolvedPosition3, resolvedVelocity3);
             if (faultFlags == 0)
@@ -2659,6 +2657,7 @@ namespace Hecton8.Gameplay
             signal.Frame = Hecton8.Core.SystemDispatcher.CurrentFrameId;
             signal.SourceId = _sourceId;
             signal.Flags = flags;
+            signal.QualityPressureQ8 = ResolveQualityPressureQ8(ReadCachedGlobalQualityWeight01());
             CoreDeterminismSignals.TryPublishKccVelocity(in signal);
         }
 
@@ -4338,6 +4337,12 @@ namespace Hecton8.Gameplay
         {
             float t = math.saturate(math.select(1.0f, value, math.isfinite(value)));
             return t * t * (3.0f - 2.0f * t);
+        }
+
+        private static byte ResolveQualityPressureQ8(float qualityWeight01)
+        {
+            float pressure01 = 1.0f - SmoothQuality01(qualityWeight01);
+            return (byte)math.clamp((int)math.round(pressure01 * 255.0f), 0, 255);
         }
 
         private byte ResolveSdfSampleMode(float qualityWeight01, uint frame)

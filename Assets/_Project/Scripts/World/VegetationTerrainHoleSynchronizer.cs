@@ -410,42 +410,67 @@ namespace Hecton8.World
             }
 
             EnsureTerrainHoleStreamingCapacity(ref _terrainHoleStreamingRecords, _terrainHoleCount);
-            bool holeRecordsLocked = false;
-            bool streamingLocked = false;
-            IDataVault holeRecordsVault = null;
-            IDataVault streamingVault = null;
-            if (!TryAcquireVegetationMemoryBuffer(
-                    ref _nativeMemory.TerrainHoleRecordsHandle,
-                    BufferID.VegetationTerrainHoleRecords,
-                    _terrainHoleCount,
-                    NativeArrayOptions.UninitializedMemory,
-                    out holeRecordsVault,
-                    out NativeArray<TerrainHoleRecord> terrainHoleRecordsNative))
+            if (!WriteTerrainHoleRecordsNativeCache())
             {
                 MarkAllTileTerrainHolesDirty();
                 return;
             }
 
-            holeRecordsLocked = true;
+            if (!WriteTerrainHoleStreamingNativeCache())
+            {
+                MarkAllTileTerrainHolesDirty();
+                return;
+            }
+
+            MarkAllTileTerrainHolesDirty();
+        }
+
+        private bool WriteTerrainHoleRecordsNativeCache()
+        {
+            if (!TryAcquireVegetationMemoryBuffer(
+                    ref _nativeMemory.TerrainHoleRecordsHandle,
+                    BufferID.VegetationTerrainHoleRecords,
+                    _terrainHoleCount,
+                    NativeArrayOptions.UninitializedMemory,
+                    out IDataVault vault,
+                    out NativeArray<TerrainHoleRecord> terrainHoleRecordsNative))
+            {
+                return false;
+            }
+
             try
             {
-                if (!TryAcquireVegetationMemoryBuffer(
+                for (int i = 0; i < _terrainHoleCount; i++)
+                    terrainHoleRecordsNative[i] = _terrainHoleRecords[i];
+
+                return true;
+            }
+            finally
+            {
+                vault.ReleaseWriteLock(
+                    in _nativeMemory.TerrainHoleRecordsHandle,
+                    VegetationMemorySovereigntyConstants.OwnerSystemId);
+            }
+        }
+
+        private bool WriteTerrainHoleStreamingNativeCache()
+        {
+            if (!TryAcquireVegetationMemoryBuffer(
                     ref _nativeMemory.TerrainHoleStreamingRecordsHandle,
                     BufferID.VegetationTerrainHoleStreamingRecords,
                     _terrainHoleCount,
                     NativeArrayOptions.UninitializedMemory,
-                    out streamingVault,
+                    out IDataVault vault,
                     out NativeArray<TerrainHoleStreamingRecord> terrainHoleStreamingRecordsNative))
-                {
-                    MarkAllTileTerrainHolesDirty();
-                    return;
-                }
+            {
+                return false;
+            }
 
-                streamingLocked = true;
+            try
+            {
                 for (int i = 0; i < _terrainHoleCount; i++)
                 {
                     TerrainHoleRecord hole = _terrainHoleRecords[i];
-                    terrainHoleRecordsNative[i] = hole;
                     TerrainHoleStreamingRecord streamingRecord = new TerrainHoleStreamingRecord
                     {
                         HoleId = hole.HoleId,
@@ -456,25 +481,15 @@ namespace Hecton8.World
                     _terrainHoleStreamingRecords[i] = streamingRecord;
                     terrainHoleStreamingRecordsNative[i] = streamingRecord;
                 }
+
+                return true;
             }
             finally
             {
-                if (streamingLocked)
-                {
-                    streamingVault.ReleaseWriteLock(
-                        in _nativeMemory.TerrainHoleStreamingRecordsHandle,
-                        VegetationMemorySovereigntyConstants.OwnerSystemId);
-                }
-
-                if (holeRecordsLocked)
-                {
-                    holeRecordsVault.ReleaseWriteLock(
-                        in _nativeMemory.TerrainHoleRecordsHandle,
-                        VegetationMemorySovereigntyConstants.OwnerSystemId);
-                }
+                vault.ReleaseWriteLock(
+                    in _nativeMemory.TerrainHoleStreamingRecordsHandle,
+                    VegetationMemorySovereigntyConstants.OwnerSystemId);
             }
-
-            MarkAllTileTerrainHolesDirty();
         }
 
         private bool TryReadTerrainHoleRecords(out NativeArray<TerrainHoleRecord> terrainHoles)
@@ -651,7 +666,6 @@ namespace Hecton8.World
             int semanticType,
             Vector3[] managedPositions,
             NativeArray<Vector3> nativePositions,
-            NativeArray<AbsoluteUniversePosition> nativeAupPositions,
             double3 universeOffset,
             ref int writeIndex)
         {
@@ -676,6 +690,39 @@ namespace Hecton8.World
                 Vector3 position = ToVector3(runtimePosition);
                 managedPositions[writeIndex] = position;
                 nativePositions[writeIndex] = position;
+                writeIndex++;
+            }
+        }
+
+        private void CopySemanticAnchorAupPositions(
+            NativeChunkPool pool,
+            int offset,
+            int count,
+            int semanticType,
+            NativeArray<AbsoluteUniversePosition> nativeAupPositions,
+            double3 universeOffset,
+            int writeCapacity,
+            ref int writeIndex)
+        {
+            int requiredPoolCount = offset + count;
+            if (offset < 0 ||
+                count <= 0 ||
+                requiredPoolCount < offset ||
+                writeCapacity <= 0)
+            {
+                return;
+            }
+
+            if (!TryReadChunkPoolView(in pool, requiredPoolCount, out NativeChunkPoolView poolView))
+                return;
+
+            int end = math.min(poolView.SemanticTypes.Length, requiredPoolCount);
+            for (int i = math.max(0, offset); i < end && writeIndex < writeCapacity; i++)
+            {
+                if (poolView.SemanticTypes[i] != semanticType)
+                    continue;
+
+                double3 runtimePosition = new double3(poolView.Matrices[i].m03, poolView.Matrices[i].m13, poolView.Matrices[i].m23) + universeOffset;
                 nativeAupPositions[writeIndex] = AbsoluteUniversePosition.FromAbsolutePosition(runtimePosition + HectonFloatingOrigin.CurrentTotalOffsetDouble);
                 writeIndex++;
             }

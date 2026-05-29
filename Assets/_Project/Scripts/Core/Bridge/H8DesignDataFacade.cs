@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using Hecton8.Core.Contracts;
 using Hecton8.Core.Memory;
 using Unity.Mathematics;
 using UnityEngine;
@@ -178,6 +179,12 @@ namespace Hecton8.Core.Bridge
         [SerializeField] private List<FloatBinding> floatBindings = new List<FloatBinding>(32);
         [SerializeField] private uint lastChangedFieldHash;
         [SerializeField] private int lastAppliedBindingCount;
+        [SerializeField, HideInInspector] private int validationNullBindingCount;
+        [SerializeField, HideInInspector] private int validationFirstNullBindingIndex = -1;
+        [SerializeField, HideInInspector] private int validationRuntimeBindingCount;
+        [SerializeField, HideInInspector] private int validationDisabledBindingCount;
+        [SerializeField, HideInInspector] private int validationDuplicateFieldHashCount;
+        [SerializeField, HideInInspector] private int validationFirstDuplicateFieldHashIndex = -1;
 
         public uint FacadeHash => facadeHash == 0u ? H8BridgeHashes.DesignFacade : facadeHash;
         public bool LiveTuningEnabled => liveTuningEnabled;
@@ -186,6 +193,14 @@ namespace Hecton8.Core.Bridge
         public uint HighTierVisualHash => highTierVisualHash;
         public uint LastChangedFieldHash => lastChangedFieldHash;
         public int BindingCount => floatBindings != null ? floatBindings.Count : 0;
+        public int RuntimeBindingCount => validationRuntimeBindingCount;
+        public bool HasValidationErrors => validationNullBindingCount > 0 || validationDuplicateFieldHashCount > 0;
+        public int ValidationNullBindingCount => validationNullBindingCount;
+        public int ValidationFirstNullBindingIndex => validationFirstNullBindingIndex;
+        public int ValidationRuntimeBindingCount => validationRuntimeBindingCount;
+        public int ValidationDisabledBindingCount => validationDisabledBindingCount;
+        public int ValidationDuplicateFieldHashCount => validationDuplicateFieldHashCount;
+        public int ValidationFirstDuplicateFieldHashIndex => validationFirstDuplicateFieldHashIndex;
 
         public FloatBinding GetBinding(int index)
         {
@@ -201,7 +216,7 @@ namespace Hecton8.Core.Bridge
             for (int i = 0; i < floatBindings.Count; i++)
             {
                 FloatBinding binding = floatBindings[i];
-                if (binding != null)
+                if (binding != null && binding.Enabled)
                     total += binding.EstimateVramBytes();
             }
 
@@ -210,8 +225,24 @@ namespace Hecton8.Core.Bridge
 
         public bool SyncToVault(IDataVault vault)
         {
+            return SyncToVault(vault, null);
+        }
+
+        public bool SyncToVault(IDataVault vault, IMacroDatabaseService macroDatabase)
+        {
             ushort flags = designerOverride ? (ushort)H8DesignValueFlags.DesignerOverride : (ushort)0;
-            return H8BridgeFacadeRuntime.SyncDesignData(this, vault, flags);
+            return H8BridgeFacadeRuntime.SyncDesignData(this, vault, flags, macroDatabase);
+        }
+
+        public void RefreshValidationState()
+        {
+            ValidateBindings(pushLive: false);
+        }
+
+        internal int RefreshRuntimeBindingStateForSync()
+        {
+            RefreshValidationState();
+            return validationRuntimeBindingCount;
         }
 
         private void Reset()
@@ -223,6 +254,11 @@ namespace Hecton8.Core.Bridge
         private void OnValidate()
         {
             ValidateBindings(pushLive: true);
+        }
+
+        private void OnEnable()
+        {
+            ValidateBindings(pushLive: false);
         }
 
         [ContextMenu("Seed Default Design Bindings")]
@@ -296,6 +332,7 @@ namespace Hecton8.Core.Bridge
         private void ValidateBindings(bool pushLive)
         {
             EnsureBindingList();
+            ResetValidationState();
             if (facadeHash == 0u)
                 facadeHash = H8BridgeHashes.DesignFacade;
             if (oneDimensionalLutHash == 0u)
@@ -309,14 +346,26 @@ namespace Hecton8.Core.Bridge
             {
                 FloatBinding binding = floatBindings[i];
                 if (binding == null)
+                {
+                    validationNullBindingCount++;
+                    if (validationFirstNullBindingIndex < 0)
+                        validationFirstNullBindingIndex = i;
                     continue;
+                }
 
                 if (binding.SanitizeAndDetectChange(out _))
                 {
                     changed = true;
                     lastChangedFieldHash = binding.FieldHash;
                 }
+
+                if (binding.Enabled)
+                    validationRuntimeBindingCount++;
+                else
+                    validationDisabledBindingCount++;
             }
+
+            validationDuplicateFieldHashCount = CountDuplicateRuntimeFieldHashes(out validationFirstDuplicateFieldHashIndex);
 
             if (floatBindings.Count != previousBindingCount)
             {
@@ -331,7 +380,60 @@ namespace Hecton8.Core.Bridge
             if (!designerOverride && H8BridgeFacadeRuntime.LiveTuningBlockedByStress())
                 return;
 
-            SyncToVault(GlobalRegistry.DataVault);
+            if (validationDuplicateFieldHashCount > 0)
+                return;
+
+            SyncToVault(GlobalRegistry.DataVault, GlobalRegistry.MacroDatabase);
+        }
+
+        private void ResetValidationState()
+        {
+            validationNullBindingCount = 0;
+            validationFirstNullBindingIndex = -1;
+            validationRuntimeBindingCount = 0;
+            validationDisabledBindingCount = 0;
+            validationDuplicateFieldHashCount = 0;
+            validationFirstDuplicateFieldHashIndex = -1;
+        }
+
+        private int CountDuplicateRuntimeFieldHashes(out int firstDuplicateIndex)
+        {
+            firstDuplicateIndex = -1;
+            if (floatBindings == null || floatBindings.Count <= 1)
+                return 0;
+
+            int duplicateRows = 0;
+            for (int i = 0; i < floatBindings.Count; i++)
+            {
+                FloatBinding binding = floatBindings[i];
+                if (!IsRuntimeHashCandidate(binding))
+                    continue;
+
+                bool duplicatesEarlierRow = false;
+                for (int j = 0; j < i; j++)
+                {
+                    FloatBinding previous = floatBindings[j];
+                    if (IsRuntimeHashCandidate(previous) && previous.FieldHash == binding.FieldHash)
+                    {
+                        duplicatesEarlierRow = true;
+                        break;
+                    }
+                }
+
+                if (!duplicatesEarlierRow)
+                    continue;
+
+                duplicateRows++;
+                if (firstDuplicateIndex < 0)
+                    firstDuplicateIndex = i;
+            }
+
+            return duplicateRows;
+        }
+
+        private static bool IsRuntimeHashCandidate(FloatBinding binding)
+        {
+            return binding != null && binding.Enabled && binding.FieldHash != 0u;
         }
     }
 

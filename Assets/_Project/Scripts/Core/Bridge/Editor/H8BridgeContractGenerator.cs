@@ -31,11 +31,18 @@ namespace Hecton8.Core.Bridge.EditorTools
                 if (facade == null)
                     continue;
 
+                facade.RefreshValidationState();
+                if (facade.ValidationDuplicateFieldHashCount > 0)
+                {
+                    Debug.LogError("[H8Bridge] Contract generation skipped duplicate design field hashes in " + path);
+                    continue;
+                }
+
                 uint assetHash = global::Hecton8.Core.Bridge.H8BridgeHashes.ComputeFnv1A(path);
                 for (int j = 0; j < facade.BindingCount; j++)
                 {
                     H8DesignDataFacade.FloatBinding binding = facade.GetBinding(j);
-                    if (binding == null)
+                    if (binding == null || !binding.Enabled)
                         continue;
 
                     int alignedOffsetBytes = H8BridgeFacadeRuntime.AlignFloatOffsetBytes(binding.OffsetBytes);

@@ -384,7 +384,7 @@ namespace Hecton8.Audio
         private const float MassiveDistanceFixedAudioDelaySeconds = 0.5f;
         private const float ThermalShimmerMaximumPitchRatio = 0.018f;
         private const float TimeDilationAudioMinimumPitchRatio = 0.72f;
-        private const int LowTierAmbientOutputSampleRate = 22050;
+        private const int SurvivalAmbientOutputSampleRate = 22050;
         private const float BrownoutAudioPitchMinimumRatio = 0.58f;
         private const float BrownoutAudioPitchSharpness = 7f;
         private const float BrownoutAudioReleasePerSecond = 0.45f;
@@ -495,8 +495,8 @@ namespace Hecton8.Audio
         private const int MaxQueuedAudioEvents = 32;
         private const int MaxVirtualVoiceCapacity = VirtualVoiceUtility.MaxVirtualVoiceCount;
         private const int MaxVirtualPhysicalVoices = VirtualVoiceUtility.MaxPhysicalVoiceCount;
-        private const int LowTierVirtualPhysicalVoices = VirtualVoiceUtility.LowTierPhysicalVoiceCount;
-        private const int VirtualVoiceTierHysteresisSlowTicks = 25;
+        private const int SurvivalVirtualPhysicalVoices = VirtualVoiceUtility.SurvivalPhysicalVoiceCount;
+        private const int VirtualVoiceQualityHysteresisSlowTicks = 25;
         private const int VirtualVoiceBlackBoxFrameCount = 300;
         private const float VirtualVoiceStealFadeSeconds = 0.01f;
         private const string VirtualVoiceDumpRelativePath = "Docs/AgentLogs/Dump_ACOUSTIC_SURGEON.bin";
@@ -545,6 +545,8 @@ namespace Hecton8.Audio
             AudioVaultMutationGuardBit(SpatialAudioPreviousVelocityAupsBufferId) |
             AudioVaultMutationGuardBit(SpatialAudioPreviousVelocityAupFramesBufferId);
         private const BufferID SpatialAudioAcousticVoxelSdfTexture3DBufferId = (BufferID)72447;
+        private static readonly ulong AcousticOcclusionSdfSnapshotMutationGuardMask =
+            AudioVaultMutationGuardBit(SpatialAudioAcousticVoxelSdfTexture3DBufferId);
         private const int AcousticSdfDefaultWidth = 64;
         private const int AcousticSdfDefaultHeight = 40;
         private const int AcousticSdfDefaultDepth = 64;
@@ -1376,10 +1378,11 @@ namespace Hecton8.Audio
         private IDataVault _acousticMaterialRowsLockVault;
         private IDataVault _virtualVoiceSortBuffersLockVault;
         private IDataVault _acousticOcclusionBuffersLockVault;
+        private IDataVault _acousticOcclusionSdfSnapshotGuardVault;
         private bool _virtualVoiceSortScheduled;
         private bool _acousticOcclusionScheduled;
         private bool _acousticMaterialRowsLockedForOcclusion;
-        private bool _acousticOcclusionSdfSnapshotLocked;
+        private bool _acousticOcclusionSdfSnapshotGuardHeld;
         private bool _virtualVoiceStatisticsLockedForSort;
         private bool _virtualVoiceSortPoolLockedForSort;
         private bool _virtualVoiceSortKeyPoolLockedForSort;
@@ -1390,8 +1393,6 @@ namespace Hecton8.Audio
         private bool _hasVirtualListenerAup;
         private bool _hasVirtualPreviousListenerVelocityAup;
         private bool _virtualVoiceBlackBoxDumped;
-        private bool _virtualVoiceLowTierTarget;
-        private bool _virtualVoiceLowTierApplied;
         private uint[] _virtualChannelStableKeys;
         private int[] _virtualChannelSourceIndices;
         private VirtualVoiceSelection[] _virtualChannelPendingSelections;
@@ -3242,16 +3243,16 @@ namespace Hecton8.Audio
         private VirtualVoiceSdfSampler ResolveVirtualVoiceSdfSampler()
         {
             float qualityWeight = ResolveVirtualVoiceQualityWeight();
-            bool enabled = qualityWeight > 0.02f &&
-                (_listenerInsideBaseInteriorMuffle || _listenerCaveInterior01 >= 0.35f);
+            float occlusionWeight = math.lerp(0.25f, 1f, SmoothQuality01(qualityWeight));
+            bool enabled = _listenerInsideBaseInteriorMuffle || _listenerCaveInterior01 >= 0.35f;
             return new VirtualVoiceSdfSampler
             {
                 Center = float3.zero,
                 HalfExtents = new float3(0.001f),
                 WallPlaneY = 0f,
                 WallThickness = _listenerInsideBaseInteriorMuffle
-                    ? math.lerp(0.04f, 0.08f, qualityWeight)
-                    : math.lerp(0.015f, 0.06f, math.saturate(_listenerCaveInterior01) * math.max(0.25f, qualityWeight)),
+                    ? math.lerp(0.04f, 0.08f, occlusionWeight)
+                    : math.lerp(0.015f, 0.06f, math.saturate(_listenerCaveInterior01) * occlusionWeight),
                 Enabled = enabled ? (byte)1 : (byte)0,
                 UseBox = 0
             };
@@ -3507,7 +3508,7 @@ namespace Hecton8.Audio
             _acousticMaterialRowsLockedForOcclusion = materialRowsLocked;
             _acousticMaterialRowsLockVault = materialRowsLocked ? _dataVault : null;
             if (hasVoxelSdf)
-                _acousticOcclusionSdfSnapshotLocked = acousticSdfSnapshotLocked;
+                _acousticOcclusionSdfSnapshotGuardHeld = acousticSdfSnapshotLocked;
             bool scheduleAccepted = false;
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
             try
@@ -3652,12 +3653,13 @@ namespace Hecton8.Audio
             }
 
             if (vault.IsCompactionFenceActive ||
-                !vault.TryLockBuffer(SpatialAudioAcousticVoxelSdfTexture3DBufferId, SystemID.Audio))
+                !vault.TryAcquireMutationGuard(AcousticOcclusionSdfSnapshotMutationGuardMask))
             {
                 return false;
             }
 
             snapshotLocked = true;
+            _acousticOcclusionSdfSnapshotGuardVault = vault;
             if (vault.IsCompactionFenceActive)
             {
                 UnlockAcousticOcclusionSdfSnapshot(ref snapshotLocked);
@@ -4939,23 +4941,22 @@ namespace Hecton8.Audio
                 return;
 
             EnsureSpatialAudioPolicyCached();
-            bool reducedSampleRate =
-                _cachedSpatialAudioQualityWeight01 <= 0.28f ||
+            bool platformSampleRateConstrained =
                 HardwareTierDetector.IsQuest3Like ||
                 QuestVulkanRuntimePolicy.IsQuestRuntimeActive;
-            if (!reducedSampleRate)
+            if (!platformSampleRateConstrained)
                 return;
 
             AudioConfiguration configuration = AudioSettings.GetConfiguration();
-            if (configuration.sampleRate > 0 && configuration.sampleRate <= LowTierAmbientOutputSampleRate)
+            if (configuration.sampleRate > 0 && configuration.sampleRate <= SurvivalAmbientOutputSampleRate)
             {
                 _lastAudioOutputSampleRate = configuration.sampleRate;
                 return;
             }
 
-            configuration.sampleRate = LowTierAmbientOutputSampleRate;
+            configuration.sampleRate = SurvivalAmbientOutputSampleRate;
             if (AudioSettings.Reset(configuration))
-                _lastAudioOutputSampleRate = LowTierAmbientOutputSampleRate;
+                _lastAudioOutputSampleRate = SurvivalAmbientOutputSampleRate;
         }
 
         private void TryRegisterHotSwapListener()
@@ -5122,26 +5123,17 @@ namespace Hecton8.Audio
                 return;
             }
 
-            bool targetSurvival = targetWeight <= 0.18f;
-            if (targetSurvival != _virtualVoiceLowTierTarget)
-            {
-                _virtualVoiceLowTierTarget = targetSurvival;
-                _virtualVoiceTierPendingSlowTicks = 0;
-                return;
-            }
-
             _virtualVoiceTierPendingSlowTicks++;
-            if (_virtualVoiceTierPendingSlowTicks >= VirtualVoiceTierHysteresisSlowTicks)
+            if (_virtualVoiceTierPendingSlowTicks >= VirtualVoiceQualityHysteresisSlowTicks)
             {
                 ApplyVirtualVoiceQualityWeight(targetWeight);
                 return;
             }
 
-            float blend = math.saturate(_virtualVoiceTierPendingSlowTicks * math.rcp(math.max(1f, VirtualVoiceTierHysteresisSlowTicks)));
+            float blend = math.saturate(_virtualVoiceTierPendingSlowTicks * math.rcp(math.max(1f, VirtualVoiceQualityHysteresisSlowTicks)));
             float smoothed = math.lerp(_virtualVoiceQualityWeight, targetWeight, blend);
             _virtualVoiceQualityWeight = smoothed;
             _virtualPhysicalVoiceLimit = VirtualVoiceUtility.ResolveContinuousVoiceBudget(smoothed);
-            _virtualVoiceLowTierApplied = smoothed <= 0.18f;
         }
 
         private void ApplyVirtualVoiceQualityWeight(float qualityWeight)
@@ -5149,9 +5141,6 @@ namespace Hecton8.Audio
             float sanitized = math.saturate(SanitizeFinite(qualityWeight, 1f));
             _virtualVoiceQualityWeight = sanitized;
             _virtualPhysicalVoiceLimit = VirtualVoiceUtility.ResolveContinuousVoiceBudget(sanitized);
-            bool survival = sanitized <= 0.18f;
-            _virtualVoiceLowTierTarget = survival;
-            _virtualVoiceLowTierApplied = survival;
             _virtualVoiceTierPendingSlowTicks = 0;
         }
 
@@ -5207,9 +5196,10 @@ namespace Hecton8.Audio
                     PhysicalVoiceLimit = (ushort)math.clamp(statistics.PhysicalVoiceLimit, 0, ushort.MaxValue),
                     StolenVoices = (ushort)math.clamp(statistics.StolenVoices, 0, ushort.MaxValue),
                     DroppedVoices = (ushort)math.clamp(statistics.DroppedVoices, 0, ushort.MaxValue),
-                    Flags = (ushort)((_hasVirtualListenerAup ? 1 : 0) | (_virtualVoiceLowTierApplied ? 2 : 0)),
+                    Flags = (ushort)(_hasVirtualListenerAup ? 1 : 0),
                     OccludedVoices = (ushort)math.clamp(statistics.OccludedVoices, 0, ushort.MaxValue),
                     DelayedVoices = (ushort)math.clamp(statistics.DelayedVoices, 0, ushort.MaxValue),
+                    QualityWeightQ8 = EncodeVirtualVoiceQualityQ8(_virtualVoiceQualityWeight),
                     StateHash = stateHash,
                     LoudestWeight = loudestWeight,
                     SortTimeMs = statistics.SortTimeMs,
@@ -5265,6 +5255,12 @@ namespace Hecton8.Audio
                 hash = (hash ^ math.asuint(statistics.AcousticOcclusionTimeMs)) * 16777619u;
                 return hash;
             }
+        }
+
+        private static ushort EncodeVirtualVoiceQualityQ8(float qualityWeight01)
+        {
+            float quality = math.saturate(SanitizeFinite(qualityWeight01, 0f));
+            return (ushort)math.clamp((int)math.round(quality * 255f), 0, 255);
         }
 
         private void DumpVirtualVoiceBlackBox()
@@ -8733,14 +8729,15 @@ namespace Hecton8.Audio
 
         private void ReleaseAcousticOcclusionSdfSnapshotLock()
         {
-            if (!_acousticOcclusionSdfSnapshotLocked)
+            if (!_acousticOcclusionSdfSnapshotGuardHeld)
                 return;
 
-            IDataVault vault = _dataVault;
+            IDataVault vault = _acousticOcclusionSdfSnapshotGuardVault ?? _dataVault;
             if (vault != null)
-                vault.TryUnlockBuffer(SpatialAudioAcousticVoxelSdfTexture3DBufferId, SystemID.Audio);
+                vault.ReleaseMutationGuard(AcousticOcclusionSdfSnapshotMutationGuardMask);
 
-            _acousticOcclusionSdfSnapshotLocked = false;
+            _acousticOcclusionSdfSnapshotGuardHeld = false;
+            _acousticOcclusionSdfSnapshotGuardVault = null;
         }
 
         private void UnlockAcousticOcclusionSdfSnapshot(ref bool locked)
@@ -8748,11 +8745,13 @@ namespace Hecton8.Audio
             if (!locked)
                 return;
 
-            IDataVault vault = _dataVault;
+            IDataVault vault = _acousticOcclusionSdfSnapshotGuardVault ?? _dataVault;
             if (vault != null)
-                vault.TryUnlockBuffer(SpatialAudioAcousticVoxelSdfTexture3DBufferId, SystemID.Audio);
+                vault.ReleaseMutationGuard(AcousticOcclusionSdfSnapshotMutationGuardMask);
 
             locked = false;
+            if (!_acousticOcclusionSdfSnapshotGuardHeld)
+                _acousticOcclusionSdfSnapshotGuardVault = null;
         }
 
         private void ReleaseAcousticMaterialRowsOcclusionLock()

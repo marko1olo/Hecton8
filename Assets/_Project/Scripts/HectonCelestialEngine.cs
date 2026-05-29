@@ -1168,9 +1168,12 @@ namespace Hecton8.Celestial
         private uint _lastPublishedCelestialFlags = uint.MaxValue;
         private float _lastPublishedCelestialEclipseOcclusion = -1f;
         private float _lastPublishedCelestialRadiationStorm = -1f;
+        private static readonly ulong OrbitOutputMutationGuardMask =
+            CelestialMutationGuardBit(BufferID.Shinobu345CelestialLegacyOrbitOutput);
         private JobHandle _orbitJobHandle;
         private bool _orbitJobScheduled;
-        private bool _orbitOutputVaultLocked;
+        private IDataVault _orbitOutputGuardVault;
+        private bool _orbitOutputGuardHeld;
         private bool _orbitJobPrimed;
         private bool _registeredLateFrameTick;
         private bool _registeredHotSwapListener;
@@ -4630,35 +4633,38 @@ namespace Hecton8.Celestial
                 out output);
         }
 
-        private bool TryLockOrbitOutputVaultBuffer()
+        private bool TryAcquireOrbitOutputGuard()
         {
-            if (_orbitOutputVaultLocked)
-                return true;
+            if (_orbitOutputGuardHeld)
+                return false;
 
             IDataVault vault = _celestialTruthVault;
             if (vault == null)
                 return false;
 
-            _orbitOutputVaultLocked = vault.TryLockBuffer(
-                BufferID.Shinobu345CelestialLegacyOrbitOutput,
-                SystemID.HabitatAtmosphere);
-            return _orbitOutputVaultLocked;
+            if (!vault.TryAcquireMutationGuard(OrbitOutputMutationGuardMask))
+                return false;
+
+            _orbitOutputGuardVault = vault;
+            _orbitOutputGuardHeld = true;
+            return true;
         }
 
         private void ReleaseOrbitOutputVaultLock()
         {
-            if (!_orbitOutputVaultLocked)
+            if (!_orbitOutputGuardHeld)
                 return;
 
-            IDataVault vault = _celestialTruthVault;
+            IDataVault vault = _orbitOutputGuardVault ?? _celestialTruthVault;
+            _orbitOutputGuardVault = null;
+            _orbitOutputGuardHeld = false;
             if (vault != null)
-            {
-                vault.TryUnlockBuffer(
-                    BufferID.Shinobu345CelestialLegacyOrbitOutput,
-                    SystemID.HabitatAtmosphere);
-            }
+                vault.ReleaseMutationGuard(OrbitOutputMutationGuardMask);
+        }
 
-            _orbitOutputVaultLocked = false;
+        private static ulong CelestialMutationGuardBit(BufferID bufferId)
+        {
+            return 1UL << (unchecked((int)(uint)(int)bufferId) & 63);
         }
 
         private void ReleaseCelestialPresentationBuffer<T>(ref VaultGenerationHandle<T> handle)
@@ -4824,7 +4830,7 @@ namespace Hecton8.Celestial
 
             if (scheduleAsync)
             {
-                if (!TryLockOrbitOutputVaultBuffer())
+                if (!TryAcquireOrbitOutputGuard())
                     return;
 
                 if (!TryResolveOrbitJobOutput(out orbitOutput))

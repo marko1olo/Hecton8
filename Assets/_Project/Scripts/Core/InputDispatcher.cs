@@ -30,7 +30,7 @@ namespace Hecton8.Core
     /// </summary>
     [DisallowMultipleComponent]
     [DefaultExecutionOrder(-9990)]
-    public sealed unsafe partial class InputDispatcher : MonoBehaviour, IInputService, ILateFrameTickable, IServiceHeartbeat, IServiceShutdown, IGlobalRegistryHotSwapListener, IGlobalRegistryHotSwapRefListener
+    public sealed unsafe partial class InputDispatcher : MonoBehaviour, IInputService, ISlowTickable, ILateFrameTickable, IServiceHeartbeat, IServiceShutdown, IGlobalRegistryHotSwapListener, IGlobalRegistryHotSwapRefListener
     {
         private static int s_x001InputDispatcherSignalPushDropCount;
         private const int BufferedActionCapacity = 10;
@@ -241,6 +241,7 @@ namespace Hecton8.Core
         private XRRuntimeAup48 _lastXRLookAtHitPointAup;
         private int _lastXRLookAtProbeFrame = -1;
         private bool _registeredLateFrame;
+        private bool _registeredSlowTick;
         private bool _registeredInputService;
         private bool _registeredHotSwapListener;
         private bool _isInitialized;
@@ -277,6 +278,7 @@ namespace Hecton8.Core
         private float _lastPublishedXRToolTriggerStrength = -1f;
         private float _lastPublishedXRSecondaryTriggerStrength = -1f;
         private float _hapticDispatchAccumulator;
+        private float _viewportHeightSnapshot = 1f;
         private uint _lastPublishedXRToolTriggerMask;
         private uint _xrRuntimeFlags;
         private uint _currentInputSchemeHash;
@@ -468,6 +470,7 @@ namespace Hecton8.Core
             if (ActiveRuntimeInstance == null)
                 ActiveRuntimeInstance = this;
 
+            RefreshViewportSnapshotCold();
             EnsureInputBinding();
             RefreshCachedPlayerRuntimeContext();
             RefreshCachedDataVaultCold();
@@ -485,6 +488,7 @@ namespace Hecton8.Core
             CaptureOwnerThread();
             ActiveRuntimeInstance = this;
 
+            RefreshViewportSnapshotCold();
             EnsureInputBinding();
             RefreshCachedDataVaultCold();
             EnsureHapticDeviceBinding();
@@ -582,6 +586,11 @@ namespace Hecton8.Core
             UpdateVisualLookInterpolation();
             DrainToolHaptics(deltaTime);
             FlushPendingHapticOutput();
+        }
+
+        public void SlowTick()
+        {
+            RefreshViewportSnapshotCold();
         }
 
         public void PreSimulationInputTick(float deltaTime)
@@ -1052,6 +1061,9 @@ namespace Hecton8.Core
 
             IDataVault vault = _dataVault;
             if (vault == null)
+                return false;
+
+            if (vault.IsAllocationLocked || vault.IsCompactionFenceActive)
                 return false;
 
             handle = vault.EnsureGenerationHandle<T>(
@@ -2394,12 +2406,20 @@ namespace Hecton8.Core
 
             if (!_registeredLateFrame)
                 _registeredLateFrame = GlobalRegistry.TryRegisterLateFrameTickable(this, PriorityLayer.Core);
+            if (!_registeredSlowTick)
+                _registeredSlowTick = GlobalRegistry.TryRegisterSlowTickable(this, PriorityLayer.Core);
             TryRegisterHapticSynthesisPostSimulation();
         }
 
         private void TryUnregisterFromDispatcher()
         {
             TryUnregisterHapticSynthesisPostSimulation();
+            if (_registeredSlowTick)
+            {
+                GlobalRegistry.UnregisterSlowTickable(this, PriorityLayer.Core);
+                _registeredSlowTick = false;
+            }
+
             if (_registeredLateFrame)
             {
                 GlobalRegistry.UnregisterLateFrameTickable(this, PriorityLayer.Core);
@@ -2725,16 +2745,21 @@ namespace Hecton8.Core
             return rawAxis * scale;
         }
 
-        private static float2 ResolveAupAgnosticLookDelta(float2 rawLookDelta, in InputProfileDTO profile)
+        private float2 ResolveAupAgnosticLookDelta(float2 rawLookDelta, in InputProfileDTO profile)
         {
             if (!math.all(math.isfinite(rawLookDelta)))
                 return float2.zero;
 
-            float viewportHeight = math.max(1f, Screen.height);
+            float viewportHeight = _viewportHeightSnapshot;
             float magnitude = math.sqrt(math.max(math.lengthsq(rawLookDelta), 0f));
             float sensitivity = math.clamp(profile.MouseSensitivity, 0.01f, 20f);
             float acceleration = 1f + (math.min(magnitude, 64f) * math.clamp(profile.MouseAcceleration, 0f, 8f));
             return rawLookDelta * (sensitivity * acceleration / viewportHeight);
+        }
+
+        private void RefreshViewportSnapshotCold()
+        {
+            _viewportHeightSnapshot = math.max(1f, Screen.height);
         }
 
         private uint ResolveCurrentInputSchemeHash()

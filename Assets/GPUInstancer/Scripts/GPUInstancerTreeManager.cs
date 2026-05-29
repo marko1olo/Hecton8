@@ -14,6 +14,7 @@ namespace GPUInstancer
     public class GPUInstancerTreeManager : GPUInstancerTerrainManager
     {
         private static ComputeShader _treeInstantiationComputeShader;
+        private static int _treeInstantiationKernelId = -1;
         public bool initializeWithCoroutine = true;
         private bool _isCoroutineActive;
 
@@ -22,8 +23,7 @@ namespace GPUInstancer
         {
             base.Awake();
 
-            if (_treeInstantiationComputeShader == null)
-                _treeInstantiationComputeShader = Resources.Load<ComputeShader>(GPUInstancerConstants.TREE_INSTANTIATION_RESOURCE_PATH);
+            EnsureTreeInstantiationComputeShader();
         }
 
         public override void Update()
@@ -152,146 +152,211 @@ namespace GPUInstancer
 
         #endregion Override Methods
 
+        private static bool EnsureTreeInstantiationComputeShader()
+        {
+            if (_treeInstantiationComputeShader != null && _treeInstantiationKernelId >= 0)
+                return true;
+
+            _treeInstantiationComputeShader = Resources.Load<ComputeShader>(GPUInstancerConstants.TREE_INSTANTIATION_RESOURCE_PATH);
+            if (_treeInstantiationComputeShader == null || !_treeInstantiationComputeShader.HasKernel(GPUInstancerConstants.TREE_INSTANTIATION_KERNEL))
+            {
+                _treeInstantiationComputeShader = null;
+                _treeInstantiationKernelId = -1;
+                return false;
+            }
+
+            _treeInstantiationKernelId = _treeInstantiationComputeShader.FindKernel(GPUInstancerConstants.TREE_INSTANTIATION_KERNEL);
+            return _treeInstantiationKernelId >= 0;
+        }
+
         public IEnumerator ReplaceUnityTrees()
         {
             _isCoroutineActive = true;
-            if (prototypeList.Count > 0)
+            try
             {
-                Vector4[] treeScales = new Vector4[prototypeList.Count];
-                int count = 0;
-                foreach (GPUInstancerTreePrototype tp in prototypeList)
+                if (!EnsureTreeInstantiationComputeShader())
                 {
-                    treeScales[count] = tp.isApplyPrefabScale ? tp.prefabObject.transform.localScale : Vector3.one;
-                    count++;
-                }
-                int[] instanceCounts = new int[prototypeList.Count];
-
-                List<Vector4> treeDataList = new List<Vector4>(); // prototypeIndex - positionx3 - rotation - scalex2
-
-                int instanceTotal = 0;
-                foreach (Terrain terrain in _terrains)
-                {
-                    if (terrain == null)
-                        continue;
-                    if (terrain.terrainData.treePrototypes.Length > prototypeList.Count)
-                    {
-                        Debug.LogError("Additional Terrain has more Tree prototypes than defined prototypes on the Tree Manager. Tree Manager requires every Terrain to have the same Tree prototypes defined.", terrain);
-                        continue;
-                    }
-
-                    terrain.treeDistance = 0f; // will not persist if called at runtime.
-                    Vector3 terrainSize = terrain.terrainData.size;
-                    Vector3 terrainPosition = terrain.GetPosition();
-                    TreeInstance[] treeInstances = terrain.terrainData.treeInstances;
-                    instanceTotal += treeInstances.Length;
-                    foreach (TreeInstance treeInstance in treeInstances)
-                    {
-                        treeDataList.Add(new Vector4(
-                            treeInstance.prototypeIndex,
-                            treeInstance.position.x * terrainSize.x + terrainPosition.x,
-                            treeInstance.position.y * terrainSize.y + terrainPosition.y,
-                            treeInstance.position.z * terrainSize.z + terrainPosition.z
-                            ));
-
-                        treeDataList.Add(new Vector4(
-                            treeInstance.rotation,
-                            treeInstance.widthScale,
-                            treeInstance.heightScale,
-                            0
-                            ));
-                        instanceCounts[treeInstance.prototypeIndex]++;
-                    }
+                    yield break;
                 }
 
-                if (instanceTotal > 0)
+                int prototypeCount = prototypeList != null ? prototypeList.Count : 0;
+                if (prototypeCount > 0)
                 {
-                    if (initializeWithCoroutine && !isInitialized)
-                        yield return null;
-
-                    ComputeBuffer treeDataBuffer = new ComputeBuffer(treeDataList.Count, GPUInstancerConstants.STRIDE_SIZE_FLOAT4);
-#if UNITY_2019_1_OR_NEWER
-                    treeDataBuffer.SetData(treeDataList);
-#else
-                    treeDataBuffer.SetData(treeDataList.ToArray());
-#endif
-                    ComputeBuffer treeScalesBuffer = new ComputeBuffer(treeScales.Length, GPUInstancerConstants.STRIDE_SIZE_FLOAT4);
-                    treeScalesBuffer.SetData(treeScales);
-                    ComputeBuffer counterBuffer = new ComputeBuffer(1, GPUInstancerConstants.STRIDE_SIZE_INT);
-                    uint[] emptyCounterData = new uint[1];
-
-                    int treeDataLength = treeDataList.Count;
-                    int treeScalesLength = treeScales.Length;
-                    treeDataList = null;
-                    treeScales = null;
-
-                    GPUInstancerRuntimeData runtimeData;
-                    for (int i = 0; i < runtimeDataList.Count; i++)
+                    Vector4[] treeScales = new Vector4[prototypeCount];
+                    for (int i = 0; i < prototypeCount; i++)
                     {
-                        runtimeData = runtimeDataList[i];
-                        int instanceCount = instanceCounts[i];
-                        runtimeData.bufferSize = instanceCount;
-                        runtimeData.instanceCount = instanceCount;
-                        if (instanceCount <= 0)
+                        GPUInstancerTreePrototype tp = prototypeList[i] as GPUInstancerTreePrototype;
+                        treeScales[i] = tp != null && tp.isApplyPrefabScale && tp.prefabObject != null ? tp.prefabObject.transform.localScale : Vector3.one;
+                    }
+                    int[] instanceCounts = new int[prototypeCount];
+
+                    List<Vector4> treeDataList = new List<Vector4>(); // prototypeIndex - positionx3 - rotation - scalex2
+
+                    int instanceTotal = 0;
+                    int terrainCount = _terrains != null ? _terrains.Count : 0;
+                    for (int terrainIndex = 0; terrainIndex < terrainCount; terrainIndex++)
+                    {
+                        Terrain terrain = _terrains[terrainIndex];
+                        if (terrain == null)
+                            continue;
+                        TerrainData terrainData = terrain.terrainData;
+                        if (terrainData == null)
+                            continue;
+
+                        TreePrototype[] treePrototypes = terrainData.treePrototypes;
+                        int treePrototypeCount = treePrototypes != null ? treePrototypes.Length : 0;
+                        if (treePrototypeCount > prototypeCount)
                         {
-                            GPUInstancerUtility.ReleaseInstanceBuffers(runtimeData);
+                            Debug.LogError("Additional Terrain has more Tree prototypes than defined prototypes on the Tree Manager. Tree Manager requires every Terrain to have the same Tree prototypes defined.", terrain);
                             continue;
                         }
 
-                        counterBuffer.SetData(emptyCounterData);
-                        if (runtimeData.transformationMatrixVisibilityBuffer != null)
-                            runtimeData.transformationMatrixVisibilityBuffer.Release();
-                        runtimeData.transformationMatrixVisibilityBuffer = new ComputeBuffer(instanceCount, GPUInstancerConstants.STRIDE_SIZE_MATRIX4X4);
+                        terrain.treeDistance = 0f; // will not persist if called at runtime.
+                        Vector3 terrainSize = terrainData.size;
+                        Vector3 terrainPosition = terrain.GetPosition();
+                        TreeInstance[] treeInstances = terrainData.treeInstances;
+                        int treeInstanceCount = treeInstances != null ? treeInstances.Length : 0;
+                        for (int treeIndex = 0; treeIndex < treeInstanceCount; treeIndex++)
+                        {
+                            TreeInstance treeInstance = treeInstances[treeIndex];
+                            int treePrototypeIndex = treeInstance.prototypeIndex;
+                            if (treePrototypeIndex < 0 || treePrototypeIndex >= prototypeCount || treePrototypeIndex >= treePrototypeCount)
+                                continue;
 
-                        _treeInstantiationComputeShader.SetBuffer(0,
-                            GPUInstancerConstants.VisibilityKernelPoperties.INSTANCE_DATA_BUFFER, runtimeData.transformationMatrixVisibilityBuffer);
-                        _treeInstantiationComputeShader.SetBuffer(0,
-                            GPUInstancerConstants.TreeKernelProperties.TREE_DATA, treeDataBuffer);
-                        _treeInstantiationComputeShader.SetBuffer(0,
-                            GPUInstancerConstants.TreeKernelProperties.TREE_SCALES, treeScalesBuffer);
-                        _treeInstantiationComputeShader.SetBuffer(0,
-                            GPUInstancerConstants.GrassKernelProperties.COUNTER_BUFFER, counterBuffer);
-                        _treeInstantiationComputeShader.SetInt(
-                            GPUInstancerConstants.VisibilityKernelPoperties.BUFFER_PARAMETER_BUFFER_SIZE, instanceTotal);
-                        _treeInstantiationComputeShader.SetInt(
-                            GPUInstancerConstants.TreeKernelProperties.TREE_DATA_LENGTH, treeDataLength);
-                        _treeInstantiationComputeShader.SetInt(
-                            GPUInstancerConstants.TreeKernelProperties.TREE_SCALES_LENGTH, treeScalesLength);
-                        _treeInstantiationComputeShader.SetInt(
-                            GPUInstancerConstants.TreeKernelProperties.INSTANCE_CAPACITY, instanceCount);
-                        //_treeInstantiationComputeShader.SetVector(
-                        //    GPUInstancerConstants.GrassKernelProperties.TERRAIN_SIZE_DATA, terrain.terrainData.size);
-                        //_treeInstantiationComputeShader.SetVector(
-                        //    GPUInstancerConstants.TreeKernelProperties.TERRAIN_POSITION, terrain.GetPosition());
-                        _treeInstantiationComputeShader.SetBool(
-                            GPUInstancerConstants.TreeKernelProperties.IS_APPLY_ROTATION, ((GPUInstancerTreePrototype)runtimeData.prototype).isApplyRotation);
-                        _treeInstantiationComputeShader.SetBool(
-                            GPUInstancerConstants.TreeKernelProperties.IS_APPLY_TERRAIN_HEIGHT, ((GPUInstancerTreePrototype)runtimeData.prototype).isApplyTerrainHeight);
-                        _treeInstantiationComputeShader.SetInt(
-                            GPUInstancerConstants.TreeKernelProperties.PROTOTYPE_INDEX, i);
+                            treeDataList.Add(new Vector4(
+                                treePrototypeIndex,
+                                treeInstance.position.x * terrainSize.x + terrainPosition.x,
+                                treeInstance.position.y * terrainSize.y + terrainPosition.y,
+                                treeInstance.position.z * terrainSize.z + terrainPosition.z
+                                ));
 
-                        _treeInstantiationComputeShader.Dispatch(0,
-                            GPUInstancerConstants.GetComputeThreadGroupCount(instanceTotal), 1, 1);
-
-                        GPUInstancerUtility.InitializeGPUBuffer(runtimeData);
-
-                        if (initializeWithCoroutine && !isInitialized)
-                            yield return null;
+                            treeDataList.Add(new Vector4(
+                                treeInstance.rotation,
+                                treeInstance.widthScale,
+                                treeInstance.heightScale,
+                                0
+                                ));
+                            instanceCounts[treePrototypeIndex]++;
+                            instanceTotal++;
+                        }
                     }
 
-                    treeDataBuffer.Release();
-                    treeScalesBuffer.Release();
-                    counterBuffer.Release();
-                }
-                else
-                {
-                    GPUInstancerUtility.ReleaseInstanceBuffers(runtimeDataList);
-                }
-            }
+                    if (instanceTotal > 0)
+                    {
+                        if (initializeWithCoroutine && !isInitialized)
+                            yield return null;
 
-            isInitial = true;
-            if (!isInitialized)
-                GPUInstancerUtility.TriggerEvent(GPUInstancerEventType.TreeInitializationFinished);
-            _isCoroutineActive = false;
+                        ComputeBuffer treeDataBuffer = null;
+                        ComputeBuffer treeScalesBuffer = null;
+                        ComputeBuffer counterBuffer = null;
+
+                        try
+                        {
+                            treeDataBuffer = new ComputeBuffer(treeDataList.Count, GPUInstancerConstants.STRIDE_SIZE_FLOAT4);
+#if UNITY_2019_1_OR_NEWER
+                            treeDataBuffer.SetData(treeDataList);
+#else
+                            treeDataBuffer.SetData(treeDataList.ToArray());
+#endif
+                            treeScalesBuffer = new ComputeBuffer(treeScales.Length, GPUInstancerConstants.STRIDE_SIZE_FLOAT4);
+                            treeScalesBuffer.SetData(treeScales);
+                            counterBuffer = new ComputeBuffer(1, GPUInstancerConstants.STRIDE_SIZE_INT);
+                            uint[] emptyCounterData = new uint[1];
+
+                            int treeDataLength = treeDataList.Count;
+                            int treeScalesLength = treeScales.Length;
+                            treeDataList = null;
+                            treeScales = null;
+
+                            GPUInstancerRuntimeData runtimeData;
+                            int runtimeDataCount = runtimeDataList != null ? runtimeDataList.Count : 0;
+                            int instancedPrototypeCount = runtimeDataCount < instanceCounts.Length ? runtimeDataCount : instanceCounts.Length;
+                            for (int i = 0; i < instancedPrototypeCount; i++)
+                            {
+                                runtimeData = runtimeDataList[i];
+                                GPUInstancerTreePrototype treePrototype = runtimeData != null ? runtimeData.prototype as GPUInstancerTreePrototype : null;
+                                if (runtimeData == null || treePrototype == null)
+                                    continue;
+
+                                int instanceCount = instanceCounts[i];
+                                runtimeData.bufferSize = instanceCount;
+                                runtimeData.instanceCount = instanceCount;
+                                if (instanceCount <= 0)
+                                {
+                                    GPUInstancerUtility.ReleaseInstanceBuffers(runtimeData);
+                                    continue;
+                                }
+
+                                counterBuffer.SetData(emptyCounterData);
+                                if (runtimeData.transformationMatrixVisibilityBuffer != null)
+                                    runtimeData.transformationMatrixVisibilityBuffer.Release();
+                                runtimeData.transformationMatrixVisibilityBuffer = new ComputeBuffer(instanceCount, GPUInstancerConstants.STRIDE_SIZE_MATRIX4X4);
+
+                                _treeInstantiationComputeShader.SetBuffer(_treeInstantiationKernelId,
+                                    GPUInstancerConstants.VisibilityKernelPoperties.INSTANCE_DATA_BUFFER, runtimeData.transformationMatrixVisibilityBuffer);
+                                _treeInstantiationComputeShader.SetBuffer(_treeInstantiationKernelId,
+                                    GPUInstancerConstants.TreeKernelProperties.TREE_DATA, treeDataBuffer);
+                                _treeInstantiationComputeShader.SetBuffer(_treeInstantiationKernelId,
+                                    GPUInstancerConstants.TreeKernelProperties.TREE_SCALES, treeScalesBuffer);
+                                _treeInstantiationComputeShader.SetBuffer(_treeInstantiationKernelId,
+                                    GPUInstancerConstants.GrassKernelProperties.COUNTER_BUFFER, counterBuffer);
+                                _treeInstantiationComputeShader.SetInt(
+                                    GPUInstancerConstants.VisibilityKernelPoperties.BUFFER_PARAMETER_BUFFER_SIZE, instanceTotal);
+                                _treeInstantiationComputeShader.SetInt(
+                                    GPUInstancerConstants.TreeKernelProperties.TREE_DATA_LENGTH, treeDataLength);
+                                _treeInstantiationComputeShader.SetInt(
+                                    GPUInstancerConstants.TreeKernelProperties.TREE_SCALES_LENGTH, treeScalesLength);
+                                _treeInstantiationComputeShader.SetInt(
+                                    GPUInstancerConstants.TreeKernelProperties.INSTANCE_CAPACITY, instanceCount);
+                                //_treeInstantiationComputeShader.SetVector(
+                                //    GPUInstancerConstants.GrassKernelProperties.TERRAIN_SIZE_DATA, terrain.terrainData.size);
+                                //_treeInstantiationComputeShader.SetVector(
+                                //    GPUInstancerConstants.TreeKernelProperties.TERRAIN_POSITION, terrain.GetPosition());
+                                _treeInstantiationComputeShader.SetBool(
+                                    GPUInstancerConstants.TreeKernelProperties.IS_APPLY_ROTATION, treePrototype.isApplyRotation);
+                                _treeInstantiationComputeShader.SetBool(
+                                    GPUInstancerConstants.TreeKernelProperties.IS_APPLY_TERRAIN_HEIGHT, treePrototype.isApplyTerrainHeight);
+                                _treeInstantiationComputeShader.SetInt(
+                                    GPUInstancerConstants.TreeKernelProperties.PROTOTYPE_INDEX, i);
+
+                                _treeInstantiationComputeShader.Dispatch(_treeInstantiationKernelId,
+                                    GPUInstancerConstants.GetComputeThreadGroupCount(instanceTotal), 1, 1);
+
+                                GPUInstancerUtility.InitializeGPUBuffer(runtimeData);
+
+                                if (initializeWithCoroutine && !isInitialized)
+                                    yield return null;
+                            }
+
+                            for (int i = instancedPrototypeCount; i < runtimeDataCount; i++)
+                            {
+                                GPUInstancerUtility.ReleaseInstanceBuffers(runtimeDataList[i]);
+                            }
+                        }
+                        finally
+                        {
+                            if (treeDataBuffer != null)
+                                treeDataBuffer.Release();
+                            if (treeScalesBuffer != null)
+                                treeScalesBuffer.Release();
+                            if (counterBuffer != null)
+                                counterBuffer.Release();
+                        }
+                    }
+                    else
+                    {
+                        GPUInstancerUtility.ReleaseInstanceBuffers(runtimeDataList);
+                    }
+                }
+
+                isInitial = true;
+                if (!isInitialized)
+                    GPUInstancerUtility.TriggerEvent(GPUInstancerEventType.TreeInitializationFinished);
+            }
+            finally
+            {
+                _isCoroutineActive = false;
+            }
         }
     }
 }

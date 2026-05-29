@@ -8,6 +8,12 @@ First setup:
 powershell -NoProfile -ExecutionPolicy Bypass -File h8mod.ps1 -Action setup -Id com.yourname.mod -DisplayName "Your Mod" -Author "YourName" -Version 0.1.0
 ```
 
+Fast first playable mod:
+
+```powershell
+powershell -NoProfile -ExecutionPolicy Bypass -File h8mod.ps1 -Action first-mod -Id com.yourname.firstmod -DisplayName "First HECTON Mod" -Author "YourName" -Version 0.1.0 -Replace
+```
+
 After edits:
 
 ```powershell
@@ -18,6 +24,24 @@ Submission handoff:
 
 ```powershell
 powershell -NoProfile -ExecutionPolicy Bypass -File h8mod.ps1 -Action submission
+```
+
+Local project discovery copy:
+
+```powershell
+powershell -NoProfile -ExecutionPolicy Bypass -File h8mod.ps1 -Action install-local -ProjectRoot ..\.. -Replace
+```
+
+Local Mods diagnosis:
+
+```powershell
+powershell -NoProfile -ExecutionPolicy Bypass -File h8mod.ps1 -Action diagnose-local -ProjectRoot ..\..
+```
+
+Dependency edit:
+
+```powershell
+powershell -NoProfile -ExecutionPolicy Bypass -File h8mod.ps1 -Action dependencies -DependencyAction add -DependencyId com.example.library
 ```
 
 Optional menu:
@@ -32,7 +56,7 @@ Do you need Unity?
 
 - No Unity project is required for manifest, graph, table, locale, content asset declaration, and validation authoring.
 - Read `Docs/capabilities.md` first. It is the current source of truth for what modders can and cannot do with this starter kit.
-- If you do use the HECTON-8 Unity project, open `Hecton/Modding/External Starter Kit Workbench`; it can create/refresh missing starter files, shows required starter-file health and Capability Matrix, configures manifest capabilities/budgets, runs these same tools asynchronously, generates graph/settings/locale/content asset snippets, applies graph/settings/locale/content asset snippets with validation and rollback, exposes Graph Opcode Picker, Parameters JSON, disabled-node, asset kind picker, CRC/byte fields, and replace-on-apply controls, opens the core contracts, and shows review summary plus review manifest freshness without changing the file contract.
+- If you do use the HECTON-8 Unity project, open `Hecton/Modding/External Starter Kit Workbench`; it can create/refresh missing starter files, shows required starter-file health and Capability Matrix, configures manifest capabilities/budgets/dependencies, runs these same tools asynchronously, generates graph/settings/locale/content asset snippets, applies graph/settings/locale/content asset snippets with validation and rollback, exposes Graph Opcode Picker, Parameters JSON, disabled-node, asset kind picker, CRC/byte fields, replace-on-apply controls, local discovery install, read-only local Mods diagnosis, opens the core contracts, and shows review summary plus review manifest freshness without changing the file contract.
 - Unity is also useful for advanced asset preview.
 - Do not ship Harmony, BepInEx, or gameplay DLL patches. Current runtime UGC ingress is envelope-only.
 
@@ -45,10 +69,10 @@ Current runtime boundary:
 
 Files:
 
-- `h8mod.ps1`: root no-Unity launcher for setup, validate, review, prepare, submission package build, opcode discovery, manifest capability/budget configuration, graph/settings/locale/content asset snippets, graph/settings/locale/content asset snippet apply, and capability-matrix display. `node-snippet` accepts `-NodeParametersJson` and `-NodeDisabled`; parameters accept strict JSON or a flat CLI fallback like `{Quantity:3,Item:demo}`. `asset-snippet` accepts `-AssetCrc32 auto` and `-AssetBytes -1` when the file exists. It delegates to `Tools/*.ps1` and is not a runtime install contract.
+- `h8mod.ps1`: root no-Unity launcher for first playable mod creation, local discovery install, local Mods diagnosis, dependency editing, setup, validate, review, prepare, submission package build, opcode discovery, manifest capability/budget configuration, graph/settings/locale/content asset snippets, graph/settings/locale/content asset snippet apply, and capability-matrix display. `first-mod` sets identity, enables the graph authoring capability, creates/applies one graph node, one setting, one locale entry, validates, and builds `Reports/review_manifest.json`. `install-local` copies the reviewed package to `Mods/<mod-id>` for loader discovery only after hash/byte verification. `diagnose-local` inspects a local project or game `Mods/` folder recursively, reports manifest/review/runtime-boundary status, duplicate IDs, missing dependencies, dependency cycles, and load-order preview without mutating files. `dependencies` edits dependency IDs in both manifests, rejects invalid/self/duplicate dependencies, validates, and rolls back on failure. `node-snippet` accepts `-NodeParametersJson` and `-NodeDisabled`; parameters accept strict JSON or a flat CLI fallback like `{Quantity:3,Item:demo}`. `asset-snippet` accepts `-AssetCrc32 auto` and `-AssetBytes -1` when the file exists. It delegates to `Tools/*.ps1` and is not a runtime activation contract.
 - `Docs/capabilities.md`: current capability matrix for public authors: supported authoring surfaces, forbidden runtime rights, and expansion route.
-- `mod.h8manifest.json`: authoring manifest for Workbench/CLI style tools.
-- `mod.json`: loader compatibility manifest; `EntryAssembly` and `EntryType` stay empty in envelope-only mode.
+- `mod.h8manifest.json`: authoring manifest for Workbench/CLI style tools. `Dependencies` mirrors `mod.json` and should be edited through `h8mod.ps1 -Action dependencies`.
+- `mod.json`: loader compatibility manifest; `EntryAssembly` and `EntryType` stay empty in envelope-only mode. `Dependencies` is loader metadata, not runtime authority.
 - `Graphs/main.h8graph.json`: command graph draft. Empty graph emits no packets. Non-empty nodes must use opcode hex tokens or comment aliases from `Reference/allowed_opcodes.csv`.
 - `Tables/settings.h8table.json`: user-facing config table draft. Rows use canonical `Id`, lower-case `Kind` (`bool`, `int`, `float`, `string`, `enum`), and a matching `Default` value.
 - `Content/assets.h8manifest.json` and `Content/Assets/`: CRC/asset declaration draft. Use `asset-snippet` and `apply-asset-snippet` to avoid hand-editing entries. Runtime use requires approval.
@@ -58,10 +82,14 @@ Files:
 - `Reference/`: copied opcode and tuning CSV references from the project docs.
 - `Schemas/`: JSON Schemas for editor autocomplete and schema-aware validation.
 - `.vscode/settings.json`: optional VS Code JSON schema mapping plus `hecton8.powerShellExecutable` override for the task runner. The local validator checks the expected schema URL/fileMatch pairs and rejects invalid settings/locale data before review packaging.
-- `.vscode/tasks.json`: VS Code Tasks surface for setup, validate, prepare, submission, capability/opcode discovery, snippet creation/apply, disabled graph node creation, explicit replace apply actions, and manifest contract edits. Tasks route through `h8mod.ps1` only; they do not bypass validation or create runtime rights.
+- `.vscode/tasks.json`: VS Code Tasks surface for first playable mod creation, local discovery install, local Mods diagnosis, setup, validate, prepare, submission, capability/opcode discovery, snippet creation/apply, disabled graph node creation, explicit replace apply actions, and manifest contract edits. Tasks route through `h8mod.ps1` only; they do not bypass validation or create runtime rights.
 - `Tools/prepare_mod.ps1`: one-command no-Unity setup/review loop. With `-Id` it writes identity, validates, and builds the review manifest; without `-Id` it validates existing manifests and rebuilds the review manifest.
 - `Tools/build_submission_package.ps1`: local no-Unity submission packer. It runs prepare, then writes `Generated/<mod-id>_submission.zip` containing the reviewed starter sources plus `Reports/review_manifest.json`. It writes to a temp zip first and restores the previous submission zip if final replacement fails. This is a review handoff artifact, not a runtime install stamp.
+- `Tools/install_local_mod.ps1`: local no-Unity discovery installer. It runs prepare, verifies source files against `Reports/review_manifest.json` byte counts and SHA-256 hashes, then atomically copies the reviewed source set plus the review manifest into `Mods/<mod-id>`. This is loader discovery only; managed entry and loose content ingestion stay disabled.
+- `Tools/diagnose_local_mods.ps1`: local no-Unity, read-only Mods inspector. It resolves `ProjectRoot/Mods` or `-ModsRoot`, recursively mirrors loader `mod.json` discovery, applies the same loader caps for manifests, top-level DLLs, bundles, and `lang_*.json`, validates `mod.json`, verifies installed `Reports/review_manifest.json` hashes when present, resolves duplicate IDs, missing dependencies, dependency cycles, and load order, then prints whether each package is invalid, review-stale, or discoverable but disabled by the envelope-only runtime boundary.
+- `Tools/configure_dependencies.ps1`: local no-Unity dependency helper. It edits `Dependencies` in `mod.h8manifest.json` and `mod.json` together, rejects invalid IDs, duplicates, and self-dependencies, writes through temp files, validates after write, and restores both manifests on failure.
 - `Tools/configure_manifest_contract.ps1`: local no-Unity manifest helper that enables/disables public authoring capabilities and sets capped budgets with validation and rollback. Capabilities are review metadata, not runtime rights.
+- `Tools/create_first_mod.ps1`: local no-Unity onboarding helper. It runs the bounded identity, manifest contract, graph snippet/apply, settings snippet/apply, locale snippet/apply, validation, and review-manifest tools in sequence. `-Replace` makes the starter onboarding rerunnable for the same sample IDs. `-BuildSubmission` also writes the review zip.
 - `Tools/list_allowed_opcodes.ps1`: local no-Unity graph helper that prints the allowed opcode aliases and hex tokens accepted by `Graphs/main.h8graph.json`.
 - `Tools/create_graph_node_snippet.ps1`: local no-Unity graph helper that writes `Generated/graph_node_snippet.json` from a validated node id, allowed opcode, optional `ParametersJson` object or flat CLI fallback, and optional disabled state; it does not mutate `Graphs/main.h8graph.json`.
 - `Tools/apply_graph_node_snippet.ps1`: local no-Unity graph helper that inserts `Generated/graph_node_snippet.json` into `Graphs/main.h8graph.json`, rejects duplicate node ids unless `-Replace` is explicit, raises graph/manifest envelope budget to one when needed, validates after the atomic temp-write, and restores previous graph/manifest files on failure.

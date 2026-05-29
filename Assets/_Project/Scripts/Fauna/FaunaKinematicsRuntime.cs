@@ -47,6 +47,8 @@ namespace Hecton8.AI
         private const uint LeviathanRigMagicH8lr = 0x524C3848u; // H8LR
         private const uint LeviathanRigMagicLvrg = 0x4752564Cu; // LVRG
         private const BufferID TerrainSdfSnapshotBuffer = (BufferID)71337;
+        private static readonly ulong TerrainSdfSnapshotMutationGuardMask =
+            FaunaVaultMutationGuardBit(TerrainSdfSnapshotBuffer);
         private const int LeviathanRigHeaderBytes = 16;
         private const int LeviathanRigRowBytes = 16;
         private const int LeviathanIkGlobalsBytes = 32;
@@ -129,6 +131,7 @@ namespace Hecton8.AI
         private VaultGenerationHandle<BiteIkSolveEvent> _biteIkSolveEventsHandle;
         private VaultGenerationHandle<int> _biteIkTelemetryCursorHandle;
         private VaultGenerationHandle<byte> _terrainSdfSnapshotHandle;
+        private IDataVault _terrainSdfSnapshotGuardVault;
 
         private GraphicsBuffer _bonesGraphicsBufferA;
         private GraphicsBuffer _bonesGraphicsBufferB;
@@ -143,7 +146,7 @@ namespace Hecton8.AI
         private long _solverScheduleTimestamp;
         private float _lastBurstSolveMicros;
         private bool _solverScheduled;
-        private bool _terrainSdfSnapshotLocked;
+        private bool _terrainSdfSnapshotGuardHeld;
         private bool _registeredUpdate;
         private bool _registeredLateFrame;
         private bool _registeredOriginShiftListener;
@@ -160,6 +163,7 @@ namespace Hecton8.AI
         private bool _gpuBufferDataValid;
         private bool _biteVaultReady;
         private bool _strikeSignalActive;
+        private bool _supportsConstantBufferBinding;
         private int _frameIndex;
         private int _lastBiteFeedbackFrame = -1;
         private int _lastBiteAudioFrame = -1;
@@ -318,6 +322,7 @@ namespace Hecton8.AI
         {
             _cachedTransform = transform;
             TryGetComponent(out _body);
+            RefreshGraphicsCapabilitySnapshotCold();
             RefreshColdDependencies();
             EnsurePersistentBuffers();
             HydrateRigDefinitionsOrMockCold();
@@ -329,6 +334,7 @@ namespace Hecton8.AI
                 return;
 
             CompleteScheduledSolverForLifecycle();
+            RefreshGraphicsCapabilitySnapshotCold();
             RefreshColdDependencies();
             EnsurePersistentBuffers();
             HydrateRigDefinitionsOrMockCold();
@@ -488,7 +494,7 @@ namespace Hecton8.AI
                 scheduledHandle = job.Schedule();
                 if (terrainSdfSnapshotLocked)
                 {
-                    _terrainSdfSnapshotLocked = true;
+                    _terrainSdfSnapshotGuardHeld = true;
                     terrainSdfSnapshotClaimed = true;
                 }
 
@@ -911,6 +917,7 @@ namespace Hecton8.AI
             _biteIkSolveEventsHandle = default;
             _biteIkTelemetryCursorHandle = default;
             _terrainSdfSnapshotHandle = default;
+            _terrainSdfSnapshotGuardVault = null;
             _biteVaultReady = false;
         }
 
@@ -930,14 +937,15 @@ namespace Hecton8.AI
 
         private void ReleaseTerrainSdfSnapshotLock()
         {
-            if (!_terrainSdfSnapshotLocked)
+            if (!_terrainSdfSnapshotGuardHeld)
                 return;
 
-            IDataVault vault = _dataVault;
+            IDataVault vault = _terrainSdfSnapshotGuardVault ?? _dataVault;
             if (vault != null)
-                vault.TryUnlockBuffer(TerrainSdfSnapshotBuffer, SystemID.AnimationFauna);
+                vault.ReleaseMutationGuard(TerrainSdfSnapshotMutationGuardMask);
 
-            _terrainSdfSnapshotLocked = false;
+            _terrainSdfSnapshotGuardHeld = false;
+            _terrainSdfSnapshotGuardVault = null;
         }
 
         private void HydrateRigDefinitionsOrMockCold()
@@ -1869,29 +1877,34 @@ namespace Hecton8.AI
             }
 
             if (vault.IsCompactionFenceActive ||
-                !vault.TryLockBuffer(TerrainSdfSnapshotBuffer, SystemID.AnimationFauna))
+                !vault.TryAcquireMutationGuard(TerrainSdfSnapshotMutationGuardMask))
             {
                 return false;
             }
 
             snapshotLocked = true;
-            if (vault.IsCompactionFenceActive)
+            _terrainSdfSnapshotGuardVault = vault;
+            bool handedOff = false;
+            try
             {
-                UnlockTerrainSdfSnapshot(ref snapshotLocked);
-                return false;
-            }
+                if (vault.IsCompactionFenceActive)
+                    return false;
 
-            if (!TryOpenVaultBuffer(vault, ref _terrainSdfSnapshotHandle, TerrainSdfSnapshotBuffer, requiredLength, out snapshot))
+                if (!TryOpenVaultBuffer(vault, ref _terrainSdfSnapshotHandle, TerrainSdfSnapshotBuffer, requiredLength, out snapshot))
+                    return false;
+
+                for (int i = 0; i < requiredLength; i++)
+                    snapshot[i] = sourceSdf[i];
+
+                snapshotSdf = snapshot.AsReadOnly();
+                handedOff = true;
+                return true;
+            }
+            finally
             {
-                UnlockTerrainSdfSnapshot(ref snapshotLocked);
-                return false;
+                if (!handedOff)
+                    UnlockTerrainSdfSnapshot(ref snapshotLocked);
             }
-
-            for (int i = 0; i < requiredLength; i++)
-                snapshot[i] = sourceSdf[i];
-
-            snapshotSdf = snapshot.AsReadOnly();
-            return true;
         }
 
         private void UnlockTerrainSdfSnapshot(ref bool locked)
@@ -1899,11 +1912,18 @@ namespace Hecton8.AI
             if (!locked)
                 return;
 
-            IDataVault vault = _dataVault;
+            IDataVault vault = _terrainSdfSnapshotGuardVault ?? _dataVault;
             if (vault != null)
-                vault.TryUnlockBuffer(TerrainSdfSnapshotBuffer, SystemID.AnimationFauna);
+                vault.ReleaseMutationGuard(TerrainSdfSnapshotMutationGuardMask);
 
             locked = false;
+            if (!_terrainSdfSnapshotGuardHeld)
+                _terrainSdfSnapshotGuardVault = null;
+        }
+
+        private static ulong FaunaVaultMutationGuardBit(BufferID bufferId)
+        {
+            return 1UL << (unchecked((int)(uint)(int)bufferId) & 31);
         }
 
         private void ResolveMapMagicPayload(
@@ -2093,7 +2113,7 @@ namespace Hecton8.AI
         private bool PublishLeviathanIkGlobals(in LeviathanIkShaderGlobalsDTO globals)
         {
             if (!ValidateLeviathanIkShaderGlobalsLayout() ||
-                !SystemInfo.supportsSetConstantBuffer ||
+                !_supportsConstantBufferBinding ||
                 !EnsureIkGlobalsBuffers())
                 return false;
 
@@ -2112,6 +2132,11 @@ namespace Hecton8.AI
             _activeIkGlobalsBuffer = writeBuffer;
             Shader.SetGlobalConstantBuffer(_LeviathanIkGlobalsId, _activeIkGlobalsBuffer, 0, LeviathanIkGlobalsBytes);
             return true;
+        }
+
+        private void RefreshGraphicsCapabilitySnapshotCold()
+        {
+            _supportsConstantBufferBinding = SystemInfo.supportsSetConstantBuffer;
         }
 
         private bool EnsureIkGlobalsBuffers()

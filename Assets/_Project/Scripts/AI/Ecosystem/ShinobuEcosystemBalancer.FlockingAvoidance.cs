@@ -162,11 +162,11 @@ namespace Hecton8.AI.Ecosystem
             return true;
         }
 
-        private void WriteFlockingCountersAfterRelease(IDataVault vault)
+        private unsafe void WriteFlockingCountersAfterRelease(IDataVault vault)
         {
             if (!_flockingCounterJobScratch.IsCreated ||
                 vault == null ||
-                !vault.TryLockBuffer(BufferID.ShinobuFlockingCounters64, SystemID.AIEcology))
+                !TryAcquireEcosystemMutationGuard(vault, BufferID.ShinobuFlockingCounters64))
             {
                 return;
             }
@@ -180,12 +180,16 @@ namespace Hecton8.AI.Ecosystem
                 }
 
                 int count = math.min(counters.Length, _flockingCounterJobScratch.Length);
-                for (int i = 0; i < count; i++)
-                    counters[i] = _flockingCounterJobScratch[i];
+                if (count <= 0)
+                    return;
+
+                void* targetPtr = NativeArrayUnsafeUtility.GetUnsafePtr(counters);
+                void* sourcePtr = NativeArrayUnsafeUtility.GetUnsafeReadOnlyPtr(_flockingCounterJobScratch);
+                UnsafeUtility.MemCpy(targetPtr, sourcePtr, (long)count * UnsafeUtility.SizeOf<FlockingCounter64>());
             }
             finally
             {
-                vault.TryUnlockBuffer(BufferID.ShinobuFlockingCounters64, SystemID.AIEcology);
+                ReleaseEcosystemMutationGuard(vault, BufferID.ShinobuFlockingCounters64);
             }
         }
 
@@ -194,7 +198,7 @@ namespace Hecton8.AI.Ecosystem
             in FlockingTelemetryEntry entry,
             bool shouldDump)
         {
-            if (vault == null || !vault.TryLockBuffer(BufferID.ShinobuFlockingTelemetryRing, SystemID.AIEcology))
+            if (!TryAcquireEcosystemMutationGuard(vault, BufferID.ShinobuFlockingTelemetryRing))
                 return;
 
             bool dumpAfterRelease = false;
@@ -227,7 +231,7 @@ namespace Hecton8.AI.Ecosystem
             }
             finally
             {
-                vault.TryUnlockBuffer(BufferID.ShinobuFlockingTelemetryRing, SystemID.AIEcology);
+                ReleaseEcosystemMutationGuard(vault, BufferID.ShinobuFlockingTelemetryRing);
             }
 
             if (dumpAfterRelease && _flockingTelemetryMirror.IsCreated)

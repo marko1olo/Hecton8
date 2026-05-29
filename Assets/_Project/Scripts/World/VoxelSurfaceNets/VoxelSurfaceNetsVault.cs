@@ -194,6 +194,16 @@ namespace Hecton8.World.VoxelSurfaceNets
         private static readonly ulong TelemetryDumpMutationGuardMask =
             VaultMutationGuardBit(VoxelSurfaceNetsVaultBufferIds.TelemetryRing) |
             VaultMutationGuardBit(VoxelSurfaceNetsVaultBufferIds.TelemetryCursor);
+        private static readonly ulong StatesMutationGuardMask =
+            VaultMutationGuardBit(VoxelSurfaceNetsVaultBufferIds.States);
+        private static readonly ulong TuningMutationGuardMask =
+            VaultMutationGuardBit(VoxelSurfaceNetsVaultBufferIds.Tuning);
+        private static readonly ulong CsvScratchMutationGuardMask =
+            VaultMutationGuardBit(VoxelSurfaceNetsVaultBufferIds.CsvScratch);
+        private static readonly ulong SurfaceEdgeMasksMutationGuardMask =
+            VaultMutationGuardBit(VoxelSurfaceNetsVaultBufferIds.SurfaceEdgeMasks);
+        private static readonly ulong MockDensityConfigMutationGuardMask =
+            VaultMutationGuardBit(VoxelSurfaceNetsVaultBufferIds.MockDensityConfig);
         private static readonly uint _globalQualityHash = HashAsciiLiteral("global_quality_weight");
         private static readonly uint _isoSurfaceHash = HashAsciiLiteral("iso_surface_threshold");
         private static readonly uint _normalAngleHash = HashAsciiLiteral("normal_smoothing_angle");
@@ -203,7 +213,12 @@ namespace Hecton8.World.VoxelSurfaceNets
 
         private static ulong VaultMutationGuardBit(BufferID bufferId)
         {
-            return 1UL << (unchecked((int)(uint)(int)bufferId) & 31);
+            return VaultMutationGuardBit(unchecked((uint)(int)bufferId));
+        }
+
+        private static ulong VaultMutationGuardBit(uint bufferId)
+        {
+            return 1UL << (unchecked((int)bufferId) & 31);
         }
 
         public static bool TryResolve(IDataVault vault, out VoxelSurfaceNetsVaultHandles handles)
@@ -360,30 +375,24 @@ namespace Hecton8.World.VoxelSurfaceNets
             return buffers.IsCreated();
         }
 
-        public static bool TryAcquireStatesWriteLock(
+        public static bool TryResolveStatesOwnerView(
             in VoxelSurfaceNetsVaultBuffers buffers,
             out NativeArray<ChunkMeshingStateDTO> states)
         {
             states = default;
-            if (buffers.Vault == null ||
-                buffers.Handles.States.BufferID == 0u ||
-                !buffers.Vault.TryAcquireWriteLock(in buffers.Handles.States, SystemID.WorldStreaming, out states))
+            IDataVault vault = buffers.Vault;
+            if (vault == null ||
+                vault.IsCompactionFenceActive ||
+                buffers.Handles.States.BufferID != (uint)(int)VoxelSurfaceNetsVaultBufferIds.States ||
+                !vault.TryResolveHandle(in buffers.Handles.States, out states) ||
+                vault.IsCompactionFenceActive ||
+                !states.IsCreated)
             {
+                states = default;
                 return false;
             }
 
-            if (states.IsCreated)
-                return true;
-
-            buffers.Vault.ReleaseWriteLock(in buffers.Handles.States, SystemID.WorldStreaming);
-            states = default;
-            return false;
-        }
-
-        public static void ReleaseStatesWriteLock(in VoxelSurfaceNetsVaultBuffers buffers)
-        {
-            if (buffers.Vault != null && buffers.Handles.States.BufferID != 0u)
-                buffers.Vault.ReleaseWriteLock(in buffers.Handles.States, SystemID.WorldStreaming);
+            return true;
         }
 
         public static bool TryAcquireGpuUploadSourceLease(
@@ -764,18 +773,17 @@ namespace Hecton8.World.VoxelSurfaceNets
 
         public static bool TryBootstrapLookupTables(IDataVault vault, ref VoxelSurfaceNetsVaultHandles handles, string projectRoot)
         {
-            if (vault == null ||
-                handles.SurfaceEdgeMasks.BufferID == 0u ||
-                !vault.TryAcquireWriteLock(in handles.SurfaceEdgeMasks, SystemID.WorldStreaming, out NativeArray<uint> edgeMasks))
-            {
+            if (!TryAcquireMutationView(
+                    vault,
+                    in handles.SurfaceEdgeMasks,
+                    VoxelSurfaceNetsVaultBufferIds.SurfaceEdgeMasks,
+                    VoxelSurfaceNetsConstants.LookupCaseCount,
+                    SurfaceEdgeMasksMutationGuardMask,
+                    out NativeArray<uint> edgeMasks))
                 return false;
-            }
 
             try
             {
-                if (!edgeMasks.IsCreated || edgeMasks.Length < VoxelSurfaceNetsConstants.LookupCaseCount)
-                    return false;
-
                 if (string.IsNullOrEmpty(projectRoot))
                 {
                     GenerateEmergencyMockTables(edgeMasks);
@@ -796,7 +804,7 @@ namespace Hecton8.World.VoxelSurfaceNets
             }
             finally
             {
-                vault.ReleaseWriteLock(in handles.SurfaceEdgeMasks, SystemID.WorldStreaming);
+                vault.ReleaseMutationGuard(SurfaceEdgeMasksMutationGuardMask);
             }
         }
 
@@ -832,24 +840,23 @@ namespace Hecton8.World.VoxelSurfaceNets
 
         public static bool TrySetTuning(IDataVault vault, ref VoxelSurfaceNetsVaultHandles handles, in VoxelMeshingTuningDTO tuning)
         {
-            if (vault == null ||
-                handles.Tuning.BufferID == 0u ||
-                !vault.TryAcquireWriteLock(in handles.Tuning, SystemID.WorldStreaming, out NativeArray<VoxelMeshingTuningDTO> tuningBuffer))
-            {
+            if (!TryAcquireMutationView(
+                    vault,
+                    in handles.Tuning,
+                    VoxelSurfaceNetsVaultBufferIds.Tuning,
+                    1,
+                    TuningMutationGuardMask,
+                    out NativeArray<VoxelMeshingTuningDTO> tuningBuffer))
                 return false;
-            }
 
             try
             {
-                if (!tuningBuffer.IsCreated || tuningBuffer.Length <= 0)
-                    return false;
-
                 tuningBuffer[0] = SanitizeTuning(in tuning);
                 return true;
             }
             finally
             {
-                vault.ReleaseWriteLock(in handles.Tuning, SystemID.WorldStreaming);
+                vault.ReleaseMutationGuard(TuningMutationGuardMask);
             }
         }
 
@@ -869,34 +876,42 @@ namespace Hecton8.World.VoxelSurfaceNets
                 return false;
 
             ulong writeTicks = (ulong)File.GetLastWriteTimeUtc(path).Ticks;
-            if (!vault.TryAcquireWriteLock(in handles.CsvScratch, SystemID.WorldStreaming, out NativeArray<byte> csvScratch))
+            if (!TryReadTuning(vault, in handles, out VoxelMeshingTuningDTO tuning))
                 return false;
 
+            if (!TryAcquireMutationView(
+                    vault,
+                    in handles.CsvScratch,
+                    VoxelSurfaceNetsVaultBufferIds.CsvScratch,
+                    1,
+                    CsvScratchMutationGuardMask,
+                    out NativeArray<byte> csvScratch))
+                return false;
+
+            int length;
+            uint csvHash;
+            bool changed;
             try
             {
-                if (!csvScratch.IsCreated)
-                    return false;
-
-                int length = ReadFileIntoNativeScratch(path, csvScratch);
+                length = ReadFileIntoNativeScratch(path, csvScratch);
                 if (length <= 0)
                     return false;
 
-                if (!TryReadTuning(vault, in handles, out VoxelMeshingTuningDTO tuning))
-                    return false;
-
-                bool changed = TryApplyCsvOverrides(csvScratch, length, ref tuning);
-                if (!changed)
-                    return false;
-
-                tuning.ForceRemeshVersion++;
-                tuning.LastCsvHash = HashBytes(csvScratch, length);
-                tuning.LastCsvWriteTicks = writeTicks;
-                return TryCommitCsvTuning(vault, in handles, in tuning);
+                changed = TryApplyCsvOverrides(csvScratch, length, ref tuning);
+                csvHash = changed ? HashBytes(csvScratch, length) : 0u;
             }
             finally
             {
-                vault.ReleaseWriteLock(in handles.CsvScratch, SystemID.WorldStreaming);
+                vault.ReleaseMutationGuard(CsvScratchMutationGuardMask);
             }
+
+            if (!changed)
+                return false;
+
+            tuning.ForceRemeshVersion++;
+            tuning.LastCsvHash = csvHash;
+            tuning.LastCsvWriteTicks = writeTicks;
+            return TryCommitCsvTuning(vault, in handles, in tuning);
         }
 
         public static bool TryPollCsvOverrides(IDataVault vault, ref VoxelSurfaceNetsVaultHandles handles, string projectRoot)
@@ -1127,59 +1142,77 @@ namespace Hecton8.World.VoxelSurfaceNets
                 return false;
 
             VoxelMeshingTuningDTO sanitized = SanitizeTuning(in tuning);
-            if (!vault.TryAcquireWriteLock(in handles.Tuning, SystemID.WorldStreaming, out NativeArray<VoxelMeshingTuningDTO> tuningBuffer))
+            if (!TryWriteCsvTuning(vault, in handles, in sanitized))
+                return false;
+
+            return TryMarkCsvDirtyStates(vault, in handles, sanitized.ForceRemeshVersion);
+        }
+
+        private static bool TryWriteCsvTuning(
+            IDataVault vault,
+            in VoxelSurfaceNetsVaultHandles handles,
+            in VoxelMeshingTuningDTO sanitized)
+        {
+            if (!TryAcquireMutationView(
+                    vault,
+                    in handles.Tuning,
+                    VoxelSurfaceNetsVaultBufferIds.Tuning,
+                    1,
+                    TuningMutationGuardMask,
+                    out NativeArray<VoxelMeshingTuningDTO> tuningBuffer))
                 return false;
 
             try
             {
-                if (!tuningBuffer.IsCreated || tuningBuffer.Length <= 0)
-                    return false;
-
                 tuningBuffer[0] = sanitized;
-            }
-            finally
-            {
-                vault.ReleaseWriteLock(in handles.Tuning, SystemID.WorldStreaming);
-            }
-
-            if (!vault.TryAcquireWriteLock(in handles.States, SystemID.WorldStreaming, out NativeArray<ChunkMeshingStateDTO> states))
-                return false;
-
-            try
-            {
-                if (!states.IsCreated)
-                    return false;
-
-                MarkVisibleChunksDirty(states, sanitized.ForceRemeshVersion);
                 return true;
             }
             finally
             {
-                vault.ReleaseWriteLock(in handles.States, SystemID.WorldStreaming);
+                vault.ReleaseMutationGuard(TuningMutationGuardMask);
+            }
+        }
+
+        private static bool TryMarkCsvDirtyStates(
+            IDataVault vault,
+            in VoxelSurfaceNetsVaultHandles handles,
+            uint forceRemeshVersion)
+        {
+            if (!TryAcquireMutationView(
+                    vault,
+                    in handles.States,
+                    VoxelSurfaceNetsVaultBufferIds.States,
+                    1,
+                    StatesMutationGuardMask,
+                    out NativeArray<ChunkMeshingStateDTO> states))
+                return false;
+
+            try
+            {
+                MarkVisibleChunksDirty(states, forceRemeshVersion);
+                return true;
+            }
+            finally
+            {
+                vault.ReleaseMutationGuard(StatesMutationGuardMask);
             }
         }
 
         private static bool TryClearBuffer<T>(IDataVault vault, in VaultGenerationHandle<T> handle)
             where T : unmanaged
         {
-            if (vault == null ||
-                handle.BufferID == 0u ||
-                !vault.TryAcquireWriteLock(in handle, SystemID.WorldStreaming, out NativeArray<T> buffer))
-            {
+            ulong guardMask = VaultMutationGuardBit(handle.BufferID);
+            if (!TryAcquireMutationView(vault, in handle, 0, guardMask, out NativeArray<T> buffer))
                 return false;
-            }
 
             try
             {
-                if (!buffer.IsCreated)
-                    return false;
-
                 ClearArray(buffer);
                 return true;
             }
             finally
             {
-                vault.ReleaseWriteLock(in handle, SystemID.WorldStreaming);
+                vault.ReleaseMutationGuard(guardMask);
             }
         }
 
@@ -1187,12 +1220,14 @@ namespace Hecton8.World.VoxelSurfaceNets
             IDataVault vault,
             in VoxelSurfaceNetsVaultHandles handles)
         {
-            if (vault == null ||
-                handles.SurfaceEdgeMasks.BufferID == 0u ||
-                !vault.TryAcquireWriteLock(in handles.SurfaceEdgeMasks, SystemID.WorldStreaming, out NativeArray<uint> edgeMasks))
-            {
+            if (!TryAcquireMutationView(
+                    vault,
+                    in handles.SurfaceEdgeMasks,
+                    VoxelSurfaceNetsVaultBufferIds.SurfaceEdgeMasks,
+                    VoxelSurfaceNetsConstants.LookupCaseCount,
+                    SurfaceEdgeMasksMutationGuardMask,
+                    out NativeArray<uint> edgeMasks))
                 return false;
-            }
 
             try
             {
@@ -1201,7 +1236,7 @@ namespace Hecton8.World.VoxelSurfaceNets
             }
             finally
             {
-                vault.ReleaseWriteLock(in handles.SurfaceEdgeMasks, SystemID.WorldStreaming);
+                vault.ReleaseMutationGuard(SurfaceEdgeMasksMutationGuardMask);
             }
         }
 
@@ -1209,24 +1244,23 @@ namespace Hecton8.World.VoxelSurfaceNets
             IDataVault vault,
             in VoxelSurfaceNetsVaultHandles handles)
         {
-            if (vault == null ||
-                handles.Tuning.BufferID == 0u ||
-                !vault.TryAcquireWriteLock(in handles.Tuning, SystemID.WorldStreaming, out NativeArray<VoxelMeshingTuningDTO> tuningBuffer))
-            {
+            if (!TryAcquireMutationView(
+                    vault,
+                    in handles.Tuning,
+                    VoxelSurfaceNetsVaultBufferIds.Tuning,
+                    1,
+                    TuningMutationGuardMask,
+                    out NativeArray<VoxelMeshingTuningDTO> tuningBuffer))
                 return false;
-            }
 
             try
             {
-                if (!tuningBuffer.IsCreated || tuningBuffer.Length <= 0)
-                    return false;
-
                 tuningBuffer[0] = VoxelSurfaceNetsDefaults.BuildDefaultTuning();
                 return true;
             }
             finally
             {
-                vault.ReleaseWriteLock(in handles.Tuning, SystemID.WorldStreaming);
+                vault.ReleaseMutationGuard(TuningMutationGuardMask);
             }
         }
 
@@ -1234,24 +1268,80 @@ namespace Hecton8.World.VoxelSurfaceNets
             IDataVault vault,
             in VoxelSurfaceNetsVaultHandles handles)
         {
-            if (vault == null ||
-                handles.MockDensityConfig.BufferID == 0u ||
-                !vault.TryAcquireWriteLock(in handles.MockDensityConfig, SystemID.WorldStreaming, out NativeArray<MockVoxelDensityArray> mockDensityBuffer))
-            {
+            if (!TryAcquireMutationView(
+                    vault,
+                    in handles.MockDensityConfig,
+                    VoxelSurfaceNetsVaultBufferIds.MockDensityConfig,
+                    1,
+                    MockDensityConfigMutationGuardMask,
+                    out NativeArray<MockVoxelDensityArray> mockDensityBuffer))
                 return false;
-            }
 
             try
             {
-                if (!mockDensityBuffer.IsCreated || mockDensityBuffer.Length <= 0)
-                    return false;
-
                 mockDensityBuffer[0] = VoxelSurfaceNetsDefaults.BuildDefaultMockDensity();
                 return true;
             }
             finally
             {
-                vault.ReleaseWriteLock(in handles.MockDensityConfig, SystemID.WorldStreaming);
+                vault.ReleaseMutationGuard(MockDensityConfigMutationGuardMask);
+            }
+        }
+
+        private static bool TryAcquireMutationView<T>(
+            IDataVault vault,
+            in VaultGenerationHandle<T> handle,
+            BufferID expectedBufferId,
+            int requiredLength,
+            ulong mutationGuardMask,
+            out NativeArray<T> buffer)
+            where T : struct
+        {
+            buffer = default;
+            if (handle.BufferID != (uint)(int)expectedBufferId)
+                return false;
+
+            return TryAcquireMutationView(vault, in handle, requiredLength, mutationGuardMask, out buffer);
+        }
+
+        private static bool TryAcquireMutationView<T>(
+            IDataVault vault,
+            in VaultGenerationHandle<T> handle,
+            int requiredLength,
+            ulong mutationGuardMask,
+            out NativeArray<T> buffer)
+            where T : struct
+        {
+            buffer = default;
+            if (vault == null ||
+                handle.BufferID == 0u ||
+                mutationGuardMask == 0UL ||
+                vault.IsCompactionFenceActive ||
+                !vault.TryAcquireMutationGuard(mutationGuardMask))
+            {
+                return false;
+            }
+
+            bool success = false;
+            try
+            {
+                if (vault.IsCompactionFenceActive ||
+                    !vault.TryResolveHandle(in handle, out buffer) ||
+                    vault.IsCompactionFenceActive ||
+                    !buffer.IsCreated ||
+                    buffer.Length < requiredLength)
+                {
+                    buffer = default;
+                    return false;
+                }
+
+                success = true;
+                return true;
+            }
+            finally
+            {
+                if (!success)
+                    vault.ReleaseMutationGuard(mutationGuardMask);
             }
         }
 

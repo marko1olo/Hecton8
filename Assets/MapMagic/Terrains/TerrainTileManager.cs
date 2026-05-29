@@ -22,16 +22,36 @@ namespace MapMagic.Core
 		public void Pin (Coord coord, bool asDraft, MonoBehaviour holder=null)
 		/// Creates new tile at the coord if it's empty and pin it
 		{
-			grid.TryGetValue(coord, out TerrainTile tile);
+			TerrainTile tile;
+			bool created = false;
+			lock (gridLocker)
+			{
+				if (!grid.TryGetValue(coord, out tile))
+					tile = null;
+			}
 
 			if (tile == null)
 			{
-				tile = ConstructTile(holder);
-				grid.Add(coord, tile);
+				TerrainTile constructedTile = ConstructTile(holder);
+
+				lock (gridLocker)
+				{
+					if (!grid.TryGetValue(coord, out tile))
+					{
+						Dictionary<Coord,TerrainTile> newGrid = new Dictionary<Coord,TerrainTile>(grid);
+						newGrid.Add(coord, constructedTile);
+						grid = newGrid;
+						tile = constructedTile;
+						created = true;
+					}
+				}
+
+				if (!created && constructedTile != null)
+					constructedTile.Remove();
 			}
 
-			else
-				tile.Pin(asDraft); 
+			if (tile == null)
+				return;
 
 			tile.Pin(asDraft);
 			tile.Move(coord, camCoords != null ? GetRemoteness(coord, camCoords, camCoordsCount) : 0);
@@ -55,8 +75,19 @@ namespace MapMagic.Core
 			//no deploy was performed - removing pinned
 			//else
 			{
-				grid[coord].Remove();
-				grid.Remove(coord);
+				TerrainTile tile;
+				lock (gridLocker)
+				{
+					if (!grid.TryGetValue(coord, out tile))
+						return;
+
+					Dictionary<Coord,TerrainTile> newGrid = new Dictionary<Coord,TerrainTile>(grid);
+					newGrid.Remove(coord);
+					grid = newGrid;
+				}
+
+				if (tile != null)
+					tile.Remove();
 			}
 		}
 

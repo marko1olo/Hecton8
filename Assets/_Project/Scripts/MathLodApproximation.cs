@@ -258,7 +258,7 @@ namespace Hecton8.Core
         [FieldOffset(40)] public float LastFrameMs;
         [FieldOffset(44)] public float VramPressure01;
         [FieldOffset(48)] public float ThermalPressure01;
-        [FieldOffset(52)] public float ReservedQualityLane0;
+        [FieldOffset(52)] public float VisualOverkillWeight01;
         [FieldOffset(56)] public uint StateHash;
         [FieldOffset(60)] public uint _pad0;
     }
@@ -438,12 +438,11 @@ namespace Hecton8.Core
             frameMs = math.max(0f, frameMs);
             float vram = math.saturate(Sanitize(vramPressure01, 0f, ref sanitized));
             float thermal = math.saturate(Sanitize(thermalPressure01, 0f, ref sanitized));
-            float pressure = math.saturate(1f - quality);
+            float pressure = ResolveSurvivalPressureWeight01(quality);
+            float visualOverkillWeight = ResolveVisualOverkillWeight01(quality);
             float activeIterations = ResolveActiveIterationBudget(quality);
             uint flags = externalFlags & ConfigFlagExternalPressure;
             flags |= sanitized ? ConfigFlagSanitized | ConfigFlagNonFiniteInput : 0u;
-            flags |= quality <= 0.1001f ? ConfigFlagMinimumSurvival : 0u;
-            flags |= quality >= 0.95f ? ConfigFlagVisualOverkill : 0u;
             faultFlags = sanitized ? ConfigFlagNonFiniteInput : 0u;
 
             MathLodConfigDTO dto = default;
@@ -460,7 +459,7 @@ namespace Hecton8.Core
             dto.LastFrameMs = frameMs;
             dto.VramPressure01 = vram;
             dto.ThermalPressure01 = thermal;
-            dto.ReservedQualityLane0 = 0f;
+            dto.VisualOverkillWeight01 = visualOverkillWeight;
             dto.StateHash = HashConfig(dto);
             dto._pad0 = 0u;
             config[0] = dto;
@@ -577,9 +576,24 @@ namespace Hecton8.Core
             dto.MathLodPressure01 = 0f;
             dto.ActiveIterationBudget = MaxJacobiIterations;
             dto.Frame = 0u;
-            dto.Flags = ConfigFlagVisualOverkill;
+            dto.Flags = 0u;
+            dto.VisualOverkillWeight01 = 1f;
             dto.StateHash = HashConfig(dto);
             return dto;
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private static float ResolveSurvivalPressureWeight01(float globalQualityWeight)
+        {
+            float quality = MathLodApproximation.SaturateFinite(globalQualityWeight, 1f);
+            return math.saturate(1f - quality);
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private static float ResolveVisualOverkillWeight01(float globalQualityWeight)
+        {
+            float quality = MathLodApproximation.SaturateFinite(globalQualityWeight, 1f);
+            return MathLodApproximation.SmoothRange01(0.72f, 1f, quality);
         }
 
         private static void ResetHandles()
@@ -605,6 +619,7 @@ namespace Hecton8.Core
             hash = Mix(hash, math.asuint(dto.GlobalQualityWeight));
             hash = Mix(hash, math.asuint(dto.FractionalTimeSlice));
             hash = Mix(hash, math.asuint(dto.MathLodPressure01));
+            hash = Mix(hash, math.asuint(dto.VisualOverkillWeight01));
             hash = Mix(hash, math.asuint(dto.ActiveIterationBudget));
             hash = Mix(hash, dto.Frame);
             hash = Mix(hash, dto.Flags);

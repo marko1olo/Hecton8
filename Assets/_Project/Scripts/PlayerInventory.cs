@@ -68,6 +68,8 @@ namespace Hecton8.Inventory
         private const int InventoryBlackBoxCapacity = 300;
         private const int InventoryBlackBoxEntrySizeBytes = 64;
         private const string InventoryBlackBoxDumpRelativePath = "Docs/AgentLogs/Dump_1317_Inventory.bin";
+        private const int PendingScavengingItemSignalCapacity = 128;
+        private const int PendingInventoryCommandSignalCapacity = 16;
         private const float SalinityCorrosionFrostTickSeconds = 5f;
         private const float SalinityCorrosionDegradationRatePerFrostTick = 0.00325f;
         private const float EquipmentFailingThreshold01 = 0.2f;
@@ -228,6 +230,13 @@ namespace Hecton8.Inventory
             private byte _pad30;
             [System.Runtime.InteropServices.FieldOffset(63)]
             private byte _pad31;
+        }
+
+        private struct PendingInventoryCommand
+        {
+            public InventoryCommandSignal Command;
+            public double3 DeferredDeathAup;
+            public byte HasDeferredDeathAup;
         }
 
         private ref struct InventoryMassVolumeKernel
@@ -615,13 +624,11 @@ namespace Hecton8.Inventory
         private InventoryVaultLane<int> _salinityCorrosionJobResult;
         private InventoryVaultLane<uint> _salinityBrokenItemHashes;
         private InventoryVaultLane<SalinityCorrosionTelemetryEntry> _salinityCorrosionBlackBox;
-        private NativeArray<int> _salinityCorrosionJobResultScratch;
-        private NativeArray<uint> _salinityBrokenItemHashesScratch;
-        private NativeArray<int> _salinityChangedSlotsScratch;
-        private NativeArray<float> _salinityNextDurabilityScratch;
-        private NativeArray<byte> _salinityNextDurabilityBytesScratch;
-        private NativeArray<ushort> _salinityNextQualityMilliScratch;
-        private NativeArray<ushort> _salinityNextStateFlagsScratch;
+        private InventoryVaultLane<int> _salinityChangedSlotsScratch;
+        private InventoryVaultLane<float> _salinityNextDurabilityScratch;
+        private InventoryVaultLane<byte> _salinityNextDurabilityBytesScratch;
+        private InventoryVaultLane<ushort> _salinityNextQualityMilliScratch;
+        private InventoryVaultLane<ushort> _salinityNextStateFlagsScratch;
         private InventoryVaultLane<int> _defragItemHashes;
         private InventoryVaultLane<ushort> _defragItemCounts;
         private InventoryVaultLane<byte> _defragCategories;
@@ -641,6 +648,10 @@ namespace Hecton8.Inventory
         private InventoryVaultLane<int> _defragResult;
         private ItemPlacement[] _sortBuffer;
         private ushort[] _bulkCompactionMaxStackBuffer;
+        private ItemAcquiredSignal[] _pendingScavengingItemSignals;
+        private PendingInventoryCommand[] _pendingInventoryCommands;
+        private int _pendingScavengingItemSignalCount;
+        private int _pendingInventoryCommandCount;
         private bool _registeredSlowTick;
         private bool _registeredLateFrameTick;
         private float _pendingEquipmentRustShaderScalar;
@@ -687,11 +698,23 @@ namespace Hecton8.Inventory
         private bool _hotSwapListenerRegistered;
         private bool _saveRegistered;
         private int _vaultBufferBase;
+        private ulong _salinityCorrosionMutationGuardMask;
 
         private const SystemID PlayerInventoryVaultOwner = SystemID.GameplayPlayer;
         private const int PlayerInventoryVaultBufferBase = 410000;
         private const int PlayerInventoryVaultBufferStride = 64;
         private const int PlayerInventoryVaultBufferInstanceMask = 0x3ff;
+        private const int ItemDurabilityVaultOrdinal = 3;
+        private const int ItemStateFlagsVaultOrdinal = 6;
+        private const int QualityMilliVaultOrdinal = 8;
+        private const int DurabilitiesVaultOrdinal = 9;
+        private const int SalinityCorrosionJobResultVaultOrdinal = 29;
+        private const int SalinityBrokenItemHashesVaultOrdinal = 30;
+        private const int SalinityChangedSlotsScratchVaultOrdinal = 49;
+        private const int SalinityNextDurabilityScratchVaultOrdinal = 50;
+        private const int SalinityNextDurabilityBytesScratchVaultOrdinal = 51;
+        private const int SalinityNextQualityMilliScratchVaultOrdinal = 52;
+        private const int SalinityNextStateFlagsScratchVaultOrdinal = 53;
 
         internal struct InventoryVaultLane<T> where T : struct
         {
@@ -702,8 +725,8 @@ namespace Hecton8.Inventory
 
             public VaultGenerationHandle<T> Handle;
 
-            public int Length => TryResolve(out NativeArray<T> buffer) ? buffer.Length : 0;
-            public bool IsCreated => TryResolve(out NativeArray<T> buffer) && buffer.IsCreated;
+            public int Length => TryReadOnly(out NativeArray<T>.ReadOnly buffer) ? buffer.Length : 0;
+            public bool IsCreated => TryReadOnly(out NativeArray<T>.ReadOnly buffer) && buffer.IsCreated;
             public uint BufferId => Handle.BufferID;
             public uint Generation => Handle.Generation;
 
@@ -711,7 +734,7 @@ namespace Hecton8.Inventory
             {
                 get
                 {
-                    if (!TryResolve(out NativeArray<T> buffer) || (uint)index >= (uint)buffer.Length)
+                    if (!TryReadOnly(out NativeArray<T>.ReadOnly buffer) || (uint)index >= (uint)buffer.Length)
                         return default;
 
                     return buffer[index];
@@ -800,12 +823,23 @@ namespace Hecton8.Inventory
                 if (!vault.TryAcquireWriteLock(in Handle, _owner, out buffer))
                     return false;
 
-                if (buffer.IsCreated && buffer.Length >= _expectedLength)
-                    return true;
+                bool ownershipTransferred = false;
+                try
+                {
+                    if (buffer.IsCreated && buffer.Length >= _expectedLength)
+                    {
+                        ownershipTransferred = true;
+                        return true;
+                    }
 
-                vault.ReleaseWriteLock(in Handle, _owner);
-                buffer = default;
-                return false;
+                    buffer = default;
+                    return false;
+                }
+                finally
+                {
+                    if (!ownershipTransferred)
+                        vault.ReleaseWriteLock(in Handle, _owner);
+                }
             }
 
             public bool ReleaseWriteLock()
@@ -849,22 +883,57 @@ namespace Hecton8.Inventory
             return (BufferID)(_vaultBufferBase + ordinal);
         }
 
+        private ulong ResolvePlayerInventoryVaultMutationGuardBit(int ordinal)
+        {
+            uint bufferId = unchecked((uint)(int)ResolvePlayerInventoryVaultBufferId(ordinal));
+            return 1UL << unchecked((int)(bufferId & 63u));
+        }
+
+        private ulong BuildSalinityCorrosionMutationGuardMask()
+        {
+            return ResolvePlayerInventoryVaultMutationGuardBit(ItemDurabilityVaultOrdinal) |
+                   ResolvePlayerInventoryVaultMutationGuardBit(ItemStateFlagsVaultOrdinal) |
+                   ResolvePlayerInventoryVaultMutationGuardBit(QualityMilliVaultOrdinal) |
+                   ResolvePlayerInventoryVaultMutationGuardBit(DurabilitiesVaultOrdinal) |
+                   ResolvePlayerInventoryVaultMutationGuardBit(SalinityCorrosionJobResultVaultOrdinal) |
+                   ResolvePlayerInventoryVaultMutationGuardBit(SalinityBrokenItemHashesVaultOrdinal) |
+                   ResolvePlayerInventoryVaultMutationGuardBit(SalinityChangedSlotsScratchVaultOrdinal) |
+                   ResolvePlayerInventoryVaultMutationGuardBit(SalinityNextDurabilityScratchVaultOrdinal) |
+                   ResolvePlayerInventoryVaultMutationGuardBit(SalinityNextDurabilityBytesScratchVaultOrdinal) |
+                   ResolvePlayerInventoryVaultMutationGuardBit(SalinityNextQualityMilliScratchVaultOrdinal) |
+                   ResolvePlayerInventoryVaultMutationGuardBit(SalinityNextStateFlagsScratchVaultOrdinal);
+        }
+
+        private bool TryAcquireSalinityCorrosionMutationGuard(out IDataVault guardedVault, out ulong guardMask)
+        {
+            guardMask = _salinityCorrosionMutationGuardMask;
+            guardedVault = _cachedDataVault;
+            return guardedVault != null && guardMask != 0UL && guardedVault.TryAcquireMutationGuard(guardMask);
+        }
+
+        private static void ReleaseSalinityCorrosionMutationGuard(IDataVault guardedVault, ulong guardMask)
+        {
+            if (guardedVault != null && guardMask != 0UL)
+                guardedVault.ReleaseMutationGuard(guardMask);
+        }
+
         private bool BindPlayerInventoryVaultBuffers(int cellCount)
         {
             if (_cachedDataVault == null || cellCount <= 0)
                 return false;
 
+            _salinityCorrosionMutationGuardMask = 0UL;
             bool success =
                 BindVaultLane(ref _itemHashes, 0, cellCount) &&
                 BindVaultLane(ref _stackCounts, 1, cellCount) &&
                 BindVaultLane(ref _itemCondition, 2, cellCount) &&
-                BindVaultLane(ref _itemDurability, 3, cellCount) &&
+                BindVaultLane(ref _itemDurability, ItemDurabilityVaultOrdinal, cellCount) &&
                 BindVaultLane(ref _craftLockedCounts, 4, cellCount) &&
                 BindVaultLane(ref _anchorStateFlags, 5, cellCount) &&
-                BindVaultLane(ref _itemStateFlags, 6, cellCount) &&
+                BindVaultLane(ref _itemStateFlags, ItemStateFlagsVaultOrdinal, cellCount) &&
                 BindVaultLane(ref _itemGenetics, 7, cellCount) &&
-                BindVaultLane(ref _qualityMilli, 8, cellCount) &&
-                BindVaultLane(ref _durabilities, 9, cellCount) &&
+                BindVaultLane(ref _qualityMilli, QualityMilliVaultOrdinal, cellCount) &&
+                BindVaultLane(ref _durabilities, DurabilitiesVaultOrdinal, cellCount) &&
                 BindVaultLane(ref _lastUpdateUnixSeconds, 10, cellCount) &&
                 BindVaultLane(ref _scavengeSimStackCounts, 11, cellCount) &&
                 BindVaultLane(ref _simulationOccupiedCells, 12, cellCount) &&
@@ -879,9 +948,14 @@ namespace Hecton8.Inventory
                 BindVaultLane(ref _thermalRunawayCounters, 26, 2) &&
                 BindVaultLane(ref _inventoryShadowBuffer, 27, InventoryShadowBufferBytes) &&
                 BindVaultLane(ref _inventoryBlackBox, 28, InventoryBlackBoxCapacity) &&
-                BindVaultLane(ref _salinityCorrosionJobResult, 29, InventoryCorrosionConstants.ResultRequiredLength) &&
-                BindVaultLane(ref _salinityBrokenItemHashes, 30, cellCount) &&
+                BindVaultLane(ref _salinityCorrosionJobResult, SalinityCorrosionJobResultVaultOrdinal, InventoryCorrosionConstants.ResultRequiredLength) &&
+                BindVaultLane(ref _salinityBrokenItemHashes, SalinityBrokenItemHashesVaultOrdinal, cellCount) &&
                 BindVaultLane(ref _salinityCorrosionBlackBox, 31, InventoryBlackBoxCapacity) &&
+                BindVaultLane(ref _salinityChangedSlotsScratch, SalinityChangedSlotsScratchVaultOrdinal, cellCount) &&
+                BindVaultLane(ref _salinityNextDurabilityScratch, SalinityNextDurabilityScratchVaultOrdinal, cellCount) &&
+                BindVaultLane(ref _salinityNextDurabilityBytesScratch, SalinityNextDurabilityBytesScratchVaultOrdinal, cellCount) &&
+                BindVaultLane(ref _salinityNextQualityMilliScratch, SalinityNextQualityMilliScratchVaultOrdinal, cellCount) &&
+                BindVaultLane(ref _salinityNextStateFlagsScratch, SalinityNextStateFlagsScratchVaultOrdinal, cellCount) &&
                 BindVaultLane(ref _defragItemHashes, 32, cellCount) &&
                 BindVaultLane(ref _defragItemCounts, 33, cellCount) &&
                 BindVaultLane(ref _defragCategories, 34, cellCount) &&
@@ -901,7 +975,13 @@ namespace Hecton8.Inventory
                 BindVaultLane(ref _defragResult, 48, InventoryDefragResultSlots.RequiredLength);
 
             if (!success)
+            {
                 ReleasePlayerInventoryVaultBuffers();
+            }
+            else
+            {
+                _salinityCorrosionMutationGuardMask = BuildSalinityCorrosionMutationGuardMask();
+            }
 
             return success;
         }
@@ -944,6 +1024,11 @@ namespace Hecton8.Inventory
             _salinityCorrosionJobResult.RebindVault(vault);
             _salinityBrokenItemHashes.RebindVault(vault);
             _salinityCorrosionBlackBox.RebindVault(vault);
+            _salinityChangedSlotsScratch.RebindVault(vault);
+            _salinityNextDurabilityScratch.RebindVault(vault);
+            _salinityNextDurabilityBytesScratch.RebindVault(vault);
+            _salinityNextQualityMilliScratch.RebindVault(vault);
+            _salinityNextStateFlagsScratch.RebindVault(vault);
             _defragItemHashes.RebindVault(vault);
             _defragItemCounts.RebindVault(vault);
             _defragCategories.RebindVault(vault);
@@ -992,6 +1077,11 @@ namespace Hecton8.Inventory
             ClearNativeArray(_salinityCorrosionJobResult);
             ClearNativeArray(_salinityBrokenItemHashes);
             ClearNativeArray(_salinityCorrosionBlackBox);
+            ClearNativeArray(_salinityChangedSlotsScratch);
+            ClearNativeArray(_salinityNextDurabilityScratch);
+            ClearNativeArray(_salinityNextDurabilityBytesScratch);
+            ClearNativeArray(_salinityNextQualityMilliScratch);
+            ClearNativeArray(_salinityNextStateFlagsScratch);
             ClearNativeArray(_defragItemHashes);
             ClearNativeArray(_defragItemCounts);
             ClearNativeArray(_defragCategories);
@@ -1013,6 +1103,7 @@ namespace Hecton8.Inventory
 
         private void ReleasePlayerInventoryVaultBuffers()
         {
+            _salinityCorrosionMutationGuardMask = 0UL;
             _itemHashes.Release();
             _stackCounts.Release();
             _itemCondition.Release();
@@ -1040,6 +1131,11 @@ namespace Hecton8.Inventory
             _salinityCorrosionJobResult.Release();
             _salinityBrokenItemHashes.Release();
             _salinityCorrosionBlackBox.Release();
+            _salinityChangedSlotsScratch.Release();
+            _salinityNextDurabilityScratch.Release();
+            _salinityNextDurabilityBytesScratch.Release();
+            _salinityNextQualityMilliScratch.Release();
+            _salinityNextStateFlagsScratch.Release();
             _defragItemHashes.Release();
             _defragItemCounts.Release();
             _defragCategories.Release();
@@ -1061,63 +1157,26 @@ namespace Hecton8.Inventory
 
         private bool AllocateSalinityCorrosionScratchCold(int cellCount)
         {
-            if (cellCount <= 0)
-                return false;
-
-            ReleaseSalinityCorrosionScratchCold();
-
-            _salinityCorrosionJobResultScratch = new NativeArray<int>(
-                InventoryCorrosionConstants.ResultRequiredLength,
-                Allocator.Persistent,
-                NativeArrayOptions.ClearMemory);
-            _salinityBrokenItemHashesScratch = new NativeArray<uint>(
-                cellCount,
-                Allocator.Persistent,
-                NativeArrayOptions.ClearMemory);
-            _salinityChangedSlotsScratch = new NativeArray<int>(
-                cellCount,
-                Allocator.Persistent,
-                NativeArrayOptions.ClearMemory);
-            _salinityNextDurabilityScratch = new NativeArray<float>(
-                cellCount,
-                Allocator.Persistent,
-                NativeArrayOptions.ClearMemory);
-            _salinityNextDurabilityBytesScratch = new NativeArray<byte>(
-                cellCount,
-                Allocator.Persistent,
-                NativeArrayOptions.ClearMemory);
-            _salinityNextQualityMilliScratch = new NativeArray<ushort>(
-                cellCount,
-                Allocator.Persistent,
-                NativeArrayOptions.ClearMemory);
-            _salinityNextStateFlagsScratch = new NativeArray<ushort>(
-                cellCount,
-                Allocator.Persistent,
-                NativeArrayOptions.ClearMemory);
-
-            bool ready =
-                _salinityCorrosionJobResultScratch.IsCreated &&
-                _salinityBrokenItemHashesScratch.IsCreated &&
-                _salinityChangedSlotsScratch.IsCreated &&
-                _salinityNextDurabilityScratch.IsCreated &&
-                _salinityNextDurabilityBytesScratch.IsCreated &&
-                _salinityNextQualityMilliScratch.IsCreated &&
-                _salinityNextStateFlagsScratch.IsCreated;
-            if (!ready)
-                ReleaseSalinityCorrosionScratchCold();
-
-            return ready;
+            return cellCount > 0 &&
+                   _salinityCorrosionJobResult.IsCreated &&
+                   _salinityCorrosionJobResult.Length >= InventoryCorrosionConstants.ResultRequiredLength &&
+                   _salinityBrokenItemHashes.IsCreated &&
+                   _salinityBrokenItemHashes.Length >= cellCount &&
+                   _salinityChangedSlotsScratch.IsCreated &&
+                   _salinityChangedSlotsScratch.Length >= cellCount &&
+                   _salinityNextDurabilityScratch.IsCreated &&
+                   _salinityNextDurabilityScratch.Length >= cellCount &&
+                   _salinityNextDurabilityBytesScratch.IsCreated &&
+                   _salinityNextDurabilityBytesScratch.Length >= cellCount &&
+                   _salinityNextQualityMilliScratch.IsCreated &&
+                   _salinityNextQualityMilliScratch.Length >= cellCount &&
+                   _salinityNextStateFlagsScratch.IsCreated &&
+                   _salinityNextStateFlagsScratch.Length >= cellCount;
         }
 
         private void ReleaseSalinityCorrosionScratchCold()
         {
-            DisposeNativeArray(ref _salinityCorrosionJobResultScratch);
-            DisposeNativeArray(ref _salinityBrokenItemHashesScratch);
-            DisposeNativeArray(ref _salinityChangedSlotsScratch);
-            DisposeNativeArray(ref _salinityNextDurabilityScratch);
-            DisposeNativeArray(ref _salinityNextDurabilityBytesScratch);
-            DisposeNativeArray(ref _salinityNextQualityMilliScratch);
-            DisposeNativeArray(ref _salinityNextStateFlagsScratch);
+            // Scratch lanes are owned by ReleasePlayerInventoryVaultBuffers.
         }
 
 #if UNITY_EDITOR
@@ -1249,6 +1308,10 @@ namespace Hecton8.Inventory
             _sortBuffer = new ItemPlacement[columns * rows];
             // COLD ALLOC: ushort[cellCount] - bulk transfer merge-cap scratch - owner: PlayerInventory
             _bulkCompactionMaxStackBuffer = new ushort[cellCount];
+            // COLD ALLOC: ItemAcquiredSignal[128] - late-frame to slow-tick scavenging ingress - owner: PlayerInventory
+            _pendingScavengingItemSignals = new ItemAcquiredSignal[PendingScavengingItemSignalCapacity];
+            // COLD ALLOC: PendingInventoryCommand[16] - late-frame to slow-tick command ingress - owner: PlayerInventory
+            _pendingInventoryCommands = new PendingInventoryCommand[PendingInventoryCommandSignalCapacity];
             if (_traumaDispatcher == null)
                 TryGetComponent(out _traumaDispatcher);
             InitializeSoaQueryEngine(cellCount);
@@ -1266,6 +1329,8 @@ namespace Hecton8.Inventory
 
         private void OnDisable()
         {
+            _pendingScavengingItemSignalCount = 0;
+            _pendingInventoryCommandCount = 0;
             TryUnregisterPhysicsImpactListener();
             TryUnregisterSaveParticipant();
             TryUnregisterSlowTick();
@@ -1428,13 +1493,6 @@ namespace Hecton8.Inventory
 
         private void RegisterNativeMemorySentinel()
         {
-            NativeMemorySentinel.RegisterNativeArray(_salinityCorrosionJobResultScratch, NativeMemoryOwner, nameof(_salinityCorrosionJobResultScratch), NativeMemoryLifetime);
-            NativeMemorySentinel.RegisterNativeArray(_salinityBrokenItemHashesScratch, NativeMemoryOwner, nameof(_salinityBrokenItemHashesScratch), NativeMemoryLifetime);
-            NativeMemorySentinel.RegisterNativeArray(_salinityChangedSlotsScratch, NativeMemoryOwner, nameof(_salinityChangedSlotsScratch), NativeMemoryLifetime);
-            NativeMemorySentinel.RegisterNativeArray(_salinityNextDurabilityScratch, NativeMemoryOwner, nameof(_salinityNextDurabilityScratch), NativeMemoryLifetime);
-            NativeMemorySentinel.RegisterNativeArray(_salinityNextDurabilityBytesScratch, NativeMemoryOwner, nameof(_salinityNextDurabilityBytesScratch), NativeMemoryLifetime);
-            NativeMemorySentinel.RegisterNativeArray(_salinityNextQualityMilliScratch, NativeMemoryOwner, nameof(_salinityNextQualityMilliScratch), NativeMemoryLifetime);
-            NativeMemorySentinel.RegisterNativeArray(_salinityNextStateFlagsScratch, NativeMemoryOwner, nameof(_salinityNextStateFlagsScratch), NativeMemoryLifetime);
             // GlobalDataVault owns generation descriptor allocation telemetry.
         }
 
@@ -1865,10 +1923,22 @@ namespace Hecton8.Inventory
             return TryAddItemWithStateInternal(itemHashId, quantity, geneticsMask, qualityMilli, itemStateFlags, out _);
         }
 
+        public bool TryAddItemWithState(int itemHashId, uint geneticsMask, ushort qualityMilli, ushort itemStateFlags, int quantity, out int addedQuantity)
+        {
+            return TryAddItemWithState(itemHashId, (ulong)geneticsMask, qualityMilli, itemStateFlags, quantity, out addedQuantity);
+        }
+
+        public bool TryAddItemWithState(int itemHashId, ulong geneticsMask, ushort qualityMilli, ushort itemStateFlags, int quantity, out int addedQuantity)
+        {
+            return TryAddItemWithStateInternal(itemHashId, quantity, geneticsMask, qualityMilli, itemStateFlags, out addedQuantity);
+        }
+
         public void SlowTick()
         {
             using (_slowTickProfilerMarker.Auto())
             {
+                ApplyDeferredScavengingLootOracleSignals();
+                ConsumeDeferredInventoryCommandSignals();
                 DrainSalinityBiomeSignals();
                 DrainRepairToolTitaniumSignals();
                 ApplyInventoryEnvironmentalDegradation();
@@ -1885,8 +1955,8 @@ namespace Hecton8.Inventory
 
         public void LateFrameTick()
         {
-            DrainScavengingLootOracleSignals();
-            ConsumeInventoryCommandSignals();
+            CaptureScavengingLootOracleSignals();
+            CaptureInventoryCommandSignals();
             FlushEquipmentRustShaderScalar();
             WriteSoaQueryTelemetryOwnerPhase();
         }
@@ -2652,19 +2722,28 @@ namespace Hecton8.Inventory
             NotifyInventoryChanged(massDirty: false);
         }
 
-        private void ConsumeInventoryCommandSignals()
+        private void ConsumeDeferredInventoryCommandSignals()
         {
-            ReadOnlySpan<InventoryCommandSignal> commands = SignalBus<InventoryCommandSignal>.GetFrameSnapshot();
-            uint inventoryHash = ResolveInventorySignalHash();
-            for (int index = 0; index < commands.Length; index++)
+            int count = _pendingInventoryCommandCount;
+            if (count <= 0)
+                return;
+
+            PendingInventoryCommand[] commands = _pendingInventoryCommands;
+            _pendingInventoryCommandCount = 0;
+            if (commands == null)
+                return;
+
+            for (int index = 0; index < count; index++)
             {
-                InventoryCommandSignal command = commands[index];
-                if (command.InventoryHash != 0u && command.InventoryHash != inventoryHash)
-                    continue;
+                PendingInventoryCommand pending = commands[index];
+                InventoryCommandSignal command = pending.Command;
 
                 if (command.Command == InventoryCommandSignalCommands.DropNonEquippedResources)
                 {
-                    TryApplyRespawnDropPenalty(in command);
+                    TryApplyRespawnDropPenalty(
+                        in command,
+                        pending.HasDeferredDeathAup != 0,
+                        in pending.DeferredDeathAup);
                     continue;
                 }
 
@@ -2682,6 +2761,15 @@ namespace Hecton8.Inventory
         }
 
         private bool TryApplyRespawnDropPenalty(in InventoryCommandSignal command)
+        {
+            double3 deferredDeathAup = default;
+            return TryApplyRespawnDropPenalty(in command, false, in deferredDeathAup);
+        }
+
+        private bool TryApplyRespawnDropPenalty(
+            in InventoryCommandSignal command,
+            bool hasDeferredDeathAup,
+            in double3 deferredDeathAup)
         {
             if (_grid == null || !_stackCounts.IsCreated)
             {
@@ -2701,7 +2789,8 @@ namespace Hecton8.Inventory
                 return false;
             }
 
-            bool hasDeathAup = TryResolveRespawnDeathAup(in command, out double3 deathAup);
+            double3 deathAup = deferredDeathAup;
+            bool hasDeathAup = hasDeferredDeathAup || TryResolveRespawnDeathAup(in command, out deathAup);
             if (!hasDeathAup)
             {
                 PublishRespawnDropPenaltyResult(in command, 0);
@@ -4973,12 +5062,17 @@ namespace Hecton8.Inventory
             }
         }
 
-        private void DrainScavengingLootOracleSignals()
+        private void CaptureScavengingLootOracleSignals()
         {
             ReadOnlySpan<ItemAcquiredSignal> signals = SignalBus<ItemAcquiredSignal>.GetFrameSnapshot();
             if (signals.Length == 0)
                 return;
 
+            ItemAcquiredSignal[] pending = _pendingScavengingItemSignals;
+            if (pending == null)
+                return;
+
+            int writeIndex = _pendingScavengingItemSignalCount;
             for (int i = 0; i < signals.Length; i++)
             {
                 ItemAcquiredSignal signal = signals[i];
@@ -4990,6 +5084,51 @@ namespace Hecton8.Inventory
                     continue;
                 }
 
+                if (TryMergePendingScavengingSignal(pending, ref writeIndex, in signal))
+                    continue;
+
+                if (writeIndex >= pending.Length)
+                    break;
+
+                pending[writeIndex++] = signal;
+            }
+
+            _pendingScavengingItemSignalCount = writeIndex;
+        }
+
+        private static bool TryMergePendingScavengingSignal(
+            ItemAcquiredSignal[] pending,
+            ref int pendingCount,
+            in ItemAcquiredSignal signal)
+        {
+            for (int i = 0; i < pendingCount; i++)
+            {
+                if (pending[i].ItemHash != signal.ItemHash)
+                    continue;
+
+                int mergedQuantity = pending[i].Quantity + signal.Quantity;
+                pending[i].Quantity = (ushort)math.min(ushort.MaxValue, mergedQuantity);
+                pending[i].Frame = pending[i].Frame >= signal.Frame ? pending[i].Frame : signal.Frame;
+                return true;
+            }
+
+            return false;
+        }
+
+        private void ApplyDeferredScavengingLootOracleSignals()
+        {
+            int count = _pendingScavengingItemSignalCount;
+            if (count <= 0)
+                return;
+
+            ItemAcquiredSignal[] pending = _pendingScavengingItemSignals;
+            _pendingScavengingItemSignalCount = 0;
+            if (pending == null)
+                return;
+
+            for (int i = 0; i < count; i++)
+            {
+                ItemAcquiredSignal signal = pending[i];
                 TryAddItemWithStateInternal(
                     unchecked((int)signal.ItemHash),
                     signal.Quantity,
@@ -4997,6 +5136,48 @@ namespace Hecton8.Inventory
                     DefaultQualityMilli,
                     out _);
             }
+        }
+
+        private void CaptureInventoryCommandSignals()
+        {
+            ReadOnlySpan<InventoryCommandSignal> commands = SignalBus<InventoryCommandSignal>.GetFrameSnapshot();
+            if (commands.Length == 0)
+                return;
+
+            PendingInventoryCommand[] pending = _pendingInventoryCommands;
+            if (pending == null)
+                return;
+
+            uint inventoryHash = ResolveInventorySignalHash();
+            int writeIndex = _pendingInventoryCommandCount;
+            for (int index = 0; index < commands.Length; index++)
+            {
+                InventoryCommandSignal command = commands[index];
+                if (command.InventoryHash != 0u && command.InventoryHash != inventoryHash)
+                    continue;
+
+                if (command.Command != InventoryCommandSignalCommands.DropNonEquippedResources &&
+                    command.Command != InventoryCommandSignalCommands.Sort)
+                {
+                    continue;
+                }
+
+                if (writeIndex >= pending.Length)
+                    break;
+
+                PendingInventoryCommand entry = default;
+                entry.Command = command;
+                if (command.Command == InventoryCommandSignalCommands.DropNonEquippedResources &&
+                    TryResolveRespawnDeathAup(in command, out double3 deathAup))
+                {
+                    entry.DeferredDeathAup = deathAup;
+                    entry.HasDeferredDeathAup = 1;
+                }
+
+                pending[writeIndex++] = entry;
+            }
+
+            _pendingInventoryCommandCount = writeIndex;
         }
 
         private void DrainRepairToolTitaniumSignals()
@@ -5100,40 +5281,82 @@ namespace Hecton8.Inventory
                 return;
             }
 
-            ItemSalinityCorrosionJob salinityJob = new ItemSalinityCorrosionJob
+            if (!TryAcquireSalinityCorrosionMutationGuard(out IDataVault salinityGuardVault, out ulong salinityGuardMask))
             {
-                ItemHashes = _itemHashes.AsReadOnly(),
-                StackCounts = _stackCounts.AsReadOnly(),
-                ItemDurability = _itemDurability.AsReadOnly(),
-                DurabilityBytes = _durabilities.AsReadOnly(),
-                QualityMilli = _qualityMilli.AsReadOnly(),
-                ItemStateFlags = _itemStateFlags.AsReadOnly(),
-                ChangedSlots = _salinityChangedSlotsScratch,
-                NextItemDurability = _salinityNextDurabilityScratch,
-                NextDurabilityBytes = _salinityNextDurabilityBytesScratch,
-                NextQualityMilli = _salinityNextQualityMilliScratch,
-                NextItemStateFlags = _salinityNextStateFlagsScratch,
-                Result = _salinityCorrosionJobResultScratch,
-                BrokenItemHashes = _salinityBrokenItemHashesScratch,
-                CurrentInventoryMask = CurrentInventoryMask,
-                SalinityFactor = _currentSalinityFactor,
-                DegradationRate = SalinityCorrosionDegradationRatePerFrostTick,
-                DegradedMask = DegradedItemStateMask,
-                RustedMask = RustedItemStateMask,
-                BrokenMask = BrokenItemStateMask,
-                DegradedThresholdMilli = DegradedQualityMilliThreshold
-            };
-            salinityJob.Execute();
+                _averageEquipmentDurability01 = ResolveAverageEquipmentDurability();
+                UpdateEquipmentRustShaderScalar();
+                WriteSalinityCorrosionBlackBoxFrame(0x13);
+                return;
+            }
 
-            int averageMilli = _salinityCorrosionJobResultScratch[InventoryCorrosionConstants.ResultAverageDurabilityMilli];
-            _averageEquipmentDurability01 = math.saturate(averageMilli * 0.001f);
-            int changedCount = _salinityCorrosionJobResultScratch[InventoryCorrosionConstants.ResultChangedCount];
-            int brokenCount = _salinityCorrosionJobResultScratch[InventoryCorrosionConstants.ResultBrokenCount];
-            bool committedChanges = changedCount <= 0 || TryCommitSalinityCorrosionScratch(changedCount);
+            int changedCount = 0;
+            int brokenCount = 0;
+            bool committedChanges = false;
+            int salinityFrameFlags = 0;
+            try
+            {
+                if (!TryResolveSalinityCorrosionScratchWithGuardHeld(
+                        out NativeArray<int> changedSlots,
+                        out NativeArray<float> nextDurability,
+                        out NativeArray<byte> nextDurabilityBytes,
+                        out NativeArray<ushort> nextQualityMilli,
+                        out NativeArray<ushort> nextStateFlags,
+                        out NativeArray<int> jobResult,
+                        out NativeArray<uint> brokenItemHashes))
+                {
+                    _averageEquipmentDurability01 = ResolveAverageEquipmentDurability();
+                    salinityFrameFlags = 0x14;
+                }
+                else
+                {
+                    ItemSalinityCorrosionJob salinityJob = new ItemSalinityCorrosionJob
+                    {
+                        ItemHashes = _itemHashes.AsReadOnly(),
+                        StackCounts = _stackCounts.AsReadOnly(),
+                        ItemDurability = _itemDurability.AsReadOnly(),
+                        DurabilityBytes = _durabilities.AsReadOnly(),
+                        QualityMilli = _qualityMilli.AsReadOnly(),
+                        ItemStateFlags = _itemStateFlags.AsReadOnly(),
+                        ChangedSlots = changedSlots,
+                        NextItemDurability = nextDurability,
+                        NextDurabilityBytes = nextDurabilityBytes,
+                        NextQualityMilli = nextQualityMilli,
+                        NextItemStateFlags = nextStateFlags,
+                        Result = jobResult,
+                        BrokenItemHashes = brokenItemHashes,
+                        CurrentInventoryMask = CurrentInventoryMask,
+                        SalinityFactor = _currentSalinityFactor,
+                        DegradationRate = SalinityCorrosionDegradationRatePerFrostTick,
+                        DegradedMask = DegradedItemStateMask,
+                        RustedMask = RustedItemStateMask,
+                        BrokenMask = BrokenItemStateMask,
+                        DegradedThresholdMilli = DegradedQualityMilliThreshold
+                    };
+                    salinityJob.Execute();
+
+                    int averageMilli = jobResult[InventoryCorrosionConstants.ResultAverageDurabilityMilli];
+                    _averageEquipmentDurability01 = math.saturate(averageMilli * 0.001f);
+                    changedCount = jobResult[InventoryCorrosionConstants.ResultChangedCount];
+                    brokenCount = jobResult[InventoryCorrosionConstants.ResultBrokenCount];
+                    committedChanges = changedCount <= 0 ||
+                        TryCommitSalinityCorrosionScratchWithGuardHeld(
+                            changedCount,
+                            changedSlots,
+                            nextDurability,
+                            nextDurabilityBytes,
+                            nextQualityMilli,
+                            nextStateFlags);
+                    salinityFrameFlags = changedCount > 0 ? (committedChanges ? 2 : 0x12) : 0;
+                }
+            }
+            finally
+            {
+                ReleaseSalinityCorrosionMutationGuard(salinityGuardVault, salinityGuardMask);
+            }
 
             UpdateEquipmentRustShaderScalar();
             UpdateEquipmentFailingNotification();
-            WriteSalinityCorrosionBlackBoxFrame(changedCount > 0 ? (committedChanges ? 2 : 0x12) : 0);
+            WriteSalinityCorrosionBlackBoxFrame(salinityFrameFlags);
 
             if (brokenCount > 0 && committedChanges)
                 PublishBrokenEquipmentSignals(brokenCount);
@@ -5147,98 +5370,140 @@ namespace Hecton8.Inventory
 
         private bool CanRunSalinityCorrosionJob()
         {
+            int cellCount = _grid != null ? _grid.Columns * _grid.Rows : columns * rows;
             return _itemHashes.IsCreated &&
                    _stackCounts.IsCreated &&
                    _itemDurability.IsCreated &&
                    _durabilities.IsCreated &&
                    _qualityMilli.IsCreated &&
                    _itemStateFlags.IsCreated &&
-                   _salinityCorrosionJobResultScratch.IsCreated &&
-                   _salinityCorrosionJobResultScratch.Length >= InventoryCorrosionConstants.ResultRequiredLength &&
-                   _salinityBrokenItemHashesScratch.IsCreated &&
+                   _salinityCorrosionJobResult.IsCreated &&
+                   _salinityCorrosionJobResult.Length >= InventoryCorrosionConstants.ResultRequiredLength &&
+                   _salinityBrokenItemHashes.IsCreated &&
+                   _salinityBrokenItemHashes.Length >= cellCount &&
                    _salinityChangedSlotsScratch.IsCreated &&
+                   _salinityChangedSlotsScratch.Length >= cellCount &&
                    _salinityNextDurabilityScratch.IsCreated &&
+                   _salinityNextDurabilityScratch.Length >= cellCount &&
                    _salinityNextDurabilityBytesScratch.IsCreated &&
+                   _salinityNextDurabilityBytesScratch.Length >= cellCount &&
                    _salinityNextQualityMilliScratch.IsCreated &&
-                   _salinityNextStateFlagsScratch.IsCreated;
+                   _salinityNextQualityMilliScratch.Length >= cellCount &&
+                   _salinityNextStateFlagsScratch.IsCreated &&
+                   _salinityNextStateFlagsScratch.Length >= cellCount;
         }
 
-        private bool TryCommitSalinityCorrosionScratch(int changedCount)
+        private bool TryResolveSalinityCorrosionScratchWithGuardHeld(
+            out NativeArray<int> changedSlots,
+            out NativeArray<float> nextDurability,
+            out NativeArray<byte> nextDurabilityBytes,
+            out NativeArray<ushort> nextQualityMilli,
+            out NativeArray<ushort> nextStateFlags,
+            out NativeArray<int> jobResult,
+            out NativeArray<uint> brokenItemHashes)
         {
-            int count = ResolveSalinityScratchChangeCount(changedCount);
+            changedSlots = default;
+            nextDurability = default;
+            nextDurabilityBytes = default;
+            nextQualityMilli = default;
+            nextStateFlags = default;
+            jobResult = default;
+            brokenItemHashes = default;
+
+            return _salinityChangedSlotsScratch.TryResolve(out changedSlots) &&
+                   _salinityNextDurabilityScratch.TryResolve(out nextDurability) &&
+                   _salinityNextDurabilityBytesScratch.TryResolve(out nextDurabilityBytes) &&
+                   _salinityNextQualityMilliScratch.TryResolve(out nextQualityMilli) &&
+                   _salinityNextStateFlagsScratch.TryResolve(out nextStateFlags) &&
+                   _salinityCorrosionJobResult.TryResolve(out jobResult) &&
+                   _salinityBrokenItemHashes.TryResolve(out brokenItemHashes);
+        }
+
+        private bool TryCommitSalinityCorrosionScratchWithGuardHeld(
+            int changedCount,
+            NativeArray<int> changedSlots,
+            NativeArray<float> nextDurability,
+            NativeArray<byte> nextDurabilityBytes,
+            NativeArray<ushort> nextQualityMilli,
+            NativeArray<ushort> nextStateFlags)
+        {
+            int count = ResolveSalinityScratchChangeCountWithGuardHeld(
+                changedCount,
+                changedSlots,
+                nextDurability,
+                nextDurabilityBytes,
+                nextQualityMilli,
+                nextStateFlags);
             if (count <= 0)
                 return false;
 
-            return TryCommitSalinityScratchLane(ref _itemDurability, _salinityNextDurabilityScratch, count) &&
-                   TryCommitSalinityScratchLane(ref _durabilities, _salinityNextDurabilityBytesScratch, count) &&
-                   TryCommitSalinityScratchLane(ref _qualityMilli, _salinityNextQualityMilliScratch, count) &&
-                   TryCommitSalinityScratchLane(ref _itemStateFlags, _salinityNextStateFlagsScratch, count);
+            if (!_itemDurability.TryResolve(out NativeArray<float> itemDurability) ||
+                !_durabilities.TryResolve(out NativeArray<byte> durabilityBytes) ||
+                !_qualityMilli.TryResolve(out NativeArray<ushort> qualityMilli) ||
+                !_itemStateFlags.TryResolve(out NativeArray<ushort> itemStateFlags))
+            {
+                return false;
+            }
+
+            int committedRows = 0;
+            for (int i = 0; i < count; i++)
+            {
+                int slot = changedSlots[i];
+                if ((uint)slot >= (uint)itemDurability.Length ||
+                    (uint)slot >= (uint)durabilityBytes.Length ||
+                    (uint)slot >= (uint)qualityMilli.Length ||
+                    (uint)slot >= (uint)itemStateFlags.Length)
+                {
+                    continue;
+                }
+
+                itemDurability[slot] = nextDurability[i];
+                durabilityBytes[slot] = nextDurabilityBytes[i];
+                qualityMilli[slot] = nextQualityMilli[i];
+                itemStateFlags[slot] = nextStateFlags[i];
+                committedRows++;
+            }
+
+            return committedRows > 0;
         }
 
-        private int ResolveSalinityScratchChangeCount(int changedCount)
+        private static int ResolveSalinityScratchChangeCountWithGuardHeld(
+            int changedCount,
+            NativeArray<int> changedSlots,
+            NativeArray<float> nextDurability,
+            NativeArray<byte> nextDurabilityBytes,
+            NativeArray<ushort> nextQualityMilli,
+            NativeArray<ushort> nextStateFlags)
         {
             if (changedCount <= 0 ||
-                !_salinityChangedSlotsScratch.IsCreated ||
-                !_salinityNextDurabilityScratch.IsCreated ||
-                !_salinityNextDurabilityBytesScratch.IsCreated ||
-                !_salinityNextQualityMilliScratch.IsCreated ||
-                !_salinityNextStateFlagsScratch.IsCreated)
+                !changedSlots.IsCreated ||
+                !nextDurability.IsCreated ||
+                !nextDurabilityBytes.IsCreated ||
+                !nextQualityMilli.IsCreated ||
+                !nextStateFlags.IsCreated)
             {
                 return 0;
             }
 
-            int capacity = _salinityChangedSlotsScratch.Length;
-            capacity = math.min(capacity, _salinityNextDurabilityScratch.Length);
-            capacity = math.min(capacity, _salinityNextDurabilityBytesScratch.Length);
-            capacity = math.min(capacity, _salinityNextQualityMilliScratch.Length);
-            capacity = math.min(capacity, _salinityNextStateFlagsScratch.Length);
+            int capacity = changedSlots.Length;
+            capacity = math.min(capacity, nextDurability.Length);
+            capacity = math.min(capacity, nextDurabilityBytes.Length);
+            capacity = math.min(capacity, nextQualityMilli.Length);
+            capacity = math.min(capacity, nextStateFlags.Length);
             return math.min(changedCount, capacity);
-        }
-
-        private bool TryCommitSalinityScratchLane<T>(
-            ref InventoryVaultLane<T> lane,
-            NativeArray<T> nextValues,
-            int changedCount) where T : struct
-        {
-            if (!nextValues.IsCreated ||
-                changedCount <= 0 ||
-                !_salinityChangedSlotsScratch.IsCreated)
-            {
-                return false;
-            }
-
-            if (!lane.TryAcquireWriteLock(out NativeArray<T> values))
-            {
-                WriteInventoryVaultFaultFrame(in lane, 0x10);
-                return false;
-            }
-
-            try
-            {
-                int count = math.min(changedCount, math.min(_salinityChangedSlotsScratch.Length, nextValues.Length));
-                for (int i = 0; i < count; i++)
-                {
-                    int slot = _salinityChangedSlotsScratch[i];
-                    if ((uint)slot < (uint)values.Length)
-                        values[slot] = nextValues[i];
-                }
-
-                return true;
-            }
-            finally
-            {
-                lane.ReleaseWriteLock();
-            }
         }
 
         private void PublishBrokenEquipmentSignals(int brokenCount)
         {
-            int count = _salinityBrokenItemHashesScratch.IsCreated
-                ? math.min(brokenCount, _salinityBrokenItemHashesScratch.Length)
+            if (!_salinityBrokenItemHashes.TryReadOnly(out NativeArray<uint>.ReadOnly brokenItemHashes))
+                return;
+
+            int count = brokenItemHashes.IsCreated
+                ? math.min(brokenCount, brokenItemHashes.Length)
                 : 0;
             for (int i = 0; i < count; i++)
             {
-                uint itemHash = _salinityBrokenItemHashesScratch[i];
+                uint itemHash = brokenItemHashes[i];
                 if (itemHash == 0u)
                     continue;
 
@@ -5364,7 +5629,7 @@ namespace Hecton8.Inventory
             _salinityCorrosionBlackBoxCursor = (_salinityCorrosionBlackBoxCursor + 1) % _salinityCorrosionBlackBox.Length;
         }
 
-        private void DumpSalinityCorrosionBlackBoxOnce()
+        private unsafe void DumpSalinityCorrosionBlackBoxOnce()
         {
             if (_salinityCorrosionBlackBoxDumped != 0 || !_salinityCorrosionBlackBox.IsCreated)
                 return;
@@ -5375,28 +5640,37 @@ namespace Hecton8.Inventory
             if (!string.IsNullOrEmpty(directory))
                 Directory.CreateDirectory(directory);
 
-            using (FileStream stream = File.Open(path, FileMode.Create, FileAccess.Write, FileShare.Read))
+            int dumpBytesLength = sizeof(int) * 2 + (_salinityCorrosionBlackBox.Length * SalinityCorrosionBlackBoxEntrySizeBytes);
+            NativeArray<byte> dumpBytes = default;
+            try
             {
-                Span<byte> header = stackalloc byte[8];
-                System.Buffers.Binary.BinaryPrimitives.WriteInt32LittleEndian(header.Slice(0, 4), _salinityCorrosionBlackBox.Length);
-                System.Buffers.Binary.BinaryPrimitives.WriteInt32LittleEndian(header.Slice(4, 4), SalinityCorrosionBlackBoxEntrySizeBytes);
-                stream.Write(header);
+                dumpBytes = new NativeArray<byte>(dumpBytesLength, Allocator.Temp, NativeArrayOptions.ClearMemory);
+                byte* dumpPtr = (byte*)NativeArrayUnsafeUtility.GetUnsafePtr(dumpBytes);
+                int cursor = 0;
+                WriteInt32LittleEndian(dumpPtr, ref cursor, _salinityCorrosionBlackBox.Length);
+                WriteInt32LittleEndian(dumpPtr, ref cursor, SalinityCorrosionBlackBoxEntrySizeBytes);
 
-                Span<byte> row = stackalloc byte[SalinityCorrosionBlackBoxEntrySizeBytes];
                 for (int i = 0; i < _salinityCorrosionBlackBox.Length; i++)
                 {
                     SalinityCorrosionTelemetryEntry entry = _salinityCorrosionBlackBox[i];
-                    row.Clear();
-                    System.Buffers.Binary.BinaryPrimitives.WriteUInt32LittleEndian(row.Slice(0, 4), entry.Frame);
-                    System.Buffers.Binary.BinaryPrimitives.WriteUInt32LittleEndian(row.Slice(4, 4), entry.InventoryVersion);
-                    System.Buffers.Binary.BinaryPrimitives.WriteUInt32LittleEndian(row.Slice(8, 4), math.asuint(entry.AverageEquipmentDurability01));
-                    System.Buffers.Binary.BinaryPrimitives.WriteUInt32LittleEndian(row.Slice(12, 4), math.asuint(entry.RustScalar01));
-                    System.Buffers.Binary.BinaryPrimitives.WriteUInt32LittleEndian(row.Slice(16, 4), math.asuint(entry.SalinityFactor));
-                    System.Buffers.Binary.BinaryPrimitives.WriteUInt32LittleEndian(row.Slice(20, 4), entry.CurrentBiomeHash);
-                    System.Buffers.Binary.BinaryPrimitives.WriteUInt32LittleEndian(row.Slice(24, 4), entry.InventoryMaskLow);
-                    System.Buffers.Binary.BinaryPrimitives.WriteInt32LittleEndian(row.Slice(28, 4), entry.Flags);
-                    stream.Write(row);
+                    int rowStart = cursor;
+                    WriteUInt32LittleEndian(dumpPtr, ref cursor, entry.Frame);
+                    WriteUInt32LittleEndian(dumpPtr, ref cursor, entry.InventoryVersion);
+                    WriteFloatLittleEndian(dumpPtr, ref cursor, entry.AverageEquipmentDurability01);
+                    WriteFloatLittleEndian(dumpPtr, ref cursor, entry.RustScalar01);
+                    WriteFloatLittleEndian(dumpPtr, ref cursor, entry.SalinityFactor);
+                    WriteUInt32LittleEndian(dumpPtr, ref cursor, entry.CurrentBiomeHash);
+                    WriteUInt32LittleEndian(dumpPtr, ref cursor, entry.InventoryMaskLow);
+                    WriteInt32LittleEndian(dumpPtr, ref cursor, entry.Flags);
+                    cursor = rowStart + SalinityCorrosionBlackBoxEntrySizeBytes;
                 }
+
+                AsyncWriteManager.WriteAll(path, dumpPtr, cursor, out _);
+            }
+            finally
+            {
+                if (dumpBytes.IsCreated)
+                    dumpBytes.Dispose();
             }
         }
 
@@ -5539,7 +5813,7 @@ namespace Hecton8.Inventory
             WriteInventoryBlackBoxFrame(flags | 0x100, lane.BufferId, lane.Generation);
         }
 
-        private void DumpInventoryBlackBoxOnce()
+        private unsafe void DumpInventoryBlackBoxOnce()
         {
             if (_inventoryBlackBoxDumped != 0 || !_inventoryBlackBox.IsCreated)
                 return;
@@ -5550,34 +5824,65 @@ namespace Hecton8.Inventory
             if (!string.IsNullOrEmpty(directory))
                 Directory.CreateDirectory(directory);
 
-            using (FileStream stream = File.Open(path, FileMode.Create, FileAccess.Write, FileShare.Read))
-            using (BinaryWriter writer = new BinaryWriter(stream))
+            int dumpBytesLength = (sizeof(uint) * 4) + (_inventoryBlackBox.Length * InventoryBlackBoxEntrySizeBytes);
+            NativeArray<byte> dumpBytes = default;
+            try
             {
-                writer.Write(0x514D494Eu);
-                writer.Write(InventoryBlackBoxCapacity);
-                writer.Write(InventoryBlackBoxEntrySizeBytes);
-                writer.Write(_inventoryBlackBoxCursor);
+                dumpBytes = new NativeArray<byte>(dumpBytesLength, Allocator.Temp, NativeArrayOptions.ClearMemory);
+                byte* dumpPtr = (byte*)NativeArrayUnsafeUtility.GetUnsafePtr(dumpBytes);
+                int cursor = 0;
+                WriteUInt32LittleEndian(dumpPtr, ref cursor, 0x514D494Eu);
+                WriteInt32LittleEndian(dumpPtr, ref cursor, InventoryBlackBoxCapacity);
+                WriteInt32LittleEndian(dumpPtr, ref cursor, InventoryBlackBoxEntrySizeBytes);
+                WriteInt32LittleEndian(dumpPtr, ref cursor, _inventoryBlackBoxCursor);
+
                 for (int i = 0; i < _inventoryBlackBox.Length; i++)
                 {
                     InventoryTelemetryEntry entry = _inventoryBlackBox[i];
-                    writer.Write(entry.Frame);
-                    writer.Write(entry.Version);
-                    writer.Write(entry.WeightKg);
-                    writer.Write(entry.VolumeLiters);
-                    writer.Write(entry.Load01);
-                    writer.Write(entry.InventoryMaskLow);
-                    writer.Write(entry.OccupiedCells);
-                    writer.Write(entry.Flags);
-                    writer.Write(entry.MaxWeightKg);
-                    writer.Write(entry.MaxVolumeLiters);
-                    writer.Write(entry.ShadowHash);
-                    writer.Write(entry.ShadowPayloadLength);
-                    writer.Write(entry.RadiationSv);
-                    writer.Write(entry.Columns);
-                    writer.Write(entry.Rows);
-                    writer.Write(entry.DefragTimeMicroseconds);
+                    int rowStart = cursor;
+                    WriteUInt32LittleEndian(dumpPtr, ref cursor, entry.Frame);
+                    WriteUInt32LittleEndian(dumpPtr, ref cursor, entry.Version);
+                    WriteFloatLittleEndian(dumpPtr, ref cursor, entry.WeightKg);
+                    WriteFloatLittleEndian(dumpPtr, ref cursor, entry.VolumeLiters);
+                    WriteFloatLittleEndian(dumpPtr, ref cursor, entry.Load01);
+                    WriteUInt32LittleEndian(dumpPtr, ref cursor, entry.InventoryMaskLow);
+                    WriteInt32LittleEndian(dumpPtr, ref cursor, entry.OccupiedCells);
+                    WriteInt32LittleEndian(dumpPtr, ref cursor, entry.Flags);
+                    WriteFloatLittleEndian(dumpPtr, ref cursor, entry.MaxWeightKg);
+                    WriteFloatLittleEndian(dumpPtr, ref cursor, entry.MaxVolumeLiters);
+                    WriteUInt32LittleEndian(dumpPtr, ref cursor, entry.ShadowHash);
+                    WriteInt32LittleEndian(dumpPtr, ref cursor, entry.ShadowPayloadLength);
+                    WriteFloatLittleEndian(dumpPtr, ref cursor, entry.RadiationSv);
+                    WriteInt32LittleEndian(dumpPtr, ref cursor, entry.Columns);
+                    WriteInt32LittleEndian(dumpPtr, ref cursor, entry.Rows);
+                    WriteInt32LittleEndian(dumpPtr, ref cursor, entry.DefragTimeMicroseconds);
+                    cursor = rowStart + InventoryBlackBoxEntrySizeBytes;
                 }
+
+                AsyncWriteManager.WriteAll(path, dumpPtr, cursor, out _);
             }
+            finally
+            {
+                if (dumpBytes.IsCreated)
+                    dumpBytes.Dispose();
+            }
+        }
+
+        private static unsafe void WriteFloatLittleEndian(byte* destination, ref int cursor, float value)
+        {
+            WriteUInt32LittleEndian(destination, ref cursor, math.asuint(value));
+        }
+
+        private static unsafe void WriteInt32LittleEndian(byte* destination, ref int cursor, int value)
+        {
+            System.Buffers.Binary.BinaryPrimitives.WriteInt32LittleEndian(new Span<byte>(destination + cursor, sizeof(int)), value);
+            cursor += sizeof(int);
+        }
+
+        private static unsafe void WriteUInt32LittleEndian(byte* destination, ref int cursor, uint value)
+        {
+            System.Buffers.Binary.BinaryPrimitives.WriteUInt32LittleEndian(new Span<byte>(destination + cursor, sizeof(uint)), value);
+            cursor += sizeof(uint);
         }
 
         private bool ApplyEnvironmentalDegradation(

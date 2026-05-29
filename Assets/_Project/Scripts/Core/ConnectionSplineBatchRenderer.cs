@@ -434,7 +434,7 @@ namespace Hecton8.Core
                 Color = color,
                 AppliedColor = color,
                 Radius = radius,
-                Mesh = ResolveStaticCylinderMesh(),
+                Mesh = AcquireStaticCylinderMeshCold(),
                 Material = CreateRuntimeMaterial(color),
                 Dirty = false,
                 MaterialColorDirty = false
@@ -792,7 +792,7 @@ namespace Hecton8.Core
             UnityEngine.Graphics.RenderMeshPrimitives(renderParams, batch.Mesh, 0, batch.InstanceCount);
         }
 
-        private static Mesh ResolveStaticCylinderMesh()
+        private static Mesh AcquireStaticCylinderMeshCold()
         {
             if (s_staticCylinderMesh != null)
                 return s_staticCylinderMesh;

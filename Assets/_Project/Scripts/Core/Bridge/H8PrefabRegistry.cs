@@ -194,10 +194,21 @@ namespace Hecton8.Core.Bridge
         [SerializeField] private List<Entry> entries = new List<Entry>(128);
         [SerializeField] private bool bindOnValidateInPlayMode = true;
         [SerializeField] private uint registryHash = H8BridgeHashes.PrefabRegistry;
+        [SerializeField, HideInInspector] private int validationNullEntryCount;
+        [SerializeField, HideInInspector] private int validationFirstNullEntryIndex = -1;
+        [SerializeField, HideInInspector] private int validationRuntimeBindableCount;
+        [SerializeField, HideInInspector] private int validationDuplicateHashCount;
+        [SerializeField, HideInInspector] private int validationFirstDuplicateHashIndex = -1;
 
         public int EntryCount => entries != null ? entries.Count : 0;
         public uint RegistryHash => registryHash == 0u ? H8BridgeHashes.PrefabRegistry : registryHash;
         public bool BindOnValidateInPlayMode => bindOnValidateInPlayMode;
+        public bool HasValidationErrors => validationNullEntryCount > 0 || validationDuplicateHashCount > 0;
+        public int ValidationNullEntryCount => validationNullEntryCount;
+        public int ValidationFirstNullEntryIndex => validationFirstNullEntryIndex;
+        public int ValidationRuntimeBindableCount => validationRuntimeBindableCount;
+        public int ValidationDuplicateHashCount => validationDuplicateHashCount;
+        public int ValidationFirstDuplicateHashIndex => validationFirstDuplicateHashIndex;
 
         public Entry GetEntry(int index)
         {
@@ -273,6 +284,12 @@ namespace Hecton8.Core.Bridge
             ValidateEntries();
         }
 
+        internal int RefreshRuntimeBindingStateForSync()
+        {
+            ValidateEntries();
+            return validationRuntimeBindableCount;
+        }
+
         public long EstimateTotalVramBytes()
         {
             long total = 0L;
@@ -293,7 +310,12 @@ namespace Hecton8.Core.Bridge
         {
             ValidateEntries();
             if (bindOnValidateInPlayMode && Application.isPlaying)
-                H8PrefabRegistryRuntimeBinder.Bind(this, GlobalRegistry.DataVault);
+                H8PrefabRegistryRuntimeBinder.Bind(this, GlobalRegistry.DataVault, GlobalRegistry.PrefabRegistryRuntime);
+        }
+
+        private void OnEnable()
+        {
+            ValidateEntries();
         }
 
         private void ValidateEntries()
@@ -304,12 +326,16 @@ namespace Hecton8.Core.Bridge
             if (registryHash == 0u)
                 registryHash = H8BridgeHashes.PrefabRegistry;
 
-            for (int i = entries.Count - 1; i >= 0; i--)
+            ResetValidationState();
+
+            for (int i = 0; i < entries.Count; i++)
             {
                 Entry entry = entries[i];
                 if (entry == null)
                 {
-                    entries.RemoveAt(i);
+                    validationNullEntryCount++;
+                    if (validationFirstNullEntryIndex < 0)
+                        validationFirstNullEntryIndex = i;
                     continue;
                 }
 
@@ -318,7 +344,60 @@ namespace Hecton8.Core.Bridge
                     entry.AssignEstimatedVramBytes(H8PrefabRegistryVramEstimator.EstimatePrefabBytes(entry.Prefab));
 #endif
                 entry.RebuildHashes();
+                if (entry.IsRuntimeBindable)
+                    validationRuntimeBindableCount++;
             }
+
+            validationDuplicateHashCount = CountDuplicateRuntimeHashes(out validationFirstDuplicateHashIndex);
+        }
+
+        private void ResetValidationState()
+        {
+            validationNullEntryCount = 0;
+            validationFirstNullEntryIndex = -1;
+            validationRuntimeBindableCount = 0;
+            validationDuplicateHashCount = 0;
+            validationFirstDuplicateHashIndex = -1;
+        }
+
+        private int CountDuplicateRuntimeHashes(out int firstDuplicateIndex)
+        {
+            firstDuplicateIndex = -1;
+            if (entries == null || entries.Count <= 1)
+                return 0;
+
+            int duplicateRows = 0;
+            for (int i = 0; i < entries.Count; i++)
+            {
+                Entry entry = entries[i];
+                if (!IsRuntimeHashCandidate(entry))
+                    continue;
+
+                bool duplicatesEarlierRow = false;
+                for (int j = 0; j < i; j++)
+                {
+                    Entry previous = entries[j];
+                    if (IsRuntimeHashCandidate(previous) && previous.HashID == entry.HashID)
+                    {
+                        duplicatesEarlierRow = true;
+                        break;
+                    }
+                }
+
+                if (!duplicatesEarlierRow)
+                    continue;
+
+                duplicateRows++;
+                if (firstDuplicateIndex < 0)
+                    firstDuplicateIndex = i;
+            }
+
+            return duplicateRows;
+        }
+
+        private static bool IsRuntimeHashCandidate(Entry entry)
+        {
+            return entry != null && entry.IsRuntimeBindable && entry.HashID != 0u;
         }
 
         private static void PublishPrefabSignals(Entry entry)
@@ -361,8 +440,11 @@ namespace Hecton8.Core.Bridge
 #if UNITY_EDITOR
     internal static class H8PrefabRegistryVramEstimator
     {
+        private const int TextureIdScratchCapacity = 2048;
         private static readonly List<Renderer> s_RendererScratch = new List<Renderer>(32);
         private static readonly List<Material> s_MaterialScratch = new List<Material>(8);
+        private static readonly List<int> s_TexturePropertyIdScratch = new List<int>(64);
+        private static readonly int[] s_TextureIdScratch = new int[TextureIdScratchCapacity];
 
         public static long EstimatePrefabBytes(GameObject prefab)
         {
@@ -370,42 +452,66 @@ namespace Hecton8.Core.Bridge
                 return 0L;
 
             long total = 0L;
-            HashSet<int> countedTextures = new HashSet<int>();
+            int countedTextureCount = 0;
             s_RendererScratch.Clear();
-            prefab.GetComponentsInChildren(true, s_RendererScratch);
-            for (int i = 0; i < s_RendererScratch.Count; i++)
+            try
             {
-                Renderer renderer = s_RendererScratch[i];
-                if (renderer == null)
-                    continue;
-
-                s_MaterialScratch.Clear();
-                renderer.GetSharedMaterials(s_MaterialScratch);
-                for (int j = 0; j < s_MaterialScratch.Count; j++)
+                prefab.GetComponentsInChildren(true, s_RendererScratch);
+                for (int i = 0; i < s_RendererScratch.Count; i++)
                 {
-                    Material material = s_MaterialScratch[j];
-                    if (material == null)
+                    Renderer renderer = s_RendererScratch[i];
+                    if (renderer == null)
                         continue;
 
-                    string[] textureNames = material.GetTexturePropertyNames();
-                    for (int k = 0; k < textureNames.Length; k++)
+                    s_MaterialScratch.Clear();
+                    renderer.GetSharedMaterials(s_MaterialScratch);
+                    for (int j = 0; j < s_MaterialScratch.Count; j++)
                     {
-                        Texture texture = material.GetTexture(textureNames[k]);
-                        if (texture == null)
+                        Material material = s_MaterialScratch[j];
+                        if (material == null)
                             continue;
 
-                        int textureId = texture.GetEntityId().GetHashCode();
-                        if (!countedTextures.Add(textureId))
-                            continue;
+                        s_TexturePropertyIdScratch.Clear();
+                        material.GetTexturePropertyNameIDs(s_TexturePropertyIdScratch);
+                        for (int k = 0; k < s_TexturePropertyIdScratch.Count; k++)
+                        {
+                            Texture texture = material.GetTexture(s_TexturePropertyIdScratch[k]);
+                            if (texture == null)
+                                continue;
 
-                        total += EstimateTextureBytes(texture);
+                            int textureId = texture.GetEntityId().GetHashCode();
+                            if (ContainsTextureId(s_TextureIdScratch, countedTextureCount, textureId))
+                                continue;
+
+                            if (countedTextureCount < TextureIdScratchCapacity)
+                                s_TextureIdScratch[countedTextureCount++] = textureId;
+
+                            total += EstimateTextureBytes(texture);
+                        }
                     }
                 }
             }
+            finally
+            {
+                s_TexturePropertyIdScratch.Clear();
+                s_MaterialScratch.Clear();
+                s_RendererScratch.Clear();
+                Array.Clear(s_TextureIdScratch, 0, math.min(countedTextureCount, TextureIdScratchCapacity));
+            }
 
-            s_MaterialScratch.Clear();
-            s_RendererScratch.Clear();
             return total;
+        }
+
+        private static bool ContainsTextureId(int[] textureIds, int count, int textureId)
+        {
+            int safeCount = math.min(count, TextureIdScratchCapacity);
+            for (int i = 0; i < safeCount; i++)
+            {
+                if (textureIds[i] == textureId)
+                    return true;
+            }
+
+            return false;
         }
 
         private static long EstimateTextureBytes(Texture texture)

@@ -703,6 +703,7 @@ namespace Hecton8.World
             CachePlayerContextCold();
             EnsureWorkingMemory();
             ResolveReferences();
+            CacheMigratorySargassumOrganicManagerCold();
             RegisterProceduralStateRegistryCallbacks();
             SubscribeToBootstrap();
             RegisterOriginShiftListener();
@@ -729,6 +730,7 @@ namespace Hecton8.World
             TryRegisterRuntimeDirector();
             EnsureWorkingMemory();
             ResolveReferences();
+            CacheMigratorySargassumOrganicManagerCold();
             RegisterProceduralStateRegistryCallbacks();
             SubscribeToBootstrap();
             TryEnsureTickRegistration();

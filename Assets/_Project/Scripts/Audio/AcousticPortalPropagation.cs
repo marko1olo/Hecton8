@@ -39,7 +39,8 @@ namespace Hecton8.Audio.Propagation
     public enum AcousticPathStatus : byte
     {
         None = 0,
-        LowTierFallback = 1,
+        SurvivalBudgetFallback = 1,
+        LowTierFallback = SurvivalBudgetFallback,
         NoGraph = 2,
         NoPath = 3,
         PathFound = 4,
@@ -338,7 +339,7 @@ namespace Hecton8.Audio.Propagation
             float portalBudget01 = ResolvePortalBudget01(Query.GlobalQualityWeight);
             AcousticPathResult fallback = AcousticPathResult.Fallback(
                 Query.DisablePortalPath != 0 || portalBudget01 <= 0.0001f
-                    ? AcousticPathStatus.LowTierFallback
+                    ? AcousticPathStatus.SurvivalBudgetFallback
                     : AcousticPathStatus.NoGraph,
                 in Query);
 

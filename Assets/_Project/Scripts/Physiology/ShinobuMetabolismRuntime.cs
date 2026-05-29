@@ -160,11 +160,13 @@ namespace Hecton8.Physiology
         private bool _autopsyDumped;
         private bool _shaderGlobalsInitialized;
         private bool _thermalGridReadbackHeld;
+        private bool _supportsConstantBufferCold;
         private int _shaderWriteIndex;
 
         private void Awake()
         {
             entityCapacity = math.max(1, entityCapacity);
+            _supportsConstantBufferCold = SystemInfo.supportsSetConstantBuffer;
 #if UNITY_EDITOR
             _csvPath = Path.GetFullPath(Path.Combine(Application.dataPath, "..", CsvRelativePath));
             _suitCsvPath = Path.GetFullPath(Path.Combine(Application.dataPath, "..", SuitCsvRelativePath));
@@ -177,6 +179,7 @@ namespace Hecton8.Physiology
             if (!Application.isPlaying)
                 return;
 
+            _supportsConstantBufferCold = SystemInfo.supportsSetConstantBuffer;
             SignalBus<PhysiologyStateSignal>.Configure(
                 PhysiologyStateSignal.ExpectedCapacity,
                 maxFrameSignals: PhysiologyStateSignal.MaxFrameSignals,
@@ -1833,7 +1836,7 @@ namespace Hecton8.Physiology
 
         private bool EnsureShaderGlobalsBuffers()
         {
-            if (!SystemInfo.supportsSetConstantBuffer)
+            if (!_supportsConstantBufferCold)
                 return false;
 
             int stride = UnsafeUtility.SizeOf<MetabolismShaderGlobalsDTO>();

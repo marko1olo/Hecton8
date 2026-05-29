@@ -8,6 +8,7 @@ using Hecton8.World;
 using Hecton.Localization;
 using Unity.Burst;
 using Unity.Collections;
+using Unity.Collections.LowLevel.Unsafe;
 using Unity.Jobs;
 using Unity.Mathematics;
 using UnityEngine;
@@ -653,13 +654,14 @@ namespace Hecton8.Construction
             ClearSocketLookup(graphBuffers.SocketLookup);
         }
 
-        private static void ClearSocketLookup(NativeArray<SocketLookupSlot> lookup)
+        private static unsafe void ClearSocketLookup(NativeArray<SocketLookupSlot> lookup)
         {
-            if (!lookup.IsCreated)
+            if (!lookup.IsCreated ||
+                lookup.Length <= 0)
                 return;
 
-            for (int i = 0; i < lookup.Length; i++)
-                lookup[i] = default;
+            void* lookupPtr = NativeArrayUnsafeUtility.GetUnsafePtr(lookup);
+            UnsafeUtility.MemClear(lookupPtr, (long)lookup.Length * UnsafeUtility.SizeOf<SocketLookupSlot>());
         }
 
         private static int ComputeExistingGraphSignature(ConstructionManager constructionManager, IDataVault socketVault)

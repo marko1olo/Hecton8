@@ -16,7 +16,7 @@ namespace Hecton8.UI
     [DisallowMultipleComponent]
     [RequireComponent(typeof(RectTransform))]
     [RequireComponent(typeof(CanvasGroup))]
-    public sealed class RelayHUDElement : MonoBehaviour, ILateFrameTickable, IGlobalRegistryHotSwapListener
+    public sealed class RelayHUDElement : MonoBehaviour, ISlowTickable, ILateFrameTickable, IGlobalRegistryHotSwapListener
     {
         private enum RelayMarkerVisibilityState : byte
         {
@@ -64,6 +64,7 @@ namespace Hecton8.UI
         private IEmergencyRelayRouteReadModel _relayDirector;
         private IPlayerRuntimeContext _cachedPlayerContext;
         private bool _registered;
+        private bool _registeredSlowTick;
         private bool _hotSwapListenerRegistered;
         private bool _isVisible;
         private bool _hasLabelState;
@@ -80,6 +81,8 @@ namespace Hecton8.UI
         private float _lastObservedDistance;
         private float _cameraRetryTimer;
         private float _hiddenPollTimer;
+        private float _screenWidthSnapshot = 1f;
+        private float _screenHeightSnapshot = 1f;
         // COLD ALLOC: char[16] - relay HUD distance text staging buffer - owner: RelayHUDElement
         private readonly char[] _distanceBuffer = new char[16];
         // COLD ALLOC: char[96] - relay HUD label text staging buffer - owner: RelayHUDElement
@@ -95,12 +98,14 @@ namespace Hecton8.UI
         {
             TryGetComponent(out _rectTransform);
             TryGetComponent(out _canvasGroup);
+            RefreshScreenSnapshotCold();
             SetVisible(false);
         }
 
         private void OnEnable()
         {
             CacheRegistryServicesCold();
+            RefreshScreenSnapshotCold();
             TryCacheCamera(0f);
 
             TryRegister();
@@ -110,11 +115,7 @@ namespace Hecton8.UI
         private void OnDisable()
         {
             TryUnregisterHotSwapListener();
-            if (_registered)
-            {
-                GlobalRegistry.UnregisterLateFrameTickable(this, PriorityLayer.UI);
-                _registered = false;
-            }
+            TryUnregister();
 
             _trackedRelayHash = 0u;
             _lastDistanceMeters = int.MinValue;
@@ -231,8 +232,8 @@ namespace Hecton8.UI
             }
 
             bool clampedToEdge = behindCamera;
-            float screenWidth = Screen.width;
-            float screenHeight = Screen.height;
+            float screenWidth = _screenWidthSnapshot;
+            float screenHeight = _screenHeightSnapshot;
             if (behindCamera)
             {
                 screenPosition.x = screenWidth - screenPosition.x;
@@ -262,6 +263,11 @@ namespace Hecton8.UI
                 ? RelayMarkerVisibilityState.Visible_ClampedToEdge
                 : RelayMarkerVisibilityState.Visible_OnScreen;
             SetVisible(true);
+        }
+
+        public void SlowTick()
+        {
+            RefreshScreenSnapshotCold();
         }
 
         private bool TryCacheCamera(float dt)
@@ -523,10 +529,29 @@ namespace Hecton8.UI
 
         private void TryRegister()
         {
-            if (_registered || !Application.isPlaying || GlobalRegistry.Dispatcher == null)
+            if (!Application.isPlaying || GlobalRegistry.Dispatcher == null)
                 return;
 
-            _registered = GlobalRegistry.TryRegisterLateFrameTickable(this, PriorityLayer.UI);
+            if (!_registered)
+                _registered = GlobalRegistry.TryRegisterLateFrameTickable(this, PriorityLayer.UI);
+
+            if (!_registeredSlowTick)
+                _registeredSlowTick = GlobalRegistry.TryRegisterSlowTickable(this, PriorityLayer.UI);
+        }
+
+        private void TryUnregister()
+        {
+            if (_registeredSlowTick)
+            {
+                GlobalRegistry.UnregisterSlowTickable(this, PriorityLayer.UI);
+                _registeredSlowTick = false;
+            }
+
+            if (_registered)
+            {
+                GlobalRegistry.UnregisterLateFrameTickable(this, PriorityLayer.UI);
+                _registered = false;
+            }
         }
 
         public void OnGlobalRegistryServiceReplaced(
@@ -577,6 +602,12 @@ namespace Hecton8.UI
                 _mainCamera = _cachedPlayerContext.PlayerCamera;
                 _playerMovement = _cachedPlayerContext.PlayerMovement;
             }
+        }
+
+        private void RefreshScreenSnapshotCold()
+        {
+            _screenWidthSnapshot = math.max(1f, Screen.width);
+            _screenHeightSnapshot = math.max(1f, Screen.height);
         }
     }
 }

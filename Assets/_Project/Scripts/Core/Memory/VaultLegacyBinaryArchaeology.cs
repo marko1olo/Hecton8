@@ -388,6 +388,9 @@ namespace Hecton8.Core.Memory
             if (!vault.TryGetGenerationHandle<T>(bufferId, out VaultGenerationHandle<T> handle) ||
                 !IsHandleCreated(in handle, bufferId))
             {
+                if (vault.IsAllocationLocked || vault.IsCompactionFenceActive)
+                    return false;
+
                 handle = vault.EnsureGenerationHandle<T>(bufferId, requiredLength, owner, options);
             }
 

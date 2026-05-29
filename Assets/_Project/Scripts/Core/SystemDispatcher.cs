@@ -113,6 +113,8 @@ namespace Hecton8.Core
         private const uint MasterDispatcherDumpVersion = 1u;
         private const string ShinobuFenceDumpPath = "Docs/AgentLogs/Dump_SHINOBU_206.bin";
         private const int DispatcherDependencyRetryFrames = 8;
+        private static readonly ulong DispatcherSurfaceProbeHitsGuardMask =
+            1UL << (unchecked((int)(uint)(int)BufferID.DispatcherRaycastHits) & 31);
         private const float AdrenalineHealthThreshold01 = 0.1f;
         private const float AdrenalineTargetTimeDilationScalar = 0.5f;
         private const float AdrenalineRampSeconds = 1.0f;
@@ -592,7 +594,8 @@ namespace Hecton8.Core
         private static int _temporalCompressionFrameCount;
         private static int _pdaOverBudgetConsecutiveFrames;
         private static VaultGenerationHandle<KinematicSurfaceHit> _scheduledDispatcherSurfaceProbeHitsHandle;
-        private static bool _scheduledDispatcherSurfaceProbeHitsVaultLocked;
+        private static IDataVault _scheduledDispatcherSurfaceProbeHitsGuardVault;
+        private static bool _scheduledDispatcherSurfaceProbeHitsGuardHeld;
         private static JobHandle _scheduledDispatcherSurfaceProbeHandle;
         private static bool _dispatcherSurfaceProbesScheduled;
         private static int _pendingDispatcherSurfaceProbeCount;
@@ -2222,7 +2225,6 @@ namespace Hecton8.Core
             out NativeArray<JobDependencyDTO> jobDependencyTelemetry,
             out NativeArray<MockTimeDilationSignal> mockTimeDilationSignals)
         {
-            EnsureMasterDispatcherNativeBuffers();
             return TryReadMasterSimulationBuffers(
                 out simulationJobHandles,
                 out dependencyScratchHandles,
@@ -2279,7 +2281,6 @@ namespace Hecton8.Core
             out NativeArray<DispatcherTimingDTO> telemetryRing,
             out NativeArray<int> telemetryCursor)
         {
-            EnsureMasterDispatcherNativeBuffers();
             return TryReadMasterTelemetryBuffers(out telemetryRing, out telemetryCursor);
         }
 
@@ -2314,7 +2315,6 @@ namespace Hecton8.Core
             out NativeArray<DispatcherFenceTelemetryEntry> telemetryRing,
             out NativeArray<int> telemetryCursor)
         {
-            EnsureMasterDispatcherNativeBuffers();
             return TryReadMasterDomainFenceBuffers(out domainFenceHandles, out telemetryRing, out telemetryCursor);
         }
 
@@ -3289,7 +3289,6 @@ namespace Hecton8.Core
 
         private void WriteMasterPresentationSuppression(uint frame)
         {
-            EnsureMasterDispatcherNativeBuffers();
             IDataVault dataVault = _dataVault;
             if (dataVault == null)
                 return;
@@ -4139,6 +4138,9 @@ namespace Hecton8.Core
                 return false;
             }
 
+            if (dataVault.IsAllocationLocked || dataVault.IsCompactionFenceActive)
+                return false;
+
             handle = dataVault.EnsureGenerationHandle<T>(
                 bufferId,
                 requiredLength,
@@ -4294,7 +4296,13 @@ namespace Hecton8.Core
             _dataVault = currentVault;
             _cachedDispatcherDataVault = currentVault;
             if (currentVault != null)
+            {
                 VaultSovereigntyTelemetry.EnsureRing(currentVault);
+                EnsureDispatcherSurfaceProbeBuffers();
+                EnsureH8TimeArray();
+                EnsureDispatcherBlackBox();
+                EnsureMasterDispatcherNativeBuffers();
+            }
         }
 
         private static IVramBudgetReadModel ResolveCachedVramMonitor()
@@ -4417,7 +4425,7 @@ namespace Hecton8.Core
         private void TryPollVaultMemoryProfileCsv(IDataVault dataVault)
         {
 #if UNITY_EDITOR
-            if (dataVault == null || dataVault.IsAllocationLocked)
+            if (dataVault == null || dataVault.IsAllocationLocked || dataVault.IsCompactionFenceActive)
                 return;
 
             VaultLegacyBinaryArchaeology.TryPollMemoryOverridesCsv(
@@ -6563,21 +6571,20 @@ namespace Hecton8.Core
 
         private static bool TryLockDispatcherSurfaceProbeScheduledVaultBuffers()
         {
-            if (_scheduledDispatcherSurfaceProbeHitsVaultLocked)
+            if (_scheduledDispatcherSurfaceProbeHitsGuardHeld)
                 return true;
 
-            EnsureDispatcherSurfaceProbeBuffers();
             if (!IsVaultGenerationHandleCreated(in _scheduledDispatcherSurfaceProbeHitsHandle))
                 return false;
 
             if (!TryResolveCachedDataVault(out IDataVault dataVault))
                 return false;
 
-            if (!_scheduledDispatcherSurfaceProbeHitsVaultLocked &&
-                !dataVault.TryLockBuffer(BufferID.DispatcherRaycastHits, SystemID.SystemDispatcher))
+            if (!dataVault.TryAcquireMutationGuard(DispatcherSurfaceProbeHitsGuardMask))
                 return false;
 
-            _scheduledDispatcherSurfaceProbeHitsVaultLocked = true;
+            _scheduledDispatcherSurfaceProbeHitsGuardVault = dataVault;
+            _scheduledDispatcherSurfaceProbeHitsGuardHeld = true;
             return true;
         }
 
@@ -6589,16 +6596,15 @@ namespace Hecton8.Core
 
         private static void UnlockDispatcherSurfaceProbeScheduledVaultBuffers(IDataVault dataVault)
         {
-            if (!_scheduledDispatcherSurfaceProbeHitsVaultLocked)
+            if (!_scheduledDispatcherSurfaceProbeHitsGuardHeld)
                 return;
 
-            if (dataVault != null)
-            {
-                if (_scheduledDispatcherSurfaceProbeHitsVaultLocked)
-                    dataVault.TryUnlockBuffer(BufferID.DispatcherRaycastHits, SystemID.SystemDispatcher);
-            }
+            IDataVault guardVault = _scheduledDispatcherSurfaceProbeHitsGuardVault ?? dataVault;
+            _scheduledDispatcherSurfaceProbeHitsGuardVault = null;
+            _scheduledDispatcherSurfaceProbeHitsGuardHeld = false;
 
-            _scheduledDispatcherSurfaceProbeHitsVaultLocked = false;
+            if (guardVault != null)
+                guardVault.ReleaseMutationGuard(DispatcherSurfaceProbeHitsGuardMask);
         }
 
         private static void ScheduleDispatcherSurfaceProbes()
@@ -6628,7 +6634,7 @@ namespace Hecton8.Core
 
             using (_dispatcherSurfaceProbeCompleteProfilerMarker.Auto())
             {
-                if (!DispatcherJobFence.TryComplete(ref _scheduledDispatcherSurfaceProbeHandle, forceComplete: false))
+                if (!DispatcherJobFence.TryFinalizeCompleted(ref _scheduledDispatcherSurfaceProbeHandle))
                     return;
 
                 _dispatcherSurfaceProbesScheduled = false;
@@ -6954,6 +6960,13 @@ namespace Hecton8.Core
         private IGIRelaySystem _giRelay;
         private bool _serviceRegistered;
 
+        internal static void BindGIRelayCold(IGIRelaySystem giRelay)
+        {
+            RenderDispatcher dispatcher = ActiveRuntimeInstance;
+            if (dispatcher != null)
+                dispatcher._giRelay = giRelay;
+        }
+
         private void Awake()
         {
             if (ActiveRuntimeInstance == null)
@@ -7042,12 +7055,6 @@ namespace Hecton8.Core
 
             RegistryBucket<IRenderable> renderables = _renderables;
             if (renderables == null)
-            {
-                RefreshRenderDependencies();
-                renderables = _renderables;
-            }
-
-            if (renderables == null)
                 return;
 
             int count = renderables.Count;
@@ -7096,9 +7103,6 @@ namespace Hecton8.Core
         {
             if (!_hasPendingRenderSettingsRestore)
                 return;
-
-            if (_giRelay == null)
-                RefreshRenderDependencies();
 
             _pendingRenderSettingsSnapshot.Restore(_giRelay);
             _pendingRenderSettingsSnapshot = default;

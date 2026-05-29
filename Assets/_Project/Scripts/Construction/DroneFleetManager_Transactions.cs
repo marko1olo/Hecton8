@@ -919,25 +919,17 @@ namespace Hecton8.Construction
             int commandCount,
             NativeArray<DroneTransactionResultDTO> results)
         {
-            IDataVault stateVault = s_CachedDataVault;
-            if (!TryAcquireDroneVaultWriteBuffer(
-                    stateVault,
-                    in s_DroneStatesHandle,
-                    BufferID.ShinobuDroneFleetStates,
-                    HeadlessDroneCapacity,
-                    out NativeArray<HeadlessDroneState> droneStates))
-            {
-                return;
-            }
-
-            if (!TryAcquireDroneMirrorWriteBuffers(
+            if (!TryAcquireDroneCoreMirrorMutationViews(
+                    out NativeArray<HeadlessDroneState> droneStates,
+                    out _,
+                    out _,
+                    out _,
                     out NativeArray<float3> positionsSoA,
                     out NativeArray<byte> stateBytes,
                     out NativeArray<DroneStateDTO> stateDtos,
                     out NativeArray<DroneTargetDTO> targetDtos,
-                    out IDataVault mirrorVault))
+                    out IDataVault coreMirrorVault))
             {
-                stateVault.ReleaseWriteLock(in s_DroneStatesHandle, SystemID.Construction);
                 return;
             }
 
@@ -987,8 +979,7 @@ namespace Hecton8.Construction
             }
             finally
             {
-                ReleaseDroneMirrorWriteLocks(mirrorVault, 4);
-                stateVault.ReleaseWriteLock(in s_DroneStatesHandle, SystemID.Construction);
+                ReleaseDroneMutationGuard(coreMirrorVault, DroneCoreMirrorMutationGuardMask);
             }
         }
 

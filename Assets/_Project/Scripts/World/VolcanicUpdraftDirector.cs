@@ -1015,6 +1015,9 @@ namespace Hecton8.World
             ResolveColdRegistryDependencies();
             ResolveDataVault();
             EnsureVaultBuffers();
+#if UNITY_EDITOR
+            TryApplyCsvOverrides();
+#endif
             if (Application.isPlaying)
             {
                 _registeredFixedDispatcher = GlobalRegistry.TryRegisterDispatcherFixedSystem(this);
@@ -1226,9 +1229,6 @@ namespace Hecton8.World
                 EnsureVaultBuffers();
 
             RefreshExternalHandles();
-#if UNITY_EDITOR
-            TryApplyCsvOverrides();
-#endif
         }
 
         public void LateFrameTick()

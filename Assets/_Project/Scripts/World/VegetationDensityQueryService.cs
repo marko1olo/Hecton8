@@ -169,77 +169,92 @@ namespace Hecton8.World
                 return false;
             }
 
-            bool chunksLocked = false;
-            bool densityLocked = false;
-            bool attractorLocked = false;
-            IDataVault chunksVault = null;
-            IDataVault densityVault = null;
-            IDataVault attractorVault = null;
+            return CopyDensityQueryChunksToVault(scratchChunks, chunkCount) &&
+                   CopyDensityQueryGridToVault(scratchDensityGrid, gridLength) &&
+                   CopyThreatAttractorGridToVault(scratchThreatAttractorGrid, gridLength);
+        }
+
+        private bool CopyDensityQueryChunksToVault(
+            NativeArray<VegetationDensityChunkRecord> scratchChunks,
+            int chunkCount)
+        {
+            if (!TryAcquireVegetationMemoryBuffer(
+                    ref _nativeMemory.DensityQueryChunksHandle,
+                    BufferID.VegetationDensityQueryChunks,
+                    chunkCount,
+                    NativeArrayOptions.UninitializedMemory,
+                    out IDataVault vault,
+                    out NativeArray<VegetationDensityChunkRecord> chunks))
+            {
+                return false;
+            }
+
             try
             {
-                if (!TryAcquireVegetationMemoryBuffer(
-                        ref _nativeMemory.DensityQueryChunksHandle,
-                        BufferID.VegetationDensityQueryChunks,
-                        chunkCount,
-                        NativeArrayOptions.UninitializedMemory,
-                        out chunksVault,
-                        out NativeArray<VegetationDensityChunkRecord> chunks))
-                {
-                    return false;
-                }
-
-                chunksLocked = true;
-                if (!TryAcquireVegetationMemoryBuffer(
-                        ref _nativeMemory.DensityQueryGridHandle,
-                        BufferID.VegetationDensityQueryGrid,
-                        gridLength,
-                        NativeArrayOptions.UninitializedMemory,
-                        out densityVault,
-                        out NativeArray<float3> densityGrid))
-                {
-                    return false;
-                }
-
-                densityLocked = true;
-                if (!TryAcquireVegetationMemoryBuffer(
-                        ref _nativeMemory.ThreatAttractorGridHandle,
-                        BufferID.VegetationThreatAttractorGrid,
-                        gridLength,
-                        NativeArrayOptions.UninitializedMemory,
-                        out attractorVault,
-                        out NativeArray<float2> threatAttractorGrid))
-                {
-                    return false;
-                }
-
-                attractorLocked = true;
                 NativeArray<VegetationDensityChunkRecord>.Copy(scratchChunks, chunks, chunkCount);
+                return true;
+            }
+            finally
+            {
+                vault.ReleaseWriteLock(
+                    in _nativeMemory.DensityQueryChunksHandle,
+                    VegetationMemorySovereigntyConstants.OwnerSystemId);
+            }
+        }
+
+        private bool CopyDensityQueryGridToVault(
+            NativeArray<float3> scratchDensityGrid,
+            int gridLength)
+        {
+            if (!TryAcquireVegetationMemoryBuffer(
+                    ref _nativeMemory.DensityQueryGridHandle,
+                    BufferID.VegetationDensityQueryGrid,
+                    gridLength,
+                    NativeArrayOptions.UninitializedMemory,
+                    out IDataVault vault,
+                    out NativeArray<float3> densityGrid))
+            {
+                return false;
+            }
+
+            try
+            {
                 NativeArray<float3>.Copy(scratchDensityGrid, densityGrid, gridLength);
+                return true;
+            }
+            finally
+            {
+                vault.ReleaseWriteLock(
+                    in _nativeMemory.DensityQueryGridHandle,
+                    VegetationMemorySovereigntyConstants.OwnerSystemId);
+            }
+        }
+
+        private bool CopyThreatAttractorGridToVault(
+            NativeArray<float2> scratchThreatAttractorGrid,
+            int gridLength)
+        {
+            if (!TryAcquireVegetationMemoryBuffer(
+                    ref _nativeMemory.ThreatAttractorGridHandle,
+                    BufferID.VegetationThreatAttractorGrid,
+                    gridLength,
+                    NativeArrayOptions.UninitializedMemory,
+                    out IDataVault vault,
+                    out NativeArray<float2> threatAttractorGrid))
+            {
+                return false;
+            }
+
+            try
+            {
                 NativeArray<float2>.Copy(scratchThreatAttractorGrid, threatAttractorGrid, gridLength);
                 return true;
             }
             finally
             {
-                if (attractorLocked)
-                {
-                    attractorVault.ReleaseWriteLock(
-                        in _nativeMemory.ThreatAttractorGridHandle,
-                        VegetationMemorySovereigntyConstants.OwnerSystemId);
-                }
-
-                if (densityLocked)
-                {
-                    densityVault.ReleaseWriteLock(
-                        in _nativeMemory.DensityQueryGridHandle,
-                        VegetationMemorySovereigntyConstants.OwnerSystemId);
-                }
-
-                if (chunksLocked)
-                {
-                    chunksVault.ReleaseWriteLock(
-                        in _nativeMemory.DensityQueryChunksHandle,
-                        VegetationMemorySovereigntyConstants.OwnerSystemId);
-                }
+                vault.ReleaseWriteLock(
+                    in _nativeMemory.ThreatAttractorGridHandle,
+                    VegetationMemorySovereigntyConstants.OwnerSystemId);
             }
         }
 
@@ -417,65 +432,102 @@ namespace Hecton8.World
                 return;
 
             EnsureVector3Capacity(ref _abyssalAnchorPositions, anchorCount);
-            if (!TryAcquireVegetationMemoryBuffer(
-                    ref _nativeMemory.AbyssalAnchorPositionsHandle,
-                    BufferID.VegetationAbyssalAnchorPositions,
-                    anchorCount,
-                    NativeArrayOptions.UninitializedMemory,
-                    out IDataVault anchorVault,
-                    out NativeArray<Vector3> nativeAnchorPositions))
+            if (!WriteAbyssalAnchorPositions(anchorCount, out int resolvedAnchorCount))
             {
                 _abyssalAnchorCount = 0;
                 return;
             }
 
+            _abyssalAnchorCount = resolvedAnchorCount;
+            if (resolvedAnchorCount <= 0)
+                return;
+
+            if (!WriteAbyssalAnchorAupPositions(resolvedAnchorCount))
+                _abyssalAnchorCount = 0;
+        }
+
+        private bool WriteAbyssalAnchorPositions(int anchorCount, out int resolvedAnchorCount)
+        {
+            resolvedAnchorCount = 0;
+            if (!TryAcquireVegetationMemoryBuffer(
+                    ref _nativeMemory.AbyssalAnchorPositionsHandle,
+                    BufferID.VegetationAbyssalAnchorPositions,
+                    anchorCount,
+                    NativeArrayOptions.UninitializedMemory,
+                    out IDataVault vault,
+                    out NativeArray<Vector3> nativeAnchorPositions))
+            {
+                return false;
+            }
+
             try
             {
-                if (!TryAcquireVegetationMemoryBuffer(
-                        ref _nativeMemory.AbyssalAnchorAupPositionsHandle,
-                        BufferID.VegetationAbyssalAnchorAupPositions,
-                        anchorCount,
-                        NativeArrayOptions.UninitializedMemory,
-                        out IDataVault anchorAupVault,
-                        out NativeArray<AbsoluteUniversePosition> nativeAnchorAupPositions))
+                int writeIndex = 0;
+                for (int i = 0; i < _selectedChunkCount; i++)
                 {
-                    _abyssalAnchorCount = 0;
-                    return;
+                    if (!_chunkPayloads.TryGetValue(_selectedChunkKeys[i], out ChunkPayload payload) || !payload.HasUnderwater)
+                        continue;
+
+                    CopySemanticAnchorPositions(
+                        ResolveChunkPool(isSurface: false, payload),
+                        payload.UnderwaterOffset,
+                        payload.UnderwaterCount,
+                        (int)VegetationSemanticType.DeadZoneMassiveStructure,
+                        _abyssalAnchorPositions,
+                        nativeAnchorPositions,
+                        _totalUniverseOffsetDouble,
+                        ref writeIndex);
                 }
 
-                try
-                {
-                    int writeIndex = 0;
-                    for (int i = 0; i < _selectedChunkCount; i++)
-                    {
-                        if (!_chunkPayloads.TryGetValue(_selectedChunkKeys[i], out ChunkPayload payload) || !payload.HasUnderwater)
-                            continue;
-
-                        CopySemanticAnchorPositions(
-                            ResolveChunkPool(isSurface: false, payload),
-                            payload.UnderwaterOffset,
-                            payload.UnderwaterCount,
-                            (int)VegetationSemanticType.DeadZoneMassiveStructure,
-                            _abyssalAnchorPositions,
-                            nativeAnchorPositions,
-                            nativeAnchorAupPositions,
-                            _totalUniverseOffsetDouble,
-                            ref writeIndex);
-                    }
-
-                    _abyssalAnchorCount = math.min(anchorCount, writeIndex);
-                }
-                finally
-                {
-                    anchorAupVault.ReleaseWriteLock(
-                        in _nativeMemory.AbyssalAnchorAupPositionsHandle,
-                        VegetationMemorySovereigntyConstants.OwnerSystemId);
-                }
+                resolvedAnchorCount = math.min(anchorCount, writeIndex);
+                return true;
             }
             finally
             {
-                anchorVault.ReleaseWriteLock(
+                vault.ReleaseWriteLock(
                     in _nativeMemory.AbyssalAnchorPositionsHandle,
+                    VegetationMemorySovereigntyConstants.OwnerSystemId);
+            }
+        }
+
+        private bool WriteAbyssalAnchorAupPositions(int anchorCount)
+        {
+            if (!TryAcquireVegetationMemoryBuffer(
+                    ref _nativeMemory.AbyssalAnchorAupPositionsHandle,
+                    BufferID.VegetationAbyssalAnchorAupPositions,
+                    anchorCount,
+                    NativeArrayOptions.UninitializedMemory,
+                    out IDataVault vault,
+                    out NativeArray<AbsoluteUniversePosition> nativeAnchorAupPositions))
+            {
+                return false;
+            }
+
+            try
+            {
+                int writeIndex = 0;
+                for (int i = 0; i < _selectedChunkCount && writeIndex < anchorCount; i++)
+                {
+                    if (!_chunkPayloads.TryGetValue(_selectedChunkKeys[i], out ChunkPayload payload) || !payload.HasUnderwater)
+                        continue;
+
+                    CopySemanticAnchorAupPositions(
+                        ResolveChunkPool(isSurface: false, payload),
+                        payload.UnderwaterOffset,
+                        payload.UnderwaterCount,
+                        (int)VegetationSemanticType.DeadZoneMassiveStructure,
+                        nativeAnchorAupPositions,
+                        _totalUniverseOffsetDouble,
+                        anchorCount,
+                        ref writeIndex);
+                }
+
+                return true;
+            }
+            finally
+            {
+                vault.ReleaseWriteLock(
+                    in _nativeMemory.AbyssalAnchorAupPositionsHandle,
                     VegetationMemorySovereigntyConstants.OwnerSystemId);
             }
         }
@@ -765,20 +817,25 @@ namespace Hecton8.World
                 return;
             }
 
-            if (!TryReadAggregateBuffer(in buffers.MatricesHandle, count, out NativeArray<Matrix4x4> matrices) ||
-                !TryAcquireAggregateWriteBuffer(ref buffers.FlowVectorsHandle, count, out IDataVault flowVectorsVault, out NativeArray<Vector3> flowVectors))
-            {
+            if (!TryReadAggregateBuffer(in buffers.MatricesHandle, count, out NativeArray<Matrix4x4> matrices))
                 return;
-            }
 
-            bool flowDirectionsLocked = false;
-            IDataVault flowDirectionsVault = null;
+            if (!DistortAggregateFlowVectorsByThreatOneLock(ref buffers, count, matrices))
+                return;
+
+            WriteAggregateFlowDirectionsFromThreatOneLock(ref buffers, count, matrices);
+        }
+
+        private bool DistortAggregateFlowVectorsByThreatOneLock(
+            ref ActiveAggregateNativeBufferSet buffers,
+            int count,
+            NativeArray<Matrix4x4> matrices)
+        {
+            if (!TryAcquireAggregateWriteBuffer(ref buffers.FlowVectorsHandle, count, out IDataVault vault, out NativeArray<Vector3> flowVectors))
+                return false;
+
             try
             {
-                if (!TryAcquireAggregateWriteBuffer(ref buffers.FlowDirectionsHandle, count, out flowDirectionsVault, out NativeArray<Vector2> flowDirections))
-                    return;
-
-                flowDirectionsLocked = true;
                 float radiusSq = threatWhirlpoolRadius * threatWhirlpoolRadius;
                 for (int i = 0; i < count; i++)
                 {
@@ -799,16 +856,50 @@ namespace Hecton8.World
                     float fakeMagnitude = Mathf.Max(EstimateLength3D(baseFlow), 1f);
                     float blend = Mathf.Clamp01(swirl01 * threatWhirlpoolStrength);
                     Vector3 distortedFlow = baseFlow + ((tangent * fakeMagnitude) - baseFlow) * blend;
-                    Vector2 distortedDirection = NormalizeFlowDirection(new Vector2(distortedFlow.x, distortedFlow.z));
                     flowVectors[i] = distortedFlow;
-                    flowDirections[i] = distortedDirection;
+                }
+
+                return true;
+            }
+            finally
+            {
+                vault.ReleaseWriteLock(in buffers.FlowVectorsHandle, VegetationMemorySovereigntyConstants.OwnerSystemId);
+            }
+        }
+
+        private void WriteAggregateFlowDirectionsFromThreatOneLock(
+            ref ActiveAggregateNativeBufferSet buffers,
+            int count,
+            NativeArray<Matrix4x4> matrices)
+        {
+            if (!TryReadAggregateBuffer(in buffers.FlowVectorsHandle, count, out NativeArray<Vector3> flowVectors) ||
+                !TryAcquireAggregateWriteBuffer(ref buffers.FlowDirectionsHandle, count, out IDataVault vault, out NativeArray<Vector2> flowDirections))
+            {
+                return;
+            }
+
+            try
+            {
+                float radiusSq = threatWhirlpoolRadius * threatWhirlpoolRadius;
+                for (int i = 0; i < count; i++)
+                {
+                    Vector3 position = ResolveRuntimePosition(matrices[i]);
+                    float localThreat = GetThreatLevel(position);
+                    if (localThreat < threatWhirlpoolThreshold)
+                        continue;
+
+                    Vector3 radial = position - _currentThreatHotspotPosition;
+                    float radialSq = (radial.x * radial.x) + (radial.z * radial.z);
+                    if (radialSq <= 0.0001f || radialSq > radiusSq)
+                        continue;
+
+                    Vector3 distortedFlow = flowVectors[i];
+                    flowDirections[i] = NormalizeFlowDirection(new Vector2(distortedFlow.x, distortedFlow.z));
                 }
             }
             finally
             {
-                if (flowDirectionsLocked)
-                    flowDirectionsVault.ReleaseWriteLock(in buffers.FlowDirectionsHandle, VegetationMemorySovereigntyConstants.OwnerSystemId);
-                flowVectorsVault.ReleaseWriteLock(in buffers.FlowVectorsHandle, VegetationMemorySovereigntyConstants.OwnerSystemId);
+                vault.ReleaseWriteLock(in buffers.FlowDirectionsHandle, VegetationMemorySovereigntyConstants.OwnerSystemId);
             }
         }
 

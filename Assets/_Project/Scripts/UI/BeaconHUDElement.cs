@@ -28,7 +28,7 @@ namespace Hecton8.UI
     /// HUD element that displays deployed beacons on screen.
     /// Uses ITickable for updates. Zero GC in hot paths.
     /// </summary>
-    public class BeaconHUDElement : MonoBehaviour, ILateFrameTickable, ILocalizationLanguageChangedListener, IGlobalRegistryHotSwapListener
+    public class BeaconHUDElement : MonoBehaviour, ISlowTickable, ILateFrameTickable, ILocalizationLanguageChangedListener, IGlobalRegistryHotSwapListener
     {
         private static readonly char[] s_EmptyChars = new char[1]; // COLD ALLOC: char[1] — empty TMP payload sentinel — owner: BeaconHUDElement
         private const int BeaconLabelTextCapacity = 96;
@@ -73,6 +73,7 @@ namespace Hecton8.UI
         private Camera _mainCamera;
         private Transform _cachedTransform;
         private bool _registered;
+        private bool _registeredSlowTick;
         private bool _hotSwapListenerRegistered;
         private IPlayerRuntimeContext _cachedPlayerContext;
         private ILocalizationTextReadModel _cachedLocalization;
@@ -81,6 +82,8 @@ namespace Hecton8.UI
         private bool _localizedPresentationDirty;
         private float _cameraRetryTimer;
         private float _idlePollTimer;
+        private float _screenWidthSnapshot = 1f;
+        private float _screenHeightSnapshot = 1f;
         private const float CameraRetryInterval = 2f;
         private const float IdlePollInterval = 0.25f;
         // COLD ALLOC: char[24] — localized distance pattern cache — owner: BeaconHUDElement
@@ -100,6 +103,7 @@ namespace Hecton8.UI
             _cachedTransform = transform;
             _cameraRetryTimer = 0f; // Allow immediate first resolve in Tick
             _idlePollTimer = 0f;
+            RefreshScreenSnapshotCold();
 
             // Pre-create icon pool
             if (beaconIconPrefab != null && iconContainer != null)
@@ -133,6 +137,7 @@ namespace Hecton8.UI
         private void OnEnable()
         {
             CacheRegistryServicesCold();
+            RefreshScreenSnapshotCold();
             TryRegisterHotSwapListener();
             LocalizationEvents.RegisterLanguageListener(this);
             _pendingDistanceLanguage = ResolveCachedDistanceLanguage();
@@ -156,6 +161,11 @@ namespace Hecton8.UI
         {
             ApplyPendingLocalizationRefresh();
             SampleBeaconDisplay(SystemDispatcher.CurrentFrameUnscaledDeltaTime);
+        }
+
+        public void SlowTick()
+        {
+            RefreshScreenSnapshotCold();
         }
 
         private void SampleBeaconDisplay(float deltaTime)
@@ -211,8 +221,8 @@ namespace Hecton8.UI
             double maxDisplayDistanceSq = (double)maxDisplayDistance * maxDisplayDistance;
             double fadeStartDistanceSq = (double)fadeStartDistance * fadeStartDistance;
             double fadeDistanceSqSpan = math.max(0.001d, maxDisplayDistanceSq - fadeStartDistanceSq);
-            float screenWidth = Screen.width;
-            float screenHeight = Screen.height;
+            float screenWidth = _screenWidthSnapshot;
+            float screenHeight = _screenHeightSnapshot;
 
             // Update each beacon icon
             for (int i = 0; i < _activeIconCount; i++)
@@ -613,22 +623,38 @@ namespace Hecton8.UI
 
         private void RegisterToTick()
         {
-            if (_registered || !Application.isPlaying)
+            if (!Application.isPlaying)
                 return;
 
             if (GlobalRegistry.Dispatcher == null)
                 return;
 
-            _registered = GlobalRegistry.TryRegisterLateFrameTickable(this, PriorityLayer.UI);
+            if (!_registered)
+                _registered = GlobalRegistry.TryRegisterLateFrameTickable(this, PriorityLayer.UI);
+
+            if (!_registeredSlowTick)
+                _registeredSlowTick = GlobalRegistry.TryRegisterSlowTickable(this, PriorityLayer.UI);
         }
 
         private void UnregisterFromTick()
         {
-            if (!_registered)
-                return;
+            if (_registeredSlowTick)
+            {
+                GlobalRegistry.UnregisterSlowTickable(this, PriorityLayer.UI);
+                _registeredSlowTick = false;
+            }
 
-            GlobalRegistry.UnregisterLateFrameTickable(this, PriorityLayer.UI);
-            _registered = false;
+            if (_registered)
+            {
+                GlobalRegistry.UnregisterLateFrameTickable(this, PriorityLayer.UI);
+                _registered = false;
+            }
+        }
+
+        private void RefreshScreenSnapshotCold()
+        {
+            _screenWidthSnapshot = math.max(1f, Screen.width);
+            _screenHeightSnapshot = math.max(1f, Screen.height);
         }
 
         private static TMPro.TMP_Text ResolveChildText(Transform root, string childName)

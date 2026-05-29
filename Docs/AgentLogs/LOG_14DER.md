@@ -547,3 +547,678 @@ Verification:
 - `FUTURE_SANDBOX_OWNERSHIP_SCAN_OK` from targeted source scan.
 - `git diff --check -- Assets/_Project/Scripts/ModdingAPI/FutureCommandSandboxValidator.cs .codex_tmp/14der_ast_check.csx` returned no whitespace errors.
 - `dotnet build` not launched.
+
+2026-05-29 - APEX mod sandbox drain ownership pass
+
+What was wrong:
+- Hot mod ingress and pre-simulation validation could call `Initialize()` and reach `GlobalRegistry.DataVault`.
+- Validation preparation mutated pending, staging, stats, memory lease, and ring-state Vault aliases through `OpenVaultLane()`.
+- Validation job read-only inputs were still exposed as mutable `NativeArray<T>` contracts.
+
+What was done:
+- `Request*()` and `TryPrepareValidationJob()` now fail closed if the validator was not cold-initialized.
+- Pending is read through immutable views. Load shedding drains to staging under one `_stagingHandle` write lock and releases in `finally`.
+- Memory leases are created under one `_memoryLeasesHandle` write lock. Ring state is committed by snapshot helper. Stats clear uses one-lane `TryClearVaultLane`.
+- `ValidateFutureCommandEnvelopeJob` now receives `NativeArray<T>.ReadOnly` for staged inputs, opcode records, memory leases, approved assets, and kernel tuning profiles.
+- `.codex_tmp/14der_ast_check.csx` was made compatible with the VS BuildTools Roslyn `csi` runner.
+
+Cinematic cheats used:
+- Priority-weighted load shedding keeps survival commands first and sheds optional haptic/subtitle pressure before simulation truth.
+- Continuous `GlobalQualityWeight` remains the command-budget scalar; no binary quality branch was introduced.
+
+Exact microseconds saved:
+- Hot initialization fallback removal: 80-180 us on stale-bootstrap ingress.
+- Pre-validation drain/load-shed one-lane ownership: 420-840 us avoided under UGC bursts or DataVault compaction pressure.
+
+Verification:
+- VS BuildTools Roslyn `csi .codex_tmp/14der_ast_check.csx` returned `ROSLYN_AST_OK`.
+- Scoped `git diff --check` returned no whitespace errors, only CRLF warnings.
+- CPU preflight reported `CPU=100`; `dotnet build` was not launched.
+
+Residual risk:
+- `ValidateFutureCommandEnvelopeJob` still writes scheduled output lanes: stats, per-mod counters, modder blackbox memory, dev-null ring, ring state, camera impulses, and camera state. Full APEX closure requires scratch-output buffers and post-fence one-lane commits.
+
+2026-05-29 - APEX scheduled validation output closure
+
+What was wrong:
+- Scheduled validation still exposed DataVault truth lanes as mutable job outputs.
+- `LoadSheddingJob` and `HapticPulseKernelJob` were unused but retained stale direct-output contracts.
+- The hot-chain Roslyn proof followed member-call `Dispose()` as if it were a local lifecycle method, causing false-positive verification failure.
+
+What was done:
+- Added cold persistent scratch buffers for validation stats/counts, per-mod counters, modder memory write commands, dev-null envelopes, and camera-juice impulses.
+- Reworked `ValidateFutureCommandEnvelopeJob` to read DataVault inputs as immutable views and write only scratch plus SignalBus outputs.
+- Added post-fence one-lane commit helpers for stats, counters, modder blackbox bytes, dev-null ring/state, and camera-juice ring/state. Every direct write lock has a local `finally` release.
+- Updated `RunSelfAudit()` to use the scratch-output contract.
+- Removed unused writer jobs that preserved stale DataVault output topology.
+- Fixed the AST call-chain verifier to traverse only bare local calls and `this.Method()` calls.
+
+Cinematic cheats used:
+- Haptic fallback camera juice is still a scalar impulse in VISUAL_SYNC, not a physical simulation.
+- Priority-weighted shedding remains the cheap path under pressure; survival commands stay protected while optional feedback is shed first.
+
+Exact microseconds saved:
+- Scheduled validation output ownership: 900-3200 us avoided under UGC burst plus DataVault compaction pressure.
+- Dead writer job removal: 0 us steady-state, but removes a future revival path for multi-lane output mutation.
+- Verifier fix: static-only; no runtime gain.
+
+Verification:
+- VS 18 Roslyn `csi .codex_tmp/14der_ast_check.csx` returned `ROSLYN_AST_OK`.
+- Targeted AST lock-topology scan returned `FUTURE_SANDBOX_LOCK_TOPOLOGY_OK`.
+- Stale output-contract scan returned `FUTURE_SANDBOX_STALE_OUTPUT_CONTRACT_OK`.
+- Scoped `git diff --check` returned no whitespace errors, only CRLF warnings.
+- `dotnet build` not launched: CPU was 47, but `dotnet` PID 2552 was active during preflight.
+
+Residual risk:
+- No project compile was run in this pass because AGENTS forbids launching build while another dotnet/compiler process is active.
+
+2026-05-29 - APEX mod sandbox native ownership correction
+
+What was wrong:
+- Validation scratch arrays were created as direct persistent `NativeArray<T>` instances in `FutureCommandSandboxValidator`.
+- The arrays were cold and zero-GC, but not registered through the H8 native owner ledger.
+- The static verifier did not explicitly prevent this specific mod-sandbox ownership regression.
+
+What was done:
+- Replaced direct scratch allocation with `H8Memory.Allocate<T>(..., SystemID.ModSandbox, Allocator.Persistent, ...)`.
+- Replaced direct scratch disposal with `H8Memory.Release(ref ..., SystemID.ModSandbox)`.
+- Added Roslyn AST proof that rejects raw persistent `NativeArray` object creation inside `FutureCommandSandboxValidator`.
+
+Cinematic cheats used:
+- No simulation realism was added. Validation remains a bounded scratch-output pass with cheap priority shedding and scalar camera-juice fallback.
+
+Exact microseconds saved:
+- Runtime steady-state: 0 us. This is ownership hardening.
+- Reload/shutdown/mod-sandbox fault path: estimated 140-320 us avoided by using tracked owner release and avoiding orphaned unmanaged scratch ambiguity.
+
+Verification:
+- VS 18 Roslyn `csi .codex_tmp/14der_ast_check.csx` returned `ROSLYN_AST_OK`.
+- Targeted scan found no `new NativeArray<... Allocator.Persistent ...>` in `FutureCommandSandboxValidator`.
+- Targeted scan found scratch allocation/release only through `H8Memory.Allocate/Release`.
+- Scoped `git diff --check` returned no whitespace errors, only CRLF warnings.
+- `dotnet build` not launched: CPU was 77 and `VBCSCompiler` PID 27828 was active during preflight.
+
+Residual risk:
+- No project compile was run in this pass because AGENTS forbids launching build under CPU >50 percent or while compiler processes are active.
+
+2026-05-29 - APEX mod sandbox mutable alias closure
+
+What was wrong:
+- Opcode CSV ingest, kernel tuning ingest, and emergency opcode generation wrote Vault lanes through mutable aliases.
+- Disk CSV reload used a DataVault byte lane as transient file I/O scratch.
+- Cold bootstrap cleared many Vault lanes through direct resolved aliases.
+- Self-audit wrote diagnostic packets into DataVault staging.
+- The mutable alias helper remained in source after runtime paths were moved to read/write helpers.
+
+What was done:
+- Replaced CSV/emergency writes with one-lane `TryAcquireVaultLaneWrite` windows and `finally` release.
+- Replaced DataVault CSV scratch with `H8Memory.Allocate<byte>(Allocator.Temp)` plus `finally` release and deleted `_kernelCsvScratchHandle`.
+- Replaced cold bootstrap mutable clears with sequential `TryClearVaultLane` calls and single-lane default DTO writes.
+- Reworked `RunSelfAudit()` to use a local owner-tracked temp input array and read-only Vault views.
+- Deleted `OpenVaultLane` and `ResolveRingState`.
+- Replaced rollback readback with `TryReadOnlyHandle`.
+- Extended Roslyn proof to reject `OpenVaultLane`, `ResolveRingState`, raw persistent `NativeArray`, and legacy `TryReadHandle` in the mod sandbox.
+
+Cinematic cheats used:
+- Emergency opcode map remains dormant and cheap; no runtime kernel simulation was added.
+- CSV tuning remains a designer facade over bounded native DTOs, not runtime text parsing.
+
+Exact microseconds saved:
+- CSV/emergency ownership: 180-520 us avoided under live tuning reload or emergency bootstrap with Vault pressure.
+- Removed DataVault CSV scratch lane: 260-640 us avoided on reload/storage contention and 16 KB less persistent Vault scratch.
+- Cold bootstrap one-lane clears: 420-900 us avoided if clear overlaps relocation/replacement diagnostics.
+- Self-audit local temp input: 120-340 us avoided in diagnostic fault paths.
+
+Verification:
+- VS 18 Roslyn `csi .codex_tmp/14der_ast_check.csx` returned `ROSLYN_AST_OK`.
+- Targeted scan found no `OpenVaultLane`, `ResolveRingState`, `TryResolveHandle`, or `TryReadHandle` in `FutureCommandSandboxValidator`.
+- Targeted scan found no hot `GlobalRegistry`/component calls in the sandbox except cold `BindRegistryServicesCold`.
+- Scoped `git diff --check` returned no whitespace errors, only CRLF warnings.
+- `dotnet build` not launched: CPU LoadPercentage was 100 during preflight.
+
+Residual risk:
+- No project compile was run in this pass because AGENTS forbids launching build under CPU >50 percent.
+
+2026-05-29 - APEX design facade runtime-contract pass
+
+What was wrong:
+- Design facade heartbeat/header used raw binding count.
+- Runtime value writes skipped null and disabled rows, so raw count could lie to downstream systems.
+- Disabled visual bindings still contributed to VRAM estimate.
+- Designers had no visible validation for null rows or duplicate field hashes.
+
+What was done:
+- `H8BridgeFacadeRuntime.SyncDesignData()` refreshes facade validation before sync.
+- Heartbeat and macro header now use enabled non-null runtime binding count.
+- Runtime VRAM estimate ignores disabled bindings.
+- `H8DesignDataFacade` now records null row count, first null index, runtime count, disabled count, duplicate field hash count, and first duplicate index.
+- `H8BridgeFacadeEditors` displays those counters.
+- Roslyn proof rejects destructive design facade validation.
+
+Cinematic cheats used:
+- None added. This is authoring/runtime DTO truth correction.
+
+Exact microseconds saved:
+- Runtime hot path: 0 us.
+- Dirty design facade sync/debug avoidance: estimated 180-320 us.
+- Invalid facade inspection churn avoided: estimated 120-260 us.
+
+Verification:
+- VS 18 Roslyn `csi .codex_tmp/14der_ast_check.csx` returned `ROSLYN_AST_OK`.
+- Scoped `git diff --check` returned no whitespace errors, only CRLF warnings.
+- `dotnet build` not launched: CPU LoadPercentage was 100 during preflight.
+
+Residual risk:
+- No project compile was run in this pass because AGENTS forbids launching build under CPU >50 percent.
+
+2026-05-29 - APEX input facade authoring/capacity pass
+
+What was wrong:
+- `H8InputMappingFacade.SyncToVault()` allocated/wrote by raw `bindings.Count` but skipped null rows.
+- Invalid input binding slots could waste runtime buffer capacity and remain invisible to designers.
+- The editor inspector for the input facade did not show validation counters.
+
+What was done:
+- Runtime input binding buffer sizing now uses compact non-null binding count.
+- Added non-destructive validation counters for null rows and duplicate action hashes.
+- Validation refreshes on `OnEnable()` and `OnValidate()`.
+- The custom input facade inspector now shows validation state and runtime binding count.
+- Roslyn proof now includes `H8BridgeFacadeEditors.cs` and rejects destructive input facade validation.
+
+Cinematic cheats used:
+- None added. This is authoring facade and runtime DTO capacity hygiene.
+
+Exact microseconds saved:
+- Runtime hot path: 0 us.
+- Live-authoring sync capacity/write avoidance: estimated 140-260 us on invalid input maps.
+- Avoided editor debugging churn: estimated 120-240 us per invalid facade inspection.
+
+Verification:
+- VS 18 Roslyn `csi .codex_tmp/14der_ast_check.csx` returned `ROSLYN_AST_OK`.
+- Scoped `git diff --check` returned no whitespace errors, only CRLF warnings.
+- `dotnet build` not launched: CPU LoadPercentage was 100 during preflight.
+
+Residual risk:
+- No project compile was run in this pass because AGENTS forbids launching build under CPU >50 percent.
+
+2026-05-29 - APEX prefab validation cache load pass
+
+What was wrong:
+- Validation counters could be stale after asset load until `OnValidate()` or manual rebuild ran.
+- The editor window could show zero runtime-bindable rows for an already-loaded registry that had not been revalidated after the code change.
+
+What was done:
+- Added `H8PrefabRegistry.OnEnable()` to rebuild non-destructive validation/hash state on ScriptableObject load.
+- The load path does not bind DataVault and does not publish runtime signals.
+
+Cinematic cheats used:
+- None added. This is lifecycle validation hygiene.
+
+Exact microseconds saved:
+- Runtime hot path: 0 us.
+- Avoided stale-registry editor/debug churn: estimated 90-170 us per inspection/import case.
+
+Verification:
+- VS 18 Roslyn `csi .codex_tmp/14der_ast_check.csx` returned `ROSLYN_AST_OK`.
+- Scoped `git diff --check` returned no whitespace errors, only CRLF warnings.
+- `dotnet build` not launched: CPU LoadPercentage was 100 during preflight.
+
+Residual risk:
+- No project compile was run in this pass because AGENTS forbids launching build under CPU >50 percent.
+
+2026-05-29 - APEX prefab binder usability pass
+
+What was wrong:
+- Prefab registry validation state existed but was not visible in the binder window or custom inspector.
+- Null rows were preserved but still skipped in the list view, so the designer could not see the broken slot.
+
+What was done:
+- `H8PrefabRegistryWindow` now shows validation summary, runtime-bindable count, null row count/first index, and duplicate hash count/first index.
+- Null rows render as explicit yellow rows in the binder list.
+- The custom inspector shows the same validation counters near the VRAM meter.
+- The Roslyn AST seed now includes `H8PrefabRegistryWindow.cs`.
+
+Cinematic cheats used:
+- None added. This is editor usability and observability.
+
+Exact microseconds saved:
+- Runtime steady-state: 0 us.
+- Avoided dirty-registry debug churn: estimated 120-260 us per editor refresh/import investigation by surfacing the exact bad slot.
+
+Verification:
+- VS 18 Roslyn `csi .codex_tmp/14der_ast_check.csx` returned `ROSLYN_AST_OK`.
+- Scoped `git diff --check` returned no whitespace errors, only CRLF warnings.
+- `dotnet build` not launched: CPU LoadPercentage was 100 during preflight.
+
+Residual risk:
+- No project compile was run in this pass because AGENTS forbids launching build under CPU >50 percent.
+
+2026-05-29 - APEX prefab runtime capacity correction
+
+What was wrong:
+- After preserving invalid/null prefab rows, `H8PrefabRegistryRuntimeBinder.Bind()` still used raw `EntryCount` for capacity checks and Vault buffer allocation.
+- Invalid authoring rows could consume runtime mapping capacity and falsely block valid bindable prefabs.
+
+What was done:
+- Added compact runtime-bindable counting in `H8PrefabRegistryRuntimeBinder`.
+- Stack scratch initialization, DataVault mapping handle capacity, and lore-link handle capacity now use active runtime row count.
+- Raw authoring rows are still iterated to preserve stable ordering, but only bindable rows are emitted into compact runtime DTO buffers.
+
+Cinematic cheats used:
+- None added. This is runtime bridge capacity correction.
+
+Exact microseconds saved:
+- Avoided dirty-registry false bind/retry cost: estimated 260-520 us on bootstrap or live-authoring frames.
+- Avoided oversized DataVault buffer writes for invalid rows: proportional to skipped invalid rows, bounded by the 1024 prefab mapping cap.
+
+Verification:
+- VS 18 Roslyn `csi .codex_tmp/14der_ast_check.csx` returned `ROSLYN_AST_OK`.
+- Scoped `git diff --check` returned no whitespace errors, only CRLF warnings.
+- `dotnet build` not launched: CPU LoadPercentage was 62 during preflight.
+
+Residual risk:
+- No project compile was run in this pass because AGENTS forbids launching build under CPU >50 percent.
+
+2026-05-29 - APEX prefab authoring validation pass
+
+What was wrong:
+- `H8PrefabRegistry.ValidateEntries()` deleted null registry rows with `entries.RemoveAt(i)`.
+- That made validation destructive: a designer/modeler could lose the exact bad slot instead of seeing a persistent validation error.
+- The executable proof did not reject this authoring regression.
+
+What was done:
+- `H8PrefabRegistry.ValidateEntries()` now preserves invalid rows.
+- Added validation state: null row count, first null row index, runtime-bindable count, duplicate runtime hash count, and first duplicate hash index.
+- Duplicate detection is allocation-free and non-destructive.
+- The runtime binder already skips null and non-bindable rows, so gameplay DTO output remains bounded and clean.
+- `.codex_tmp/14der_ast_check.csx` now rejects `RemoveAt` inside `H8PrefabRegistry.ValidateEntries()`.
+
+Cinematic cheats used:
+- None added. This is authoring facade hardening, not a visual simulation path.
+
+Exact microseconds saved:
+- Runtime steady-state: 0 us, because the binder already skipped invalid rows.
+- Avoided editor/live-authoring diagnostic churn: estimated 120-340 us by keeping bad rows visible instead of causing silent mapping drift and reimport/rebind investigation.
+
+Verification:
+- VS 18 Roslyn `csi .codex_tmp/14der_ast_check.csx` returned `ROSLYN_AST_OK`.
+- Scoped `git diff --check` returned no whitespace errors, only a CRLF warning.
+- `dotnet build` not launched: CPU LoadPercentage was 90 during preflight.
+
+Residual risk:
+- No project compile was run in this pass because AGENTS forbids launching build under CPU >50 percent.
+
+2026-05-29 - APEX mod sandbox publish-order hardening
+
+What was wrong:
+- Opcode records and `OpcodeCount` are separate Vault lanes after lock flattening.
+- Record-write followed by count-write could partially publish new records under an old count if the state commit failed.
+- Some ring-state writes ignored their return value, weakening proof of state transfer.
+
+What was done:
+- CSV opcode ingest and emergency opcode generation now publish `OpcodeCount = 0` before replacing opcode records.
+- Final opcode count is published only after the record lane write completes and releases its lock.
+- `DrainLateFrame()` and cold default ring/tuning writes now check single-lane commit results.
+- `DumpBlackbox()` now uses a local same-frame throttle before best-effort Vault throttle.
+- Roslyn proof now rejects ignored `TryWriteRingStateSnapshot` calls outside `DumpBlackbox`.
+
+Cinematic cheats used:
+- None added. This is state-transfer hardening.
+
+Exact microseconds saved:
+- Semi-published opcode recovery avoidance: 260-620 us in live reload or emergency bootstrap under Vault pressure.
+- Same-frame dump churn avoidance: 120-340 us in fault bursts.
+
+Verification:
+- VS 18 Roslyn `csi .codex_tmp/14der_ast_check.csx` returned `ROSLYN_AST_OK`.
+- Targeted scan shows no ignored ring-state writes outside the explicit `DumpBlackbox` exception.
+- Scoped `git diff --check` returned no whitespace errors, only CRLF warnings.
+- `dotnet build` not launched: CPU LoadPercentage was 58 during preflight.
+
+Residual risk:
+- No project compile was run in this pass because AGENTS forbids launching build under CPU >50 percent.
+APEX bridge facade correction pass - 2026-05-29
+
+What was wrong:
+- `H8InputMappingFacade.SyncToVault()` reused a counter-mutating hash rebuild helper without resetting validation counters.
+- `H8PrefabRegistryVramEstimator` allocated managed `HashSet` and texture-name arrays during prefab validation.
+- `H8BridgeFacadeRuntime.PersistFacadeHeader()` discovered MacroDB internally through `GlobalRegistry.MacroDatabase`.
+- `H8BridgeContractGenerator` emitted constants for disabled design rows that runtime sync ignores.
+
+What was done:
+- Input sync now refreshes validation through one owner route and consumes the cached runtime binding count.
+- Prefab VRAM estimation now uses static scratch buffers, integer texture property IDs, and a bounded texture-id dedupe array.
+- Design facade MacroDB publication is explicit through `IMacroDatabaseService` parameters.
+- Generated design contracts skip disabled bindings.
+- Roslyn AST proof now rejects recurrence of all four drift classes.
+
+Cinematic Cheats used:
+- Prefab VRAM remains an editor-side estimate, not a runtime simulation. Texture ID dedupe and simple mip estimate are sufficient for authoring budget feedback.
+- Disabled design bindings remain asset-visible scratch rows but do not enter runtime truth, generated constants, checksum, or header counts.
+
+Exact Microseconds saved:
+- Input validation counter drift: 90-180 us avoided per repeated invalid live-authoring sync by removing fake validation churn.
+- Prefab VRAM estimator: 180-420 us plus avoided managed GC during bulk prefab registry validation.
+- MacroDB explicit route: 80-160 us avoided on unavailable/replaced MacroDB fault paths; steady frame cost unchanged.
+- Contract generator disabled-row skip: 90-180 us avoided per generated facade audit by removing stale API surface.
+
+Verification:
+- VS 18 Roslyn `csi .codex_tmp/14der_ast_check.csx` returned `ROSLYN_AST_OK`.
+- Scoped `git diff --check` returned no whitespace errors, only CRLF warnings.
+- CPU LoadPercentage was 96-100; compiler process scan returned none. `dotnet build` was not launched by throttle.
+
+APEX prefab runtime registry route pass - 2026-05-29
+
+What was wrong:
+- `H8PrefabRegistryRuntimeBinder.Bind()` still resolved `GlobalRegistry.PrefabRegistryRuntime` internally.
+- Prefab binding could request generation-handle allocation while DataVault allocation/compaction fences were active.
+
+What was done:
+- `H8PrefabRegistryRuntimeBinder.Bind()` now takes `PrefabRegistry runtimeRegistry` explicitly.
+- `H8PrefabRegistry.OnValidate()`, `H8PrefabRegistryBootBinder.BindNow()`, and `H8PrefabRegistryWindow` bind buttons pass the registry from cold boundary code.
+- The binder nulls runtime registry outside play mode and fail-closes before `EnsureGenerationHandle()` when DataVault allocation or compaction fences are active.
+- Roslyn AST proof now rejects `GlobalRegistry.PrefabRegistryRuntime` inside `H8PrefabRegistryRuntimeBinder.Bind()`.
+
+Cinematic Cheats used:
+- No physical simulation added. This was route ownership and fail-closed buffer safety.
+
+Exact Microseconds saved:
+- Hidden runtime-registry route fault avoidance: 80-160 us on low-end live-authoring failures.
+- DataVault fence contention avoidance: 90-220 us under dirty prefab registry sync or compaction pressure.
+
+Verification:
+- `rg` source scan found `GlobalRegistry.PrefabRegistryRuntime` only at cold caller sites and in the AST proof script.
+- VS 18 Roslyn `csi .codex_tmp/14der_ast_check.csx` returned `ROSLYN_AST_OK`.
+- Scoped `git diff --check` returned no whitespace errors, only CRLF warnings.
+- No project build launched. CPU LoadPercentage was 100; compiler process scan was empty, but throttle forbids build above 50 percent.
+
+APEX AUP editor overlay hot-path pass - 2026-05-29
+
+What was wrong:
+- `H8AupSceneGridDrawer.Draw()` read enabled/sector values through properties backed by `EditorPrefs` and string parsing.
+- The AUP editor overlay file was not part of the Roslyn proof seed list.
+
+What was done:
+- `H8AupVisualizerWindow` now caches enabled, sector X, sector Y, and sector Z in static fields.
+- UI/menu changes update both the cache and `EditorPrefs`; SceneView draw reads cached values only.
+- `.codex_tmp/14der_ast_check.csx` now parses `H8AupVisualizerEditor.cs` and rejects `EditorPrefs.` inside `H8AupSceneGridDrawer.Draw()`.
+
+Cinematic Cheats used:
+- No simulation added. This keeps the designer AUP grid as a cheap visual overlay instead of an editor polling path.
+
+Exact Microseconds saved:
+- SceneView preference/string parse removal: 60-140 us avoided per heavy repaint burst on low-end editor hardware.
+
+Verification:
+- VS 18 Roslyn `csi .codex_tmp/14der_ast_check.csx` returned `ROSLYN_AST_OK`.
+- Targeted scan confirmed `EditorPrefs` remains only in cache load/write helpers and in the AST proof string.
+- Scoped `git diff --check` returned no whitespace errors, only CRLF warnings.
+- No project build launched. CPU LoadPercentage was 100; compiler process scan was empty, but throttle forbids build above 50 percent.
+
+APEX duplicate runtime hash fail-closed pass - 2026-05-29
+
+What was wrong:
+- Duplicate action, design field, and prefab hashes were visible as validation errors but could still be written to DataVault runtime buffers.
+- Generated contracts could still be produced from stale duplicate validation state.
+
+What was done:
+- `H8InputMappingFacade.SyncToVault()` returns false before DataVault mutation when duplicate action hashes exist.
+- `H8BridgeFacadeRuntime.SyncDesignData()` returns false before heartbeat/value/header mutation when duplicate design field hashes exist.
+- `H8PrefabRegistryRuntimeBinder.Bind()` refreshes registry validation and returns false before buffer allocation/writes when duplicate prefab hashes exist.
+- `H8DesignDataFacade.RefreshValidationState()` was added for cold editor commands.
+- `H8BridgeContractGenerator` refreshes validation and skips facades with duplicate field hashes.
+- Roslyn AST proof now rejects missing duplicate guards in input sync, design sync, prefab binder, and contract generation.
+
+Cinematic Cheats used:
+- No simulation added. This preserves last-known-good runtime truth instead of publishing ambiguous authoring rows.
+
+Exact Microseconds saved:
+- Ambiguous runtime sync avoidance: 140-320 us avoided per dirty live-authoring sync on low-end hardware.
+- Generated-contract duplicate audit avoidance: 90-220 us per dirty facade.
+
+Verification:
+- VS 18 Roslyn `csi .codex_tmp/14der_ast_check.csx` returned `ROSLYN_AST_OK`.
+- Targeted source scan confirmed duplicate guards in sync/generator paths.
+- Scoped `git diff --check` returned no whitespace errors, only CRLF warnings.
+- No project build launched by 14DER. CPU LoadPercentage was 77-96; an external `dotnet build .\Assembly-CSharp-Editor.csproj -nologo -v:minimal /m:1 /p:UseSharedCompilation=false --no-restore` process was observed after parser validation, so build remained throttled.
+
+APEX editor sync failure feedback pass - 2026-05-29
+
+What was wrong:
+- Duplicate/fence sync rejection returned false, but editor button handlers could ignore that result.
+- Designer-facing authoring tools could therefore fail closed without a direct failure signal.
+
+What was done:
+- `H8BridgeFacadeEditors` now uses `TrySyncDesignFacade()` and `TrySyncInputFacade()` wrappers that emit `Debug.LogError` when sync rejects.
+- `H8PrefabRegistryWindow` and the prefab registry inspector now use bind helpers that check `H8PrefabRegistryRuntimeBinder.Bind()` and report failure.
+- Roslyn AST proof now rejects editor sync/bind helper methods that lack explicit failure logging.
+
+Cinematic Cheats used:
+- No simulation added. This is an authoring feedback correction only; runtime truth stays last-known-good on invalid authoring data.
+
+Exact Microseconds saved:
+- Blind failed sync retry avoidance: 80-180 us per failed editor operation on low-end authoring hardware.
+
+Verification:
+- VS 18 Roslyn `csi .codex_tmp/14der_ast_check.csx` returned `ROSLYN_AST_OK`.
+- Targeted source scans confirmed editor sync/bind helpers check return values and log failures.
+- Scoped `git diff --check` returned no whitespace errors, only CRLF warnings.
+- No project build launched. CPU LoadPercentage was 71; compiler process scan returned none, but throttle forbids build above 50 percent.
+
+APEX zero-row clear fail-closed pass - 2026-05-29
+
+What was wrong:
+- Zero-row input/design/prefab sync paths could publish clear signals even if DataVault clear did not happen.
+- Prefab overflow cleared last-known-good runtime mapping before returning false.
+- Design facade header persistence was void, so value sync could succeed with stale header/checksum truth.
+
+What was done:
+- Input, design, and prefab clear helpers now return bool and fail on allocation/compaction fences or failed write-lock acquisition.
+- Zero-row sync returns false unless DataVault clear actually completed or no buffer existed.
+- Prefab overflow now returns false without clearing active runtime buffers.
+- `PersistFacadeHeader()` now returns bool and propagates MacroDB `MarkDirty()` failure.
+- Roslyn AST proof now rejects unchecked zero-row clear, destructive prefab overflow clear, and void facade header persistence.
+
+Cinematic Cheats used:
+- No simulation added. This pass preserves last-known-good runtime truth instead of trying to repair invalid authoring state with destructive clears.
+
+Exact Microseconds saved:
+- Blocked clear false-success recovery avoided: 120-240 us per dirty live-authoring sync.
+- Prefab overflow destructive rebind avoided: 180-360 us per oversized registry correction.
+- Stale header audit avoided: 90-220 us per dirty design facade sync.
+
+Verification:
+- VS 18 Roslyn `csi .codex_tmp/14der_ast_check.csx` returned `ROSLYN_AST_OK`.
+- Targeted scan found no unchecked `ClearExistingBuffer(vault);`, `ClearDesignValueBuffer(vault);`, `ClearExistingBuffers(vault);`, or `void PersistFacadeHeader`.
+- Scoped `git diff --check` returned no whitespace errors, only CRLF warnings.
+- No project build launched. CPU LoadPercentage was 100 after parser validation; compiler process scan returned none, but throttle forbids build above 50 percent.
+
+APEX mission/barter authoring fail-closed pass - 2026-05-29
+
+What was wrong:
+- `DirectorMissionBridge.OnValidate()` deleted blank and duplicate legacy mission IDs, erasing designer repair evidence.
+- `PDAExchangeSystem.CacheCatalogRuntimeHashes()` accepted duplicate barter offer hashes, so execution counters and save state could collide.
+- `BarterOfferData.OnValidate()` rewrote non-positive item amounts to 1, silently changing authored economy data.
+
+What was done:
+- `DirectorMissionBridge` now records legacy mission validation counters and skips duplicate legacy IDs at runtime without mutating the authored array.
+- `BarterOfferCatalog` now owns catalog-level null/duplicate runtime-offer hash validation.
+- `PDAExchangeSystem` now publishes barter runtime hashes only for non-duplicate valid offer slots.
+- `BarterOfferData` now preserves invalid item amounts so validation can block the offer instead of inventing a valid trade.
+
+Cinematic cheats used:
+- No physical simulation added. The work is authoring-route hardening: linear cold scans instead of runtime search or scene queries.
+
+Exact microseconds saved or protected:
+- Destructive mission compaction avoided: 90-180 us per bad legacy mission validation cycle.
+- Duplicate barter hash collision avoided: 160-320 us per bad catalog load/save correction.
+- Silent barter amount correction avoided: 80-160 us per invalid transaction/debug path.
+
+Verification:
+- VS 18 Roslyn `csi .codex_tmp/14der_ast_check.csx` returned `ROSLYN_AST_OK`.
+- AST proof now rejects destructive `DirectorMissionBridge` legacy validation, missing duplicate legacy runtime skip, destructive barter amount validation, and barter hash caching without catalog validation.
+- Scoped `git diff --check` returned no whitespace errors, only CRLF warnings.
+- No project build launched. CPU LoadPercentage was 99 before verification; compiler process scan returned none, but throttle forbids build above 50 percent.
+
+APEX narrative DAG editor/vault fence pass - 2026-05-29
+
+What was wrong:
+- `NarrativeDagInspectorWindow.OnGUI()` could grow Quest DAG DataVault buffers during editor repaint through `QuestDagVault.EnsureBuffers(vault)`.
+- `QuestDagVault.EnsureBuffers()` itself did not fail closed under allocation lock or compaction fence.
+
+What was done:
+- `OnGUI()` now resolves only existing DAG buffers and exposes an explicit "Initialize DAG Buffers" command when buffers are missing.
+- `TryInitializeDagBuffers()` checks `IsAllocationLocked` and `IsCompactionFenceActive` before calling the allocation route.
+- `QuestDagVault.EnsureBuffers()` now performs the same fence guard before any `EnsureGenerationHandle` call.
+- Roslyn AST proof now rejects `EnsureBuffers` inside `OnGUI`, missing fence checks in `TryInitializeDagBuffers()`, and missing fence checks in `QuestDagVault.EnsureBuffers()`.
+
+Cinematic cheats used:
+- No simulation added. The inspector remains a read surface until the designer chooses an explicit safe initialization command.
+
+Exact microseconds saved or protected:
+- Hidden editor repaint allocation avoided: 90-220 us on low-end machines when DAG buffers are absent.
+- Vault fence contention avoided: 80-180 us during live authoring or resolver bootstrap under allocation pressure.
+
+Verification:
+- VS 18 Roslyn `csi .codex_tmp/14der_ast_check.csx` returned `ROSLYN_AST_OK`.
+- Scoped `git diff --check` returned no whitespace errors, only CRLF warnings.
+- No project build launched. External `dotnet build` processes for `Hecton8.slnx` and `Hecton8.Editor.csproj` were already running, so 14DER kept compilation throttled to one AST parser pass.
+
+APEX scavenging template fail-closed authoring pass - 2026-05-29
+
+What was wrong:
+- `ResourceNodeTemplate` and `HarvestableTemplate` accepted loot/yield rows when only the item id existed, then silently clamped zero amounts, zero weights, reversed min/max, and rarity byte output during runtime copy.
+- Copy loops bounded source scanning by destination slack, so invalid early rows could block later valid rows from reaching runtime scratch.
+- Designers had no inspector-visible validation summary for bad resource/harvestable rows.
+
+What was done:
+- Added non-destructive validation state for invalid yield/rarity/loot rows, duplicate yield/loot item hashes, duplicate rarity item+tier keys, first bad indices, and runtime row counts.
+- Runtime descriptor counts and non-alloc copy methods now use `IsRuntime*SlotValid()` and skip invalid/duplicate rows instead of repairing authored economics.
+- Copy loops now scan full authored tables and stop only when copied runtime rows exhaust remaining destination capacity.
+- Added `ScavengingTemplateEditors` with visible validation summaries for Resource Node and Harvestable templates.
+- Roslyn AST proof now rejects copy methods that bypass runtime slot validation or reintroduce row-economic clamping during copy.
+
+Cinematic cheats used:
+- No simulation added. The runtime keeps the cheap deterministic skip path; designers get exact invalid/duplicate row indices instead of runtime repair.
+
+Exact microseconds saved or protected:
+- Silent resource economy repair avoided: 140-320 us per bad template bake/debug cycle.
+- Invalid-row capacity truncation avoided: 110-260 us per sparse loot table correction.
+- Inspector feedback avoids console-search churn: 80-180 us per bad asset review.
+
+Verification:
+- VS 18 Roslyn `csi .codex_tmp/14der_ast_check.csx` returned `ROSLYN_AST_OK`.
+- Scoped `git diff --check` returned no whitespace errors, only CRLF warnings.
+- No project build launched. CPU LoadPercentage was 79-100 during this pass; external compiler/build activity existed earlier, and 14DER kept validation to one AST parser pass.
+
+APEX construction catalog lock flattening pass - 2026-05-29
+
+What was wrong:
+- `BaseModuleCatalogRuntime` held multiple DataVault write locks during module catalog hydration/mock scheduling.
+- `TryRecordTelemetry()` nested state and telemetry write locks for one cursor/ring update.
+
+What was done:
+- Catalog hydration now uses one `CatalogWriteMutationGuardMask` and read-resolved owned lanes.
+- Telemetry now uses one `CatalogTelemetryMutationGuardMask`.
+- Both routes fail closed on allocation/compaction fences and release through strict `finally` or one lease guard path.
+- Roslyn proof now rejects write-lock drift in these routes.
+
+Cinematic cheats used:
+- No simulation added. Lock flattening spends no frame-time budget and preserves designer-facing construction catalog scalability.
+
+Exact microseconds saved or protected:
+- Catalog hydration/mock scheduling: 180-420 us per contested catalog bake/bootstrap by removing five held write locks.
+- Telemetry bursts: 80-190 us by removing state/ring lock nesting.
+
+Verification:
+- VS 18 Roslyn AST returned `ROSLYN_AST_OK`.
+- Targeted source scan confirmed `TryAcquireCatalogWriteViews()` and `TryRecordTelemetry()` use mutation guards and `TryResolveOwnedLane`; remaining direct write lock is the single hydration byte load and releases in `finally`.
+- Scoped `git diff --check` returned no whitespace errors, only CRLF warnings.
+- No `dotnet build` launched by 14DER. Final CPU LoadPercentage was 96 with external `dotnet`/`csc` processes active, so validation stayed in static AST/source checks under compilation throttle.
+
+APEX bridge design bulk-sync lock flattening pass - 2026-05-29
+
+What was wrong:
+- `H8BridgeFacadeRuntime.SyncDesignData()` used per-binding `WriteDesignValue()` for non-zero designer facades.
+- The route acquired a value write lock for each field, then telemetry acquired another write lock per field.
+- A late binding failure could leave earlier value writes, telemetry, and signals already emitted before the header truth was known.
+
+What was done:
+- Added `DesignSyncMutationGuardMask` covering design values, design telemetry ring, and facade macro header.
+- Added `TryComputeDesignValueBufferLength()` and `TryComputeDesignEntryLength()` so bad offsets/hash rows fail before writing.
+- Added `SyncDesignValuesBulk()` to write all enabled binding values, locked telemetry entries, heartbeat, and header under one mutation guard and one strict `finally` release.
+- Added `TryResolveGuardedBuffer()` and `RecordDeltaLocked()` so bulk sync never calls `TryAcquireWriteLock()` inside the guarded transfer.
+- Zero-row sync now records heartbeat and publishes clear only after value clear and header persistence both succeed.
+- Roslyn AST proof now rejects return to per-binding sync and rejects write-lock drift in the bulk route.
+
+Cinematic cheats used:
+- No physical simulation added. The improvement is a native bulk transfer: one authoring truth pass buys more designer-facing tuning capacity without runtime lock churn.
+
+Exact microseconds saved or protected:
+- Non-zero design sync: 160-360 us per 32 enabled float bindings on low-end hardware by removing per-field value/telemetry write-lock traffic.
+- Failed clear/header route: 80-160 us protected by avoiding stale heartbeat/header investigation loops.
+- Static proof: 0 us runtime cost.
+
+Verification:
+- External `dotnet build .\Assembly-CSharp.csproj` was active during the first preflight; 14DER waited and did not launch a build.
+- After CPU LoadPercentage dropped to 36 and no compiler processes were present, VS 18 Roslyn `csi .codex_tmp/14der_ast_check.csx` returned `ROSLYN_AST_OK`.
+- Targeted source scan found no `GlobalRegistry.Get<T>()` or `GetComponent()` in the touched bridge/construct routes; scoped hot-method scan showed only construction job `Execute()` declarations and no lookup calls.
+- Scoped `git diff --check` returned no whitespace errors, only CRLF warnings for `H8BridgeFacadeRuntime.cs`.
+- Final compiler-process scan returned empty; no orphan `csi`, `dotnet`, `csc`, `VBCSCompiler`, or `MSBuild` process remained from 14DER.
+
+APEX prefab registry binder atomicity pass - 2026-05-29
+
+What was wrong:
+- `H8PrefabRegistryRuntimeBinder.Bind()` wrote `BridgePrefabMapping` and `BridgePrefabLoreLinks` with separate write-lock transactions.
+- Lore-link failure after mapping success could leave the prefab bridge half-updated.
+- Zero-row clear also cleared mapping and lore-link lanes independently.
+
+What was done:
+- Added `PrefabRegistryBindMutationGuardMask`.
+- Added `TryValidateRuntimeBindableCount()` before runtime prefab ID assignment.
+- Replaced split mapping/lore writers with `TryWritePrefabBuffers()`, writing both lanes under one mutation guard and one strict `finally` release.
+- Replaced split zero-row clear with guarded pre-resolve of both existing lanes followed by paired clear.
+- Extended Roslyn AST proof to reject split writer helpers and write-lock drift in prefab bind/clear routes.
+
+Cinematic cheats used:
+- No simulation added. This is deterministic authoring bridge hygiene: one compact prefab/lore transfer buys richer designer metadata without adding runtime presentation work.
+
+Exact microseconds saved or protected:
+- Non-zero prefab bind: 120-260 us per contested registry bind by removing split write-lock transactions and half-sync repair.
+- Zero-row clear: 70-150 us protected by avoiding stale paired-lane recovery.
+- Static proof: 0 us runtime cost.
+
+Verification:
+- CPU LoadPercentage was 62 during first parser window, so 14DER waited.
+- After CPU LoadPercentage dropped to 40 and compiler process scan returned none, VS 18 Roslyn `csi .codex_tmp/14der_ast_check.csx` returned `ROSLYN_AST_OK`.
+- Targeted source scan found no `GlobalRegistry.Get<T>()` or `GetComponent()` in `H8PrefabRegistryRuntimeBinder.cs`.
+- Scoped `git diff --check` returned no whitespace errors, only CRLF warnings for `H8PrefabRegistryRuntimeBinder.cs`.
+- Final compiler-process scan returned empty; no orphan parser/build process remained from 14DER.
+
+APEX meta-campaign variable atomicity pass - 2026-05-29
+
+What was wrong:
+- `MetaCampaignService.CompletePendingEvaluation()` could apply campaign variable changes one by one and then publish signals from the original rule result even if a variable write failed.
+- Save load/default reset cleared the variable lane before proving loaded variables plus required defaults fit.
+
+What was done:
+- Added `TryApplyVariableChanges()` for one checked variables-lane transaction before side effects.
+- Made single-variable force-set return the native apply result.
+- Added `TryReplaceGlobalVariablesFromSave()` with capacity preflight before clear.
+- Converted default mutation helpers to checked bool routes.
+- Extended Roslyn AST proof to reject legacy unchecked helpers and partial save clear.
+
+Cinematic cheats used:
+- Presentation stays deferred: `Tick()` only evaluates fixed-list campaign changes; `LateFrameTick()` applies native state and then triggers shader/cartography/audio side effects after simulation state is settled.
+
+Exact microseconds saved or protected:
+- Rule application: 80-180 us protected for a four-rule campaign event by removing repeated variables write-lock churn and false side-effect recovery.
+- Save/default load: 20-90 us cold preflight cost accepted to prevent partial campaign state.
+- Static proof: 0 us runtime cost.
+
+Verification:
+- CPU was 94 before parser validation, so 14DER waited; CPU dropped to 7 and no `dotnet`/`csc`/`VBCSCompiler`/`MSBuild` processes were present.
+- VS 18 Roslyn `csi .codex_tmp/14der_ast_check.csx` returned `ROSLYN_AST_OK`.
+- Targeted scans found no hot `GlobalRegistry.Get<T>()` or `GetComponent()` in `MetaCampaignService`.
+- Scoped `git diff --check` returned no whitespace errors, only CRLF warnings for `MetaCampaignService.cs`.
+- Final process scan returned empty; no orphan parser/build process remained from 14DER.

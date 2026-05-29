@@ -204,6 +204,8 @@ namespace Hecton8.Biolum
         private const uint ActiveBiolumRipplesHash = 0xB105A11Fu;
         private const uint BiolumDirectorContextHash = 0xB101D1ECu;
         private const SystemID VaultOwnerSystem = SystemID.Vfx;
+        private static readonly ulong TelemetryRingMutationGuardMask =
+            1UL << ((int)BufferID.BiolumLegacyTelemetryRing & 31);
 
         // COLD ALLOC: fixed zone registry arrays; bounded, no List growth in runtime route.
         private readonly HectonBiolumZone[] _activeCaveZones = new HectonBiolumZone[ActiveZoneListCapacity];
@@ -1304,7 +1306,7 @@ namespace Hecton8.Biolum
             handle = default;
         }
 
-        private bool TryLockTelemetryRing(out IDataVault vault, out NativeArray<BiolumTelemetryEntry> telemetryRing)
+        private bool TryAcquireTelemetryRingGuard(out IDataVault vault, out NativeArray<BiolumTelemetryEntry> telemetryRing)
         {
             vault = null;
             telemetryRing = default;
@@ -1312,37 +1314,39 @@ namespace Hecton8.Biolum
             vault = _dataVault;
             if (vault == null ||
                 vault.IsCompactionFenceActive ||
-                !vault.TryLockBuffer(BufferID.BiolumLegacyTelemetryRing, VaultOwnerSystem))
+                !vault.TryAcquireMutationGuard(TelemetryRingMutationGuardMask))
             {
                 vault = null;
                 return false;
             }
 
-            if (vault.IsCompactionFenceActive)
+            bool keepGuard = false;
+            try
             {
-                vault.TryUnlockBuffer(BufferID.BiolumLegacyTelemetryRing, VaultOwnerSystem);
-                vault = null;
-                return false;
+                keepGuard =
+                    !vault.IsCompactionFenceActive &&
+                    TryResolveBiolumVaultBuffer(
+                        ref _telemetryRingHandle,
+                        BufferID.BiolumLegacyTelemetryRing,
+                        BiolumTelemetryCapacity,
+                        out telemetryRing) &&
+                    telemetryRing.IsCreated;
+                return keepGuard;
             }
-
-            if (TryResolveBiolumVaultBuffer(
-                    ref _telemetryRingHandle,
-                    BufferID.BiolumLegacyTelemetryRing,
-                    BiolumTelemetryCapacity,
-                    out telemetryRing) &&
-                telemetryRing.IsCreated)
+            finally
             {
-                return true;
+                if (!keepGuard)
+                {
+                    vault.ReleaseMutationGuard(TelemetryRingMutationGuardMask);
+                    vault = null;
+                    telemetryRing = default;
+                }
             }
-
-            vault.TryUnlockBuffer(BufferID.BiolumLegacyTelemetryRing, VaultOwnerSystem);
-            vault = null;
-            return false;
         }
 
-        private static void UnlockTelemetryRing(IDataVault vault)
+        private static void ReleaseTelemetryRingGuard(IDataVault vault)
         {
-            vault?.TryUnlockBuffer(BufferID.BiolumLegacyTelemetryRing, VaultOwnerSystem);
+            vault?.ReleaseMutationGuard(TelemetryRingMutationGuardMask);
         }
 
         private GraphicsBuffer SelectTouchRippleWriteBuffer()
@@ -1396,7 +1400,7 @@ namespace Hecton8.Biolum
             float safePhase = math.isfinite(_globalBiolumPhase) ? _globalBiolumPhase : 0f;
             float safePredatorDim = math.isfinite(_predatorCurrentIntensity) ? _predatorCurrentIntensity : 1f;
 
-            if (!TryLockTelemetryRing(out IDataVault telemetryVault, out NativeArray<BiolumTelemetryEntry> telemetryRing))
+            if (!TryAcquireTelemetryRingGuard(out IDataVault telemetryVault, out NativeArray<BiolumTelemetryEntry> telemetryRing))
                 return;
 
             try
@@ -1419,7 +1423,7 @@ namespace Hecton8.Biolum
             }
             finally
             {
-                UnlockTelemetryRing(telemetryVault);
+                ReleaseTelemetryRingGuard(telemetryVault);
             }
 
             int currentFrame = Hecton8.Core.SystemDispatcher.CurrentFrameIndex;
@@ -1442,7 +1446,7 @@ namespace Hecton8.Biolum
 
         private void DumpBiolumTelemetry(byte reasonFlags)
         {
-            if (!TryLockTelemetryRing(out IDataVault telemetryVault, out NativeArray<BiolumTelemetryEntry> telemetryRing))
+            if (!TryAcquireTelemetryRingGuard(out IDataVault telemetryVault, out NativeArray<BiolumTelemetryEntry> telemetryRing))
                 return;
 
             try
@@ -1483,7 +1487,7 @@ namespace Hecton8.Biolum
             }
             finally
             {
-                UnlockTelemetryRing(telemetryVault);
+                ReleaseTelemetryRingGuard(telemetryVault);
             }
         }
 

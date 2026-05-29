@@ -1194,7 +1194,7 @@ namespace Hecton8.World
             titanRootMoundPosition = default;
 
             IDataVault vault = _dearLieVault;
-            if (!TryLockOrganicOvergrowthMutationBuffers(vault, out int lockedMask))
+            if (!TryAcquireOrganicOvergrowthMutationGuard(vault, out int lockedMask))
             {
                 laneUnavailable = true;
                 RecordDearLieTelemetry(Hecton8.Core.SystemDispatcher.CurrentFrameIndex, 0, 0, 0, 0, 1, 0, 0f, 0u, 32);
@@ -1304,7 +1304,7 @@ namespace Hecton8.World
             }
             finally
             {
-                UnlockOrganicOvergrowthMutationBuffers(vault, lockedMask);
+                ReleaseOrganicOvergrowthMutationGuard(vault, lockedMask);
             }
 
             if (touchPrimeFailed)
@@ -1480,6 +1480,8 @@ namespace Hecton8.World
         private VaultUidMap<OrganicByteMapEntry, byte> _rootMoundAppliedByInstanceUid;
         private VaultList<PersistentWorldDeltaRecord> _destroyedFloraScratch;
         private VaultList<PersistentWorldDeltaRecord> _floraStateOverrideScratch;
+        private readonly PersistentWorldDeltaRecord[] _destroyedFloraPersistenceScratch = new PersistentWorldDeltaRecord[DefaultTrackedDestroyedCapacity]; // COLD ALLOC: managed persistence import mirror; avoids holding DataVault scratch locks with lifecycle mutation lanes.
+        private readonly PersistentWorldDeltaRecord[] _floraStateOverridePersistenceScratch = new PersistentWorldDeltaRecord[DefaultTrackedHealthCapacity]; // COLD ALLOC: managed persistence import mirror; avoids DataVault scratch/lifecycle multi-lock during override sync.
         private VaultUidMap<OrganicHalfMapEntry, Unity.Mathematics.half> _persistedHealth01ByInstanceUid;
         private VaultUidMap<OrganicHalfMapEntry, Unity.Mathematics.half> _persistedHeightScale01ByInstanceUid;
         private VaultList<DestroyedOrganicEvent> _pendingYieldEvents;
@@ -1516,10 +1518,11 @@ namespace Hecton8.World
         private bool _originShiftListenerRegistered;
         private bool _dearLieJobScheduled;
         private bool _dearLieVaultReady;
-        private bool _dearLieVaultJobLocksHeld;
+        private bool _dearLieVaultJobGuardHeld;
         private bool _templateCacheReady;
         private bool _yieldMaterialLutReady;
-        private int _dearLieVaultJobLockCount;
+        private ulong _dearLieVaultJobGuardMask;
+        private IDataVault _dearLieVaultJobGuardVault;
 
         private BridgeMatrixLane _surfaceMatrices;
         private BridgeMetadataLane _surfaceMetadata;
@@ -2379,48 +2382,42 @@ namespace Hecton8.World
             _dearLieTelemetryCursor = 0;
         }
 
-        private bool TryLockDearLieVaultJobBuffers()
+        private bool TryAcquireDearLieVaultJobGuard()
         {
             IDataVault vault = _dearLieVault;
-            if (vault == null || _dearLieVaultJobLocksHeld || _dearLieVaultJobLockCount != 0)
+            if (vault == null || _dearLieVaultJobGuardHeld || _dearLieVaultJobGuardMask != 0UL)
                 return false;
 
-            int lockedCount = 0;
-            for (int i = 0; i < DearLieVaultJobBufferCount; i++)
-            {
-                BufferID bufferId = GetDearLieVaultJobBufferId(i);
-                if (!vault.TryLockBuffer(bufferId, SystemID.FloraGenomics))
-                {
-                    UnlockDearLieVaultJobBuffers(vault, lockedCount);
-                    return false;
-                }
+            ulong guardMask = ResolveDearLieVaultJobGuardMask();
+            if (guardMask == 0UL || !vault.TryAcquireMutationGuard(guardMask))
+                return false;
 
-                lockedCount++;
-            }
-
-            _dearLieVaultJobLockCount = lockedCount;
-            _dearLieVaultJobLocksHeld = true;
+            _dearLieVaultJobGuardMask = guardMask;
+            _dearLieVaultJobGuardVault = vault;
+            _dearLieVaultJobGuardHeld = true;
             return true;
         }
 
-        private void UnlockDearLieVaultJobBuffers()
+        private static ulong ResolveDearLieVaultJobGuardMask()
         {
-            IDataVault vault = _dearLieVault;
-            if (vault != null && _dearLieVaultJobLockCount > 0)
-                UnlockDearLieVaultJobBuffers(vault, _dearLieVaultJobLockCount);
-
-            _dearLieVaultJobLockCount = 0;
-            _dearLieVaultJobLocksHeld = false;
-        }
-
-        private static void UnlockDearLieVaultJobBuffers(IDataVault vault, int lockedCount)
-        {
-            for (int i = lockedCount - 1; i >= 0; i--)
+            ulong guardMask = 0UL;
+            for (int i = 0; i < DearLieVaultJobBufferCount; i++)
             {
                 BufferID bufferId = GetDearLieVaultJobBufferId(i);
-                if (bufferId != default)
-                    vault.TryUnlockBuffer(bufferId, SystemID.FloraGenomics);
+                guardMask |= OrganicMutationGuardBit(bufferId);
             }
+
+            return guardMask;
+        }
+
+        private void ReleaseDearLieVaultJobGuard()
+        {
+            IDataVault vault = _dearLieVaultJobGuardVault;
+            ulong guardMask = _dearLieVaultJobGuardMask;
+            _dearLieVaultJobGuardMask = 0UL;
+            _dearLieVaultJobGuardVault = null;
+            _dearLieVaultJobGuardHeld = false;
+            ReleaseOrganicGuard(vault, guardMask);
         }
 
         private static BufferID GetDearLieVaultJobBufferId(int index)
@@ -2498,17 +2495,49 @@ namespace Hecton8.World
             }
         }
 
-        private bool TryLockOrganicLifecycleMutationBuffers(IDataVault vault, out int lockedMask)
+        private static bool TryAcquireOrganicBufferGuard(IDataVault vault, BufferID bufferId, out ulong guardMask)
+        {
+            guardMask = OrganicMutationGuardBit(bufferId);
+            return vault != null && guardMask != 0UL && vault.TryAcquireMutationGuard(guardMask);
+        }
+
+        private static void ReleaseOrganicGuard(IDataVault vault, ulong guardMask)
+        {
+            if (vault != null && guardMask != 0UL)
+                vault.ReleaseMutationGuard(guardMask);
+        }
+
+        private static ulong OrganicMutationGuardBit(BufferID bufferId)
+        {
+            return bufferId == default ? 0UL : 1UL << ((int)bufferId & 31);
+        }
+
+        private bool TryAcquireOrganicLifecycleMutationGuard(IDataVault vault, out int lockedMask)
         {
             lockedMask = 0;
-            if (!TryLockOrganicRegrowthMutationBuffers(vault, out int regrowthMask))
-                return false;
 
-            if (!TryLockOrganicMaturationMutationBuffers(vault, out int maturationMask))
+            int regrowthMask = 0;
+            for (int i = 0; i < OrganicRegrowthMutationBufferCount; i++)
             {
-                UnlockOrganicRegrowthMutationBuffers(vault, regrowthMask);
-                return false;
+                if (ShouldLockOrganicRegrowthMutationBuffer(i))
+                    regrowthMask |= 1 << i;
             }
+
+            int maturationMask = 0;
+            for (int i = 0; i < OrganicMaturationMutationBufferCount; i++)
+            {
+                if (ShouldLockOrganicMaturationMutationBuffer(i))
+                    maturationMask |= 1 << i;
+            }
+
+            ulong guardMask =
+                ResolveOrganicRegrowthMutationGuardMask(regrowthMask) |
+                ResolveOrganicMaturationMutationGuardMask(maturationMask);
+            if (guardMask == 0UL)
+                return true;
+
+            if (vault == null || !vault.TryAcquireMutationGuard(guardMask))
+                return false;
 
             lockedMask = regrowthMask | (maturationMask << OrganicRegrowthMutationBufferCount);
             return true;
@@ -2568,101 +2597,61 @@ namespace Hecton8.World
             return false;
         }
 
-        private static void UnlockOrganicLifecycleMutationBuffers(IDataVault vault, int lockedMask)
+        private static void ReleaseOrganicLifecycleMutationGuard(IDataVault vault, int lockedMask)
         {
             int regrowthMask = lockedMask & ((1 << OrganicRegrowthMutationBufferCount) - 1);
             int maturationMask = (lockedMask >> OrganicRegrowthMutationBufferCount) & ((1 << OrganicMaturationMutationBufferCount) - 1);
-            UnlockOrganicMaturationMutationBuffers(vault, maturationMask);
-            UnlockOrganicRegrowthMutationBuffers(vault, regrowthMask);
+            ReleaseOrganicGuard(
+                vault,
+                ResolveOrganicRegrowthMutationGuardMask(regrowthMask) |
+                ResolveOrganicMaturationMutationGuardMask(maturationMask));
         }
 
-        private bool TryLockOrganicPersistenceMutationBuffers(IDataVault vault, out int lifecycleMask, out int scratchMask)
-        {
-            lifecycleMask = 0;
-            scratchMask = 0;
-            if (!TryLockOrganicLifecycleMutationBuffers(vault, out lifecycleMask))
-                return false;
-
-            if (_destroyedFloraScratch.IsCreated)
-            {
-                if (vault == null || !vault.TryLockBuffer(OrganicDestroyedFloraScratchBufferId, OrganicVaultSystemId))
-                {
-                    UnlockOrganicLifecycleMutationBuffers(vault, lifecycleMask);
-                    lifecycleMask = 0;
-                    return false;
-                }
-
-                scratchMask |= 1;
-            }
-
-            if (_floraStateOverrideScratch.IsCreated)
-            {
-                if (vault == null || !vault.TryLockBuffer(OrganicFloraStateOverrideScratchBufferId, OrganicVaultSystemId))
-                {
-                    UnlockOrganicPersistenceMutationBuffers(vault, lifecycleMask, scratchMask);
-                    lifecycleMask = 0;
-                    scratchMask = 0;
-                    return false;
-                }
-
-                scratchMask |= 2;
-            }
-
-            return true;
-        }
-
-        private static void UnlockOrganicPersistenceMutationBuffers(IDataVault vault, int lifecycleMask, int scratchMask)
-        {
-            if (vault != null)
-            {
-                if ((scratchMask & 2) != 0)
-                    vault.TryUnlockBuffer(OrganicFloraStateOverrideScratchBufferId, OrganicVaultSystemId);
-                if ((scratchMask & 1) != 0)
-                    vault.TryUnlockBuffer(OrganicDestroyedFloraScratchBufferId, OrganicVaultSystemId);
-            }
-
-            UnlockOrganicLifecycleMutationBuffers(vault, lifecycleMask);
-        }
-
-        private bool TryLockOrganicRegrowthMutationBuffers(IDataVault vault, out int lockedMask)
+        private bool TryAcquireOrganicRegrowthMutationGuard(IDataVault vault, out int lockedMask)
         {
             lockedMask = 0;
             if (vault == null)
                 return false;
 
+            ulong guardMask = 0UL;
             for (int i = 0; i < OrganicRegrowthMutationBufferCount; i++)
             {
                 if (!ShouldLockOrganicRegrowthMutationBuffer(i))
                     continue;
 
                 BufferID bufferId = GetOrganicRegrowthMutationBufferId(i);
-                if (!vault.TryLockBuffer(bufferId, OrganicVaultSystemId))
-                {
-                    UnlockOrganicRegrowthMutationBuffers(vault, lockedMask);
-                    lockedMask = 0;
-                    return false;
-                }
-
+                guardMask |= OrganicMutationGuardBit(bufferId);
                 lockedMask |= 1 << i;
             }
 
-            return true;
+            if (guardMask == 0UL)
+                return true;
+
+            if (vault.TryAcquireMutationGuard(guardMask))
+                return true;
+
+            lockedMask = 0;
+            return false;
         }
 
-        private static void UnlockOrganicRegrowthMutationBuffers(IDataVault vault, int lockedMask)
+        private static void ReleaseOrganicRegrowthMutationGuard(IDataVault vault, int lockedMask)
         {
-            if (vault == null)
-                return;
+            ReleaseOrganicGuard(vault, ResolveOrganicRegrowthMutationGuardMask(lockedMask));
+        }
 
+        private static ulong ResolveOrganicRegrowthMutationGuardMask(int lockedMask)
+        {
+            ulong guardMask = 0UL;
             for (int i = OrganicRegrowthMutationBufferCount - 1; i >= 0; i--)
             {
                 if ((lockedMask & (1 << i)) == 0)
                     continue;
 
                 BufferID bufferId = GetOrganicRegrowthMutationBufferId(i);
-                if (bufferId != default)
-                    vault.TryUnlockBuffer(bufferId, OrganicVaultSystemId);
+                guardMask |= OrganicMutationGuardBit(bufferId);
             }
+
+            return guardMask;
         }
 
         private bool ShouldLockOrganicRegrowthMutationBuffer(int index)
@@ -2767,45 +2756,51 @@ namespace Hecton8.World
             }
         }
 
-        private bool TryLockOrganicMaturationMutationBuffers(IDataVault vault, out int lockedMask)
+        private bool TryAcquireOrganicMaturationMutationGuard(IDataVault vault, out int lockedMask)
         {
             lockedMask = 0;
             if (vault == null)
                 return false;
 
+            ulong guardMask = 0UL;
             for (int i = 0; i < OrganicMaturationMutationBufferCount; i++)
             {
                 if (!ShouldLockOrganicMaturationMutationBuffer(i))
                     continue;
 
                 BufferID bufferId = GetOrganicMaturationMutationBufferId(i);
-                if (!vault.TryLockBuffer(bufferId, OrganicVaultSystemId))
-                {
-                    UnlockOrganicMaturationMutationBuffers(vault, lockedMask);
-                    lockedMask = 0;
-                    return false;
-                }
-
+                guardMask |= OrganicMutationGuardBit(bufferId);
                 lockedMask |= 1 << i;
             }
 
-            return true;
+            if (guardMask == 0UL)
+                return true;
+
+            if (vault.TryAcquireMutationGuard(guardMask))
+                return true;
+
+            lockedMask = 0;
+            return false;
         }
 
-        private static void UnlockOrganicMaturationMutationBuffers(IDataVault vault, int lockedMask)
+        private static void ReleaseOrganicMaturationMutationGuard(IDataVault vault, int lockedMask)
         {
-            if (vault == null)
-                return;
+            ReleaseOrganicGuard(vault, ResolveOrganicMaturationMutationGuardMask(lockedMask));
+        }
 
+        private static ulong ResolveOrganicMaturationMutationGuardMask(int lockedMask)
+        {
+            ulong guardMask = 0UL;
             for (int i = OrganicMaturationMutationBufferCount - 1; i >= 0; i--)
             {
                 if ((lockedMask & (1 << i)) == 0)
                     continue;
 
                 BufferID bufferId = GetOrganicMaturationMutationBufferId(i);
-                if (bufferId != default)
-                    vault.TryUnlockBuffer(bufferId, OrganicVaultSystemId);
+                guardMask |= OrganicMutationGuardBit(bufferId);
             }
+
+            return guardMask;
         }
 
         private bool ShouldLockOrganicMaturationMutationBuffer(int index)
@@ -2838,45 +2833,51 @@ namespace Hecton8.World
             }
         }
 
-        private bool TryLockOrganicOvergrowthMutationBuffers(IDataVault vault, out int lockedMask)
+        private bool TryAcquireOrganicOvergrowthMutationGuard(IDataVault vault, out int lockedMask)
         {
             lockedMask = 0;
             if (vault == null)
                 return false;
 
+            ulong guardMask = 0UL;
             for (int i = 0; i < OrganicOvergrowthMutationBufferCount; i++)
             {
                 if (!ShouldLockOrganicOvergrowthMutationBuffer(i))
                     continue;
 
                 BufferID bufferId = GetOrganicOvergrowthMutationBufferId(i);
-                if (!vault.TryLockBuffer(bufferId, OrganicVaultSystemId))
-                {
-                    UnlockOrganicOvergrowthMutationBuffers(vault, lockedMask);
-                    lockedMask = 0;
-                    return false;
-                }
-
+                guardMask |= OrganicMutationGuardBit(bufferId);
                 lockedMask |= 1 << i;
             }
 
-            return true;
+            if (guardMask == 0UL)
+                return true;
+
+            if (vault.TryAcquireMutationGuard(guardMask))
+                return true;
+
+            lockedMask = 0;
+            return false;
         }
 
-        private static void UnlockOrganicOvergrowthMutationBuffers(IDataVault vault, int lockedMask)
+        private static void ReleaseOrganicOvergrowthMutationGuard(IDataVault vault, int lockedMask)
         {
-            if (vault == null)
-                return;
+            ReleaseOrganicGuard(vault, ResolveOrganicOvergrowthMutationGuardMask(lockedMask));
+        }
 
+        private static ulong ResolveOrganicOvergrowthMutationGuardMask(int lockedMask)
+        {
+            ulong guardMask = 0UL;
             for (int i = OrganicOvergrowthMutationBufferCount - 1; i >= 0; i--)
             {
                 if ((lockedMask & (1 << i)) == 0)
                     continue;
 
                 BufferID bufferId = GetOrganicOvergrowthMutationBufferId(i);
-                if (bufferId != default)
-                    vault.TryUnlockBuffer(bufferId, OrganicVaultSystemId);
+                guardMask |= OrganicMutationGuardBit(bufferId);
             }
+
+            return guardMask;
         }
 
         private bool ShouldLockOrganicOvergrowthMutationBuffer(int index)
@@ -2941,45 +2942,51 @@ namespace Hecton8.World
             }
         }
 
-        private bool TryLockOrganicParasiteExposureReadBuffers(IDataVault vault, out int lockedMask)
+        private bool TryAcquireOrganicParasiteExposureReadGuard(IDataVault vault, out int lockedMask)
         {
             lockedMask = 0;
             if (vault == null)
                 return false;
 
+            ulong guardMask = 0UL;
             for (int i = 0; i < OrganicParasiteExposureReadBufferCount; i++)
             {
                 if (!ShouldLockOrganicParasiteExposureReadBuffer(i))
                     continue;
 
                 BufferID bufferId = GetOrganicParasiteExposureReadBufferId(i);
-                if (!vault.TryLockBuffer(bufferId, OrganicVaultSystemId))
-                {
-                    UnlockOrganicParasiteExposureReadBuffers(vault, lockedMask);
-                    lockedMask = 0;
-                    return false;
-                }
-
+                guardMask |= OrganicMutationGuardBit(bufferId);
                 lockedMask |= 1 << i;
             }
 
-            return true;
+            if (guardMask == 0UL)
+                return true;
+
+            if (vault.TryAcquireMutationGuard(guardMask))
+                return true;
+
+            lockedMask = 0;
+            return false;
         }
 
-        private static void UnlockOrganicParasiteExposureReadBuffers(IDataVault vault, int lockedMask)
+        private static void ReleaseOrganicParasiteExposureReadGuard(IDataVault vault, int lockedMask)
         {
-            if (vault == null)
-                return;
+            ReleaseOrganicGuard(vault, ResolveOrganicParasiteExposureReadGuardMask(lockedMask));
+        }
 
+        private static ulong ResolveOrganicParasiteExposureReadGuardMask(int lockedMask)
+        {
+            ulong guardMask = 0UL;
             for (int i = OrganicParasiteExposureReadBufferCount - 1; i >= 0; i--)
             {
                 if ((lockedMask & (1 << i)) == 0)
                     continue;
 
                 BufferID bufferId = GetOrganicParasiteExposureReadBufferId(i);
-                if (bufferId != default)
-                    vault.TryUnlockBuffer(bufferId, OrganicVaultSystemId);
+                guardMask |= OrganicMutationGuardBit(bufferId);
             }
+
+            return guardMask;
         }
 
         private bool ShouldLockOrganicParasiteExposureReadBuffer(int index)
@@ -3020,49 +3027,48 @@ namespace Hecton8.World
             }
         }
 
-        private bool TryLockOrganicLifecycleReadBuffers(IDataVault vault, out int lockedMask)
+        private bool TryAcquireOrganicLifecycleReadGuard(IDataVault vault, out int lockedMask)
         {
             lockedMask = 0;
+            ulong guardMask = 0UL;
             for (int i = 0; i < OrganicLifecycleReadBufferCount; i++)
             {
                 if (!ShouldLockOrganicLifecycleReadBuffer(i))
                     continue;
 
-                if (vault == null)
-                {
-                    UnlockOrganicLifecycleReadBuffers(vault, lockedMask);
-                    lockedMask = 0;
-                    return false;
-                }
-
                 BufferID bufferId = GetOrganicLifecycleReadBufferId(i);
-                if (!vault.TryLockBuffer(bufferId, OrganicVaultSystemId))
-                {
-                    UnlockOrganicLifecycleReadBuffers(vault, lockedMask);
-                    lockedMask = 0;
-                    return false;
-                }
-
+                guardMask |= OrganicMutationGuardBit(bufferId);
                 lockedMask |= 1 << i;
             }
 
-            return true;
+            if (guardMask == 0UL)
+                return true;
+
+            if (vault != null && vault.TryAcquireMutationGuard(guardMask))
+                return true;
+
+            lockedMask = 0;
+            return false;
         }
 
-        private static void UnlockOrganicLifecycleReadBuffers(IDataVault vault, int lockedMask)
+        private static void ReleaseOrganicLifecycleReadGuard(IDataVault vault, int lockedMask)
         {
-            if (vault == null)
-                return;
+            ReleaseOrganicGuard(vault, ResolveOrganicLifecycleReadGuardMask(lockedMask));
+        }
 
+        private static ulong ResolveOrganicLifecycleReadGuardMask(int lockedMask)
+        {
+            ulong guardMask = 0UL;
             for (int i = OrganicLifecycleReadBufferCount - 1; i >= 0; i--)
             {
                 if ((lockedMask & (1 << i)) == 0)
                     continue;
 
                 BufferID bufferId = GetOrganicLifecycleReadBufferId(i);
-                if (bufferId != default)
-                    vault.TryUnlockBuffer(bufferId, OrganicVaultSystemId);
+                guardMask |= OrganicMutationGuardBit(bufferId);
             }
+
+            return guardMask;
         }
 
         private bool ShouldLockOrganicLifecycleReadBuffer(int index)
@@ -3124,8 +3130,8 @@ namespace Hecton8.World
             if (_dearLieJobScheduled)
                 CompleteDearLieJobIfNeeded(ResolveOrganicClockSeconds(), force: true);
 
-            if (_dearLieVaultJobLocksHeld)
-                UnlockDearLieVaultJobBuffers();
+            if (_dearLieVaultJobGuardHeld)
+                ReleaseDearLieVaultJobGuard();
 
             _surfaceDearLieClaims.Release();
             _underwaterDearLieClaims.Release();
@@ -3140,8 +3146,9 @@ namespace Hecton8.World
             _underwaterDearLieBucketNext.Release();
             _dearLieVault = null;
             _dearLieVaultReady = false;
-            _dearLieVaultJobLocksHeld = false;
-            _dearLieVaultJobLockCount = 0;
+            _dearLieVaultJobGuardHeld = false;
+            _dearLieVaultJobGuardMask = 0UL;
+            _dearLieVaultJobGuardVault = null;
         }
 
         private void CacheDearLieFallbackQualityWeightCold()
@@ -3200,7 +3207,7 @@ namespace Hecton8.World
                 return;
 
             IDataVault vault = _dearLieVault;
-            if (!TryLockOrganicLifecycleMutationBuffers(vault, out int lockedMask))
+            if (!TryAcquireOrganicLifecycleMutationGuard(vault, out int lockedMask))
             {
                 RecordDearLieTelemetry(Hecton8.Core.SystemDispatcher.CurrentFrameIndex, 0, 0, 0, 0, 1, 0, 0f, 0u, 32);
                 return;
@@ -3216,7 +3223,7 @@ namespace Hecton8.World
             }
             finally
             {
-                UnlockOrganicLifecycleMutationBuffers(vault, lockedMask);
+                ReleaseOrganicLifecycleMutationGuard(vault, lockedMask);
             }
 
             VoxelDynamicNavGridRuntime.SchedulePendingDynamicObstacleUpdates();
@@ -3300,7 +3307,7 @@ namespace Hecton8.World
                 return;
             }
 
-            if (!TryLockDearLieVaultJobBuffers())
+            if (!TryAcquireDearLieVaultJobGuard())
             {
                 RecordDearLieTelemetry(Hecton8.Core.SystemDispatcher.CurrentFrameIndex, 0, 0, 0, 0, 1, 0, 0f, 0u, 32);
                 return;
@@ -3341,7 +3348,7 @@ namespace Hecton8.World
             finally
             {
                 if (!scheduled)
-                    UnlockDearLieVaultJobBuffers();
+                    ReleaseDearLieVaultJobGuard();
             }
 
             if (recordStageTelemetry)
@@ -3468,7 +3475,7 @@ namespace Hecton8.World
             }
             finally
             {
-                UnlockDearLieVaultJobBuffers();
+                ReleaseDearLieVaultJobGuard();
             }
 
             if (recordCompletionTelemetry)
@@ -3856,7 +3863,7 @@ namespace Hecton8.World
                 return false;
 
             IDataVault vault = _dearLieVault;
-            if (vault == null || !vault.TryLockBuffer(DearLieRegenRecordsBufferId, OrganicVaultSystemId))
+            if (!TryAcquireOrganicBufferGuard(vault, DearLieRegenRecordsBufferId, out ulong guardMask))
             {
                 lockFailed = true;
                 return false;
@@ -3882,7 +3889,7 @@ namespace Hecton8.World
             }
             finally
             {
-                vault.TryUnlockBuffer(DearLieRegenRecordsBufferId, OrganicVaultSystemId);
+                ReleaseOrganicGuard(vault, guardMask);
             }
         }
 
@@ -3892,7 +3899,7 @@ namespace Hecton8.World
                 return false;
 
             IDataVault vault = _dearLieVault;
-            if (vault == null || !vault.TryLockBuffer(DearLieRegenRecordsBufferId, OrganicVaultSystemId))
+            if (!TryAcquireOrganicBufferGuard(vault, DearLieRegenRecordsBufferId, out ulong guardMask))
                 return false;
 
             try
@@ -3907,7 +3914,7 @@ namespace Hecton8.World
             }
             finally
             {
-                vault.TryUnlockBuffer(DearLieRegenRecordsBufferId, OrganicVaultSystemId);
+                ReleaseOrganicGuard(vault, guardMask);
             }
         }
 
@@ -3924,7 +3931,7 @@ namespace Hecton8.World
             byte flags)
         {
             IDataVault vault = _dearLieVault;
-            if (vault == null || !vault.TryLockBuffer(DearLieTelemetryRingBufferId, SystemID.FloraGenomics))
+            if (!TryAcquireOrganicBufferGuard(vault, DearLieTelemetryRingBufferId, out ulong guardMask))
                 return;
 
             try
@@ -3966,14 +3973,14 @@ namespace Hecton8.World
             }
             finally
             {
-                vault.TryUnlockBuffer(DearLieTelemetryRingBufferId, SystemID.FloraGenomics);
+                ReleaseOrganicGuard(vault, guardMask);
             }
         }
 
         private unsafe void DumpDearLieTelemetry()
         {
             IDataVault vault = _dearLieVault;
-            if (vault == null || !vault.TryLockBuffer(DearLieTelemetryRingBufferId, SystemID.FloraGenomics))
+            if (!TryAcquireOrganicBufferGuard(vault, DearLieTelemetryRingBufferId, out ulong guardMask))
                 return;
 
             int snapshotCount = 0;
@@ -3988,7 +3995,7 @@ namespace Hecton8.World
             }
             finally
             {
-                vault.TryUnlockBuffer(DearLieTelemetryRingBufferId, SystemID.FloraGenomics);
+                ReleaseOrganicGuard(vault, guardMask);
             }
 
             if (snapshotCount <= 0)
@@ -4475,7 +4482,7 @@ namespace Hecton8.World
             byte stateOverrideHarvestState = 0;
 
             IDataVault vault = _dearLieVault;
-            if (!TryLockOrganicLifecycleMutationBuffers(vault, out int lockedMask))
+            if (!TryAcquireOrganicLifecycleMutationGuard(vault, out int lockedMask))
             {
                 RecordDearLieTelemetry(Hecton8.Core.SystemDispatcher.CurrentFrameIndex, 0, 0, 0, 0, 1, 0, 0f, instanceUid, 32);
                 return false;
@@ -4534,7 +4541,7 @@ namespace Hecton8.World
             }
             finally
             {
-                UnlockOrganicLifecycleMutationBuffers(vault, lockedMask);
+                ReleaseOrganicLifecycleMutationGuard(vault, lockedMask);
             }
 
             if (destroyAfterHealthRecheck)
@@ -4683,7 +4690,7 @@ namespace Hecton8.World
             Span<PassiveDecompositionCandidate> candidates = stackalloc PassiveDecompositionCandidate[MaxOrganicPassiveDecompositionStackBatch];
             int candidateCount = 0;
             IDataVault vault = _dearLieVault;
-            if (!TryLockOrganicLifecycleReadBuffers(vault, out int lockedMask))
+            if (!TryAcquireOrganicLifecycleReadGuard(vault, out int lockedMask))
             {
                 RecordDearLieTelemetry(Hecton8.Core.SystemDispatcher.CurrentFrameIndex, 0, 0, 0, 0, 1, 0, 0f, 0u, 32);
                 return;
@@ -4807,7 +4814,7 @@ namespace Hecton8.World
             }
             finally
             {
-                UnlockOrganicLifecycleReadBuffers(vault, lockedMask);
+                ReleaseOrganicLifecycleReadGuard(vault, lockedMask);
             }
 
             ApplyPassiveDecompositionCandidates(candidates, candidateCount);
@@ -5041,64 +5048,28 @@ namespace Hecton8.World
                 return;
             }
 
-            if (!vault.TryLockBuffer(OrganicTemplateDescriptorsBufferId, OrganicVaultSystemId))
-            {
-                _templateCacheReady = canPreserveExistingCache;
-                return;
-            }
-
-            bool descriptorLockHeld = true;
-            bool lootLockHeld = false;
-            try
-            {
-                if (!vault.TryLockBuffer(OrganicLootEntriesBufferId, OrganicVaultSystemId))
-                {
-                    _templateCacheReady = canPreserveExistingCache;
-                    return;
-                }
-
-                lootLockHeld = true;
-
-                if (!_templateDescriptors.TryResolve(out NativeArray<HarvestableTemplate.RuntimeDescriptor> templateDescriptors) ||
-                    !_lootEntries.TryResolve(out NativeArray<HarvestableTemplate.LootRuntimeEntry> lootEntries) ||
-                    !templateDescriptors.IsCreated ||
-                    !lootEntries.IsCreated ||
-                    templateDescriptors.Length < descriptorCapacity ||
-                    lootEntries.Length < lootCapacity)
-                {
-                    cacheBuilt = false;
-                }
-                else
-                {
-                    for (int i = 0; i < templateDescriptors.Length; i++)
-                        templateDescriptors[i] = default;
-
-                    for (int i = 0; i < lootEntries.Length; i++)
-                        lootEntries[i] = default;
-
-                    int safeDescriptorCount = math.min(descriptorWriteIndex, templateDescriptors.Length);
-                    for (int i = 0; i < safeDescriptorCount; i++)
-                        templateDescriptors[i] = descriptorScratch[i];
-
-                    int safeLootCount = math.min(lootWriteIndex, lootEntries.Length);
-                    for (int i = 0; i < safeLootCount; i++)
-                        lootEntries[i] = lootEntryScratch[i];
-
-                    cacheBuilt = safeDescriptorCount > 0;
-                }
-            }
-            finally
-            {
-                if (lootLockHeld)
-                    vault.TryUnlockBuffer(OrganicLootEntriesBufferId, OrganicVaultSystemId);
-
-                if (descriptorLockHeld)
-                    vault.TryUnlockBuffer(OrganicTemplateDescriptorsBufferId, OrganicVaultSystemId);
-            }
+            cacheBuilt = false;
+            bool wroteTemplateLane = false;
+            bool wroteLootLane = false;
+            bool lootCacheWritten = WriteLootEntryCacheGuarded(
+                vault,
+                lootEntryScratch,
+                lootWriteIndex,
+                lootCapacity,
+                out wroteLootLane);
+            bool descriptorCacheWritten =
+                lootCacheWritten &&
+                WriteTemplateDescriptorCacheGuarded(
+                    vault,
+                    descriptorScratch,
+                    descriptorWriteIndex,
+                    descriptorCapacity,
+                    out wroteTemplateLane);
+            cacheBuilt = lootCacheWritten && descriptorCacheWritten;
 
             if (!cacheBuilt)
             {
-                _templateCacheReady = canPreserveExistingCache;
+                _templateCacheReady = (wroteLootLane || wroteTemplateLane) ? false : canPreserveExistingCache;
                 return;
             }
 
@@ -5115,6 +5086,78 @@ namespace Hecton8.World
             _templateCacheReady = true;
         }
 
+        private bool WriteTemplateDescriptorCacheGuarded(
+            IDataVault vault,
+            HarvestableTemplate.RuntimeDescriptor[] descriptorScratch,
+            int descriptorWriteIndex,
+            int descriptorCapacity,
+            out bool wroteLane)
+        {
+            wroteLane = false;
+            if (!TryAcquireOrganicBufferGuard(vault, OrganicTemplateDescriptorsBufferId, out ulong guardMask))
+                return false;
+
+            try
+            {
+                if (!_templateDescriptors.TryResolve(out NativeArray<HarvestableTemplate.RuntimeDescriptor> templateDescriptors) ||
+                    !templateDescriptors.IsCreated ||
+                    templateDescriptors.Length < descriptorCapacity)
+                {
+                    return false;
+                }
+
+                for (int i = 0; i < templateDescriptors.Length; i++)
+                    templateDescriptors[i] = default;
+
+                int safeDescriptorCount = math.min(descriptorWriteIndex, templateDescriptors.Length);
+                for (int i = 0; i < safeDescriptorCount; i++)
+                    templateDescriptors[i] = descriptorScratch[i];
+
+                wroteLane = true;
+                return safeDescriptorCount > 0;
+            }
+            finally
+            {
+                ReleaseOrganicGuard(vault, guardMask);
+            }
+        }
+
+        private bool WriteLootEntryCacheGuarded(
+            IDataVault vault,
+            HarvestableTemplate.LootRuntimeEntry[] lootEntryScratch,
+            int lootWriteIndex,
+            int lootCapacity,
+            out bool wroteLane)
+        {
+            wroteLane = false;
+            if (!TryAcquireOrganicBufferGuard(vault, OrganicLootEntriesBufferId, out ulong guardMask))
+                return false;
+
+            try
+            {
+                if (!_lootEntries.TryResolve(out NativeArray<HarvestableTemplate.LootRuntimeEntry> lootEntries) ||
+                    !lootEntries.IsCreated ||
+                    lootEntries.Length < lootCapacity)
+                {
+                    return false;
+                }
+
+                for (int i = 0; i < lootEntries.Length; i++)
+                    lootEntries[i] = default;
+
+                int safeLootCount = math.min(lootWriteIndex, lootEntries.Length);
+                for (int i = 0; i < safeLootCount; i++)
+                    lootEntries[i] = lootEntryScratch[i];
+
+                wroteLane = true;
+                return true;
+            }
+            finally
+            {
+                ReleaseOrganicGuard(vault, guardMask);
+            }
+        }
+
         private int ApplyConstructionDecompositionInLane(bool underwater, double3 centerUniversePosition, double radiusSq)
         {
             Span<PassiveDecompositionCandidate> candidates = stackalloc PassiveDecompositionCandidate[MaxOrganicPassiveDecompositionStackBatch];
@@ -5125,7 +5168,7 @@ namespace Hecton8.World
                 int candidateCount = 0;
                 int safeCount = 0;
                 IDataVault vault = _dearLieVault;
-                if (!TryLockOrganicLifecycleReadBuffers(vault, out int lockedMask))
+                if (!TryAcquireOrganicLifecycleReadGuard(vault, out int lockedMask))
                 {
                     RecordDearLieTelemetry(Hecton8.Core.SystemDispatcher.CurrentFrameIndex, 0, 0, 0, 0, 1, 0, 0f, 0u, 32);
                     return decomposedCount;
@@ -5192,7 +5235,7 @@ namespace Hecton8.World
                 }
                 finally
                 {
-                    UnlockOrganicLifecycleReadBuffers(vault, lockedMask);
+                    ReleaseOrganicLifecycleReadGuard(vault, lockedMask);
                 }
 
                 if (candidateCount <= 0)
@@ -5214,7 +5257,7 @@ namespace Hecton8.World
                 int candidateCount = 0;
                 int safeCount = 0;
                 IDataVault vault = _dearLieVault;
-                if (!TryLockOrganicLifecycleReadBuffers(vault, out int lockedMask))
+                if (!TryAcquireOrganicLifecycleReadGuard(vault, out int lockedMask))
                 {
                     RecordDearLieTelemetry(Hecton8.Core.SystemDispatcher.CurrentFrameIndex, 0, 0, 0, 0, 1, 0, 0f, 0u, 32);
                     return killedCount;
@@ -5284,7 +5327,7 @@ namespace Hecton8.World
                 }
                 finally
                 {
-                    UnlockOrganicLifecycleReadBuffers(vault, lockedMask);
+                    ReleaseOrganicLifecycleReadGuard(vault, lockedMask);
                 }
 
                 if (candidateCount <= 0)
@@ -5373,7 +5416,7 @@ namespace Hecton8.World
                 return;
             }
 
-            if (!vault.TryLockBuffer(OrganicYieldMaterialLutBufferId, OrganicVaultSystemId))
+            if (!TryAcquireOrganicBufferGuard(vault, OrganicYieldMaterialLutBufferId, out ulong guardMask))
             {
                 _yieldMaterialLutReady = existingReady;
                 return;
@@ -5401,7 +5444,7 @@ namespace Hecton8.World
             }
             finally
             {
-                vault.TryUnlockBuffer(OrganicYieldMaterialLutBufferId, OrganicVaultSystemId);
+                ReleaseOrganicGuard(vault, guardMask);
             }
 
             _yieldMaterialLutReady = built;
@@ -5546,7 +5589,7 @@ namespace Hecton8.World
             }
 
             IDataVault vault = _dearLieVault;
-            if (!TryLockOrganicLifecycleMutationBuffers(vault, out int lockedMask))
+            if (!TryAcquireOrganicLifecycleMutationGuard(vault, out int lockedMask))
             {
                 RecordDearLieTelemetry(Hecton8.Core.SystemDispatcher.CurrentFrameIndex, 0, 0, 0, 0, 1, 0, 0f, 0u, 32);
                 return;
@@ -5679,7 +5722,7 @@ namespace Hecton8.World
             }
             finally
             {
-                UnlockOrganicLifecycleMutationBuffers(vault, lockedMask);
+                ReleaseOrganicLifecycleMutationGuard(vault, lockedMask);
             }
 
             FlushCacheSyncDestroyedRegistry(defoliantRegistryCount);
@@ -5709,11 +5752,15 @@ namespace Hecton8.World
         private bool SyncDestroyedFloraFromPersistence()
         {
             PersistentWorldRegistry registry = _persistentWorldRegistry;
-            if (registry == null || !_destroyedFloraScratch.IsCreated || !_destroyedByInstanceUid.IsCreated)
+            if (registry == null || !_destroyedByInstanceUid.IsCreated)
                 return false;
 
+            int copiedDestroyedCount = registry.CopyDestroyedFloraDeltas(
+                _destroyedFloraPersistenceScratch,
+                _destroyedFloraPersistenceScratch.Length);
+            bool destroyedScratchSaturated = copiedDestroyedCount >= _destroyedFloraPersistenceScratch.Length;
             IDataVault vault = _dearLieVault;
-            if (!TryLockOrganicPersistenceMutationBuffers(vault, out int lifecycleMask, out int scratchMask))
+            if (!TryAcquireOrganicLifecycleMutationGuard(vault, out int lifecycleMask))
             {
                 RecordDearLieTelemetry(Hecton8.Core.SystemDispatcher.CurrentFrameIndex, 0, 0, 0, 0, 1, 0, 0f, 0u, 32);
                 return false;
@@ -5724,19 +5771,13 @@ namespace Hecton8.World
             bool destroyedStateChanged = false;
             try
             {
-                _destroyedFloraScratch.Clear();
-                if (!_destroyedFloraScratch.TryResolveArray(out NativeArray<PersistentWorldDeltaRecord> destroyedFloraCopy))
-                    return false;
-
-                int copiedDestroyedCount = registry.CopyDestroyedFloraDeltas(destroyedFloraCopy, _destroyedFloraScratch.Capacity);
-                _destroyedFloraScratch.ResizeUninitialized(copiedDestroyedCount);
-                bool destroyedScratchSaturated = copiedDestroyedCount >= _destroyedFloraScratch.Capacity;
                 if (destroyedScratchSaturated)
                     staleDestroyedOverflow++;
 
-                for (int i = 0; i < _destroyedFloraScratch.Length; i++)
+                int safeDestroyedCount = math.min(copiedDestroyedCount, _destroyedFloraPersistenceScratch.Length);
+                for (int i = 0; i < safeDestroyedCount; i++)
                 {
-                    PersistentWorldDeltaRecord record = _destroyedFloraScratch[i];
+                    PersistentWorldDeltaRecord record = _destroyedFloraPersistenceScratch[i];
                     if (record.InstanceUid == 0u)
                         continue;
 
@@ -5789,7 +5830,7 @@ namespace Hecton8.World
             }
             finally
             {
-                UnlockOrganicPersistenceMutationBuffers(vault, lifecycleMask, scratchMask);
+                ReleaseOrganicLifecycleMutationGuard(vault, lifecycleMask);
             }
 
             for (int i = 0; i < staleDestroyedCount; i++)
@@ -5808,15 +5849,18 @@ namespace Hecton8.World
         {
             PersistentWorldRegistry registry = _persistentWorldRegistry;
             if (registry == null ||
-                !_floraStateOverrideScratch.IsCreated ||
                 !_persistedHealth01ByInstanceUid.IsCreated ||
                 !_persistedHeightScale01ByInstanceUid.IsCreated)
             {
                 return false;
             }
 
+            int copiedOverrideCount = registry.CopyFloraStateOverrideDeltas(
+                _floraStateOverridePersistenceScratch,
+                _floraStateOverridePersistenceScratch.Length);
+            bool overrideScratchSaturated = copiedOverrideCount >= _floraStateOverridePersistenceScratch.Length;
             IDataVault vault = _dearLieVault;
-            if (!TryLockOrganicPersistenceMutationBuffers(vault, out int lifecycleMask, out int scratchMask))
+            if (!TryAcquireOrganicLifecycleMutationGuard(vault, out int lifecycleMask))
             {
                 RecordDearLieTelemetry(Hecton8.Core.SystemDispatcher.CurrentFrameIndex, 0, 0, 0, 0, 1, 0, 0f, 0u, 32);
                 return false;
@@ -5827,19 +5871,13 @@ namespace Hecton8.World
             bool overrideStateChanged = false;
             try
             {
-                _floraStateOverrideScratch.Clear();
-                if (!_floraStateOverrideScratch.TryResolveArray(out NativeArray<PersistentWorldDeltaRecord> floraStateOverrideCopy))
-                    return false;
-
-                int copiedOverrideCount = registry.CopyFloraStateOverrideDeltas(floraStateOverrideCopy, _floraStateOverrideScratch.Capacity);
-                _floraStateOverrideScratch.ResizeUninitialized(copiedOverrideCount);
-                bool overrideScratchSaturated = copiedOverrideCount >= _floraStateOverrideScratch.Capacity;
                 if (overrideScratchSaturated)
                     staleOverrideOverflow++;
 
-                for (int i = 0; i < _floraStateOverrideScratch.Length; i++)
+                int safeOverrideCount = math.min(copiedOverrideCount, _floraStateOverridePersistenceScratch.Length);
+                for (int i = 0; i < safeOverrideCount; i++)
                 {
-                    PersistentWorldDeltaRecord record = _floraStateOverrideScratch[i];
+                    PersistentWorldDeltaRecord record = _floraStateOverridePersistenceScratch[i];
                     if (record.InstanceUid == 0u)
                         continue;
 
@@ -5902,7 +5940,7 @@ namespace Hecton8.World
             }
             finally
             {
-                UnlockOrganicPersistenceMutationBuffers(vault, lifecycleMask, scratchMask);
+                ReleaseOrganicLifecycleMutationGuard(vault, lifecycleMask);
             }
 
             for (int i = 0; i < staleOverrideCount; i++)
@@ -5920,8 +5958,7 @@ namespace Hecton8.World
         private void ProcessYieldBatchIfNeeded()
         {
             IDataVault vault = _dearLieVault;
-            int lockedCount = 0;
-            if (!TryLockYieldJobBuffers(vault, out lockedCount))
+            if (!TryAcquireYieldJobGuard(vault, out ulong guardMask))
                 return;
 
             Span<DestroyedOrganicEvent> navDispatchEvents = stackalloc DestroyedOrganicEvent[MaxOrganicYieldNavDispatchStackBatch];
@@ -6000,46 +6037,38 @@ namespace Hecton8.World
             }
             finally
             {
-                UnlockYieldJobBuffers(vault, lockedCount);
+                ReleaseYieldJobGuard(vault, guardMask);
             }
 
             if (navDispatchCount > 0)
                 VoxelDynamicNavGridRuntime.EnqueueDestroyedOrganicEvents(navDispatchEvents.Slice(0, navDispatchCount));
         }
 
-        private static bool TryLockYieldJobBuffers(IDataVault vault, out int lockedCount)
+        private static bool TryAcquireYieldJobGuard(IDataVault vault, out ulong guardMask)
         {
-            lockedCount = 0;
+            guardMask = 0UL;
             if (vault == null)
                 return false;
 
             for (int i = 0; i < YieldJobBufferCount; i++)
             {
                 BufferID bufferId = GetYieldJobBufferId(i);
-                if (!vault.TryLockBuffer(bufferId, OrganicVaultSystemId))
-                {
-                    UnlockYieldJobBuffers(vault, lockedCount);
-                    lockedCount = 0;
-                    return false;
-                }
-
-                lockedCount++;
+                guardMask |= OrganicMutationGuardBit(bufferId);
             }
 
-            return true;
+            if (guardMask == 0UL)
+                return true;
+
+            if (vault.TryAcquireMutationGuard(guardMask))
+                return true;
+
+            guardMask = 0UL;
+            return false;
         }
 
-        private static void UnlockYieldJobBuffers(IDataVault vault, int lockedCount)
+        private static void ReleaseYieldJobGuard(IDataVault vault, ulong guardMask)
         {
-            if (vault == null || lockedCount <= 0)
-                return;
-
-            for (int i = lockedCount - 1; i >= 0; i--)
-            {
-                BufferID bufferId = GetYieldJobBufferId(i);
-                if (bufferId != default)
-                    vault.TryUnlockBuffer(bufferId, OrganicVaultSystemId);
-            }
+            ReleaseOrganicGuard(vault, guardMask);
         }
 
         private static BufferID GetYieldJobBufferId(int index)
@@ -6191,26 +6220,11 @@ namespace Hecton8.World
         {
             producedCount = 0;
             droppedCount = 0;
-            IDataVault vault = _dearLieVault;
-            int lockedCount = 0;
-            if (!TryLockDropDrainBuffers(vault, out lockedCount))
-                return false;
-
-            try
-            {
-                NativeArray<ItemDropData> dropOutput = _dropOutput;
-                NativeArray<int> dropBudget = _dropBudget;
-                if (!dropOutput.IsCreated || !dropBudget.IsCreated || dropBudget.Length < DropBudgetLength)
-                    return true;
-
-                producedCount = ResolveDropOutputCount(dropBudget, dropOutput.Length);
-                droppedCount = ResolveDropDroppedCount(dropBudget);
+            NativeArray<ItemDropData> dropOutput = _dropOutput;
+            if (!dropOutput.IsCreated || dropOutput.Length <= 0)
                 return true;
-            }
-            finally
-            {
-                UnlockDropDrainBuffers(vault, lockedCount);
-            }
+
+            return TryReadDropBudgetGuarded(dropOutput.Length, out producedCount, out droppedCount);
         }
 
         private bool TryReturnDropToOutput(ItemDropData drop)
@@ -6218,30 +6232,20 @@ namespace Hecton8.World
             if (drop.ItemHashId == 0 || drop.Quantity == 0)
                 return true;
 
-            IDataVault vault = _dearLieVault;
-            int lockedCount = 0;
-            if (!TryLockDropDrainBuffers(vault, out lockedCount))
+            NativeArray<ItemDropData> dropOutput = _dropOutput;
+            if (!dropOutput.IsCreated || dropOutput.Length <= 0)
                 return false;
 
-            try
-            {
-                NativeArray<ItemDropData> dropOutput = _dropOutput;
-                NativeArray<int> dropBudget = _dropBudget;
-                if (!dropOutput.IsCreated || !dropBudget.IsCreated || dropBudget.Length < DropBudgetLength)
-                    return false;
+            if (!TryReadDropBudgetGuarded(dropOutput.Length, out int producedCount, out _))
+                return false;
 
-                int producedCount = ResolveDropOutputCount(dropBudget, dropOutput.Length);
-                if (producedCount < 0 || producedCount >= dropOutput.Length)
-                    return false;
+            if (producedCount < 0 || producedCount >= dropOutput.Length)
+                return false;
 
-                dropOutput[producedCount] = drop;
-                SetDropOutputCount(dropBudget, dropOutput.Length, producedCount + 1);
-                return true;
-            }
-            finally
-            {
-                UnlockDropDrainBuffers(vault, lockedCount);
-            }
+            if (!WriteDropOutputSlotGuarded(producedCount, drop))
+                return false;
+
+            return TrySetDropOutputCountGuarded(dropOutput.Length, producedCount + 1);
         }
 
         private bool TryDrainDropBatch(
@@ -6257,36 +6261,27 @@ namespace Hecton8.World
             if (maxDrainCount <= 0 || destination.Length <= 0)
                 return true;
 
-            IDataVault vault = _dearLieVault;
-            int lockedCount = 0;
-            if (!TryLockDropDrainBuffers(vault, out lockedCount))
+            NativeArray<ItemDropData> dropOutput = _dropOutput;
+            if (!dropOutput.IsCreated || dropOutput.Length <= 0)
+                return true;
+
+            if (!TryReadDropBudgetGuarded(dropOutput.Length, out int producedCount, out droppedCount))
                 return false;
 
-            try
-            {
-                NativeArray<ItemDropData> dropOutput = _dropOutput;
-                NativeArray<int> dropBudget = _dropBudget;
-                if (!dropOutput.IsCreated || !dropBudget.IsCreated || dropBudget.Length < DropBudgetLength)
-                    return true;
-
-                int producedCount = ResolveDropOutputCount(dropBudget, dropOutput.Length);
-                droppedCount = ResolveDropDroppedCount(dropBudget);
-                drainCount = math.min(producedCount, math.min(maxDrainCount, destination.Length));
-                int tailStart = producedCount - drainCount;
-                for (int i = 0; i < drainCount; i++)
-                    destination[i] = dropOutput[tailStart + i];
-
-                remainingCount = producedCount - drainCount;
-                for (int i = remainingCount; i < producedCount; i++)
-                    dropOutput[i] = default;
-
-                SetDropOutputCount(dropBudget, dropOutput.Length, remainingCount);
+            drainCount = math.min(producedCount, math.min(maxDrainCount, destination.Length));
+            remainingCount = producedCount - drainCount;
+            if (drainCount <= 0)
                 return true;
-            }
-            finally
-            {
-                UnlockDropDrainBuffers(vault, lockedCount);
-            }
+
+            int tailStart = producedCount - drainCount;
+            if (!CopyDropOutputTailGuarded(destination, tailStart, drainCount))
+                return false;
+
+            if (!TrySetDropOutputCountGuarded(dropOutput.Length, remainingCount))
+                return false;
+
+            ClearDropOutputRangeGuarded(remainingCount, drainCount);
+            return true;
         }
 
         private static int ResolveDropDroppedCount(NativeArray<int> dropBudget)
@@ -6297,36 +6292,130 @@ namespace Hecton8.World
             return math.max(0, dropBudget[DropBudgetDroppedIndex]);
         }
 
-        private static bool TryLockDropDrainBuffers(IDataVault vault, out int lockedCount)
+        private bool TryReadDropBudgetGuarded(int capacity, out int producedCount, out int droppedCount)
         {
-            lockedCount = 0;
-            if (vault == null)
+            producedCount = 0;
+            droppedCount = 0;
+            IDataVault vault = _dearLieVault;
+            if (!TryAcquireOrganicBufferGuard(vault, OrganicDropBudgetBufferId, out ulong guardMask))
                 return false;
 
-            if (!vault.TryLockBuffer(OrganicDropOutputBufferId, OrganicVaultSystemId))
-                return false;
-
-            lockedCount = 1;
-            if (!vault.TryLockBuffer(OrganicDropBudgetBufferId, OrganicVaultSystemId))
+            try
             {
-                UnlockDropDrainBuffers(vault, lockedCount);
-                lockedCount = 0;
-                return false;
-            }
+                NativeArray<int> dropBudget = _dropBudget;
+                if (!dropBudget.IsCreated || dropBudget.Length < DropBudgetLength || capacity <= 0)
+                    return true;
 
-            lockedCount = 2;
-            return true;
+                producedCount = ResolveDropOutputCount(dropBudget, capacity);
+                droppedCount = ResolveDropDroppedCount(dropBudget);
+                return true;
+            }
+            finally
+            {
+                ReleaseOrganicGuard(vault, guardMask);
+            }
         }
 
-        private static void UnlockDropDrainBuffers(IDataVault vault, int lockedCount)
+        private bool TrySetDropOutputCountGuarded(int capacity, int count)
         {
-            if (vault == null || lockedCount <= 0)
-                return;
+            IDataVault vault = _dearLieVault;
+            if (!TryAcquireOrganicBufferGuard(vault, OrganicDropBudgetBufferId, out ulong guardMask))
+                return false;
 
-            if (lockedCount >= 2)
-                vault.TryUnlockBuffer(OrganicDropBudgetBufferId, OrganicVaultSystemId);
-            if (lockedCount >= 1)
-                vault.TryUnlockBuffer(OrganicDropOutputBufferId, OrganicVaultSystemId);
+            try
+            {
+                NativeArray<int> dropBudget = _dropBudget;
+                if (!dropBudget.IsCreated || dropBudget.Length < DropBudgetLength || capacity <= 0)
+                    return false;
+
+                SetDropOutputCount(dropBudget, capacity, count);
+                return true;
+            }
+            finally
+            {
+                ReleaseOrganicGuard(vault, guardMask);
+            }
+        }
+
+        private bool WriteDropOutputSlotGuarded(int index, ItemDropData drop)
+        {
+            IDataVault vault = _dearLieVault;
+            if (!TryAcquireOrganicBufferGuard(vault, OrganicDropOutputBufferId, out ulong guardMask))
+                return false;
+
+            try
+            {
+                NativeArray<ItemDropData> dropOutput = _dropOutput;
+                if (!dropOutput.IsCreated || (uint)index >= (uint)dropOutput.Length)
+                    return false;
+
+                dropOutput[index] = drop;
+                return true;
+            }
+            finally
+            {
+                ReleaseOrganicGuard(vault, guardMask);
+            }
+        }
+
+        private bool CopyDropOutputTailGuarded(Span<ItemDropData> destination, int tailStart, int drainCount)
+        {
+            IDataVault vault = _dearLieVault;
+            if (!TryAcquireOrganicBufferGuard(vault, OrganicDropOutputBufferId, out ulong guardMask))
+                return false;
+
+            try
+            {
+                NativeArray<ItemDropData> dropOutput = _dropOutput;
+                if (!dropOutput.IsCreated ||
+                    tailStart < 0 ||
+                    drainCount < 0 ||
+                    drainCount > destination.Length ||
+                    tailStart + drainCount > dropOutput.Length)
+                {
+                    return false;
+                }
+
+                for (int i = 0; i < drainCount; i++)
+                    destination[i] = dropOutput[tailStart + i];
+
+                return true;
+            }
+            finally
+            {
+                ReleaseOrganicGuard(vault, guardMask);
+            }
+        }
+
+        private bool ClearDropOutputRangeGuarded(int startIndex, int count)
+        {
+            if (count <= 0)
+                return true;
+
+            IDataVault vault = _dearLieVault;
+            if (!TryAcquireOrganicBufferGuard(vault, OrganicDropOutputBufferId, out ulong guardMask))
+                return false;
+
+            try
+            {
+                NativeArray<ItemDropData> dropOutput = _dropOutput;
+                if (!dropOutput.IsCreated ||
+                    startIndex < 0 ||
+                    count < 0 ||
+                    startIndex + count > dropOutput.Length)
+                {
+                    return false;
+                }
+
+                for (int i = 0; i < count; i++)
+                    dropOutput[startIndex + i] = default;
+
+                return true;
+            }
+            finally
+            {
+                ReleaseOrganicGuard(vault, guardMask);
+            }
         }
 
         private void RefreshCorpseResourceNodes(float currentTime)
@@ -6405,7 +6494,7 @@ namespace Hecton8.World
 
             float bestDistanceSq = searchRadius * searchRadius;
             IDataVault vault = _dearLieVault;
-            if (!TryLockOrganicLifecycleReadBuffers(vault, out int lockedMask))
+            if (!TryAcquireOrganicLifecycleReadGuard(vault, out int lockedMask))
                 return false;
 
             bool found;
@@ -6417,7 +6506,7 @@ namespace Hecton8.World
             }
             finally
             {
-                UnlockOrganicLifecycleReadBuffers(vault, lockedMask);
+                ReleaseOrganicLifecycleReadGuard(vault, lockedMask);
             }
 
             return found;
@@ -6502,7 +6591,7 @@ namespace Hecton8.World
                 bestDistanceSq[i] = float.MaxValue;
 
             IDataVault vault = _dearLieVault;
-            if (!TryLockOrganicLifecycleReadBuffers(vault, out int lockedMask))
+            if (!TryAcquireOrganicLifecycleReadGuard(vault, out int lockedMask))
                 return 0;
 
             int collectedCount = 0;
@@ -6513,7 +6602,7 @@ namespace Hecton8.World
             }
             finally
             {
-                UnlockOrganicLifecycleReadBuffers(vault, lockedMask);
+                ReleaseOrganicLifecycleReadGuard(vault, lockedMask);
             }
 
             return collectedCount;
@@ -6524,10 +6613,11 @@ namespace Hecton8.World
             if (instanceUids == null || trackedCount <= 0)
                 return false;
 
-            if (!_destroyedByInstanceUid.IsCreated || _dearLieVault == null)
+            IDataVault vault = _dearLieVault;
+            if (!_destroyedByInstanceUid.IsCreated || vault == null)
                 return false;
 
-            if (!_dearLieVault.TryLockBuffer(OrganicDestroyedByUidBufferId, OrganicVaultSystemId))
+            if (!TryAcquireOrganicBufferGuard(vault, OrganicDestroyedByUidBufferId, out ulong guardMask))
                 return false;
 
             int upperBound = math.min(trackedCount, instanceUids.Length);
@@ -6547,7 +6637,7 @@ namespace Hecton8.World
             }
             finally
             {
-                _dearLieVault.TryUnlockBuffer(OrganicDestroyedByUidBufferId, OrganicVaultSystemId);
+                ReleaseOrganicGuard(vault, guardMask);
             }
 
             return hasTrackedInstance;
@@ -6602,7 +6692,7 @@ namespace Hecton8.World
             instanceNormalizedHeightScale = 1f;
 
             IDataVault vault = _dearLieVault;
-            if (!TryLockOrganicLifecycleReadBuffers(vault, out int lockedMask))
+            if (!TryAcquireOrganicLifecycleReadGuard(vault, out int lockedMask))
                 return false;
 
             float bestDistanceSq = float.MaxValue;
@@ -6672,7 +6762,7 @@ namespace Hecton8.World
             }
             finally
             {
-                UnlockOrganicLifecycleReadBuffers(vault, lockedMask);
+                ReleaseOrganicLifecycleReadGuard(vault, lockedMask);
             }
         }
 
@@ -6951,7 +7041,7 @@ namespace Hecton8.World
             bool destroyedMapInsertFailed = false;
             ulong templateStableHash = 0UL;
             IDataVault vault = _dearLieVault;
-            if (!TryLockOrganicLifecycleMutationBuffers(vault, out int lockedMask))
+            if (!TryAcquireOrganicLifecycleMutationGuard(vault, out int lockedMask))
             {
                 RecordDearLieTelemetry(Hecton8.Core.SystemDispatcher.CurrentFrameIndex, 0, 0, 0, 0, 1, 0, 0f, instanceUid, 32);
                 return false;
@@ -7002,7 +7092,7 @@ namespace Hecton8.World
             }
             finally
             {
-                UnlockOrganicLifecycleMutationBuffers(vault, lockedMask);
+                ReleaseOrganicLifecycleMutationGuard(vault, lockedMask);
             }
 
             if (destroyedMapInsertFailed)
@@ -7076,7 +7166,7 @@ namespace Hecton8.World
             bool destroyedMapInsertFailed = false;
             ulong templateStableHash = 0UL;
             IDataVault vault = _dearLieVault;
-            if (!TryLockOrganicLifecycleMutationBuffers(vault, out int lockedMask))
+            if (!TryAcquireOrganicLifecycleMutationGuard(vault, out int lockedMask))
             {
                 RecordDearLieTelemetry(Hecton8.Core.SystemDispatcher.CurrentFrameIndex, 0, 0, 0, 0, 1, 0, 0f, instanceUid, 32);
                 return false;
@@ -7127,7 +7217,7 @@ namespace Hecton8.World
             }
             finally
             {
-                UnlockOrganicLifecycleMutationBuffers(vault, lockedMask);
+                ReleaseOrganicLifecycleMutationGuard(vault, lockedMask);
             }
 
             if (destroyedMapInsertFailed)
@@ -7206,7 +7296,7 @@ namespace Hecton8.World
             float3 navObstacleExtents)
         {
             IDataVault vault = _dearLieVault;
-            if (vault == null || !vault.TryLockBuffer(OrganicPendingYieldEventsBufferId, OrganicVaultSystemId))
+            if (!TryAcquireOrganicBufferGuard(vault, OrganicPendingYieldEventsBufferId, out ulong guardMask))
                 return;
 
             try
@@ -7228,7 +7318,7 @@ namespace Hecton8.World
             }
             finally
             {
-                vault.TryUnlockBuffer(OrganicPendingYieldEventsBufferId, OrganicVaultSystemId);
+                ReleaseOrganicGuard(vault, guardMask);
             }
         }
 
@@ -7283,7 +7373,7 @@ namespace Hecton8.World
                 return false;
 
             IDataVault vault = _dearLieVault;
-            if (vault == null || !vault.TryLockBuffer(OrganicTemplateDescriptorsBufferId, OrganicVaultSystemId))
+            if (!TryAcquireOrganicBufferGuard(vault, OrganicTemplateDescriptorsBufferId, out ulong guardMask))
                 return false;
 
             try
@@ -7292,7 +7382,7 @@ namespace Hecton8.World
             }
             finally
             {
-                vault.TryUnlockBuffer(OrganicTemplateDescriptorsBufferId, OrganicVaultSystemId);
+                ReleaseOrganicGuard(vault, guardMask);
             }
         }
 
@@ -7324,7 +7414,7 @@ namespace Hecton8.World
                 return false;
 
             IDataVault vault = _dearLieVault;
-            if (vault == null || !vault.TryLockBuffer(OrganicTemplateDescriptorsBufferId, OrganicVaultSystemId))
+            if (!TryAcquireOrganicBufferGuard(vault, OrganicTemplateDescriptorsBufferId, out ulong guardMask))
                 return false;
 
             try
@@ -7333,7 +7423,7 @@ namespace Hecton8.World
             }
             finally
             {
-                vault.TryUnlockBuffer(OrganicTemplateDescriptorsBufferId, OrganicVaultSystemId);
+                ReleaseOrganicGuard(vault, guardMask);
             }
         }
 
@@ -7636,7 +7726,7 @@ namespace Hecton8.World
             }
 
             IDataVault vault = _dearLieVault;
-            if (!TryLockOrganicParasiteExposureReadBuffers(vault, out int lockedMask))
+            if (!TryAcquireOrganicParasiteExposureReadGuard(vault, out int lockedMask))
             {
                 if (_lastParasiteExposure01 > 0.0001f &&
                     currentTime - _lastParasiteExposureSampleTime <= ParasiteExposureHoldSeconds)
@@ -7658,7 +7748,7 @@ namespace Hecton8.World
             }
             finally
             {
-                UnlockOrganicParasiteExposureReadBuffers(vault, lockedMask);
+                ReleaseOrganicParasiteExposureReadGuard(vault, lockedMask);
             }
 
             if (bestExposure > 0.0001f)
@@ -9051,7 +9141,7 @@ namespace Hecton8.World
                 return false;
 
             IDataVault vault = _dearLieVault;
-            if (vault == null || !vault.TryLockBuffer(OrganicRootMoundAppliedByUidBufferId, OrganicVaultSystemId))
+            if (!TryAcquireOrganicBufferGuard(vault, OrganicRootMoundAppliedByUidBufferId, out ulong guardMask))
             {
                 RecordDearLieTelemetry(Hecton8.Core.SystemDispatcher.CurrentFrameIndex, 0, 0, 0, 0, 1, 0, 0f, instanceUid, 32);
                 return false;
@@ -9064,7 +9154,7 @@ namespace Hecton8.World
             }
             finally
             {
-                vault.TryUnlockBuffer(OrganicRootMoundAppliedByUidBufferId, OrganicVaultSystemId);
+                ReleaseOrganicGuard(vault, guardMask);
             }
 
             if (markFailed)
@@ -9147,7 +9237,7 @@ namespace Hecton8.World
                 return false;
 
             IDataVault vault = _dearLieVault;
-            if (!TryLockOrganicLifecycleMutationBuffers(vault, out int lockedMask))
+            if (!TryAcquireOrganicLifecycleMutationGuard(vault, out int lockedMask))
             {
                 RecordDearLieTelemetry(Hecton8.Core.SystemDispatcher.CurrentFrameIndex, 0, 0, 0, 0, 1, 0, 0f, instanceUid, 32);
                 return false;
@@ -9188,7 +9278,7 @@ namespace Hecton8.World
             }
             finally
             {
-                UnlockOrganicLifecycleMutationBuffers(vault, lockedMask);
+                ReleaseOrganicLifecycleMutationGuard(vault, lockedMask);
             }
 
             if (applyTitanRootMound)
@@ -9355,7 +9445,7 @@ namespace Hecton8.World
             float normalizedHeightScale)
         {
             IDataVault vault = _dearLieVault;
-            if (!TryLockOrganicLifecycleMutationBuffers(vault, out int lockedMask))
+            if (!TryAcquireOrganicLifecycleMutationGuard(vault, out int lockedMask))
             {
                 RecordDearLieTelemetry(Hecton8.Core.SystemDispatcher.CurrentFrameIndex, 0, 0, 0, 0, 1, 0, 0f, instanceUid, 32);
                 return false;
@@ -9418,7 +9508,7 @@ namespace Hecton8.World
             }
             finally
             {
-                UnlockOrganicLifecycleMutationBuffers(vault, lockedMask);
+                ReleaseOrganicLifecycleMutationGuard(vault, lockedMask);
             }
 
             if (hasStateOverrideRequest)
@@ -9446,7 +9536,7 @@ namespace Hecton8.World
             float clampedStarvation01)
         {
             IDataVault vault = _dearLieVault;
-            if (!TryLockOrganicLifecycleMutationBuffers(vault, out int lockedMask))
+            if (!TryAcquireOrganicLifecycleMutationGuard(vault, out int lockedMask))
             {
                 RecordDearLieTelemetry(Hecton8.Core.SystemDispatcher.CurrentFrameIndex, 0, 0, 0, 0, 1, 0, 0f, instanceUid, 32);
                 return false;
@@ -9514,7 +9604,7 @@ namespace Hecton8.World
             }
             finally
             {
-                UnlockOrganicLifecycleMutationBuffers(vault, lockedMask);
+                ReleaseOrganicLifecycleMutationGuard(vault, lockedMask);
             }
 
             if (decomposeAfterUnlock)
@@ -9588,7 +9678,7 @@ namespace Hecton8.World
                 return false;
 
             IDataVault vault = _dearLieVault;
-            if (!TryLockOrganicRegrowthMutationBuffers(vault, out int lockedMask))
+            if (!TryAcquireOrganicRegrowthMutationGuard(vault, out int lockedMask))
             {
                 lockFailed = true;
                 RecordDearLieTelemetry(Hecton8.Core.SystemDispatcher.CurrentFrameIndex, 0, 0, 0, 0, 1, 0, 0f, instanceUid, 32);
@@ -9671,7 +9761,7 @@ namespace Hecton8.World
             }
             finally
             {
-                UnlockOrganicRegrowthMutationBuffers(vault, lockedMask);
+                ReleaseOrganicRegrowthMutationGuard(vault, lockedMask);
             }
 
             if (regrowthStateWriteFailed)
@@ -9877,7 +9967,7 @@ namespace Hecton8.World
                 return false;
 
             IDataVault vault = _dearLieVault;
-            if (!TryLockOrganicLifecycleReadBuffers(vault, out int lockedMask))
+            if (!TryAcquireOrganicLifecycleReadGuard(vault, out int lockedMask))
                 return false;
 
             try
@@ -9913,7 +10003,7 @@ namespace Hecton8.World
             }
             finally
             {
-                UnlockOrganicLifecycleReadBuffers(vault, lockedMask);
+                ReleaseOrganicLifecycleReadGuard(vault, lockedMask);
             }
         }
 

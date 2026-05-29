@@ -16,14 +16,15 @@ namespace Hecton8.Physics
     [DisallowMultipleComponent]
     public unsafe sealed class AnalyticalGerstnerWaveRuntime : MonoBehaviour, IFixedTickable, IPostFixedTickable, IGlobalRegistryHotSwapListener, IOriginShiftListener
     {
-        private const int LockSpectrum = 1 << 0;
-        private const int LockRequests = 1 << 1;
-        private const int LockResults = 1 << 2;
-        private const int LockMacroGrid = 1 << 3;
-        private const int LockCounters = 1 << 4;
-        private const int LockTuning = 1 << 5;
         private const uint GerstnerFaultEventHash = 0x47464654u; // GFFT
         private const uint GerstnerFaultDumpHash = 0x47464450u; // GFDP
+        private static readonly ulong JobMutationGuardMask =
+            VaultMutationGuardBit(AnalyticalGerstnerWaveBufferIds.Spectrum) |
+            VaultMutationGuardBit(AnalyticalGerstnerWaveBufferIds.Tuning) |
+            VaultMutationGuardBit(AnalyticalGerstnerWaveBufferIds.Requests) |
+            VaultMutationGuardBit(AnalyticalGerstnerWaveBufferIds.Results) |
+            VaultMutationGuardBit(AnalyticalGerstnerWaveBufferIds.MacroGrid) |
+            VaultMutationGuardBit(AnalyticalGerstnerWaveBufferIds.Counters);
         private static readonly ulong TelemetryMutationGuardMask =
             VaultMutationGuardBit(AnalyticalGerstnerWaveBufferIds.Tuning) |
             VaultMutationGuardBit(AnalyticalGerstnerWaveBufferIds.Results) |
@@ -75,9 +76,10 @@ namespace Hecton8.Physics
         private JobHandle _pendingHandle;
         private long _scheduleTimestamp;
         private uint _simulationFrame;
-        private int _lockedBuffers;
         private int _scheduledSampleCount;
+        private IDataVault _jobGuardVault;
         private bool _jobScheduled;
+        private bool _jobGuardHeld;
         private bool _registeredFixed;
         private bool _registeredPostFixed;
         private bool _registeredHotSwap;
@@ -204,7 +206,7 @@ namespace Hecton8.Physics
             if (!TryPrepareRuntimeVault(out IDataVault vault))
                 return;
 
-            if (!TryLockJobBuffers(vault))
+            if (!TryAcquireJobBufferGuard(vault))
                 return;
 
             bool scheduled = false;
@@ -279,7 +281,7 @@ namespace Hecton8.Physics
             finally
             {
                 if (!scheduled)
-                    UnlockJobBuffers();
+                    ReleaseJobBufferGuard();
             }
         }
 
@@ -305,7 +307,7 @@ namespace Hecton8.Physics
             try
             {
                 float elapsedMicros = ResolveElapsedMicros(_scheduleTimestamp);
-                UnlockJobBuffers();
+                ReleaseJobBufferGuard();
 
                 IDataVault vault = _dataVault;
                 if (vault != null && TryAcquireGerstnerMutationGuard(vault, TelemetryMutationGuardMask))
@@ -353,7 +355,7 @@ namespace Hecton8.Physics
             }
             finally
             {
-                UnlockJobBuffers();
+                ReleaseJobBufferGuard();
                 _jobScheduled = false;
                 _scheduledSampleCount = 0;
                 _simulationFrame++;
@@ -562,6 +564,9 @@ namespace Hecton8.Physics
                 return handle;
             }
 
+            if (vault.IsAllocationLocked || vault.IsCompactionFenceActive)
+                return default;
+
             return vault.EnsureGenerationHandle<T>(bufferId, requiredLength, SystemID.Physics, options);
         }
 
@@ -643,17 +648,6 @@ namespace Hecton8.Physics
                 : default;
         }
 
-        private bool TryLockJobBuffers(IDataVault vault)
-        {
-            _lockedBuffers = 0;
-            return TryLock(vault, AnalyticalGerstnerWaveBufferIds.Spectrum, LockSpectrum) &&
-                   TryLock(vault, AnalyticalGerstnerWaveBufferIds.Tuning, LockTuning) &&
-                   TryLock(vault, AnalyticalGerstnerWaveBufferIds.Requests, LockRequests) &&
-                   TryLock(vault, AnalyticalGerstnerWaveBufferIds.Results, LockResults) &&
-                   TryLock(vault, AnalyticalGerstnerWaveBufferIds.MacroGrid, LockMacroGrid) &&
-                   TryLock(vault, AnalyticalGerstnerWaveBufferIds.Counters, LockCounters);
-        }
-
         private static bool TryAcquireGerstnerMutationGuard(IDataVault vault, ulong mask)
         {
             return vault != null &&
@@ -668,16 +662,17 @@ namespace Hecton8.Physics
             return 1UL << bitIndex;
         }
 
-        private bool TryLock(IDataVault vault, BufferID bufferId, int bit)
+        private bool TryAcquireJobBufferGuard(IDataVault vault)
         {
-            if (vault != null && vault.TryLockBuffer(bufferId, SystemID.Physics))
-            {
-                _lockedBuffers |= bit;
-                return true;
-            }
+            if (_jobGuardHeld)
+                ReleaseJobBufferGuard();
 
-            UnlockJobBuffers();
-            return false;
+            if (!TryAcquireGerstnerMutationGuard(vault, JobMutationGuardMask))
+                return false;
+
+            _jobGuardVault = vault;
+            _jobGuardHeld = true;
+            return true;
         }
 
         private static void ClearCounterLanes(NativeArray<WaveMathCounterLane> counters)
@@ -690,30 +685,19 @@ namespace Hecton8.Physics
                 counters[i] = default;
         }
 
-        private void UnlockJobBuffers()
+        private void ReleaseJobBufferGuard()
         {
-            IDataVault vault = _dataVault;
-            if (vault == null || _lockedBuffers == 0)
+            if (!_jobGuardHeld)
             {
-                _lockedBuffers = 0;
+                _jobGuardVault = null;
                 return;
             }
 
-            Unlock(vault, AnalyticalGerstnerWaveBufferIds.Counters, LockCounters);
-            Unlock(vault, AnalyticalGerstnerWaveBufferIds.MacroGrid, LockMacroGrid);
-            Unlock(vault, AnalyticalGerstnerWaveBufferIds.Results, LockResults);
-            Unlock(vault, AnalyticalGerstnerWaveBufferIds.Requests, LockRequests);
-            Unlock(vault, AnalyticalGerstnerWaveBufferIds.Tuning, LockTuning);
-            Unlock(vault, AnalyticalGerstnerWaveBufferIds.Spectrum, LockSpectrum);
-            _lockedBuffers = 0;
-        }
-
-        private void Unlock(IDataVault vault, BufferID bufferId, int bit)
-        {
-            if ((_lockedBuffers & bit) == 0)
-                return;
-
-            vault.TryUnlockBuffer(bufferId, SystemID.Physics);
+            IDataVault vault = _jobGuardVault;
+            _jobGuardVault = null;
+            _jobGuardHeld = false;
+            if (vault != null)
+                vault.ReleaseMutationGuard(JobMutationGuardMask);
         }
 
         private void TryRegister()
@@ -801,7 +785,7 @@ namespace Hecton8.Physics
                 _jobScheduled = false;
             }
 
-            UnlockJobBuffers();
+            ReleaseJobBufferGuard();
         }
 
         private void ReleaseVaultHandles(IDataVault vault)

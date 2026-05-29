@@ -435,3 +435,179 @@ Solution: Replace the threshold ladder with `ResolveCompatibilityQualityTierOrdi
 Rejected Alternatives: Removing the enum and breaking existing tether APIs; keeping the threshold ladder; passing the compatibility enum deeper into active solver math.
 Scalability potential: Weak, middle, high, and ultra tiers all flow through the same scalar curve; the enum remains only a legacy label and no longer owns cost transitions.
 Hardware Impact: 0 B/frame; no allocation and no gameplay authority route change.
+
+## Decision 54 - KCC Velocity Continuous Quality Pressure
+
+Problem: `KccVelocitySignal` encoded quality pressure as a binary low-tier flag. `SomaticKinematicsRuntime` set `StateFlagLowTier` at `qualityPressureQ8 >= 128`, and `HydrodynamicKccRuntime` published `KccVelocitySignal.FlagLowTier` through `survivalPressure01 > 0.5f`.
+Solution: Reuse the existing byte at offset 77 as `QualityPressureQ8`. Somatic publishes `_frameContext.QualityPressureQ8`, hydrodynamic KCC publishes a smooth Q8 survival-pressure curve, player kinematics publishes Q8 from cached `GlobalQualityWeight`, and `PhysicsDeterminismSignals` exposes the byte as an optional bridge parameter.
+Rejected Alternatives: Keeping `FlagLowTier`; adding a second signal; changing the 128-byte signal size; using `GlobalRegistry` or scene lookups in producers.
+Scalability potential: Weak devices expose continuous pressure without changing authority ownership; middle devices move through the same Q8 route; high and ultra devices converge to zero pressure while retaining movement authority flags.
+Hardware Impact: 0 B/frame managed allocation. Existing signal padding was reused; no DTO size growth.
+
+## Decision 55 - Somatic Kinematics DataVault Lock Flattening
+
+Problem: `SomaticKinematicsRuntime.FixedTick` acquired state, sphere, hand history, tuning, drag LUT, signal scratch, blackbox, and blackbox cursor write buffers together and held them across `job.Run()`. CSV/tuning paths also held multiple write buffers in one method.
+Solution: Add persistent local NativeArray scratch for the fixed-step job. FixedTick hydrates from read-only vault snapshots, runs the job locally, then flushes each changed buffer through one write lock at a time with `try/finally`. Tuning and CSV override writes are split into sequential single-lock sections.
+Rejected Alternatives: Keeping the multi-lock job window; allocating Temp NativeArrays every fixed tick; dropping blackbox history; moving somatic authority out of DataVault in this pass.
+Scalability potential: Weak devices avoid deadlock stalls and keep local deterministic kinematics; middle/high/ultra keep the same rich hand-stroke/blackbox route while lock lifetime stays bounded.
+Hardware Impact: 0 B/frame managed allocation. Persistent native scratch is allocated once; per-frame DataVault write-lock max is statically bounded to 1.
+
+## Decision 56 - Thermal DRS Survival Pressure Semantics
+
+Problem: `ThermalDynamicResolutionAdapter` had already moved render-scale math to continuous quality, but the active pressure flag was still named `FlagLowTierEmergency` and the scalar multiplier was `lowTierWeight01`. That naming kept a binary hardware-tier foothold in a high-frequency presentation governor.
+Solution: Rename the active flag to `FlagSurvivalPressureEmergency`, add explicit survival pressure fade constants, resolve `ResolveSurvivalPressureWeight01(float qualityWeight01)` from the continuous quality scalar, and publish `ResolutionScaleStateFlags.SurvivalPressureEmergency`. Preserve `ResolutionScaleStateFlags.LowTierEmergency` only as a same-bit compatibility alias so existing readers do not lose the byte contract.
+Rejected Alternatives: Changing the `ResolutionScaleState.Flags` bit layout; deleting the legacy alias mid-batch; leaving active low-tier names because behavior was already scalar.
+Scalability potential: Weak devices express survival pressure as a smooth fade between 0.12 and 0.44 quality, middle devices taper through the same curve, and high/ultra devices clear the pressure bit without a hard route change.
+Hardware Impact: 0 B/frame. No profiler-backed microsecond claim; this prevents future binary pressure routing while preserving the existing 64-byte DRS state layout.
+
+## Decision 57 - Homeostasis And QA Survival Emergency Bit
+
+Problem: `HomeostasisBrain.ScalabilityDictator` and `Shinobu38QaWatchdogRuntime` still wrote active emergency bits through `LowTierEmergency` names, even though the actual owner state is `_survivalEmergencyActive` and system-health pressure.
+Solution: Add `SystemBit.SurvivalPressureEmergency` on the existing bit value, keep `LowTierEmergency` only as an enum alias, and update active kill-mask writes/reads to the survival-pressure bit. Rename the QA mock-vault flag to `VaultFlagSurvivalPressureEmergency`.
+Rejected Alternatives: Changing the mask bit value; deleting compatibility aliases; leaving proof harness telemetry with low-tier naming.
+Scalability potential: Weak devices still enter survival pressure through the same mask bit, middle devices recover through existing hysteresis, and high/ultra only see the alias as compatibility metadata.
+Hardware Impact: 0 B/frame; no mask or DTO size growth.
+
+## Decision 58 - QA Watchdog Continuous Normal Blend
+
+Problem: The headless QA bot used `richNormalGate > 0f ? SampleNormal : cheapNormal`, a binary quality route for obstacle avoidance proof data.
+Solution: Rename the threshold to `RichNormalFadeStart01`, always resolve the rich SDF normal inside the QA job, and use the continuous gate only as blend weight against the cheap dear-lie normal.
+Rejected Alternatives: Keeping the branchy low-quality collapse; deleting the rich SDF normal proof path; adding a scheduler/cadence layer to a small headless watchdog job.
+Scalability potential: Weak QA runs deterministic one-route math with the cheap normal dominating the blend; middle/high/ultra get progressively richer obstacle normals without a route switch.
+Hardware Impact: 0 B/frame GC. CPU cost can rise in the headless QA obstacle branch because rich normal is no longer skipped; accepted because this is a proof harness, not active player presentation.
+
+## Decision 59 - Rendering Bridge Survival Pressure Naming
+
+Problem: `GlobalShaderDispatcher` and `HectonUberNoirRuntimeBridge` still called their continuous pressure scalar `lowTierWeight01` and carried `ResolveLowTierWeight01`/`ResolveLowTierFloor01` helpers. That kept binary vocabulary in shader-global and Noir presentation bridges.
+Solution: Rename the scalar route to `survivalPressureWeight01`, rename the floor/weight helpers, update telemetry bucket state, mock shader kernel fields, wake params, and Uber Noir feature-mask/blackbox hashing to the survival-pressure names without changing numeric values.
+Rejected Alternatives: Changing shader slot layout; rewriting the Noir feature mask contract; leaving active render bridge vocabulary as low-tier residue.
+Scalability potential: Weak devices still receive high survival-pressure weights for cheaper wakes/Noir features; middle devices taper continuously; high/ultra clear pressure while visual-overkill features remain scalar-driven.
+Hardware Impact: 0 B/frame; no shader slot, telemetry stride, or DataVault buffer growth.
+
+## Decision 60 - Verification Throttle
+
+Problem: The final verification needed syntax and contract confidence, but the host had external `dotnet` activity and the task forbids compile spam.
+Solution: Use prompt re-extraction, targeted residue `rg`, method-body lookup parsing, write-lock release-balance parsing, restricted `git diff --check`, and a string/comment-aware brace scan on recent touched files. Do not launch build or Unity tests.
+Rejected Alternatives: Running `dotnet build` under active compiler load; trusting chat-only claims; writing JSON/bin reports.
+Scalability potential: Verification adds no runtime route and preserves CPU for other agents while source gates remain in editor tests.
+Hardware Impact: Compile CPU avoided; 0 B/frame runtime change.
+
+## Decision 61 - World Sampler Survival Sampling Pressure Naming
+
+Problem: `GlobalWorldSampler` still wrote active result flags through `MathLodLow` vocabulary and used a literal `qualityWeight <= 0.05f` check for that flag. The expensive sampler math already scales through `ResolveExpensiveSamplingWeight`, but the active flag name and threshold invited future binary policy.
+Solution: Add `SurvivalSamplingPressure` and `ForceSurvivalSamplingPressure` same-bit enum names, preserve the old enum members only as compatibility aliases, and route active flag writes through `ResolveSurvivalSamplingPressureFlag(float qualityWeight)`.
+Rejected Alternatives: Deleting public enum members would break unknown consumers; computing all expensive normals at survival pressure would violate the toaster path and spend CPU with zero visual benefit.
+Scalability potential: Weak devices keep the cheap sampler path while reporting survival pressure by name; middle devices fade expensive sampling through the existing scalar; high/ultra retain rich sampling without a route rename.
+Hardware Impact: 0 B/frame; DTO layout unchanged. No profiler-backed microsecond claim.
+
+## Decision 62 - Toxic Outgassing Binary Fallback Telemetry Removal
+
+Problem: `ToxicOutgassingChemistryRuntime` published `TelemetryFlagFallbackRadial` when `qualityWeight < 0.3f` or `_activeResolution == LowResolution`, even though telemetry already carries both `GlobalQualityWeight` and `ActiveResolution`.
+Solution: Remove the fallback radial telemetry bit from schedule/header publication and keep flags for mock/failure/NaN semantics only. The active simulation resolution remains continuous through `ResolveResolution(ResolveRuntimeQualityWeight01())`.
+Rejected Alternatives: Keeping duplicate binary telemetry; adding a new byte to DTOs; changing gas truth or resolution ownership in the same pass.
+Scalability potential: Weak, middle, high, and ultra telemetry now reports the actual scalar and resolution instead of a coarse bucket; runtime cost remains governed by the existing quality-derived resolution.
+Hardware Impact: 0 B/frame; no buffer growth and no new allocation.
+
+## Decision 63 - Sampler/Toxic Verification Without Build
+
+Problem: The new cleanup needed source confidence, but host `dotnet` and `csc` processes were active and the compilation throttle forbids build spam.
+Solution: Run targeted `rg` residue checks, method-token validation for the editor source gates, hot-loop forbidden lookup scan, write-lock scan, restricted `git diff --check`, and a string/comment-aware brace scan. Do not launch build or Unity tests.
+Rejected Alternatives: Running `dotnet build`; treating broad candidate names as bugs without ownership proof; editing gameplay loot quality because it contained the word quality.
+Scalability potential: Source gates now prevent fallback radial telemetry and active MathLodLow flag naming from returning.
+Hardware Impact: Compile CPU avoided; 0 B/frame runtime change.
+
+## Decision 64 - Utility AI Continuous Quality Output And Over-Budget Faults
+
+Problem: AI cognition used `UtilityAICognitionActionFlags.HighQuality` as a binary `quality > 0.75f` action-output marker, and reused the same active flag name for Burst microsecond over-budget telemetry. This mixed device-quality semantics with timing faults and left a hard quality threshold in a high-frequency Burst job.
+Solution: Reuse `CognitionActionOutputDTO` offset 58 as `QualityWeightQ8`, encoded from the existing continuous quality scalar. Rename active timing-fault writes to `OverBudget`; keep `HighQuality` only as a same-bit compatibility alias in the contract. Add an editor source gate proving runtime jobs/vault no longer call the active `HighQuality` flag or `quality > 0.75f`.
+Rejected Alternatives: Growing the 64-byte output DTO; keeping a binary visual-overkill flag; deleting compatibility aliases that unknown readers may still compile against; adding registry or scene lookups for quality access.
+Scalability potential: Weak devices publish low Q8 quality while candidate budget and tick cadence remain continuous; middle devices interpolate through the same byte; high and ultra devices publish saturated Q8 without a separate route or authority change.
+Hardware Impact: 0 B/frame managed allocation. Existing DTO padding was reused; the Burst job adds one `round`/`clamp` encode and removes one binary quality comparison.
+
+## Decision 65 - Survival Pressure Naming For Active Flags
+
+Problem: Several active writers still used low/reduced quality names even though their math already consumed continuous pressure: acoustic portal `LowTierFallback`, instance culling `LowTierDistance`, marauder descriptor `LowTierFlag`, and Apex brain `ReducedQualityNodeBudget`.
+Solution: Add same-value survival-pressure names and update active runtime writers to `SurvivalBudgetFallback`, `SurvivalDistancePressure`, `SurvivalBandFlag`, and `SurvivalNodeBudgetPressure`. Keep old names as aliases only.
+Rejected Alternatives: Removing public aliases; changing enum/bit values; treating the names as harmless while they still sat in active writer code.
+Scalability potential: Weak devices still take the same cheap budget paths; middle devices slide through the existing scalar curves; high/ultra devices keep richer paths without a separate boolean hardware route.
+Hardware Impact: 0 B/frame; no DTO, enum value, or buffer size change.
+
+## Decision 66 - Marauder Outpost DataVault Job Lock Flattening
+
+Problem: `MarauderOutpostGenerationService` held DataVault write locks across scheduled solve/extraction/shift jobs. Extraction was worst: six write buffers could be locked together until `LateFrameTick`, creating a deadlock vector and violating single-writer phase discipline.
+Solution: Add persistent local scratch arrays for solve WFC, extraction mutable grid/matrices/cell types/interactables/counters, and shift matrices. Jobs write scratch only. `LateFrameTick` copies scratch into DataVault one buffer at a time through `TryFlushScratchBuffer<T>`, which releases inside `finally`.
+Rejected Alternatives: Keeping the multi-lock job window; allocating TempJob scratch per generation phase; completing jobs immediately on the scheduling frame; rewriting the WFC job contract outside this pass.
+Scalability potential: Weak devices avoid long-held vault locks during outpost generation; middle/high/ultra keep the same generated geometry and richer dimensions while vault ownership stays phase-safe.
+Hardware Impact: 0 B/frame managed allocation. Persistent native scratch is allocated cold; per-frame/job-finalization DataVault write-lock max is statically bounded to 1.
+
+## Decision 67 - Thermal DRS Compatibility Scalar Ordinal
+
+Problem: `ThermalDynamicResolutionAdapter.ResolveQualityTierFromWeight` still used four hard quality thresholds to derive a legacy `HectonQualityTier`, and FSR admission used a graphics-memory-or-`quality >= 0.86f` cliff.
+Solution: Convert the compatibility tier byte through `ResolveCompatibilityQualityTierOrdinal(float qualityWeight01)`, a single smoothed scalar ordinal from Low to Ultra. FSR admission now depends on cold capability plus the existing continuous eligibility curve.
+Rejected Alternatives: Keeping threshold tiers; deleting the compatibility byte; using graphics memory as a second binary visual admission authority.
+Scalability potential: Weak devices stay on the same DRS route through lower scalar eligibility; middle/high/ultra converge through the same ordinal and upscaler eligibility curve.
+Hardware Impact: 0 B/frame; no DTO growth and no new allocation.
+
+## Decision 68 - Loot And Spatial Audio Survival Endpoints
+
+Problem: Loot magnet budgets, virtual voice budget floor, spatial SDF sampler, and SubmarineOS sonar cadence still exposed active low-tier names or quality cutoffs, even where math already scaled continuously.
+Solution: Rename active endpoints to survival/standard/high-fidelity/visual-overkill names, keep old constants only as aliases, smooth loot budgets through one envelope helper, remove the spatial SDF `qualityWeight > 0.02f` enable gate, stop dropping ambient sample rate from `GlobalQualityWeight`, and reuse blackbox padding for `QualityWeightQ8`.
+Rejected Alternatives: Deleting public aliases; keeping quality-driven audio sample-rate switches; publishing a survival-pressure boolean in acoustic blackbox telemetry; adding allocations for lookup tables or per-frame policy data.
+Scalability potential: Weak devices still get lower voice/budget/cadence values via scalar math; middle devices interpolate; high/ultra get denser acoustic, wake, and sonar presentation without route forks.
+Hardware Impact: 0 B/frame; all changes reuse existing value paths and persistent buffers.
+
+## Decision 69 - Noir Telemetry Scalar Ownership
+
+Problem: Noir telemetry converted `QualityAndLimits.x` into a binary active feature flag while the same telemetry row already stores `GlobalQualityWeight01`.
+Solution: Remove the quality-derived feature bit and leave feature flags for actual active effects: chroma, glitch offset, and AB split. Quality remains a scalar telemetry field.
+Rejected Alternatives: Keeping duplicate binary quality flag; changing telemetry stride; adding another DTO field.
+Scalability potential: Weak, middle, high, and ultra diagnostics now read the actual scalar instead of a coarse bit.
+Hardware Impact: 0 B/frame; no buffer or stride change.
+
+## Decision 70 - Math LOD Runtime Config Scalars
+
+Problem: `MathLodApproximation.PublishConfig` still converted `GlobalQualityWeight` into hard minimum-survival and visual-overkill config flags, and reserved DTO bytes carried no scalar proof of overkill pressure.
+Solution: Stop writing those quality bits, reuse the existing explicit-layout offset 52 as `VisualOverkillWeight01`, and publish continuous `SurvivalPressure01` plus `VisualOverkillWeight01` from scalar helper curves.
+Rejected Alternatives: Keeping `quality <= 0.1001f` / `quality >= 0.95f`; growing `MathLodConfigDTO`; deleting legacy constants that unknown readers may still compile against.
+Scalability potential: Weak devices publish high survival pressure and zero overkill through one DTO route; middle devices interpolate; high/ultra publish smooth overkill weight without a separate authority bit.
+Hardware Impact: 0 B/frame. Existing DTO storage was reused; no registry lookup, allocation, or buffer growth.
+
+## Decision 71 - Ambient Biota Continuous Spawn And Shader Fake
+
+Problem: Ambient Biota spawn signals and state flags encoded quality through hard survival/visual-overkill bits, telemetry duplicated visual-overkill as a threshold flag, and the indirect shader used a binary overkill branch into a 16-tap parallax loop.
+Solution: Overlay `EntitySpawnSignal` offset 57 as `QualityWeightQ8` and offset 59 as `SurvivalPressureQ8`, publish only ecology flags from macro hydration, keep legacy flag names as aliases, rename active ambient state semantics to survival/headlight names, and replace shader `Parallax16` with one continuous triangle-wave `ParallaxCheat`.
+Rejected Alternatives: Growing the 64-byte spawn signal; deleting compatibility aliases; keeping a 16-tap branch; computing full parallax at low quality.
+Scalability potential: Weak devices keep cheap billboard pressure and one-tap parallax with near-zero overkill weight; middle devices ramp the same path; high/ultra spend scalar overkill on richer movement, salt/silt, and parallax without variant or branch switches.
+Hardware Impact: 0 B/frame managed. The former overkill shader path loses 15 loop taps; no profiler-backed microsecond claim.
+
+## Decision 72 - Ambient/MathLod Verification Throttle
+
+Problem: The pass changed explicit-layout DTO overlays and shader math, but the host had external compiler processes and the task forbids build spam.
+Solution: Use prompt re-extraction, targeted runtime/shader residue `rg`, method-body hot lookup parsing, write-lock acquisition counting, string/comment-aware brace scan, restricted `git diff --check`, and editor source gates. Do not launch build or Unity tests.
+Rejected Alternatives: Running `dotnet build`; writing JSON/bin proof; claiming whole-repo proof from local changes.
+Scalability potential: Source gates now reject regression to hard Ambient quality flags, 16-tap branch parallax, and Math LOD binary config flags.
+Hardware Impact: Compile CPU avoided; 0 B/frame runtime change.
+
+## Decision 73 - Marauder Outpost Compatibility Tier Scalarization
+
+Problem: `MarauderOutpostGenerationService` still resolved `OutpostGenerationQualityTier` through three hard thresholds (`0.25`, `0.55`, `0.85`). The generated dimensions were already continuous, so the enum had become a compatibility label with binary cut points.
+Solution: Rename the active field to `_compatibilityQualityTier`, derive it through `ResolveCompatibilityQualityTierOrdinal(float qualityWeight01)` with `SmoothStep01` and `math.lerp`, and publish the real scalar as `OutpostGenerationSnapshot.QualityWeightQ8`.
+Rejected Alternatives: Deleting `OutpostGenerationQualityTier` and breaking unknown readers; keeping the hard ladder; passing the enum back into WFC or matrix extraction.
+Scalability potential: Weak devices, middle devices, high-end, and ultra all use the same scalar dimension/quality route. The enum is now only a rounded compatibility label at the boundary.
+Hardware Impact: 0 B/frame. Existing explicit-layout padding was reused; no allocation, no registry lookup, no snapshot size growth.
+
+## Decision 74 - Marauder Survival-Band Snapshot Scalar
+
+Problem: After tier cleanup, `ResolveDescriptorFlags()` still converted continuous quality into `MarauderOutpostConstants.SurvivalBandFlag` by `survivalBandWeight > 0.5f`. That left a binary quality bit in an otherwise scalar snapshot.
+Solution: Add `SurvivalBandWeightQ8` at snapshot offset 57 and encode `ResolveSurvivalBandWeight01(_generationQualityWeight01)`. Leave `Flags` for factual state such as heightmap fallback; keep `SurvivalBandFlag` only as a legacy constant alias in the job constants.
+Rejected Alternatives: Keeping the survival-band bit; removing descriptor flags entirely; increasing the 64-byte snapshot stride.
+Scalability potential: Weak devices expose high survival-band pressure as a byte, middle devices interpolate, and high/ultra devices fade to zero without changing the data route.
+Hardware Impact: 0 B/frame. One existing padding byte was reused; no DataVault lock, DTO stride, or managed allocation change.
+
+## Decision 75 - Outpost Scalar Verification Without Build
+
+Problem: The outpost pass modified explicit-layout contracts and runtime snapshot publication. Compile throttle still forbids using `dotnet build` as a reflex.
+Solution: Re-extract prompt, run targeted residue `rg`, method-body hot lookup scan, refined max-held DataVault writer scan, string/comment-aware brace scan, restricted `git diff --check`, and process check. Do not launch build, MSBuild, Unity runner, JSON reports, or binary dumps.
+Rejected Alternatives: Running a project build for syntax-local edits; accepting a naive write-lock count that flags sequential locks as nested; leaving source gates unchanged.
+Scalability potential: Source gates now reject regression to outpost tier ladders and binary survival-band descriptor bits.
+Hardware Impact: Compile CPU avoided; 0 B/frame runtime change.

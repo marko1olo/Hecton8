@@ -459,6 +459,9 @@ namespace Hecton8.Core.Content
                 !buffer.IsCreated ||
                 buffer.Length < requiredLength)
             {
+                if (vault.IsAllocationLocked || vault.IsCompactionFenceActive)
+                    return false;
+
                 handle = vault.EnsureGenerationHandle<T>(
                     bufferId,
                     requiredLength,
@@ -638,7 +641,7 @@ namespace Hecton8.Core.Content
     /// </summary>
     [DisallowMultipleComponent]
     [DefaultExecutionOrder(-8009)]
-    public sealed class ContentAuthorityRuntime : MonoBehaviour, IUpdatable, ILateFrameTickable, IGlobalRegistryHotSwapListener
+    public sealed class ContentAuthorityRuntime : MonoBehaviour, IUpdatable, ILateFrameTickable, ISlowTickable, IGlobalRegistryHotSwapListener
     {
         private const float GhostProxyDelaySeconds = 0.1f;
         private const long HardVramCeilingBytes = 1800L * 1024L * 1024L;
@@ -692,6 +695,7 @@ namespace Hecton8.Core.Content
         private Renderer[] _hologramRenderers;
         private bool _registeredTick;
         private bool _registeredLateFrame;
+        private bool _registeredSlowTick;
         private bool _pendingContentVisualSyncTick;
         private bool _registeredHotSwap;
         private bool _vfxPrewarmStarted;
@@ -781,8 +785,12 @@ namespace Hecton8.Core.Content
             TickPendingLoads(ref flags);
             TickAupShiftCleanup(ref flags);
             TickVramIntercept(ref flags);
-            TickVfxPrewarm();
             WriteTelemetry(flags);
+        }
+
+        public void SlowTick()
+        {
+            TickVfxPrewarm();
         }
 
         public bool RegisterBundleAcquire(uint hash)
@@ -1093,7 +1101,8 @@ namespace Hecton8.Core.Content
                     out ContentPendingLoadState* pendingLoads,
                     out int* _,
                     out int count,
-                    out IDataVault writeVault))
+                    out IDataVault writeVault,
+                    allowColdInitialization: false))
                 return;
 
             try
@@ -1537,7 +1546,8 @@ namespace Hecton8.Core.Content
             if (!OpenOrAcquireTelemetryWritePointer(
                     out ContentAuthorityTelemetryEntry* telemetry,
                     out int* cursorPtr,
-                    out IDataVault writeVault))
+                    out IDataVault writeVault,
+                    allowColdInitialization: false))
                 return;
 
             try
@@ -1575,7 +1585,8 @@ namespace Hecton8.Core.Content
         private unsafe bool OpenOrAcquireTelemetryWritePointer(
             out ContentAuthorityTelemetryEntry* telemetry,
             out int* cursor,
-            out IDataVault writeVault)
+            out IDataVault writeVault,
+            bool allowColdInitialization = true)
         {
             telemetry = null;
             cursor = null;
@@ -1584,7 +1595,8 @@ namespace Hecton8.Core.Content
             if (!OpenOrAcquireTelemetryWriteBuffers(
                     out NativeArray<ContentAuthorityTelemetryEntry> telemetryBuffer,
                     out NativeArray<int> cursorBuffer,
-                    out writeVault))
+                    out writeVault,
+                    allowColdInitialization))
                 return false;
 
             telemetry = (ContentAuthorityTelemetryEntry*)telemetryBuffer.GetUnsafePtr();
@@ -1600,7 +1612,8 @@ namespace Hecton8.Core.Content
         private bool OpenOrAcquireTelemetryWriteBuffers(
             out NativeArray<ContentAuthorityTelemetryEntry> telemetry,
             out NativeArray<int> cursor,
-            out IDataVault writeVault)
+            out IDataVault writeVault,
+            bool allowColdInitialization = true)
         {
             telemetry = default;
             cursor = default;
@@ -1614,13 +1627,15 @@ namespace Hecton8.Core.Content
                     ref _telemetryHandle,
                     BufferID.ContentAuthorityBlackBox,
                     TelemetryCapacity,
-                    out _) ||
+                    out _,
+                    allowColdInitialization) ||
                 !OpenOrAcquireBuffer(
                     vault,
                     ref _telemetryCursorHandle,
                     BufferID.ContentAuthorityTelemetryCursor,
                     1,
-                    out _) ||
+                    out _,
+                    allowColdInitialization) ||
                 !vault.TryAcquireMutationGuard(ContentTelemetryMutationGuardMask))
             {
                 return false;
@@ -1678,7 +1693,8 @@ namespace Hecton8.Core.Content
         private unsafe bool OpenOrAcquirePendingLoadWritePointers(
             out ContentPendingLoadState* pendingLoads,
             out int* count,
-            out IDataVault writeVault)
+            out IDataVault writeVault,
+            bool allowColdInitialization = true)
         {
             pendingLoads = null;
             count = null;
@@ -1693,13 +1709,15 @@ namespace Hecton8.Core.Content
                     ref _pendingLoadsHandle,
                     BufferID.ContentAuthorityPendingLoads,
                     PendingLoadCapacity,
-                    out _) ||
+                    out _,
+                    allowColdInitialization) ||
                 !OpenOrAcquireBuffer(
                     vault,
                     ref _pendingLoadCountHandle,
                     BufferID.ContentAuthorityPendingLoadCount,
                     1,
-                    out _) ||
+                    out _,
+                    allowColdInitialization) ||
                 !vault.TryAcquireMutationGuard(ContentPendingLoadMutationGuardMask))
             {
                 return false;
@@ -1738,10 +1756,15 @@ namespace Hecton8.Core.Content
             out ContentPendingLoadState* pendingLoads,
             out int* countPtr,
             out int count,
-            out IDataVault writeVault)
+            out IDataVault writeVault,
+            bool allowColdInitialization = true)
         {
             count = 0;
-            if (!OpenOrAcquirePendingLoadWritePointers(out pendingLoads, out countPtr, out writeVault))
+            if (!OpenOrAcquirePendingLoadWritePointers(
+                    out pendingLoads,
+                    out countPtr,
+                    out writeVault,
+                    allowColdInitialization))
                 return false;
 
             count = *countPtr;
@@ -1837,7 +1860,8 @@ namespace Hecton8.Core.Content
             ref VaultGenerationHandle<T> handle,
             BufferID bufferId,
             int requiredLength,
-            out NativeArray<T> buffer)
+            out NativeArray<T> buffer,
+            bool allowColdInitialization = true)
             where T : struct
         {
             buffer = default;
@@ -1849,6 +1873,9 @@ namespace Hecton8.Core.Content
                 !buffer.IsCreated ||
                 buffer.Length < requiredLength)
             {
+                if (!allowColdInitialization || vault.IsAllocationLocked || vault.IsCompactionFenceActive)
+                    return false;
+
                 handle = vault.EnsureGenerationHandle<T>(
                     bufferId,
                     requiredLength,
@@ -2224,7 +2251,7 @@ namespace Hecton8.Core.Content
 
         private void TryRegister()
         {
-            if ((_registeredTick && _registeredLateFrame) || !Application.isPlaying || GlobalRegistry.Dispatcher == null)
+            if ((_registeredTick && _registeredLateFrame && _registeredSlowTick) || !Application.isPlaying || GlobalRegistry.Dispatcher == null)
                 return;
 
             CacheDependencies();
@@ -2232,20 +2259,25 @@ namespace Hecton8.Core.Content
                 _registeredTick = GlobalRegistry.TryRegisterUpdatable(this, PriorityLayer.Core);
             if (!_registeredLateFrame)
                 _registeredLateFrame = GlobalRegistry.TryRegisterLateFrameTickable(this, PriorityLayer.Core);
+            if (!_registeredSlowTick)
+                _registeredSlowTick = GlobalRegistry.TryRegisterSlowTickable(this, PriorityLayer.Core);
         }
 
         private void TryUnregister()
         {
-            if (!_registeredTick && !_registeredLateFrame)
+            if (!_registeredTick && !_registeredLateFrame && !_registeredSlowTick)
                 return;
 
             if (_registeredTick)
                 GlobalRegistry.UnregisterUpdatable(this, PriorityLayer.Core);
             if (_registeredLateFrame)
                 GlobalRegistry.UnregisterLateFrameTickable(this, PriorityLayer.Core);
+            if (_registeredSlowTick)
+                GlobalRegistry.UnregisterSlowTickable(this, PriorityLayer.Core);
 
             _registeredTick = false;
             _registeredLateFrame = false;
+            _registeredSlowTick = false;
             _pendingContentVisualSyncTick = false;
         }
 
@@ -2282,6 +2314,7 @@ namespace Hecton8.Core.Content
             if (ReferenceEquals(_dataVault, replacementVault))
             {
                 _bundleRefs.BindVault(_dataVault);
+                EnsureAuthorityVaultBuffersCold();
                 return;
             }
 
@@ -2292,6 +2325,39 @@ namespace Hecton8.Core.Content
             _telemetryCursorHandle = default;
             _pendingLoadsHandle = default;
             _pendingLoadCountHandle = default;
+            EnsureAuthorityVaultBuffersCold();
+        }
+
+        private void EnsureAuthorityVaultBuffersCold()
+        {
+            IDataVault vault = _dataVault;
+            if (vault == null)
+                return;
+
+            OpenOrAcquireBuffer(
+                vault,
+                ref _telemetryHandle,
+                BufferID.ContentAuthorityBlackBox,
+                TelemetryCapacity,
+                out NativeArray<ContentAuthorityTelemetryEntry> _);
+            OpenOrAcquireBuffer(
+                vault,
+                ref _telemetryCursorHandle,
+                BufferID.ContentAuthorityTelemetryCursor,
+                1,
+                out NativeArray<int> _);
+            OpenOrAcquireBuffer(
+                vault,
+                ref _pendingLoadsHandle,
+                BufferID.ContentAuthorityPendingLoads,
+                PendingLoadCapacity,
+                out NativeArray<ContentPendingLoadState> _);
+            OpenOrAcquireBuffer(
+                vault,
+                ref _pendingLoadCountHandle,
+                BufferID.ContentAuthorityPendingLoadCount,
+                1,
+                out NativeArray<int> _);
         }
 
         public void OnGlobalRegistryServiceReplaced(
@@ -2312,6 +2378,10 @@ namespace Hecton8.Core.Content
                     break;
                 case GlobalRegistryServiceSlot.AssetLifecycleRuntime:
                     _assetLifecycle = currentService as IAssetLifecyclePressureSink;
+                    break;
+                case GlobalRegistryServiceSlot.Dispatcher:
+                    if (currentService != null)
+                        TryRegister();
                     break;
             }
         }

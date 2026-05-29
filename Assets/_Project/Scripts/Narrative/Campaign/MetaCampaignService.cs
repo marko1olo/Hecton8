@@ -349,13 +349,12 @@ namespace Hecton8.Narrative.Campaign
             if (TryFindVariableValue(variableHash, out int existing) && existing == value)
                 return true;
 
-            ApplyGlobalVariableChange(
+            return ApplyGlobalVariableChange(
                 variableHash,
                 value,
                 reason != 0 ? reason : GlobalWorldStateSignal.ChangeKindDevConsole,
                 ResolveSideEffectFlags(variableHash),
                 (uint)Hecton8.Core.SystemDispatcher.CurrentFrameIndex);
-            return true;
         }
 
         public void PopulateSaveData(SaveData data)
@@ -399,7 +398,6 @@ namespace Hecton8.Narrative.Campaign
                 AllocateRuntimeState();
 
             CompletePendingEvaluation();
-            ClearGlobalVariables();
 
             if (data == null)
             {
@@ -409,18 +407,10 @@ namespace Hecton8.Narrative.Campaign
 
             MetaCampaignDTO dto = data.metaCampaign;
             dto.EnsureCapacity();
-            int count = math.clamp(dto.variableCount, 0, math.min(dto.variableHashes.Length, dto.variableValues.Length));
-            for (int i = 0; i < count; i++)
-            {
-                uint variableHash = dto.variableHashes[i];
-                if (variableHash == 0u)
-                    continue;
-
-                UpsertGlobalVariable(variableHash, dto.variableValues[i]);
-            }
+            if (!TryReplaceGlobalVariablesFromSave(ref dto))
+                return;
 
             data.metaCampaign = dto;
-            EnsureDefaultVariables();
             RefreshCachedStateFromVariables();
             PublishCampaignStateSnapshot(
                 GlobalWorldStateSignal.ChangeKindLoad,
@@ -646,19 +636,28 @@ namespace Hecton8.Narrative.Campaign
             if (changeCount <= 0)
                 return;
 
-            for (int i = 0; i < changeCount; i++)
+            if (!TryApplyVariableChanges(
+                    in result,
+                    out FixedList128Bytes<MetaCampaignVariableChange> appliedChanges,
+                    out bool shouldRetry))
             {
-                MetaCampaignVariableChange change = result.Changes[i];
-                UpsertGlobalVariable(change.VariableHash, change.Value);
+                if (shouldRetry)
+                {
+                    _pendingEvaluationResult = result;
+                    _evaluationPending = true;
+                }
+
+                return;
             }
 
             RefreshCachedStateFromVariables();
             uint frame = (uint)Hecton8.Core.SystemDispatcher.CurrentFrameIndex;
             byte aggregateSideEffectFlags = 0;
             uint broadcastVariableHash = 0u;
+            changeCount = appliedChanges.Length;
             for (int i = 0; i < changeCount; i++)
             {
-                MetaCampaignVariableChange change = result.Changes[i];
+                MetaCampaignVariableChange change = appliedChanges[i];
                 aggregateSideEffectFlags |= change.SideEffectFlags;
                 broadcastVariableHash = SelectBroadcastVariable(broadcastVariableHash, change.VariableHash);
                 PublishGlobalVariableSignal(
@@ -676,47 +675,61 @@ namespace Hecton8.Narrative.Campaign
                 frame);
         }
 
-        private void SeedDefaultState()
+        private bool SeedDefaultState()
         {
             if (!IsInitialized)
-                return;
+                return false;
 
-            ClearGlobalVariables();
-            UpsertGlobalVariable(CampaignStageHash, 0);
-            UpsertGlobalVariable(ToxicityLevelHash, 0);
-            UpsertGlobalVariable(LeviathanAwakenedHash, 0);
-            UpsertGlobalVariable(BaseDeltaDestroyedHash, 0);
+            if (!TryResetDefaultVariables())
+                return false;
+
             RefreshCachedStateFromVariables();
+            return true;
         }
 
         private void ResetDefaultState(byte changeKind)
         {
-            SeedDefaultState();
+            if (!SeedDefaultState())
+                return;
+
             PublishCampaignStateSnapshot(
                 changeKind,
                 (byte)(GlobalWorldStateSignal.FlagVisualRefresh | GlobalWorldStateSignal.FlagCartographyRefresh),
                 (uint)Hecton8.Core.SystemDispatcher.CurrentFrameIndex);
         }
 
-        private void EnsureDefaultVariables()
+        private bool EnsureDefaultVariables()
         {
-            EnsureGlobalVariable(CampaignStageHash, 0);
-            EnsureGlobalVariable(ToxicityLevelHash, 0);
-            EnsureGlobalVariable(LeviathanAwakenedHash, 0);
-            EnsureGlobalVariable(BaseDeltaDestroyedHash, 0);
+            if (!IsInitialized ||
+                !TryAcquireVariablesWrite(out NativeArray<MetaCampaignVariableSlot> variables, out IDataVault lockedVault))
+            {
+                return false;
+            }
+
+            try
+            {
+                return TryEnsureDefaultVariables(variables);
+            }
+            finally
+            {
+                ReleaseVariablesWrite(lockedVault);
+            }
         }
 
-        private void ApplyGlobalVariableChange(
+        private bool ApplyGlobalVariableChange(
             uint variableHash,
             int value,
             byte changeKind,
             byte sideEffectFlags,
             uint frame)
         {
-            UpsertGlobalVariable(variableHash, value);
+            if (!TryUpsertGlobalVariable(variableHash, value))
+                return false;
+
             RefreshCachedStateFromVariables();
             PublishGlobalVariableSignal(variableHash, value, changeKind, sideEffectFlags, frame);
             PublishStateSideEffects(changeKind, sideEffectFlags, variableHash, frame);
+            return true;
         }
 
         private void PublishGlobalVariableSignal(
@@ -837,39 +850,17 @@ namespace Hecton8.Narrative.Campaign
             return TryFindVariableValue(variableHash, out int value) ? value : fallback;
         }
 
-        private void UpsertGlobalVariable(uint variableHash, int value)
+        private bool TryUpsertGlobalVariable(uint variableHash, int value)
         {
             if (variableHash == 0u || !IsInitialized)
-                return;
+                return false;
 
             if (!TryAcquireVariablesWrite(out NativeArray<MetaCampaignVariableSlot> variables, out IDataVault lockedVault))
-                return;
+                return false;
 
             try
             {
-                int firstEmptyIndex = -1;
-                for (int i = 0; i < variables.Length; i++)
-                {
-                    MetaCampaignVariableSlot slot = variables[i];
-                    if (slot.VariableHash == variableHash)
-                    {
-                        slot.Value = value;
-                        variables[i] = slot;
-                        return;
-                    }
-
-                    if (slot.VariableHash == 0u && firstEmptyIndex < 0)
-                        firstEmptyIndex = i;
-                }
-
-                if (firstEmptyIndex >= 0)
-                {
-                    variables[firstEmptyIndex] = new MetaCampaignVariableSlot
-                    {
-                        VariableHash = variableHash,
-                        Value = value
-                    };
-                }
+                return TryUpsertVariableSlot(variables, variableHash, value);
             }
             finally
             {
@@ -877,29 +868,218 @@ namespace Hecton8.Narrative.Campaign
             }
         }
 
-        private void EnsureGlobalVariable(uint variableHash, int fallback)
+        private bool TryApplyVariableChanges(
+            in MetaCampaignEvaluationResult result,
+            out FixedList128Bytes<MetaCampaignVariableChange> appliedChanges,
+            out bool shouldRetry)
         {
-            int value = fallback;
-            if (TryFindVariableValue(variableHash, out int existing))
-                value = existing;
+            appliedChanges = default;
+            shouldRetry = false;
+            int changeCount = result.Changes.Length;
+            if (changeCount <= 0)
+                return true;
 
-            UpsertGlobalVariable(variableHash, value);
+            if (!TryAcquireVariablesWrite(out NativeArray<MetaCampaignVariableSlot> variables, out IDataVault lockedVault))
+            {
+                shouldRetry = true;
+                return false;
+            }
+
+            try
+            {
+                if (!CanApplyVariableChanges(variables, in result.Changes))
+                    return false;
+
+                for (int i = 0; i < changeCount; i++)
+                {
+                    MetaCampaignVariableChange change = result.Changes[i];
+                    if (!TryUpsertVariableSlot(variables, change.VariableHash, change.Value))
+                        return false;
+
+                    appliedChanges.Add(change);
+                }
+
+                return appliedChanges.Length == changeCount;
+            }
+            finally
+            {
+                ReleaseVariablesWrite(lockedVault);
+            }
         }
 
-        private void ClearGlobalVariables()
+        private bool TryReplaceGlobalVariablesFromSave(ref MetaCampaignDTO dto)
         {
             if (!TryAcquireVariablesWrite(out NativeArray<MetaCampaignVariableSlot> variables, out IDataVault lockedVault))
-                return;
+                return false;
+
+            try
+            {
+                int count = math.clamp(dto.variableCount, 0, math.min(dto.variableHashes.Length, dto.variableValues.Length));
+                if (!CanReplaceVariablesFromSave(ref dto, count, variables.Length))
+                    return false;
+
+                for (int i = 0; i < variables.Length; i++)
+                    variables[i] = default;
+
+                for (int i = 0; i < count; i++)
+                {
+                    uint variableHash = dto.variableHashes[i];
+                    if (variableHash == 0u)
+                        continue;
+
+                    if (!TryUpsertVariableSlot(variables, variableHash, dto.variableValues[i]))
+                        return false;
+                }
+
+                return TryEnsureDefaultVariables(variables);
+            }
+            finally
+            {
+                ReleaseVariablesWrite(lockedVault);
+            }
+        }
+
+        private bool TryResetDefaultVariables()
+        {
+            if (!TryAcquireVariablesWrite(out NativeArray<MetaCampaignVariableSlot> variables, out IDataVault lockedVault))
+                return false;
 
             try
             {
                 for (int i = 0; i < variables.Length; i++)
                     variables[i] = default;
+
+                return TryEnsureDefaultVariables(variables);
             }
             finally
             {
                 ReleaseVariablesWrite(lockedVault);
             }
+        }
+
+        private static bool TryEnsureDefaultVariables(NativeArray<MetaCampaignVariableSlot> variables)
+        {
+            return TryEnsureVariableSlot(variables, CampaignStageHash, 0) &&
+                   TryEnsureVariableSlot(variables, ToxicityLevelHash, 0) &&
+                   TryEnsureVariableSlot(variables, LeviathanAwakenedHash, 0) &&
+                   TryEnsureVariableSlot(variables, BaseDeltaDestroyedHash, 0);
+        }
+
+        private static bool TryEnsureVariableSlot(NativeArray<MetaCampaignVariableSlot> variables, uint variableHash, int fallback)
+        {
+            int value = fallback;
+            if (TryFindVariableValue(variables.AsReadOnly(), variableHash, out int existing))
+                value = existing;
+
+            return TryUpsertVariableSlot(variables, variableHash, value);
+        }
+
+        private static bool TryUpsertVariableSlot(NativeArray<MetaCampaignVariableSlot> variables, uint variableHash, int value)
+        {
+            if (variableHash == 0u || !variables.IsCreated)
+                return false;
+
+            int firstEmptyIndex = -1;
+            for (int i = 0; i < variables.Length; i++)
+            {
+                MetaCampaignVariableSlot slot = variables[i];
+                if (slot.VariableHash == variableHash)
+                {
+                    slot.Value = value;
+                    variables[i] = slot;
+                    return true;
+                }
+
+                if (slot.VariableHash == 0u && firstEmptyIndex < 0)
+                    firstEmptyIndex = i;
+            }
+
+            if (firstEmptyIndex < 0)
+                return false;
+
+            variables[firstEmptyIndex] = new MetaCampaignVariableSlot
+            {
+                VariableHash = variableHash,
+                Value = value
+            };
+            return true;
+        }
+
+        private static bool CanApplyVariableChanges(
+            NativeArray<MetaCampaignVariableSlot> variables,
+            in FixedList128Bytes<MetaCampaignVariableChange> changes)
+        {
+            if (!variables.IsCreated)
+                return false;
+
+            int emptySlots = 0;
+            for (int i = 0; i < variables.Length; i++)
+            {
+                if (variables[i].VariableHash == 0u)
+                    emptySlots++;
+            }
+
+            int requiredNewSlots = 0;
+            for (int i = 0; i < changes.Length; i++)
+            {
+                uint variableHash = changes[i].VariableHash;
+                if (variableHash == 0u)
+                    return false;
+
+                if (!TryFindVariableValue(variables.AsReadOnly(), variableHash, out _))
+                    requiredNewSlots++;
+            }
+
+            return requiredNewSlots <= emptySlots;
+        }
+
+        private static bool CanReplaceVariablesFromSave(ref MetaCampaignDTO dto, int count, int capacity)
+        {
+            if (capacity <= 0)
+                return false;
+
+            int requiredSlots = 0;
+            for (int i = 0; i < count; i++)
+            {
+                uint variableHash = dto.variableHashes[i];
+                if (variableHash == 0u || SaveVariableHashExistsBefore(ref dto, i, variableHash))
+                    continue;
+
+                requiredSlots++;
+            }
+
+            if (!SaveVariableHashExists(ref dto, count, CampaignStageHash))
+                requiredSlots++;
+            if (!SaveVariableHashExists(ref dto, count, ToxicityLevelHash))
+                requiredSlots++;
+            if (!SaveVariableHashExists(ref dto, count, LeviathanAwakenedHash))
+                requiredSlots++;
+            if (!SaveVariableHashExists(ref dto, count, BaseDeltaDestroyedHash))
+                requiredSlots++;
+
+            return requiredSlots <= capacity;
+        }
+
+        private static bool SaveVariableHashExists(ref MetaCampaignDTO dto, int count, uint variableHash)
+        {
+            for (int i = 0; i < count; i++)
+            {
+                if (dto.variableHashes[i] == variableHash)
+                    return true;
+            }
+
+            return false;
+        }
+
+        private static bool SaveVariableHashExistsBefore(ref MetaCampaignDTO dto, int index, uint variableHash)
+        {
+            for (int i = 0; i < index; i++)
+            {
+                if (dto.variableHashes[i] == variableHash)
+                    return true;
+            }
+
+            return false;
         }
 
         private static byte ResolveSideEffectFlags(uint variableHash)

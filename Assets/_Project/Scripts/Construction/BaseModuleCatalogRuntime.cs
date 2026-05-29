@@ -148,9 +148,9 @@ namespace Hecton8.Construction
         internal VaultGenerationHandle<ModuleCostDTO> CostsHandle;
         internal VaultGenerationHandle<uint> HashToIndexHandle;
         internal VaultGenerationHandle<ModuleCatalogTelemetryEntry> TelemetryHandle;
-        internal byte LockMask;
+        internal ulong MutationGuardMask;
 
-        public bool IsCreated => Vault != null && LockMask != 0;
+        public bool IsCreated => Vault != null && MutationGuardMask != 0UL;
     }
 
     internal enum ModuleCatalogHydrationStatus : uint
@@ -200,14 +200,18 @@ namespace Hecton8.Construction
         public const uint MockUtilityHash = 0x21601004u;
         private const int CompatibilityLaneBitOffset = 8;
         private const int CompatibilityLaneCount = 23;
-        private const byte CatalogStateLockBit = 1 << 0;
-        private const byte CatalogModulesLockBit = 1 << 1;
-        private const byte CatalogSocketsLockBit = 1 << 2;
-        private const byte CatalogCostsLockBit = 1 << 3;
-        private const byte CatalogHashToIndexLockBit = 1 << 4;
-        private const byte CatalogTelemetryLockBit = 1 << 5;
         private const uint ClassHabitatHash = 0x48414249u; // "HABI"
         private const uint AllBiomesMask = 0xFFFFFFFFu;
+        private const ulong CatalogWriteMutationGuardMask =
+            (1UL << (unchecked((int)(uint)(int)BufferID.BaseModuleCatalogState) & 31)) |
+            (1UL << (unchecked((int)(uint)(int)BufferID.BaseModuleCatalogDefinitions) & 31)) |
+            (1UL << (unchecked((int)(uint)(int)BufferID.BaseModuleCatalogSockets) & 31)) |
+            (1UL << (unchecked((int)(uint)(int)BufferID.BaseModuleCatalogCosts) & 31)) |
+            (1UL << (unchecked((int)(uint)(int)BufferID.BaseModuleCatalogHashToIndex) & 31)) |
+            (1UL << (unchecked((int)(uint)(int)BufferID.BaseModuleCatalogTelemetryRing) & 31));
+        private const ulong CatalogTelemetryMutationGuardMask =
+            (1UL << (unchecked((int)(uint)(int)BufferID.BaseModuleCatalogState) & 31)) |
+            (1UL << (unchecked((int)(uint)(int)BufferID.BaseModuleCatalogTelemetryRing) & 31));
         private const string DumpRelativePath = "Docs/AgentLogs/Dump_1306_Construction_ModuleCatalog.bin";
 
         public static bool TryEnsureVaultBuffers(
@@ -253,7 +257,7 @@ namespace Hecton8.Construction
             out VaultGenerationHandle<T> handle) where T : struct
         {
             handle = default;
-            if (vault == null || vault.IsAllocationLocked)
+            if (vault == null || vault.IsAllocationLocked || vault.IsCompactionFenceActive)
                 return false;
 
             handle = vault.EnsureGenerationHandle<T>(
@@ -291,6 +295,22 @@ namespace Hecton8.Construction
             return false;
         }
 
+        private static bool TryResolveOwnedLane<T>(
+            IDataVault vault,
+            BufferID bufferId,
+            int requiredLength,
+            NativeArrayOptions options,
+            out VaultGenerationHandle<T> handle,
+            out NativeArray<T> buffer) where T : struct
+        {
+            handle = default;
+            buffer = default;
+            return TryEnsureOwnedLane(vault, bufferId, requiredLength, options, out handle) &&
+                   vault.TryReadHandle(in handle, out buffer) &&
+                   buffer.IsCreated &&
+                   buffer.Length >= requiredLength;
+        }
+
         private static bool TryReadExistingLane<T>(
             IDataVault vault,
             BufferID bufferId,
@@ -312,21 +332,10 @@ namespace Hecton8.Construction
         public static void ReleaseWriteLease(in ModuleCatalogWriteLease lease)
         {
             IDataVault vault = lease.Vault;
-            if (vault == null || lease.LockMask == 0)
+            if (vault == null || lease.MutationGuardMask == 0UL)
                 return;
 
-            if ((lease.LockMask & CatalogTelemetryLockBit) != 0u)
-                vault.ReleaseWriteLock(in lease.TelemetryHandle, SystemID.Construction);
-            if ((lease.LockMask & CatalogHashToIndexLockBit) != 0u)
-                vault.ReleaseWriteLock(in lease.HashToIndexHandle, SystemID.Construction);
-            if ((lease.LockMask & CatalogCostsLockBit) != 0u)
-                vault.ReleaseWriteLock(in lease.CostsHandle, SystemID.Construction);
-            if ((lease.LockMask & CatalogSocketsLockBit) != 0u)
-                vault.ReleaseWriteLock(in lease.SocketsHandle, SystemID.Construction);
-            if ((lease.LockMask & CatalogModulesLockBit) != 0u)
-                vault.ReleaseWriteLock(in lease.ModulesHandle, SystemID.Construction);
-            if ((lease.LockMask & CatalogStateLockBit) != 0u)
-                vault.ReleaseWriteLock(in lease.StateHandle, SystemID.Construction);
+            vault.ReleaseMutationGuard(lease.MutationGuardMask);
         }
 
         private static bool TryAcquireCatalogWriteViews(
@@ -340,11 +349,17 @@ namespace Hecton8.Construction
         {
             views = default;
             lease = default;
-            if (vault == null || vault.IsAllocationLocked)
+            if (vault == null ||
+                vault.IsAllocationLocked ||
+                vault.IsCompactionFenceActive ||
+                !vault.TryAcquireMutationGuard(CatalogWriteMutationGuardMask))
+            {
                 return false;
+            }
 
             lease.Vault = vault;
-            if (!TryAcquireOwnedLane(
+            lease.MutationGuardMask = CatalogWriteMutationGuardMask;
+            if (!TryResolveOwnedLane(
                     vault,
                     BufferID.BaseModuleCatalogState,
                     1,
@@ -352,11 +367,13 @@ namespace Hecton8.Construction
                     out lease.StateHandle,
                     out views.State))
             {
+                ReleaseWriteLease(in lease);
+                lease = default;
+                views = default;
                 return false;
             }
 
-            lease.LockMask |= CatalogStateLockBit;
-            if (!TryAcquireOwnedLane(
+            if (!TryResolveOwnedLane(
                     vault,
                     BufferID.BaseModuleCatalogDefinitions,
                     math.max(1, moduleCapacity),
@@ -370,8 +387,7 @@ namespace Hecton8.Construction
                 return false;
             }
 
-            lease.LockMask |= CatalogModulesLockBit;
-            if (!TryAcquireOwnedLane(
+            if (!TryResolveOwnedLane(
                     vault,
                     BufferID.BaseModuleCatalogSockets,
                     math.max(1, socketCapacity),
@@ -385,8 +401,7 @@ namespace Hecton8.Construction
                 return false;
             }
 
-            lease.LockMask |= CatalogSocketsLockBit;
-            if (!TryAcquireOwnedLane(
+            if (!TryResolveOwnedLane(
                     vault,
                     BufferID.BaseModuleCatalogCosts,
                     math.max(1, costCapacity),
@@ -400,8 +415,7 @@ namespace Hecton8.Construction
                 return false;
             }
 
-            lease.LockMask |= CatalogCostsLockBit;
-            if (!TryAcquireOwnedLane(
+            if (!TryResolveOwnedLane(
                     vault,
                     BufferID.BaseModuleCatalogHashToIndex,
                     math.max(1, hashCapacity),
@@ -415,8 +429,7 @@ namespace Hecton8.Construction
                 return false;
             }
 
-            lease.LockMask |= CatalogHashToIndexLockBit;
-            if (!TryAcquireOwnedLane(
+            if (!TryResolveOwnedLane(
                     vault,
                     BufferID.BaseModuleCatalogTelemetryRing,
                     TelemetryCapacity,
@@ -430,7 +443,6 @@ namespace Hecton8.Construction
                 return false;
             }
 
-            lease.LockMask |= CatalogTelemetryLockBit;
             return true;
         }
 
@@ -958,23 +970,29 @@ namespace Hecton8.Construction
             if (vault == null)
                 return false;
 
-            if (!TryAcquireOwnedLane(
+            if (vault.IsAllocationLocked ||
+                vault.IsCompactionFenceActive ||
+                !vault.TryAcquireMutationGuard(CatalogTelemetryMutationGuardMask))
+            {
+                return false;
+            }
+
+            bool shouldDump = false;
+            VaultGenerationHandle<ModuleCatalogTelemetryEntry> telemetryHandle = default;
+            try
+            {
+                if (!TryResolveOwnedLane(
                     vault,
                     BufferID.BaseModuleCatalogState,
                     1,
                     NativeArrayOptions.ClearMemory,
                     out VaultGenerationHandle<ModuleCatalogStateDTO> stateHandle,
                     out NativeArray<ModuleCatalogStateDTO> stateBuffer))
-            {
-                return false;
-            }
+                {
+                    return false;
+                }
 
-            bool telemetryLocked = false;
-            bool shouldDump = false;
-            VaultGenerationHandle<ModuleCatalogTelemetryEntry> telemetryHandle = default;
-            try
-            {
-                if (!TryAcquireOwnedLane(
+                if (!TryResolveOwnedLane(
                         vault,
                         BufferID.BaseModuleCatalogTelemetryRing,
                         TelemetryCapacity,
@@ -985,7 +1003,6 @@ namespace Hecton8.Construction
                     return false;
                 }
 
-                telemetryLocked = true;
                 ModuleCatalogStateDTO state = stateBuffer[0];
                 uint cursor = state.TelemetryCursor;
                 if (cursor >= telemetryBuffer.Length)
@@ -1016,9 +1033,7 @@ namespace Hecton8.Construction
             }
             finally
             {
-                if (telemetryLocked)
-                    vault.ReleaseWriteLock(in telemetryHandle, SystemID.Construction);
-                vault.ReleaseWriteLock(in stateHandle, SystemID.Construction);
+                vault.ReleaseMutationGuard(CatalogTelemetryMutationGuardMask);
             }
 
             if (shouldDump)

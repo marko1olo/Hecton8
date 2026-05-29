@@ -92,8 +92,25 @@ namespace Hecton8.World
         public const int DefaultRawBytesCapacity = 5 * 1024 * 1024;
         public const int DefaultCsvScratchCapacity = 256 * 1024;
         public const uint OverloadWarningHash = 0x464F5632u; // FOV2
+        private static readonly ulong RawBytesMutationGuardMask = FloraGenomeMutationGuardBit(BufferID.FloraGenomeRawBytes);
+        private static readonly ulong DecodeMutationGuardMask =
+            FloraGenomeMutationGuardBit(BufferID.FloraGenomeRawBytes) |
+            FloraGenomeMutationGuardBit(BufferID.FloraGenomeDtos) |
+            FloraGenomeMutationGuardBit(BufferID.FloraGenomeStats);
+        private static readonly ulong GenerationJobMutationGuardMask =
+            FloraGenomeMutationGuardBit(BufferID.FloraGenomeExpandedSymbols) |
+            FloraGenomeMutationGuardBit(BufferID.FloraGenomeScratchSymbols) |
+            FloraGenomeMutationGuardBit(BufferID.FloraGenomePlantSeeds) |
+            FloraGenomeMutationGuardBit(BufferID.FloraGenomeBranchMatrices) |
+            FloraGenomeMutationGuardBit(BufferID.FloraGenomeHazardZones) |
+            FloraGenomeMutationGuardBit(BufferID.FloraGenomeTurtleStack) |
+            FloraGenomeMutationGuardBit(BufferID.FloraGenomeStats) |
+            FloraGenomeMutationGuardBit(BufferID.FloraGenomeBlackBox) |
+            FloraGenomeMutationGuardBit(BufferID.FloraGenomeBlackBoxCursor);
 
         private IDataVault _vault;
+        private IDataVault _rawBufferGuardVault;
+        private IDataVault _generationJobGuardVault;
         private VaultGenerationHandle<byte> _rawBytesHandle;
         private VaultGenerationHandle<byte> _csvScratchHandle;
         private VaultGenerationHandle<byte> _expandedSymbolsHandle;
@@ -109,7 +126,8 @@ namespace Hecton8.World
         private bool _pendingBinaryReadActive;
         private bool _pendingBinaryReadCompleted;
         private int _pendingBinaryReadByteCount;
-        private bool _rawBufferLocked;
+        private bool _rawBufferGuardHeld;
+        private bool _generationJobGuardHeld;
         private bool _generationInFlight;
         private int _genomeCount;
         private int _genomeCapacity;
@@ -173,9 +191,7 @@ namespace Hecton8.World
                 return false;
 
             IDataVault vault = _vault;
-            if (_rawBufferLocked && vault != null)
-                vault.TryUnlockBuffer(BufferID.FloraGenomeRawBytes, OwnerSystem);
-            _rawBufferLocked = false;
+            ReleaseRawBytesGuard();
 
             ReleaseFloraGenomeVaultHandle(vault, ref _rawBytesHandle);
             ReleaseFloraGenomeVaultHandle(vault, ref _csvScratchHandle);
@@ -223,13 +239,9 @@ namespace Hecton8.World
             if (_vault == null || _pendingBinaryReadActive)
                 return false;
 
-            if (!TryResolveFloraGenomeVaultBuffer(_vault, ref _rawBytesHandle, BufferID.FloraGenomeRawBytes, DefaultRawBytesCapacity, out NativeArray<byte> rawBytes))
+            if (!TryAcquireRawBytesGuard(out NativeArray<byte> rawBytes))
                 return false;
 
-            if (!_vault.TryLockBuffer(BufferID.FloraGenomeRawBytes, OwnerSystem))
-                return false;
-
-            _rawBufferLocked = true;
             _pendingBinaryReadActive = true;
             _pendingBinaryReadCompleted = false;
             _pendingBinaryReadByteCount = 0;
@@ -246,9 +258,7 @@ namespace Hecton8.World
             _pendingBinaryReadActive = false;
             _pendingBinaryReadCompleted = false;
             _pendingBinaryReadByteCount = 0;
-            if (_rawBufferLocked && _vault != null)
-                _vault.TryUnlockBuffer(BufferID.FloraGenomeRawBytes, OwnerSystem);
-            _rawBufferLocked = false;
+            ReleaseRawBytesGuard();
 
             DecodeLoadedBytes(byteCount);
             return true;
@@ -285,72 +295,87 @@ namespace Hecton8.World
             if (_vault == null || _generationInFlight || !workspace.IsCreated)
                 return false;
 
-            if (!TryResolveFloraGenomeVaultBuffer(_vault, ref _genomesHandle, BufferID.FloraGenomeDtos, math.max(1, _genomeCapacity), out NativeArray<FloraGenomeDTO> genomes) ||
-                !TryResolveFloraGenomeVaultBuffer(_vault, ref _plantSeedsHandle, BufferID.FloraGenomePlantSeeds, 1, out NativeArray<FloraPlantSeedDTO> seeds) ||
-                !TryResolveFloraGenomeVaultBuffer(_vault, ref _statsHandle, BufferID.FloraGenomeStats, 1, out NativeArray<FloraGenomeJobStats> statsVault) ||
-                !TryResolveFloraGenomeVaultBuffer(_vault, ref _blackBoxHandle, BufferID.FloraGenomeBlackBox, FloraGenomeLSystemConstants.BlackBoxFrameCount, out NativeArray<FloraGenomeBlackBoxEntry> blackBox) ||
-                !TryResolveFloraGenomeVaultBuffer(_vault, ref _blackBoxCursorHandle, BufferID.FloraGenomeBlackBoxCursor, 1, out NativeArray<int> blackBoxCursor))
+            if (!TryAcquireGenerationJobGuard())
             {
                 return false;
             }
 
-            if ((uint)genomeIndex >= (uint)genomes.Length)
-                return false;
-
-            FloraPlantSeedDTO resolvedSeed = seed;
-            FloraGenomeDTO genome = genomes[genomeIndex];
-            resolvedSeed.SpeciesHash = genome.SpeciesHash;
-            if (resolvedSeed.PlantHash == 0u)
-                resolvedSeed.PlantHash = FloraGenomeLSystemUtility.HashPlant(resolvedSeed.AupCell, genome.SpeciesHash, resolvedSeed.WorldSeed, resolvedSeed.ChunkSlot);
-            float qualityWeight01 = ResolveGenomeQualityWeight01();
-            resolvedSeed.QualityWeightQ8 = EncodeQualityWeightQ8(qualityWeight01);
-            resolvedSeed.RequestedIterations = genome.MaxIterations;
-            seeds[0] = resolvedSeed;
-
-            int safeMatrixOffset = math.max(0, matrixOffset);
-            int safeHazardOffset = math.max(0, hazardOffset);
-            JobHandle expandHandle = new IterativeLSystemExpanderJob
+            bool handoffGuard = false;
+            try
             {
-                Genomes = genomes,
-                GenomeIndex = genomeIndex,
-                QualityWeight01 = qualityWeight01,
-                ExpandedSymbols = workspace.ExpandedSymbols,
-                ScratchSymbols = workspace.ScratchSymbols,
-                Stats = statsVault
-            }.Schedule(inputDeps);
+                if (!TryResolveFloraGenomeVaultBuffer(_vault, ref _genomesHandle, BufferID.FloraGenomeDtos, math.max(1, _genomeCapacity), out NativeArray<FloraGenomeDTO> genomes) ||
+                    !TryResolveFloraGenomeVaultBuffer(_vault, ref _plantSeedsHandle, BufferID.FloraGenomePlantSeeds, 1, out NativeArray<FloraPlantSeedDTO> seeds) ||
+                    !TryResolveFloraGenomeVaultBuffer(_vault, ref _statsHandle, BufferID.FloraGenomeStats, 1, out NativeArray<FloraGenomeJobStats> statsVault) ||
+                    !TryResolveFloraGenomeVaultBuffer(_vault, ref _blackBoxHandle, BufferID.FloraGenomeBlackBox, FloraGenomeLSystemConstants.BlackBoxFrameCount, out NativeArray<FloraGenomeBlackBoxEntry> blackBox) ||
+                    !TryResolveFloraGenomeVaultBuffer(_vault, ref _blackBoxCursorHandle, BufferID.FloraGenomeBlackBoxCursor, 1, out NativeArray<int> blackBoxCursor))
+                {
+                    return false;
+                }
 
-            JobHandle turtleHandle = new TurtleGraphicsJob
-            {
-                Genomes = genomes,
-                PlantSeeds = seeds,
-                Symbols = workspace.ExpandedSymbols,
-                GenomeIndex = genomeIndex,
-                PlantIndex = 0,
-                FrameIndex = frameIndex,
-                QualityWeight01 = qualityWeight01,
-                TurtleStack = workspace.TurtleStack,
-                BranchMatrices = workspace.BranchMatrices,
-                MatrixWriteOffset = safeMatrixOffset,
-                MatrixWriteCapacity = ResolveWriteCapacity(workspace.BranchMatrices.Length, safeMatrixOffset),
-                HazardZones = workspace.HazardZones,
-                HazardWriteOffset = safeHazardOffset,
-                HazardWriteCapacity = ResolveWriteCapacity(workspace.HazardZones.Length, safeHazardOffset),
-                BlackBox = blackBox,
-                BlackBoxCursor = blackBoxCursor,
-                Stats = statsVault
-            }.Schedule(expandHandle);
+                if ((uint)genomeIndex >= (uint)genomes.Length)
+                    return false;
 
-            ticket = new FloraGenomeGenerationTicket
+                FloraPlantSeedDTO resolvedSeed = seed;
+                FloraGenomeDTO genome = genomes[genomeIndex];
+                resolvedSeed.SpeciesHash = genome.SpeciesHash;
+                if (resolvedSeed.PlantHash == 0u)
+                    resolvedSeed.PlantHash = FloraGenomeLSystemUtility.HashPlant(resolvedSeed.AupCell, genome.SpeciesHash, resolvedSeed.WorldSeed, resolvedSeed.ChunkSlot);
+                float qualityWeight01 = ResolveGenomeQualityWeight01();
+                resolvedSeed.QualityWeightQ8 = EncodeQualityWeightQ8(qualityWeight01);
+                resolvedSeed.RequestedIterations = genome.MaxIterations;
+                seeds[0] = resolvedSeed;
+
+                int safeMatrixOffset = math.max(0, matrixOffset);
+                int safeHazardOffset = math.max(0, hazardOffset);
+                JobHandle expandHandle = new IterativeLSystemExpanderJob
+                {
+                    Genomes = genomes,
+                    GenomeIndex = genomeIndex,
+                    QualityWeight01 = qualityWeight01,
+                    ExpandedSymbols = workspace.ExpandedSymbols,
+                    ScratchSymbols = workspace.ScratchSymbols,
+                    Stats = statsVault
+                }.Schedule(inputDeps);
+
+                JobHandle turtleHandle = new TurtleGraphicsJob
+                {
+                    Genomes = genomes,
+                    PlantSeeds = seeds,
+                    Symbols = workspace.ExpandedSymbols,
+                    GenomeIndex = genomeIndex,
+                    PlantIndex = 0,
+                    FrameIndex = frameIndex,
+                    QualityWeight01 = qualityWeight01,
+                    TurtleStack = workspace.TurtleStack,
+                    BranchMatrices = workspace.BranchMatrices,
+                    MatrixWriteOffset = safeMatrixOffset,
+                    MatrixWriteCapacity = ResolveWriteCapacity(workspace.BranchMatrices.Length, safeMatrixOffset),
+                    HazardZones = workspace.HazardZones,
+                    HazardWriteOffset = safeHazardOffset,
+                    HazardWriteCapacity = ResolveWriteCapacity(workspace.HazardZones.Length, safeHazardOffset),
+                    BlackBox = blackBox,
+                    BlackBoxCursor = blackBoxCursor,
+                    Stats = statsVault
+                }.Schedule(expandHandle);
+
+                ticket = new FloraGenomeGenerationTicket
+                {
+                    Handle = turtleHandle,
+                    Seed = resolvedSeed,
+                    Genome = genome,
+                    MatrixOffset = safeMatrixOffset,
+                    FrameIndex = frameIndex,
+                    IsCreated = 1
+                };
+                _generationInFlight = true;
+                handoffGuard = true;
+                return true;
+            }
+            finally
             {
-                Handle = turtleHandle,
-                Seed = resolvedSeed,
-                Genome = genome,
-                MatrixOffset = safeMatrixOffset,
-                FrameIndex = frameIndex,
-                IsCreated = 1
-            };
-            _generationInFlight = true;
-            return true;
+                if (!handoffGuard)
+                    ReleaseGenerationJobGuard();
+            }
         }
 
         public bool TryFinalizePlantGeneration(ref FloraGenomeGenerationTicket ticket, out FloraGenomeJobStats stats)
@@ -365,42 +390,139 @@ namespace Hecton8.World
             if (!TryResolveFloraGenomeVaultBuffer(_vault, ref _statsHandle, BufferID.FloraGenomeStats, 1, out NativeArray<FloraGenomeJobStats> statsVault) ||
                 statsVault.Length <= FloraGenomeLSystemUtility.StatsDecoderIndex)
             {
+                ReleaseGenerationJobGuard();
                 _generationInFlight = false;
                 ticket = default;
                 return false;
             }
 
-            stats = statsVault[0];
-            PublishBiomassSignal(in ticket.Seed, in ticket.Genome, in stats, ticket.MatrixOffset);
-            PublishOverloadWarningIfNeeded(ticket.FrameIndex, in stats);
-            DumpBlackBoxIfFatal(in stats);
-            _generationInFlight = false;
-            ticket = default;
+            try
+            {
+                stats = statsVault[0];
+                PublishBiomassSignal(in ticket.Seed, in ticket.Genome, in stats, ticket.MatrixOffset);
+                PublishOverloadWarningIfNeeded(ticket.FrameIndex, in stats);
+                DumpBlackBoxIfFatal(in stats);
+                return true;
+            }
+            finally
+            {
+                ReleaseGenerationJobGuard();
+                _generationInFlight = false;
+                ticket = default;
+            }
+        }
+
+        private bool TryAcquireRawBytesGuard(out NativeArray<byte> rawBytes)
+        {
+            rawBytes = default;
+            IDataVault vault = _vault;
+            if (vault == null ||
+                vault.IsCompactionFenceActive ||
+                _rawBufferGuardHeld ||
+                !vault.TryAcquireMutationGuard(RawBytesMutationGuardMask))
+            {
+                return false;
+            }
+
+            bool keepGuard = false;
+            try
+            {
+                keepGuard =
+                    !vault.IsCompactionFenceActive &&
+                    TryResolveFloraGenomeVaultBuffer(
+                        vault,
+                        ref _rawBytesHandle,
+                        BufferID.FloraGenomeRawBytes,
+                        DefaultRawBytesCapacity,
+                        out rawBytes) &&
+                    rawBytes.IsCreated;
+
+                if (keepGuard)
+                {
+                    _rawBufferGuardVault = vault;
+                    _rawBufferGuardHeld = true;
+                }
+
+                return keepGuard;
+            }
+            finally
+            {
+                if (!keepGuard)
+                {
+                    vault.ReleaseMutationGuard(RawBytesMutationGuardMask);
+                    rawBytes = default;
+                }
+            }
+        }
+
+        private void ReleaseRawBytesGuard()
+        {
+            if (_rawBufferGuardHeld && _rawBufferGuardVault != null)
+                _rawBufferGuardVault.ReleaseMutationGuard(RawBytesMutationGuardMask);
+
+            _rawBufferGuardHeld = false;
+            _rawBufferGuardVault = null;
+        }
+
+        private bool TryAcquireGenerationJobGuard()
+        {
+            IDataVault vault = _vault;
+            if (vault == null ||
+                vault.IsCompactionFenceActive ||
+                _generationJobGuardHeld ||
+                !vault.TryAcquireMutationGuard(GenerationJobMutationGuardMask))
+            {
+                return false;
+            }
+
+            _generationJobGuardVault = vault;
+            _generationJobGuardHeld = true;
             return true;
+        }
+
+        private void ReleaseGenerationJobGuard()
+        {
+            if (_generationJobGuardHeld && _generationJobGuardVault != null)
+                _generationJobGuardVault.ReleaseMutationGuard(GenerationJobMutationGuardMask);
+
+            _generationJobGuardHeld = false;
+            _generationJobGuardVault = null;
         }
 
         private void DecodeLoadedBytes(int byteCount)
         {
-            if (_vault == null)
-                return;
-
-            if (!TryResolveFloraGenomeVaultBuffer(_vault, ref _rawBytesHandle, BufferID.FloraGenomeRawBytes, DefaultRawBytesCapacity, out NativeArray<byte> rawBytes) ||
-                !TryResolveFloraGenomeVaultBuffer(_vault, ref _genomesHandle, BufferID.FloraGenomeDtos, math.max(1, _genomeCapacity), out NativeArray<FloraGenomeDTO> genomes) ||
-                !TryResolveFloraGenomeVaultBuffer(_vault, ref _statsHandle, BufferID.FloraGenomeStats, 1, out NativeArray<FloraGenomeJobStats> stats))
+            IDataVault vault = _vault;
+            if (vault == null ||
+                vault.IsCompactionFenceActive ||
+                !vault.TryAcquireMutationGuard(DecodeMutationGuardMask))
             {
                 return;
             }
 
-            FloraGenomeDecoderJob decoderJob = new FloraGenomeDecoderJob
+            try
             {
-                RawBytes = rawBytes,
-                RawByteCount = byteCount,
-                Genomes = genomes,
-                Stats = stats
-            };
-            decoderJob.Execute();
+                if (!TryResolveFloraGenomeVaultBuffer(vault, ref _rawBytesHandle, BufferID.FloraGenomeRawBytes, DefaultRawBytesCapacity, out NativeArray<byte> rawBytes) ||
+                    !TryResolveFloraGenomeVaultBuffer(vault, ref _genomesHandle, BufferID.FloraGenomeDtos, math.max(1, _genomeCapacity), out NativeArray<FloraGenomeDTO> genomes) ||
+                    !TryResolveFloraGenomeVaultBuffer(vault, ref _statsHandle, BufferID.FloraGenomeStats, 1, out NativeArray<FloraGenomeJobStats> stats))
+                {
+                    return;
+                }
 
-            _genomeCount = stats[0].GenomeCount;
+                FloraGenomeDecoderJob decoderJob = new FloraGenomeDecoderJob
+                {
+                    RawBytes = rawBytes,
+                    RawByteCount = byteCount,
+                    Genomes = genomes,
+                    Stats = stats
+                };
+                decoderJob.Execute();
+
+                _genomeCount = stats[0].GenomeCount;
+            }
+            finally
+            {
+                vault.ReleaseMutationGuard(DecodeMutationGuardMask);
+            }
         }
 
         private async Awaitable RunGenomeBinaryLoadAsync(string projectRoot, NativeArray<byte> rawBytes)
@@ -587,6 +709,11 @@ namespace Hecton8.World
             return handle.BufferID == unchecked((uint)(int)bufferId) &&
                    handle.SystemID == (uint)OwnerSystem &&
                    handle.Generation != 0u;
+        }
+
+        private static ulong FloraGenomeMutationGuardBit(BufferID bufferId)
+        {
+            return 1UL << ((int)bufferId & 31);
         }
 
         private static void ReleaseFloraGenomeVaultHandle<T>(

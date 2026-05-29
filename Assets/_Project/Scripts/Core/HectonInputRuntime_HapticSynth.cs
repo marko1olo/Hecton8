@@ -575,6 +575,12 @@ namespace Hecton8.Core
             if (vault == null)
                 return false;
 
+            if (vault.IsAllocationLocked || vault.IsCompactionFenceActive)
+            {
+                buffer = default;
+                return false;
+            }
+
             handle = vault.EnsureGenerationHandle<T>(
                 bufferId,
                 requiredLength,

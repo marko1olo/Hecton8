@@ -237,7 +237,7 @@ namespace Hecton8.Graphics.Culling
             float qualityWeight = ResolveDispatchQualityWeight(in descriptor);
             uint flags = (uint)descriptor.Flags;
             if (ResolveSurvivalDistanceWeight01(qualityWeight) > 0.0001f)
-                flags |= (uint)InstanceCullingDispatchFlags.LowTierDistance;
+                flags |= (uint)InstanceCullingDispatchFlags.SurvivalDistancePressure;
             if (descriptor.VramUsedMb > VramDownsampleThresholdMb)
                 flags |= (uint)InstanceCullingDispatchFlags.VramDownsample;
             if (_voxelSdfEnabled)

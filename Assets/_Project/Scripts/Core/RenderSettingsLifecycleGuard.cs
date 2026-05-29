@@ -56,7 +56,7 @@ namespace Hecton8.Core
                 RenderSettings.fogMode = FogMode;
                 RenderSettings.fogColor = FogColor;
                 RenderSettings.fogDensity = FogDensity;
-                IGIRelaySystem giRelay = GlobalRegistry.GIRelay;
+                IGIRelaySystem giRelay = RenderSettingsLifecycleGuard._giRelay;
                 bool giRelayAmbientAuthority = giRelay != null && giRelay.IsAmbientProbeAuthorityActive;
                 if (!giRelayAmbientAuthority)
                 {
@@ -81,6 +81,8 @@ namespace Hecton8.Core
         private static int _ownerOverflowCount;
         private static bool _snapshotCaptured;
         private static RenderSettingsSnapshot _snapshot;
+        private static IGIRelaySystem _giRelay;
+        private static IAtmosphereRenderSettingsBridge _atmosphereBridge;
 #if UNITY_EDITOR
         private static bool _editorHooksRegistered;
 #endif
@@ -92,7 +94,19 @@ namespace Hecton8.Core
             _ownerOverflowCount = 0;
             _snapshotCaptured = false;
             _snapshot = default;
+            _giRelay = null;
+            _atmosphereBridge = null;
             Array.Clear(_ownerIds, 0, _ownerIds.Length);
+        }
+
+        internal static void BindGIRelayCold(IGIRelaySystem giRelay)
+        {
+            _giRelay = giRelay;
+        }
+
+        internal static void BindAtmosphereCold(IAtmosphereRenderSettingsBridge atmosphereBridge)
+        {
+            _atmosphereBridge = atmosphereBridge;
         }
 
         public static void Acquire(UnityEngine.Object owner)
@@ -191,7 +205,7 @@ namespace Hecton8.Core
 
         private static Material CaptureSkybox()
         {
-            IAtmosphereRenderSettingsBridge bridge = GlobalRegistry.Atmosphere;
+            IAtmosphereRenderSettingsBridge bridge = _atmosphereBridge;
             return bridge != null
                 ? bridge.Skybox
                 : RenderSettings.skybox;
@@ -199,7 +213,7 @@ namespace Hecton8.Core
 
         private static void RestoreSkybox(Material skybox)
         {
-            IAtmosphereRenderSettingsBridge bridge = GlobalRegistry.Atmosphere;
+            IAtmosphereRenderSettingsBridge bridge = _atmosphereBridge;
             if (bridge != null)
             {
                 bridge.SetSkybox(skybox);

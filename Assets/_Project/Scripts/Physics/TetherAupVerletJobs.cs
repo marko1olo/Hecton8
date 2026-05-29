@@ -1254,7 +1254,7 @@ namespace Hecton8.Physics
             if (TryOpenExistingBuffer(vault, bufferId, requiredLength, out buffer))
                 return true;
 
-            if (vault == null || requiredLength <= 0 || vault.IsAllocationLocked)
+            if (vault == null || requiredLength <= 0 || vault.IsAllocationLocked || vault.IsCompactionFenceActive)
             {
                 buffer = default;
                 return false;

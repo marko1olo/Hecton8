@@ -2982,3 +2982,289 @@ Verification:
 - Scoped hot lookup scan over the ten verified files found no `GlobalRegistry.Get<`, `GetComponent<`, or `TryGetComponent<`.
 - `dotnet build` invocations: 0; CPU sample `91%`; active `dotnet/csc/VBCSCompiler` processes: 0. Build stayed blocked by AGENTS CPU throttle.
 - Runtime verification absent: no Unity import, Console, Play Mode, profiler, GCMonitor, player build, device run, or crash dump.
+
+## 2026-05-29 - UNKNOWN - FrameTimeWatchdog Continuous Visual Pressure Pass
+
+What was wrong:
+- `FrameTimeWatchdog` forced visual/shader frame pressure to `0.85` when `MathLodMode.Low` was selected.
+- That was a binary visual pressure cliff in a system that must scale by continuous `HomeostasisBrain.GlobalQualityWeight` and measured frame pressure.
+
+What was done:
+- Removed the forced low-math-lod pressure floor from the visual/shader quality route.
+- Kept legacy `MathLodMode` precision events for compatibility.
+- `ApplyContinuousQualityState`, `ResolveShaderQualityWeight01`, and `ResolveEffectiveFramePressure01` now use only continuous quality/pressure inputs.
+
+Cinematic cheats used:
+- No physical simulation added. This preserves the cheap visual-control route and removes a binary quality cliff.
+
+Exact microseconds saved:
+- Claimed runtime savings: `0 us`; no profiler/player proof.
+- Expected value is visual continuity: low/mid/high/ultra now scale without a hard low-mode shader pressure jump.
+
+Verification:
+- Hash: `FrameTimeWatchdog.cs=8D917CF09BD9D5152AB367E33EDE01F3E33F1A7233C59037899FF49EFF894A5D`.
+- Source evidence: `FrameTimeWatchdog.cs:334`, `339`, `357`, `359`, `364`, `367`, `369`, `384`, `387`, `404`.
+- Last source commit: `4af83981f`.
+- Added-line scan: `added_lines=12`, `new=0`, `string.Format=0`, `.ToString=0`, LINQ `0`, `foreach=0`, `GlobalRegistry.Get=0`, `GetComponent=0`, `.Complete=0`, `TryAcquireWriteLock=0`.
+- Scoped `git diff --check`: exit `0`, LF/CRLF warning only.
+- `dotnet build` invocations: 0; CPU sample `91%`; build stayed blocked by AGENTS CPU throttle.
+- Runtime verification absent: no Unity import, Console, Play Mode, profiler, GCMonitor, frame-pressure soak, shader quality capture, player build, device run, or crash dump.
+
+## 2026-05-29 - UNKNOWN - Exosuit FixedTick Cold-Allocation Seal
+
+What was wrong:
+- `ExosuitKinematicsRuntime.FixedTick()` called `EnsureBuffers(true)`.
+- That allowed `EnsureBuffers` to reach `AllocateVaultBuffers` and `EnsureGenerationHandle` from fixed simulation if cold initialization was incomplete.
+
+What was done:
+- Changed `FixedTick` to call `EnsureBuffers(false)`.
+- Added a fail-closed branch in `EnsureBuffers`: if `_stateHandle` is missing and cold initialization is disallowed, return false instead of allocating DataVault buffers.
+- Kept `OnEnable` as the cold owner path with `EnsureBuffers(true)`.
+
+Cinematic cheats used:
+- None. This was DataVault lifecycle/phase safety. No physical simulation or presentation route was added.
+
+Exact microseconds saved:
+- Claimed runtime savings: `0 us`; no profiler/player proof.
+- Expected value is stability: fixed simulation no longer has a cold allocation/generation-handle fallback.
+
+Verification:
+- Hash: `ExosuitKinematicsRuntime.cs=8EBD6B0E246B43DF1AE7E335B9870AADB4901C4EABB19E3D8622660BC29EF8F0`.
+- Source evidence: `EnsureBuffers(true)` remains at `OnEnable` line `247`; `EnsureBuffers(false)` is at `FixedTick` line `292`; fail-closed guard is at lines `545-550`; `EnsureGenerationHandle` remains inside `AllocateVaultBuffers`.
+- Forbidden scan over the file found no `GlobalRegistry.Get<`, `GetComponent<`, `TryGetComponent<`, `.Complete()`, `string.Format`, `.ToString(`, or `foreach(`.
+- Scoped `git diff --check`: exit `0`, LF/CRLF warning only.
+- `dotnet build` invocations: 0; CPU sample `97%`; active `dotnet/csc/VBCSCompiler` processes: 0. Build stayed blocked by AGENTS CPU throttle and user's compile-wall boundary.
+- Runtime verification absent: no Unity import, Console, Play Mode, profiler, GCMonitor, exosuit simulation run, player build, device run, or crash dump.
+
+## 2026-05-29 - UNKNOWN - Habitat Fluid FixedTick Cold-Allocation Seal
+
+What was wrong:
+- `HabitatFluidIncursionDirector.FixedTick()` called `EnsureBuffersInitialized()` when `_buffersReady` was false.
+- That route can allocate/grow DataVault buffers through `EnsureGenerationHandle` and run cold-clear jobs through `DispatcherJobFence.TryComplete`.
+
+What was done:
+- Changed `FixedTick` to call `EnsureBuffersInitialized(false)`.
+- Added an explicit `allowColdInitialization` gate to `OpenOrAcquireFluidVaultBuffer`.
+- Kept `OnEnable`, DataVault hot-swap, topology install, editor CSV, and mock generation on the default cold-owner route.
+
+Cinematic cheats used:
+- None. This was DataVault lifecycle/phase safety. No physical simulation or presentation route was added.
+
+Exact microseconds saved:
+- Claimed runtime savings: `0 us`; no profiler/player proof.
+- Expected value is stability: fixed simulation no longer repairs missing habitat fluid buffers by allocating or running cold-clear jobs.
+
+Verification:
+- Hash: `HabitatFluidIncursionDirector.cs=38E8C401CF7C092750E93305813E9EB2B44543F55D588215E492DD7827D7C810`.
+- Source evidence: `FixedTick` line `203`; `OpenOrAcquireFluidVaultBuffer` `allowColdInitialization` line `824`, allocation gate line `850`, `EnsureGenerationHandle` line `853`; `EnsureBuffersInitialized` false-path lines `904/906`.
+- Forbidden scan over the file found no `GlobalRegistry.Get<`, `GetComponent<`, `TryGetComponent<`, `.Complete()`, `string.Format`, `.ToString(`, or `foreach(`.
+- Scoped `git diff --check`: exit `0`, LF/CRLF warning only.
+- `dotnet build` invocations: 0; CPU sample `77%`; active `dotnet/csc/VBCSCompiler` processes: 0. Build stayed blocked by AGENTS CPU throttle and user's compile-wall boundary.
+- Runtime verification absent: no Unity import, Console, Play Mode, profiler, GCMonitor, habitat fluid simulation run, player build, device run, or crash dump.
+
+## 2026-05-29 - UNKNOWN - SystemDispatcher Frame-Phase Prewarm Seal
+
+What was wrong:
+- Master dispatcher simulation/telemetry/fence buffer accessors called `EnsureMasterDispatcherNativeBuffers()` from frame phases.
+- `WriteMasterPresentationSuppression()` called the same ensure route from VISUAL_SYNC.
+- `TryLockDispatcherSurfaceProbeScheduledVaultBuffers()` called `EnsureDispatcherSurfaceProbeBuffers()` from the scheduled-probe lock path.
+
+What was done:
+- Removed frame-phase native buffer ensures from `TryEnsureMasterSimulationBuffers`, `TryEnsureMasterTelemetryBuffers`, `TryEnsureMasterDomainFenceBuffers`, and `WriteMasterPresentationSuppression`.
+- Removed scheduled-probe lock-time surface probe ensure.
+- Added explicit DataVault hot-swap prewarm for surface probes, H8 time, dispatcher blackbox, and master dispatcher native buffers after `_dataVault` is rebound.
+
+Cinematic cheats used:
+- None. This was core dispatcher lifecycle/phase safety. Existing continuous quality and presentation suppression behavior is unchanged after prewarm.
+
+Exact microseconds saved:
+- Claimed runtime savings: `0 us`; no profiler/player proof.
+- Expected value is stability: dispatcher frame phases now fail closed instead of allocating or growing DataVault buffers.
+
+Verification:
+- Hash: `SystemDispatcher.cs=EB56182BD55C3A555E68650F038C2684076E0353FE66CC14ADC188D6E8796D98`.
+- Source evidence: removed ensure calls in the diff for `TryEnsureMasterSimulationBuffers`, `TryEnsureMasterTelemetryBuffers`, `TryEnsureMasterDomainFenceBuffers`, `WriteMasterPresentationSuppression`, and `TryLockDispatcherSurfaceProbeScheduledVaultBuffers`; hot-swap prewarm is at lines `4293-4298`.
+- Forbidden scan over the file found no `GlobalRegistry.Get<`, `GetComponent<`, `TryGetComponent<`, `.Complete()`, `string.Format`, `.ToString(`, or `foreach(`.
+- Scoped `git diff --check`: exit `0`, LF/CRLF warning only.
+- `dotnet build` invocations: 0; CPU sample `80%`; active `dotnet/csc/VBCSCompiler` processes: 0. Build stayed blocked by AGENTS CPU throttle and user's compile-wall boundary.
+- Runtime verification absent: no Unity import, Console, Play Mode, profiler, GCMonitor, dispatcher frame soak, DataVault hot-swap test, player build, device run, or crash dump.
+
+## 2026-05-29 - UNKNOWN - ContentAuthority LateFrame Cold-Allocation Seal
+
+What was wrong:
+- `ContentAuthorityRuntime.LateFrameTick()` called pending-load and telemetry pointer helpers that could allocate DataVault handles through `EnsureGenerationHandle` when content authority buffers were missing.
+
+What was done:
+- `TickPendingLoads()` and `WriteTelemetry()` now pass `allowColdInitialization: false`.
+- The shared outer `OpenOrAcquireBuffer` returns false before `EnsureGenerationHandle` when cold initialization is disallowed.
+- `RebindDataVaultCold()` now prewarms telemetry, telemetry cursor, pending-load state, and pending-load count buffers from cold bind/DataVault replacement.
+
+Cinematic cheats used:
+- None. This was visual-sync phase safety. Hologram proxy and VRAM telemetry behavior is unchanged after prewarm.
+
+Exact microseconds saved:
+- Claimed runtime savings: `0 us`; no profiler/player proof.
+- Expected value is stability: content visual sync no longer repairs missing buffers by allocating or growing DataVault handles.
+
+Verification:
+- Hash: `ContentRuntimeServices.cs=597812157381F3F6DA57FA95E1CC2A2F0691B01E10BF2E8BF21E25E459796F23`.
+- Source evidence: `LateFrameTick` lines `774-785`; false cold-init gates at lines `1097` and `1542`; generic allocation gate at lines `1856/1868`; cold prewarm at lines `2304/2315/2318-2347`.
+- Added-line scan: `added_lines=66`, `new=0`, `string.Format=0`, `.ToString=0`, LINQ `0`, `foreach=0`, `GlobalRegistry.Get=0`, `GetComponent=0`, `.Complete=0`, `EnsureGenerationHandle=0`.
+- Scoped `git diff --check`: exit `0`, LF/CRLF warning only.
+- `dotnet build` invocations: 0; CPU sample `46%`; active `dotnet.exe` PID `2552`. Build stayed blocked by active-compiler throttle and user's compile-wall boundary.
+- Runtime verification absent: no Unity import, Console, Play Mode, profiler, GCMonitor, content async-load soak, player build, device run, or crash dump.
+
+## 2026-05-29 - UNKNOWN - Foveated VisualSync Allocation Seal
+
+What was wrong:
+- `FoveatedSimulationManager.RebuildVisualTargetCache()` allocated `new Transform[_visualTargetCount]` from `VisualSyncTick()` when the visual target count changed.
+
+What was done:
+- Added a fixed cold `Transform[MaxTargets]` compact visual cache.
+- `RebuildVisualTargetCache()` now fills existing slots and clears stale tail entries; it no longer allocates inside VISUAL_SYNC.
+- `ResetRuntimeState()` clears the fixed cache instead of assigning `Array.Empty<Transform>()`.
+
+Cinematic cheats used:
+- None. This was presentation-phase GC hygiene. Existing visual interpolation and Doppler cheap presentation behavior is unchanged.
+
+Exact microseconds saved:
+- Claimed runtime savings: `0 us`; no profiler/player proof.
+- Expected value is stability: visual target churn no longer creates a managed array during visual sync.
+
+Verification:
+- Hash: `FoveatedSimulationManager.cs=5C847C80016D2238F7313179515787B301CE92891D6A450FE05A98418DB1BB4D`.
+- Source evidence: fixed cache line `270`, reset clear line `780`, `VisualSyncTick` route lines `630-635`, rebuild lines `1337-1358`.
+- Added-line scan: `added_lines=7`, cold `new[]` field initializer `1`, hot-method `new=0`, `string.Format=0`, `.ToString=0`, LINQ `0`, `foreach=0`, `GlobalRegistry.Get=0`, `GetComponent=0`, `.Complete=0`, `EnsureGenerationHandle=0`.
+- Scoped `git diff --check`: exit `0`, LF/CRLF warning only.
+- `dotnet build` invocations: 0; CPU sample `57%`; active `VBCSCompiler` PID `27828`. Build stayed blocked by CPU/active-compiler throttle and user's compile-wall boundary.
+- Runtime verification absent: no Unity import, Console, Play Mode, profiler, GCMonitor, foveated target churn test, player build, device run, or crash dump.
+
+## 2026-05-29 - UNKNOWN - Lockstep PostFixed DataVault Allocation Seal
+
+What was wrong:
+- `LockstepStateValidator.PostFixedTick()` could allocate/grow DataVault handles through input capture, player mirror, room-water mirror, hash scratch, master history, and telemetry helper calls.
+- `ExecuteHashJobs()` called cold ensure methods from the hash cadence path.
+
+What was done:
+- Added `allowColdInitialization` to the shared lockstep DataVault open helper.
+- Passed `allowColdInitialization:false` from all inspected post-fixed write/hash/telemetry routes.
+- Moved hash/replay/telemetry/player mirror prewarm to cold enable/DataVault replacement and room mirror prewarm to initialized habitat cold routes.
+- Fixed room-water hash semantics so missing habitat remains missing and live room count above fixed mirror capacity is reported as truncated.
+
+Cinematic cheats used:
+- None. This was deterministic phase safety and fixed-capacity mirroring, not a physical simulation or presentation feature.
+- Existing continuous hash cadence remains driven by `GlobalQualityWeight` and system stress; no binary quality switch was added.
+
+Exact microseconds saved:
+- Claimed runtime savings: `0 us`; no profiler/player proof.
+- Expected value is stability: post-fixed determinism no longer repairs missing buffers by allocating or growing DataVault handles.
+
+Verification:
+- Hash: `LockstepStateValidator.cs=A5B61E65D9A8C0830D46831ED6FEA372E58B9D2969EE84B3156BD63BB6A84C87`.
+- Source evidence: cold prewarm lines `393-395`, DataVault hotswap prewarm lines `441-443`, logistics room prewarm line `454`, post-fixed false gates lines `658/742/835/853-863/1203/1208/1448/1456`, generic false gate lines `1803-1809`, mirror prewarm lines `1910-1915`.
+- Added-line scan: `added_lines=65`, `new=0`, `string.Format=0`, `.ToString=0`, LINQ `0`, `foreach=0`, `GlobalRegistry.Get=0`, `GetComponent=0`, `TryGetComponent=0`, `.Complete=0`, `EnsureGenerationHandle=0`, `TryAcquireWriteLock=0`.
+- Full-file forbidden scan returned no `GlobalRegistry.Get<`, `GetComponent<`, `TryGetComponent<`, `.Complete()`, `string.Format`, `.ToString(`, `foreach(`, `TryAcquireWriteLock`, or `ReleaseWriteLock`.
+- Brace/paren/bracket counts: `225/225`, `960/960`, `220/220`; scoped `git diff --check`: exit `0`, LF/CRLF warning only.
+- `dotnet build` invocations: 0; CPU sample `93%`; active `VBCSCompiler` PID `27828`. Build stayed blocked by CPU/active-compiler throttle and user's compile-wall boundary.
+- Runtime verification absent: no Unity import, Console, Play Mode, profiler, GCMonitor, lockstep replay/hash soak, DataVault hotswap test, player build, device run, or crash dump.
+
+## 2026-05-29 - UNKNOWN - AUP DataVault Compaction-Fence Guard
+
+What was wrong:
+- `AupPrecisionVault.OpenOrAcquireBuffersForOwnerRoute()` checked `IsAllocationLocked` but not `IsCompactionFenceActive` before generation-handle creation.
+- `AupOriginShiftCoordinator.OpenOrAcquireVaultBufferForOwnerRoute()` could reach `EnsureGenerationHandle<T>` without either allocation-lock or compaction-fence guard.
+
+What was done:
+- Added a pre-generation `vault.IsAllocationLocked || vault.IsCompactionFenceActive` fail-closed guard in both AUP owner routes.
+- Did not add locks, managed allocations, hot registry lookups, jobs, quality switches, or tier switches.
+
+Cinematic cheats used:
+- None. This is DataVault relocation safety, not a physical simulation or visual-fidelity feature.
+
+Exact microseconds saved:
+- Claimed runtime savings: `0 us`; no profiler/player proof.
+- Expected value is stability: AUP owner routes no longer create or grow generation handles while DataVault compaction is fenced.
+
+Verification:
+- `AupPrecisionJobs.cs` SHA-256 `942DE60A90A8CA44B3B1172B14D55853670E815B0B64B7068D5F42E8B321DE44`.
+- `AupOriginShiftCoordinator.cs` SHA-256 `E41B36C57E055471AFE12893B983747459084C9F94ED8FD66AAC490D0546EBFE`.
+- Guards: `AupPrecisionJobs.cs:51`, `AupOriginShiftCoordinator.cs:494`.
+- Added-line scan: `added_lines=4`, `new=0`, `string.Format=0`, `.ToString=0`, LINQ `0`, `foreach=0`, `GlobalRegistry.Get=0`, `GetComponent=0`, `TryGetComponent=0`, `.Complete=0`, `EnsureGenerationHandle=0`, `TryAcquireWriteLock=0`, `TryAcquireMutationGuard=0`.
+- Scoped `git diff --check`: exit `0`, LF/CRLF warnings only.
+- `dotnet build` invocations: 0; CPU sample `79%`; active `dotnet.exe` PID `13764`. Build stayed blocked by CPU/active-compiler throttle and user's compile-wall boundary.
+- Runtime verification absent: no Unity import, Console, Play Mode, profiler, GCMonitor, DataVault compaction-fence soak, player build, device run, or crash dump.
+
+## 2026-05-29 - UNKNOWN - Core/Physics DataVault Compaction-Fence Sweep
+
+What was wrong:
+- A broader Core/Physics scan found runtime owner/cold/mock/prewarm routes that checked `IsAllocationLocked` but did not check `IsCompactionFenceActive` before possible DataVault generation-handle creation.
+- This left a relocation path open during explicit DataVault compaction fences.
+
+What was done:
+- Added compaction-fence gates to hardware thermal severity/blackbox owner routes, docking autopilot active spline allocation, vault sovereignty telemetry/prewarm, math guard invalid-number buffers, harpoon mock/bootstrap views, seaglide cold/mock/open routes, hydrodynamic KCC open route, cable mock/open route, tether AUP open route, habitat fluid open route, and dispatcher memory-profile CSV polling.
+- Did not change DTOs, owners, authority routes, lock topology, job scheduling, quality scaling, or simulation truth.
+
+Cinematic cheats used:
+- None. This is DataVault relocation safety, not a visual/physical simulation feature.
+
+Exact microseconds saved:
+- Claimed runtime savings: `0 us`; no profiler/player proof.
+- Expected value is stability: generation-handle creation is blocked while DataVault compaction is fenced.
+
+Verification:
+- Hashes: `HardwareThermalService.cs=AA6FBE57B82E41A5B477FDCAAE0CB6A7A0935096D179A06F5A61A102D9A90704`, `DockingAutopilotService.cs=165180BF64097A1008F1EAD6AC0FD3A10CF7772CAFA13E0FB1281CAED0D1BD26`, `VaultMemoryContracts.cs=FAA06E087FFA957AE448D0D1AAE2CE6D3C6B9D8328D53A348E7609D42616D80C`, `MathGuard.cs=2F949E4B7D9885AA2A7ECA2D2FDA4944008F093B3F76929A489F19859657D549`, `HarpoonTensionSolver328.cs=61676194D2CFB4EDB16106E3849C19B2D0C22C942895259FD99FFB3F25F1C21A`, `SeaglideHydrodynamicsRuntime.cs=6810F108E66DDC49549F427D8D4DCFF6D7B25BFFB7CE5D3AEBBCC98FFE4C4CA8`, `HydrodynamicKccRuntime.cs=2F0F747EE12FE81EBF9C7ACF8F384D997BCED1AA4E7460BB7664212E6ED622D3`, `CablePhysicsSolver132.cs=7E0C503B4B6E6372D747A8E8A823F1C0A890814708DD6D7BDB15111F73DE379E`, `TetherAupVerletJobs.cs=3E2455AB7E8982F83C3EE7BE09D7B512F5D5B536012B754C553898CEC23FED6A`, `HabitatFluidIncursionDirector.cs=76B581D355ED65EAAD0B555C197F591BCC4E7BD05F50257CE3471160C9D48C05`, `SystemDispatcher.cs=B6325641E1EB83265242C555B18AC578F3979BC921949C70D561A34F938FF4BF`.
+- Added-line scan: `added_lines=50`, `new=0`, `string.Format=0`, `.ToString=0`, LINQ `0`, `foreach=0`, `GlobalRegistry.Get=0`, `GetComponent=0`, `TryGetComponent=0`, `.Complete=0`, `EnsureGenerationHandle=0`, `TryAcquireWriteLock=0`, `TryAcquireMutationGuard=0`.
+- Scoped `git diff --check`: exit `0`, LF/CRLF warnings only.
+- Residual runtime classification: remaining `IsAllocationLocked` without same-line compaction evidence is editor-only windows/scanners, `GlobalDataVault` interface/property definitions, and a multiline `BuoyancyDisplacementRuntime` gate that already checks `!currentVault.IsCompactionFenceActive`.
+- `dotnet build` invocations: 0; CPU sample `66%`; active compiler scan returned none. Build stayed blocked by AGENTS CPU throttle.
+- Runtime verification absent: no Unity import, Console, Play Mode, profiler, GCMonitor, DataVault compaction-fence soak, player build, device run, or crash dump.
+
+## 2026-05-29 - UNKNOWN - PlayerRuntimeContext Hot Component Lookup Seal
+
+What was wrong:
+- `PlayerRuntimeContextService.Tick()` could enter `RefreshDynamicContextReferences()` every frame.
+- That method used service caches first, then fell through to `TryGetComponent` fallbacks when optional references were missing.
+
+What was done:
+- Added `allowColdComponentLookup`.
+- Stable-player Tick branch calls `RefreshDynamicContextReferences(allowColdComponentLookup: false)`.
+- Player-root replacement branch calls `RefreshDynamicContextReferences(allowColdComponentLookup: true)`.
+- Direct cached/static reference hydration remains available in the hot path; root/camera component lookup is cold-only.
+
+Cinematic cheats used:
+- None. This is hot dependency hygiene, not a visual or physical simulation feature.
+
+Exact microseconds saved:
+- Claimed runtime savings: `0 us`; no profiler/player proof.
+- Expected value is stability: no repeated component lookup from stable player Tick when optional references are missing.
+
+Verification:
+- `PlayerRuntimeContextService.cs` SHA-256 `68C6C946807171099A2F2D489AD9FA239EBB5D6937485ACCF52B2B1155CCEC06`.
+- Source evidence: `Tick` line `445`, stable cached-only call line `608`, cold fallback call line `653`, method signature line `862`, cold lookup gate line `913`.
+- Added-line scan: `added_lines=9`, `new=0`, `string.Format=0`, `.ToString=0`, LINQ `0`, `foreach=0`, `GlobalRegistry.Get=0`, `GetComponent=0`, `TryGetComponent=0`, `.Complete=0`, `EnsureGenerationHandle=0`, `TryAcquireWriteLock=0`, `TryAcquireMutationGuard=0`.
+- Scoped `git diff --check`: exit `0`, LF/CRLF warning only.
+- `dotnet build` invocations: 0; CPU sample `88%`; active `csc.exe` PID `21392` and `dotnet.exe` PID `16264`. Build stayed blocked by CPU/active-compiler throttle.
+- Runtime verification absent: no Unity import, Console, Play Mode, profiler, GCMonitor, player-root swap test, player service hot-swap test, player build, device run, or crash dump.
+2026-05-29 UNKNOWN Core DataVault compaction-fence recheck: wrong -> helper-level generation routes in lockstep, content authority/bundle refs, and foveated manager could still reach `EnsureGenerationHandle` while DataVault compaction fence was active; done -> added direct `IsAllocationLocked || IsCompactionFenceActive` gates before generation/reacquire in `LockstepStateValidator.cs:1806`, `ContentRuntimeServices.cs:462/1871`, `FoveatedSimulationManager.cs:1514/1528`; cinematic cheats -> none, this was ownership/relocation safety, no physical simulation added; exact microseconds saved -> 0 claimed, no profiler/player proof; static proof -> hashes `715ED9F5711F6D313FE7AA45E92B6DEEBA888308BC665D590D7327AC4635D62A`, `F3298DACC73307D700E60BBEF51565D1C8B8B4F8AFB5F77145FE2225412588FB`, `221BBD619958D6FB416E000E00BF99DBD509A265AF2DC8B243420F33BEFA5526`; build -> skipped because CPU 100% and active dotnet PIDs 33704/62500.
+2026-05-29 UNKNOWN Core input/haptic DataVault fence: wrong -> deterministic input and haptic synthesis owner-route helpers could create DataVault generation handles during allocation lock or compaction fence; done -> added fail-closed `IsAllocationLocked || IsCompactionFenceActive` guards in `InputDispatcher.cs:1057` and `HectonInputRuntime_HapticSynth.cs:578`; cinematic cheats -> none, ownership/relocation safety only; exact microseconds saved -> 0 claimed, no profiler/player proof; static proof -> hashes `C13924D6564F0A9671AD93219FFE5471A518B8DCA94439114592D28C05852604`, `7C0B2723959A2A9DBFC583321F22CFCA3349FF86F67F90AD8BC6FF622CE1C9CB`; build -> skipped because CPU 62% exceeded throttle.
+2026-05-29 UNKNOWN Core diagnostics/signal DataVault fence: wrong -> crash blackbox, memory sentinel, homeostasis, async telemetry, and SignalWarden init routes could create DataVault generation handles during allocation lock or compaction fence; done -> added fail-closed `IsAllocationLocked || IsCompactionFenceActive` guards at `GlobalTelemetryBus.Blackbox.cs:721`, `MemorySentinelRuntime.cs:551`, `HomeostasisBrain.cs:1124`, `SignalWardenRuntime.cs:276/823/2468`, `AsynchronousTelemetryExporter.cs:1079`; cinematic cheats -> none, relocation safety only; exact microseconds saved -> 0 claimed, no profiler/player proof; static proof -> hashes `54D564766CAC222F7F891A9867EA36C1785456F9FB02ECF16B3740AB8CB0019D`, `7F3A9EED5F680956BF4FCEC02A83F9AA219A1152BFB2496B1BBCAAB610DA87D0`, `71F3D6C13787D7EE09A1B213ADD1B48344BD089EDD423A62A851BC456FB1E733`, `01353995915E835DEF91F739A7977584D5D633060CEF335754F35A6099CAABB6`, `1B2BA1FB2BF96552032B021CA1B822D846477EC9957A7E2DDB8D1BF80728103E`; build -> not run, scoped static proof only.
+2026-05-29 UNKNOWN Core scheduling/bridge DataVault fence: wrong -> simulation bucketer, job admission/profile catalog, input facade, prefab registry binder, design value, facade header, and bridge telemetry routes could create generation handles during allocation lock or compaction fence; done -> added fail-closed `IsAllocationLocked || IsCompactionFenceActive` guards at `ModuloSimulationBucketer.cs:164`, `BurstTokenBucketJobAdmissionService.cs:100`, `JobSchedulingProfileCatalog.cs:53`, `H8InputMappingFacade.cs:94`, `H8PrefabRegistryRuntimeBinder.cs:54`, `H8BridgeFacadeRuntime.cs:142/322/393`; cinematic cheats -> none, relocation safety only; exact microseconds saved -> 0 claimed, no profiler/player proof; static proof -> hashes `8DC635BF3CB3729A9EABC3E80165B32291B20BC7A7DA25614947A3326267E24C`, `2E53BDB28B646191964BFDE14CE521F0AB39BD6A30C4B620DFA14500F9F0BCCE`, `17987B5B5DB3CF3A2536444169B58AC4906EA2B8CB195F831E079B67BBF84DEB`, `681D6032BAF8F22CF13349E0F22F2F3ADD17AA33F8F7D4CFF193D309C322E452`, `87D14A20CD2EA295FE63E04DB34FC43B67D4A18440AF3C5245FCDDD9907D4DC4`, `609AC805779583434F4DF69767486BD41890BA26B3EEA6C89D5A66774ADCF2A9`; build -> skipped because CPU 85% exceeded throttle.
+2026-05-29 UNKNOWN Physics DataVault fence: wrong -> cavitation, exosuit, vehicle damage, and submarine dynamics generation routes could create DataVault handles during allocation lock or compaction fence; done -> added fail-closed guards at `AbyssalCavitationRuntime.cs:151`, `ExosuitKinematicsRuntime.cs:549`, `VehicleComponentDamageRuntime.cs:553`, `SubmarineDynamicsRuntime.cs:740`; cinematic cheats -> none, relocation safety only; exact microseconds saved -> 0 claimed, no profiler/player proof; static proof -> hashes `5F5004E5E21B7E377F56DE1FBFFAA1F969AFBC9A40584DCA9A1EB0B092AE493F`, `98F959C5C43673BC75892F5C9A8EBBBCA775E75099AE151D3CB0CF8BB6D86C16`, `01B581B254A460A2A602A78749A38D62FDD4C7FBD1C5B3937826E81B425A2596`, `D10E5565C8E817424D048A4DF8B60800472A9765168E5093B680A804E7DB5360`; build -> skipped because CPU 85% exceeded throttle.
+2026-05-29 UNKNOWN Core data/signal/dispatcher DataVault fence: wrong -> static data, Babel, macro DB, SignalBus snapshots, diagnostics, legacy archaeology, alignment telemetry, dispatcher vault buffers, submarine gyros, and Gerstner owner helper could create generation handles during allocation lock or compaction fence; done -> added fail-closed guards at `StaticDataStore.cs:559/595`, `BabelDictionaryStore.cs:566/930/1098/1134`, `H8StaticDataContracts.cs:706/806`, `H8MacroDatabaseService.cs:2538`, `SignalBusRuntime.cs:1471`, `ArchitectEyeVisualizer.cs:360`, `VaultLegacyBinaryArchaeology.cs:391`, `AlignmentTelemetryContracts.cs:258`, `SystemDispatcher.cs:4138`, `SubmarineDynamicsRuntime_Gyroscopes.cs:87`, `AnalyticalGerstnerWaveRuntime.cs:567`; cinematic cheats -> none, relocation safety only; exact microseconds saved -> 0 claimed, no profiler/player proof; static proof -> scoped diff check clean, brackets balanced, hashes recorded in Status_UNKNOWN; build -> skipped because CPU 100% exceeded throttle.
+2026-05-29 UNKNOWN GlobalPhysicsStateManager shared VaultBufferBinding generation now fails closed under DataVault allocation-lock or compaction-fence before EnsureGenerationHandle; valid existing buffers still resolve; static diff/added-line/bracket proof passed; runtime verification absent.
+2026-05-29 UNKNOWN Core URP render camera cache: wrong -> `HectonUrpTextureRequirementsGuard` could call `camera.TryGetComponent(out UniversalAdditionalCameraData)` from SRP `beginCameraRendering` on first cache miss; done -> moved component discovery to cold `BeforeSceneLoad`/`sceneLoaded` scene-camera prewarm, made `TryResolveCameraData()` cache-only, and kept `TryGetComponent` only in `TryCacheCameraDataCold()`; cinematic cheats -> none, existing Quest VR/full-ocean URP policy preserved; exact microseconds saved -> 0 claimed, no profiler/player proof; static proof -> hash `A584B20818BC8F69884A11EBA7A32E5C71C6E9511307DAF0775E49A9466773AB`, evidence lines `27/28`, `40/51`, `54`, `133-147`, `179-185`, diff check clean, brackets `30/30 92/92 23/23`, added-line scan `55` lines with only `new=2` cold scratch lists, hot-body scan `0` forbidden hits; build -> not run, CPU 47%, no compiler processes, compile-wall owned elsewhere.
+2026-05-29 UNKNOWN Core RenderDispatcher GI relay cache: wrong -> SRP render/restore callbacks could refresh `_renderables`/`_giRelay` from GlobalRegistry on null cache; done -> added cold GI relay bind from GlobalRegistry register/unregister and removed render-time dependency refresh; cinematic cheat -> no simulation added, same ambient probe visual authority; proof -> hashes `SystemDispatcher.cs=1DD175292CD0F0DC5DE207DB7F446544E7CBE22F2A005B3CE404B4EFBE86EE55`, `GlobalRegistry.cs=E01C716A4A2A3ED0163C98299CDE40D9474A1F8FB93AA8EB34EC67B575ADAE39`, hot body forbidden scan `0/0`, scoped diff-check `0`; us saved -> `0` claimed, no profiler proof; build -> not run, CPU `74%`, active `dotnet` PID `12900`, active `VBCSCompiler` PID `68868`.
+2026-05-29 UNKNOWN Core RenderSettingsLifecycleGuard cache: wrong -> render-settings restore read `GlobalRegistry.GIRelay` and `GlobalRegistry.Atmosphere`; done -> added cold cached GI/atmosphere binds from registry register/unregister and made restore/skybox paths cache-only; cinematic cheat -> no simulation added, same GI ambient authority and skybox behavior; proof -> hashes `RenderSettingsLifecycleGuard.cs=012BE64436C70E30624BD72BFED43D0964C787E37D68A0612DC8945BF393A2B9`, `GlobalRegistry.cs=5D75A5D7D5B87EDDB9B24754CA3A80A2EC57837A484D9933EAD06679430C10F0`, direct forbidden scan `0`, scoped diff-check `0`; us saved -> `0` claimed, no profiler proof; build -> not run, CPU `45%`, no compiler processes, compile-wall owned elsewhere.
+2026-05-29 UNKNOWN Physics Exosuit helper fence: wrong -> `ExosuitKinematicsRuntime.AllocateVaultBuffers()` could create DataVault generation handles if a future caller bypassed the current caller fence; done -> helper is now bool and fails closed on `null`, `IsAllocationLocked`, or `IsCompactionFenceActive` before any `EnsureGenerationHandle`, caller now checks failure; cinematic cheat -> none, DataVault topology safety only; exact microseconds saved -> 0 claimed, no profiler/player proof; proof -> hash `F18D91FE193319E132A0E52AB9AB17A5FB8F67C1970B6F17C40BCF713A7B032D`, lines `562/564/584`, bracket counts `147/147 844/844 108/108`, hot managed/reference allocation scans `0`; build -> not run, CPU `100%`.
+2026-05-29 UNKNOWN Core read-accessor purity naming: wrong -> impure cold helpers used `Resolve*` names while caching components or creating a fallback primitive mesh; done -> renamed to `CacheLightCold`, `AcquireStaticCylinderMeshCold`, and `CachePlayerHierarchyReferencesCold`; cinematic cheat -> none, naming/source-contract cleanup only; exact microseconds saved -> 0 claimed; proof -> hashes `639CFF27723FBEB51AC45E43158B957EEE47E6D8328B5A954DA9056A55CDE675`, `4C8514060708F617A26EC8577E1A09B5DBC39EF2584594EFCF3F1B0FAFAA2B1F`, `D2B48F0534918ECA928A38BB80F7B633A164401883D436912B1AF0810093DF7C`, read-accessor suspicious scan `0`, diff-check `0`; build -> not run, CPU `34%`.
+2026-05-29 UNKNOWN Core/Physics hot dependency bridge seal: wrong -> physics owner ticks read globally published celestial snapshot through `GlobalRegistry.CelestialRuntimeSnapshot`, URP shadow render callback reached `SceneManager.GetActiveScene`, and submarine autopilot FixedTick could cold-fetch `GlobalRegistry.DataVault`; done -> added cached `ICelestialRuntimeSnapshotReadModel`, cached URP loaded-scene state from scene events, and split autopilot `CacheDataVaultCold()` from hot `EnsureVaultBuffers()`; cinematic cheat -> none, route hygiene only; exact microseconds saved -> 0 claimed; proof -> hashes `DEBA5A84676BED404879F7B45EBCFFFFDDB93C5979D4BE23D4E42E8D1062E4C4`, `A1702DC7953167F0C8E3FE1213A5637F5CF6D3590F92F482D2C109E97FE5A9DF`, `57BDEB82E9516753A9B35774CE5E9B60AA7F458BE4C32F28BA2D7F152C897347`, `7F63B6F335D421A35311C4642E36AB7E8E08375D9F92B06E9F063EE0631C99EC`, `B79EC037F1867174B67649DBF5AAC3409A6E279200C17A72E3EC7CA8A9E25E66`; direct hot scanner `0`; two-hop residuals limited to editor-only tuner `.ToString()` and Exosuit one-shot lifecycle unregister; build -> not run, CPU `97%`, active dotnet PIDs `48068/42284`.
+2026-05-29 UNKNOWN Async buoyancy readback lock flattening: wrong -> mock/apply jobs retained multiple DataVault write locks and telemetry locked cursor+ring together; done -> removed active mock/apply jobs, moved bounded single-buffer readback passes to `PostSimulation`, deleted stale job structs, split telemetry/profile writes into one-lock `try/finally` windows, restored continuous smoothstep `GlobalQualityWeight` sample budget; cinematic cheat -> retained deterministic triangle-wave mock water fake, no physical solver added; exact microseconds saved -> 0 claimed, no profiler/player proof; proof -> `maxOpenWriteLocksByText=1` for every runtime write method, hot-method forbidden token scan all `0`, hashes `758B4CBE47611B57133D0A51D4275C0108D5D52E1205613F745F16955F369E69`, `8F0601263FEC0C1B7277C49438C5E27159DF174BB092FC2E97C4E3694332A9B1`, `5D3A3C4C94C25E9E38436BAAC8C6A8D40CAE56FE583B4815239410C440E71B8A`, docs hash `0D78023F96F3E5D4BDC0AA6D489A421785CC8FC95FE9B1EBDEAF2C67043C1ADD`; build -> not run, CPU `56%`, no compiler process rows.
+2026-05-29 UNKNOWN Vehicle PostFixed finalize fence hygiene: wrong -> `SubmarineDynamicsRuntime.PostFixedTick()` and `VehicleComponentDamageRuntime.PostFixedTick()` used `DispatcherJobFence.TryComplete(... forceComplete:false)` in hot PostFixed, which was nonblocking but semantically broader than finalize-only reclamation; done -> replaced both calls with `TryFinalizeCompleted`; cinematic cheat -> none, source-contract/phase hygiene only; exact microseconds saved -> 0 claimed, no profiler/player proof; proof -> evidence lines `SubmarineDynamicsRuntime.cs:361`, `VehicleComponentDamageRuntime.cs:342`, hashes `105F2425555FDF0598B66E29D2DD9DC4FCB78E511E96D388DB87D62653164835`, `A0D666758D6D17E5F2C4007CB5A5DD9977BFE96D2BEADB39A21E83C974945E90`, stale `TryComplete(false)` scan no matches, hot forbidden scan `vehicle_hot_forbidden_hits=0`, scoped diff-check `0`; build -> not run, CPU `53%`, no compiler process rows.
+2026-05-29 UNKNOWN Dispatcher surface probe LateFrame finalize fence hygiene: wrong -> `SystemDispatcher.CompleteDispatcherSurfaceProbes()` used `DispatcherJobFence.TryComplete(... forceComplete:false)` in LateFrame visual-sync, which was nonblocking but semantically broader than finalize-only reclamation; done -> replaced it with `TryFinalizeCompleted`; teardown `forceComplete:true` structural barrier unchanged; cinematic cheat -> none, probe cadence and visual route unchanged; exact microseconds saved -> 0 claimed, no profiler/player proof; proof -> evidence line `SystemDispatcher.cs:6637`, hash `B4F368D92AA0F75B5598AFDB6B8D415804D6EF0B1ADF2CF52AEA6691560E6E51`, bracket counts `711/711 2889/2889 401/401`, direct Core/Physics `TryComplete(... forceComplete:false)` scan no matches, `hot_forbidden_route_hits=0`, hot direct forced-complete scan no hits, read-accessor suspicious scan `0`, hot reference allocation scan `0`, scoped diff-check `0`; build not run, CPU `43%`, compiler process scan empty, build invocations `0`; runtime verification absent.
+2026-05-29 UNKNOWN URP shadow atlas continuous quality step: wrong -> `HectonUrpShadowBudgetGuard.ResolveShadowAtlasResolution()` consumed `GlobalQualityWeight` but collapsed atlas size into a binary `1024/2048` threshold at `1536`; done -> added `ShadowAtlasResolutionStep=256` and quantized the lerped atlas value to `1024/1280/1536/1792/2048`; cinematic cheat -> kept cheap URP atlas/distance/caster-budget knobs, no physical shadow simulation added; exact microseconds saved -> 0 claimed, no profiler/player proof; proof -> `HectonUrpShadowBudgetGuard.cs:20/411/417-422`, hash `8EA89AB9E9D53F8CD3F1EAF599D8CCF9B9C682B7CFAEB2869454959A28FD7F34`, bracket counts `49/49 162/162 35/35`, added-line forbidden scan all `0`, reachable shadow hot-helper scan `0`, Core/Physics hot scanner `hot_forbidden_route_hits=0`, scoped diff-check `0`; build not run, CPU `85%`, active dotnet PID `68624`, build invocations `0`; runtime verification absent.
+2026-05-29 UNKNOWN Vehicle SlowTick DataVault registry poll seal: wrong -> `VehicleComponentDamageRuntime.SlowTick()` and `SubmarineDynamicsRuntime.SlowTick()` reached an `EnsureDataVault()` helper that read `GlobalRegistry.DataVault` every slow tick; done -> registered hotswap listener before cold cache, moved registry read into `CacheDataVaultCold()` on `OnEnable`, and made `EnsureDataVault()` cache-only while hotswap remains the replacement route; cinematic cheat -> none, dependency hygiene only; exact microseconds saved -> 0 claimed, no profiler/player proof; proof -> lines `VehicleComponentDamageRuntime.cs:137/355/367/372`, `SubmarineDynamicsRuntime.cs:181/467/493/498`, hashes `52701ED09F5C7D01566165809B78E382F017447FCC13D88C1DB28C1E5448D6AC`, `256BE6A75BB73DC00725E50EAB798F90ED40C42F62A7C51C0926F6F07460BFF0`, bracket counts `99/99 559/559 53/53` and `202/202 966/966 103/103`, vehicle hot direct scan `0`, Core/Physics Tick/SlowTick scanner `0`, scoped diff-check `0`; build not run, CPU `65%`, active dotnet PID `44888`, build invocations `0`; runtime verification absent.
+2026-05-29 UNKNOWN Core/Physics: corrected prior URP shadow atlas quantization after local URP 17.4 enum proof; `HectonUrpShadowBudgetGuard.ResolveShadowAtlasResolution()` now writes only supported `1024/2048/4096` enum values, hash `154476F5036F35E1BB96A57B5B5AC51488FEDACA595192D7B925D787C20D9C72`, hot direct scan `0`, build not run.
+2026-05-29 UNKNOWN Core/Memory: sealed `GlobalDataVault.TryAcquireMutationGuard()` behind `_blockMutationGate` to close writer-lock/mutation-guard race, hash `F99228923992F5D510056D41C8CC79894279F85F390064B89D2D0389DB15699A`, `git diff --check` clean except LF/CRLF warning, build not run.
+2026-05-29 UNKNOWN Core runtime: removed SlowTick cold-dependency polling from `ContentAuthorityRuntime` and split `PlayerInventoryManager` hot/cold sync; targeted SlowTick forbidden scans `0`, build not run.
+2026-05-29 - Lockstep same-frame job fence removed. Wrong: `LockstepStateValidator.ExecuteHashJobs()` scheduled multiple hash jobs and immediately forced completion in PostFixed. Done: replaced with direct deterministic zero-GC hash loops and removed local Burst/Jobs dependency. Cinematic cheat: none, determinism route only. Exact microseconds saved: `0` claimed; no profiler proof. Proof: `LockstepStateValidator.cs` SHA-256 `F81BD04391E2E7A5B86167280D05550EA40EDCFCBF3F23B3A4B50FF04DD2C81A`, `lockstep_hash_route_forbidden_hits_cs=0`, Core/Physics hot direct scanner `0`, build not run because CPU `76%` and active `dotnet.exe` PID `58736`.
+2026-05-29 UNKNOWN Cable/Tension bootstrap fence removal: wrong -> `CablePhysicsSolver132.EnsureMockBuffers()` and `HarpoonTensionSolver328.EnsureMockBuffers()` scheduled bootstrap jobs and immediately forced completion from runtime preparation; done -> direct deterministic seeding loops under one DataVault mutation guard with `finally`, stale bootstrap job structs removed, Harpoon editor self-audit text corrected; cinematic cheat -> kept cheap visual cable/tension mock seeding and runtime Dear Lie GPU presentation, no physical over-simulation added; exact microseconds saved -> `0` claimed, no profiler/player proof; proof -> hashes `CablePhysicsSolver132.cs=FBE4F3CFB4679EC86702BC98BB5E6D6AB67D889B3CAB2723E8068EDC8402E451`, `HarpoonTensionSolver328.cs=CEECAB068B8C3EEC7C56489126CB83CFC193F97F418AF9114E1A41D61B18F126`, body scanners `0`, full Core/Physics hot direct scanner `0`, scoped diff-check `0`; build not run, CPU `97%`, build invocations `0`; runtime verification absent.

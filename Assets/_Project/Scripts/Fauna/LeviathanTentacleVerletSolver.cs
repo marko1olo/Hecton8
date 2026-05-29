@@ -504,6 +504,7 @@ namespace Hecton8.AI
         private bool _telemetryDumped;
         private bool _disposed;
         private bool _invalidInputDetected;
+        private bool _supportsConstantBufferBinding;
         private int _matrixUploadBufferIndex;
         private int _argsUploadInstanceCount = -1;
         private int _resolvedConstraintIterations;
@@ -571,6 +572,7 @@ namespace Hecton8.AI
         private void Awake()
         {
             _cachedTransform = transform;
+            RefreshGraphicsCapabilitySnapshotCold();
             BuildFallbackRootOffsets();
             RefreshColdDependencies();
             EnsurePersistentBuffers();
@@ -583,6 +585,7 @@ namespace Hecton8.AI
                 return;
 
             CompletePendingJob(force: true);
+            RefreshGraphicsCapabilitySnapshotCold();
             RefreshColdDependencies();
             EnsurePersistentBuffers();
             SeedAllTentaclesFromSockets();
@@ -1387,7 +1390,7 @@ namespace Hecton8.AI
         private bool PublishTentacleGlobals(in LeviathanTentacleShaderGlobalsDTO globals)
         {
             if (!ValidateTentacleShaderGlobalsLayout() ||
-                !SystemInfo.supportsSetConstantBuffer ||
+                !_supportsConstantBufferBinding ||
                 !EnsureTentacleGlobalsBuffers())
                 return false;
 
@@ -1406,6 +1409,11 @@ namespace Hecton8.AI
             _activeTentacleGlobalsBuffer = writeBuffer;
             Shader.SetGlobalConstantBuffer(_TentacleGlobalsId, _activeTentacleGlobalsBuffer, 0, TentacleShaderGlobalsBytes);
             return true;
+        }
+
+        private void RefreshGraphicsCapabilitySnapshotCold()
+        {
+            _supportsConstantBufferBinding = SystemInfo.supportsSetConstantBuffer;
         }
 
         private bool EnsureTentacleGlobalsBuffers()

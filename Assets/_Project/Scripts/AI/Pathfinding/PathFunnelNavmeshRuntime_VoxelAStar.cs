@@ -23,6 +23,9 @@ namespace Hecton8.AI.Pathfinding
 #endif
         private const int MaxVoxelPathProfileCapacity = 256;
         private const string VoxelAStarDumpRelativePath = "Docs/AgentLogs/Dump_13AI.bin";
+        private static readonly ulong VoxelPathProfileMutationGuardMask =
+            PathFunnelMutationGuardBit(BufferID.ShinobuVoxelPathSpeciesProfiles) |
+            PathFunnelMutationGuardBit(BufferID.ShinobuVoxelPathSpeciesProfileCount);
 
         [Header("Voxel SDF A* Runtime")]
         [SerializeField, Min(2), Tooltip("Bounded native request ring for SHINOBU_304 voxel route requests.")]
@@ -281,52 +284,37 @@ namespace Hecton8.AI.Pathfinding
         public bool TryLoadVoxelPathingProfiles(ReadOnlySpan<byte> csvBytes, out uint flags)
         {
             flags = 0u;
-            IDataVault vault = _dataVault;
             if (!_voxelAStarColdBootstrapped ||
-                vault == null ||
-                !IsOwnedVaultHandle(in _voxelPathSpeciesProfilesHandle, BufferID.ShinobuVoxelPathSpeciesProfiles) ||
-                !vault.TryAcquireWriteLock(in _voxelPathSpeciesProfilesHandle, SystemID.AIPathfinding, out NativeArray<VoxelPathingProfileDTO> profiles))
-            {
-                return false;
-            }
-
-            bool parsed = false;
-            bool profilesReady = false;
-            int written = 0;
-            bool countReady = false;
-            bool releasedCount = true;
-            bool releasedProfiles = true;
-            try
-            {
-                profilesReady = profiles.IsCreated && profiles.Length >= ResolveVoxelProfileCapacity();
-                if (profilesReady)
-                    parsed = VoxelPathingProfileCsvParser.TryParse(csvBytes, profiles, out written, out flags);
-            }
-            finally
-            {
-                releasedProfiles = vault.ReleaseWriteLock(in _voxelPathSpeciesProfilesHandle, SystemID.AIPathfinding);
-            }
-
-            if (!profilesReady ||
-                !releasedProfiles ||
-                !IsOwnedVaultHandle(in _voxelPathSpeciesProfileCountHandle, BufferID.ShinobuVoxelPathSpeciesProfileCount) ||
-                !vault.TryAcquireWriteLock(in _voxelPathSpeciesProfileCountHandle, SystemID.AIPathfinding, out NativeArray<int> profileCount))
+                !TryAcquirePathFunnelMutationGuard(VoxelPathProfileMutationGuardMask, out IDataVault guardVault))
             {
                 return false;
             }
 
             try
             {
-                countReady = profileCount.IsCreated && profileCount.Length >= 1;
-                if (countReady)
-                    profileCount[0] = written;
+                IDataVault vault = guardVault;
+                if (vault == null ||
+                    vault.IsCompactionFenceActive ||
+                    !IsOwnedVaultHandle(in _voxelPathSpeciesProfilesHandle, BufferID.ShinobuVoxelPathSpeciesProfiles) ||
+                    !IsOwnedVaultHandle(in _voxelPathSpeciesProfileCountHandle, BufferID.ShinobuVoxelPathSpeciesProfileCount) ||
+                    !vault.TryResolveHandle(in _voxelPathSpeciesProfilesHandle, out NativeArray<VoxelPathingProfileDTO> profiles) ||
+                    !vault.TryResolveHandle(in _voxelPathSpeciesProfileCountHandle, out NativeArray<int> profileCount) ||
+                    !profiles.IsCreated ||
+                    profiles.Length < ResolveVoxelProfileCapacity() ||
+                    !profileCount.IsCreated ||
+                    profileCount.Length < 1)
+                {
+                    return false;
+                }
+
+                bool parsed = VoxelPathingProfileCsvParser.TryParse(csvBytes, profiles, out int written, out flags);
+                profileCount[0] = written;
+                return parsed;
             }
             finally
             {
-                releasedCount = vault.ReleaseWriteLock(in _voxelPathSpeciesProfileCountHandle, SystemID.AIPathfinding);
+                ReleasePathFunnelMutationGuard(guardVault, VoxelPathProfileMutationGuardMask);
             }
-
-            return parsed && countReady && releasedCount;
         }
 #endif
 

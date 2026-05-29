@@ -144,24 +144,57 @@ namespace Hecton8.World
             if (vault.IsCompactionFenceActive)
                 return;
 
-            if (!vault.TryAcquireWriteLock(
+            if (!TryAdvanceVegetationMemoryTelemetryCursor(vault, out int cursor))
+                return;
+
+            uint frame = unchecked((uint)SystemDispatcher.CurrentFrameIndex);
+            float rawQuality = HomeostasisBrain.GlobalQualityWeight;
+            float quality = math.saturate(math.select(1f, rawQuality, math.isfinite(rawQuality)));
+            VegetationMemoryTelemetryEntry entry = default;
+            entry.BufferId = unchecked((uint)(int)bufferId);
+            entry.Generation = generation;
+            entry.Frame = frame;
+            entry.ExpectedLength = expectedLength;
+            entry.ActualLength = actualLength;
+            entry.CulledInstances = culledInstances;
+            entry.JobMicroseconds = math.select(0f, jobMicroseconds, math.isfinite(jobMicroseconds));
+            entry.QualityWeight = quality;
+            entry.FailureCode = (ushort)code;
+            entry.Phase = (ushort)phase;
+            entry.Flags = flags;
+            entry.Position = position;
+            entry.StateHash = HashVegetationMemoryTelemetry(entry);
+
+            if (!TryWriteVegetationMemoryTelemetryEntry(vault, cursor, in entry))
+                return;
+
+            if ((flags & VegetationMemorySovereigntyConstants.FlagNan) != 0u ||
+                code == VegetationMemoryTelemetryCode.NaNDetected)
+            {
+                DumpVegetationMemoryBlackBox();
+            }
+        }
+
+        private bool TryAdvanceVegetationMemoryTelemetryCursor(IDataVault vault, out int cursor)
+        {
+            cursor = 0;
+            if (vault == null ||
+                vault.IsCompactionFenceActive ||
+                !vault.TryAcquireWriteLock(
                     in _vegetationMemoryTelemetryCursorHandle,
                     VegetationMemorySovereigntyConstants.OwnerSystemId,
                     out NativeArray<int> cursorBuffer))
             {
-                return;
+                return false;
             }
 
-            int cursor = 0;
             try
             {
-                if (vault.IsCompactionFenceActive)
-                    return;
-
-                if (!cursorBuffer.IsCreated ||
+                if (vault.IsCompactionFenceActive ||
+                    !cursorBuffer.IsCreated ||
                     cursorBuffer.Length == 0)
                 {
-                    return;
+                    return false;
                 }
 
                 cursor = cursorBuffer[0];
@@ -173,6 +206,7 @@ namespace Hecton8.World
                     nextCursor = 0;
 
                 cursorBuffer[0] = nextCursor;
+                return true;
             }
             finally
             {
@@ -180,14 +214,21 @@ namespace Hecton8.World
                     in _vegetationMemoryTelemetryCursorHandle,
                     VegetationMemorySovereigntyConstants.OwnerSystemId);
             }
+        }
 
-            if (vault.IsCompactionFenceActive ||
+        private bool TryWriteVegetationMemoryTelemetryEntry(
+            IDataVault vault,
+            int cursor,
+            in VegetationMemoryTelemetryEntry entry)
+        {
+            if (vault == null ||
+                vault.IsCompactionFenceActive ||
                 !vault.TryAcquireWriteLock(
                     in _vegetationMemoryTelemetryHandle,
                     VegetationMemorySovereigntyConstants.OwnerSystemId,
                     out NativeArray<VegetationMemoryTelemetryEntry> telemetry))
             {
-                return;
+                return false;
             }
 
             try
@@ -195,39 +236,21 @@ namespace Hecton8.World
                 if (!telemetry.IsCreated ||
                     telemetry.Length < VegetationMemorySovereigntyConstants.TelemetryFrameCount)
                 {
-                    return;
+                    return false;
                 }
 
-                uint frame = unchecked((uint)SystemDispatcher.CurrentFrameIndex);
-                float rawQuality = HomeostasisBrain.GlobalQualityWeight;
-                float quality = math.saturate(math.select(1f, rawQuality, math.isfinite(rawQuality)));
-                VegetationMemoryTelemetryEntry entry = default;
-                entry.BufferId = unchecked((uint)(int)bufferId);
-                entry.Generation = generation;
-                entry.Frame = frame;
-                entry.ExpectedLength = expectedLength;
-                entry.ActualLength = actualLength;
-                entry.CulledInstances = culledInstances;
-                entry.JobMicroseconds = math.select(0f, jobMicroseconds, math.isfinite(jobMicroseconds));
-                entry.QualityWeight = quality;
-                entry.FailureCode = (ushort)code;
-                entry.Phase = (ushort)phase;
-                entry.Flags = flags;
-                entry.Position = position;
-                entry.StateHash = HashVegetationMemoryTelemetry(entry);
-                telemetry[cursor] = entry;
+                int slot = cursor;
+                if ((uint)slot >= (uint)telemetry.Length)
+                    slot = 0;
+
+                telemetry[slot] = entry;
+                return true;
             }
             finally
             {
                 vault.ReleaseWriteLock(
                     in _vegetationMemoryTelemetryHandle,
                     VegetationMemorySovereigntyConstants.OwnerSystemId);
-            }
-
-            if ((flags & VegetationMemorySovereigntyConstants.FlagNan) != 0u ||
-                code == VegetationMemoryTelemetryCode.NaNDetected)
-            {
-                DumpVegetationMemoryBlackBox();
             }
         }
 

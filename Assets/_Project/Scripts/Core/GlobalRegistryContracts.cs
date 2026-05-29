@@ -5070,6 +5070,16 @@ namespace Hecton8.Core
     }
 
     /// <summary>
+    /// Read-only route for the globally published celestial runtime snapshot.
+    /// </summary>
+    public interface ICelestialRuntimeSnapshotReadModel : ISystem
+    {
+        CelestialRuntimeSnapshot RuntimeSnapshot { get; }
+
+        uint RuntimeSnapshotSequence { get; }
+    }
+
+    /// <summary>
     /// Read-only celestial sky-direction route for physics/fluid consumers.
     /// </summary>
     public interface ICelestialSkyDirectionReadModel : ISystem
@@ -5883,7 +5893,8 @@ namespace Hecton8.Core
     {
         public const byte LoadedEntity = 1 << 0;
         public const byte MacroSwarm = 1 << 1;
-        public const byte LowTierMacroSkipped = 1 << 2;
+        public const byte SurvivalPressureMacroSkipped = 1 << 2;
+        public const byte LowTierMacroSkipped = SurvivalPressureMacroSkipped;
     }
 
     /// <summary>
@@ -5895,10 +5906,12 @@ namespace Hecton8.Core
     public struct AmbientBiotaState
     {
         public const uint FlagActive = 1u << 0;
-        public const uint FlagLowTierBillboard = 1u << 1;
+        public const uint FlagSurvivalBillboardPressure = 1u << 1;
         public const uint FlagMacroHydrated = 1u << 2;
         public const uint FlagSdfEmergence = 1u << 3;
-        public const uint FlagHighTierReactive = 1u << 4;
+        public const uint FlagHeadlightReactive = 1u << 4;
+        public const uint FlagLowTierBillboard = FlagSurvivalBillboardPressure;
+        public const uint FlagHighTierReactive = FlagHeadlightReactive;
         public const uint ReservedDebrisPending = 1u << 0;
         public const uint ReservedFaultSanitized = 1u << 1;
 
@@ -6259,9 +6272,11 @@ namespace Hecton8.Core
             Transform current = root;
             while (current != null)
             {
-                Component component = current.GetComponent(typeof(T));
-                if (component is T service)
+                if (current.TryGetComponent(typeof(T), out Component component) &&
+                    component is T service)
+                {
                     return service;
+                }
 
                 current = current.parent;
             }

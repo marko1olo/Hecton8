@@ -4779,3 +4779,297 @@ What was done: replaced the per-buffer lock mask with one `ValidationMutationGua
 Cinematic cheats used: none added. The existing deterministic structural score and socket-compatibility model stays intact; no physical construction simulation or binary quality switch was introduced.
 
 Exact microseconds saved: 0 us measured; expected steady-frame delta 0 us. Static value is removal of a ten-pin DataVault writer topology from construction validation. Proof: source scan has no `TryLockBuffer/TryUnlockBuffer` or stale validation lock helper names; mutation scan shows one acquire route and one release route; added diff Zero-GC/dependency scan returns no hits; scoped `git diff --check` exits 0 with LF/CRLF warning only. Compile/import/profiler proof not run.
+
+## 2026-05-29 - RepairTool Hull Dent And Black Box Guard Flattening
+
+What was wrong: `Assets/_Project/Scripts/RepairTool.cs` still used direct `TryLockBuffer/TryUnlockBuffer` for `HullDents` repair, repair black-box recording, and repair black-box dumping. The hull-dent lock used `SystemID.GameplayTools` even though the borrowed lane is created by the VFX hull-dent controller under `SystemID.Vfx`.
+
+What was done: replaced the three direct lock pairs with mutation guards; added exact handle validators for `HullDents` (`SystemID.Vfx`) and `RepairToolBlackBox` (`SystemID.GameplayTools`); kept repair math, signal publication, black-box entry layout, frame count, and dump path unchanged.
+
+Cinematic cheats used: preserved the cheap 16-slot shader hull-dent state and 300-frame black-box ring. No physical hull deformation, new simulation, or binary quality branch was added.
+
+Exact microseconds saved: 0 us measured; expected steady-frame delta 0 us. Static value is removal of three legacy DataVault pins and one wrong-owner hull-dent lock route. Proof: source scan has no `TryLockBuffer/TryUnlockBuffer` in the file; mutation scan shows three acquire/release routes; added diff Zero-GC/dependency scan returns no hits; scoped `git diff --check` exits 0 with LF/CRLF warning only. Compile/import/profiler proof not run.
+
+## 2026-05-29 - HectonBiolumManager Telemetry Ring Guard Flattening
+
+What was wrong: `Assets/_Project/Scripts/World/Biolum/HectonBiolumManager.cs` still guarded `BiolumLegacyTelemetryRing` through legacy `TryLockBuffer/TryUnlockBuffer` in telemetry record and dump routes.
+
+What was done: added `TelemetryRingMutationGuardMask`, replaced the old telemetry lock helper with `TryAcquireTelemetryRingGuard`, and releases through `ReleaseTelemetryRingGuard` in `finally` on validation failure and at both call sites.
+
+Cinematic cheats used: preserved the fixed-size telemetry ring plus shader/ripple biolum fake. No physical light simulation, ripple rewrite, predator blackout math change, or binary quality branch was added.
+
+Exact microseconds saved: 0 us measured; expected steady-frame delta 0 us. Static value is removal of one legacy DataVault pin from the VFX telemetry route. Proof: source scan has no `TryLockBuffer/TryUnlockBuffer`, `TryLockTelemetryRing`, or `UnlockTelemetryRing` in the file; mutation scan reports one guarded acquire path and one release helper; added diff Zero-GC/dependency scan returns no hits; scoped `git diff --check` exits 0 with LF/CRLF warning only. Compile/import/profiler proof not run.
+
+## 2026-05-29 - FloraGenomeVaultRuntime Writer Guard Flattening
+
+What was wrong: `Assets/_Project/Scripts/World/FloraGenomics/FloraGenomeVaultRuntime.cs` still used legacy `TryLockBuffer/TryUnlockBuffer` for raw genome binary loading, and decode/generation writer paths resolved mutable vault arrays without a writer guard.
+
+What was done: added raw, decode, and generation mutation guard masks; raw async load now releases through `ReleaseRawBytesGuard`; decode executes under `DecodeMutationGuardMask`; scheduled plant generation holds `GenerationJobMutationGuardMask` until `TryFinalizePlantGeneration` completes the job fence.
+
+Cinematic cheats used: preserved L-system expansion, fixed native buffer capacities, branch matrix/hazard output, and black-box ring. No physical plant simulation, binary quality switch, or DTO layout change was added.
+
+Exact microseconds saved: 0 us measured; expected steady-frame delta 0 us. Static value is removal of one legacy raw-byte pin and addition of explicit writer ownership around decode/job lanes. Proof: source scan has no `TryLockBuffer/TryUnlockBuffer` in the file; mutation scan reports raw, decode, and generation guard routes; hot dependency scan returns no registry/component lookup hits; added `new` tokens are value-type job/ticket structs only; scoped `git diff --check` exits 0 with LF/CRLF warning only. Compile/import/profiler proof blocked by CPU sample 63.
+
+## 2026-05-29 - ShinobuSpatialGridSolver Telemetry Guard Flattening
+
+What was wrong: `Assets/_Project/Scripts/AI/Ecosystem/ShinobuSpatialGridSolver.cs` locked telemetry cursor and telemetry ring through two separate legacy `TryLockBuffer/TryUnlockBuffer` pairs in `SpatialHashQuery.RecordQueryFailure`.
+
+What was done: added `TelemetryMutationGuardMask`; cursor and ring now resolve under one mutation guard, both writes complete under the same guard, and release happens in `finally`.
+
+Cinematic cheats used: none added. Spatial hashing, probe budget, telemetry DTOs, and deterministic AI query behavior remain unchanged.
+
+Exact microseconds saved: 0 us measured; expected steady-frame delta 0 us. Static value is removal of a two-lock telemetry path from AI query failure recording. Proof: source scan has no `TryLockBuffer/TryUnlockBuffer` in the file; mutation scan reports one acquire and one release route; added diff Zero-GC/dependency scan returns no hits; scoped `git diff --check` exits 0 with LF/CRLF warning only. Compile/import/profiler proof not run.
+
+## 2026-05-29 - AbyssalCavitationRuntime Simulation Guard Flattening
+
+What was wrong: `Assets/_Project/Scripts/Physics/Cavitation/AbyssalCavitationRuntime.cs` held ten scheduled simulation lanes through `_lockedBuffers` and legacy `TryLockBuffer/TryUnlockBuffer` while the cavitation job chain was pending.
+
+What was done: replaced lock-bit tracking with `SimulationMutationGuardMask`, `_simulationGuardVault`, and `_simulationGuardHeld`; `ScheduleSimulation` acquires one guard; schedule failure and `FinishScheduledCompletion` release through `ReleaseSimulationGuard`.
+
+Cinematic cheats used: preserved mock SDF sampling, visual sphere shader upload, acoustic/wake signals, and continuous cavitation quality tuning. No physical fluid simulation or binary quality branch was added.
+
+Exact microseconds saved: 0 us measured; expected steady-frame delta 0 us. Static value is removal of a ten-pin scheduled DataVault writer topology. Proof: source scan has no `TryLockBuffer/TryUnlockBuffer` in the file; mutation scan reports simulation acquire/release plus existing targeted guards; hot dependency and added diff GC scans return no hits; scoped `git diff --check` exits 0 with LF/CRLF warning only. Compile/import/profiler proof not run.
+
+## 2026-05-29 - AnalyticalGerstnerWaveRuntime Wave Job Guard Flattening
+
+What was wrong: `Assets/_Project/Scripts/Physics/Buoyancy/AnalyticalGerstnerWaveRuntime.cs` held six scheduled wave-job lanes through legacy `TryLockBuffer/TryUnlockBuffer` while the analytical Gerstner job was pending.
+
+What was done: replaced spectrum/tuning/request/result/macro-grid/counter lock bits with one `JobMutationGuardMask`, stored the granting vault, and release before telemetry guard acquisition, on unscheduled failure, and during teardown.
+
+Cinematic cheats used: preserved analytical Gerstner waves and macro swell grid approximation. No physical fluid simulation, wave rewrite, or binary quality branch was added.
+
+Exact microseconds saved: 0 us measured; expected steady-frame delta 0 us. Static value is removal of a six-pin scheduled DataVault writer topology. Proof: source scan has no `TryLockBuffer/TryUnlockBuffer` in the file; stale lock helper/name scan returns no hits; hot dependency and added diff GC scans return no hits; scoped `git diff --check` exits 0 with LF/CRLF warning only. Compile/import/profiler proof not run.
+
+## 2026-05-29 - JacobianFoamGpuRuntime Read Pin Guard Flattening
+
+What was wrong: `Assets/_Project/Scripts/VFX/JacobianFoam/JacobianFoamGpuRuntime.cs` still used legacy `TryLockBuffer/TryUnlockBuffer` in `TryAcquireReadPin` for tuning, wake upload, and deferred telemetry dump reads.
+
+What was done: replaced generic read pins with one mutation guard bit derived from `BufferID`; retained exact `BufferID`, `SystemID.Vfx`, generation, creation, and length validation; failure and caller `finally` paths release the guard.
+
+Cinematic cheats used: preserved foam history texture, wake-impact fake, compute dispatch cadence, and continuous resolution/wake-count scaling. No physical foam simulation or binary quality branch was added.
+
+Exact microseconds saved: 0 us measured; expected steady-frame delta 0 us. Static value is removal of all legacy DataVault locks from the runtime foam presenter. Proof: source scan has no `TryLockBuffer/TryUnlockBuffer`; hot dependency and added diff GC scans return no hits; scoped `git diff --check` exits 0 with LF/CRLF warning only. Compile/import/profiler proof not run.
+
+## 2026-05-29 - QuestDagResolverRuntime Scheduled Guard Flattening
+
+What was wrong: `Assets/_Project/Scripts/Quest/QuestDagResolverRuntime.cs` held 16 QuestDag buffers through legacy per-buffer pins while the scheduled fixed-point quest resolver job was pending.
+
+What was done: replaced scheduled pin constants and `_scheduledBufferPinMask` with one `ScheduledMutationGuardMask`; release now runs on schedule failure, completion, dispose, and teardown, while existing exact handle validation remains in `QuestDagVault.TryResolveBuffers`.
+
+Cinematic cheats used: none added. Preserved fixed-point quest graph, spatial hash, SignalBus emission, and continuous cadence dilation.
+
+Exact microseconds saved: 0 us measured; expected steady-frame delta 0 us. Static value is removal of a 16-pin scheduled DataVault topology from quest resolution. Proof: stale lock/pin scan, hot dependency scan, added diff GC scan, and scoped `git diff --check` are clean except LF/CRLF warning. No compile/import/profiler run.
+
+## 2026-05-29 - BaseAtmosphereLogisticsRuntime Pending Tuning Guard
+
+What was wrong: `Assets/_Project/Scripts/Atmosphere/BaseAtmosphereLogisticsRuntime.cs` still used legacy `TryLockBuffer/TryUnlockBuffer` for pending atmosphere tuning writes.
+
+What was done: replaced the tuning lock with `TryAcquireMutationGuard` using `AtmosphereLogisticsMutationGuardBit(Tuning)` and released in `finally`; existing owner/handle validation remains before DTO write.
+
+Cinematic cheats used: preserved bounded diffusion, shader payload, and quality-driven iteration policy. No physical gas simulation rewrite or binary quality branch was added.
+
+Exact microseconds saved: 0 us measured; expected steady-frame delta 0 us. Static value is removal of the last legacy DataVault lock from this atmosphere logistics file. Proof: source scan has no `TryLockBuffer/TryUnlockBuffer`; hot dependency and added diff GC scans return no hits; scoped `git diff --check` exits 0 with LF/CRLF warning only. No compile/import/profiler run.
+
+## 2026-05-29 - HomeostasisBrain Mock Terrain Sampler Guard
+
+What was wrong: `Assets/_Project/Scripts/Core/HomeostasisBrain.ScalabilityDictator.cs` held `ShinobuScalabilityMockScatterDensity` through legacy `TryLockBuffer/TryUnlockBuffer` while the scheduled mock terrain sampler job was pending.
+
+What was done: added `MockTerrainSamplerMutationGuardMask`, replaced the lock flag with `_mockTerrainSamplerGuardHeld`, and released the guard on schedule failure, job completion, shutdown, and vault release paths.
+
+Cinematic cheats used: preserved the mock terrain sampler probability fake and continuous `GlobalQualityWeight` math. No binary quality branch, PID rewrite, or render policy change was added.
+
+Exact microseconds saved: 0 us measured; expected steady-frame delta 0 us. Static value is removal of one scheduled legacy DataVault lock from the global scalability owner. Proof: stale lock/helper scan, hot dependency scan, added diff GC scan, and scoped `git diff --check` are clean except LF/CRLF warning. No compile/import/profiler run.
+
+## 2026-05-29 - Current Pass Static Recheck
+
+What was wrong: no additional code defect in this entry; this is the post-pass proof gate.
+
+What was done: scoped scan across current-pass and prior AUDIT-native touched runtime files found no `.TryLockBuffer/.TryUnlockBuffer`; current-pass hot dependency scan found no `GlobalRegistry.Get<` or direct `GetComponent(`; added diff GC/dependency scan found no new allocation/format/LINQ/foreach/hot lookup patterns; scoped `git diff --check` returned only LF/CRLF warnings.
+
+Cinematic cheats used: unchanged from individual patches.
+
+Exact microseconds saved: 0 us measured. Build/import/profiler proof was not run because CPU sampled `100%`; launching `dotnet build` would violate Compilation Resource Throttling.
+
+## 2026-05-29 - Migratory Sargassum Job Guard Flattening
+
+What was wrong: `Assets/_Project/Scripts/WorldProceduralScatterDirectorMigratorySargassum.cs` mixed flow-sample direct write lock, flow-sample legacy buffer pin, and island write lock across the scheduled sargassum job.
+
+What was done: replaced that route with one `MigratorySargassumJobMutationGuardMask`, exact handle resolution after acquire, and release on schedule failure, completion, dispose, or vault release. Removed the local legacy lock/write-lock wrappers from the migratory vault array facade.
+
+Cinematic cheats used: preserved source-driven island drift and cheap abyssal flow sampling. No physical algae/fluid simulation or binary quality branch was added.
+
+Exact microseconds saved: 0 us measured; expected steady-frame delta 0 us. Static proof: no legacy lock/direct write-lock symbols, hot registry/direct component lookups, or managed allocation patterns remain in the scoped file diff except value-type `new float3(...)`; `git diff --check` exits 0 with LF/CRLF warning only.
+
+## 2026-05-29 - Shinobu Storm Propagation Guard Flattening
+
+What was wrong: `Assets/_Project/Scripts/Atmosphere/StormPropagation/ShinobuStormPropagationRuntime.cs` still used legacy DataVault pins for tuning, profile, state, scalar, telemetry, and snapshot lanes.
+
+What was done: added storm propagation mutation guard helpers and replaced all runtime `TryLockBuffer/TryUnlockBuffer` calls with guard acquire/release while preserving existing exact handle and length validation.
+
+Cinematic cheats used: preserved bounded storm attenuation, mock hurricane fallback, scalar visual outputs, telemetry dump shape, and continuous `GlobalQualityWeight` cadence. No physical weather rewrite was added.
+
+Exact microseconds saved: 0 us measured; expected steady-frame delta 0 us. Static proof: no `TryLockBuffer/TryUnlockBuffer`, direct `TryAcquireWriteLock/ReleaseWriteLock`, `GlobalRegistry.Get<`, direct `GetComponent(`, or added GC/LINQ/string-format patterns remain in the runtime file; `git diff --check` exits 0 with LF/CRLF warning only.
+
+## 2026-05-29 - SystemDispatcher Surface Probe Guard Flattening
+
+What was wrong: `Assets/_Project/Scripts/Core/SystemDispatcher.cs` still pinned `BufferID.DispatcherRaycastHits` through legacy DataVault lock plumbing in the scheduled surface-probe hit lane.
+
+What was done: replaced the lock flag with a stored guard vault and guard-held flag, using `DispatcherSurfaceProbeHitsGuardMask`; existing completion and teardown release paths now release the mutation guard.
+
+Cinematic cheats used: none added. Dispatcher phase behavior, VISUAL_SYNC cadence, and surface-probe contract were preserved.
+
+Exact microseconds saved: 0 us measured; expected steady-frame delta 0 us. Static proof: no legacy lock symbols remain in `SystemDispatcher.cs`; scoped hot lookup and added diff GC scans are clean; `git diff --check` exits 0 with LF/CRLF warning only. Build/import/profiler proof not run because CPU sampled `100%`.
+2026-05-29 AUDIT_NATIVE_STATE continuation:
+What was wrong: remaining source-local DataVault lock violations were found in `GlobalTelemetryBus.Blackbox.cs`, `MemorySentinelRuntime.cs`, `SeaglideHydrodynamicsRuntime.cs`, and `HarpoonTensionSolver328.cs`. The defects were legacy per-buffer pins around crash blackbox lanes, dynamic memory sentinel validation targets, seaglide scheduled hydrodynamics, and harpoon mock scheduled tension buffers.
+What was done: replaced those per-buffer lock chains with mutation guard masks. Blackbox uses one fixed crash-lane guard; MemorySentinel builds one dynamic guard mask and rejects repeat acquisition while held; Seaglide uses one scheduled job guard; Harpoon uses one mock schedule guard and keeps the public release API used by `TetherManager`.
+Cinematic Cheats used: no physical simulation was added. Existing seaglide audio/cavitation and harpoon mock schedule approximations remain cheap deterministic fakes; the work removed lock topology hazards only.
+Exact Microseconds saved: 0 us measured. Expected steady-frame delta 0 us; benefit is lower deadlock/stall risk from replacing 11+12 scheduled pins and two diagnostic multi-pin routes with single guard acquisitions.
+Verification: scoped scan over the four files returns no `.TryLockBuffer`, `.TryUnlockBuffer`, direct write-lock APIs, stale lock masks/fields, or removed helper names. Hot dependency scan returns no `GlobalRegistry.Get<` or direct `GetComponent(`. Added diff scan returns no `new`, `string.Format`, `.ToString`, LINQ, `foreach`, hot registry, or direct component hits. `git diff --check` exits 0 with LF/CRLF warnings only. Compile/import/profiler proof not run: CPU sample 85, no compiler process rows, CPU guard above 50.
+2026-05-29 AUDIT_NATIVE_STATE continuation 2:
+What was wrong: more source-local legacy guard routes remained in `CablePhysicsSolver132.cs`, `HectonCelestialEngine.cs`, `AupPrecisionJobs.cs`, `ShinobuStormPropagationDebugGizmo.cs`, and `PhysicsApplySystem.cs`. The defects were job/editor paths that still used old DataVault buffer pins or stale helper naming.
+What was done: Cable mock schedule uses one mutation guard; Celestial orbit output job handoff uses one stored-vault guard; AUP scheduled localization lease uses one guard after the runtime-state write lock has already been released; Storm gizmo read uses one guard; PhysicsApply validation schedule uses one stored-vault guard.
+Cinematic Cheats used: none added. Existing cable approximation, celestial orbit math, AUP localization, storm gizmo visualization, and physics validation contracts were preserved.
+Exact Microseconds saved: 0 us measured. Expected steady-frame delta 0 us; benefit is removal of scheduled/editor pin topology and lower stall/deadlock surface.
+Verification: scoped stale-symbol scans return no `.TryLockBuffer`, `.TryUnlockBuffer`, old pin fields, old lock helper names, or old pin constants in touched files. Added diff scan returns no `new`, `string.Format`, `.ToString`, LINQ, `foreach`, `GlobalRegistry.Get<`, or direct `GetComponent(` hits. `git diff --check` exits 0 with LF/CRLF warnings only. Whole scripts inventory no longer lists these files; top remaining offenders are `DestructibleOrganicManager` 48 and `ShinobuEcosystemBalancer` 44. Compile/import/profiler proof not run: CPU sample 88, no compiler processes, CPU guard above 50.
+Build attempt: later throttle pre-check became legal (`CPU=19`, no compiler process rows). Ran exactly one `dotnet build Hecton8.slnx -nologo -clp:ErrorsOnly -maxcpucount:1`. Result: timeout after `604008 ms`, no compiler diagnostics captured, no successful compile proof. Follow-up compiler process check cleared after the timed-out process exited. No second build launched.
+External compiler lane after timeout: final process check observed `dotnet` PID `28040` running `dotnet build .\Assembly-CSharp.csproj -nologo -v:minimal /m:1 /p:UseSharedCompilation=false --no-restore`. No additional build launched; compile proof remains unavailable.
+Compiler lane cleared: later process check returned no `dotnet`, `csc`, or `VBCSCompiler` rows. No second build launched after the timeout.
+External editor compiler lane observed: subsequent process check saw `dotnet` PID `43348` running `dotnet build .\Assembly-CSharp-Editor.csproj -nologo -v:minimal /m:1 /p:UseSharedCompilation=false --no-restore`. No additional build launched.
+2026-05-29 AUDIT_NATIVE_STATE continuation 3:
+What was wrong: `Assets/_Project/Scripts/SpatialAudioManager.cs` still held the acoustic occlusion SDF snapshot with legacy `TryLockBuffer/TryUnlockBuffer`, and release used the current `_dataVault` instead of the granting vault.
+What was done: added `AcousticOcclusionSdfSnapshotMutationGuardMask`, stored `_acousticOcclusionSdfSnapshotGuardVault`, and released the same mutation guard from local failure, schedule failure, job completion, and telemetry/cache clear paths.
+Cinematic Cheats used: preserved the existing copied SDF snapshot and cinematic low-pass occlusion fake. No physical sound propagation rewrite or binary quality branch was added.
+Exact Microseconds saved: 0 us measured. Expected steady-frame delta 0 us; benefit is lower stale-unlock/hot-swap risk in the scheduled audio occlusion lane.
+Verification: `SpatialAudioManager.cs` scan reports no `TryLockBuffer/TryUnlockBuffer`; added diff GC/hot dependency scan returns no `new`, `string.Format`, `.ToString`, LINQ, `foreach`, `GlobalRegistry.Get<`, or direct `GetComponent(` hits. `git diff --check` exits 0 with LF/CRLF warning only. Compile/import/profiler proof not run after the prior 604008 ms build timeout and external compiler-lane observations.
+2026-05-29 AUDIT_NATIVE_STATE continuation 4:
+What was wrong: `Assets/_Project/Scripts/World/AbyssalThermalManager.cs` used legacy `TryLockBuffer/TryUnlockBuffer` for retained thermal grid readback and released via current `_dataVault`, which is unsafe across DataVault service replacement.
+What was done: added one `ThermalMapReadbackMutationGuardMask`, stored the granting vault, retained it across readback ref-counts, released only on the final `ReleaseThermalGridReadback`, and made DataVault hot-swap dispose thermal map buffers before assigning the replacement service.
+Cinematic Cheats used: preserved the existing thermal grid/Jacobi approximation and visual texture projection. No physical heat simulation or binary quality branch was added.
+Exact Microseconds saved: 0 us measured. Expected steady-frame delta 0 us; benefit is stale-unlock and old-vault buffer release correctness.
+Verification: source scan reports no `TryLockBuffer/TryUnlockBuffer` in `AbyssalThermalManager.cs`; remaining write locks are single-buffer routes with `finally` release. `git diff --check` exits 0 with LF/CRLF warning only. Full-file diff contains unrelated pre-existing dirty scratch/dump allocation hunks, so it is not used as Zero-GC proof for this patch. No compile/import/profiler proof run.
+2026-05-29 AUDIT_NATIVE_STATE continuation 5:
+What was wrong: `Assets/_Project/Scripts/Fauna/FaunaKinematicsRuntime.cs` held the copied terrain SDF snapshot for the scheduled leviathan terrain IK job through legacy `TryLockBuffer/TryUnlockBuffer`.
+What was done: added `TerrainSdfSnapshotMutationGuardMask`, stored the granting vault, and released the guard on local failure, schedule failure, solver completion, DataVault hot-swap completion, and disposal.
+Cinematic Cheats used: preserved the SDF/heightmap terrain hugging approximation, FABRIK solve, bite IK, and continuous quality-scaled segment/iteration policy. No physical creature simulation rewrite or binary quality branch was added.
+Exact Microseconds saved: 0 us measured. Expected steady-frame delta 0 us; benefit is lower stale-unlock risk during scheduled fauna IK.
+Verification: source scan reports no `TryLockBuffer/TryUnlockBuffer` or direct write-lock APIs in `FaunaKinematicsRuntime.cs`; added diff GC/hot dependency scan returns no hits; `git diff --check` exits 0 with LF/CRLF warning only. No compile/import/profiler proof run.
+2026-05-29 AUDIT_NATIVE_STATE continuation 6:
+What was wrong: `Assets/_Project/Scripts/World/ProceduralWreckGenerator.cs` used legacy `TryLockBuffer/TryUnlockBuffer` for placement buffer reads while building wreck render payloads and proxy meshes.
+What was done: added a wreck buffer mutation guard bit helper, stored the granting vault/mask, released from normal unlock and full Vault-buffer teardown, and removed all legacy lock/unlock calls from this file.
+Cinematic Cheats used: preserved deterministic WFC placement, merged mesh/proxy mesh generation, disabled nav bake policy, and existing cheap debris/artifact processing. No physical wreck simulation or binary quality branch was added.
+Exact Microseconds saved: 0 us measured. Expected steady-frame delta 0 us; benefit is stale-release and legacy-pin removal in source-local wreck generation.
+Verification: source scan reports no `TryLockBuffer/TryUnlockBuffer` in `ProceduralWreckGenerator.cs`; added guard diff has no `new`, format, `.ToString`, LINQ, `foreach`, hot registry, or direct component lookup hits. `git diff --check` exits 0 with LF/CRLF warning only. File already had unrelated dirty loot/debris tick changes; they are not claimed as this patch. No compile/import/profiler proof run.
+2026-05-29 AUDIT_NATIVE_STATE continuation 7:
+What was wrong: `Assets/_Project/Scripts/Physics/KCC/HydrodynamicKccRuntime.cs` still held 21 scheduled KCC/environment/telemetry lanes through legacy per-buffer Vault pins. `Assets/_Project/Scripts/Physics/Vehicles/Automation/SubmarineAutopilotSdfNavigator.cs` still held scheduled initialization and solver lanes through `_scheduledPinMask` and `TryPinAutopilotVaultBuffer`.
+What was done: KCC now uses one stored-vault `ScheduledVaultMutationGuardMask` and releases it from schedule failure, rollback, `LateFrameTick`, clear, and teardown routes. Autopilot now uses one initialization guard and one solver guard, validates every exact handle after guard acquisition, and releases through `UnlockBuffers` using the granting vault.
+Cinematic Cheats used: preserved KCC flow/SDF/metabolism approximation, autopilot mock SDF/flow sampling, and route telemetry. No physical fluid/navigation simulation or binary quality branch was added.
+Exact Microseconds saved: 0 us measured. Expected steady-frame delta 0 us; benefit is removal of two scheduled multi-pin deadlock/stall surfaces and stale current-vault release risk.
+Verification: scoped source scan over both files reports no `.TryLockBuffer`, `.TryUnlockBuffer`, stale scheduled pin helpers, stale scheduled lock fields, `GlobalRegistry.Get<`, or direct `GetComponent(`. Added diff GC/hot dependency scan returns no hits. `git diff --check` exits 0 with LF/CRLF warnings only. Remaining `TryAcquireWriteLock/ReleaseWriteLock` hits are the pre-existing single-buffer autopilot write helper route, not a scheduled multi-lock route. No compile/import/profiler proof run after the earlier 604008 ms build timeout.
+2026-05-29 AUDIT_NATIVE_STATE continuation 8:
+What was wrong: `Assets/_Project/Scripts/Physics/Vehicles/SubmarineDynamicsRuntime.cs` held the main submarine solver buffers through per-buffer Vault pins, and `Assets/_Project/Scripts/Physics/Vehicles/SubmarineDynamicsRuntime_Gyroscopes.cs` added a second gyro pin group inside the same scheduled integration route.
+What was done: replaced both pin groups with one combined simulation mutation guard. The main solver validates state/control/PID/mass/force/telemetry/added-mass/hydrodynamics/hull/tuning/config/drag handles. The gyro partial validates gyro/error/force-packet/telemetry/visual/counter handles without acquiring a second guard. `UnlockSimulationBuffers` releases the single stored granting vault.
+Cinematic Cheats used: preserved deterministic hydrodynamic integration, added-mass approximation, gyro auto-level fake, and visual upload path. No physical fluid rewrite or binary quality branch was added.
+Exact Microseconds saved: 0 us measured. Expected steady-frame delta 0 us; benefit is lower deadlock/stall surface from replacing 18 scheduled pins with one guard and forbidding a separate gyro guard.
+Verification: stale-symbol scan over the two files returns no `.TryLockBuffer`, `.TryUnlockBuffer`, `_simulationPinMask`, `_gyroSchedulePinMask`, `TryAcquireVaultBufferPin`, `TryPinSimulationBuffer`, or gyro pin helper hits. Hot dependency scan returns no `GlobalRegistry.Get<` or direct `GetComponent(` hits. Added diff GC/hot lookup scan returns no hits. `git diff --check` exits 0 with LF/CRLF warnings only. Compile/import/profiler proof blocked: CPU sample 99 and active `csc` PID 59168 plus `dotnet` PID 42284.
+2026-05-29 AUDIT_NATIVE_STATE continuation 9:
+What was wrong: `Assets/_Project/Scripts/Graphics/Materials/VisualPressureAgingRuntime.cs` still used legacy `TryLockBuffer/TryUnlockBuffer` in editor aging/degradation snapshot leases, pending editor tuning apply, GPU upload reads, and CSV tuning read/write helpers.
+What was done: added aging/degradation/tuning mutation guard masks, stored granting vaults for editor leases, released all guards through close/failure/finally paths, and kept exact DataVault handle validation before native data use.
+Cinematic Cheats used: preserved cheap shader-buffer aging/degradation upload and CSV tuning workflow. No physical corrosion simulation or binary quality branch was added.
+Exact Microseconds saved: 0 us measured. Expected steady-frame delta 0 us; benefit is lower stale-release and legacy-pin risk in visual aging tooling/upload routes.
+Verification: source scan returns no `.TryLockBuffer`, `.TryUnlockBuffer`, stale gizmo lock fields, stale `OneLock` helpers, direct write-lock APIs, `GlobalRegistry.Get<`, or direct `GetComponent(` in `VisualPressureAgingRuntime.cs`. Added diff GC/hot dependency scan returns no hits. `git diff --check` exits 0 with LF/CRLF warning only. No compile/import/profiler proof run in this step.
+2026-05-29 AUDIT_NATIVE_STATE continuation 10:
+What was wrong: `Assets/_Project/Scripts/Graphics/Scalability/ThermalDynamicResolutionAdapter.cs` still used legacy DataVault pins for DRS state, resolution-scale state, telemetry, mock reconstruction input, and scalability quality snapshot. Pointer-style routes released via current `_dataVault`, creating stale-release risk on service rebind.
+What was done: added DRS/scalability mutation guard masks, stored granting vaults for DRS/scale/telemetry pointer routes, released active guards before DataVault rebind/dispose, and converted short read routes to guard acquire/release in `finally`.
+Cinematic Cheats used: preserved continuous `GlobalQualityWeight` scaling, STP/URP render-scale commits, visual-overkill shader weights, and blackbox dump format. No binary device branch or physical scalability model was added.
+Exact Microseconds saved: 0 us measured. Expected steady-frame delta 0 us; benefit is lower stale-release and legacy-pin risk in the graphics scalability service.
+Verification: `ThermalDynamicResolutionAdapter.cs` source scan returns no `TryLock`, `TryUnlock`, `.TryLockBuffer`, or `.TryUnlockBuffer` hits; hot dependency scan returns no `GlobalRegistry.Get<` or direct `GetComponent(` hits; added diff GC/hot dependency scan returns no hits. Project-wide legacy pin inventory no longer lists this file. `git diff --check` exits 0 with LF/CRLF warning only. No compile/import/profiler proof run in this step.
+2026-05-29 AUDIT_NATIVE_STATE continuation 11:
+What was wrong: `Assets/_Project/Scripts/VFX/Bioluminescence/BiolumPulseSyncRuntime.cs` still used legacy DataVault pins for profile floats, blackbox telemetry, mock weather/damage/predator rows, species tuning, and blackbox dump scratch memory.
+What was done: added VFX lane mutation guard masks, converted profile/blackbox acquisition helpers to guard acquire/release, and converted every mock/species/dump scratch route to `TryAcquireBiolumGuard` with `finally` release.
+Cinematic Cheats used: preserved shader-driven pulse matrix/scalars, biome/weather/damage/predator mock fakes, CSV/binary profile loading, and continuous `HomeostasisBrain.GlobalQualityWeight` cadence. No physical light simulation or binary device branch was added.
+Exact Microseconds saved: 0 us measured. Expected steady-frame delta 0 us; benefit is lower stale-release and legacy-pin risk in the VFX bioluminescence runtime.
+Verification: source scan returns no `TryLock`, `TryUnlock`, `.TryLockBuffer`, or `.TryUnlockBuffer` hits in `BiolumPulseSyncRuntime.cs`; project-wide legacy pin inventory no longer lists this file. Hot dependency scan returns no `GlobalRegistry.Get<` or direct `GetComponent(` hits. Added diff GC/hot dependency scan returns no hits. Remaining direct write locks are two editor static single-buffer routes released in `finally`. `git diff --check` exits 0 with LF/CRLF warning only. No compile/import/profiler proof run in this step.
+2026-05-29 AUDIT_NATIVE_STATE continuation 12:
+What was wrong: `Assets/_Project/Scripts/Interaction/EquipmentInteractionHandler.cs` still used legacy DataVault pins for interaction signal queue publish/clear/consume, surface-query staging writes, and request-lane reset.
+What was done: added signal/staging mutation guard masks and shared acquire/release helpers, then converted every remaining legacy lock route in the handler to guard acquire with `finally` release.
+Cinematic Cheats used: preserved queued late-frame signal dispatch, one-frame-latent surface query staging, SDF/terrain cheap hit approximation, and continuous `SignalBusRegistry.GlobalQualityWeight01` SDF step scaling. No physical interaction simulation or binary device branch was added.
+Exact Microseconds saved: 0 us measured. Expected steady-frame delta 0 us; benefit is lower stale-release and legacy-pin risk in interaction signal/staging routes.
+Verification: source scan returns no `TryLockBuffer`, `TryUnlockBuffer`, `TryLock`, `TryUnlock`, stale `ResetRequestLaneLocked`, `GlobalRegistry.Get<`, or direct `GetComponent(` hits in `EquipmentInteractionHandler.cs`. Added diff GC/hot dependency scan returns no hits. Project-wide legacy pin inventory no longer lists this file. `git diff --check` exits 0 with LF/CRLF warning only. No compile/import/profiler proof run in this step.
+2026-05-29 AUDIT_NATIVE_STATE continuation 13:
+What was wrong: `Assets/_Project/Scripts/PDA/PlayerExplorationTracker.cs` used the central cartography helper to acquire many DataVault buffers one by one with `TryLockBuffer`, and scheduled simulation/upload pins released through current `_cartographyVault` rather than the granting vault.
+What was done: replaced the per-buffer lock chain with one mutation guard mask derived from the requested cartography pin mask, preserved the logical pin mask for exact buffer resolution, and stored the granting vault for long-lived simulation/upload routes.
+Cinematic Cheats used: preserved Morton fog-of-war math, one-frame dispatcher phases, RLE/upload jobs, blackbox telemetry, save DTO shape, and continuous quality-weight sampling/upload cadence. No physical cartography simulation or binary device branch was added.
+Exact Microseconds saved: 0 us measured. Expected steady-frame delta 0 us; benefit is lower deadlock/stale-release risk from replacing a 21-buffer cartography lock chain with one mutation guard.
+Verification: source scan returns no `TryLockBuffer`, `TryUnlockBuffer`, `TryLock`, `TryUnlock`, `TryPinCartographyBuffer`, or `GlobalRegistry.Get<` hits in `PlayerExplorationTracker.cs`; direct non-`Try` `GetComponent(` scan returns no hits. Added diff GC/hot dependency scan returns no hits. Project-wide legacy pin inventory no longer lists this file. `git diff --check` exits 0 with LF/CRLF warning only. No compile/import/profiler proof run in this step.
+2026-05-29 AUDIT_NATIVE_STATE continuation 14:
+What was wrong: `Assets/_Project/Scripts/Core/Origin/AupOriginShiftCoordinator.cs` still had legacy pins in synchronous fallback rebase helpers for `VaultHotEntityData` and supplemental tether historical `float3` buffers.
+What was done: replaced those fallback pins with mutation guard bits derived from the affected `BufferID`, released in `finally`, and left the existing scheduled `RebaseScheduleMutationGuardMask` route untouched.
+Cinematic Cheats used: preserved deterministic AUP sector rebasing, time-sliced batch policy, double-precision math, telemetry DTOs, and fallback synchronous slices. No physical world simulation or binary quality branch was added.
+Exact Microseconds saved: 0 us measured. Expected steady-frame delta 0 us; benefit is lower stale-release and legacy-pin risk in origin-shift fallback routes.
+Verification: source scan returns no `TryLockBuffer`, `TryUnlockBuffer`, `TryLock`, `TryUnlock`, `GlobalRegistry.Get<`, or direct non-`Try` `GetComponent(` hits in `AupOriginShiftCoordinator.cs`. Added diff GC/hot dependency scan returns no hits. Project-wide legacy pin inventory no longer lists this file. `git diff --check` exits 0 with LF/CRLF warning only. No compile/import/profiler proof run in this step.
+2026-05-29 AUDIT_NATIVE_STATE continuation 15:
+What was wrong: `Assets/_Project/Scripts/VoxelDeltaProcessor.cs` still used legacy DataVault pins for scheduled `ShinobuDeltaCrusherCarveWrites` acquisition and commit, and released via current `ResolveDataVault()` instead of the granting vault.
+What was done: added `ScheduledCarveWritesMutationGuardMask`, stored `_scheduledCarveWritesGuardVault`, converted schedule/commit acquisitions to `TryAcquireScheduledCarveWritesGuard`, and released the guard through the granting vault in `UnlockScheduledCarveWrites`.
+Cinematic Cheats used: preserved sliced carve scheduling, late-frame commit, backlog budget scaling, thermal melt behavior, blackbox schema, and voxel DTO layout. No physical terrain simulation or binary device branch was added.
+Exact Microseconds saved: 0 us measured. Expected steady-frame delta 0 us; benefit is lower stale-release and legacy-pin risk in the voxel carve write route.
+Verification: source scan returns no `TryLockBuffer`, `TryUnlockBuffer`, `TryLock`, `TryUnlock`, `GlobalRegistry.Get<`, or direct non-`Try` `GetComponent(` hits in `VoxelDeltaProcessor.cs`. Added diff GC/hot dependency scan returns no hits. Project-wide legacy pin inventory no longer lists this file. `git diff --check` exits 0 with LF/CRLF warning only. No compile/import/profiler proof run in this step.
+2026-05-29 AUDIT_NATIVE_STATE continuation 16:
+What was wrong: `Assets/_Project/Scripts/VFX/JacobianFoam/Editor/JacobianFoamTunerWindow.cs` and `Assets/_Project/Scripts/World/SeedShipAnomaly/Editor/SeedShipAnomalyTunerWindow.cs` still used legacy DataVault pins. Seed Ship held field and tuning pins together.
+What was done: converted Jacobian tuning writes to one mutation guard and converted Seed Ship field+tuning writes to one combined mutation guard. Both release in `finally`.
+Cinematic Cheats used: preserved editor-only visual tuning ranges, telemetry preview graph, anomaly wire-gizmo pulse approximation, and existing DTO layouts. No runtime physical simulation or binary device branch was added.
+Exact Microseconds saved: 0 us measured. Expected player runtime delta 0 us because both files are editor-only; benefit is lower editor-side DataVault stall risk during tuning.
+Verification: source scan returns no `TryLockBuffer`, `TryUnlockBuffer`, `TryLock`, `TryUnlock`, `GlobalRegistry.Get<`, or direct non-`Try` `GetComponent(` hits in both files. Added diff GC/hot dependency scan returns no hits. Project-wide legacy pin inventory no longer lists either file. `git diff --check` exits 0 with LF/CRLF warnings only. No compile/import/profiler proof run in this step.
+2026-05-29 AUDIT_NATIVE_STATE continuation 17:
+What was wrong: both MemorySentry relocation fuzzer copies still exercised legacy DataVault pin APIs in their pin/job stress lanes.
+What was done: converted the active 1412 fuzzer and opt-in legacy 1310 fuzzer pin lanes to mutation guards with release in `finally`, preserving slot gates, forced compaction, corruption probe behavior, and report shape.
+Cinematic Cheats used: none; this is editor/test infrastructure. The runtime DataVault stress signal now targets the current guard primitive.
+Exact Microseconds saved: 0 us measured. Expected player runtime delta 0 us; benefit is better editor fuzzer coverage of current lock topology.
+Verification: source scan returns no `TryLockBuffer`, `TryUnlockBuffer`, `TryLock`, `TryUnlock`, `GlobalRegistry.Get<`, or direct non-`Try` `GetComponent(` hits in both fuzzer files. Added diff GC/hot dependency scan returns no hits. Project-wide legacy pin inventory no longer lists either fuzzer file. `git diff --check` exits 0 with LF/CRLF warnings only. No compile/import/fuzzer proof run in this step.
+2026-05-29 AUDIT_NATIVE_STATE continuation 18:
+What was wrong: `Assets/_Project/Scripts/Atmosphere/StormPropagation/Editor/ShinobuStormPropagationTunerWindow.cs` used legacy pins for tuning reads/writes and held telemetry ring plus cursor pins together during editor graph drawing.
+What was done: converted tuning operations to one mutation guard and telemetry graph reads to one combined ring+cursor mutation guard, both released in `finally`.
+Cinematic Cheats used: preserved editor graph line drawing, storm tuning slider ranges, DTO layout, and runtime propagation math. No runtime physical simulation or binary device branch was added.
+Exact Microseconds saved: 0 us measured. Expected player runtime delta 0 us because this is editor-only; benefit is lower editor-side DataVault stall risk.
+Verification: source scan returns no `TryLockBuffer`, `TryUnlockBuffer`, `TryLock`, `TryUnlock`, `GlobalRegistry.Get<`, or direct non-`Try` `GetComponent(` hits in the file. Added diff GC/hot dependency scan returns no hits. Project-wide legacy pin inventory no longer lists this file. `git diff --check` exits 0 with LF/CRLF warning only. No compile/import/profiler proof run in this step.
+2026-05-29 AUDIT_NATIVE_STATE continuation 19:
+What was wrong: `Assets/_Project/Scripts/Editor/SpatialGridXRayWindow.cs` still used legacy DataVault pins in editor telemetry, raw-grid, debug-cell, and read-set helpers.
+What was done: converted telemetry read set to one mutation guard, raw-grid cursor+ring to one combined guard, and single-buffer debug/raw-grid copy routes to single mutation guards with `finally` release.
+Cinematic Cheats used: preserved editor X-Ray histogram, raw spatial grid drawing, debug-cell fallback, and diagnostic latest-vault route. No runtime physical simulation or binary device branch was added.
+Exact Microseconds saved: 0 us measured. Expected player runtime delta 0 us because this is editor-only; benefit is lower editor-side DataVault stall risk.
+Verification: source scan returns no `TryLockBuffer`, `TryUnlockBuffer`, `TryLock`, `TryUnlock`, `GlobalRegistry.Get<`, or direct non-`Try` `GetComponent(` hits in the file. Project-wide legacy pin inventory no longer lists it. `git diff --check` exits 0 with LF/CRLF warning only. Full-file diff GC scan is not clean because unrelated pre-existing editor scratch arrays are already dirty in this file; no compile/import/editor-run proof run in this step.
+2026-05-29 AUDIT_NATIVE_STATE continuation 20:
+What was wrong: `Assets/_Project/Scripts/SubmarineStructuralGrid.cs` used legacy DataVault pins around breach repair, compartment mapping, fatigue, and hull damage job buffer windows.
+What was done: changed the job helper to validate handles only, then acquire one computed mutation guard mask for the complete job buffer set. Existing cleanup paths now release that single guard.
+Cinematic Cheats used: preserved hull damage diffusion, pressure fatigue, breach repair, leak plume visual sync, and cheap visual feedback routes. No physical fluid breach simulation or binary device branch was added.
+Exact Microseconds saved: 0 us measured. Expected steady-frame delta 0 us; benefit is lower multi-pin and stale-release risk in structural job windows.
+Verification: source scan returns no `TryLockBuffer`, `TryUnlockBuffer`, `TryLock`, `TryUnlock`, `GlobalRegistry.Get<`, or direct non-`Try` `GetComponent(` hits in the file. Added diff GC/hot dependency scan returns no hits. Project-wide legacy pin inventory now lists only `HectonVoxelVolume.cs`, `HectonVoxelEngine.cs`, and `DestructibleOrganicManager.cs`. `git diff --check` exits 0 with LF/CRLF warning only. No compile/import/profiler proof run in this step.
+2026-05-29 AUDIT_NATIVE_STATE continuation 21:
+What was wrong: `Assets/_Project/Scripts/World/DestructibleOrganicManager.cs` still used legacy DataVault pins across DearLie destruction jobs, lifecycle mutation/read routes, parasite exposure reads, overgrowth mutation, regeneration records, telemetry ring, template/loot/yield caches, drop budget/output, pending yield events, destroyed UID checks, and titan root-mound state. The DearLie job route was especially risky because it held pins across schedule/complete and released through the current `_dearLieVault`, so a vault rebind could release the wrong service.
+What was done: replaced per-buffer pins with computed mutation guard masks. DearLie job windows now acquire one guard mask for all job buffers, store the granting vault, and release that vault in the completion/failure cleanup path. Lifecycle mutation combines regrowth+maturation into one guard call instead of holding two guards. Read, parasite, overgrowth, yield, drop, telemetry, template, regen, and root-mound routes now acquire one guard and release it in `finally`.
+Cinematic Cheats used: preserved organic destruction/decomposition/regrowth math, SignalBus debris output, shader/audio presentation, continuous quality-budget scaling, and voxel root-mound request behavior. No physical organics simulation or binary device branch was added.
+Exact Microseconds saved: 0 us measured. Expected steady-frame delta 0 us; benefit is lower multi-pin, stale-release, and deadlock risk in organic runtime routes.
+Verification: source scan returns no `TryLock`, `TryUnlock`, `.TryLockBuffer`, `.TryUnlockBuffer`, `GlobalRegistry.Get<`, or direct non-`Try` `GetComponent(` hits in `DestructibleOrganicManager.cs`. Project-wide DataVault pin inventory no longer lists this file; remaining real DataVault pin tail is voxel SDF lease code in `HectonVoxelVolume.cs` and `HectonVoxelEngine.cs`, plus false-positive `GraphicsBuffer` helper names. `git diff --check` exits 0 with LF/CRLF warning only. Full-file diff Zero-GC is not claimed because unrelated cold managed scratch arrays were already dirty. No compile/import/profiler proof run in this step.
+2026-05-29 AUDIT_NATIVE_STATE continuation 22:
+What was wrong: `Assets/_Project/Scripts/HectonVoxelVolume.cs` and `Assets/_Project/Scripts/HectonVoxelEngine.cs` were the last real runtime DataVault legacy pin tail. Published sonar SDF/audio/descriptor reads used `TryLockBuffer/TryUnlockBuffer`, public nearest-SDF leases in the engine released direct buffer pins, and the async SDF publisher held multiple DataVault write locks across SDF/audio/descriptor work.
+What was done: replaced published sonar read pins with one descriptor+SDF+audio mutation guard mask and a static zero-GC refcount gate. Public engine leases now release through `HectonVoxelVolume.ReleasePublishedSonarPayloadReadGuard`. The async publisher now takes one combined payload mutation guard and writes SDF/audio/descriptor views via `TryResolveHandle`, eliminating the multi-write-lock path.
+Cinematic Cheats used: preserved byte-encoded SDF, nearest-cell audio material lookup, raymarch shortcuts, cheap gradient sampling, and existing sonar payload DTO layout. No physical terrain simulation, capacity rewrite, or binary device branch was added.
+Exact Microseconds saved: 0 us measured. Expected steady-frame delta 0 us; benefit is removal of the final runtime DataVault legacy pin route and the SDF/audio/descriptor multi-write-lock topology.
+Verification: scoped scan returns no `.TryLockBuffer` or `.TryUnlockBuffer` in `HectonVoxelVolume.cs` or `HectonVoxelEngine.cs`; hot dependency scan returns no `GlobalRegistry.Get<` or direct non-`Try` `GetComponent(` hits. Project-wide DataVault pin inventory now lists only GlobalDataVault API definitions/implementation, editor scanner string literals, and non-DataVault `GraphicsBuffer.TryUnlockBufferAfterWrite` helpers. `git diff --check` exits 0 with LF/CRLF warnings only. Compile/import/profiler proof blocked: CPU sample `84`, active `dotnet` PID `58948`; no build launched.
+2026-05-29 AUDIT_NATIVE_STATE continuation 23:
+What was wrong: runtime component lookup scan still showed direct non-`Try` `GetComponent` in shared/runtime code. `HullDentShaderController` also recalculated fallback `transform` from `LateFrameTick` through `ResolveRoot` when no explicit submarine root was assigned.
+What was done: converted runtime type lookups in `HullDentShaderController`, `GlobalRegistryContracts.ResolveParentService`, and `MetaRuntimeInstaller` to `TryGetComponent(Type, out Component)`. `HullDentShaderController.ResolveRoot` now returns the serialized root or keeps the first cached fallback transform.
+Cinematic Cheats used: preserved shader-only hull dents and late-frame visual presentation. No physical hull deformation, service ownership rewrite, or binary quality branch was added.
+Exact Microseconds saved: 0 us measured. Expected steady-frame delta 0 us; benefit is removal of direct runtime component lookup tail and repeated fallback transform resolution from a visual late-frame presenter.
+Verification: project scan for `GlobalRegistry.Get<` and direct non-`Try` `GetComponent(` now reports only editor authoring/repair files and one `#if UNITY_EDITOR && HECTON8_AMPLIFY_IMPOSTORS` prefab scan. Scoped `git diff --check` exits 0 with LF/CRLF warnings only. Added diff scan has no reference-type allocation, LINQ, `foreach`, string formatting, hot registry, or direct component lookup. No compile/import/profiler proof run.
+2026-05-29 AUDIT_NATIVE_STATE verification:
+What was wrong: compile proof was still missing after the source cleanup.
+What was done: waited for a legal throttle window (`CPU=40`, no compiler rows) and launched one limited build: `dotnet build Hecton8.slnx -nologo -clp:ErrorsOnly -maxcpucount:1`.
+Cinematic Cheats used: none; verification only.
+Exact Microseconds saved: 0 us measured.
+Verification: build timed out after `904012 ms` with no diagnostics in captured output. Follow-up showed lingering `dotnet` PID `58736` running the same build and `VBCSCompiler` PID `28496`; both were stopped. Later compiler process scan returned no rows. CPU sample after cleanup was `100`, so no retry was launched. Compile/import/profiler proof remains absent.
+2026-05-29 AUDIT_NATIVE_STATE continuation 24:
+What was wrong: `Assets/_Project/Scripts/World/FloraAmbientSway/FloraAmbientSwayRuntime.cs` held paired direct DataVault write locks in `TryLoadBiomeProfilesFromEditorCsv` (`CsvScratch` plus `BiomeProfiles`) and `RecordTelemetry` (`TelemetryRing` plus `TelemetryCursor`).
+What was done: added combined mutation guard masks for profile CSV and telemetry routes, resolved exact guarded mutable views by `BufferID` and minimum length, released guards in `finally`, and added `OnDestroy` forwarding to idempotent `OnServiceShutdown`.
+Cinematic Cheats used: preserved shader global flora sway and continuous `HomeostasisBrain.GlobalQualityWeight` math. No physical plant simulation or binary device branch was added.
+Exact Microseconds saved: 0 us measured. Expected steady-frame delta 0 us; benefit is lower lock-stall/deadlock risk in flora sway profile and telemetry routes.
+Verification: remaining direct write-lock releases in the file are single-buffer flow/params/tuning/generic helper releases. Stale paired profile/telemetry write-lock pattern scan returns no hits. Added diff scan returns no `string.Format`, `.ToString()`, LINQ `.Select/.Where`, `foreach`, `GlobalRegistry.Get<`, direct non-`Try` `GetComponent(`, or added reference-type `new`. `git diff --check` exits 0 with LF/CRLF warning only. No compile/import/profiler proof run in this step.

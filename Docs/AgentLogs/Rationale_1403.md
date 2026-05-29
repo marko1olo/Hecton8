@@ -297,3 +297,99 @@ Solution: Make write-side block compression native LZ4 only. If LZ4 is unavailab
 Rejected Alternatives: Keep managed Deflate fallback for compatibility; rejected for new writes because it violates the zero-GC evidence path. Remove legacy Deflate read support; rejected because it could strand existing saves/mod payloads. Replace with a new native Deflate backend; rejected as a platform plugin and compression-format project outside this scoped pass.
 Scalability potential: Low devices avoid managed compression object churn under missing native LZ4. Middle/High/Ultra keep native LZ4 fast path and identical current save format for new writes.
 Hardware Impact: Measured runtime microseconds saved: 0. Expected benefit is removal of cold managed compression allocations and deterministic fail-closed behavior when native compression is absent.
+
+## Decision 037 - Residual MonoBehaviour Native Fields Must Become Owner-Local BufferSets
+
+Problem: Corrected all-domain class-depth scan still found direct physical `NativeArray` fields in `AbyssalThermalManager` and `ProceduralOreSpawner`. They were local scratch/staging arenas, but tying physical native storage directly to MonoBehaviour fields weakens scene-unload ownership and sentinel proof.
+Solution: Move thermal Jacobi scratch into `ThermalMapScratchBuffers` and ore generation staging into `SpawnStagingScratchBuffers`. Both wrappers allocate only on cold ensure paths, register persistent arrays with `NativeMemorySentinel`, dispose all arrays through one owner lifecycle, and preserve existing job payloads as raw `NativeArray` values. The ore black-box writer was also changed from `FileStream`/`BinaryWriter` to Temp `NativeArray<byte>` staging plus `AsyncWriteManager.WriteAll`.
+Rejected Alternatives: Move local scratch to `GlobalDataVault`; rejected because it would turn private frame-local staging into global heap and add lock traffic without improving authority. Implement actual multi-buffer write locks in `ProceduralOreSpawner.TryLockVault*`; rejected in this pass because that design would hold many write locks simultaneously and needs a separate flattened single-buffer commit plan.
+Scalability potential: Low devices get deterministic native disposal and fewer fault-path managed objects. Middle/High/Ultra keep the same thermal diffusion, ore generation, HZB culling, and `GlobalQualityWeight` continuous scaling; no binary low-end switch was introduced.
+Hardware Impact: Measured runtime microseconds saved: 0. Expected benefit is lower scene-unload leak risk, sentinel-visible scratch ownership, and lower crash-dump GC pressure on i3/MX350-class hardware. Residual risk remains in `ProceduralOreSpawner` pseudo-lock routes and is not marked fixed.
+
+## Decision 038 - Procedural Ore Multi-Buffer Writes Need One Guard, Not Nested Locks
+
+Problem: `ProceduralOreSpawner.TryLockVaultBuffer` was a false lock: it resolved or created a mutable buffer but never called `TryAcquireWriteLock`, never set the locked bit, and `UnlockVaultWriteBuffers` only cleared `_lockedVaultBufferMask`. Converting every buffer in depletion/runtime-shift to write-locks would hold several DataVault locks at once and create the deadlock vector the integrator protocol forbids.
+Solution: Single-buffer writes now use `TryAcquireVaultBuffer` with one `TryAcquireWriteLock` and `finally` release. Multi-buffer depletion/runtime-shift paths now reserve one aggregate `TryAcquireMutationGuard` mask derived from BufferID active-lock bits, then mutate already-open owner views under that one guard and release it in `finally`. Nested indirect-args and telemetry updates inside guarded routes write through the guarded view instead of taking a second lock.
+Rejected Alternatives: Keep `_lockedVaultBufferMask` as a local flag; rejected because it provided no DataVault protection. Take multiple DataVault write-locks; rejected because it is a deadlock-prone lock stack. Disable ore depletion/runtime-shift while waiting for a larger redesign; rejected because it would damage gameplay stability.
+Scalability potential: Low devices avoid lock stalls and mutation/compaction races during ore depletion and AUP shifts. Middle/High/Ultra keep the same ore placement, HZB culling, thermal diffusion, sonar fidelity, and continuous `HomeostasisBrain.GlobalQualityWeight` behavior.
+Hardware Impact: Measured runtime microseconds saved: 0. Expected benefit is correctness: fewer hidden stalls, relocation races, and fault-path managed allocations on i3/MX350-class machines.
+
+## Decision 039 - Runtime Mutation Guards Must Be Single-Layer
+
+Problem: All-domain textual scan found two runtime methods with apparent nested `TryAcquireMutationGuard` sequences. `BulkheadContainmentIntentBus` was a real lock-stack smell because it held an intent mutation guard while helper methods acquired write locks on intent/control buffers. `ExosuitKinematicsRuntime` was behaviorally safe but produced false nested-guard evidence because full and fallback guard acquisitions lived in one method.
+Solution: `BulkheadContainmentIntentBus` now acquires one intent mutation guard, reads capacity/control via `TryReadOnlyHandle`, and writes intent/control rows via guarded mutable views without taking write locks inside the guard. `ExosuitKinematicsRuntime` now uses separate single-acquire helpers for full and fallback job guard acquisition.
+Rejected Alternatives: Leaving Bulkhead as guard-plus-write-lock because the route is small; rejected because it weakens the deadlock proof. Replacing Bulkhead with two sequential write locks; rejected because intent ring/control publish wants one atomic writer lane. Treating Exosuit as clean with an explanation only; rejected because the source scanner should be able to prove it.
+Scalability potential: Low devices avoid hidden lock stalls in containment intent publishing and exosuit job setup. Middle/High/Ultra keep identical simulation and visual behavior; no binary quality switch or physical over-simulation was introduced.
+Hardware Impact: Measured runtime microseconds saved: 0. Expected benefit is lock-order correctness and less chance of frame stalls under DataVault contention.
+
+## Decision 040 - Sonar Vault Mirrors Need Writer Fences
+
+Problem: `TopographicalSonarSynthesizer` mirrored late-frame presentation state into GlobalDataVault buffers through mutable `TryResolveHandle` views. The writes were in the right phase, but Data Sovereignty proof was weak because relocation/compaction could observe unfenced telemetry, point, counter, indirect-args, or shader-globals mutations.
+Solution: Add `TryAcquireVaultWriteBuffer` and route telemetry ring, telemetry cursor, mirrored point cloud, mirrored counters, indirect args DTO, and shader globals DTO through one `TryAcquireWriteLock` at a time with strict `finally` release. Keep scan jobs on owner-local `JobBufferSet`; only late-frame mirrors touch the vault.
+Rejected Alternatives: Put sonar job buffers into GlobalDataVault; rejected because it would add lock traffic to transient scan work and weaken phase boundaries. Hold one broad write-lock stack across all sonar mirrors; rejected because it creates deadlock risk. Leave mutable resolve because the owner is UI; rejected because source proof must survive compaction pressure.
+Scalability potential: Low devices avoid relocation races and hidden stalls during sonar pings. Middle/High/Ultra keep the same `HomeostasisBrain.GlobalQualityWeight` continuous ray count, step budget, and visual overkill behavior.
+Hardware Impact: Measured runtime microseconds saved: 0. Expected benefit is correctness and stable fault telemetry under DataVault contention, not raw frame-time reduction.
+
+## Decision 041 - Salinity Corrosion Commit Must Be Row-Atomic
+
+Problem: The inventory salinity corrosion refactor correctly used one aggregate mutation guard, but the commit helper still wrote four target lanes as four sequential lane commits. If lane two or three failed after lane one succeeded, inventory durability, byte durability, quality, and state flags could diverge for the same item.
+Solution: Resolve all four target lanes before the first write while the single aggregate mutation guard is held. Commit each changed slot as one row only after every target view exists. `InventoryVaultLane.Length`, `IsCreated`, getter, and broken-item signal publication now use read-only views so read probes do not request mutable aliases.
+Rejected Alternatives: Keep the sequential helper because failures are rare; rejected because rare partial state is exactly the kind of save/runtime corruption this purge is meant to eliminate. Take four `TryAcquireWriteLock` locks; rejected because that creates the multi-lock deadlock vector the integrator protocol forbids. Copy changed rows into a managed staging object; rejected because it violates Zero-GC and adds no correctness over the row-atomic native path.
+Scalability potential: Low devices avoid hidden lock stalls and inconsistent item state under contention. Middle/High/Ultra keep identical salinity math, item DTO layout, rust shader scalar, and signal behavior; no binary quality switch or extra simulation was introduced.
+Hardware Impact: Measured runtime microseconds saved: 0. Expected benefit is correctness: fewer partial writes, fewer save-corrupt state combinations, and cleaner DataVault compaction behavior on i3/MX350-class hardware.
+
+## Decision 042 - Editor Sonar CSV Writes Still Need Real Vault Fences
+
+Problem: The sonar runtime mirror paths were fenced, but editor CSV import still wrote CSV scratch and material LUT through mutable resolves. It is not a hot player path, but it can run against the same DataVault buffers during authoring and weakens the source proof.
+Solution: Route CSV scratch through one write lock, release it in `finally`, then read scratch through `TryReadOnlyHandle`. Acquire the material LUT write lock only after scratch is released, parse into the LUT, copy to the owner-local job LUT, and release the LUT in `finally`.
+Rejected Alternatives: Keep editor mutable resolve because it is editor-only; rejected because editor tooling can still corrupt runtime-authoring buffers and produce false verification. Hold scratch and LUT locks together; rejected because two simultaneous write locks are unnecessary and create an avoidable deadlock shape.
+Scalability potential: Low/Middle/High/Ultra runtime behavior is unchanged. The authoring route now has the same single-lock discipline as runtime presentation mirrors.
+Hardware Impact: Measured runtime microseconds saved: 0. Expected benefit is authoring stability and truthful DataVault lock evidence, not player-frame performance.
+
+## Decision 043 - Exosuit CSV Authoring Must Not Poll From Physics Tick
+
+Problem: `ExosuitKinematicsRuntime.FixedTick` called the editor CSV reload route every physics step and gated actual file IO with a 0.25 second countdown. Even though the code was editor-only, the route still tied synchronous file checks and sequential DataVault writer sections to the simulation phase.
+Solution: Remove CSV reload polling from `FixedTick`. Keep only the forced cold CSV apply from `OnEnable` after vault buffers are initialized. Split the CSV path into `TryReadCsvTuningOverride` and `TryCommitCsvTuningOverride`; each helper owns exactly one `TryAcquireWriteLock` and releases it in a `finally` block.
+Rejected Alternatives: Move polling to `LateFrameTick`; rejected because it would still run synchronous editor IO from a high-frequency frame phase. Keep the countdown because it is editor-only; rejected because the source proof should show no IO/control mutation route from physics tick. Hold scratch and tuning locks together; rejected because one file read and one row commit do not need simultaneous locks.
+Scalability potential: Low devices avoid editor physics-step stalls during authoring play mode. Middle/High/Ultra keep the same exosuit simulation, SDF sampling, haptic/acoustic signals, and continuous `GlobalQualityWeight` tuning behavior.
+Hardware Impact: Measured runtime microseconds saved: 0. Expected benefit is phase safety and fewer editor-play physics stalls; player builds are unchanged because the CSV route remains under `UNITY_EDITOR`.
+
+## Decision 044 - Editor CSV Reloads Belong To Cold Enable, Not Runtime Ticks
+
+Problem: After the exosuit fix, the same all-domain pattern remained in somatic player kinematics, submarine dynamics, and volcanic updraft authoring routes. Each `SlowTick` ran editor-only CSV file probes and mutation commits. `SlowTick` is lower cadence than physics, but it is still a runtime loop and can stall editor play mode or hide DataVault mutation in a tick phase.
+Solution: Move somatic, submarine, and volcanic CSV application to `OnEnable` after their vault buffers are initialized. Remove the CSV calls from `SlowTick`; those methods now keep cache refresh, handle refresh, and signal publication only.
+Rejected Alternatives: Leave these because `SlowTick` is not listed in the narrow high-frequency examples; rejected because it is still a repeated runtime phase. Move them to `LateFrameTick`; rejected because synchronous file IO is not presentation work. Add binary low-end/editor switches; rejected because editor authoring determinism should be phase-owned, not device-tier gated.
+Scalability potential: Low devices avoid editor play-mode stalls from repeated CSV polling. Middle/High/Ultra keep identical player-build simulation, because the affected routes are under `UNITY_EDITOR`; continuous `GlobalQualityWeight` math in all three systems is unchanged.
+Hardware Impact: Measured runtime microseconds saved: 0. Expected benefit is lower editor-loop IO pressure and cleaner source evidence; no player-frame profiler claim was made.
+
+## Decision 045 - Remaining MonoBehaviour NativeArrays Were Real Debt
+
+Problem: A fresh all-domain class-depth scan contradicted the earlier clean status. Direct physical `NativeArray` fields still existed on `AutonomousExtractorSystem`, `SomaticKinematicsRuntime`, `ScavengingLootOracleRuntime`, and `ResourceDistributionDirector`. These were private scratch/workspace arrays, but the lifecycle ownership was still attached directly to MonoBehaviour instances.
+Solution: Move those arrays into nested owner structs: `ExtractorNativeState`, `LocalSimulationScratch`, `SimulationNativeScratch`, and `MetamorphismWorkspaceOwner`. The public behavior, job payloads, buffer sizes, quality math, signal routes, and teardown calls remain unchanged; only the physical native storage owner moved out of class-depth MonoBehaviour fields.
+Rejected Alternatives: Mark local scratch as acceptable; rejected because the project rule is physical native storage must have a non-MonoBehaviour owner. Move scratch to `GlobalDataVault`; rejected because private per-runtime scratch is not sovereign cross-domain data and would add lock traffic. Rewrite the jobs; rejected because the job contracts already consume raw `NativeArray<T>` values correctly.
+Scalability potential: Low devices get cleaner scene-unload disposal and less stale native state risk. Middle/High/Ultra keep the same simulation fidelity and continuous `HomeostasisBrain.GlobalQualityWeight` routes; no binary quality switch or extra physical simulation was added.
+Hardware Impact: Measured runtime microseconds saved: 0. Expected benefit is lifecycle correctness: fewer leaked/undisposed native workspaces during scene unload, not raw frame-time reduction.
+
+## Decision 046 - Build Gate Closed, Source Proof Only
+
+Problem: The owner-struct sweep touched C# sources and would normally justify one compile check, but the workstation gate was closed.
+Solution: Run source-only verification: class-depth native field scan, hot dependency lookup scan, hot allocation/IO pattern scan, brace balance, and targeted `git diff --check`. Latest sampled build gate was CPU 99% with active `dotnet.exe` PID 57088 building `Assembly-CSharp-Editor.csproj`; no 1403 build was launched.
+Rejected Alternatives: Launch another `dotnet build` anyway; rejected because CPU exceeded 50% and a compiler process was active. Claim compile success from scans; rejected because scans are syntax/static evidence, not a compiler verdict.
+Scalability potential: Runtime behavior unchanged. Verification remains source-level until the compile gate opens.
+Hardware Impact: Avoided adding a compiler workload during 99% CPU load.
+
+## Decision 047 - Owner Structs Must Not Allocate From Runtime Phases
+
+Problem: Moving native fields into owner structs was necessary but incomplete. `AutonomousExtractorSystem.SlowTick` still called `EnsureExtractorNativeStateCold`, and `SomaticKinematicsRuntime.FixedTick` still called `EnsureLocalSimulationScratch`. Those calls made the direct hot-method scan look clean while leaving a transitive `Allocator.Persistent` allocation path in runtime phases.
+Solution: Keep cold allocation in lifecycle setup only. `AutonomousExtractorSystem.OnEnable` prewarms `_nativeState`; `SlowTick`, `TryAcquireExtractorJobBuffers`, and `TryAcquireExtractorStateBuffers` now only test `_nativeState.IsReady(MaxModuleCapacity)`. `SomaticKinematicsRuntime.FixedTick` now only tests `_localScratch.IsReady()`. `ExtractorNativeState`, `LocalSimulationScratch`, `SimulationNativeScratch`, and `MetamorphismWorkspaceOwner` now register every persistent `NativeArray` with `NativeMemorySentinel`, unregister before disposal, and dispose partial cold allocations before rethrowing.
+Rejected Alternatives: Leave the `Ensure*` calls in runtime because they usually no-op; rejected because rare scene reload or failed cold init would turn the first runtime tick into a persistent allocation hitch. Move private scratch to `GlobalDataVault`; rejected because these buffers are local job workspaces, not cross-domain truth. Add binary low-end branches; rejected because lifecycle correctness must not depend on device tier.
+Scalability potential: Low devices avoid rare but severe runtime allocation stalls. Middle/High/Ultra keep identical simulation and visual behavior; no gameplay truth, DTO layout, `HomeostasisBrain.GlobalQualityWeight` route, or physical solver math changed.
+Hardware Impact: Measured runtime microseconds saved: 0 in source-only verification. Expected benefit is eliminating runtime allocation spikes and making scene-unload native ownership visible to the sentinel on i3/MX350-class hardware.
+
+## Decision 048 - Cold Ensures And Editor IO Must Not Sit In SlowTick
+
+Problem: Generic all-domain scan still found `Ensure*Cold()` calls inside runtime `SlowTick` bodies. `ShinobuOceanSurfaceAtmosphereRuntime.SlowTick` could allocate/ensure vault buffers and run editor CSV loading; `ShinobuStormPropagationRuntime.SlowTick` could allocate/ensure vault buffers and job staging when `_vaultReady` was false.
+Solution: Make both slow ticks readiness-only. Ocean vault warmup and optional editor CSV import now happen from `OnEnable` after cold vault setup. Storm vault warmup stays in `OnEnable` and DataVault rebind; `SlowTick` returns while `_vaultReady` is false.
+Rejected Alternatives: Keep slow-tick cold ensures because the cadence is low; rejected because low cadence still lands on the game thread and can hitch weak devices. Move CSV to `LateFrameTick`; rejected because file IO is not presentation sync. Add device-tier conditionals; rejected because phase correctness must be invariant across hardware.
+Scalability potential: Low devices avoid editor/play-mode stalls from repeated cold file/vault work. Middle/High/Ultra keep the same ocean wave, storm propagation, and continuous quality-weight scaling behavior.
+Hardware Impact: Measured runtime microseconds saved: 0 in source-only verification. Expected benefit is fewer slow-frame spikes under cold-start/rebind edge cases.

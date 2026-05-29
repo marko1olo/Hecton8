@@ -69,7 +69,7 @@ Evidence class: STATIC_SOURCE / PACKAGE_LOCK / FILESYSTEM. No Unity import, play
 - `#pragma target >= 4.5`: `96`
 - `#pragma target >= 5.0`: `5`
 - Compute files: `71`
-- Compute reference files scanned: `9604`
+- Compute reference files scanned: `9605`
 - Compute reference files skipped over `2000000` bytes: `39` / bytes `346161212`
 - `numthreads` declarations: `156`
 - Risky numeric thread groups > `64`: `4`
@@ -158,13 +158,13 @@ First-party runtime payload-sized dispatch bridges without local query:
 - `Assets/Crest/Crest/Scripts/Collision/QueryBase.cs:504` (`Runtime`) `_shaderProcessQueries.Dispatch(_kernelHandle, numGroups, 1, 1);`
 - `Assets/Crest/Crest/Scripts/Helpers/TextureArrayHelpers.cs:79` (`Runtime`) `s_clearToBlackShader.Dispatch( krnl_ClearToBlack, groupsX, groupsY, depth );`
 - `Assets/Crest/Crest/Scripts/LodData/LodDataMgrAnimWaves.cs:451` (`Runtime`) `buf.DispatchCompute(_combineShader, selectedShaderKernel, groupsX, groupsY, 1);`
-- `Assets/Crest/Crest/Scripts/LodData/LodDataMgrPersistent.cs:202` (`Runtime`) `buf.DispatchCompute(_shader, krnl_ShaderSim, groupsX, groupsY, lodDispatchCount);`
+- `Assets/Crest/Crest/Scripts/LodData/LodDataMgrPersistent.cs:210` (`Runtime`) `buf.DispatchCompute(_shader, krnl_ShaderSim, groupsX, groupsY, lodDispatchCount);`
 - `Assets/Crest/Crest/Scripts/Shapes/FFT/FFTBaker.cs:136` (`Runtime`) `buf.DispatchCompute(waveCombineShader, kernel, groupsX, groupsY, 1);`
-- `Assets/Crest/Crest/Scripts/Shapes/FFT/FFTCompute.cs:453` (`Runtime`) `buf.DispatchCompute(_shaderSpectrum, _kernelSpectrumInit, groups, groups, CASCADE_COUNT);`
-- `Assets/Crest/Crest/Scripts/Shapes/FFT/FFTCompute.cs:477` (`Runtime`) `buf.DispatchCompute(_shaderSpectrum, _kernelSpectrumUpdate, groups, groups, CASCADE_COUNT);`
-- `Assets/Crest/Crest/Scripts/Shapes/FFT/FFTCompute.cs:499` (`Runtime`) `buf.DispatchCompute(_shaderFFT, kernelOffset, 1, _resolution, CASCADE_COUNT);`
-- `Assets/Crest/Crest/Scripts/Shapes/FFT/FFTCompute.cs:506` (`Runtime`) `buf.DispatchCompute(_shaderFFT, kernelOffset + 1, _resolution, 1, CASCADE_COUNT);`
-- `Assets/Crest/Crest/Scripts/Shapes/ShapeGerstner.cs:397` (`Runtime`) `buf.DispatchCompute(_shaderGerstner, _krnlGerstner, groupsX, groupsY, cascadeCount);`
+- `Assets/Crest/Crest/Scripts/Shapes/FFT/FFTCompute.cs:452` (`Runtime`) `buf.DispatchCompute(_shaderSpectrum, _kernelSpectrumInit, groups, groups, CASCADE_COUNT);`
+- `Assets/Crest/Crest/Scripts/Shapes/FFT/FFTCompute.cs:476` (`Runtime`) `buf.DispatchCompute(_shaderSpectrum, _kernelSpectrumUpdate, groups, groups, CASCADE_COUNT);`
+- `Assets/Crest/Crest/Scripts/Shapes/FFT/FFTCompute.cs:498` (`Runtime`) `buf.DispatchCompute(_shaderFFT, kernelOffset, 1, _resolution, CASCADE_COUNT);`
+- `Assets/Crest/Crest/Scripts/Shapes/FFT/FFTCompute.cs:505` (`Runtime`) `buf.DispatchCompute(_shaderFFT, kernelOffset + 1, _resolution, 1, CASCADE_COUNT);`
+- `Assets/Crest/Crest/Scripts/Shapes/ShapeGerstner.cs:396` (`Runtime`) `buf.DispatchCompute(_shaderGerstner, _krnlGerstner, groupsX, groupsY, cascadeCount);`
 - `Assets/Editor/x64/Bakery/scripts/ftBuildGraphics.cs:3003` (`Editor`) `farSphereCSTransform.Dispatch(0, dispatchWidth, dispatchWidth, 1);`
 - `Assets/Editor/x64/Bakery/scripts/ftBuildGraphics.cs:3017` (`Editor`) `farSphereCSCull.Dispatch(0, dispatchIndexGroups, 1, 1);`
 

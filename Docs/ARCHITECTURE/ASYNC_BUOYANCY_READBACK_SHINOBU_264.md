@@ -18,8 +18,8 @@ Runtime assembly: `Hecton8.Physics.Buoyancy.Runtime` under `Assets/_Project/Scri
 - `Simulation` consumes only completed old requests. No `WaitForCompletion` route exists.
 - A ready `AsyncGPUReadbackRequest` slot is retained if the results Vault write lock is unavailable; GPU error, zero payload, or successful copy clears it.
 - Timing uses cached `DispatcherTimingDTO.FixedDelta`; readback/mock accumulation advances by fixed delta. Owned async files do not read Unity `Time`.
-- `ApplyDelayedBuoyancyReadbackJob` reconstructs absolute water height with `cameraAup.y + ResultHeight` and writes `ReadbackResolvedHeightDTO`.
-- `ApplyDelayedBuoyancyReadbackJob` is not scheduled on empty frames. When samples exist, the scheduled lane count is the actual `max(dispatchCount, completedCount)`, capped to the fixed request capacity.
+- `PostSimulation` reconstructs absolute water height with `cameraAup.y + ResultHeight` through sequential single-buffer Vault write passes after dispatcher simulation fences are closed.
+- Empty frames return the inbound dispatcher handle. When samples exist, apply work is capped to the actual `max(dispatchCount, completedCount)` and the fixed request capacity.
 - `PostSimulation` records the 300-frame black-box telemetry ring and raises a dump request if latency exceeds four frames.
 - `VisualSync` performs the diagnostic file write to `Docs/AgentLogs/Dump_SHINOBU_264.bin` as a 16-byte header plus raw `ReadOnlySpan<byte>` telemetry rows, keeping physics phases free of file I/O.
 - GPU wave inputs use `AsyncBuoyancyWaveParametersDTO` in the Physics-owned Vault lane. Runtime no longer borrows `Hecton8.Atmosphere` concrete DTOs or constants.
@@ -68,7 +68,7 @@ Rollback must reuse cached resolved heights. It must not block on a new GPU read
 
 ## Compile Wall Boundary
 - Runtime code is isolated in `Assets/_Project/Scripts/Physics/Buoyancy/AsyncReadback` under `Hecton8.Physics.Buoyancy.Runtime.asmdef`.
-- The runtime assembly depends on `Hecton8.Core`/`Hecton8.Core.Contracts`/`Hecton8.Core.Memory`, Unity Burst/Collections/Jobs/Mathematics, and local Physics DTOs only.
+- The runtime assembly depends on `Hecton8.Core`/`Hecton8.Core.Contracts`/`Hecton8.Core.Memory`, Unity Collections/Jobs/Mathematics, and local Physics DTOs only.
 - No root `Buoyancy` asmdef was added because that would capture neighboring agents' files already present in the folder.
 - No sibling-domain `Hecton8.Atmosphere` runtime type is referenced by the buoyancy readback engine.
 - GPU uploads use private local `GraphicsBuffer.LockBufferForWrite` helpers; the route no longer depends on internal `GraphicsBufferUploadUtility`.
@@ -80,14 +80,14 @@ Rollback must reuse cached resolved heights. It must not block on a new GPU read
 ## Vault Access
 - Pure public/editor read routes use `IDataVault.TryReadHandle`.
 - Direct owner writes use `TryAcquireWriteLock` / `ReleaseWriteLock`.
-- Scheduled mock/apply job outputs acquire writer locks before scheduling and release them from `PostSimulation`, the dispatcher-owned completion window.
+- Mock, apply, telemetry, tuning, profile, and counter writes hold at most one Vault write lock at a time and release each lock in the same method `finally` block.
 
 ## Tooling
 - `AsyncGpuReadbackXRayWindow` is UI Toolkit editor tooling. It reads Vault telemetry/counters and writes tuning through `ApplyEditorTuning`; refresh is throttled to 10Hz and unchanged label writes are skipped.
 - `SynchronousGpuReadbackScanner` is a Roslyn AST scanner.
 - It flags `ReadPixels`, `GetPixel*`, `WaitForCompletion`, unsafe `GetData`, `SetData`, texture allocation, hot arrays, `Pack=1`, and DTO properties.
 - Async readback `GetData<T>()` is allowed only after `SystemDispatcher.IsAsyncReadbackReadyNoWait` in the same method.
-- `ApplyMicros` telemetry is schedule-side until Unity Profiler/SystemDispatcher worker timing is integrated; rows are marked with `FlagApplyMicrosScheduleOnly`.
+- `ApplyMicros` telemetry measures the immediate single-buffer apply passes in `PostSimulation`; no retained apply job lock window remains.
 - No separate telemetry Burst job exists. One 64-byte telemetry row is written directly during `PostSimulation`; dumping stays in `VisualSync`.
 
 ## Scalability

@@ -400,7 +400,7 @@ namespace Hecton8.Core
             if (vault == null || capacity <= 0)
                 return false;
 
-            if (vault.IsAllocationLocked)
+            if (vault.IsAllocationLocked || vault.IsCompactionFenceActive)
                 return vault.TryGetGenerationHandle<T>(bufferId, out handle);
 
             handle = vault.EnsureGenerationHandle<T>(

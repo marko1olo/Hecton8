@@ -276,14 +276,14 @@ namespace Hecton8.QA.Headless
         private const float HealthStressCycleSeconds = 60f;
         private const float CatastrophicAupDeltaMeters = 500f;
         private const float AupJitterFailureMeters = 0.001f;
-        private const float LowQualityNormalCollapseThreshold = 0.3f;
+        private const float RichNormalFadeStart01 = 0.3f;
         private const long BytesPerMegabyte = 1024L * 1024L;
         private const uint KccAupMaxFrameAge = 2u;
         private const uint InputMaskSprint = 1u << 4;
         private const uint InputMaskPrimaryFire = 1u << 2;
         private const uint InputMaskAutomation = 1u << 31;
         private const uint VaultFlagMemoryLeakDetected = 1u;
-        private const uint VaultFlagLowTierEmergency = 1u << 1;
+        private const uint VaultFlagSurvivalPressureEmergency = 1u << 1;
         private const uint VaultFlagFatal = 1u << 2;
         private const uint VaultFlagCsvSlow = 1u << 3;
         private const uint VaultFlagStressRecoveryObserved = 1u << 4;
@@ -1194,7 +1194,7 @@ namespace Hecton8.QA.Headless
                     Flags = SystemHealthIndexSignal.FlagAdrenaline
                 };
                 SignalBus<SystemHealthIndexSignal>.TryPushTracked(in signal, ref s_x001Shinobu38QaWatchdogRuntimeSignalPushDropCount);
-                vault.Flags |= VaultFlagLowTierEmergency;
+                vault.Flags |= VaultFlagSurvivalPressureEmergency;
                 _healthStressWasActive = true;
                 mockVault[0] = vault;
                 return;
@@ -1202,7 +1202,7 @@ namespace Hecton8.QA.Headless
 
             if (_healthStressWasActive)
             {
-                vault.Flags &= ~VaultFlagLowTierEmergency;
+                vault.Flags &= ~VaultFlagSurvivalPressureEmergency;
                 vault.Flags |= VaultFlagStressRecoveryObserved;
                 vault.FrameFlags |= TelemetryFlagStressRecovered;
                 _healthStressWasActive = false;
@@ -2293,7 +2293,7 @@ namespace Hecton8.QA.Headless
                 double3 target = Waypoints[waypointIndex].Aup;
                 double3 current = vault.CurrentAUP;
                 uint flags = vault.Flags & (VaultFlagMemoryLeakDetected |
-                                            VaultFlagLowTierEmergency |
+                                            VaultFlagSurvivalPressureEmergency |
                                             VaultFlagFatal |
                                             VaultFlagCsvSlow |
                                             VaultFlagStressRecoveryObserved |
@@ -2329,10 +2329,10 @@ namespace Hecton8.QA.Headless
                 if (sdf < 10f)
                 {
                     float quality = math.saturate(QualityWeight);
-                    float richNormalGate = Smooth01((quality - LowQualityNormalCollapseThreshold) * math.rcp(math.max(0.0001f, 1f - LowQualityNormalCollapseThreshold)));
+                    float richNormalGate = Smooth01((quality - RichNormalFadeStart01) * math.rcp(math.max(0.0001f, 1f - RichNormalFadeStart01)));
                     float3 cheapNormal = math.normalizesafe(new float3(-desired.x * 0.25f, 1f, -desired.z * 0.25f), new float3(0f, 1f, 0f));
-                    float3 richNormal = richNormalGate > 0f ? Shinobu38MockTerrainSdf.SampleNormal(ahead) : cheapNormal;
-                    float normalBlend = quality * quality * (3f - (2f * quality));
+                    float3 richNormal = Shinobu38MockTerrainSdf.SampleNormal(ahead);
+                    float normalBlend = richNormalGate * quality * quality * (3f - (2f * quality));
                     float3 normal = math.normalizesafe(math.lerp(cheapNormal, richNormal, normalBlend), new float3(0f, 1f, 0f));
                     float avoid01 = math.saturate((10f - sdf) * 0.1f);
                     desired = math.normalizesafe(desired + normal * (tuning.ObstacleAvoidanceStrength * avoid01), new float3(0f, 0f, 1f));
@@ -2407,7 +2407,7 @@ namespace Hecton8.QA.Headless
                 };
 
                 if (SystemHealthIndex01 >= 0.9f)
-                    flags |= VaultFlagLowTierEmergency;
+                    flags |= VaultFlagSurvivalPressureEmergency;
                 vault.Flags = flags;
                 vault.FrameFlags = frameFlags;
                 MockVault[0] = vault;

@@ -19,7 +19,7 @@ namespace Hecton8.Core
             if (_registered)
                 return;
 
-            ResolveLight();
+            CacheLightCold();
             if (_light == null)
                 return;
 
@@ -35,7 +35,7 @@ namespace Hecton8.Core
             _registered = false;
         }
 
-        private void ResolveLight()
+        private void CacheLightCold()
         {
             if (_light != null)
                 return;
@@ -46,7 +46,7 @@ namespace Hecton8.Core
 #if UNITY_EDITOR
         private void OnValidate()
         {
-            ResolveLight();
+            CacheLightCold();
         }
 #endif
     }

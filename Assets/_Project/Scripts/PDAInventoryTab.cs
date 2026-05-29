@@ -35,7 +35,7 @@ namespace Hecton8.UI
 
     [DisallowMultipleComponent]
     [AddComponentMenu("Hecton8/UI/PDA Inventory Tab")]
-    public sealed class PDAInventoryTab : MonoBehaviour, IUpdatable, ILateFrameTickable, IPDAEventListener, ILocalizationCorruptionVisualStateListener, IGlobalRegistryHotSwapListener
+    public sealed class PDAInventoryTab : MonoBehaviour, IUpdatable, ISlowTickable, ILateFrameTickable, IPDAEventListener, ILocalizationCorruptionVisualStateListener, IGlobalRegistryHotSwapListener
     {
         private static ReadOnlySpan<char> StackCountTemplateChars => "\u00D7{0}".AsSpan();
         private static ReadOnlySpan<char> DetailWeightStackTemplateChars => "MASS: {0:0.0} kg  |  STACK x{1}  |  TOTAL {2:0.0} kg".AsSpan();
@@ -251,7 +251,10 @@ namespace Hecton8.UI
         private readonly int[] _prefabToolCacheIds = new int[PrefabToolCacheCapacity]; // COLD ALLOC: int[32] - prefab metadata lookup cache keys - owner: PDAInventoryTab
         private readonly byte[] _prefabToolCacheStates = new byte[PrefabToolCacheCapacity]; // COLD ALLOC: byte[32] - 1=hit, 2=miss - owner: PDAInventoryTab
         private readonly IPlayerToolDataReadModel[] _prefabToolCacheTools = new IPlayerToolDataReadModel[PrefabToolCacheCapacity]; // COLD ALLOC: interface[32] - cached prefab tool metadata - owner: PDAInventoryTab
+        private readonly int[] _prefabToolProbeIds = new int[PrefabToolCacheCapacity]; // COLD ALLOC: int[32] - cold prefab probe queue keys - owner: PDAInventoryTab
+        private readonly GameObject[] _prefabToolProbePrefabs = new GameObject[PrefabToolCacheCapacity]; // COLD ALLOC: GameObject[32] - cold prefab probe queue refs - owner: PDAInventoryTab
         private int _prefabToolCacheCount;
+        private int _prefabToolProbeCount;
         private int[] _filteredAnchorIndices;
         private bool _gridDirty;
         private bool _detailsDirty;
@@ -262,9 +265,12 @@ namespace Hecton8.UI
         private uint _lastToolLoadoutSignalSequence;
 
         private bool _registeredToUpdateLoop;
+        private bool _registeredToSlowTickLoop;
         private bool _registeredToLateFrameLoop;
         private bool _pendingInventoryParallaxDirty;
         private bool _pendingInventoryParallaxClear;
+        private float _screenWidthSnapshot = 1f;
+        private float _screenHeightSnapshot = 1f;
         private Transform _dropOrigin;
         private IPlayerRuntimeContext _playerRuntimeContext;
         private INativeInputManagerRuntime _nativeInputManager;
@@ -292,11 +298,13 @@ namespace Hecton8.UI
             _descriptionTextBuffer = new char[384]; // COLD ALLOC: char[384] - selected item description corruption staging buffer - owner: PDAInventoryTab
             _loadoutAssignTextBuffer = new char[32]; // COLD ALLOC: char[32] - loadout assign label staging buffer - owner: PDAInventoryTab
             _filteredAnchorIndices = new int[MaxItems]; // COLD ALLOC: int[MaxItems] - filtered anchor page index buffer - owner: PDAInventoryTab
+            RefreshScreenSnapshotCold();
         }
 
         private void OnEnable()
         {
             CacheRegistryServicesCold();
+            RefreshScreenSnapshotCold();
             TryRegisterHotSwapListener();
             AutoResolve();
             EnsureBuilt();
@@ -318,6 +326,7 @@ namespace Hecton8.UI
         private void OnDestroy()
         {
             Unsubscribe();
+            TryUnregisterTick();
             TryUnregisterHotSwapListener();
             PDAEvents.AssertUnregistered(this, nameof(PDAInventoryTab));
             Shader.SetGlobalVector(PdaInventoryParallaxId, Vector4.zero);
@@ -344,6 +353,12 @@ namespace Hecton8.UI
 
             _pendingInventoryParallaxClear = false;
             _pendingInventoryParallaxDirty = true;
+        }
+
+        public void SlowTick()
+        {
+            RefreshScreenSnapshotCold();
+            FlushPrefabToolCacheProbesCold();
         }
 
         public void LateFrameTick()
@@ -379,6 +394,9 @@ namespace Hecton8.UI
                 _registeredToUpdateLoop = GlobalRegistry.TryRegisterUpdatable(this, PriorityLayer.UI);
             }
 
+            if (!_registeredToSlowTickLoop)
+                _registeredToSlowTickLoop = GlobalRegistry.TryRegisterSlowTickable(this, PriorityLayer.UI);
+
             if (!_registeredToLateFrameLoop)
                 _registeredToLateFrameLoop = GlobalRegistry.TryRegisterLateFrameTickable(this, PriorityLayer.UI);
         }
@@ -389,6 +407,12 @@ namespace Hecton8.UI
             {
                 GlobalRegistry.UnregisterLateFrameTickable(this, PriorityLayer.UI);
                 _registeredToLateFrameLoop = false;
+            }
+
+            if (_registeredToSlowTickLoop)
+            {
+                GlobalRegistry.UnregisterSlowTickable(this, PriorityLayer.UI);
+                _registeredToSlowTickLoop = false;
             }
 
             if (!_registeredToUpdateLoop)
@@ -524,8 +548,8 @@ namespace Hecton8.UI
 
         private void PublishInventoryUiParallax()
         {
-            float screenWidth = Mathf.Max(1f, Screen.width);
-            float screenHeight = Mathf.Max(1f, Screen.height);
+            float screenWidth = Mathf.Max(1f, _screenWidthSnapshot);
+            float screenHeight = Mathf.Max(1f, _screenHeightSnapshot);
             if (screenWidth <= 1f || screenHeight <= 1f)
             {
                 Shader.SetGlobalVector(PdaInventoryParallaxId, Vector4.zero);
@@ -541,6 +565,12 @@ namespace Hecton8.UI
             float parallaxX = Mathf.Clamp((pointerPosition.x - halfWidth) / halfWidth, -1f, 1f) * InventoryUiParallaxStrength;
             float parallaxY = Mathf.Clamp((pointerPosition.y - halfHeight) / halfHeight, -1f, 1f) * InventoryUiParallaxStrength;
             Shader.SetGlobalVector(PdaInventoryParallaxId, new Vector4(parallaxX, parallaxY, 1f, 0f));
+        }
+
+        private void RefreshScreenSnapshotCold()
+        {
+            _screenWidthSnapshot = Mathf.Max(1f, Screen.width);
+            _screenHeightSnapshot = Mathf.Max(1f, Screen.height);
         }
 
         // ══════════════════════════════════════════════════════════
@@ -2830,18 +2860,77 @@ namespace Hecton8.UI
                     return _prefabToolCacheStates[i] == 1 ? _prefabToolCacheTools[i] : null;
             }
 
-            if (!prefab.TryGetComponent(out IPlayerToolDataReadModel resolvedTool))
-                resolvedTool = null;
+            QueuePrefabToolCacheProbe(prefab, prefabId);
+            return null;
+        }
 
-            if (_prefabToolCacheCount < PrefabToolCacheCapacity)
+        private void QueuePrefabToolCacheProbe(GameObject prefab, int prefabId)
+        {
+            if (prefab == null || _prefabToolCacheCount >= PrefabToolCacheCapacity)
+                return;
+
+            for (int i = 0; i < _prefabToolCacheCount; i++)
             {
+                if (_prefabToolCacheIds[i] == prefabId)
+                    return;
+            }
+
+            for (int i = 0; i < _prefabToolProbeCount; i++)
+            {
+                if (_prefabToolProbeIds[i] == prefabId)
+                    return;
+            }
+
+            if (_prefabToolProbeCount >= PrefabToolCacheCapacity)
+                return;
+
+            int index = _prefabToolProbeCount++;
+            _prefabToolProbeIds[index] = prefabId;
+            _prefabToolProbePrefabs[index] = prefab;
+        }
+
+        private void FlushPrefabToolCacheProbesCold()
+        {
+            int probeCount = _prefabToolProbeCount;
+            if (probeCount <= 0)
+                return;
+
+            _prefabToolProbeCount = 0;
+            bool cacheChanged = false;
+            for (int i = 0; i < probeCount; i++)
+            {
+                GameObject prefab = _prefabToolProbePrefabs[i];
+                int prefabId = _prefabToolProbeIds[i];
+                _prefabToolProbePrefabs[i] = null;
+                _prefabToolProbeIds[i] = 0;
+                if (prefab == null || _prefabToolCacheCount >= PrefabToolCacheCapacity)
+                    continue;
+
+                bool alreadyCached = false;
+                for (int cacheIndex = 0; cacheIndex < _prefabToolCacheCount; cacheIndex++)
+                {
+                    if (_prefabToolCacheIds[cacheIndex] == prefabId)
+                    {
+                        alreadyCached = true;
+                        break;
+                    }
+                }
+
+                if (alreadyCached)
+                    continue;
+
+                if (!prefab.TryGetComponent(out IPlayerToolDataReadModel resolvedTool))
+                    resolvedTool = null;
+
                 int index = _prefabToolCacheCount++;
                 _prefabToolCacheIds[index] = prefabId;
                 _prefabToolCacheStates[index] = resolvedTool != null ? (byte)1 : (byte)2;
                 _prefabToolCacheTools[index] = resolvedTool;
+                cacheChanged = true;
             }
 
-            return resolvedTool;
+            if (cacheChanged)
+                _toolStripDirty = true;
         }
 
         private static ReadOnlySpan<char> ResolveFilterEmptyLabelChars(InventoryViewFilter filter)

@@ -6,10 +6,8 @@ using Hecton8.Core;
 using Hecton8.Core.Contracts;
 using Hecton8.Core.Memory;
 using Hecton8.Core.Contracts.Signals;
-using Unity.Burst;
 using Unity.Collections;
 using Unity.Collections.LowLevel.Unsafe;
-using Unity.Jobs;
 using Unity.Mathematics;
 using UnityEngine;
 using UnityEngine.Rendering;
@@ -70,6 +68,9 @@ namespace Hecton8.Graphics.Scalability
         private const float DefaultSharpeningMultiplier = 0.8f;
         private const float DefaultPostCullScale = 0.6f;
         private const float StressEmergencyThreshold = 0.8f;
+        private const float SurvivalPressureFadeStart01 = 0.12f;
+        private const float SurvivalPressureFadeEnd01 = 0.44f;
+        private const float SurvivalPressureFlagEpsilon = 0.001f;
         private const float ResolutionSignalThreshold = 0.05f;
         private const float NotificationThreshold = 0.4f;
         private const float EwmaAlpha = 0.18f;
@@ -95,7 +96,7 @@ namespace Hecton8.Graphics.Scalability
         private const byte FlagFramePressure = 1 << 1;
         private const byte FlagNotification = 1 << 2;
         private const byte FlagInvalidState = 1 << 3;
-        private const byte FlagLowTierEmergency = 1 << 4;
+        private const byte FlagSurvivalPressureEmergency = 1 << 4;
         private const byte FlagAupLocked = 1 << 5;
         private const byte FlagStpActive = 1 << 6;
 
@@ -121,6 +122,21 @@ namespace Hecton8.Graphics.Scalability
         private static ThermalDynamicResolutionAdapter s_activeAdapter;
         private static float s_systemScalePercentage = 100f;
 
+        private static readonly ulong DrsStateMutationGuardMask =
+            DrsMutationGuardBit(BufferID.DrsState);
+
+        private static readonly ulong ResolutionScaleStateMutationGuardMask =
+            DrsMutationGuardBit(BufferID.ResolutionScaleState);
+
+        private static readonly ulong ResolutionScaleTelemetryMutationGuardMask =
+            DrsMutationGuardBit(BufferID.ResolutionScaleTelemetry);
+
+        private static readonly ulong MockReconstructionInputMutationGuardMask =
+            DrsMutationGuardBit((BufferID)UberNoirReconstructionVaultIds.MockSignal);
+
+        private static readonly ulong ScalabilityStateMutationGuardMask =
+            DrsMutationGuardBit(BufferID.ShinobuScalabilityState);
+
         private UniversalRenderPipelineAsset _urpAsset;
         private IDynamicResolutionRuntime _dynamicResolutionRuntime;
         private IDataVault _dataVault;
@@ -129,7 +145,9 @@ namespace Hecton8.Graphics.Scalability
         private VaultGenerationHandle<DrsTelemetryEntry> _telemetryHandle;
         private VaultGenerationHandle<ScalabilityStateDTO> _scalabilityStateHandle;
         private VaultGenerationHandle<MockReconstructionInputSignal> _mockReconstructionInputHandle;
-        private JobHandle _stressEwmaHandle;
+        private IDataVault _drsStateGuardVault;
+        private IDataVault _scaleStateGuardVault;
+        private IDataVault _telemetryGuardVault;
         private int _telemetryCursor;
         private uint _sequence;
         private float _defaultRenderScale = PolicyMaxScale;
@@ -141,6 +159,8 @@ namespace Hecton8.Graphics.Scalability
         private float _latestSystemStress01;
         private float _latestSystemStressEwma01;
         private float _latestGlobalQualityWeight01 = PolicyMaxScale;
+        private float _scalabilityQualityWeightSnapshot01 = PolicyMaxScale;
+        private float _shaderQualityWeightSnapshot01 = PolicyMaxScale;
         private float _sharpenIntensity01;
         private float _dearLie01;
         private float _visualOverkill01;
@@ -169,7 +189,8 @@ namespace Hecton8.Graphics.Scalability
         private byte _thermalSeverity;
         private byte _foveatedPressureTier;
         private byte _hardwareTier;
-        private int _coldGraphicsMemoryMb;
+        private int _screenWidthSnapshot = 1;
+        private int _screenHeightSnapshot = 1;
         private HectonQualityTier _bootHardwareTier = HectonQualityTier.Unknown;
         private HectonQualityTier _cachedQualityTier = HectonQualityTier.Unknown;
         private int _lastObservedScaleMilli = -1;
@@ -185,11 +206,11 @@ namespace Hecton8.Graphics.Scalability
         private bool _hotSwapRegistered;
         private bool _systemScalerInstalled;
         private bool _blackBoxDumped;
-        private bool _stressEwmaScheduled;
-        private bool _stressEwmaBufferLocked;
         private bool _stpActive = true;
         private bool _coldFsrCapabilityAllowed;
         private bool _fsrUpscalerAllowed;
+        private bool _scalabilityQualityWeightSnapshotValid;
+        private bool _shaderQualityWeightSnapshotValid;
         private bool _cameraShieldRegistered;
         private bool _cameraShieldColdRefreshRequested;
         private bool _lateFrameRegistrationRequested;
@@ -201,6 +222,9 @@ namespace Hecton8.Graphics.Scalability
         private bool _pendingRuntimeSnapshotDirty;
         private bool _pendingSharpenGlobalDirty;
         private bool _pendingVisualBudgetGlobalsDirty;
+        private bool _drsStateGuardHeld;
+        private bool _scaleStateGuardHeld;
+        private bool _telemetryGuardHeld;
         private byte _pendingRenderScaleCommitFlags;
         private byte _pendingRuntimeSnapshotFlags;
         private float _mockQualityWeight01 = 1f;
@@ -310,51 +334,6 @@ namespace Hecton8.Graphics.Scalability
             private byte _pad15;
         }
 
-        [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
-        private unsafe struct SystemStressEwmaJob : IJob
-        {
-            [NoAlias]
-            [NativeDisableUnsafePtrRestriction]
-            public ResolutionScaleState* State;
-            public int StateLength;
-            public float InputStress01;
-            public float Alpha;
-
-            public void Execute()
-            {
-                if (State != null && StateLength > 0)
-                {
-                    float input = math.isfinite(InputStress01) ? math.saturate(InputStress01) : 1f;
-                    float alpha = math.isfinite(Alpha) ? math.saturate(Alpha) : EwmaAlpha;
-                    ref ResolutionScaleState state = ref UnsafeUtility.AsRef<ResolutionScaleState>(State);
-                    float previous = math.isfinite(state.SystemStressEwma01)
-                        ? math.saturate(state.SystemStressEwma01)
-                        : input;
-                    state.SystemStress01 = input;
-                    state.SystemStressEwma01 = math.lerp(previous, input, alpha);
-                }
-            }
-        }
-
-        [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
-        private unsafe struct MockQualityWeightDropJob : IJob
-        {
-            [NoAlias]
-            [NativeDisableUnsafePtrRestriction]
-            public DrsStateDTO* State;
-            public float MinScaleLimit;
-
-            public void Execute()
-            {
-                if (State == null)
-                    return;
-
-                ref DrsStateDTO state = ref UnsafeUtility.AsRef<DrsStateDTO>(State);
-                state.TargetRenderScale = math.lerp(MinScaleLimit, PolicyMaxScale, 0.2f);
-                state.UpscalerTypeHash = UpscalerBilateralTaaHash;
-            }
-        }
-
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
         private static void ResetStaticState()
         {
@@ -413,7 +392,9 @@ namespace Hecton8.Graphics.Scalability
             SetVector4(ref _lastCommittedVisualFeatureWeights1, -1f, -1f, -1f, -1f);
             s_systemScalePercentage = _currentScale * 100f;
             CacheGraphicsCapabilitySnapshotCold();
+            RefreshRenderSurfaceSnapshotCold();
             _bootHardwareTier = ResolveBootHardwareTier();
+            RefreshQualityInputSnapshotsCold();
             _latestGlobalQualityWeight01 = ResolveQualitySignalWeight();
             RefreshQualityTierPolicyFromContinuousWeight(_latestGlobalQualityWeight01);
             GenerateEmergencyMockLimits();
@@ -424,6 +405,7 @@ namespace Hecton8.Graphics.Scalability
             _drsState.TargetRenderScale = _targetScale;
             _drsState.UpscalerTypeHash = _upscalerTypeHash;
             RebindDataVault(GlobalRegistry.DataVault);
+            ApplyQualitySnapshotPolicyCold();
             TryEnsureDrsStateHandle(allowAllocation: true);
             TryEnsureTelemetryHandle(allowAllocation: true);
             TryEnsureScaleStateHandle(allowAllocation: true);
@@ -445,6 +427,8 @@ namespace Hecton8.Graphics.Scalability
             {
                 RebindDataVault(GlobalRegistry.DataVault);
                 RebindDynamicResolutionRuntime(GlobalRegistry.DynamicResolutionRuntime);
+                RefreshRenderSurfaceSnapshotCold();
+                ApplyQualitySnapshotPolicyCold();
                 RegisterResolutionScalerService();
                 InstallSystemDynamicResolutionScaler();
                 RegisterCameraShield();
@@ -475,13 +459,12 @@ namespace Hecton8.Graphics.Scalability
             TryUnregisterLateFrame();
             TryUnregisterHotSwap();
             UnregisterResolutionScalerService();
-            if (!ownsAdapter)
-                return;
-
-            CompletePendingStressJobForTeardown();
-            ClearSystemOverrideRenderScale();
-            ReleaseSystemDynamicResolutionScaler();
-            UnregisterCameraShield();
+            if (ownsAdapter)
+            {
+                ClearSystemOverrideRenderScale();
+                ReleaseSystemDynamicResolutionScaler();
+                UnregisterCameraShield();
+            }
         }
 
         private void OnDestroy()
@@ -498,7 +481,6 @@ namespace Hecton8.Graphics.Scalability
             TryUnregisterLateFrame();
             TryUnregisterHotSwap();
             UnregisterResolutionScalerService();
-            CompletePendingStressJobForTeardown();
             if (ownsAdapter)
             {
                 ClearSystemOverrideRenderScale();
@@ -506,6 +488,7 @@ namespace Hecton8.Graphics.Scalability
                 UnregisterCameraShield();
             }
 
+            ReleaseActiveVaultGuards();
             _scaleStateHandle = default;
             _telemetryHandle = default;
             _drsStateHandle = default;
@@ -517,10 +500,7 @@ namespace Hecton8.Graphics.Scalability
 
         private void AdvanceThermalResolutionState(float deltaTime)
         {
-            TryFinalizePendingStressJobNoWait();
             if (!ReferenceEquals(s_activeAdapter, this))
-                return;
-            if (_stressEwmaScheduled)
                 return;
 
             _frameCounter = unchecked(_frameCounter + 1u);
@@ -530,7 +510,6 @@ namespace Hecton8.Graphics.Scalability
                 tickFrameMs,
                 EwmaAlpha);
             ConsumeSignals();
-            ConsumeMockReconstructionInputFromVault();
             _latestFrameTimeEwmaMs = SanitizePositive(_latestFrameTimeEwmaMs, TargetFrameTimeMs);
             _latestSystemHealth01 = Sanitize01(_latestSystemHealth01);
             _latestGpuUtil01 = Sanitize01(_latestGpuUtil01);
@@ -538,21 +517,17 @@ namespace Hecton8.Graphics.Scalability
             RefreshQualityTierPolicyFromContinuousWeight(_latestGlobalQualityWeight01);
             _stpActive = ResolveStpIntent((HectonQualityTier)_hardwareTier);
             _latestSystemStress01 = ResolveSystemStressInput01();
-            if (_latestSystemStressEwma01 <= 0f)
-                _latestSystemStressEwma01 = _latestSystemStress01;
+            ApplySystemStressEwmaInline(_latestSystemStress01);
 
             if (RecoverInvalidScaleState())
-            {
-                ScheduleStressEwmaJob(_latestSystemStress01);
                 return;
-            }
 
             byte flags = _stpActive ? FlagStpActive : (byte)0;
             float qualityWeight01 = Sanitize01(_latestGlobalQualityWeight01);
             float stress01 = Sanitize01(_latestSystemStressEwma01);
             _minScaleLimit = ResolveMinScaleLimit(qualityWeight01);
             float requestedScale = ResolvePolicyScale(qualityWeight01, stress01, ref flags);
-            bool pressureActive = (flags & (FlagFramePressure | FlagThermalOverride | FlagLowTierEmergency)) != 0;
+            bool pressureActive = (flags & (FlagFramePressure | FlagThermalOverride | FlagSurvivalPressureEmergency)) != 0;
 
             if (_aupShiftLockFrames > 0)
             {
@@ -565,7 +540,6 @@ namespace Hecton8.Graphics.Scalability
                 UpdateDrsState();
                 UpdateScaleState(flags);
                 WriteTelemetry(flags);
-                ScheduleStressEwmaJob(_latestSystemStress01);
                 return;
             }
 
@@ -615,7 +589,6 @@ namespace Hecton8.Graphics.Scalability
             UpdateScaleState(flags);
             UpdateDrsState();
             WriteTelemetry(flags);
-            ScheduleStressEwmaJob(_latestSystemStress01);
         }
 
         public void LateFrameTick()
@@ -668,6 +641,10 @@ namespace Hecton8.Graphics.Scalability
                 RefreshCameraShieldCacheCold();
                 _cameraShieldColdRefreshRequested = false;
             }
+
+            RefreshRenderSurfaceSnapshotCold();
+            ConsumeMockReconstructionInputFromVault();
+            ApplyQualitySnapshotPolicyCold();
         }
 
         public bool TryGetScaleState(out ResolutionScaleState state)
@@ -800,7 +777,7 @@ namespace Hecton8.Graphics.Scalability
             if (currentScale == null || targetScale == null || stress == null || capacity <= 0)
                 return 0;
 
-            if (!TryLockTelemetryPointer(out DrsTelemetryEntry* telemetryRing, out int telemetryLength))
+            if (!TryAcquireTelemetryPointer(out DrsTelemetryEntry* telemetryRing, out int telemetryLength))
                 return 0;
 
             try
@@ -822,8 +799,7 @@ namespace Hecton8.Graphics.Scalability
             }
             finally
             {
-                if (_dataVault != null)
-                    _dataVault.TryUnlockBuffer(BufferID.ResolutionScaleTelemetry, SystemID.GraphicsScalability);
+                ReleaseTelemetryPointer();
             }
         }
 
@@ -899,8 +875,8 @@ namespace Hecton8.Graphics.Scalability
             signal.FrameTimeMs = TargetFrameTimeMs;
             signal.Flags = 1u;
             ConsumeMockQualityWeightSignal(in signal);
-            // COLD SYNC JOB: editor/tuner proof path only; never called from Tick.
-            RunMockQualityWeightDropJob();
+            // Cold editor/tuner sync path only; never called from Tick.
+            ApplyMockQualityWeightDropColdSync();
         }
 
         public void OnGlobalRegistryServiceRebound(
@@ -996,7 +972,7 @@ namespace Hecton8.Graphics.Scalability
                 return false;
 
             BufferID bufferId = (BufferID)UberNoirReconstructionVaultIds.MockSignal;
-            if (!vault.TryLockBuffer(bufferId, SystemID.GraphicsScalability))
+            if (!TryAcquireDrsGuard(vault, MockReconstructionInputMutationGuardMask))
                 return false;
 
             try
@@ -1024,23 +1000,23 @@ namespace Hecton8.Graphics.Scalability
             }
             finally
             {
-                vault.TryUnlockBuffer(bufferId, SystemID.GraphicsScalability);
+                ReleaseDrsGuard(vault, MockReconstructionInputMutationGuardMask);
             }
         }
 
         private float ResolvePolicyScale(float qualityWeight01, float stress01, ref byte flags)
         {
-            float hardwareWeight01 = Sanitize01(qualityWeight01);
-            float lowTierWeight01 = 1f - SmoothRange01(hardwareWeight01, 0.12f, 0.44f);
+            float qualitySignal01 = Sanitize01(qualityWeight01);
+            float survivalPressureWeight01 = ResolveSurvivalPressureWeight01(qualitySignal01);
             float qualityWeight = ResolveGlobalQualityWeight(stress01);
-            float minScaleLimit = ResolveMinScaleLimit(hardwareWeight01);
+            float minScaleLimit = ResolveMinScaleLimit(qualitySignal01);
             float requestedScale = math.lerp(minScaleLimit, PolicyMaxScale, qualityWeight);
 
-            float stressCollapse01 = SmoothRange01(stress01, ResolveStressCollapseStart(hardwareWeight01), PolicyMaxScale);
+            float stressCollapse01 = SmoothRange01(stress01, ResolveStressCollapseStart(qualitySignal01), PolicyMaxScale);
             requestedScale = math.lerp(requestedScale, minScaleLimit, stressCollapse01);
-            if (stressCollapse01 * lowTierWeight01 > 0.001f)
+            if (stressCollapse01 * survivalPressureWeight01 > SurvivalPressureFlagEpsilon)
             {
-                flags |= FlagLowTierEmergency;
+                flags |= FlagSurvivalPressureEmergency;
             }
 
             float frameTimeMs = SanitizePositive(_latestFrameTimeEwmaMs, TargetFrameTimeMs);
@@ -1152,115 +1128,172 @@ namespace Hecton8.Graphics.Scalability
                 out _);
         }
 
-        private bool TryLockDrsStatePointer(out DrsStateDTO* drsState, out int drsStateLength)
+        private bool TryAcquireDrsStatePointer(out DrsStateDTO* drsState, out int drsStateLength)
         {
             drsState = null;
             drsStateLength = 0;
-            if (!TryEnsureDrsStateHandle())
+            if (_drsStateGuardHeld || !TryEnsureDrsStateHandle())
                 return false;
 
-            if (!_dataVault.TryLockBuffer(BufferID.DrsState, SystemID.GraphicsScalability))
+            IDataVault vault = _dataVault;
+            if (!TryAcquireDrsGuard(vault, DrsStateMutationGuardMask))
                 return false;
 
-            if (!TryOpenVaultBuffer(
-                    _dataVault,
-                    ref _drsStateHandle,
-                    BufferID.DrsState,
-                    1,
-                    out NativeArray<DrsStateDTO> buffer))
+            _drsStateGuardVault = vault;
+            _drsStateGuardHeld = true;
+            bool handedOff = false;
+            try
             {
-                _dataVault.TryUnlockBuffer(BufferID.DrsState, SystemID.GraphicsScalability);
-                return false;
-            }
+                if (!TryOpenVaultBuffer(
+                        vault,
+                        ref _drsStateHandle,
+                        BufferID.DrsState,
+                        1,
+                        out NativeArray<DrsStateDTO> buffer))
+                {
+                    return false;
+                }
 
-            void* pointer = NativeArrayUnsafeUtility.GetUnsafeBufferPointerWithoutChecks(buffer);
-            if (pointer == null)
+                void* pointer = NativeArrayUnsafeUtility.GetUnsafeBufferPointerWithoutChecks(buffer);
+                if (pointer == null)
+                    return false;
+
+                drsState = (DrsStateDTO*)pointer;
+                drsStateLength = buffer.Length;
+                handedOff = true;
+                return true;
+            }
+            finally
             {
-                _dataVault.TryUnlockBuffer(BufferID.DrsState, SystemID.GraphicsScalability);
-                return false;
+                if (!handedOff)
+                    ReleaseDrsStatePointer();
             }
-
-            drsState = (DrsStateDTO*)pointer;
-            drsStateLength = buffer.Length;
-            return true;
         }
 
-        private void UnlockDrsStatePointer()
+        private void ReleaseDrsStatePointer()
         {
-            if (_dataVault != null)
-                _dataVault.TryUnlockBuffer(BufferID.DrsState, SystemID.GraphicsScalability);
+            if (!_drsStateGuardHeld)
+            {
+                _drsStateGuardVault = null;
+                return;
+            }
+
+            IDataVault vault = _drsStateGuardVault ?? _dataVault;
+            _drsStateGuardVault = null;
+            _drsStateGuardHeld = false;
+            ReleaseDrsGuard(vault, DrsStateMutationGuardMask);
         }
 
-        private bool TryLockScaleStatePointer(out ResolutionScaleState* scaleState, out int scaleStateLength)
+        private bool TryAcquireScaleStatePointer(out ResolutionScaleState* scaleState, out int scaleStateLength)
         {
             scaleState = null;
             scaleStateLength = 0;
-            if (!TryEnsureScaleStateHandle())
+            if (_scaleStateGuardHeld || !TryEnsureScaleStateHandle())
                 return false;
 
-            if (!_dataVault.TryLockBuffer(BufferID.ResolutionScaleState, SystemID.GraphicsScalability))
+            IDataVault vault = _dataVault;
+            if (!TryAcquireDrsGuard(vault, ResolutionScaleStateMutationGuardMask))
                 return false;
 
-            if (!TryOpenVaultBuffer(
-                    _dataVault,
-                    ref _scaleStateHandle,
-                    BufferID.ResolutionScaleState,
-                    1,
-                    out NativeArray<ResolutionScaleState> buffer))
+            _scaleStateGuardVault = vault;
+            _scaleStateGuardHeld = true;
+            bool handedOff = false;
+            try
             {
-                _dataVault.TryUnlockBuffer(BufferID.ResolutionScaleState, SystemID.GraphicsScalability);
-                return false;
-            }
+                if (!TryOpenVaultBuffer(
+                        vault,
+                        ref _scaleStateHandle,
+                        BufferID.ResolutionScaleState,
+                        1,
+                        out NativeArray<ResolutionScaleState> buffer))
+                {
+                    return false;
+                }
 
-            void* pointer = NativeArrayUnsafeUtility.GetUnsafeBufferPointerWithoutChecks(buffer);
-            if (pointer == null)
+                void* pointer = NativeArrayUnsafeUtility.GetUnsafeBufferPointerWithoutChecks(buffer);
+                if (pointer == null)
+                    return false;
+
+                scaleState = (ResolutionScaleState*)pointer;
+                scaleStateLength = buffer.Length;
+                handedOff = true;
+                return true;
+            }
+            finally
             {
-                _dataVault.TryUnlockBuffer(BufferID.ResolutionScaleState, SystemID.GraphicsScalability);
-                return false;
+                if (!handedOff)
+                    ReleaseScaleStatePointer();
             }
-
-            scaleState = (ResolutionScaleState*)pointer;
-            scaleStateLength = buffer.Length;
-            return true;
         }
 
-        private void UnlockScaleStatePointer()
+        private void ReleaseScaleStatePointer()
         {
-            if (_dataVault != null)
-                _dataVault.TryUnlockBuffer(BufferID.ResolutionScaleState, SystemID.GraphicsScalability);
+            if (!_scaleStateGuardHeld)
+            {
+                _scaleStateGuardVault = null;
+                return;
+            }
+
+            IDataVault vault = _scaleStateGuardVault ?? _dataVault;
+            _scaleStateGuardVault = null;
+            _scaleStateGuardHeld = false;
+            ReleaseDrsGuard(vault, ResolutionScaleStateMutationGuardMask);
         }
 
-        private bool TryLockTelemetryPointer(out DrsTelemetryEntry* telemetryRing, out int telemetryLength)
+        private bool TryAcquireTelemetryPointer(out DrsTelemetryEntry* telemetryRing, out int telemetryLength)
         {
             telemetryRing = null;
             telemetryLength = 0;
-            if (!TryEnsureTelemetryHandle())
+            if (_telemetryGuardHeld || !TryEnsureTelemetryHandle())
                 return false;
 
-            if (!_dataVault.TryLockBuffer(BufferID.ResolutionScaleTelemetry, SystemID.GraphicsScalability))
+            IDataVault vault = _dataVault;
+            if (!TryAcquireDrsGuard(vault, ResolutionScaleTelemetryMutationGuardMask))
                 return false;
 
-            if (!TryOpenVaultBuffer(
-                    _dataVault,
-                    ref _telemetryHandle,
-                    BufferID.ResolutionScaleTelemetry,
-                    TelemetryCapacity,
-                    out NativeArray<DrsTelemetryEntry> buffer))
+            _telemetryGuardVault = vault;
+            _telemetryGuardHeld = true;
+            bool handedOff = false;
+            try
             {
-                _dataVault.TryUnlockBuffer(BufferID.ResolutionScaleTelemetry, SystemID.GraphicsScalability);
-                return false;
+                if (!TryOpenVaultBuffer(
+                        vault,
+                        ref _telemetryHandle,
+                        BufferID.ResolutionScaleTelemetry,
+                        TelemetryCapacity,
+                        out NativeArray<DrsTelemetryEntry> buffer))
+                {
+                    return false;
+                }
+
+                void* pointer = NativeArrayUnsafeUtility.GetUnsafeBufferPointerWithoutChecks(buffer);
+                if (pointer == null)
+                    return false;
+
+                telemetryRing = (DrsTelemetryEntry*)pointer;
+                telemetryLength = buffer.Length;
+                handedOff = true;
+                return true;
+            }
+            finally
+            {
+                if (!handedOff)
+                    ReleaseTelemetryPointer();
+            }
+        }
+
+        private void ReleaseTelemetryPointer()
+        {
+            if (!_telemetryGuardHeld)
+            {
+                _telemetryGuardVault = null;
+                return;
             }
 
-            void* pointer = NativeArrayUnsafeUtility.GetUnsafeBufferPointerWithoutChecks(buffer);
-            if (pointer == null)
-            {
-                _dataVault.TryUnlockBuffer(BufferID.ResolutionScaleTelemetry, SystemID.GraphicsScalability);
-                return false;
-            }
-
-            telemetryRing = (DrsTelemetryEntry*)pointer;
-            telemetryLength = buffer.Length;
-            return true;
+            IDataVault vault = _telemetryGuardVault ?? _dataVault;
+            _telemetryGuardVault = null;
+            _telemetryGuardHeld = false;
+            ReleaseDrsGuard(vault, ResolutionScaleTelemetryMutationGuardMask);
         }
 
         private bool TryEnsureTelemetryHandle(bool allowAllocation = false)
@@ -1281,11 +1314,10 @@ namespace Hecton8.Graphics.Scalability
 
         private void RebindDataVault(IDataVault vault)
         {
-            CompletePendingStressJobForTeardown();
-
             if (ReferenceEquals(_dataVault, vault))
                 return;
 
+            ReleaseActiveVaultGuards();
             _dataVault = vault;
             _drsStateHandle = default;
             _scaleStateHandle = default;
@@ -1301,6 +1333,13 @@ namespace Hecton8.Graphics.Scalability
             }
         }
 
+        private void ReleaseActiveVaultGuards()
+        {
+            ReleaseDrsStatePointer();
+            ReleaseScaleStatePointer();
+            ReleaseTelemetryPointer();
+        }
+
         private void UpdateScaleState(byte flags)
         {
             ResolutionScaleState mirror = default;
@@ -1308,10 +1347,7 @@ namespace Hecton8.Graphics.Scalability
             _scaleStateMirror = mirror;
             _scaleStateMirrorValid = true;
 
-            if (_stressEwmaScheduled)
-                return;
-
-            if (!TryLockScaleStatePointer(out ResolutionScaleState* scaleState, out int scaleStateLength))
+            if (!TryAcquireScaleStatePointer(out ResolutionScaleState* scaleState, out int scaleStateLength))
                 return;
 
             try
@@ -1323,15 +1359,15 @@ namespace Hecton8.Graphics.Scalability
             }
             finally
             {
-                UnlockScaleStatePointer();
+                ReleaseScaleStatePointer();
             }
         }
 
         private void PopulateScaleState(ref ResolutionScaleState state, byte flags)
         {
             byte stateFlags = 0;
-            if ((flags & FlagLowTierEmergency) != 0)
-                stateFlags |= ResolutionScaleStateFlags.LowTierEmergency;
+            if ((flags & FlagSurvivalPressureEmergency) != 0)
+                stateFlags |= ResolutionScaleStateFlags.SurvivalPressureEmergency;
             if ((flags & FlagFramePressure) != 0)
                 stateFlags |= ResolutionScaleStateFlags.FramePressure;
             if ((flags & FlagThermalOverride) != 0)
@@ -1368,7 +1404,7 @@ namespace Hecton8.Graphics.Scalability
             _drsState.TargetRenderScale = ClampRenderScale(_targetScale);
             _drsState.UpscalerTypeHash = _upscalerTypeHash;
 
-            if (!TryLockDrsStatePointer(out DrsStateDTO* drsState, out int drsStateLength))
+            if (!TryAcquireDrsStatePointer(out DrsStateDTO* drsState, out int drsStateLength))
                 return;
 
             try
@@ -1383,13 +1419,13 @@ namespace Hecton8.Graphics.Scalability
             }
             finally
             {
-                UnlockDrsStatePointer();
+                ReleaseDrsStatePointer();
             }
         }
 
-        private void RunMockQualityWeightDropJob()
+        private void ApplyMockQualityWeightDropColdSync()
         {
-            if (!TryLockDrsStatePointer(out DrsStateDTO* drsState, out int drsStateLength))
+            if (!TryAcquireDrsStatePointer(out DrsStateDTO* drsState, out int drsStateLength))
                 return;
 
             try
@@ -1397,128 +1433,30 @@ namespace Hecton8.Graphics.Scalability
                 if (drsStateLength <= 0)
                     return;
 
-                MockQualityWeightDropJob job = default;
-                job.State = drsState;
-                job.MinScaleLimit = _minScaleLimit;
-                job.Execute();
-                _drsState = drsState[0];
+                ref DrsStateDTO state = ref UnsafeUtility.AsRef<DrsStateDTO>(drsState);
+                state.TargetRenderScale = math.lerp(_minScaleLimit, PolicyMaxScale, 0.2f);
+                state.UpscalerTypeHash = UpscalerBilateralTaaHash;
+                _drsState = state;
             }
             finally
             {
-                UnlockDrsStatePointer();
+                ReleaseDrsStatePointer();
             }
         }
 
-        private void ScheduleStressEwmaJob(float inputStress01)
+        private void ApplySystemStressEwmaInline(float inputStress01)
         {
-            if (_stressEwmaScheduled || !TryEnsureScaleStateHandle())
-                return;
-
-            if (_dataVault == null || !_dataVault.TryLockBuffer(BufferID.ResolutionScaleState, SystemID.GraphicsScalability))
-                return;
-
-            if (!TryOpenVaultBuffer(
-                    _dataVault,
-                    ref _scaleStateHandle,
-                    BufferID.ResolutionScaleState,
-                    1,
-                    out NativeArray<ResolutionScaleState> buffer))
+            float input = Sanitize01(inputStress01);
+            float previous = _latestSystemStressEwma01 > 0f && math.isfinite(_latestSystemStressEwma01)
+                ? Sanitize01(_latestSystemStressEwma01)
+                : input;
+            _latestSystemStress01 = input;
+            _latestSystemStressEwma01 = math.lerp(previous, input, EwmaAlpha);
+            if (_scaleStateMirrorValid)
             {
-                _dataVault.TryUnlockBuffer(BufferID.ResolutionScaleState, SystemID.GraphicsScalability);
-                return;
+                _scaleStateMirror.SystemStress01 = _latestSystemStress01;
+                _scaleStateMirror.SystemStressEwma01 = _latestSystemStressEwma01;
             }
-
-            void* pointer = NativeArrayUnsafeUtility.GetUnsafeBufferPointerWithoutChecks(buffer);
-            if (pointer == null)
-            {
-                _dataVault.TryUnlockBuffer(BufferID.ResolutionScaleState, SystemID.GraphicsScalability);
-                return;
-            }
-
-            SystemStressEwmaJob job = default;
-            job.State = (ResolutionScaleState*)pointer;
-            job.StateLength = buffer.Length;
-            job.InputStress01 = inputStress01;
-            job.Alpha = EwmaAlpha;
-            _stressEwmaHandle = job.Schedule();
-            _stressEwmaScheduled = true;
-            _stressEwmaBufferLocked = true;
-        }
-
-        private void TryFinalizePendingStressJobNoWait()
-        {
-            if (!_stressEwmaScheduled)
-            {
-                UnlockStressEwmaBufferIfNeeded();
-                return;
-            }
-
-            if (!_stressEwmaHandle.IsCompleted)
-                return;
-
-            if (!DispatcherJobFence.TryFinalizeCompleted(ref _stressEwmaHandle))
-                return;
-
-            FinishPendingStressJob();
-        }
-
-        private void CompletePendingStressJobForTeardown()
-        {
-            if (!_stressEwmaScheduled)
-            {
-                UnlockStressEwmaBufferIfNeeded();
-                return;
-            }
-
-            if (!DispatcherJobFence.TryComplete(ref _stressEwmaHandle, forceComplete: true))
-                return;
-
-            FinishPendingStressJob();
-        }
-
-        private void FinishPendingStressJob()
-        {
-            _stressEwmaScheduled = false;
-            bool hasState = false;
-            ResolutionScaleState state = default;
-            if (TryOpenVaultBuffer(
-                    _dataVault,
-                    ref _scaleStateHandle,
-                    BufferID.ResolutionScaleState,
-                    1,
-                    out NativeArray<ResolutionScaleState> buffer))
-            {
-                state = buffer[0];
-                hasState = true;
-            }
-
-            UnlockStressEwmaBufferIfNeeded();
-
-            if (hasState)
-            {
-                _latestSystemStress01 = Sanitize01(state.SystemStress01);
-                _latestSystemStressEwma01 = Sanitize01(state.SystemStressEwma01);
-                if (_scaleStateMirrorValid)
-                {
-                    _scaleStateMirror.SystemStress01 = _latestSystemStress01;
-                    _scaleStateMirror.SystemStressEwma01 = _latestSystemStressEwma01;
-                }
-                else
-                {
-                    _scaleStateMirror = state;
-                    _scaleStateMirrorValid = true;
-                }
-            }
-        }
-
-        private void UnlockStressEwmaBufferIfNeeded()
-        {
-            if (!_stressEwmaBufferLocked)
-                return;
-
-            if (_dataVault != null)
-                _dataVault.TryUnlockBuffer(BufferID.ResolutionScaleState, SystemID.GraphicsScalability);
-            _stressEwmaBufferLocked = false;
         }
 
         private void InstallSystemDynamicResolutionScaler()
@@ -1883,8 +1821,8 @@ namespace Hecton8.Graphics.Scalability
             float mipBias = math.log2(math.rcp(safeScale));
             float postCullScale = math.isfinite(_postCullScale) ? math.clamp(_postCullScale, MinScale, PolicyMaxScale) : DefaultPostCullScale;
             float postProcessWeight = math.saturate((safeScale - postCullScale) * math.rcp(math.max(0.001f, PolicyMaxScale - postCullScale)));
-            float screenWidth = Screen.width > 0 ? Screen.width : 1f;
-            float screenHeight = Screen.height > 0 ? Screen.height : 1f;
+            float screenWidth = _screenWidthSnapshot > 0 ? _screenWidthSnapshot : 1f;
+            float screenHeight = _screenHeightSnapshot > 0 ? _screenHeightSnapshot : 1f;
             Vector4 screenPixels = default;
             screenPixels.x = screenWidth;
             screenPixels.y = screenHeight;
@@ -1983,7 +1921,7 @@ namespace Hecton8.Graphics.Scalability
 
         private void WriteTelemetry(byte flags)
         {
-            if (!TryLockTelemetryPointer(out DrsTelemetryEntry* telemetryRing, out int telemetryLength))
+            if (!TryAcquireTelemetryPointer(out DrsTelemetryEntry* telemetryRing, out int telemetryLength))
                 return;
 
             try
@@ -2033,14 +1971,13 @@ namespace Hecton8.Graphics.Scalability
             }
             finally
             {
-                if (_dataVault != null)
-                    _dataVault.TryUnlockBuffer(BufferID.ResolutionScaleTelemetry, SystemID.GraphicsScalability);
+                ReleaseTelemetryPointer();
             }
         }
 
         private void DumpBlackBoxOnce()
         {
-            if (!TryLockTelemetryPointer(out DrsTelemetryEntry* telemetryRing, out int telemetryLength))
+            if (!TryAcquireTelemetryPointer(out DrsTelemetryEntry* telemetryRing, out int telemetryLength))
                 return;
 
             try
@@ -2049,8 +1986,7 @@ namespace Hecton8.Graphics.Scalability
             }
             finally
             {
-                if (_dataVault != null)
-                    _dataVault.TryUnlockBuffer(BufferID.ResolutionScaleTelemetry, SystemID.GraphicsScalability);
+                ReleaseTelemetryPointer();
             }
         }
 
@@ -2316,11 +2252,11 @@ namespace Hecton8.Graphics.Scalability
 
         private float ResolvePublishedGlobalQualityWeight()
         {
-            if (TryReadScalabilityStateQualityWeight(out float vaultQualityWeight))
-                return vaultQualityWeight;
+            if (_scalabilityQualityWeightSnapshotValid)
+                return _scalabilityQualityWeightSnapshot01;
 
-            if (TryReadPublishedShaderQualityWeight(out float shaderQualityWeight))
-                return shaderQualityWeight;
+            if (_shaderQualityWeightSnapshotValid)
+                return _shaderQualityWeightSnapshot01;
 
             float cachedQualityWeight = _latestGlobalQualityWeight01;
             if (!math.isfinite(cachedQualityWeight))
@@ -2335,6 +2271,19 @@ namespace Hecton8.Graphics.Scalability
             }
 
             return math.saturate(cachedQualityWeight);
+        }
+
+        private void ApplyQualitySnapshotPolicyCold()
+        {
+            RefreshQualityInputSnapshotsCold();
+            _latestGlobalQualityWeight01 = ResolveQualitySignalWeight();
+            RefreshQualityTierPolicyFromContinuousWeight(_latestGlobalQualityWeight01);
+        }
+
+        private void RefreshQualityInputSnapshotsCold()
+        {
+            _scalabilityQualityWeightSnapshotValid = TryReadScalabilityStateQualityWeight(out _scalabilityQualityWeightSnapshot01);
+            _shaderQualityWeightSnapshotValid = TryReadPublishedShaderQualityWeight(out _shaderQualityWeightSnapshot01);
         }
 
         private static bool TryReadPublishedShaderQualityWeight(out float qualityWeight)
@@ -2363,7 +2312,7 @@ namespace Hecton8.Graphics.Scalability
             if (vault == null)
                 return false;
 
-            if (!vault.TryLockBuffer(BufferID.ShinobuScalabilityState, SystemID.GraphicsScalability))
+            if (!TryAcquireDrsGuard(vault, ScalabilityStateMutationGuardMask))
                 return false;
 
             try
@@ -2390,7 +2339,7 @@ namespace Hecton8.Graphics.Scalability
             }
             finally
             {
-                vault.TryUnlockBuffer(BufferID.ShinobuScalabilityState, SystemID.GraphicsScalability);
+                ReleaseDrsGuard(vault, ScalabilityStateMutationGuardMask);
             }
         }
 
@@ -2481,6 +2430,22 @@ namespace Hecton8.Graphics.Scalability
                    handle.Generation != 0u;
         }
 
+        private static ulong DrsMutationGuardBit(BufferID bufferId)
+        {
+            return 1UL << ((int)bufferId & 63);
+        }
+
+        private static bool TryAcquireDrsGuard(IDataVault vault, ulong guardMask)
+        {
+            return vault != null && guardMask != 0UL && vault.TryAcquireMutationGuard(guardMask);
+        }
+
+        private static void ReleaseDrsGuard(IDataVault vault, ulong guardMask)
+        {
+            if (vault != null && guardMask != 0UL)
+                vault.ReleaseMutationGuard(guardMask);
+        }
+
         private float ResolveMinScaleLimit(float qualityWeight01)
         {
             float low = math.clamp(_scaleLimits.LowMinScale > 0f ? _scaleLimits.LowMinScale : DefaultLowMinScale, MinScale, PolicyMaxScale);
@@ -2527,14 +2492,14 @@ namespace Hecton8.Graphics.Scalability
             return currentTargetScale + (desiredTargetScale - currentTargetScale) * alpha;
         }
 
-        private static float ResolvePixelStableRenderScale(float renderScale)
+        private float ResolvePixelStableRenderScale(float renderScale)
         {
             renderScale = ClampRenderScale(renderScale);
             if (renderScale >= PolicyMaxScale - ScaleEpsilon)
                 return PolicyMaxScale;
 
-            float screenWidth = Screen.width > 0 ? Screen.width : 1f;
-            float screenHeight = Screen.height > 0 ? Screen.height : 1f;
+            float screenWidth = _screenWidthSnapshot > 0 ? _screenWidthSnapshot : 1f;
+            float screenHeight = _screenHeightSnapshot > 0 ? _screenHeightSnapshot : 1f;
             float dominantAxisPixels = math.max(screenWidth, screenHeight);
             float scaleGrid = PixelStableGridStep * math.rcp(math.max(1f, dominantAxisPixels));
             float snappedScale = math.round(renderScale * math.rcp(scaleGrid)) * scaleGrid;
@@ -2557,21 +2522,31 @@ namespace Hecton8.Graphics.Scalability
             if (!_coldFsrCapabilityAllowed)
                 return false;
 
-            float quality = Sanitize01(qualityWeight01);
-            int graphicsMemoryMb = _coldGraphicsMemoryMb;
-            return (graphicsMemoryMb <= 0 || graphicsMemoryMb >= 3000 || quality >= 0.86f) &&
-                   ResolveFsrUpscalerEligibility01(quality) > FsrEligibilityEpsilon;
+            return ResolveFsrUpscalerEligibility01(qualityWeight01) > FsrEligibilityEpsilon;
         }
 
         private void CacheGraphicsCapabilitySnapshotCold()
         {
-            _coldGraphicsMemoryMb = math.max(0, SystemInfo.graphicsMemorySize);
             _coldFsrCapabilityAllowed = !Application.isMobilePlatform && SystemInfo.supportsComputeShaders;
+        }
+
+        private void RefreshRenderSurfaceSnapshotCold()
+        {
+            _screenWidthSnapshot = math.max(1, Screen.width);
+            _screenHeightSnapshot = math.max(1, Screen.height);
         }
 
         private static float ResolveFsrUpscalerEligibility01(float qualityWeight01)
         {
             return SmoothRange01(Sanitize01(qualityWeight01), 0.42f, 0.74f);
+        }
+
+        private static float ResolveSurvivalPressureWeight01(float qualityWeight01)
+        {
+            return 1f - SmoothRange01(
+                Sanitize01(qualityWeight01),
+                SurvivalPressureFadeStart01,
+                SurvivalPressureFadeEnd01);
         }
 
         private static float ResolveEstimatedUpscalerComputeTimeMs(uint upscalerHash, float renderScale)
@@ -2621,16 +2596,21 @@ namespace Hecton8.Graphics.Scalability
 
         private static HectonQualityTier ResolveQualityTierFromWeight(float qualityWeight01)
         {
-            float quality = Sanitize01(qualityWeight01);
-            if (quality < 0.18f)
-                return HectonQualityTier.Low;
-            if (quality < 0.36f)
-                return HectonQualityTier.Mx350;
-            if (quality < 0.62f)
-                return HectonQualityTier.Mid;
-            if (quality < 0.86f)
-                return HectonQualityTier.High;
-            return HectonQualityTier.Ultra;
+            int tierOrdinal = (int)math.round(ResolveCompatibilityQualityTierOrdinal(qualityWeight01));
+            tierOrdinal = math.clamp(
+                tierOrdinal,
+                (int)HectonQualityTier.Low,
+                (int)HectonQualityTier.Ultra);
+            return (HectonQualityTier)tierOrdinal;
+        }
+
+        private static float ResolveCompatibilityQualityTierOrdinal(float qualityWeight01)
+        {
+            float quality = Smooth01(Sanitize01(qualityWeight01));
+            return math.lerp(
+                (float)HectonQualityTier.Low,
+                (float)HectonQualityTier.Ultra,
+                quality);
         }
 
         private float ResolveHysteresisTarget(float requestedScale, bool pressureActive)

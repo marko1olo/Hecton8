@@ -4,7 +4,7 @@
   "title": "HECTON-8 authoring mod manifest",
   "type": "object",
   "additionalProperties": false,
-  "required": ["Schema", "Id", "DisplayName", "Author", "Version", "RequiredAPIVersion", "Capabilities", "Budgets", "Compatibility", "Entrypoints"],
+  "required": ["Schema", "Id", "DisplayName", "Author", "Version", "RequiredAPIVersion", "Dependencies", "Capabilities", "Budgets", "Compatibility", "Entrypoints"],
   "properties": {
     "Schema": { "const": "hecton8.h8mod.authoring.v1" },
     "Id": { "type": "string", "pattern": "^[a-z0-9]+([._-][a-z0-9]+)*$" },
@@ -12,6 +12,12 @@
     "Author": { "type": "string", "minLength": 1 },
     "Version": { "type": "string", "pattern": "^(0|[1-9][0-9]*)\\.(0|[1-9][0-9]*)\\.(0|[1-9][0-9]*)(-[0-9A-Za-z]+([.-][0-9A-Za-z]+)*)?(\\+[0-9A-Za-z]+([.-][0-9A-Za-z]+)*)?$" },
     "RequiredAPIVersion": { "type": "integer", "minimum": 2 },
+    "Dependencies": {
+      "type": "array",
+      "uniqueItems": true,
+      "maxItems": 32,
+      "items": { "type": "string", "pattern": "^[a-z0-9]+([._-][a-z0-9]+)*$" }
+    },
     "Capabilities": {
       "type": "array",
       "uniqueItems": true,

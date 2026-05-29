@@ -25,6 +25,10 @@ namespace Hecton8.Interaction
         private const float MinDirectionSqr = 0.0001f;
         private const float MinHitDistance = 0.05f;
         private const float AttachedFloraArbitrationRadiusMeters = 0.5f;
+        private static readonly ulong SignalQueueMutationGuardMask =
+            InteractionMutationGuardBit(BufferID.InteractionSignalQueue);
+        private static readonly ulong StagingCommandsMutationGuardMask =
+            InteractionMutationGuardBit(BufferID.InteractionRaycastStagingCommands);
         private static readonly ulong SurfaceQueryScheduledMutationGuardMask =
             InteractionMutationGuardBit(BufferID.InteractionRaycastScheduledCommands) |
             InteractionMutationGuardBit(BufferID.InteractionRaycastScheduledHits);
@@ -139,7 +143,7 @@ namespace Hecton8.Interaction
             }
 
             IDataVault vault = ResolveDataVault();
-            if (vault == null || !vault.TryLockBuffer(BufferID.InteractionSignalQueue, SystemID.GameplayTools))
+            if (!TryAcquireInteractionGuard(vault, SignalQueueMutationGuardMask))
                 return false;
 
             try
@@ -164,7 +168,7 @@ namespace Hecton8.Interaction
             }
             finally
             {
-                vault.TryUnlockBuffer(BufferID.InteractionSignalQueue, SystemID.GameplayTools);
+                ReleaseInteractionGuard(vault, SignalQueueMutationGuardMask);
             }
         }
 
@@ -219,7 +223,7 @@ namespace Hecton8.Interaction
                         out NativeArray<InteractionSignal> _);
             }
 
-            if (vault != null && canClearVaultQueue && vault.TryLockBuffer(BufferID.InteractionSignalQueue, SystemID.GameplayTools))
+            if (vault != null && canClearVaultQueue && TryAcquireInteractionGuard(vault, SignalQueueMutationGuardMask))
             {
                 try
                 {
@@ -236,7 +240,7 @@ namespace Hecton8.Interaction
                 }
                 finally
                 {
-                    vault.TryUnlockBuffer(BufferID.InteractionSignalQueue, SystemID.GameplayTools);
+                    ReleaseInteractionGuard(vault, SignalQueueMutationGuardMask);
                 }
             }
 
@@ -265,11 +269,11 @@ namespace Hecton8.Interaction
             if (EnsureSurfaceQueryBufferHandles(createIfMissing: true))
             {
                 IDataVault vault = ResolveDataVault();
-                ResetRequestLaneLocked(
+                ResetRequestLaneGuarded(
                     vault,
                     ref _scheduledRequestsHandle,
                     BufferID.InteractionRaycastScheduledCommands);
-                ResetRequestLaneLocked(
+                ResetRequestLaneGuarded(
                     vault,
                     ref _stagingRequestsHandle,
                     BufferID.InteractionRaycastStagingCommands);
@@ -912,7 +916,7 @@ namespace Hecton8.Interaction
             }
 
             IDataVault vault = ResolveDataVault();
-            if (vault == null || !vault.TryLockBuffer(BufferID.InteractionRaycastStagingCommands, SystemID.GameplayTools))
+            if (!TryAcquireInteractionGuard(vault, StagingCommandsMutationGuardMask))
                 return;
 
             try
@@ -937,7 +941,7 @@ namespace Hecton8.Interaction
             }
             finally
             {
-                vault.TryUnlockBuffer(BufferID.InteractionRaycastStagingCommands, SystemID.GameplayTools);
+                ReleaseInteractionGuard(vault, StagingCommandsMutationGuardMask);
             }
         }
 
@@ -1309,7 +1313,7 @@ namespace Hecton8.Interaction
                 return false;
 
             IDataVault vault = ResolveDataVault();
-            if (vault == null || !vault.TryLockBuffer(BufferID.InteractionSignalQueue, SystemID.GameplayTools))
+            if (!TryAcquireInteractionGuard(vault, SignalQueueMutationGuardMask))
                 return false;
 
             try
@@ -1330,7 +1334,7 @@ namespace Hecton8.Interaction
             }
             finally
             {
-                vault.TryUnlockBuffer(BufferID.InteractionSignalQueue, SystemID.GameplayTools);
+                ReleaseInteractionGuard(vault, SignalQueueMutationGuardMask);
             }
         }
 
@@ -1419,7 +1423,18 @@ namespace Hecton8.Interaction
             return 1UL << (unchecked((int)(uint)(int)bufferId) & 31);
         }
 
-        private static void ResetRequestLaneLocked(
+        private static bool TryAcquireInteractionGuard(IDataVault vault, ulong guardMask)
+        {
+            return vault != null && guardMask != 0UL && vault.TryAcquireMutationGuard(guardMask);
+        }
+
+        private static void ReleaseInteractionGuard(IDataVault vault, ulong guardMask)
+        {
+            if (vault != null && guardMask != 0UL)
+                vault.ReleaseMutationGuard(guardMask);
+        }
+
+        private static void ResetRequestLaneGuarded(
             IDataVault vault,
             ref VaultGenerationHandle<InteractionSurfaceQueryDTO> handle,
             BufferID bufferId)
@@ -1427,7 +1442,8 @@ namespace Hecton8.Interaction
             if (vault == null || !IsGameplayToolsVaultHandle(in handle, bufferId))
                 return;
 
-            if (!vault.TryLockBuffer(bufferId, SystemID.GameplayTools))
+            ulong guardMask = InteractionMutationGuardBit(bufferId);
+            if (!TryAcquireInteractionGuard(vault, guardMask))
                 return;
 
             try
@@ -1445,7 +1461,7 @@ namespace Hecton8.Interaction
             }
             finally
             {
-                vault.TryUnlockBuffer(bufferId, SystemID.GameplayTools);
+                ReleaseInteractionGuard(vault, guardMask);
             }
         }
 

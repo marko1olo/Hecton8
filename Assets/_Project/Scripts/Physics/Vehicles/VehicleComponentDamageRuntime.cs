@@ -134,12 +134,12 @@ namespace Hecton8.Physics.Vehicles
 #endif
             _resolvedVehicleHash = ResolveVehicleHash();
             EnsureSignalLanes();
-            EnsureDataVault();
+            TryRegisterHotSwapListener();
+            CacheDataVaultCold();
             EnsureVaultBuffers(forceReinitialize: false);
             WarmCoreBlackboxRoute();
             TryRefreshRootPoseSnapshot(transform, allowPresentationFallback: true);
 
-            TryRegisterHotSwapListener();
             TryRegisterRuntimeLanes();
         }
 
@@ -339,7 +339,7 @@ namespace Hecton8.Physics.Vehicles
             if (!_damagePending)
                 return;
 
-            if (!DispatcherJobFence.TryComplete(ref _damageHandle, forceComplete: false))
+            if (!DispatcherJobFence.TryFinalizeCompleted(ref _damageHandle))
                 return;
 
             _damagePending = false;
@@ -366,10 +366,14 @@ namespace Hecton8.Physics.Vehicles
 
         private bool EnsureDataVault()
         {
+            return _dataVault != null;
+        }
+
+        private void CacheDataVaultCold()
+        {
             IDataVault currentVault = GlobalRegistry.DataVault;
             if (!ReferenceEquals(_dataVault, currentVault))
                 RebindDataVaultForLifecycle(currentVault);
-            return _dataVault != null;
         }
 
         private void TryRegisterRuntimeLanes()
@@ -548,6 +552,9 @@ namespace Hecton8.Physics.Vehicles
         private bool EnsureVaultBuffers(bool forceReinitialize)
         {
             if (!EnsureDataVault())
+                return false;
+
+            if (_dataVault.IsAllocationLocked || _dataVault.IsCompactionFenceActive)
                 return false;
 
             int width = math.clamp(gridWidth, 2, MaxGridWidth);

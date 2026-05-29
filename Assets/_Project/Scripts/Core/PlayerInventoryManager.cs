@@ -93,7 +93,7 @@ namespace Hecton8.Core
                 TryRegisterSlowTickable();
                 TryRegisterService();
                 RefreshPlayerRuntimeContextCold();
-                SyncInventoryContext(allowColdFallback: true);
+                SyncInventoryContextCold();
                 return;
             }
 
@@ -102,13 +102,13 @@ namespace Hecton8.Core
             TryRegisterSlowTickable();
             TryRegisterService();
             RefreshPlayerRuntimeContextCold();
-            SyncInventoryContext(allowColdFallback: true);
+            SyncInventoryContextCold();
         }
 
         /// <inheritdoc />
         public void SlowTick()
         {
-            SyncInventoryContext(allowColdFallback: false);
+            SyncInventoryContextHot();
         }
 
         private void OnEnable()
@@ -122,7 +122,7 @@ namespace Hecton8.Core
                 TryRegisterSlowTickable();
                 TryRegisterService();
                 RefreshPlayerRuntimeContextCold();
-                SyncInventoryContext(allowColdFallback: true);
+                SyncInventoryContextCold();
             }
         }
 
@@ -188,7 +188,7 @@ namespace Hecton8.Core
                     return;
                 }
 
-                SyncInventoryContext(allowColdFallback: false);
+                SyncInventoryContextHot();
             }
         }
 
@@ -197,7 +197,7 @@ namespace Hecton8.Core
             _playerRuntimeContext = GlobalRegistry.RegisteredPlayer ?? PlayerRuntimeContextService.ActiveRuntimeContext;
         }
 
-        private void SyncInventoryContext(bool allowColdFallback)
+        private void SyncInventoryContextHot()
         {
             if (_syncInProgress)
                 return;
@@ -206,24 +206,38 @@ namespace Hecton8.Core
             try
             {
                 IPlayerRuntimeContext runtimeContext = _playerRuntimeContext;
-                if (!allowColdFallback && runtimeContext == null)
+                if (runtimeContext == null)
                     return;
 
+                SyncPlayerObjectReference(runtimeContext.PlayerObject);
+                if (_playerObject == null || !ReferenceEquals(runtimeContext.PlayerObject, _playerObject))
+                    return;
+
+                _toolManager = runtimeContext.ToolManager;
+                _inventory = runtimeContext.Inventory;
+                _playerBuilder = runtimeContext.PlayerBuilder;
+                _handAnchor = runtimeContext.HandAnchor;
+            }
+            finally
+            {
+                _syncInProgress = false;
+            }
+        }
+
+        private void SyncInventoryContextCold()
+        {
+            if (_syncInProgress)
+                return;
+
+            _syncInProgress = true;
+            try
+            {
+                IPlayerRuntimeContext runtimeContext = _playerRuntimeContext;
                 GameObject currentPlayerObject = runtimeContext != null && runtimeContext.PlayerObject != null
                     ? runtimeContext.PlayerObject
-                    : allowColdFallback
-                        ? BootstrapState.CurrentPlayerObject
-                        : null;
+                    : BootstrapState.CurrentPlayerObject;
 
-                if (!ReferenceEquals(_playerObject, currentPlayerObject))
-                {
-                    _playerObject = currentPlayerObject;
-                    _toolManager = null;
-                    _inventory = null;
-                    _playerBuilder = null;
-                    _handAnchor = null;
-                }
-
+                SyncPlayerObjectReference(currentPlayerObject);
                 if (_playerObject == null)
                     return;
 
@@ -234,9 +248,6 @@ namespace Hecton8.Core
                     _playerBuilder = runtimeContext.PlayerBuilder;
                     _handAnchor = runtimeContext.HandAnchor;
                 }
-
-                if (!allowColdFallback)
-                    return;
 
                 if (_toolManager == null)
                     _playerObject.TryGetComponent(out _toolManager);
@@ -259,6 +270,18 @@ namespace Hecton8.Core
             {
                 _syncInProgress = false;
             }
+        }
+
+        private void SyncPlayerObjectReference(GameObject currentPlayerObject)
+        {
+            if (ReferenceEquals(_playerObject, currentPlayerObject))
+                return;
+
+            _playerObject = currentPlayerObject;
+            _toolManager = null;
+            _inventory = null;
+            _playerBuilder = null;
+            _handAnchor = null;
         }
 
         private void TryRegisterSlowTickable()

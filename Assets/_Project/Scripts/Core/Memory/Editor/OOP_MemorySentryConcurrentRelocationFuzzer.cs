@@ -606,7 +606,7 @@ namespace Hecton8.Core.Memory.Editor
                 bool lockedBuffer;
                 lock (state.StructuralGate)
                 {
-                    lockedBuffer = state.Vault.TryLockBuffer(slot.BufferId, Owner);
+                    lockedBuffer = state.Vault.TryAcquireMutationGuard(MemorySentryMutationGuardBit(slot.BufferId));
                 }
 
                 if (!lockedBuffer)
@@ -654,7 +654,7 @@ namespace Hecton8.Core.Memory.Editor
                 }
                 finally
                 {
-                    UnlockBufferOrRecord(state, slot, FuzzerOperation.PinJob);
+                    ReleaseMutationGuard(state, slot);
                 }
             }
         }
@@ -1014,15 +1014,12 @@ namespace Hecton8.Core.Memory.Editor
             state.RecordFailure(FailureFlagLockRelease, bufferId, operation);
         }
 
-        private static void UnlockBufferOrRecord(FuzzerState state, SlotState slot, FuzzerOperation operation)
+        private static void ReleaseMutationGuard(FuzzerState state, SlotState slot)
         {
             lock (state.StructuralGate)
             {
-                if (state.Vault.TryUnlockBuffer(slot.BufferId, Owner))
-                    return;
+                state.Vault.ReleaseMutationGuard(MemorySentryMutationGuardBit(slot.BufferId));
             }
-
-            state.RecordFailure(FailureFlagPinUnlock, slot.BufferId, operation);
         }
 
         private static void ClearSlot(SlotState slot)
@@ -1037,6 +1034,11 @@ namespace Hecton8.Core.Memory.Editor
         {
             int next = unchecked(currentEpoch + 1);
             return next == 0 ? 1 : next;
+        }
+
+        private static ulong MemorySentryMutationGuardBit(BufferID bufferId)
+        {
+            return 1UL << ((int)bufferId & 31);
         }
 
         private static void WritePattern(BufferID bufferId, int patternEpoch, NativeArray<int> buffer)

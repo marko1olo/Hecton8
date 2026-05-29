@@ -189,7 +189,7 @@ namespace Hecton8.Core
         private uint _dispatchTelemetryFrame;
         private int _activeKeywordCount;
         private byte _lastGlobalQualityByte = byte.MaxValue;
-        private int _lastLowTierWeightBucket = int.MinValue;
+        private int _lastSurvivalPressureBucket = int.MinValue;
         private Vector4 _lastWakeParams = Vector4.zero;
         private Vector4 _lastThermalParams = Vector4.zero;
 
@@ -349,9 +349,9 @@ namespace Hecton8.Core
                 _shaderTime -= Math.Floor(_shaderTime / ShaderTimeModuloSeconds) * ShaderTimeModuloSeconds;
 
             float globalQualityWeight01 = ResolveGlobalQualityWeight01();
-            float lowTierFloor01 = ResolveLowTierFloor01(globalQualityWeight01);
-            float lowTierWeight01 = ResolveLowTierWeight01(globalQualityWeight01, lowTierFloor01);
-            RefreshQualityTelemetry(globalQualityWeight01, lowTierWeight01);
+            float survivalPressureFloor01 = ResolveSurvivalPressureFloor01(globalQualityWeight01);
+            float survivalPressureWeight01 = ResolveSurvivalPressureWeight01(globalQualityWeight01, survivalPressureFloor01);
+            RefreshQualityTelemetry(globalQualityWeight01, survivalPressureWeight01);
 
             float shaderTime = (float)_shaderTime;
             Span<float4> thermalPackedSlots = stackalloc float4[ThermalAnomalyCapacity];
@@ -387,7 +387,7 @@ namespace Hecton8.Core
                 if (!TryResolveShaderGlobalSlotsLocked(vault, out NativeArray<float4> slots))
                     return;
 
-                RunMockGlobalDataKernel(slots, lowTierWeight01, shaderTime, ResolveSectorPhase());
+                RunMockGlobalDataKernel(slots, survivalPressureWeight01, shaderTime, ResolveSectorPhase());
 
                 ref ShaderGlobalsDTO dtoRef = ref ResolveShaderGlobalsRef(slots);
                 aupOffset = ResolveAupOffset();
@@ -430,7 +430,7 @@ namespace Hecton8.Core
             }
 
             thermalParams = UploadThermalBuffer(thermalPackedSlots, thermalCount);
-            Vector4 wakeParams = UploadDynamicWakeBuffers(lowTierWeight01);
+            Vector4 wakeParams = UploadDynamicWakeBuffers(survivalPressureWeight01);
             ExecuteGlobalDispatch(
                 in dto,
                 ambient,
@@ -456,7 +456,7 @@ namespace Hecton8.Core
                 physiologyGasToxicity,
                 uberNoirFeatureMask,
                 globalQualityWeight01,
-                lowTierWeight01);
+                survivalPressureWeight01);
 
             float dispatchMicroseconds = (float)((Stopwatch.GetTimestamp() - startTicks) * s_stopwatchTicksToMicroseconds);
             RecordTelemetry(vault, dispatchMicroseconds, (uint)_activeKeywordCount, 0u);
@@ -787,14 +787,14 @@ namespace Hecton8.Core
             slots[ExtinctionCoefficientsSlot] = new float4(0.624f, 0.0434f, 0.0106f, 0.024f);
         }
 
-        private void RunMockGlobalDataKernel(NativeArray<float4> slots, float lowTierWeight01, float shaderTime, float sectorPhase)
+        private void RunMockGlobalDataKernel(NativeArray<float4> slots, float survivalPressureWeight01, float shaderTime, float sectorPhase)
         {
             MockGlobalShaderDataKernel kernel = new MockGlobalShaderDataKernel
             {
                 Slots = slots,
                 ShaderTime = shaderTime,
                 SectorPhase = sectorPhase,
-                LowTierWeight01 = math.saturate(lowTierWeight01),
+                SurvivalPressureWeight01 = math.saturate(survivalPressureWeight01),
                 GeneratedEmergencyGlobals = _generatedEmergencyGlobals ? 1 : 0,
                 ManualOverrideActive = s_manualOverrideActive ? 1 : 0,
 #if UNITY_EDITOR
@@ -834,10 +834,10 @@ namespace Hecton8.Core
                    TelemetrySlotStart + TelemetryCapacity <= RequiredShaderGlobalSlots;
         }
 
-        private Vector4 UploadDynamicWakeBuffers(float lowTierWeight01)
+        private Vector4 UploadDynamicWakeBuffers(float survivalPressureWeight01)
         {
-            lowTierWeight01 = math.saturate(lowTierWeight01);
-            Vector4 fallbackParams = new Vector4(0f, lowTierWeight01, 0f, 0f);
+            survivalPressureWeight01 = math.saturate(survivalPressureWeight01);
+            Vector4 fallbackParams = new Vector4(0f, survivalPressureWeight01, 0f, 0f);
             _lastWakeParams = fallbackParams;
             return _lastWakeParams;
         }
@@ -985,7 +985,7 @@ namespace Hecton8.Core
             Vector4 physiologyGasToxicity,
             float uberNoirFeatureMask,
             float globalQualityWeight01,
-            float lowTierWeight01)
+            float survivalPressureWeight01)
         {
             CommandBuffer cmd = s_commandBuffer;
             cmd.Clear();
@@ -1014,7 +1014,7 @@ namespace Hecton8.Core
             cmd.SetGlobalVector(_BiomePaletteId, biomePalette);
             cmd.SetGlobalVector(_HardwareTierParamsId, new Vector4(
                 math.saturate(globalQualityWeight01),
-                math.saturate(lowTierWeight01),
+                math.saturate(survivalPressureWeight01),
                 _generatedEmergencyGlobals ? 1f : 0f,
                 _activeKeywordCount));
             cmd.SetGlobalVector(_BiolumMasterPhaseId, biolumMasterPhase);
@@ -1095,16 +1095,16 @@ namespace Hecton8.Core
             return math.saturate(math.isfinite(quality) ? quality : 1f);
         }
 
-        private static float ResolveLowTierWeight01(float qualityWeight01, float lowTierFloor01)
+        private static float ResolveSurvivalPressureWeight01(float qualityWeight01, float survivalPressureFloor01)
         {
-            lowTierFloor01 = math.saturate(lowTierFloor01);
-            float fallbackQuality = math.lerp(1f, 0.35f, lowTierFloor01);
+            survivalPressureFloor01 = math.saturate(survivalPressureFloor01);
+            float fallbackQuality = math.lerp(1f, 0.35f, survivalPressureFloor01);
             float quality = math.saturate(math.isfinite(qualityWeight01) ? qualityWeight01 : fallbackQuality);
             float weight = 1f - Smooth01(math.saturate((quality - 0.18f) * 1.2195122f));
-            return math.max(weight, lowTierFloor01);
+            return math.max(weight, survivalPressureFloor01);
         }
 
-        private static float ResolveLowTierFloor01(float qualityWeight01)
+        private static float ResolveSurvivalPressureFloor01(float qualityWeight01)
         {
             float quality = math.saturate(math.isfinite(qualityWeight01) ? qualityWeight01 : 1f);
             float survivalPressure01 = 1f - Smooth01(math.saturate((quality - 0.12f) * 1.1363636f));
@@ -1155,15 +1155,15 @@ namespace Hecton8.Core
             return (hash & 1023u) * (6.2831853f / 1024f);
         }
 
-        private void RefreshQualityTelemetry(float globalQualityWeight01, float lowTierWeight01)
+        private void RefreshQualityTelemetry(float globalQualityWeight01, float survivalPressureWeight01)
         {
             byte qualityByte = EncodeQualityWeightByte(globalQualityWeight01);
-            int lowTierWeightBucket = (int)math.round(math.saturate(lowTierWeight01) * 255f);
-            if (_lastGlobalQualityByte == qualityByte && _lastLowTierWeightBucket == lowTierWeightBucket)
+            int survivalPressureBucket = (int)math.round(math.saturate(survivalPressureWeight01) * 255f);
+            if (_lastGlobalQualityByte == qualityByte && _lastSurvivalPressureBucket == survivalPressureBucket)
                 return;
 
             _lastGlobalQualityByte = qualityByte;
-            _lastLowTierWeightBucket = lowTierWeightBucket;
+            _lastSurvivalPressureBucket = survivalPressureBucket;
             _activeKeywordCount = 0;
         }
 
@@ -1684,7 +1684,7 @@ namespace Hecton8.Core
             public NativeArray<float4> Slots;
             public float ShaderTime;
             public float SectorPhase;
-            public float LowTierWeight01;
+            public float SurvivalPressureWeight01;
             public int GeneratedEmergencyGlobals;
             public int ManualOverrideActive;
             public int CsvOverrideActive;
@@ -1713,10 +1713,10 @@ namespace Hecton8.Core
                 flowVector = math.isfinite(flowLengthSq) && flowLengthSq > 0.0001f
                     ? flowVector * math.rsqrt(math.max(flowLengthSq, 0.0001f))
                     : new float3(1f, 0f, 0f);
-                float lowTierWeight = math.saturate(LowTierWeight01);
-                float lowFlowMagnitude = 0.32f + (0.18f * storm);
-                float highFlowMagnitude = 0.78f + (0.38f * storm);
-                float flowMagnitude = math.lerp(highFlowMagnitude, lowFlowMagnitude, lowTierWeight);
+                float survivalPressureWeight = math.saturate(SurvivalPressureWeight01);
+                float survivalFlowMagnitude = 0.32f + (0.18f * storm);
+                float overkillFlowMagnitude = 0.78f + (0.38f * storm);
+                float flowMagnitude = math.lerp(overkillFlowMagnitude, survivalFlowMagnitude, survivalPressureWeight);
 
                 if (CsvOverrideActive != 0)
                 {
@@ -1745,7 +1745,7 @@ namespace Hecton8.Core
                 Slots[ShaderGlobalsDtoSlot + 2] = new float4(ShaderTime, 0f, 0f, 0f);
                 Slots[MockWeatherSlot] = new float4(storm, turbidity, heat, smoothBiome);
                 Slots[AmbientSlot] = new float4(fogColorDensity.xyz * (0.55f + (0.25f * (1f - storm))), fogColorDensity.w);
-                Slots[CausticRuntimeSlot] = new float4(causticSpeed, math.lerp(0.75f * (1f - storm), 0.12f, lowTierWeight), smoothBiome, storm);
+                Slots[CausticRuntimeSlot] = new float4(causticSpeed, math.lerp(0.75f * (1f - storm), 0.12f, survivalPressureWeight), smoothBiome, storm);
                 Slots[ExtinctionCoefficientsSlot] = new float4(0.624f, 0.0434f * (1f + turbidity), 0.0106f * (1f + (turbidity * 0.5f)), fogColorDensity.w);
             }
         }

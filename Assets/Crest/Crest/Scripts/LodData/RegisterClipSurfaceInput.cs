@@ -108,11 +108,18 @@ namespace Crest
             }
         }
 
+        protected override void OnEnable()
+        {
+            base.OnEnable();
+            EnsurePropertyWrapper();
+        }
+
         protected override void Start()
         {
             base.Start();
 
             InitializeSignedDistanceMaterial();
+            EnsurePropertyWrapper();
         }
 
         protected override void Update()
@@ -135,6 +142,14 @@ namespace Crest
             else
             {
                 return base.GetQueue(out queue);
+            }
+        }
+
+        void EnsurePropertyWrapper()
+        {
+            if (_mpb == null)
+            {
+                _mpb = new PropertyWrapperMPB();
             }
         }
 
@@ -184,7 +199,7 @@ namespace Crest
                 // Need this here or will see NullReferenceException on recompile.
                 if (_mpb == null)
                 {
-                    _mpb = new PropertyWrapperMPB();
+                    return;
                 }
 
                 buf.DrawMesh(QuadMesh, QuadMatrix, _signedDistancedMaterial, submeshIndex: 0, shaderPass: 0, _mpb.materialPropertyBlock);
@@ -244,7 +259,7 @@ namespace Crest
             // Need this here or will see NullReferenceException on recompile.
             if (_mpb == null)
             {
-                _mpb = new PropertyWrapperMPB();
+                return;
             }
 
             if (_mode == Mode.Geometry)

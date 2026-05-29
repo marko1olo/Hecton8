@@ -180,6 +180,8 @@ namespace Hecton8.Construction
         private const int PendingEventCapacity = 64;
         private const BufferID PendingEventBufferId = (BufferID)72041;
         private const BufferID NextFrameEventBufferId = (BufferID)72042;
+        private static readonly ulong PendingEventMutationGuardMask = SnapshotMutationGuardBit(PendingEventBufferId);
+        private static readonly ulong NextFrameEventMutationGuardMask = SnapshotMutationGuardBit(NextFrameEventBufferId);
 
         private static readonly uint _overflowWarningHash = unchecked((uint)LocHash.Compute("HectonDroneFleetEvents.Overflow"));
         private static readonly uint _queueHash = unchecked((uint)LocHash.Compute("HectonDroneFleetEvents"));
@@ -470,10 +472,12 @@ namespace Hecton8.Construction
                 return true;
             }
 
-            IDataVault vault = _vault;
-            if (vault == null ||
-                !IsSnapshotVaultHandle(in _pendingEventsHandle) ||
-                !vault.TryAcquireWriteLock(in _pendingEventsHandle, SystemID.Construction, out NativeArray<HectonDroneFleetSnapshotPayload> buffer))
+            if (!TryAcquirePayloadMutationBuffer(
+                    in _pendingEventsHandle,
+                    _pendingEventCount,
+                    out NativeArray<HectonDroneFleetSnapshotPayload> buffer,
+                    out IDataVault guardedVault,
+                    out ulong mutationGuardMask))
             {
                 return false;
             }
@@ -492,7 +496,7 @@ namespace Hecton8.Construction
             }
             finally
             {
-                ReleaseSnapshotVaultWrite(vault, in _pendingEventsHandle);
+                ReleaseSnapshotPayloadMutationGuard(guardedVault, mutationGuardMask);
             }
         }
 
@@ -548,11 +552,13 @@ namespace Hecton8.Construction
             int index,
             in HectonDroneFleetSnapshotPayload payload)
         {
-            IDataVault vault = _vault;
-            if (vault == null ||
-                !IsSnapshotVaultHandle(in handle) ||
-                index < 0 ||
-                !vault.TryAcquireWriteLock(in handle, SystemID.Construction, out NativeArray<HectonDroneFleetSnapshotPayload> buffer))
+            if (index < 0 ||
+                !TryAcquirePayloadMutationBuffer(
+                    in handle,
+                    index + 1,
+                    out NativeArray<HectonDroneFleetSnapshotPayload> buffer,
+                    out IDataVault guardedVault,
+                    out ulong mutationGuardMask))
             {
                 return false;
             }
@@ -567,7 +573,52 @@ namespace Hecton8.Construction
             }
             finally
             {
-                ReleaseSnapshotVaultWrite(vault, in handle);
+                ReleaseSnapshotPayloadMutationGuard(guardedVault, mutationGuardMask);
+            }
+        }
+
+        private static bool TryAcquirePayloadMutationBuffer(
+            in VaultGenerationHandle<HectonDroneFleetSnapshotPayload> handle,
+            int requiredLength,
+            out NativeArray<HectonDroneFleetSnapshotPayload> buffer,
+            out IDataVault guardedVault,
+            out ulong mutationGuardMask)
+        {
+            buffer = default;
+            guardedVault = null;
+            mutationGuardMask = 0UL;
+
+            IDataVault vault = _vault;
+            if (vault == null ||
+                requiredLength <= 0 ||
+                vault.IsCompactionFenceActive ||
+                !TryResolveSnapshotMutationGuardMask(in handle, out mutationGuardMask) ||
+                !vault.TryAcquireMutationGuard(mutationGuardMask))
+            {
+                return false;
+            }
+
+            bool releaseOnExit = true;
+            try
+            {
+                if (vault.IsCompactionFenceActive ||
+                    !vault.TryResolveHandle(in handle, out buffer) ||
+                    vault.IsCompactionFenceActive ||
+                    !buffer.IsCreated ||
+                    buffer.Length < requiredLength)
+                {
+                    buffer = default;
+                    return false;
+                }
+
+                guardedVault = vault;
+                releaseOnExit = false;
+                return true;
+            }
+            finally
+            {
+                if (releaseOnExit)
+                    vault.ReleaseMutationGuard(mutationGuardMask);
             }
         }
 
@@ -606,12 +657,12 @@ namespace Hecton8.Construction
             handle = default;
         }
 
-        private static void ReleaseSnapshotVaultWrite(
+        private static void ReleaseSnapshotPayloadMutationGuard(
             IDataVault vault,
-            in VaultGenerationHandle<HectonDroneFleetSnapshotPayload> handle)
+            ulong mutationGuardMask)
         {
-            if (vault != null && IsSnapshotVaultHandle(in handle))
-                vault.ReleaseWriteLock(in handle, SystemID.Construction);
+            if (vault != null && mutationGuardMask != 0UL)
+                vault.ReleaseMutationGuard(mutationGuardMask);
         }
 
         private static BufferID ResolveSnapshotBufferId(
@@ -630,6 +681,34 @@ namespace Hecton8.Construction
                     handle.BufferID == unchecked((uint)(int)NextFrameEventBufferId)) &&
                    handle.SystemID == (uint)SystemID.Construction &&
                    handle.Generation != 0u;
+        }
+
+        private static bool TryResolveSnapshotMutationGuardMask(
+            in VaultGenerationHandle<HectonDroneFleetSnapshotPayload> handle,
+            out ulong mutationGuardMask)
+        {
+            if (IsSnapshotVaultHandle(in handle))
+            {
+                if (handle.BufferID == unchecked((uint)(int)PendingEventBufferId))
+                {
+                    mutationGuardMask = PendingEventMutationGuardMask;
+                    return true;
+                }
+
+                if (handle.BufferID == unchecked((uint)(int)NextFrameEventBufferId))
+                {
+                    mutationGuardMask = NextFrameEventMutationGuardMask;
+                    return true;
+                }
+            }
+
+            mutationGuardMask = 0UL;
+            return false;
+        }
+
+        private static ulong SnapshotMutationGuardBit(BufferID bufferId)
+        {
+            return 1UL << (unchecked((int)(uint)(int)bufferId) & 31);
         }
     }
 
@@ -679,6 +758,47 @@ namespace Hecton8.Construction
         private const int DroneSpecsCsvMaxBytes = 16 * 1024;
 #endif
         private const int DroneChassisSpecCapacity = 8;
+        private static readonly ulong TaskAssignmentMutationGuardMask =
+            DroneMutationGuardBit(BufferID.ShinobuDroneFleetTaskClaimCounts) |
+            DroneMutationGuardBit(BufferID.ShinobuDroneFleetTaskPriorityHeap);
+        private static readonly ulong DroneServiceCommandMutationGuardMask =
+            DroneMutationGuardBit(DroneFleetServiceCommandsBufferId) |
+            DroneMutationGuardBit(DroneFleetServiceCommandCursorBufferId);
+        private static readonly ulong DroneCoreMutationGuardMask =
+            DroneMutationGuardBit(BufferID.ShinobuDroneFleetStates) |
+            DroneMutationGuardBit(BufferID.ShinobuDroneFleetStateBackBuffer) |
+            DroneMutationGuardBit(BufferID.ShinobuDroneFleetRenderMatrices) |
+            DroneMutationGuardBit(BufferID.ShinobuDroneFleetRenderMatrixBackBuffer);
+        private static readonly ulong DroneMirrorMutationGuardMask =
+            DroneMutationGuardBit(BufferID.ShinobuDroneFleetPositionsSoA) |
+            DroneMutationGuardBit(BufferID.ShinobuDroneFleetStateBytes) |
+            DroneMutationGuardBit(DroneFleetStateDtoBufferId) |
+            DroneMutationGuardBit(DroneFleetTargetDtoBufferId);
+        private static readonly ulong DroneCoreMirrorMutationGuardMask =
+            DroneCoreMutationGuardMask |
+            DroneMirrorMutationGuardMask;
+        private static readonly ulong DroneOriginShiftMutationGuardMask =
+            DroneCoreMutationGuardMask |
+            DroneMutationGuardBit(BufferID.ShinobuDroneFleetPositionsSoA);
+        private static readonly ulong DroneHeadlessJobMutationGuardMask =
+            DroneCoreMirrorMutationGuardMask |
+            DroneMutationGuardBit(BufferID.ShinobuDroneFleetTaskClaimOwners) |
+            DroneMutationGuardBit(BufferID.ShinobuDroneFleetTelemetryAccumulator) |
+            DroneMutationGuardBit(DroneFleetAssignmentTasksBufferId) |
+            DroneMutationGuardBit(DroneFleetSpatialBucketHeadsBufferId) |
+            DroneMutationGuardBit(DroneFleetSpatialNextIndicesBufferId) |
+            DroneMutationGuardBit(DroneFleetSpatialKeysBufferId) |
+            DroneMutationGuardBit(BufferID.ShinobuDroneFleetMacroWaypoints) |
+            DroneMutationGuardBit(BufferID.ShinobuDroneFleetMacroWaypointStates) |
+            DroneMutationGuardBit(BufferID.ShinobuDroneFleetAStarOpenHeap) |
+            DroneMutationGuardBit(BufferID.ShinobuDroneFleetAStarGCosts) |
+            DroneMutationGuardBit(BufferID.ShinobuDroneFleetAStarCameFrom) |
+            DroneMutationGuardBit(BufferID.ShinobuDroneFleetAStarNodeStates) |
+            DroneMutationGuardBit(BufferID.ShinobuDroneFleetMacroRouteNodes) |
+            DroneMutationGuardBit(BufferID.ShinobuDroneFleetMacroRouteCounts) |
+            DroneMutationGuardBit(BufferID.ShinobuDroneFleetAStarTelemetry) |
+            DroneMutationGuardBit(DroneFleetAStarPersistentStatesBufferId) |
+            DroneMutationGuardBit(DroneFleetProceduralArgsBufferId);
         private const float DefaultDroneClearanceRadiusMeters = 0.75f;
         private const float RepairDroneClearanceRadiusMeters = 0.35f;
         private const float MiningDroneClearanceRadiusMeters = 2.0f;
@@ -932,11 +1052,10 @@ namespace Hecton8.Construction
         private static bool s_HeadlessHotSwapRegistered;
         private static bool s_HeadlessJobScheduled;
         private static JobHandle s_HeadlessJobHandle;
-        private static bool s_DroneServiceCommandWriteLocksHeld;
-        private static IDataVault s_DroneServiceCommandWriteLockVault;
-        private static bool s_DroneHeadlessScratchWriteLocksHeld;
-        private static bool s_DroneProceduralArgsWriteLockHeld;
-        private static IDataVault s_DroneHeadlessScratchWriteLockVault;
+        private static bool s_DroneServiceCommandMutationGuardHeld;
+        private static IDataVault s_DroneServiceCommandMutationGuardVault;
+        private static bool s_DroneHeadlessJobMutationGuardHeld;
+        private static IDataVault s_DroneHeadlessJobMutationGuardVault;
         private static bool s_FleetSacrificeRequested;
         private static int s_DestroyedDroneCount;
         private static SubmarineEmergencyLevel s_EmergencyLevel;
@@ -1389,17 +1508,12 @@ namespace Hecton8.Construction
                 return false;
 
             int scanModuleCount = Mathf.Min(moduleCount, MaxMainThreadTaskScanCount);
-            if (!TryAcquireTaskClaimCounts(
+            if (!TryAcquireTaskAssignmentMutationViews(
                     scanModuleCount,
                     out NativeArray<int> taskClaimCounts,
-                    out IDataVault taskClaimVault))
+                    out NativeArray<DroneAssignmentTaskDTO> taskPriorityHeap,
+                    out IDataVault taskAssignmentVault))
             {
-                return false;
-            }
-
-            if (!TryAcquireTaskPriorityHeap(taskClaimVault, out NativeArray<DroneAssignmentTaskDTO> taskPriorityHeap))
-            {
-                taskClaimVault.ReleaseWriteLock(in s_TaskClaimCountsHandle, SystemID.Construction);
                 return false;
             }
 
@@ -1494,8 +1608,7 @@ namespace Hecton8.Construction
             }
             finally
             {
-                taskClaimVault.ReleaseWriteLock(in s_DroneTaskPriorityHeapHandle, SystemID.Construction);
-                taskClaimVault.ReleaseWriteLock(in s_TaskClaimCountsHandle, SystemID.Construction);
+                ReleaseDroneMutationGuard(taskAssignmentVault, TaskAssignmentMutationGuardMask);
             }
 
             PublishSnapshot();
@@ -1917,8 +2030,8 @@ namespace Hecton8.Construction
 
         private static void ReleaseHeadlessVaultHandles(IDataVault vault)
         {
-            ReleaseDroneServiceCommandWriteLocks();
-            ReleaseDroneHeadlessScratchWriteLocks();
+            ReleaseDroneServiceCommandMutationGuard();
+            ReleaseDroneHeadlessJobMutationGuard();
             ReleaseDroneVaultHandle(vault, ref s_DroneStatesHandle, BufferID.ShinobuDroneFleetStates);
             ReleaseDroneVaultHandle(vault, ref s_DroneStateBackBufferHandle, BufferID.ShinobuDroneFleetStateBackBuffer);
             ReleaseDroneVaultHandle(vault, ref s_DroneRenderMatricesHandle, BufferID.ShinobuDroneFleetRenderMatrices);
@@ -2188,60 +2301,73 @@ namespace Hecton8.Construction
                        out cursor);
         }
 
-        private static bool TryAcquireDroneServiceCommandWriteBuffers(
+        private static bool TryAcquireDroneServiceCommandMutationViews(
             out NativeArray<DroneServiceCommand> commands,
             out NativeArray<DroneServiceCommandCursor> cursor,
-            out IDataVault vault)
+            out IDataVault guardedVault)
         {
             commands = default;
             cursor = default;
-            vault = s_CachedDataVault;
-            if (vault == null)
-                return false;
+            guardedVault = null;
 
-            bool commandsLocked = TryAcquireDroneVaultWriteBuffer(
-                vault,
-                in s_DroneServiceCommandsHandle,
-                DroneFleetServiceCommandsBufferId,
-                DroneServiceCommandCapacity,
-                out commands);
-            if (!commandsLocked)
+            IDataVault vault = s_CachedDataVault;
+            if (vault == null ||
+                vault.IsCompactionFenceActive ||
+                !TryOpenDroneVaultBuffer(
+                    vault,
+                    in s_DroneServiceCommandsHandle,
+                    DroneFleetServiceCommandsBufferId,
+                    DroneServiceCommandCapacity,
+                    out NativeArray<DroneServiceCommand> _) ||
+                !TryOpenDroneVaultBuffer(
+                    vault,
+                    in s_DroneServiceCommandCursorHandle,
+                    DroneFleetServiceCommandCursorBufferId,
+                    1,
+                    out NativeArray<DroneServiceCommandCursor> _) ||
+                vault.IsCompactionFenceActive ||
+                !vault.TryAcquireMutationGuard(DroneServiceCommandMutationGuardMask))
             {
-                commands = default;
                 return false;
             }
 
-            bool cursorLocked = TryAcquireDroneVaultWriteBuffer(
-                vault,
-                in s_DroneServiceCommandCursorHandle,
-                DroneFleetServiceCommandCursorBufferId,
-                1,
-                out cursor);
-            if (!cursorLocked)
+            bool releaseOnExit = true;
+            try
             {
-                ReleaseDroneVaultWrite(vault, in s_DroneServiceCommandsHandle, DroneFleetServiceCommandsBufferId);
-                commands = default;
-                cursor = default;
-                return false;
-            }
+                if (vault.IsCompactionFenceActive ||
+                    !vault.TryResolveHandle(in s_DroneServiceCommandsHandle, out commands) ||
+                    !vault.TryResolveHandle(in s_DroneServiceCommandCursorHandle, out cursor) ||
+                    vault.IsCompactionFenceActive ||
+                    !commands.IsCreated ||
+                    commands.Length < DroneServiceCommandCapacity ||
+                    !cursor.IsCreated ||
+                    cursor.Length < 1)
+                {
+                    commands = default;
+                    cursor = default;
+                    return false;
+                }
 
-            return true;
+                guardedVault = vault;
+                releaseOnExit = false;
+                return true;
+            }
+            finally
+            {
+                if (releaseOnExit)
+                    vault.ReleaseMutationGuard(DroneServiceCommandMutationGuardMask);
+            }
         }
 
-        private static void ReleaseDroneServiceCommandWriteLocks()
+        private static void ReleaseDroneServiceCommandMutationGuard()
         {
-            if (!s_DroneServiceCommandWriteLocksHeld)
+            if (!s_DroneServiceCommandMutationGuardHeld)
                 return;
 
-            IDataVault vault = s_DroneServiceCommandWriteLockVault;
-            if (vault != null)
-            {
-                ReleaseDroneVaultWrite(vault, in s_DroneServiceCommandCursorHandle, DroneFleetServiceCommandCursorBufferId);
-                ReleaseDroneVaultWrite(vault, in s_DroneServiceCommandsHandle, DroneFleetServiceCommandsBufferId);
-            }
+            ReleaseDroneMutationGuard(s_DroneServiceCommandMutationGuardVault, DroneServiceCommandMutationGuardMask);
 
-            s_DroneServiceCommandWriteLockVault = null;
-            s_DroneServiceCommandWriteLocksHeld = false;
+            s_DroneServiceCommandMutationGuardVault = null;
+            s_DroneServiceCommandMutationGuardHeld = false;
         }
 
         private static void ReleaseDroneVaultHandle<T>(ref VaultGenerationHandle<T> handle, BufferID bufferId)
@@ -2347,12 +2473,23 @@ namespace Hecton8.Construction
                 vault.ReleaseWriteLock(in handle, SystemID.Construction);
         }
 
+        private static void ReleaseDroneMutationGuard(IDataVault vault, ulong mutationGuardMask)
+        {
+            if (vault != null && mutationGuardMask != 0UL)
+                vault.ReleaseMutationGuard(mutationGuardMask);
+        }
+
         private static bool IsDroneVaultHandle<T>(in VaultGenerationHandle<T> handle, BufferID bufferId)
             where T : struct
         {
             return handle.BufferID == unchecked((uint)(int)bufferId) &&
                    handle.SystemID == (uint)SystemID.Construction &&
                    handle.Generation != 0u;
+        }
+
+        private static ulong DroneMutationGuardBit(BufferID bufferId)
+        {
+            return 1UL << (unchecked((int)(uint)(int)bufferId) & 31);
         }
 
         private static bool TryOpenDroneCoreBuffers(
@@ -2412,84 +2549,105 @@ namespace Hecton8.Construction
                 out droneRenderMatrices);
         }
 
-        private static bool TryAcquireDroneCoreWriteBuffers(
-            out NativeArray<HeadlessDroneState> droneStates,
-            out NativeArray<HeadlessDroneState> droneStateBackBuffer,
-            out NativeArray<float4x4> droneRenderMatrices,
-            out NativeArray<float4x4> droneRenderMatrixBackBuffer,
-            out IDataVault vault)
+        private static bool TryResolveDroneMutationBuffer<T>(
+            IDataVault vault,
+            in VaultGenerationHandle<T> handle,
+            BufferID bufferId,
+            int requiredLength,
+            out NativeArray<T> buffer)
+            where T : struct
         {
-            droneStates = default;
-            droneStateBackBuffer = default;
-            droneRenderMatrices = default;
-            droneRenderMatrixBackBuffer = default;
-            vault = s_CachedDataVault;
-            if (vault == null)
-                return false;
-
-            int acquiredCount = 0;
-            if (!TryAcquireDroneVaultWriteBuffer(
-                    vault,
-                    in s_DroneStatesHandle,
-                    BufferID.ShinobuDroneFleetStates,
-                    HeadlessDroneCapacity,
-                    out droneStates))
+            buffer = default;
+            if (vault == null ||
+                requiredLength <= 0 ||
+                !IsDroneVaultHandle(in handle, bufferId) ||
+                !vault.TryResolveHandle(in handle, out buffer) ||
+                !buffer.IsCreated ||
+                buffer.Length < requiredLength)
             {
-                return false;
-            }
-
-            acquiredCount++;
-            if (!TryAcquireDroneVaultWriteBuffer(
-                    vault,
-                    in s_DroneStateBackBufferHandle,
-                    BufferID.ShinobuDroneFleetStateBackBuffer,
-                    HeadlessDroneCapacity,
-                    out droneStateBackBuffer))
-            {
-                ReleaseDroneCoreWriteLocks(vault, acquiredCount);
-                return false;
-            }
-
-            acquiredCount++;
-            if (!TryAcquireDroneVaultWriteBuffer(
-                    vault,
-                    in s_DroneRenderMatricesHandle,
-                    BufferID.ShinobuDroneFleetRenderMatrices,
-                    HeadlessDroneCapacity,
-                    out droneRenderMatrices))
-            {
-                ReleaseDroneCoreWriteLocks(vault, acquiredCount);
-                return false;
-            }
-
-            acquiredCount++;
-            if (!TryAcquireDroneVaultWriteBuffer(
-                    vault,
-                    in s_DroneRenderMatrixBackBufferHandle,
-                    BufferID.ShinobuDroneFleetRenderMatrixBackBuffer,
-                    HeadlessDroneCapacity,
-                    out droneRenderMatrixBackBuffer))
-            {
-                ReleaseDroneCoreWriteLocks(vault, acquiredCount);
+                buffer = default;
                 return false;
             }
 
             return true;
         }
 
-        private static void ReleaseDroneCoreWriteLocks(IDataVault vault, int acquiredCount)
+        private static bool TryAcquireDroneOriginShiftMutationViews(
+            out NativeArray<HeadlessDroneState> droneStates,
+            out NativeArray<HeadlessDroneState> droneStateBackBuffer,
+            out NativeArray<float4x4> droneRenderMatrices,
+            out NativeArray<float4x4> droneRenderMatrixBackBuffer,
+            out NativeArray<float3> positionsSoA,
+            out IDataVault guardedVault)
         {
-            if (vault == null || acquiredCount <= 0)
-                return;
+            droneStates = default;
+            droneStateBackBuffer = default;
+            droneRenderMatrices = default;
+            droneRenderMatrixBackBuffer = default;
+            positionsSoA = default;
+            guardedVault = null;
 
-            if (acquiredCount >= 4)
-                vault.ReleaseWriteLock(in s_DroneRenderMatrixBackBufferHandle, SystemID.Construction);
-            if (acquiredCount >= 3)
-                vault.ReleaseWriteLock(in s_DroneRenderMatricesHandle, SystemID.Construction);
-            if (acquiredCount >= 2)
-                vault.ReleaseWriteLock(in s_DroneStateBackBufferHandle, SystemID.Construction);
-            if (acquiredCount >= 1)
-                vault.ReleaseWriteLock(in s_DroneStatesHandle, SystemID.Construction);
+            IDataVault vault = s_CachedDataVault;
+            if (vault == null ||
+                vault.IsCompactionFenceActive ||
+                !vault.TryAcquireMutationGuard(DroneOriginShiftMutationGuardMask))
+            {
+                return false;
+            }
+
+            bool releaseOnExit = true;
+            try
+            {
+                if (vault.IsCompactionFenceActive ||
+                    !TryResolveDroneMutationBuffer(
+                        vault,
+                        in s_DroneStatesHandle,
+                        BufferID.ShinobuDroneFleetStates,
+                        HeadlessDroneCapacity,
+                        out droneStates) ||
+                    !TryResolveDroneMutationBuffer(
+                        vault,
+                        in s_DroneStateBackBufferHandle,
+                        BufferID.ShinobuDroneFleetStateBackBuffer,
+                        HeadlessDroneCapacity,
+                        out droneStateBackBuffer) ||
+                    !TryResolveDroneMutationBuffer(
+                        vault,
+                        in s_DroneRenderMatricesHandle,
+                        BufferID.ShinobuDroneFleetRenderMatrices,
+                        HeadlessDroneCapacity,
+                        out droneRenderMatrices) ||
+                    !TryResolveDroneMutationBuffer(
+                        vault,
+                        in s_DroneRenderMatrixBackBufferHandle,
+                        BufferID.ShinobuDroneFleetRenderMatrixBackBuffer,
+                        HeadlessDroneCapacity,
+                        out droneRenderMatrixBackBuffer) ||
+                    !TryResolveDroneMutationBuffer(
+                        vault,
+                        in s_DronePositionsSoAHandle,
+                        BufferID.ShinobuDroneFleetPositionsSoA,
+                        HeadlessDroneCapacity,
+                        out positionsSoA) ||
+                    vault.IsCompactionFenceActive)
+                {
+                    droneStates = default;
+                    droneStateBackBuffer = default;
+                    droneRenderMatrices = default;
+                    droneRenderMatrixBackBuffer = default;
+                    positionsSoA = default;
+                    return false;
+                }
+
+                guardedVault = vault;
+                releaseOnExit = false;
+                return true;
+            }
+            finally
+            {
+                if (releaseOnExit)
+                    vault.ReleaseMutationGuard(DroneOriginShiftMutationGuardMask);
+            }
         }
 
         private static bool TryAcquireDroneChassisSpecs(
@@ -2529,18 +2687,6 @@ namespace Hecton8.Construction
                 BufferID.ShinobuDroneFleetBlackBox,
                 DroneFleetBlackBoxFrameCapacity,
                 out blackBox);
-        }
-
-        private static bool TryAcquireDroneProceduralArgs(
-            IDataVault vault,
-            out NativeArray<DroneProceduralIndirectArgsDTO> proceduralArgs)
-        {
-            return TryAcquireDroneVaultWriteBuffer(
-                vault,
-                in s_DroneProceduralArgsHandle,
-                DroneFleetProceduralArgsBufferId,
-                1,
-                out proceduralArgs);
         }
 
         private static bool TryPrepareAndUploadDroneRenderInstances(
@@ -2741,84 +2887,109 @@ namespace Hecton8.Construction
                        out targetDtos);
         }
 
-        private static bool TryAcquireDroneMirrorWriteBuffers(
+        private static bool TryAcquireDroneCoreMirrorMutationViews(
+            out NativeArray<HeadlessDroneState> droneStates,
+            out NativeArray<HeadlessDroneState> droneStateBackBuffer,
+            out NativeArray<float4x4> droneRenderMatrices,
+            out NativeArray<float4x4> droneRenderMatrixBackBuffer,
             out NativeArray<float3> positionsSoA,
             out NativeArray<byte> stateBytes,
             out NativeArray<DroneStateDTO> stateDtos,
             out NativeArray<DroneTargetDTO> targetDtos,
-            out IDataVault vault)
+            out IDataVault guardedVault)
         {
+            droneStates = default;
+            droneStateBackBuffer = default;
+            droneRenderMatrices = default;
+            droneRenderMatrixBackBuffer = default;
             positionsSoA = default;
             stateBytes = default;
             stateDtos = default;
             targetDtos = default;
-            vault = s_CachedDataVault;
-            if (vault == null)
-                return false;
+            guardedVault = null;
 
-            int acquiredCount = 0;
-            if (!TryAcquireDroneVaultWriteBuffer(
-                    vault,
-                    in s_DronePositionsSoAHandle,
-                    BufferID.ShinobuDroneFleetPositionsSoA,
-                    HeadlessDroneCapacity,
-                    out positionsSoA))
+            IDataVault vault = s_CachedDataVault;
+            if (vault == null ||
+                vault.IsCompactionFenceActive ||
+                !vault.TryAcquireMutationGuard(DroneCoreMirrorMutationGuardMask))
             {
                 return false;
             }
 
-            acquiredCount++;
-            if (!TryAcquireDroneVaultWriteBuffer(
-                    vault,
-                    in s_DroneStateBytesHandle,
-                    BufferID.ShinobuDroneFleetStateBytes,
-                    HeadlessDroneCapacity,
-                    out stateBytes))
+            bool releaseOnExit = true;
+            try
             {
-                ReleaseDroneMirrorWriteLocks(vault, acquiredCount);
-                return false;
-            }
+                if (vault.IsCompactionFenceActive ||
+                    !TryResolveDroneMutationBuffer(
+                        vault,
+                        in s_DroneStatesHandle,
+                        BufferID.ShinobuDroneFleetStates,
+                        HeadlessDroneCapacity,
+                        out droneStates) ||
+                    !TryResolveDroneMutationBuffer(
+                        vault,
+                        in s_DroneStateBackBufferHandle,
+                        BufferID.ShinobuDroneFleetStateBackBuffer,
+                        HeadlessDroneCapacity,
+                        out droneStateBackBuffer) ||
+                    !TryResolveDroneMutationBuffer(
+                        vault,
+                        in s_DroneRenderMatricesHandle,
+                        BufferID.ShinobuDroneFleetRenderMatrices,
+                        HeadlessDroneCapacity,
+                        out droneRenderMatrices) ||
+                    !TryResolveDroneMutationBuffer(
+                        vault,
+                        in s_DroneRenderMatrixBackBufferHandle,
+                        BufferID.ShinobuDroneFleetRenderMatrixBackBuffer,
+                        HeadlessDroneCapacity,
+                        out droneRenderMatrixBackBuffer) ||
+                    !TryResolveDroneMutationBuffer(
+                        vault,
+                        in s_DronePositionsSoAHandle,
+                        BufferID.ShinobuDroneFleetPositionsSoA,
+                        HeadlessDroneCapacity,
+                        out positionsSoA) ||
+                    !TryResolveDroneMutationBuffer(
+                        vault,
+                        in s_DroneStateBytesHandle,
+                        BufferID.ShinobuDroneFleetStateBytes,
+                        HeadlessDroneCapacity,
+                        out stateBytes) ||
+                    !TryResolveDroneMutationBuffer(
+                        vault,
+                        in s_DroneStateDtosHandle,
+                        DroneFleetStateDtoBufferId,
+                        HeadlessDroneCapacity,
+                        out stateDtos) ||
+                    !TryResolveDroneMutationBuffer(
+                        vault,
+                        in s_DroneTargetDtosHandle,
+                        DroneFleetTargetDtoBufferId,
+                        HeadlessDroneCapacity,
+                        out targetDtos) ||
+                    vault.IsCompactionFenceActive)
+                {
+                    droneStates = default;
+                    droneStateBackBuffer = default;
+                    droneRenderMatrices = default;
+                    droneRenderMatrixBackBuffer = default;
+                    positionsSoA = default;
+                    stateBytes = default;
+                    stateDtos = default;
+                    targetDtos = default;
+                    return false;
+                }
 
-            acquiredCount++;
-            if (!TryAcquireDroneVaultWriteBuffer(
-                    vault,
-                    in s_DroneStateDtosHandle,
-                    DroneFleetStateDtoBufferId,
-                    HeadlessDroneCapacity,
-                    out stateDtos))
+                guardedVault = vault;
+                releaseOnExit = false;
+                return true;
+            }
+            finally
             {
-                ReleaseDroneMirrorWriteLocks(vault, acquiredCount);
-                return false;
+                if (releaseOnExit)
+                    vault.ReleaseMutationGuard(DroneCoreMirrorMutationGuardMask);
             }
-
-            acquiredCount++;
-            if (!TryAcquireDroneVaultWriteBuffer(
-                    vault,
-                    in s_DroneTargetDtosHandle,
-                    DroneFleetTargetDtoBufferId,
-                    HeadlessDroneCapacity,
-                    out targetDtos))
-            {
-                ReleaseDroneMirrorWriteLocks(vault, acquiredCount);
-                return false;
-            }
-
-            return true;
-        }
-
-        private static void ReleaseDroneMirrorWriteLocks(IDataVault vault, int acquiredCount)
-        {
-            if (vault == null || acquiredCount <= 0)
-                return;
-
-            if (acquiredCount >= 4)
-                vault.ReleaseWriteLock(in s_DroneTargetDtosHandle, SystemID.Construction);
-            if (acquiredCount >= 3)
-                vault.ReleaseWriteLock(in s_DroneStateDtosHandle, SystemID.Construction);
-            if (acquiredCount >= 2)
-                vault.ReleaseWriteLock(in s_DroneStateBytesHandle, SystemID.Construction);
-            if (acquiredCount >= 1)
-                vault.ReleaseWriteLock(in s_DronePositionsSoAHandle, SystemID.Construction);
         }
 
         private static bool TryAcquireHeadlessJobScratchBuffers(
@@ -2847,8 +3018,8 @@ namespace Hecton8.Construction
             out NativeArray<DroneStateDTO> stateDtos,
             out NativeArray<DroneTargetDTO> targetDtos,
             out NativeArray<DroneProceduralIndirectArgsDTO> proceduralArgs,
-            out bool proceduralArgsLocked,
-            out IDataVault vault)
+            out bool proceduralArgsReady,
+            out IDataVault guardedVault)
         {
             droneStates = default;
             droneStateBackBuffer = default;
@@ -2875,308 +3046,107 @@ namespace Hecton8.Construction
             stateDtos = default;
             targetDtos = default;
             proceduralArgs = default;
-            proceduralArgsLocked = false;
-            vault = s_CachedDataVault;
-            if (vault == null)
-                return false;
+            proceduralArgsReady = false;
+            guardedVault = null;
 
-            int acquiredCount = 0;
-            if (!TryAcquireDroneVaultWriteBuffer(
-                vault,
-                in s_DroneStatesHandle,
-                BufferID.ShinobuDroneFleetStates,
-                HeadlessDroneCapacity,
-                out droneStates))
+            IDataVault vault = s_CachedDataVault;
+            if (vault == null ||
+                vault.IsCompactionFenceActive ||
+                !vault.TryAcquireMutationGuard(DroneHeadlessJobMutationGuardMask))
             {
                 return false;
             }
 
-            acquiredCount++;
-            if (!TryAcquireDroneVaultWriteBuffer(
-                vault,
-                in s_DroneStateBackBufferHandle,
-                BufferID.ShinobuDroneFleetStateBackBuffer,
-                HeadlessDroneCapacity,
-                out droneStateBackBuffer))
+            bool releaseOnExit = true;
+            try
             {
-                ReleaseDroneHeadlessScratchWriteLocks(vault, acquiredCount);
-                return false;
-            }
+                if (vault.IsCompactionFenceActive ||
+                    !TryResolveDroneMutationBuffer(vault, in s_DroneStatesHandle, BufferID.ShinobuDroneFleetStates, HeadlessDroneCapacity, out droneStates) ||
+                    !TryResolveDroneMutationBuffer(vault, in s_DroneStateBackBufferHandle, BufferID.ShinobuDroneFleetStateBackBuffer, HeadlessDroneCapacity, out droneStateBackBuffer) ||
+                    !TryResolveDroneMutationBuffer(vault, in s_DroneRenderMatricesHandle, BufferID.ShinobuDroneFleetRenderMatrices, HeadlessDroneCapacity, out droneRenderMatrices) ||
+                    !TryResolveDroneMutationBuffer(vault, in s_DroneRenderMatrixBackBufferHandle, BufferID.ShinobuDroneFleetRenderMatrixBackBuffer, HeadlessDroneCapacity, out droneRenderMatrixBackBuffer) ||
+                    !TryResolveDroneMutationBuffer(vault, in s_HeadlessTaskClaimOwnersHandle, BufferID.ShinobuDroneFleetTaskClaimOwners, HeadlessTaskCapacity, out taskClaimOwners) ||
+                    !TryResolveDroneMutationBuffer(vault, in s_FleetTelemetryAccumulatorHandle, BufferID.ShinobuDroneFleetTelemetryAccumulator, (int)DroneFleetTelemetryAccumulatorSlot.Count, out telemetryAccumulator) ||
+                    !TryResolveDroneMutationBuffer(vault, in s_DroneAssignmentTasksHandle, DroneFleetAssignmentTasksBufferId, HeadlessTaskCapacity, out assignmentTasks) ||
+                    !TryResolveDroneMutationBuffer(vault, in s_DroneSpatialBucketHeadsHandle, DroneFleetSpatialBucketHeadsBufferId, DroneSpatialBucketCapacity, out spatialBucketHeads) ||
+                    !TryResolveDroneMutationBuffer(vault, in s_DroneSpatialNextIndicesHandle, DroneFleetSpatialNextIndicesBufferId, HeadlessDroneCapacity, out spatialNextIndices) ||
+                    !TryResolveDroneMutationBuffer(vault, in s_DroneSpatialKeysHandle, DroneFleetSpatialKeysBufferId, HeadlessDroneCapacity, out spatialKeys) ||
+                    !TryResolveDroneMutationBuffer(vault, in s_DroneMacroWaypointsHandle, BufferID.ShinobuDroneFleetMacroWaypoints, HeadlessDroneCapacity, out macroWaypoints) ||
+                    !TryResolveDroneMutationBuffer(vault, in s_DroneMacroWaypointStatesHandle, BufferID.ShinobuDroneFleetMacroWaypointStates, HeadlessDroneCapacity, out macroWaypointStates) ||
+                    !TryResolveDroneMutationBuffer(vault, in s_DroneAStarOpenHeapHandle, BufferID.ShinobuDroneFleetAStarOpenHeap, DroneAStarScratchNodeCapacity, out aStarOpenHeap) ||
+                    !TryResolveDroneMutationBuffer(vault, in s_DroneAStarGCostsHandle, BufferID.ShinobuDroneFleetAStarGCosts, DroneAStarScratchNodeCapacity, out aStarGCosts) ||
+                    !TryResolveDroneMutationBuffer(vault, in s_DroneAStarCameFromHandle, BufferID.ShinobuDroneFleetAStarCameFrom, DroneAStarScratchNodeCapacity, out aStarCameFrom) ||
+                    !TryResolveDroneMutationBuffer(vault, in s_DroneAStarNodeStatesHandle, BufferID.ShinobuDroneFleetAStarNodeStates, DroneAStarScratchNodeCapacity, out aStarNodeStates) ||
+                    !TryResolveDroneMutationBuffer(vault, in s_DroneMacroRouteNodesHandle, BufferID.ShinobuDroneFleetMacroRouteNodes, DroneAStarRouteNodeCapacity, out macroRouteNodes) ||
+                    !TryResolveDroneMutationBuffer(vault, in s_DroneMacroRouteCountsHandle, BufferID.ShinobuDroneFleetMacroRouteCounts, HeadlessDroneCapacity, out macroRouteCounts) ||
+                    !TryResolveDroneMutationBuffer(vault, in s_DroneAStarTelemetryHandle, BufferID.ShinobuDroneFleetAStarTelemetry, DroneAStarTelemetryCapacity, out aStarTelemetry) ||
+                    !TryResolveDroneMutationBuffer(vault, in s_DroneAStarPersistentStatesHandle, DroneFleetAStarPersistentStatesBufferId, HeadlessDroneCapacity, out aStarPersistentStates) ||
+                    !TryResolveDroneMutationBuffer(vault, in s_DronePositionsSoAHandle, BufferID.ShinobuDroneFleetPositionsSoA, HeadlessDroneCapacity, out positionsSoA) ||
+                    !TryResolveDroneMutationBuffer(vault, in s_DroneStateBytesHandle, BufferID.ShinobuDroneFleetStateBytes, HeadlessDroneCapacity, out stateBytes) ||
+                    !TryResolveDroneMutationBuffer(vault, in s_DroneStateDtosHandle, DroneFleetStateDtoBufferId, HeadlessDroneCapacity, out stateDtos) ||
+                    !TryResolveDroneMutationBuffer(vault, in s_DroneTargetDtosHandle, DroneFleetTargetDtoBufferId, HeadlessDroneCapacity, out targetDtos) ||
+                    vault.IsCompactionFenceActive)
+                {
+                    droneStates = default;
+                    droneStateBackBuffer = default;
+                    droneRenderMatrices = default;
+                    droneRenderMatrixBackBuffer = default;
+                    taskClaimOwners = default;
+                    telemetryAccumulator = default;
+                    assignmentTasks = default;
+                    spatialBucketHeads = default;
+                    spatialNextIndices = default;
+                    spatialKeys = default;
+                    macroWaypoints = default;
+                    macroWaypointStates = default;
+                    aStarOpenHeap = default;
+                    aStarGCosts = default;
+                    aStarCameFrom = default;
+                    aStarNodeStates = default;
+                    macroRouteNodes = default;
+                    macroRouteCounts = default;
+                    aStarTelemetry = default;
+                    aStarPersistentStates = default;
+                    positionsSoA = default;
+                    stateBytes = default;
+                    stateDtos = default;
+                    targetDtos = default;
+                    return false;
+                }
 
-            acquiredCount++;
-            if (!TryAcquireDroneVaultWriteBuffer(
-                vault,
-                in s_DroneRenderMatricesHandle,
-                BufferID.ShinobuDroneFleetRenderMatrices,
-                HeadlessDroneCapacity,
-                out droneRenderMatrices))
+                proceduralArgsReady = TryResolveDroneMutationBuffer(
+                    vault,
+                    in s_DroneProceduralArgsHandle,
+                    DroneFleetProceduralArgsBufferId,
+                    1,
+                    out proceduralArgs);
+
+                if (vault.IsCompactionFenceActive)
+                {
+                    proceduralArgs = default;
+                    proceduralArgsReady = false;
+                    return false;
+                }
+
+                guardedVault = vault;
+                releaseOnExit = false;
+                return true;
+            }
+            finally
             {
-                ReleaseDroneHeadlessScratchWriteLocks(vault, acquiredCount);
-                return false;
+                if (releaseOnExit)
+                    vault.ReleaseMutationGuard(DroneHeadlessJobMutationGuardMask);
             }
-
-            acquiredCount++;
-            if (!TryAcquireDroneVaultWriteBuffer(
-                vault,
-                in s_DroneRenderMatrixBackBufferHandle,
-                BufferID.ShinobuDroneFleetRenderMatrixBackBuffer,
-                HeadlessDroneCapacity,
-                out droneRenderMatrixBackBuffer))
-            {
-                ReleaseDroneHeadlessScratchWriteLocks(vault, acquiredCount);
-                return false;
-            }
-
-            acquiredCount++;
-            if (!TryAcquireDroneVaultWriteBuffer(
-                vault,
-                in s_HeadlessTaskClaimOwnersHandle,
-                BufferID.ShinobuDroneFleetTaskClaimOwners,
-                HeadlessTaskCapacity,
-                out taskClaimOwners))
-            {
-                ReleaseDroneHeadlessScratchWriteLocks(vault, acquiredCount);
-                return false;
-            }
-
-            acquiredCount++;
-            if (!TryAcquireDroneVaultWriteBuffer(
-                vault,
-                in s_FleetTelemetryAccumulatorHandle,
-                BufferID.ShinobuDroneFleetTelemetryAccumulator,
-                (int)DroneFleetTelemetryAccumulatorSlot.Count,
-                out telemetryAccumulator))
-            {
-                ReleaseDroneHeadlessScratchWriteLocks(vault, acquiredCount);
-                return false;
-            }
-
-            acquiredCount++;
-            if (!TryAcquireDroneVaultWriteBuffer(
-                vault,
-                in s_DroneAssignmentTasksHandle,
-                DroneFleetAssignmentTasksBufferId,
-                HeadlessTaskCapacity,
-                out assignmentTasks))
-            {
-                ReleaseDroneHeadlessScratchWriteLocks(vault, acquiredCount);
-                return false;
-            }
-
-            acquiredCount++;
-            if (!TryAcquireDroneVaultWriteBuffer(
-                vault,
-                in s_DroneSpatialBucketHeadsHandle,
-                DroneFleetSpatialBucketHeadsBufferId,
-                DroneSpatialBucketCapacity,
-                out spatialBucketHeads))
-            {
-                ReleaseDroneHeadlessScratchWriteLocks(vault, acquiredCount);
-                return false;
-            }
-
-            acquiredCount++;
-            if (!TryAcquireDroneVaultWriteBuffer(
-                vault,
-                in s_DroneSpatialNextIndicesHandle,
-                DroneFleetSpatialNextIndicesBufferId,
-                HeadlessDroneCapacity,
-                out spatialNextIndices))
-            {
-                ReleaseDroneHeadlessScratchWriteLocks(vault, acquiredCount);
-                return false;
-            }
-
-            acquiredCount++;
-            if (!TryAcquireDroneVaultWriteBuffer(
-                vault,
-                in s_DroneSpatialKeysHandle,
-                DroneFleetSpatialKeysBufferId,
-                HeadlessDroneCapacity,
-                out spatialKeys))
-            {
-                ReleaseDroneHeadlessScratchWriteLocks(vault, acquiredCount);
-                return false;
-            }
-
-            acquiredCount++;
-            if (!TryAcquireDroneVaultWriteBuffer(vault, in s_DroneMacroWaypointsHandle, BufferID.ShinobuDroneFleetMacroWaypoints, HeadlessDroneCapacity, out macroWaypoints))
-            {
-                ReleaseDroneHeadlessScratchWriteLocks(vault, acquiredCount);
-                return false;
-            }
-
-            acquiredCount++;
-            if (!TryAcquireDroneVaultWriteBuffer(vault, in s_DroneMacroWaypointStatesHandle, BufferID.ShinobuDroneFleetMacroWaypointStates, HeadlessDroneCapacity, out macroWaypointStates))
-            {
-                ReleaseDroneHeadlessScratchWriteLocks(vault, acquiredCount);
-                return false;
-            }
-
-            acquiredCount++;
-            if (!TryAcquireDroneVaultWriteBuffer(vault, in s_DroneAStarOpenHeapHandle, BufferID.ShinobuDroneFleetAStarOpenHeap, DroneAStarScratchNodeCapacity, out aStarOpenHeap))
-            {
-                ReleaseDroneHeadlessScratchWriteLocks(vault, acquiredCount);
-                return false;
-            }
-
-            acquiredCount++;
-            if (!TryAcquireDroneVaultWriteBuffer(vault, in s_DroneAStarGCostsHandle, BufferID.ShinobuDroneFleetAStarGCosts, DroneAStarScratchNodeCapacity, out aStarGCosts))
-            {
-                ReleaseDroneHeadlessScratchWriteLocks(vault, acquiredCount);
-                return false;
-            }
-
-            acquiredCount++;
-            if (!TryAcquireDroneVaultWriteBuffer(vault, in s_DroneAStarCameFromHandle, BufferID.ShinobuDroneFleetAStarCameFrom, DroneAStarScratchNodeCapacity, out aStarCameFrom))
-            {
-                ReleaseDroneHeadlessScratchWriteLocks(vault, acquiredCount);
-                return false;
-            }
-
-            acquiredCount++;
-            if (!TryAcquireDroneVaultWriteBuffer(vault, in s_DroneAStarNodeStatesHandle, BufferID.ShinobuDroneFleetAStarNodeStates, DroneAStarScratchNodeCapacity, out aStarNodeStates))
-            {
-                ReleaseDroneHeadlessScratchWriteLocks(vault, acquiredCount);
-                return false;
-            }
-
-            acquiredCount++;
-            if (!TryAcquireDroneVaultWriteBuffer(vault, in s_DroneMacroRouteNodesHandle, BufferID.ShinobuDroneFleetMacroRouteNodes, DroneAStarRouteNodeCapacity, out macroRouteNodes))
-            {
-                ReleaseDroneHeadlessScratchWriteLocks(vault, acquiredCount);
-                return false;
-            }
-
-            acquiredCount++;
-            if (!TryAcquireDroneVaultWriteBuffer(vault, in s_DroneMacroRouteCountsHandle, BufferID.ShinobuDroneFleetMacroRouteCounts, HeadlessDroneCapacity, out macroRouteCounts))
-            {
-                ReleaseDroneHeadlessScratchWriteLocks(vault, acquiredCount);
-                return false;
-            }
-
-            acquiredCount++;
-            if (!TryAcquireDroneVaultWriteBuffer(vault, in s_DroneAStarTelemetryHandle, BufferID.ShinobuDroneFleetAStarTelemetry, DroneAStarTelemetryCapacity, out aStarTelemetry))
-            {
-                ReleaseDroneHeadlessScratchWriteLocks(vault, acquiredCount);
-                return false;
-            }
-
-            acquiredCount++;
-            if (!TryAcquireDroneVaultWriteBuffer(vault, in s_DroneAStarPersistentStatesHandle, DroneFleetAStarPersistentStatesBufferId, HeadlessDroneCapacity, out aStarPersistentStates))
-            {
-                ReleaseDroneHeadlessScratchWriteLocks(vault, acquiredCount);
-                return false;
-            }
-
-            acquiredCount++;
-            if (!TryAcquireDroneVaultWriteBuffer(vault, in s_DronePositionsSoAHandle, BufferID.ShinobuDroneFleetPositionsSoA, HeadlessDroneCapacity, out positionsSoA))
-            {
-                ReleaseDroneHeadlessScratchWriteLocks(vault, acquiredCount);
-                return false;
-            }
-
-            acquiredCount++;
-            if (!TryAcquireDroneVaultWriteBuffer(vault, in s_DroneStateBytesHandle, BufferID.ShinobuDroneFleetStateBytes, HeadlessDroneCapacity, out stateBytes))
-            {
-                ReleaseDroneHeadlessScratchWriteLocks(vault, acquiredCount);
-                return false;
-            }
-
-            acquiredCount++;
-            if (!TryAcquireDroneVaultWriteBuffer(vault, in s_DroneStateDtosHandle, DroneFleetStateDtoBufferId, HeadlessDroneCapacity, out stateDtos))
-            {
-                ReleaseDroneHeadlessScratchWriteLocks(vault, acquiredCount);
-                return false;
-            }
-
-            acquiredCount++;
-            if (!TryAcquireDroneVaultWriteBuffer(vault, in s_DroneTargetDtosHandle, DroneFleetTargetDtoBufferId, HeadlessDroneCapacity, out targetDtos))
-            {
-                ReleaseDroneHeadlessScratchWriteLocks(vault, acquiredCount);
-                return false;
-            }
-
-            proceduralArgsLocked = TryAcquireDroneProceduralArgs(vault, out proceduralArgs);
-            return true;
         }
 
-        private static void ReleaseDroneHeadlessScratchWriteLocks()
+        private static void ReleaseDroneHeadlessJobMutationGuard()
         {
-            if (!s_DroneHeadlessScratchWriteLocksHeld && !s_DroneProceduralArgsWriteLockHeld)
+            if (!s_DroneHeadlessJobMutationGuardHeld)
                 return;
 
-            ReleaseDroneHeadlessScratchWriteLocks(s_DroneHeadlessScratchWriteLockVault);
-            s_DroneHeadlessScratchWriteLockVault = null;
-            s_DroneHeadlessScratchWriteLocksHeld = false;
-            s_DroneProceduralArgsWriteLockHeld = false;
-        }
-
-        private static void ReleaseDroneHeadlessScratchWriteLocks(IDataVault vault)
-        {
-            if (vault == null)
-                return;
-
-            if (s_DroneProceduralArgsWriteLockHeld)
-                vault.ReleaseWriteLock(in s_DroneProceduralArgsHandle, SystemID.Construction);
-
-            if (s_DroneHeadlessScratchWriteLocksHeld)
-                ReleaseDroneHeadlessScratchWriteLocks(vault, 24);
-        }
-
-        private static void ReleaseDroneHeadlessScratchWriteLocks(IDataVault vault, int acquiredCount)
-        {
-            if (vault == null || acquiredCount <= 0)
-                return;
-
-            if (acquiredCount >= 24)
-                vault.ReleaseWriteLock(in s_DroneTargetDtosHandle, SystemID.Construction);
-            if (acquiredCount >= 23)
-                vault.ReleaseWriteLock(in s_DroneStateDtosHandle, SystemID.Construction);
-            if (acquiredCount >= 22)
-                vault.ReleaseWriteLock(in s_DroneStateBytesHandle, SystemID.Construction);
-            if (acquiredCount >= 21)
-                vault.ReleaseWriteLock(in s_DronePositionsSoAHandle, SystemID.Construction);
-            if (acquiredCount >= 20)
-                vault.ReleaseWriteLock(in s_DroneAStarPersistentStatesHandle, SystemID.Construction);
-            if (acquiredCount >= 19)
-                vault.ReleaseWriteLock(in s_DroneAStarTelemetryHandle, SystemID.Construction);
-            if (acquiredCount >= 18)
-                vault.ReleaseWriteLock(in s_DroneMacroRouteCountsHandle, SystemID.Construction);
-            if (acquiredCount >= 17)
-                vault.ReleaseWriteLock(in s_DroneMacroRouteNodesHandle, SystemID.Construction);
-            if (acquiredCount >= 16)
-                vault.ReleaseWriteLock(in s_DroneAStarNodeStatesHandle, SystemID.Construction);
-            if (acquiredCount >= 15)
-                vault.ReleaseWriteLock(in s_DroneAStarCameFromHandle, SystemID.Construction);
-            if (acquiredCount >= 14)
-                vault.ReleaseWriteLock(in s_DroneAStarGCostsHandle, SystemID.Construction);
-            if (acquiredCount >= 13)
-                vault.ReleaseWriteLock(in s_DroneAStarOpenHeapHandle, SystemID.Construction);
-            if (acquiredCount >= 12)
-                vault.ReleaseWriteLock(in s_DroneMacroWaypointStatesHandle, SystemID.Construction);
-            if (acquiredCount >= 11)
-                vault.ReleaseWriteLock(in s_DroneMacroWaypointsHandle, SystemID.Construction);
-            if (acquiredCount >= 10)
-                vault.ReleaseWriteLock(in s_DroneSpatialKeysHandle, SystemID.Construction);
-            if (acquiredCount >= 9)
-                vault.ReleaseWriteLock(in s_DroneSpatialNextIndicesHandle, SystemID.Construction);
-            if (acquiredCount >= 8)
-                vault.ReleaseWriteLock(in s_DroneSpatialBucketHeadsHandle, SystemID.Construction);
-            if (acquiredCount >= 7)
-                vault.ReleaseWriteLock(in s_DroneAssignmentTasksHandle, SystemID.Construction);
-            if (acquiredCount >= 6)
-                vault.ReleaseWriteLock(in s_FleetTelemetryAccumulatorHandle, SystemID.Construction);
-            if (acquiredCount >= 5)
-                vault.ReleaseWriteLock(in s_HeadlessTaskClaimOwnersHandle, SystemID.Construction);
-            if (acquiredCount >= 4)
-                vault.ReleaseWriteLock(in s_DroneRenderMatrixBackBufferHandle, SystemID.Construction);
-            if (acquiredCount >= 3)
-                vault.ReleaseWriteLock(in s_DroneRenderMatricesHandle, SystemID.Construction);
-            if (acquiredCount >= 2)
-                vault.ReleaseWriteLock(in s_DroneStateBackBufferHandle, SystemID.Construction);
-            if (acquiredCount >= 1)
-                vault.ReleaseWriteLock(in s_DroneStatesHandle, SystemID.Construction);
+            ReleaseDroneMutationGuard(s_DroneHeadlessJobMutationGuardVault, DroneHeadlessJobMutationGuardMask);
+            s_DroneHeadlessJobMutationGuardVault = null;
+            s_DroneHeadlessJobMutationGuardHeld = false;
         }
 
 #if UNITY_EDITOR
@@ -3296,12 +3266,17 @@ namespace Hecton8.Construction
                     out NativeArray<DroneStateDTO> stateDtos,
                     out NativeArray<DroneTargetDTO> targetDtos,
                     out NativeArray<DroneProceduralIndirectArgsDTO> proceduralArgs,
-                    out bool proceduralArgsLocked,
+                    out bool proceduralArgsReady,
                     out IDataVault headlessScratchVault))
             {
                 return;
             }
 
+            s_DroneHeadlessJobMutationGuardHeld = true;
+            s_DroneHeadlessJobMutationGuardVault = headlessScratchVault;
+            bool headlessJobScheduled = false;
+            try
+            {
             BuildHeadlessTaskMap(s_LastHeadlessDeltaTime, assignmentTasks);
             BuildHeadlessSpatialHash(droneStates, spatialBucketHeads, spatialNextIndices, spatialKeys);
             ClearHeadlessTaskClaims(droneStates, taskClaimOwners);
@@ -3372,14 +3347,14 @@ namespace Hecton8.Construction
                 assignmentHandle = assignmentJob.Schedule(HeadlessDroneCapacity, DroneJobBatchSize, macroAStarHandle);
             }
             s_LastDroneSteeringTickModulo = steeringTickModulo;
-            bool serviceQueueEnabled = TryAcquireDroneServiceCommandWriteBuffers(
+            bool serviceQueueEnabled = TryAcquireDroneServiceCommandMutationViews(
                 out NativeArray<DroneServiceCommand> serviceCommands,
                 out NativeArray<DroneServiceCommandCursor> serviceCommandCursor,
                 out IDataVault serviceCommandVault);
             if (serviceQueueEnabled)
             {
-                s_DroneServiceCommandWriteLocksHeld = true;
-                s_DroneServiceCommandWriteLockVault = serviceCommandVault;
+                s_DroneServiceCommandMutationGuardHeld = true;
+                s_DroneServiceCommandMutationGuardVault = serviceCommandVault;
                 serviceCommandCursor[0] = default;
             }
 
@@ -3454,7 +3429,7 @@ namespace Hecton8.Construction
                 ScaleMeters = DroneProceduralScaleMeters
             };
             JobHandle matrixHandle = matrixJob.Schedule(HeadlessDroneCapacity, DroneJobBatchSize, metabolismHandle);
-            if (proceduralArgsLocked && proceduralArgs.IsCreated)
+            if (proceduralArgsReady && proceduralArgs.IsCreated)
             {
                 BuildDroneProceduralArgsJob argsJob = new BuildDroneProceduralArgsJob
                 {
@@ -3469,9 +3444,16 @@ namespace Hecton8.Construction
                 s_HeadlessJobHandle = matrixHandle;
             }
             s_HeadlessJobScheduled = true;
-            s_DroneHeadlessScratchWriteLocksHeld = true;
-            s_DroneProceduralArgsWriteLockHeld = proceduralArgsLocked;
-            s_DroneHeadlessScratchWriteLockVault = headlessScratchVault;
+            headlessJobScheduled = true;
+            }
+            finally
+            {
+                if (!headlessJobScheduled)
+                {
+                    ReleaseDroneServiceCommandMutationGuard();
+                    ReleaseDroneHeadlessJobMutationGuard();
+                }
+            }
         }
 
         private static float SanitizeHeadlessDeltaTime(float deltaTime)
@@ -3989,8 +3971,8 @@ namespace Hecton8.Construction
                     HeadlessDroneCapacity,
                     out NativeArray<HeadlessDroneState> _))
             {
-                ReleaseDroneServiceCommandWriteLocks();
-                ReleaseDroneHeadlessScratchWriteLocks();
+                ReleaseDroneServiceCommandMutationGuard();
+                ReleaseDroneHeadlessJobMutationGuard();
                 return;
             }
 
@@ -4009,76 +3991,61 @@ namespace Hecton8.Construction
                 ReadDroneAStarTelemetry();
             }
 
-            bool coreLocksAcquired = false;
-            IDataVault coreVault = null;
+            bool coreMirrorGuardAcquired = false;
+            IDataVault coreMirrorVault = null;
             NativeArray<HeadlessDroneState> droneStates = default;
             NativeArray<HeadlessDroneState> droneStateBackBuffer = default;
             NativeArray<float4x4> droneRenderMatrices = default;
             NativeArray<float4x4> droneRenderMatrixBackBuffer = default;
-            bool coreReady = s_DroneHeadlessScratchWriteLocksHeld &&
-                TryOpenDroneCoreBuffers(
-                    out droneStates,
-                    out droneStateBackBuffer,
-                    out droneRenderMatrices,
-                    out droneRenderMatrixBackBuffer);
-            if (!coreReady &&
-                TryAcquireDroneCoreWriteBuffers(
-                    out droneStates,
-                    out droneStateBackBuffer,
-                    out droneRenderMatrices,
-                    out droneRenderMatrixBackBuffer,
-                    out coreVault))
-            {
-                coreReady = true;
-            }
-
-            if (!coreReady)
-            {
-                ReleaseDroneServiceCommandWriteLocks();
-                ReleaseDroneHeadlessScratchWriteLocks();
-                return;
-            }
-
-            bool mirrorLocksAcquired = false;
-            IDataVault mirrorVault = null;
             NativeArray<float3> positionsSoA = default;
             NativeArray<byte> stateBytes = default;
             NativeArray<DroneStateDTO> stateDtos = default;
             NativeArray<DroneTargetDTO> targetDtos = default;
-            bool mirrorReady = s_DroneHeadlessScratchWriteLocksHeld &&
-                TryOpenDroneMirrorBuffers(
-                    out positionsSoA,
-                    out stateBytes,
-                    out stateDtos,
-                    out targetDtos);
-            if (!mirrorReady &&
-                TryAcquireDroneMirrorWriteBuffers(
+            bool coreReady = false;
+            bool mirrorReady = false;
+            if (s_DroneHeadlessJobMutationGuardHeld)
+            {
+                coreReady = TryOpenDroneCoreBuffers(
+                    out droneStates,
+                    out droneStateBackBuffer,
+                    out droneRenderMatrices,
+                    out droneRenderMatrixBackBuffer);
+
+                mirrorReady = coreReady &&
+                    TryOpenDroneMirrorBuffers(
+                        out positionsSoA,
+                        out stateBytes,
+                        out stateDtos,
+                        out targetDtos);
+            }
+            else if (TryAcquireDroneCoreMirrorMutationViews(
+                    out droneStates,
+                    out droneStateBackBuffer,
+                    out droneRenderMatrices,
+                    out droneRenderMatrixBackBuffer,
                     out positionsSoA,
                     out stateBytes,
                     out stateDtos,
                     out targetDtos,
-                    out mirrorVault))
+                    out coreMirrorVault))
             {
+                coreReady = true;
                 mirrorReady = true;
+                coreMirrorGuardAcquired = true;
             }
 
-            if (!mirrorReady)
+            if (!coreReady || !mirrorReady)
             {
-                if (coreVault != null)
-                    ReleaseDroneCoreWriteLocks(coreVault, 4);
-                ReleaseDroneServiceCommandWriteLocks();
-                ReleaseDroneHeadlessScratchWriteLocks();
+                ReleaseDroneServiceCommandMutationGuard();
+                ReleaseDroneHeadlessJobMutationGuard();
                 return;
             }
-
-            coreLocksAcquired = coreVault != null;
-            mirrorLocksAcquired = mirrorVault != null;
             try
             {
                 ApplyPendingControls(droneStates, droneStateBackBuffer, droneRenderMatrices, droneRenderMatrixBackBuffer, positionsSoA, stateBytes, stateDtos, targetDtos);
                 ApplyCompletedHeadlessServices(droneStates, droneStateBackBuffer, droneRenderMatrices, droneRenderMatrixBackBuffer, positionsSoA, stateBytes, stateDtos, targetDtos);
                 DrainDroneServiceCommandQueue(droneStates, droneStateBackBuffer, positionsSoA, stateBytes, stateDtos, targetDtos);
-                ReleaseDroneServiceCommandWriteLocks();
+                ReleaseDroneServiceCommandMutationGuard();
                 ApplyPendingLaunches(droneStates, droneStateBackBuffer, droneRenderMatrices, droneRenderMatrixBackBuffer, positionsSoA, stateBytes, stateDtos, targetDtos);
                 RefreshHeadlessCounters(droneStates);
                 UpdateDrawBounds();
@@ -4088,11 +4055,9 @@ namespace Hecton8.Construction
             }
             finally
             {
-                if (mirrorLocksAcquired)
-                    ReleaseDroneMirrorWriteLocks(mirrorVault, 4);
-                if (coreLocksAcquired)
-                    ReleaseDroneCoreWriteLocks(coreVault, 4);
-                ReleaseDroneHeadlessScratchWriteLocks();
+                if (coreMirrorGuardAcquired)
+                    ReleaseDroneMutationGuard(coreMirrorVault, DroneCoreMirrorMutationGuardMask);
+                ReleaseDroneHeadlessJobMutationGuard();
             }
         }
 
@@ -4106,8 +4071,8 @@ namespace Hecton8.Construction
             // outside gameplay cadence; normal fleet simulation uses DispatcherJobSwap.TryComplete(..., false).
             DispatcherJobSwap.TryComplete(ref s_HeadlessJobHandle, true);
             s_HeadlessJobScheduled = false;
-            ReleaseDroneServiceCommandWriteLocks();
-            ReleaseDroneHeadlessScratchWriteLocks();
+            ReleaseDroneServiceCommandMutationGuard();
+            ReleaseDroneHeadlessJobMutationGuard();
         }
 
         internal static void ApplyOriginShift(Vector3 shiftOffset)
@@ -4117,25 +4082,14 @@ namespace Hecton8.Construction
 
             EnsureInitialized();
             CompletePendingHeadlessJobForReset();
-            if (!TryAcquireDroneCoreWriteBuffers(
+            if (!TryAcquireDroneOriginShiftMutationViews(
                     out NativeArray<HeadlessDroneState> droneStates,
                     out NativeArray<HeadlessDroneState> droneStateBackBuffer,
                     out NativeArray<float4x4> droneRenderMatrices,
                     out NativeArray<float4x4> droneRenderMatrixBackBuffer,
-                    out IDataVault coreVault))
+                    out NativeArray<float3> positionsSoA,
+                    out IDataVault originShiftVault))
             {
-                return;
-            }
-
-            IDataVault positionsVault = s_CachedDataVault;
-            if (!TryAcquireDroneVaultWriteBuffer(
-                    positionsVault,
-                    in s_DronePositionsSoAHandle,
-                    BufferID.ShinobuDroneFleetPositionsSoA,
-                    HeadlessDroneCapacity,
-                    out NativeArray<float3> positionsSoA))
-            {
-                ReleaseDroneCoreWriteLocks(coreVault, 4);
                 return;
             }
 
@@ -4160,8 +4114,7 @@ namespace Hecton8.Construction
             }
             finally
             {
-                positionsVault.ReleaseWriteLock(in s_DronePositionsSoAHandle, SystemID.Construction);
-                ReleaseDroneCoreWriteLocks(coreVault, 4);
+                ReleaseDroneMutationGuard(originShiftVault, DroneOriginShiftMutationGuardMask);
             }
 
             if (s_DronePositions != null)
@@ -4691,7 +4644,7 @@ namespace Hecton8.Construction
             NativeArray<DroneStateDTO> stateDtos,
             NativeArray<DroneTargetDTO> targetDtos)
         {
-            if (!s_DroneServiceCommandWriteLocksHeld ||
+            if (!s_DroneServiceCommandMutationGuardHeld ||
                 !TryResolveDroneServiceCommandBuffers(
                     out NativeArray<DroneServiceCommand> serviceCommands,
                     out NativeArray<DroneServiceCommandCursor> serviceCommandCursor) ||
@@ -5441,24 +5394,17 @@ namespace Hecton8.Construction
 
         private static void ClearAllHeadlessSlots()
         {
-            if (!TryAcquireDroneCoreWriteBuffers(
+            if (!TryAcquireDroneCoreMirrorMutationViews(
                     out NativeArray<HeadlessDroneState> droneStates,
                     out NativeArray<HeadlessDroneState> droneStateBackBuffer,
                     out NativeArray<float4x4> droneRenderMatrices,
                     out NativeArray<float4x4> droneRenderMatrixBackBuffer,
-                    out IDataVault coreVault))
-            {
-                return;
-            }
-
-            if (!TryAcquireDroneMirrorWriteBuffers(
                     out NativeArray<float3> positionsSoA,
                     out NativeArray<byte> stateBytes,
                     out NativeArray<DroneStateDTO> stateDtos,
                     out NativeArray<DroneTargetDTO> targetDtos,
-                    out IDataVault mirrorVault))
+                    out IDataVault coreMirrorVault))
             {
-                ReleaseDroneCoreWriteLocks(coreVault, 4);
                 return;
             }
 
@@ -5469,31 +5415,23 @@ namespace Hecton8.Construction
             }
             finally
             {
-                ReleaseDroneMirrorWriteLocks(mirrorVault, 4);
-                ReleaseDroneCoreWriteLocks(coreVault, 4);
+                ReleaseDroneMutationGuard(coreMirrorVault, DroneCoreMirrorMutationGuardMask);
             }
         }
 
         private static void ClearHeadlessSlot(int slot, bool notifyHub)
         {
-            if (!TryAcquireDroneCoreWriteBuffers(
+            if (!TryAcquireDroneCoreMirrorMutationViews(
                     out NativeArray<HeadlessDroneState> droneStates,
                     out NativeArray<HeadlessDroneState> droneStateBackBuffer,
                     out NativeArray<float4x4> droneRenderMatrices,
                     out NativeArray<float4x4> droneRenderMatrixBackBuffer,
-                    out IDataVault coreVault))
-            {
-                return;
-            }
-
-            if (!TryAcquireDroneMirrorWriteBuffers(
                     out NativeArray<float3> positionsSoA,
                     out NativeArray<byte> stateBytes,
                     out NativeArray<DroneStateDTO> stateDtos,
                     out NativeArray<DroneTargetDTO> targetDtos,
-                    out IDataVault mirrorVault))
+                    out IDataVault coreMirrorVault))
             {
-                ReleaseDroneCoreWriteLocks(coreVault, 4);
                 return;
             }
 
@@ -5503,8 +5441,7 @@ namespace Hecton8.Construction
             }
             finally
             {
-                ReleaseDroneMirrorWriteLocks(mirrorVault, 4);
-                ReleaseDroneCoreWriteLocks(coreVault, 4);
+                ReleaseDroneMutationGuard(coreMirrorVault, DroneCoreMirrorMutationGuardMask);
             }
         }
 
@@ -8052,17 +7989,59 @@ namespace Hecton8.Construction
             return weight;
         }
 
-        private static bool TryAcquireTaskClaimCounts(
+        private static bool TryAcquireTaskAssignmentMutationViews(
             int requiredCount,
             out NativeArray<int> taskClaimCounts,
-            out IDataVault vault)
+            out NativeArray<DroneAssignmentTaskDTO> taskPriorityHeap,
+            out IDataVault guardedVault)
         {
             taskClaimCounts = default;
-            vault = s_CachedDataVault;
-            if (requiredCount <= 0)
-                return false;
+            taskPriorityHeap = default;
+            guardedVault = null;
 
-            if (vault == null)
+            IDataVault vault = s_CachedDataVault;
+            if (vault == null ||
+                requiredCount <= 0 ||
+                vault.IsCompactionFenceActive ||
+                !TryEnsureTaskClaimCountsBuffer(vault, requiredCount) ||
+                !TryEnsureTaskPriorityHeapBuffer(vault) ||
+                vault.IsCompactionFenceActive ||
+                !vault.TryAcquireMutationGuard(TaskAssignmentMutationGuardMask))
+            {
+                return false;
+            }
+
+            bool releaseOnExit = true;
+            try
+            {
+                if (vault.IsCompactionFenceActive ||
+                    !vault.TryResolveHandle(in s_TaskClaimCountsHandle, out taskClaimCounts) ||
+                    !vault.TryResolveHandle(in s_DroneTaskPriorityHeapHandle, out taskPriorityHeap) ||
+                    vault.IsCompactionFenceActive ||
+                    !taskClaimCounts.IsCreated ||
+                    taskClaimCounts.Length < requiredCount ||
+                    !taskPriorityHeap.IsCreated ||
+                    taskPriorityHeap.Length < HeadlessTaskCapacity)
+                {
+                    taskClaimCounts = default;
+                    taskPriorityHeap = default;
+                    return false;
+                }
+
+                guardedVault = vault;
+                releaseOnExit = false;
+                return true;
+            }
+            finally
+            {
+                if (releaseOnExit)
+                    vault.ReleaseMutationGuard(TaskAssignmentMutationGuardMask);
+            }
+        }
+
+        private static bool TryEnsureTaskClaimCountsBuffer(IDataVault vault, int requiredCount)
+        {
+            if (vault == null || requiredCount <= 0)
                 return false;
 
             if (!TryOpenDroneVaultBuffer(
@@ -8095,38 +8074,22 @@ namespace Hecton8.Construction
                 }
             }
 
-            if (!TryOpenDroneVaultBuffer(
+            if (TryOpenDroneVaultBuffer(
                     vault,
                     in s_TaskClaimCountsHandle,
                     BufferID.ShinobuDroneFleetTaskClaimCounts,
                     requiredCount,
                     out _))
             {
-                s_TaskClaimCountsHandle = default;
-                vault = null;
-                return false;
+                return true;
             }
 
-            bool locked = vault.TryAcquireWriteLock(in s_TaskClaimCountsHandle, SystemID.Construction, out taskClaimCounts);
-            if (!locked ||
-                !taskClaimCounts.IsCreated ||
-                taskClaimCounts.Length < requiredCount)
-            {
-                if (locked)
-                    vault.ReleaseWriteLock(in s_TaskClaimCountsHandle, SystemID.Construction);
-                taskClaimCounts = default;
-                vault = null;
-                return false;
-            }
-
-            return true;
+            s_TaskClaimCountsHandle = default;
+            return false;
         }
 
-        private static bool TryAcquireTaskPriorityHeap(
-            IDataVault vault,
-            out NativeArray<DroneAssignmentTaskDTO> taskPriorityHeap)
+        private static bool TryEnsureTaskPriorityHeapBuffer(IDataVault vault)
         {
-            taskPriorityHeap = default;
             if (vault == null)
                 return false;
 
@@ -8159,29 +8122,18 @@ namespace Hecton8.Construction
                 }
             }
 
-            if (!TryOpenDroneVaultBuffer(
+            if (TryOpenDroneVaultBuffer(
                     vault,
                     in s_DroneTaskPriorityHeapHandle,
                     BufferID.ShinobuDroneFleetTaskPriorityHeap,
                     HeadlessTaskCapacity,
                     out _))
             {
-                s_DroneTaskPriorityHeapHandle = default;
-                return false;
+                return true;
             }
 
-            bool locked = vault.TryAcquireWriteLock(in s_DroneTaskPriorityHeapHandle, SystemID.Construction, out taskPriorityHeap);
-            if (!locked ||
-                !taskPriorityHeap.IsCreated ||
-                taskPriorityHeap.Length < HeadlessTaskCapacity)
-            {
-                if (locked)
-                    vault.ReleaseWriteLock(in s_DroneTaskPriorityHeapHandle, SystemID.Construction);
-                taskPriorityHeap = default;
-                return false;
-            }
-
-            return true;
+            s_DroneTaskPriorityHeapHandle = default;
+            return false;
         }
 
         private static void ConsiderTaskCandidate(

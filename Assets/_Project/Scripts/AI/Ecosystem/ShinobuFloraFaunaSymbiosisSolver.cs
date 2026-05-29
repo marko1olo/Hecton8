@@ -89,6 +89,9 @@ namespace Hecton8.AI.Ecosystem
         internal const uint FloraHashGlowMoss = 0x474D4F53u; // GMOS
         internal const uint FloraHashSporeCoral = 0x5350434Fu; // SPCO
 
+        private static readonly ulong SymbiosisTelemetryMutationGuardMask =
+            SymbiosisMutationGuardBit(BufferID.ShinobuSymbiosisTelemetryRing);
+
         private static ShinobuFloraFaunaSymbiosisSolver s_runtime;
 
         private VaultGenerationHandle<SymbiosisFloraDTO> _floraHandle;
@@ -468,6 +471,24 @@ namespace Hecton8.AI.Ecosystem
                    IsVaultHandleForBuffer(in handle, expectedBufferId) &&
                    vault.TryResolveHandle(in handle, out buffer) &&
                    buffer.IsCreated;
+        }
+
+        private static bool TryAcquireSymbiosisMutationGuard(IDataVault vault, BufferID bufferId)
+        {
+            return vault != null &&
+                   !vault.IsCompactionFenceActive &&
+                   vault.TryAcquireMutationGuard(SymbiosisMutationGuardBit(bufferId));
+        }
+
+        private static void ReleaseSymbiosisMutationGuard(IDataVault vault, BufferID bufferId)
+        {
+            vault?.ReleaseMutationGuard(SymbiosisMutationGuardBit(bufferId));
+        }
+
+        private static ulong SymbiosisMutationGuardBit(BufferID bufferId)
+        {
+            int bitIndex = unchecked((int)((uint)(int)bufferId & 31u));
+            return 1UL << bitIndex;
         }
 
         private void Activate()
@@ -1005,7 +1026,7 @@ namespace Hecton8.AI.Ecosystem
             if (vault == null || !snapshot.IsCreated || vault.IsCompactionFenceActive)
                 return false;
 
-            if (!vault.TryLockBuffer(bufferId, SystemID.AIEcology))
+            if (!TryAcquireSymbiosisMutationGuard(vault, bufferId))
                 return false;
 
             try
@@ -1030,7 +1051,7 @@ namespace Hecton8.AI.Ecosystem
             }
             finally
             {
-                vault.TryUnlockBuffer(bufferId, SystemID.AIEcology);
+                ReleaseSymbiosisMutationGuard(vault, bufferId);
             }
         }
 
@@ -1043,33 +1064,23 @@ namespace Hecton8.AI.Ecosystem
             if (vault == null || !snapshot.IsCreated || vault.IsCompactionFenceActive)
                 return false;
 
-            if (!vault.TryLockBuffer(bufferId, SystemID.AIEcology))
+            if (!TryResolveVaultBuffer(vault, in handle, bufferId, out NativeArray<T> source))
                 return false;
 
-            try
+            int safeCount = math.min(source.Length, snapshot.Length);
+            int stride = UnsafeUtility.SizeOf<T>();
+            byte* snapshotPtr = (byte*)NativeArrayUnsafeUtility.GetUnsafePtr(snapshot);
+            if (safeCount > 0)
             {
-                if (!TryResolveVaultBuffer(vault, in handle, bufferId, out NativeArray<T> source))
-                    return false;
-
-                int safeCount = math.min(source.Length, snapshot.Length);
-                int stride = UnsafeUtility.SizeOf<T>();
-                byte* snapshotPtr = (byte*)NativeArrayUnsafeUtility.GetUnsafePtr(snapshot);
-                if (safeCount > 0)
-                {
-                    void* sourcePtr = NativeArrayUnsafeUtility.GetUnsafeReadOnlyPtr(source);
-                    UnsafeUtility.MemCpy(snapshotPtr, sourcePtr, (long)stride * safeCount);
-                }
-
-                int tailCount = snapshot.Length - safeCount;
-                if (tailCount > 0)
-                    UnsafeUtility.MemClear(snapshotPtr + ((long)stride * safeCount), (long)stride * tailCount);
-
-                return true;
+                void* sourcePtr = NativeArrayUnsafeUtility.GetUnsafeReadOnlyPtr(source);
+                UnsafeUtility.MemCpy(snapshotPtr, sourcePtr, (long)stride * safeCount);
             }
-            finally
-            {
-                vault.TryUnlockBuffer(bufferId, SystemID.AIEcology);
-            }
+
+            int tailCount = snapshot.Length - safeCount;
+            if (tailCount > 0)
+                UnsafeUtility.MemClear(snapshotPtr + ((long)stride * safeCount), (long)stride * tailCount);
+
+            return true;
         }
 
         private void RefreshAupSignals()
@@ -1137,27 +1148,19 @@ namespace Hecton8.AI.Ecosystem
             float quality = ResolveSymbiosisQualityWeight();
             SymbiosisTuningDTO raw = default;
             if (vault == null ||
-                !vault.TryLockBuffer(BufferID.ShinobuSymbiosisTuning, SystemID.AIEcology))
+                vault.IsCompactionFenceActive)
             {
                 return false;
             }
 
-            try
+            if (!TryResolveOwnedVaultBuffer(vault, in _tuningHandle, BufferID.ShinobuSymbiosisTuning, out NativeArray<SymbiosisTuningDTO> tuning) ||
+                !tuning.IsCreated ||
+                tuning.Length <= 0)
             {
-                if (!TryResolveOwnedVaultBuffer(vault, in _tuningHandle, BufferID.ShinobuSymbiosisTuning, out NativeArray<SymbiosisTuningDTO> tuning) ||
-                    !tuning.IsCreated ||
-                    tuning.Length <= 0)
-                {
-                    return false;
-                }
-
-                raw = tuning[0];
-            }
-            finally
-            {
-                vault.TryUnlockBuffer(BufferID.ShinobuSymbiosisTuning, SystemID.AIEcology);
+                return false;
             }
 
+            raw = tuning[0];
             dto = SymbiosisTuningDTO.Sanitize(raw);
             dto.GlobalQualityWeight = quality;
             dto.SimulationTickDelta = DefaultSimulationTickDelta;
@@ -1345,27 +1348,19 @@ namespace Hecton8.AI.Ecosystem
         {
             dto = SymbiosisTuningDTO.Default();
             SymbiosisTuningDTO raw = default;
-            if (vault == null || !vault.TryLockBuffer(BufferID.ShinobuSymbiosisTuning, SystemID.AIEcology))
+            if (vault == null || vault.IsCompactionFenceActive)
             {
                 return false;
             }
 
-            try
+            if (!TryResolveOwnedVaultBuffer(vault, in _tuningHandle, BufferID.ShinobuSymbiosisTuning, out NativeArray<SymbiosisTuningDTO> tuning) ||
+                !tuning.IsCreated ||
+                tuning.Length <= 0)
             {
-                if (!TryResolveOwnedVaultBuffer(vault, in _tuningHandle, BufferID.ShinobuSymbiosisTuning, out NativeArray<SymbiosisTuningDTO> tuning) ||
-                    !tuning.IsCreated ||
-                    tuning.Length <= 0)
-                {
-                    return false;
-                }
-
-                raw = tuning[0];
-            }
-            finally
-            {
-                vault.TryUnlockBuffer(BufferID.ShinobuSymbiosisTuning, SystemID.AIEcology);
+                return false;
             }
 
+            raw = tuning[0];
             dto = SymbiosisTuningDTO.Sanitize(raw);
             return true;
         }
@@ -1373,7 +1368,7 @@ namespace Hecton8.AI.Ecosystem
         private bool TryWriteSymbiosisTuning(IDataVault vault, SymbiosisTuningDTO dto)
         {
             SymbiosisTuningDTO sanitized = SymbiosisTuningDTO.Sanitize(dto);
-            if (vault == null || !vault.TryLockBuffer(BufferID.ShinobuSymbiosisTuning, SystemID.AIEcology))
+            if (!TryAcquireSymbiosisMutationGuard(vault, BufferID.ShinobuSymbiosisTuning))
             {
                 return false;
             }
@@ -1392,18 +1387,26 @@ namespace Hecton8.AI.Ecosystem
             }
             finally
             {
-                vault.TryUnlockBuffer(BufferID.ShinobuSymbiosisTuning, SystemID.AIEcology);
+                ReleaseSymbiosisMutationGuard(vault, BufferID.ShinobuSymbiosisTuning);
             }
         }
 
-        private bool TryWriteSymbiosisLinks(
+        private unsafe bool TryWriteSymbiosisLinks(
             IDataVault vault,
             SymbiosisChemicalLinkDTO[] source,
             int count)
         {
             if (source == null ||
-                vault == null ||
-                !vault.TryLockBuffer(BufferID.ShinobuSymbiosisLinks, SystemID.AIEcology))
+                vault == null)
+            {
+                return false;
+            }
+
+            int requestedCount = math.min(math.max(0, count), source.Length);
+            if (requestedCount <= 0)
+                return true;
+
+            if (!TryAcquireSymbiosisMutationGuard(vault, BufferID.ShinobuSymbiosisLinks))
             {
                 return false;
             }
@@ -1416,46 +1419,46 @@ namespace Hecton8.AI.Ecosystem
                     return false;
                 }
 
-                int writeCount = math.min(math.max(0, count), math.min(source.Length, links.Length));
-                for (int i = 0; i < writeCount; i++)
-                    links[i] = source[i];
+                int writeCount = math.min(requestedCount, links.Length);
+                if (writeCount <= 0)
+                    return true;
+
+                void* targetPtr = NativeArrayUnsafeUtility.GetUnsafePtr(links);
+                fixed (SymbiosisChemicalLinkDTO* sourcePtr = source)
+                {
+                    UnsafeUtility.MemCpy(targetPtr, sourcePtr, (long)writeCount * UnsafeUtility.SizeOf<SymbiosisChemicalLinkDTO>());
+                }
+
                 return true;
             }
             finally
             {
-                vault.TryUnlockBuffer(BufferID.ShinobuSymbiosisLinks, SystemID.AIEcology);
+                ReleaseSymbiosisMutationGuard(vault, BufferID.ShinobuSymbiosisLinks);
             }
         }
 
         private bool TryReadSymbiosisCounter(IDataVault vault, out SymbiosisCounterDTO counter)
         {
             counter = default;
-            if (vault == null || !vault.TryLockBuffer(BufferID.ShinobuSymbiosisCounters, SystemID.AIEcology))
+            if (vault == null || vault.IsCompactionFenceActive)
             {
                 return false;
             }
 
-            try
+            if (!TryResolveOwnedVaultBuffer(vault, in _counterHandle, BufferID.ShinobuSymbiosisCounters, out NativeArray<SymbiosisCounterDTO> counters) ||
+                !counters.IsCreated ||
+                counters.Length <= 0)
             {
-                if (!TryResolveOwnedVaultBuffer(vault, in _counterHandle, BufferID.ShinobuSymbiosisCounters, out NativeArray<SymbiosisCounterDTO> counters) ||
-                    !counters.IsCreated ||
-                    counters.Length <= 0)
-                {
-                    return false;
-                }
+                return false;
+            }
 
-                counter = counters[0];
-                return true;
-            }
-            finally
-            {
-                vault.TryUnlockBuffer(BufferID.ShinobuSymbiosisCounters, SystemID.AIEcology);
-            }
+            counter = counters[0];
+            return true;
         }
 
         private bool TryWriteSymbiosisCounter(IDataVault vault, SymbiosisCounterDTO counter)
         {
-            if (vault == null || !vault.TryLockBuffer(BufferID.ShinobuSymbiosisCounters, SystemID.AIEcology))
+            if (!TryAcquireSymbiosisMutationGuard(vault, BufferID.ShinobuSymbiosisCounters))
             {
                 return false;
             }
@@ -1474,7 +1477,7 @@ namespace Hecton8.AI.Ecosystem
             }
             finally
             {
-                vault.TryUnlockBuffer(BufferID.ShinobuSymbiosisCounters, SystemID.AIEcology);
+                ReleaseSymbiosisMutationGuard(vault, BufferID.ShinobuSymbiosisCounters);
             }
         }
 
@@ -1599,7 +1602,8 @@ namespace Hecton8.AI.Ecosystem
             bool shouldDump)
         {
             if (vault == null ||
-                !vault.TryLockBuffer(BufferID.ShinobuSymbiosisTelemetryRing, SystemID.AIEcology))
+                vault.IsCompactionFenceActive ||
+                !vault.TryAcquireMutationGuard(SymbiosisTelemetryMutationGuardMask))
             {
                 return;
             }
@@ -1635,7 +1639,7 @@ namespace Hecton8.AI.Ecosystem
             }
             finally
             {
-                vault.TryUnlockBuffer(BufferID.ShinobuSymbiosisTelemetryRing, SystemID.AIEcology);
+                vault.ReleaseMutationGuard(SymbiosisTelemetryMutationGuardMask);
             }
 
             if (dumpAfterRelease && _telemetryMirror.IsCreated)

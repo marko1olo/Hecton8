@@ -628,7 +628,8 @@ namespace Hecton8.Tools
 
                 int cursor = (int)(_blackBoxCursor % (uint)entryCount);
                 int payloadBytes = entryCount * entrySize;
-                Span<byte> header = stackalloc byte[BlackBoxDumpHeaderBytes];
+                byte* headerPtr = stackalloc byte[BlackBoxDumpHeaderBytes];
+                Span<byte> header = new Span<byte>(headerPtr, BlackBoxDumpHeaderBytes);
                 WriteUIntLittleEndian(header.Slice(0, 4), BlackBoxDumpMagic);
                 WriteUIntLittleEndian(header.Slice(4, 4), BlackBoxDumpVersion);
                 WriteUIntLittleEndian(header.Slice(8, 4), ResolveCurrentFrameId());
@@ -638,13 +639,26 @@ namespace Hecton8.Tools
                 WriteUIntLittleEndian(header.Slice(24, 4), _doorsCutCount);
                 WriteUIntLittleEndian(header.Slice(28, 4), (uint)payloadBytes);
 
-                byte* source = (byte*)NativeArrayUnsafeUtility.GetUnsafeReadOnlyPtr(blackBox);
-                using (FileStream stream = new FileStream(path, FileMode.Create, FileAccess.Write, FileShare.Read, 4096, FileOptions.WriteThrough))
+                NativeArray<byte> orderedPayload = new NativeArray<byte>(
+                    payloadBytes,
+                    Allocator.Temp,
+                    NativeArrayOptions.UninitializedMemory);
+                try
                 {
-                    stream.Write(header);
-                    WriteTelemetryBlock(stream, source, cursor, entryCount - cursor, entrySize);
-                    WriteTelemetryBlock(stream, source, 0, cursor, entrySize);
-                    stream.Flush(true);
+                    byte* source = (byte*)NativeArrayUnsafeUtility.GetUnsafeReadOnlyPtr(blackBox);
+                    byte* payload = (byte*)NativeArrayUnsafeUtility.GetUnsafePtr(orderedPayload);
+                    int payloadCursor = 0;
+                    payloadCursor += CopyTelemetryBlock(payload, payloadCursor, source, cursor, entryCount - cursor, entrySize);
+                    payloadCursor += CopyTelemetryBlock(payload, payloadCursor, source, 0, cursor, entrySize);
+                    if (payloadCursor != payloadBytes)
+                        return;
+
+                    Hecton8.SaveSystem.AsyncWriteManager.WriteAll(path, headerPtr, BlackBoxDumpHeaderBytes, payload, payloadBytes, out _);
+                }
+                finally
+                {
+                    if (orderedPayload.IsCreated)
+                        orderedPayload.Dispose();
                 }
             }
             catch (Exception exception)
@@ -654,12 +668,14 @@ namespace Hecton8.Tools
             }
         }
 
-        private static unsafe void WriteTelemetryBlock(FileStream stream, byte* source, int start, int count, int entrySize)
+        private static unsafe int CopyTelemetryBlock(byte* destination, int destinationOffset, byte* source, int start, int count, int entrySize)
         {
             if (count <= 0)
-                return;
+                return 0;
 
-            stream.Write(new ReadOnlySpan<byte>(source + start * entrySize, count * entrySize));
+            int byteCount = count * entrySize;
+            UnsafeUtility.MemCpy(destination + destinationOffset, source + start * entrySize, byteCount);
+            return byteCount;
         }
 
         private static void WriteUIntLittleEndian(Span<byte> destination, uint value)

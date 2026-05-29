@@ -108,6 +108,8 @@ namespace Hecton8.AI.Cognition
         private const uint DumpVersion = 1u;
         private const string DumpFileName = "Dump_SHINOBU_302.bin";
         private const string Agent1300DumpFileName = "Dump_1300_AICognition.bin";
+        private static readonly ulong UtilityTuningMutationGuardMask =
+            UtilityVaultMutationGuardBit(UtilityAICognitionVaultBufferIds.Tuning);
 #if UNITY_EDITOR
         private const string CsvFileName = "fauna_cognition_profiles.csv";
 #endif
@@ -348,15 +350,18 @@ namespace Hecton8.AI.Cognition
         public static bool TrySetTuning(IDataVault vault, ref UtilityAICognitionVaultHandles handles, in CognitionUtilityTuningDTO tuning)
         {
             if (vault == null ||
-                handles.Tuning.BufferID == 0u ||
+                handles.Tuning.BufferID != (uint)UtilityAICognitionVaultBufferIds.Tuning ||
                 handles.Tuning.Generation == 0u ||
-                !vault.TryAcquireWriteLock(in handles.Tuning, SystemID.AICognition, out NativeArray<CognitionUtilityTuningDTO> tuningBuffer))
+                !TryAcquireUtilityCognitionMutationGuard(vault, UtilityTuningMutationGuardMask))
             {
                 return false;
             }
 
             try
             {
+                if (!TryOpenVaultView(vault, in handles.Tuning, 1, out NativeArray<CognitionUtilityTuningDTO> tuningBuffer))
+                    return false;
+
                 if (!tuningBuffer.IsCreated || tuningBuffer.Length <= 0)
                     return false;
 
@@ -366,7 +371,7 @@ namespace Hecton8.AI.Cognition
             }
             finally
             {
-                vault.ReleaseWriteLock(in handles.Tuning, SystemID.AICognition);
+                ReleaseUtilityCognitionMutationGuard(vault, UtilityTuningMutationGuardMask);
             }
         }
 
@@ -461,7 +466,7 @@ namespace Hecton8.AI.Cognition
                 faultLimit = UtilityAICognitionJobMath.SanitizePositive(buffers.Tuning[0].Runtime.w, faultLimit);
 
             if (entry.BurstMicroseconds > faultLimit)
-                entry.FaultFlags |= UtilityAICognitionActionFlags.HighQuality;
+                entry.FaultFlags |= UtilityAICognitionActionFlags.OverBudget;
 
             buffers.TelemetryRing[index] = entry;
             return entry.FaultFlags != 0u && TryDumpBlackBox(in buffers, projectRoot, frame);
@@ -582,6 +587,25 @@ namespace Hecton8.AI.Cognition
                    vault.TryResolveHandle(in handle, out buffer) &&
                    buffer.IsCreated &&
                    buffer.Length >= requiredLength;
+        }
+
+        private static bool TryAcquireUtilityCognitionMutationGuard(IDataVault vault, ulong guardMask)
+        {
+            return vault != null &&
+                   guardMask != 0UL &&
+                   !vault.IsCompactionFenceActive &&
+                   vault.TryAcquireMutationGuard(guardMask);
+        }
+
+        private static void ReleaseUtilityCognitionMutationGuard(IDataVault vault, ulong guardMask)
+        {
+            if (guardMask != 0UL)
+                vault?.ReleaseMutationGuard(guardMask);
+        }
+
+        private static ulong UtilityVaultMutationGuardBit(BufferID bufferId)
+        {
+            return 1UL << (unchecked((int)(uint)(int)bufferId) & 31);
         }
 
         private static void ReleaseVaultHandle<T>(IDataVault vault, ref VaultGenerationHandle<T> handle)

@@ -113,6 +113,10 @@ $externalStarterKitTemplateLocaleEntryApplyToolPath = Join-Path $externalStarter
 $externalStarterKitTemplateAssetEntrySnippetToolPath = Join-Path $externalStarterKitTemplatePath 'Tools\create_asset_entry_snippet.ps1'
 $externalStarterKitTemplateAssetEntryApplyToolPath = Join-Path $externalStarterKitTemplatePath 'Tools\apply_asset_entry_snippet.ps1'
 $externalStarterKitTemplateManifestContractToolPath = Join-Path $externalStarterKitTemplatePath 'Tools\configure_manifest_contract.ps1'
+$externalStarterKitTemplateDependenciesToolPath = Join-Path $externalStarterKitTemplatePath 'Tools\configure_dependencies.ps1'
+$externalStarterKitTemplateFirstModToolPath = Join-Path $externalStarterKitTemplatePath 'Tools\create_first_mod.ps1'
+$externalStarterKitTemplateInstallLocalToolPath = Join-Path $externalStarterKitTemplatePath 'Tools\install_local_mod.ps1'
+$externalStarterKitTemplateDiagnoseLocalToolPath = Join-Path $externalStarterKitTemplatePath 'Tools\diagnose_local_mods.ps1'
 $externalStarterKitTemplateIdentityToolPath = Join-Path $externalStarterKitTemplatePath 'Tools\set_mod_identity.ps1'
 $externalStarterKitTemplatePrepareToolPath = Join-Path $externalStarterKitTemplatePath 'Tools\prepare_mod.ps1'
 $externalStarterKitTemplateReviewManifestPath = Join-Path $externalStarterKitTemplatePath 'Reports\review_manifest.json'
@@ -187,6 +191,7 @@ Assert-True (Test-Path -LiteralPath $externalStarterKitTemplateLocaleEntryApplyT
 Assert-True (Test-Path -LiteralPath $externalStarterKitTemplateAssetEntrySnippetToolPath -PathType Leaf) "Missing external starter kit asset entry snippet tool: $externalStarterKitTemplateAssetEntrySnippetToolPath"
 Assert-True (Test-Path -LiteralPath $externalStarterKitTemplateAssetEntryApplyToolPath -PathType Leaf) "Missing external starter kit asset entry apply tool: $externalStarterKitTemplateAssetEntryApplyToolPath"
 Assert-True (Test-Path -LiteralPath $externalStarterKitTemplateManifestContractToolPath -PathType Leaf) "Missing external starter kit manifest contract tool: $externalStarterKitTemplateManifestContractToolPath"
+Assert-True (Test-Path -LiteralPath $externalStarterKitTemplateDependenciesToolPath -PathType Leaf) "Missing external starter kit dependency config tool: $externalStarterKitTemplateDependenciesToolPath"
 Assert-True (Test-Path -LiteralPath $externalStarterKitTemplateIdentityToolPath -PathType Leaf) "Missing external starter kit identity tool: $externalStarterKitTemplateIdentityToolPath"
 Assert-True (Test-Path -LiteralPath $externalStarterKitTemplatePrepareToolPath -PathType Leaf) "Missing external starter kit prepare tool: $externalStarterKitTemplatePrepareToolPath"
 Assert-True (Test-Path -LiteralPath $externalStarterKitTemplateVsCodeSettingsPath -PathType Leaf) "Missing external starter kit VS Code settings: $externalStarterKitTemplateVsCodeSettingsPath"
@@ -296,6 +301,10 @@ $externalStarterKitTemplateLocaleEntryApplyToolSource = Get-Content -Raw -Litera
 $externalStarterKitTemplateAssetEntrySnippetToolSource = Get-Content -Raw -LiteralPath $externalStarterKitTemplateAssetEntrySnippetToolPath
 $externalStarterKitTemplateAssetEntryApplyToolSource = Get-Content -Raw -LiteralPath $externalStarterKitTemplateAssetEntryApplyToolPath
 $externalStarterKitTemplateManifestContractToolSource = Get-Content -Raw -LiteralPath $externalStarterKitTemplateManifestContractToolPath
+$externalStarterKitTemplateDependenciesToolSource = Get-Content -Raw -LiteralPath $externalStarterKitTemplateDependenciesToolPath
+$externalStarterKitTemplateFirstModToolSource = Get-Content -Raw -LiteralPath $externalStarterKitTemplateFirstModToolPath
+$externalStarterKitTemplateInstallLocalToolSource = Get-Content -Raw -LiteralPath $externalStarterKitTemplateInstallLocalToolPath
+$externalStarterKitTemplateDiagnoseLocalToolSource = Get-Content -Raw -LiteralPath $externalStarterKitTemplateDiagnoseLocalToolPath
 $externalStarterKitTemplateIdentityToolSource = Get-Content -Raw -LiteralPath $externalStarterKitTemplateIdentityToolPath
 $externalStarterKitTemplatePrepareToolSource = Get-Content -Raw -LiteralPath $externalStarterKitTemplatePrepareToolPath
 $externalStarterKitTemplateValidatorSource = Get-Content -Raw -LiteralPath $externalStarterKitTemplateValidatorPath
@@ -422,6 +431,7 @@ function Invoke-StarterPrepareToolProbe([string]$TemplatePath) {
             ReviewHasSettingsRowSnippetTool = $reviewPaths -contains 'Tools/create_settings_row_snippet.ps1'
             ReviewHasLocaleEntrySnippetTool = $reviewPaths -contains 'Tools/create_locale_entry_snippet.ps1'
             ReviewHasManifestContractTool = $reviewPaths -contains 'Tools/configure_manifest_contract.ps1'
+            ReviewHasDependenciesTool = $reviewPaths -contains 'Tools/configure_dependencies.ps1'
             ReviewExcludesReports = (@($reviewPaths | Where-Object { $_ -like 'Reports/*' -or $_ -like 'Generated/*' }).Count -eq 0)
         }
     } finally {
@@ -1658,6 +1668,13 @@ $externalStarterKitWorkbenchConfiguresManifestContract =
     $externalStarterKitWorkbenchSource.Contains('review metadata from a public allowlist, not runtime rights') -and
     $externalStarterKitWorkbenchSource.Contains('budgets are capped and cannot be lowered below the current graph or asset manifest requirements') -and
     $externalStarterKitWorkbenchSource.Contains('Apply Manifest Contract + Validate')
+$externalStarterKitWorkbenchConfiguresDependencies =
+    $externalStarterKitWorkbenchSource.Contains('Dependency Contract') -and
+    $externalStarterKitWorkbenchSource.Contains('ConfigureDependencies') -and
+    $externalStarterKitWorkbenchSource.Contains('Tools/configure_dependencies.ps1') -and
+    $externalStarterKitWorkbenchSource.Contains('Add Dependency + Validate') -and
+    $externalStarterKitWorkbenchSource.Contains('Remove Dependency + Validate') -and
+    $externalStarterKitWorkbenchSource.Contains('Dependency order is loader metadata only; it does not grant runtime code execution rights.')
 $externalStarterKitWorkbenchChecksRootLauncher =
     $externalStarterKitWorkbenchSource.Contains('"h8mod.ps1"') -and
     $externalStarterKitWorkbenchSource.Contains('Open Root Launcher') -and
@@ -1703,6 +1720,7 @@ Assert-True $externalStarterKitWorkbenchShowsContentAssetPreview 'External Start
 Assert-True $externalStarterKitWorkbenchGeneratesAssetEntrySnippet 'External Starter Kit Workbench must generate content asset snippets through the no-Unity helper.'
 Assert-True $externalStarterKitWorkbenchAppliesAssetEntrySnippet 'External Starter Kit Workbench must apply content asset snippets through the bounded no-Unity helper with duplicate rejection, budget repair, and rollback.'
 Assert-True $externalStarterKitWorkbenchConfiguresManifestContract 'External Starter Kit Workbench must configure manifest capabilities/budgets through the bounded no-Unity helper.'
+Assert-True $externalStarterKitWorkbenchConfiguresDependencies 'External Starter Kit Workbench must configure dependency metadata through the bounded no-Unity helper.'
 Assert-True $externalStarterKitWorkbenchChecksRootLauncher 'External Starter Kit Workbench must include the root no-Unity h8mod.ps1 launcher in health and file access.'
 $externalStarterKitGeneratorPresent =
     $moddingSdkHubSource.Contains('ExternalStarterKitRoot = "ModdingSDK/ExternalStarterKit"') -and
@@ -1712,11 +1730,13 @@ $externalStarterKitGeneratorPresent =
 $externalStarterKitWritesRootLauncher =
     $moddingSdkHubSource.Contains('"h8mod.ps1"') -and
     $moddingSdkHubSource.Contains('BuildStarterKitLauncherScript') -and
-    $moddingSdkHubSource.Contains("ValidateSet('menu','setup','validate','review','prepare','submission','opcodes','opcodes-json','node-snippet','apply-node-snippet','setting-snippet','locale-snippet','apply-setting-snippet','apply-locale-snippet','asset-snippet','apply-asset-snippet','manifest-contract','capabilities')") -and
+    $moddingSdkHubSource.Contains("ValidateSet('menu','first-mod','install-local','diagnose-local','dependencies','setup','validate','review','prepare','submission','opcodes','opcodes-json','node-snippet','apply-node-snippet','setting-snippet','locale-snippet','apply-setting-snippet','apply-locale-snippet','asset-snippet','apply-asset-snippet','manifest-contract','capabilities')") -and
     $moddingSdkHubSource.Contains("Resolve-StarterTool 'Tools/prepare_mod.ps1'") -and
     $moddingSdkHubSource.Contains("Resolve-StarterTool 'Tools/validate_structure.ps1'") -and
     $moddingSdkHubSource.Contains("Resolve-StarterTool 'Tools/build_review_manifest.ps1'") -and
     $moddingSdkHubSource.Contains("Resolve-StarterTool 'Tools/build_submission_package.ps1'") -and
+    $moddingSdkHubSource.Contains("Resolve-StarterTool 'Tools/install_local_mod.ps1'") -and
+    $moddingSdkHubSource.Contains("Resolve-StarterTool 'Tools/diagnose_local_mods.ps1'") -and
     $moddingSdkHubSource.Contains("Resolve-StarterTool 'Tools/list_allowed_opcodes.ps1'") -and
     $moddingSdkHubSource.Contains("Resolve-StarterTool 'Tools/create_graph_node_snippet.ps1'") -and
     $moddingSdkHubSource.Contains("Resolve-StarterTool 'Tools/apply_graph_node_snippet.ps1'") -and
@@ -1780,7 +1800,10 @@ $externalStarterKitValidatorChecksRequiredFiles =
     $externalStarterKitTemplateValidatorSource.Contains("'Tools/apply_locale_entry_snippet.ps1'") -and
     $externalStarterKitTemplateValidatorSource.Contains("'Tools/create_asset_entry_snippet.ps1'") -and
     $externalStarterKitTemplateValidatorSource.Contains("'Tools/apply_asset_entry_snippet.ps1'") -and
+    $externalStarterKitTemplateValidatorSource.Contains("'Tools/configure_dependencies.ps1'") -and
     $externalStarterKitTemplateValidatorSource.Contains("'Tools/configure_manifest_contract.ps1'") -and
+    $externalStarterKitTemplateValidatorSource.Contains("'Tools/install_local_mod.ps1'") -and
+    $externalStarterKitTemplateValidatorSource.Contains("'Tools/diagnose_local_mods.ps1'") -and
     $externalStarterKitTemplateValidatorSource.Contains("'.vscode/tasks.json'") -and
     $moddingSdkHubSource.Contains('[switch]$ThrowInsteadOfExit') -and
     $externalStarterKitTemplateValidatorSource.Contains('[switch]$ThrowInsteadOfExit') -and
@@ -1794,6 +1817,12 @@ $externalStarterKitValidatorChecksCapabilityGuide =
     $externalStarterKitTemplateValidatorSource.Contains('h8mod.ps1 -Action asset-snippet') -and
     $externalStarterKitTemplateValidatorSource.Contains('h8mod.ps1 -Action apply-asset-snippet') -and
     $externalStarterKitTemplateValidatorSource.Contains('h8mod.ps1 -Action manifest-contract') -and
+    $externalStarterKitTemplateValidatorSource.Contains('h8mod.ps1 -Action dependencies') -and
+    $externalStarterKitTemplateValidatorSource.Contains('h8mod.ps1 -Action install-local') -and
+    $externalStarterKitTemplateValidatorSource.Contains('install_local_mod.ps1') -and
+    $externalStarterKitTemplateValidatorSource.Contains('h8mod.ps1 -Action diagnose-local') -and
+    $externalStarterKitTemplateValidatorSource.Contains('diagnose_local_mods.ps1') -and
+    $externalStarterKitTemplateValidatorSource.Contains('configure_dependencies.ps1') -and
     $externalStarterKitTemplateValidatorSource.Contains('configure_manifest_contract.ps1') -and
     $moddingSdkHubSource.Contains('Docs/capabilities.md missing required capability text') -and
     $moddingSdkHubSource.Contains('h8mod.ps1 -Action setting-snippet') -and
@@ -1801,6 +1830,12 @@ $externalStarterKitValidatorChecksCapabilityGuide =
     $moddingSdkHubSource.Contains('h8mod.ps1 -Action asset-snippet') -and
     $moddingSdkHubSource.Contains('h8mod.ps1 -Action apply-asset-snippet') -and
     $moddingSdkHubSource.Contains('h8mod.ps1 -Action manifest-contract') -and
+    $moddingSdkHubSource.Contains('h8mod.ps1 -Action dependencies') -and
+    $moddingSdkHubSource.Contains('h8mod.ps1 -Action install-local') -and
+    $moddingSdkHubSource.Contains('install_local_mod.ps1') -and
+    $moddingSdkHubSource.Contains('h8mod.ps1 -Action diagnose-local') -and
+    $moddingSdkHubSource.Contains('diagnose_local_mods.ps1') -and
+    $moddingSdkHubSource.Contains('configure_dependencies.ps1') -and
     $moddingSdkHubSource.Contains('configure_manifest_contract.ps1') -and
     $externalStarterKitContractText.Contains('rejects missing capability guide text')
 $externalStarterKitValidatorChecksEnvelopeOnly =
@@ -1816,8 +1851,12 @@ $externalStarterKitValidatorChecksCanonicalIds =
 $externalStarterKitValidatorChecksManifestIdParity =
     $moddingSdkHubSource.Contains('mod.h8manifest.json Id must match mod.json Id')
 $externalStarterKitValidatorChecksDependencyIds =
-    $moddingSdkHubSource.Contains('mod.json Dependencies item') -and
-    $moddingSdkHubSource.Contains('$runtime.Dependencies')
+    $externalStarterKitTemplateValidatorSource.Contains('function Validate-DependencyList') -and
+    $externalStarterKitTemplateValidatorSource.Contains('mod.h8manifest.json Dependencies must match mod.json Dependencies in the same order') -and
+    $externalStarterKitTemplateValidatorSource.Contains('must not contain self dependency') -and
+    $externalStarterKitTemplateValidatorSource.Contains('contains duplicate dependency') -and
+    $moddingSdkHubSource.Contains('Validate-DependencyList') -and
+    $moddingSdkHubSource.Contains('mod.h8manifest.json Dependencies must match mod.json Dependencies')
 $externalStarterKitInvalidGraphOpcodeProbe = Invoke-StarterInvalidGraphOpcodeProbe $externalStarterKitTemplatePath
 $externalStarterKitValidatorRejectsInvalidGraphOpcode =
     $externalStarterKitInvalidGraphOpcodeProbe.ExitCode -ne 0
@@ -2091,6 +2130,72 @@ $externalStarterKitManifestContractToolPasses =
     $externalStarterKitManifestContractProbe.ValidatorExitCode -eq 0
 $externalStarterKitManifestContractRejectsUnknownCapability =
     $externalStarterKitManifestContractProbe.BadCapabilityExitCode -ne 0
+$externalStarterKitWritesFirstModTool =
+    $moddingSdkHubSource.Contains('Tools", "create_first_mod.ps1"') -and
+    $moddingSdkHubSource.Contains('BuildStarterKitFirstModScript') -and
+    $moddingSdkHubSource.Contains('BuildStarterKitToolFromTemplate("Tools/create_first_mod.ps1")') -and
+    $externalStarterKitTemplateFirstModToolSource.Contains('hecton8.first_mod.v1') -and
+    $externalStarterKitTemplateFirstModToolSource.Contains("Resolve-Tool 'Tools/prepare_mod.ps1'") -and
+    $externalStarterKitTemplateFirstModToolSource.Contains("Resolve-Tool 'Tools/configure_manifest_contract.ps1'") -and
+    $externalStarterKitTemplateFirstModToolSource.Contains("Resolve-Tool 'Tools/apply_graph_node_snippet.ps1'") -and
+    $externalStarterKitTemplateFirstModToolSource.Contains("Resolve-Tool 'Tools/apply_settings_row_snippet.ps1'") -and
+    $externalStarterKitTemplateFirstModToolSource.Contains("Resolve-Tool 'Tools/apply_locale_entry_snippet.ps1'") -and
+    $externalStarterKitTemplateFirstModToolSource.Contains('[switch]$BuildSubmission') -and
+    $externalStarterKitContractText.Contains('Tools/create_first_mod.ps1')
+$externalStarterKitWritesInstallLocalTool =
+    $moddingSdkHubSource.Contains('Tools", "install_local_mod.ps1"') -and
+    $moddingSdkHubSource.Contains('BuildStarterKitInstallLocalModScript') -and
+    $moddingSdkHubSource.Contains('BuildStarterKitToolFromTemplate("Tools/install_local_mod.ps1")') -and
+    $externalStarterKitTemplateInstallLocalToolSource.Contains('hecton8.local_install.v1') -and
+    $externalStarterKitTemplateInstallLocalToolSource.Contains("Resolve-Tool 'Tools/prepare_mod.ps1'") -and
+    $externalStarterKitTemplateInstallLocalToolSource.Contains('Get-FileHash -LiteralPath $Path -Algorithm SHA256') -and
+    $externalStarterKitTemplateInstallLocalToolSource.Contains('Assert-UnderPath $modsRootFull $staging') -and
+    $externalStarterKitTemplateInstallLocalToolSource.Contains('Remove-Item -LiteralPath $staging -Recurse -Force') -and
+    $externalStarterKitContractText.Contains('Tools/install_local_mod.ps1')
+$externalStarterKitWritesDiagnoseLocalTool =
+    $moddingSdkHubSource.Contains('Tools", "diagnose_local_mods.ps1"') -and
+    $moddingSdkHubSource.Contains('BuildStarterKitDiagnoseLocalModsScript') -and
+    $moddingSdkHubSource.Contains('BuildStarterKitToolFromTemplate("Tools/diagnose_local_mods.ps1")') -and
+    $externalStarterKitTemplateDiagnoseLocalToolSource.Contains('hecton8.local_mods_diagnosis.v1') -and
+    $externalStarterKitTemplateDiagnoseLocalToolSource.Contains('$MaxManifestBytes = 32768') -and
+    $externalStarterKitTemplateDiagnoseLocalToolSource.Contains('$MaxDiscoveredManifestCount = 64') -and
+    $externalStarterKitTemplateDiagnoseLocalToolSource.Contains('$MaxTopLevelManagedAssemblyCount = 32') -and
+    $externalStarterKitTemplateDiagnoseLocalToolSource.Contains('$MaxTopLevelBundleCount = 4') -and
+    $externalStarterKitTemplateDiagnoseLocalToolSource.Contains('$MaxLocalizationFileCount = 16') -and
+    $externalStarterKitTemplateDiagnoseLocalToolSource.Contains('Managed mod entry disabled. UGC commands must use 64-byte FutureCommandEnvelope packets.') -and
+    $externalStarterKitTemplateDiagnoseLocalToolSource.Contains('[System.IO.SearchOption]::AllDirectories') -and
+    $externalStarterKitTemplateDiagnoseLocalToolSource.Contains('RecursiveManifestDiscovery') -and
+    $externalStarterKitTemplateDiagnoseLocalToolSource.Contains('DependencyGraph') -and
+    $externalStarterKitTemplateDiagnoseLocalToolSource.Contains('Resolve-DependencyGraph') -and
+    $externalStarterKitTemplateDiagnoseLocalToolSource.Contains('Dependency cycle or unresolved ordering deadlock.') -and
+    $externalStarterKitContractText.Contains('Tools/diagnose_local_mods.ps1')
+$externalStarterKitWritesDependenciesTool =
+    $moddingSdkHubSource.Contains('Tools", "configure_dependencies.ps1"') -and
+    $moddingSdkHubSource.Contains('BuildStarterKitDependenciesScript') -and
+    $moddingSdkHubSource.Contains('BuildStarterKitToolFromTemplate("Tools/configure_dependencies.ps1")') -and
+    $externalStarterKitTemplateDependenciesToolSource.Contains('hecton8.dependencies.v1') -and
+    $externalStarterKitTemplateDependenciesToolSource.Contains("ValidateSet('list','add','remove','clear')") -and
+    $externalStarterKitTemplateDependenciesToolSource.Contains('mod.h8manifest.json Dependencies must match mod.json Dependencies') -and
+    $externalStarterKitTemplateDependenciesToolSource.Contains('Mod must not depend on itself') -and
+    $externalStarterKitTemplateDependenciesToolSource.Contains('Dependency already exists') -and
+    $externalStarterKitTemplateDependenciesToolSource.Contains('Invoke-LocalValidation') -and
+    $externalStarterKitTemplateDependenciesToolSource.Contains('Write-ManifestsWithValidation') -and
+    $externalStarterKitContractText.Contains('Tools/configure_dependencies.ps1')
+$externalStarterKitDependencyToolMirrorsBothManifests =
+    $externalStarterKitTemplateDependenciesToolSource.Contains("Set-JsonStringArray `$authoring 'Dependencies'") -and
+    $externalStarterKitTemplateDependenciesToolSource.Contains("Set-JsonStringArray `$runtime 'Dependencies'") -and
+    $externalStarterKitTemplateDependenciesToolSource.Contains('Write-ManifestsWithValidation $authoring $runtime')
+$externalStarterKitDiagnoseLocalUsesRecursiveManifestDiscovery =
+    $externalStarterKitTemplateDiagnoseLocalToolSource.Contains('[System.IO.SearchOption]::AllDirectories') -and
+    $externalStarterKitTemplateDiagnoseLocalToolSource.Contains('Get-DiscoveredManifestFiles') -and
+    $externalStarterKitTemplateDiagnoseLocalToolSource.Contains('RecursiveManifestDiscovery')
+$externalStarterKitDiagnoseLocalChecksDependencyGraph =
+    $externalStarterKitTemplateDiagnoseLocalToolSource.Contains('Resolve-DependencyGraph') -and
+    $externalStarterKitTemplateDiagnoseLocalToolSource.Contains('DuplicateIdCount') -and
+    $externalStarterKitTemplateDiagnoseLocalToolSource.Contains('MissingDependencyCount') -and
+    $externalStarterKitTemplateDiagnoseLocalToolSource.Contains('CycleOrDeadlockCount') -and
+    $externalStarterKitTemplateDiagnoseLocalToolSource.Contains('LoadOrderIndex') -and
+    $externalStarterKitTemplateDiagnoseLocalToolSource.Contains('Dependency cycle or unresolved ordering deadlock.')
 $externalStarterKitRootLauncherSupportsGraphNodeSnippet =
     $externalStarterKitTemplateLauncherSource.Contains("'node-snippet'") -and
     $externalStarterKitTemplateLauncherSource.Contains('Invoke-GraphNodeSnippet') -and
@@ -2169,6 +2274,36 @@ $externalStarterKitRootLauncherSupportsSubmissionPackage =
     $externalStarterKitTemplateLauncherSource.Contains('Invoke-SubmissionPackage') -and
     $externalStarterKitTemplateLauncherSource.Contains("Resolve-StarterTool 'Tools/build_submission_package.ps1'") -and
     $moddingSdkHubSource.Contains("'submission' { Invoke-SubmissionPackage")
+$externalStarterKitRootLauncherSupportsFirstMod =
+    $externalStarterKitTemplateLauncherSource.Contains("'first-mod'") -and
+    $externalStarterKitTemplateLauncherSource.Contains('Invoke-FirstMod') -and
+    $externalStarterKitTemplateLauncherSource.Contains("Resolve-StarterTool 'Tools/create_first_mod.ps1'") -and
+    $externalStarterKitTemplateLauncherSource.Contains('-BuildSubmission') -and
+    $externalStarterKitTemplateLauncherSource.Contains('-Replace -BuildSubmission') -and
+    $moddingSdkHubSource.Contains("'first-mod' { Invoke-FirstMod")
+$externalStarterKitRootLauncherSupportsInstallLocal =
+    $externalStarterKitTemplateLauncherSource.Contains("'install-local'") -and
+    $externalStarterKitTemplateLauncherSource.Contains('Invoke-InstallLocal') -and
+    $externalStarterKitTemplateLauncherSource.Contains("Resolve-StarterTool 'Tools/install_local_mod.ps1'") -and
+    $externalStarterKitTemplateLauncherSource.Contains('ProjectRoot') -and
+    $externalStarterKitTemplateLauncherSource.Contains('ModsRoot') -and
+    $externalStarterKitTemplateLauncherSource.Contains('-Replace') -and
+    $moddingSdkHubSource.Contains("'install-local' { Invoke-InstallLocal")
+$externalStarterKitRootLauncherSupportsDiagnoseLocal =
+    $externalStarterKitTemplateLauncherSource.Contains("'diagnose-local'") -and
+    $externalStarterKitTemplateLauncherSource.Contains('Invoke-DiagnoseLocal') -and
+    $externalStarterKitTemplateLauncherSource.Contains("Resolve-StarterTool 'Tools/diagnose_local_mods.ps1'") -and
+    $externalStarterKitTemplateLauncherSource.Contains('ProjectRoot') -and
+    $externalStarterKitTemplateLauncherSource.Contains('ModsRoot') -and
+    $externalStarterKitTemplateLauncherSource.Contains('-ModsRoot $diagnoseModsRoot -Json') -and
+    $moddingSdkHubSource.Contains("'diagnose-local' { Invoke-DiagnoseLocal")
+$externalStarterKitRootLauncherSupportsDependencies =
+    $externalStarterKitTemplateLauncherSource.Contains("'dependencies'") -and
+    $externalStarterKitTemplateLauncherSource.Contains('Invoke-Dependencies') -and
+    $externalStarterKitTemplateLauncherSource.Contains("Resolve-StarterTool 'Tools/configure_dependencies.ps1'") -and
+    $externalStarterKitTemplateLauncherSource.Contains('DependencyAction') -and
+    $externalStarterKitTemplateLauncherSource.Contains('DependencyId') -and
+    $moddingSdkHubSource.Contains("'dependencies' { Invoke-Dependencies")
 $externalStarterKitIdentityToolValidatesCanonicalId =
     $moddingSdkHubSource.Contains('Validate-ModId $Id') -and
     $moddingSdkHubSource.Contains('reserved filesystem device segment') -and
@@ -2205,6 +2340,7 @@ $externalStarterKitToolsAvoidNestedPowerShell =
     (-not $externalStarterKitTemplateAssetEntrySnippetToolSource.Contains('& powershell')) -and
     (-not $externalStarterKitTemplateAssetEntryApplyToolSource.Contains('& powershell')) -and
     (-not $externalStarterKitTemplateManifestContractToolSource.Contains('& powershell')) -and
+    (-not $externalStarterKitTemplateFirstModToolSource.Contains('& powershell')) -and
     (-not $externalStarterKitTemplatePrepareToolSource.Contains('& powershell')) -and
     $moddingSdkHubSource.Contains('& $validator -Root $rootFull | Out-Host') -and
     $moddingSdkHubSource.Contains('& $identityTool -Root $rootFull -Id $Id') -and
@@ -2226,6 +2362,7 @@ $externalStarterKitToolsUsePortableJoinPath =
     $externalStarterKitTemplateAssetEntrySnippetToolSource.Contains('function Join-StarterPath') -and
     $externalStarterKitTemplateAssetEntryApplyToolSource.Contains('function Join-StarterPath') -and
     $externalStarterKitTemplateManifestContractToolSource.Contains('function Join-StarterPath') -and
+    $externalStarterKitTemplateFirstModToolSource.Contains('function Join-StarterPath') -and
     $externalStarterKitTemplatePrepareToolSource.Contains('function Join-StarterPath') -and
     $externalStarterKitTemplateReviewManifestBuilderSource.Contains('$outputPath = Join-StarterPath $rootFull $normalizedOutput') -and
     $externalStarterKitTemplateSubmissionPackageToolSource.Contains('$outputPath = Join-StarterPath $rootFull $Output') -and
@@ -2245,6 +2382,7 @@ $externalStarterKitToolsUsePortableJoinPath =
     (-not $externalStarterKitTemplateAssetEntrySnippetToolSource.Contains("'Tools\")) -and
     (-not $externalStarterKitTemplateAssetEntryApplyToolSource.Contains("'Tools\")) -and
     (-not $externalStarterKitTemplateManifestContractToolSource.Contains("'Tools\")) -and
+    (-not $externalStarterKitTemplateFirstModToolSource.Contains("'Tools\")) -and
     (-not $externalStarterKitTemplatePrepareToolSource.Contains("'Tools\")) -and
     (-not $externalStarterKitTemplateLauncherSource.Contains("'Tools\")) -and
     (-not $moddingSdkHubSource.Contains("'Tools\\"))
@@ -2283,6 +2421,7 @@ $starterKitGeneratorTemplateMarkers = @(
     'BuildStarterKitTemplateFile("Tools/build_review_manifest.ps1"',
     'BuildStarterKitTemplateFile("Tools/build_submission_package.ps1"',
     'BuildStarterKitTemplateFile("Tools/configure_manifest_contract.ps1"',
+    'BuildStarterKitTemplateFile("Tools/create_first_mod.ps1"',
     'BuildStarterKitTemplateFile("Tools/apply_graph_node_snippet.ps1"',
     'BuildStarterKitTemplateFile("Tools/apply_locale_entry_snippet.ps1"',
     'BuildStarterKitTemplateFile("Tools/apply_settings_row_snippet.ps1"',
@@ -2318,9 +2457,16 @@ $externalStarterKitValidatorChecksEditorSchemaMappings =
     $moddingSdkHubSource.Contains('.vscode/settings.json missing schema mapping')
 $requiredVsCodeTaskLabels = @(
     'HECTON-8: setup identity',
+    'HECTON-8: create first playable mod',
     'HECTON-8: validate starter',
     'HECTON-8: prepare review manifest',
     'HECTON-8: build submission zip',
+    'HECTON-8: install local discovery copy',
+    'HECTON-8: diagnose local Mods folder',
+    'HECTON-8: list dependencies',
+    'HECTON-8: add dependency',
+    'HECTON-8: remove dependency',
+    'HECTON-8: clear dependencies',
     'HECTON-8: show capabilities',
     'HECTON-8: show opcodes',
     'HECTON-8: create graph node snippet',
@@ -2338,7 +2484,7 @@ $requiredVsCodeTaskLabels = @(
     'HECTON-8: replace asset entry snippet',
     'HECTON-8: configure manifest contract'
 )
-$requiredVsCodeTaskInputIds = @('modId','displayName','author','version','nodeId','opcode','nodeParametersJson','settingId','settingKind','settingDefault','localeKey','localeValue','assetId','assetKind','assetPath','capability','capabilityState','maxEnvelopesPerFrame','maxAssetBytes')
+$requiredVsCodeTaskInputIds = @('modId','displayName','author','version','projectRoot','dependencyId','nodeId','opcode','nodeParametersJson','settingId','settingKind','settingDefault','localeKey','localeValue','assetId','assetKind','assetPath','capability','capabilityState','maxEnvelopesPerFrame','maxAssetBytes')
 $externalStarterKitVsCodeTaskLabels = @($externalStarterKitTemplateVsCodeTasks.tasks | ForEach-Object { [string]$_.label })
 $externalStarterKitVsCodeTaskInputIds = @($externalStarterKitTemplateVsCodeTasks.inputs | ForEach-Object { [string]$_.id })
 $externalStarterKitVsCodeTasksRouteThroughLauncher = $true
@@ -2360,6 +2506,11 @@ $externalStarterKitVsCodeTasksPresent =
     $externalStarterKitVsCodeTasksRouteThroughLauncher
 $externalStarterKitVsCodeTasksSupportDisabledAndReplace =
     (@($externalStarterKitTemplateVsCodeTasks.tasks | Where-Object {
+        [string]$_.label -eq 'HECTON-8: create first playable mod' -and
+        @($_.args | ForEach-Object { [string]$_ }) -contains 'first-mod' -and
+        @($_.args | ForEach-Object { [string]$_ }) -contains '-Replace'
+    }).Count -eq 1) -and
+    (@($externalStarterKitTemplateVsCodeTasks.tasks | Where-Object {
         [string]$_.label -eq 'HECTON-8: create disabled graph node snippet' -and
         @($_.args | ForEach-Object { [string]$_ }) -contains '-NodeDisabled'
     }).Count -eq 1) -and
@@ -2379,6 +2530,45 @@ $externalStarterKitVsCodeTasksSupportDisabledAndReplace =
         [string]$_.label -eq 'HECTON-8: replace asset entry snippet' -and
         @($_.args | ForEach-Object { [string]$_ }) -contains '-Replace'
     }).Count -eq 1)
+$externalStarterKitVsCodeTasksSupportLocalInstall =
+    (@($externalStarterKitTemplateVsCodeTasks.tasks | Where-Object {
+        [string]$_.label -eq 'HECTON-8: install local discovery copy' -and
+        @($_.args | ForEach-Object { [string]$_ }) -contains 'install-local' -and
+        @($_.args | ForEach-Object { [string]$_ }) -contains '-ProjectRoot' -and
+        @($_.args | ForEach-Object { [string]$_ }) -contains '-Replace'
+    }).Count -eq 1) -and
+    ($externalStarterKitVsCodeTaskInputIds -contains 'projectRoot')
+$externalStarterKitVsCodeTasksSupportLocalDiagnose =
+    (@($externalStarterKitTemplateVsCodeTasks.tasks | Where-Object {
+        [string]$_.label -eq 'HECTON-8: diagnose local Mods folder' -and
+        @($_.args | ForEach-Object { [string]$_ }) -contains 'diagnose-local' -and
+        @($_.args | ForEach-Object { [string]$_ }) -contains '-ProjectRoot'
+    }).Count -eq 1) -and
+    ($externalStarterKitVsCodeTaskInputIds -contains 'projectRoot')
+$externalStarterKitVsCodeTasksSupportDependencies =
+    (@($externalStarterKitTemplateVsCodeTasks.tasks | Where-Object {
+        [string]$_.label -eq 'HECTON-8: list dependencies' -and
+        @($_.args | ForEach-Object { [string]$_ }) -contains 'dependencies' -and
+        @($_.args | ForEach-Object { [string]$_ }) -contains 'list'
+    }).Count -eq 1) -and
+    (@($externalStarterKitTemplateVsCodeTasks.tasks | Where-Object {
+        [string]$_.label -eq 'HECTON-8: add dependency' -and
+        @($_.args | ForEach-Object { [string]$_ }) -contains 'dependencies' -and
+        @($_.args | ForEach-Object { [string]$_ }) -contains 'add' -and
+        @($_.args | ForEach-Object { [string]$_ }) -contains '-DependencyId'
+    }).Count -eq 1) -and
+    (@($externalStarterKitTemplateVsCodeTasks.tasks | Where-Object {
+        [string]$_.label -eq 'HECTON-8: remove dependency' -and
+        @($_.args | ForEach-Object { [string]$_ }) -contains 'dependencies' -and
+        @($_.args | ForEach-Object { [string]$_ }) -contains 'remove' -and
+        @($_.args | ForEach-Object { [string]$_ }) -contains '-DependencyId'
+    }).Count -eq 1) -and
+    (@($externalStarterKitTemplateVsCodeTasks.tasks | Where-Object {
+        [string]$_.label -eq 'HECTON-8: clear dependencies' -and
+        @($_.args | ForEach-Object { [string]$_ }) -contains 'dependencies' -and
+        @($_.args | ForEach-Object { [string]$_ }) -contains 'clear'
+    }).Count -eq 1) -and
+    ($externalStarterKitVsCodeTaskInputIds -contains 'dependencyId')
 $externalStarterKitWritesVsCodeTasks =
     $moddingSdkHubSource.Contains('BuildVsCodeTasks') -and
     $moddingSdkHubSource.Contains('Path.Combine(rootPath, ".vscode", "tasks.json")') -and
@@ -2388,6 +2578,15 @@ $externalStarterKitValidatorChecksVsCodeTasks =
     $externalStarterKitTemplateValidatorSource.Contains('function Validate-VsCodeTasks') -and
     $externalStarterKitTemplateValidatorSource.Contains('.vscode/tasks.json requires version 2.0.0') -and
     $externalStarterKitTemplateValidatorSource.Contains('HECTON-8: setup identity') -and
+    $externalStarterKitTemplateValidatorSource.Contains('HECTON-8: create first playable mod') -and
+    $externalStarterKitTemplateValidatorSource.Contains('first playable mod task must pass -Action first-mod') -and
+    $externalStarterKitTemplateValidatorSource.Contains('HECTON-8: install local discovery copy') -and
+    $externalStarterKitTemplateValidatorSource.Contains('local install task must pass -Action install-local') -and
+    $externalStarterKitTemplateValidatorSource.Contains('HECTON-8: diagnose local Mods folder') -and
+    $externalStarterKitTemplateValidatorSource.Contains('local diagnose task must pass -Action diagnose-local') -and
+    $externalStarterKitTemplateValidatorSource.Contains('HECTON-8: add dependency') -and
+    $externalStarterKitTemplateValidatorSource.Contains('dependency task must pass -Action dependencies') -and
+    $externalStarterKitTemplateValidatorSource.Contains('dependency id task must pass -DependencyId') -and
     $externalStarterKitTemplateValidatorSource.Contains('HECTON-8: build submission zip') -and
     $externalStarterKitTemplateValidatorSource.Contains('HECTON-8: create disabled graph node snippet') -and
     $externalStarterKitTemplateValidatorSource.Contains('replace task must pass -Replace') -and
@@ -2518,6 +2717,7 @@ $externalStarterKitPrepareToolPasses =
     $externalStarterKitPrepareProbe.ReviewHasSettingsRowSnippetTool -eq $true -and
     $externalStarterKitPrepareProbe.ReviewHasLocaleEntrySnippetTool -eq $true -and
     $externalStarterKitPrepareProbe.ReviewHasManifestContractTool -eq $true -and
+    $externalStarterKitPrepareProbe.ReviewHasDependenciesTool -eq $true -and
     $externalStarterKitPrepareProbe.ReviewExcludesReports -eq $true
 $externalStarterKitPrepareToolSupportsExistingManifest =
     $externalStarterKitPrepareProbe.ExistingExitCode -eq 0 -and
@@ -2569,6 +2769,10 @@ $externalStarterKitTemplateRequiredFiles = @(
     'Tools\README.md',
     'Tools\build_review_manifest.ps1',
     'Tools\build_submission_package.ps1',
+    'Tools\create_first_mod.ps1',
+    'Tools\configure_dependencies.ps1',
+    'Tools\install_local_mod.ps1',
+    'Tools\diagnose_local_mods.ps1',
     'Tools\apply_graph_node_snippet.ps1',
     'Tools\apply_asset_entry_snippet.ps1',
     'Tools\apply_locale_entry_snippet.ps1',
@@ -2687,6 +2891,9 @@ $externalStarterKitReviewManifestHashesFiles =
     $externalStarterKitReviewManifestPaths -contains 'Tools/create_asset_entry_snippet.ps1' -and
     $externalStarterKitReviewManifestPaths -contains 'Tools/apply_asset_entry_snippet.ps1' -and
     $externalStarterKitReviewManifestPaths -contains 'Tools/configure_manifest_contract.ps1' -and
+    $externalStarterKitReviewManifestPaths -contains 'Tools/configure_dependencies.ps1' -and
+    $externalStarterKitReviewManifestPaths -contains 'Tools/create_first_mod.ps1' -and
+    $externalStarterKitReviewManifestPaths -contains 'Tools/install_local_mod.ps1' -and
     $externalStarterKitReviewManifestPaths -contains 'Tools/list_allowed_opcodes.ps1' -and
     $externalStarterKitReviewManifestPaths -contains 'Tools/prepare_mod.ps1'
 $externalStarterKitReviewManifestExcludesReports =
@@ -2752,6 +2959,13 @@ Assert-True $externalStarterKitAssetEntryApplyToolRejectsDuplicateWithoutReplace
 Assert-True $externalStarterKitWritesManifestContractTool 'External starter kit must write a no-Unity manifest capability/budget configuration helper.'
 Assert-True $externalStarterKitManifestContractToolPasses 'External starter kit manifest contract helper must configure allowlisted capabilities/budgets and validate after write.'
 Assert-True $externalStarterKitManifestContractRejectsUnknownCapability 'External starter kit manifest contract helper must reject unknown public capability IDs.'
+Assert-True $externalStarterKitWritesFirstModTool 'External starter kit must write a no-Unity first playable mod onboarding helper.'
+Assert-True $externalStarterKitWritesInstallLocalTool 'External starter kit must write a no-Unity local discovery install helper.'
+Assert-True $externalStarterKitWritesDiagnoseLocalTool 'External starter kit must write a no-Unity read-only local Mods diagnosis helper.'
+Assert-True $externalStarterKitDiagnoseLocalUsesRecursiveManifestDiscovery 'External starter kit local diagnosis must mirror recursive ModLoader mod.json discovery.'
+Assert-True $externalStarterKitDiagnoseLocalChecksDependencyGraph 'External starter kit local diagnosis must report duplicate IDs, missing dependencies, dependency cycles, and load order.'
+Assert-True $externalStarterKitWritesDependenciesTool 'External starter kit must write a no-Unity dependency configuration helper.'
+Assert-True $externalStarterKitDependencyToolMirrorsBothManifests 'External starter kit dependency helper must mirror Dependencies across authoring/runtime manifests and validate after write.'
 Assert-True $externalStarterKitRootLauncherSupportsAuthoringSnippets 'External starter kit root launcher must route setting-snippet and locale-snippet to authoring snippet helpers.'
 Assert-True $externalStarterKitRootLauncherSupportsAuthoringSnippetApply 'External starter kit root launcher must route apply-setting-snippet and apply-locale-snippet to bounded authoring data apply helpers.'
 Assert-True $externalStarterKitRootLauncherSupportsAssetEntrySnippet 'External starter kit root launcher must route asset-snippet to the content asset entry snippet helper.'
@@ -2761,6 +2975,10 @@ Assert-True $externalStarterKitRootLauncherSupportsCapabilities 'External starte
 Assert-True $externalStarterKitSubmissionPackageToolPasses 'External starter kit submission package tool must write a Generated/ zip on a temp copy.'
 Assert-True $externalStarterKitSubmissionPackageIncludesReviewManifest 'External starter kit submission package must include Reports/review_manifest.json as the review proof.'
 Assert-True $externalStarterKitRootLauncherSupportsSubmissionPackage 'External starter kit root launcher must route submission to the submission package helper.'
+Assert-True $externalStarterKitRootLauncherSupportsFirstMod 'External starter kit root launcher must route first-mod to the first playable mod helper.'
+Assert-True $externalStarterKitRootLauncherSupportsInstallLocal 'External starter kit root launcher must route install-local to the local discovery install helper.'
+Assert-True $externalStarterKitRootLauncherSupportsDiagnoseLocal 'External starter kit root launcher must route diagnose-local to the read-only local Mods diagnosis helper.'
+Assert-True $externalStarterKitRootLauncherSupportsDependencies 'External starter kit root launcher must route dependencies to the dependency configuration helper.'
 Assert-True $externalStarterKitIdentityToolValidatesCanonicalId 'External starter kit identity helper must validate canonical mod IDs.'
 Assert-True $externalStarterKitValidatorChecksSemver 'External starter kit validator and identity helper must enforce semantic version strings.'
 Assert-True $externalStarterKitValidatorChecksManifestIdentityTextParity 'External starter kit local validator must enforce display name, author, and version parity across manifests.'
@@ -2774,6 +2992,9 @@ Assert-True $externalStarterKitValidatorChecksEditorSchemaMappings 'External sta
 Assert-True $externalStarterKitWritesVsCodeTasks 'External starter kit generator must write VS Code task runner integration.'
 Assert-True $externalStarterKitVsCodeTasksPresent 'Versioned external starter kit must include VS Code tasks routed through h8mod.ps1.'
 Assert-True $externalStarterKitVsCodeTasksSupportDisabledAndReplace 'Versioned external starter kit VS Code tasks must expose disabled-node creation and explicit replace actions.'
+Assert-True $externalStarterKitVsCodeTasksSupportLocalInstall 'Versioned external starter kit VS Code tasks must expose local discovery install through h8mod.ps1.'
+Assert-True $externalStarterKitVsCodeTasksSupportLocalDiagnose 'Versioned external starter kit VS Code tasks must expose local Mods diagnosis through h8mod.ps1.'
+Assert-True $externalStarterKitVsCodeTasksSupportDependencies 'Versioned external starter kit VS Code tasks must expose dependency list/add/remove/clear through h8mod.ps1.'
 Assert-True $externalStarterKitValidatorChecksVsCodeTasks 'External starter kit local validator must check VS Code task labels, inputs, launcher routing, and command indirection.'
 Assert-True $externalStarterKitValidatorChecksSettingsAndLocaleContracts 'External starter kit local validator must reject invalid settings rows and locale string contracts.'
 Assert-True $externalStarterKitValidatorChecksAssetManifestContracts 'External starter kit local validator must reject invalid content asset manifest paths, kinds, CRCs, byte sizes, duplicates, caps, and budget drift.'
@@ -3454,9 +3675,17 @@ Assert-True ([bool]$schema.sdkAuthoringAudit.externalStarterKitWritesAssetEntryA
 Assert-True ([bool]$schema.sdkAuthoringAudit.externalStarterKitAssetEntryApplyToolPasses) 'Schema sdkAuthoringAudit must record starter asset entry apply helper pass.'
 Assert-True ([bool]$schema.sdkAuthoringAudit.externalStarterKitAssetEntryApplyToolRejectsDuplicateWithoutReplace) 'Schema sdkAuthoringAudit must record starter asset entry apply duplicate rejection.'
 Assert-True ([bool]$schema.sdkAuthoringAudit.starterWorkbenchConfiguresManifestContract) 'Schema sdkAuthoringAudit must record starter Workbench manifest contract configuration.'
+Assert-True ([bool]$schema.sdkAuthoringAudit.starterWorkbenchConfiguresDependencies) 'Schema sdkAuthoringAudit must record starter Workbench dependency configuration.'
 Assert-True ([bool]$schema.sdkAuthoringAudit.externalStarterKitWritesManifestContractTool) 'Schema sdkAuthoringAudit must record starter manifest contract helper output.'
 Assert-True ([bool]$schema.sdkAuthoringAudit.externalStarterKitManifestContractToolPasses) 'Schema sdkAuthoringAudit must record starter manifest contract helper pass.'
 Assert-True ([bool]$schema.sdkAuthoringAudit.externalStarterKitManifestContractRejectsUnknownCapability) 'Schema sdkAuthoringAudit must record starter manifest contract unknown capability rejection.'
+Assert-True ([bool]$schema.sdkAuthoringAudit.externalStarterKitWritesFirstModTool) 'Schema sdkAuthoringAudit must record starter first playable mod helper output.'
+Assert-True ([bool]$schema.sdkAuthoringAudit.externalStarterKitWritesInstallLocalTool) 'Schema sdkAuthoringAudit must record starter local discovery install helper output.'
+Assert-True ([bool]$schema.sdkAuthoringAudit.externalStarterKitWritesDiagnoseLocalTool) 'Schema sdkAuthoringAudit must record starter local Mods diagnosis helper output.'
+Assert-True ([bool]$schema.sdkAuthoringAudit.externalStarterKitDiagnoseLocalUsesRecursiveManifestDiscovery) 'Schema sdkAuthoringAudit must record recursive local Mods manifest discovery.'
+Assert-True ([bool]$schema.sdkAuthoringAudit.externalStarterKitDiagnoseLocalChecksDependencyGraph) 'Schema sdkAuthoringAudit must record local Mods dependency graph diagnosis.'
+Assert-True ([bool]$schema.sdkAuthoringAudit.externalStarterKitWritesDependenciesTool) 'Schema sdkAuthoringAudit must record starter dependency helper output.'
+Assert-True ([bool]$schema.sdkAuthoringAudit.externalStarterKitDependencyToolMirrorsBothManifests) 'Schema sdkAuthoringAudit must record starter dependency helper authoring/runtime manifest parity.'
 Assert-True ([bool]$schema.sdkAuthoringAudit.externalStarterKitRootLauncherSupportsAuthoringSnippets) 'Schema sdkAuthoringAudit must record starter root launcher settings/locale snippet route.'
 Assert-True ([bool]$schema.sdkAuthoringAudit.externalStarterKitRootLauncherSupportsAuthoringSnippetApply) 'Schema sdkAuthoringAudit must record starter root launcher settings/locale apply route.'
 Assert-True ([bool]$schema.sdkAuthoringAudit.externalStarterKitRootLauncherSupportsAssetEntrySnippet) 'Schema sdkAuthoringAudit must record starter root launcher asset snippet route.'
@@ -3468,6 +3697,10 @@ Assert-True ([bool]$schema.sdkAuthoringAudit.externalStarterKitSubmissionPackage
 Assert-True ([bool]$schema.sdkAuthoringAudit.externalStarterKitSubmissionPackageToolPasses) 'Schema sdkAuthoringAudit must record starter submission package helper pass.'
 Assert-True ([bool]$schema.sdkAuthoringAudit.externalStarterKitSubmissionPackageIncludesReviewManifest) 'Schema sdkAuthoringAudit must record starter submission package review manifest inclusion.'
 Assert-True ([bool]$schema.sdkAuthoringAudit.externalStarterKitRootLauncherSupportsSubmissionPackage) 'Schema sdkAuthoringAudit must record starter root launcher submission package route.'
+Assert-True ([bool]$schema.sdkAuthoringAudit.externalStarterKitRootLauncherSupportsFirstMod) 'Schema sdkAuthoringAudit must record starter root launcher first-mod route.'
+Assert-True ([bool]$schema.sdkAuthoringAudit.externalStarterKitRootLauncherSupportsInstallLocal) 'Schema sdkAuthoringAudit must record starter root launcher install-local route.'
+Assert-True ([bool]$schema.sdkAuthoringAudit.externalStarterKitRootLauncherSupportsDiagnoseLocal) 'Schema sdkAuthoringAudit must record starter root launcher diagnose-local route.'
+Assert-True ([bool]$schema.sdkAuthoringAudit.externalStarterKitRootLauncherSupportsDependencies) 'Schema sdkAuthoringAudit must record starter root launcher dependencies route.'
 Assert-True ([bool]$schema.sdkAuthoringAudit.externalStarterKitIdentityToolValidatesCanonicalId) 'Schema sdkAuthoringAudit must record starter identity helper canonical ID validation.'
 Assert-True ([bool]$schema.sdkAuthoringAudit.externalStarterKitValidatorChecksSemver) 'Schema sdkAuthoringAudit must record starter semantic version validation.'
 Assert-True ([bool]$schema.sdkAuthoringAudit.externalStarterKitValidatorChecksManifestIdentityTextParity) 'Schema sdkAuthoringAudit must record starter identity text parity validation.'
@@ -3481,6 +3714,9 @@ Assert-True ([bool]$schema.sdkAuthoringAudit.externalStarterKitValidatorChecksEd
 Assert-True ([bool]$schema.sdkAuthoringAudit.externalStarterKitWritesVsCodeTasks) 'Schema sdkAuthoringAudit must record starter VS Code task output.'
 Assert-True ([bool]$schema.sdkAuthoringAudit.externalStarterKitVsCodeTasksPresent) 'Schema sdkAuthoringAudit must record versioned starter VS Code task surface.'
 Assert-True ([bool]$schema.sdkAuthoringAudit.externalStarterKitVsCodeTasksSupportDisabledAndReplace) 'Schema sdkAuthoringAudit must record starter VS Code disabled-node and replace task surface.'
+Assert-True ([bool]$schema.sdkAuthoringAudit.externalStarterKitVsCodeTasksSupportLocalInstall) 'Schema sdkAuthoringAudit must record starter VS Code local discovery install task surface.'
+Assert-True ([bool]$schema.sdkAuthoringAudit.externalStarterKitVsCodeTasksSupportLocalDiagnose) 'Schema sdkAuthoringAudit must record starter VS Code local Mods diagnosis task surface.'
+Assert-True ([bool]$schema.sdkAuthoringAudit.externalStarterKitVsCodeTasksSupportDependencies) 'Schema sdkAuthoringAudit must record starter VS Code dependency task surface.'
 Assert-True ([bool]$schema.sdkAuthoringAudit.externalStarterKitValidatorChecksVsCodeTasks) 'Schema sdkAuthoringAudit must record starter VS Code task validation.'
 Assert-True ([bool]$schema.sdkAuthoringAudit.externalStarterKitValidatorChecksSettingsAndLocaleContracts) 'Schema sdkAuthoringAudit must record starter settings/locale contract validation.'
 Assert-True ([bool]$schema.sdkAuthoringAudit.externalStarterKitValidatorChecksAssetManifestContracts) 'Schema sdkAuthoringAudit must record starter content asset manifest validation.'
@@ -4027,6 +4263,7 @@ Assert-True ($lastStaticValidation.externalStarterKitWorkbenchShowsContentAssetP
 Assert-True ($lastStaticValidation.externalStarterKitWorkbenchGeneratesAssetEntrySnippet -eq $true) "Schema lastStaticValidationSnapshot must record starter workbench content asset snippet generation."
 Assert-True ($lastStaticValidation.externalStarterKitWorkbenchAppliesAssetEntrySnippet -eq $true) "Schema lastStaticValidationSnapshot must record starter workbench content asset snippet apply route."
 Assert-True ($lastStaticValidation.externalStarterKitWorkbenchConfiguresManifestContract -eq $true) "Schema lastStaticValidationSnapshot must record starter workbench manifest contract configuration."
+Assert-True ($lastStaticValidation.externalStarterKitWorkbenchConfiguresDependencies -eq $true) "Schema lastStaticValidationSnapshot must record starter workbench dependency configuration."
 Assert-True ($lastStaticValidation.externalStarterKitWorkbenchChecksRootLauncher -eq $true) "Schema lastStaticValidationSnapshot must record starter workbench root launcher health/file access."
 Assert-True ($lastStaticValidation.externalStarterKitGeneratorPresent -eq $true) "Schema lastStaticValidationSnapshot must record external starter kit generator presence."
 Assert-True ($lastStaticValidation.externalStarterKitWritesRootLauncher -eq $true) "Schema lastStaticValidationSnapshot must record root no-Unity launcher output."
@@ -4086,6 +4323,13 @@ Assert-True ($lastStaticValidation.externalStarterKitAssetEntryApplyToolRejectsD
 Assert-True ($lastStaticValidation.externalStarterKitWritesManifestContractTool -eq $true) "Schema lastStaticValidationSnapshot must record starter manifest contract helper output."
 Assert-True ($lastStaticValidation.externalStarterKitManifestContractToolPasses -eq $true) "Schema lastStaticValidationSnapshot must record starter manifest contract helper pass."
 Assert-True ($lastStaticValidation.externalStarterKitManifestContractRejectsUnknownCapability -eq $true) "Schema lastStaticValidationSnapshot must record starter manifest contract unknown capability rejection."
+Assert-True ($lastStaticValidation.externalStarterKitWritesFirstModTool -eq $true) "Schema lastStaticValidationSnapshot must record starter first playable mod helper output."
+Assert-True ($lastStaticValidation.externalStarterKitWritesInstallLocalTool -eq $true) "Schema lastStaticValidationSnapshot must record starter local discovery install helper output."
+Assert-True ($lastStaticValidation.externalStarterKitWritesDiagnoseLocalTool -eq $true) "Schema lastStaticValidationSnapshot must record starter local Mods diagnosis helper output."
+Assert-True ($lastStaticValidation.externalStarterKitDiagnoseLocalUsesRecursiveManifestDiscovery -eq $true) "Schema lastStaticValidationSnapshot must record recursive local Mods manifest discovery."
+Assert-True ($lastStaticValidation.externalStarterKitDiagnoseLocalChecksDependencyGraph -eq $true) "Schema lastStaticValidationSnapshot must record local Mods dependency graph diagnosis."
+Assert-True ($lastStaticValidation.externalStarterKitWritesDependenciesTool -eq $true) "Schema lastStaticValidationSnapshot must record starter dependency helper output."
+Assert-True ($lastStaticValidation.externalStarterKitDependencyToolMirrorsBothManifests -eq $true) "Schema lastStaticValidationSnapshot must record starter dependency helper authoring/runtime manifest parity."
 Assert-True ($lastStaticValidation.externalStarterKitRootLauncherSupportsAuthoringSnippets -eq $true) "Schema lastStaticValidationSnapshot must record starter root launcher settings/locale snippet route."
 Assert-True ($lastStaticValidation.externalStarterKitRootLauncherSupportsAuthoringSnippetApply -eq $true) "Schema lastStaticValidationSnapshot must record starter root launcher settings/locale apply route."
 Assert-True ($lastStaticValidation.externalStarterKitRootLauncherSupportsAssetEntrySnippet -eq $true) "Schema lastStaticValidationSnapshot must record starter root launcher asset snippet route."
@@ -4097,6 +4341,10 @@ Assert-True ($lastStaticValidation.externalStarterKitSubmissionPackagePreservesP
 Assert-True ($lastStaticValidation.externalStarterKitSubmissionPackageToolPasses -eq $true) "Schema lastStaticValidationSnapshot must record starter submission package helper pass."
 Assert-True ($lastStaticValidation.externalStarterKitSubmissionPackageIncludesReviewManifest -eq $true) "Schema lastStaticValidationSnapshot must record starter submission package review manifest inclusion."
 Assert-True ($lastStaticValidation.externalStarterKitRootLauncherSupportsSubmissionPackage -eq $true) "Schema lastStaticValidationSnapshot must record starter root launcher submission package route."
+Assert-True ($lastStaticValidation.externalStarterKitRootLauncherSupportsFirstMod -eq $true) "Schema lastStaticValidationSnapshot must record starter root launcher first-mod route."
+Assert-True ($lastStaticValidation.externalStarterKitRootLauncherSupportsInstallLocal -eq $true) "Schema lastStaticValidationSnapshot must record starter root launcher install-local route."
+Assert-True ($lastStaticValidation.externalStarterKitRootLauncherSupportsDiagnoseLocal -eq $true) "Schema lastStaticValidationSnapshot must record starter root launcher diagnose-local route."
+Assert-True ($lastStaticValidation.externalStarterKitRootLauncherSupportsDependencies -eq $true) "Schema lastStaticValidationSnapshot must record starter root launcher dependencies route."
 Assert-True ($lastStaticValidation.externalStarterKitIdentityToolValidatesCanonicalId -eq $true) "Schema lastStaticValidationSnapshot must record starter identity helper canonical ID validation."
 Assert-True ($lastStaticValidation.externalStarterKitValidatorChecksSemver -eq $true) "Schema lastStaticValidationSnapshot must record starter semantic version validation."
 Assert-True ($lastStaticValidation.externalStarterKitValidatorChecksManifestIdentityTextParity -eq $true) "Schema lastStaticValidationSnapshot must record starter identity text parity validation."
@@ -4109,6 +4357,9 @@ Assert-True ($lastStaticValidation.externalStarterKitValidatorChecksEditorSchema
 Assert-True ($lastStaticValidation.externalStarterKitWritesVsCodeTasks -eq $true) "Schema lastStaticValidationSnapshot must record starter VS Code task output."
 Assert-True ($lastStaticValidation.externalStarterKitVsCodeTasksPresent -eq $true) "Schema lastStaticValidationSnapshot must record versioned starter VS Code task surface."
 Assert-True ($lastStaticValidation.externalStarterKitVsCodeTasksSupportDisabledAndReplace -eq $true) "Schema lastStaticValidationSnapshot must record starter VS Code disabled-node and replace task surface."
+Assert-True ($lastStaticValidation.externalStarterKitVsCodeTasksSupportLocalInstall -eq $true) "Schema lastStaticValidationSnapshot must record starter VS Code local discovery install task surface."
+Assert-True ($lastStaticValidation.externalStarterKitVsCodeTasksSupportLocalDiagnose -eq $true) "Schema lastStaticValidationSnapshot must record starter VS Code local Mods diagnosis task surface."
+Assert-True ($lastStaticValidation.externalStarterKitVsCodeTasksSupportDependencies -eq $true) "Schema lastStaticValidationSnapshot must record starter VS Code dependency task surface."
 Assert-True ($lastStaticValidation.externalStarterKitValidatorChecksVsCodeTasks -eq $true) "Schema lastStaticValidationSnapshot must record starter VS Code task validation."
 Assert-True ($lastStaticValidation.externalStarterKitValidatorChecksSettingsAndLocaleContracts -eq $true) "Schema lastStaticValidationSnapshot must record starter settings/locale contract validation."
 Assert-True ($lastStaticValidation.externalStarterKitValidatorChecksAssetManifestContracts -eq $true) "Schema lastStaticValidationSnapshot must record starter content asset manifest validation."
@@ -4265,6 +4516,7 @@ Assert-True ($runtimePlaybookText.Contains('ExternalStarterKitWorkbenchShowsCont
 Assert-True ($runtimePlaybookText.Contains('ExternalStarterKitWorkbenchGeneratesAssetEntrySnippet = True')) 'Runtime playbook missing starter workbench content asset snippet generation evidence.'
 Assert-True ($runtimePlaybookText.Contains('ExternalStarterKitWorkbenchAppliesAssetEntrySnippet = True')) 'Runtime playbook missing starter workbench content asset apply evidence.'
 Assert-True ($runtimePlaybookText.Contains('ExternalStarterKitWorkbenchConfiguresManifestContract = True')) 'Runtime playbook missing starter workbench manifest contract evidence.'
+Assert-True ($runtimePlaybookText.Contains('ExternalStarterKitWorkbenchConfiguresDependencies = True')) 'Runtime playbook missing starter workbench dependency contract evidence.'
 Assert-True ($runtimePlaybookText.Contains('ExternalStarterKitWorkbenchChecksRootLauncher = True')) 'Runtime playbook missing starter workbench root launcher evidence.'
 Assert-True ($runtimePlaybookText.Contains('ExternalStarterKitWritesRootLauncher = True')) 'Runtime playbook missing starter root launcher generator evidence.'
 Assert-True ($runtimePlaybookText.Contains('ExternalStarterKitValidatorChecksRootLauncher = True')) 'Runtime playbook missing starter validator root launcher evidence.'
@@ -4329,6 +4581,13 @@ Assert-True ($runtimePlaybookText.Contains('ExternalStarterKitRootLauncherSuppor
 Assert-True ($runtimePlaybookText.Contains('ExternalStarterKitWritesManifestContractTool = True')) 'Runtime playbook missing starter manifest contract helper evidence.'
 Assert-True ($runtimePlaybookText.Contains('ExternalStarterKitManifestContractToolPasses = True')) 'Runtime playbook missing starter manifest contract helper pass evidence.'
 Assert-True ($runtimePlaybookText.Contains('ExternalStarterKitManifestContractRejectsUnknownCapability = True')) 'Runtime playbook missing starter manifest contract unknown capability rejection evidence.'
+Assert-True ($runtimePlaybookText.Contains('ExternalStarterKitWritesFirstModTool = True')) 'Runtime playbook missing starter first playable mod helper evidence.'
+Assert-True ($runtimePlaybookText.Contains('ExternalStarterKitWritesInstallLocalTool = True')) 'Runtime playbook missing starter local discovery install helper evidence.'
+Assert-True ($runtimePlaybookText.Contains('ExternalStarterKitWritesDiagnoseLocalTool = True')) 'Runtime playbook missing starter local Mods diagnosis helper evidence.'
+Assert-True ($runtimePlaybookText.Contains('ExternalStarterKitDiagnoseLocalUsesRecursiveManifestDiscovery = True')) 'Runtime playbook missing recursive local Mods manifest discovery evidence.'
+Assert-True ($runtimePlaybookText.Contains('ExternalStarterKitDiagnoseLocalChecksDependencyGraph = True')) 'Runtime playbook missing local Mods dependency graph diagnosis evidence.'
+Assert-True ($runtimePlaybookText.Contains('ExternalStarterKitWritesDependenciesTool = True')) 'Runtime playbook missing starter dependency helper evidence.'
+Assert-True ($runtimePlaybookText.Contains('ExternalStarterKitDependencyToolMirrorsBothManifests = True')) 'Runtime playbook missing starter dependency helper manifest parity evidence.'
 Assert-True ($runtimePlaybookText.Contains('ExternalStarterKitRootLauncherSupportsManifestContract = True')) 'Runtime playbook missing starter root launcher manifest contract evidence.'
 Assert-True ($runtimePlaybookText.Contains('ExternalStarterKitRootLauncherSupportsCapabilities = True')) 'Runtime playbook missing starter root launcher capability guide evidence.'
 Assert-True ($runtimePlaybookText.Contains('ExternalStarterKitWritesSubmissionPackageTool = True')) 'Runtime playbook missing starter submission package helper evidence.'
@@ -4336,6 +4595,10 @@ Assert-True ($runtimePlaybookText.Contains('ExternalStarterKitSubmissionPackageP
 Assert-True ($runtimePlaybookText.Contains('ExternalStarterKitSubmissionPackageToolPasses = True')) 'Runtime playbook missing starter submission package helper pass evidence.'
 Assert-True ($runtimePlaybookText.Contains('ExternalStarterKitSubmissionPackageIncludesReviewManifest = True')) 'Runtime playbook missing starter submission package review manifest evidence.'
 Assert-True ($runtimePlaybookText.Contains('ExternalStarterKitRootLauncherSupportsSubmissionPackage = True')) 'Runtime playbook missing starter root launcher submission package evidence.'
+Assert-True ($runtimePlaybookText.Contains('ExternalStarterKitRootLauncherSupportsFirstMod = True')) 'Runtime playbook missing starter root launcher first-mod evidence.'
+Assert-True ($runtimePlaybookText.Contains('ExternalStarterKitRootLauncherSupportsInstallLocal = True')) 'Runtime playbook missing starter root launcher install-local evidence.'
+Assert-True ($runtimePlaybookText.Contains('ExternalStarterKitRootLauncherSupportsDiagnoseLocal = True')) 'Runtime playbook missing starter root launcher diagnose-local evidence.'
+Assert-True ($runtimePlaybookText.Contains('ExternalStarterKitRootLauncherSupportsDependencies = True')) 'Runtime playbook missing starter root launcher dependencies evidence.'
 Assert-True ($runtimePlaybookText.Contains('ExternalStarterKitIdentityToolValidatesCanonicalId = True')) 'Runtime playbook missing starter identity helper canonical ID evidence.'
 Assert-True ($runtimePlaybookText.Contains('ExternalStarterKitValidatorChecksSemver = True')) 'Runtime playbook missing starter semver validation evidence.'
 Assert-True ($runtimePlaybookText.Contains('ExternalStarterKitValidatorChecksManifestIdentityTextParity = True')) 'Runtime playbook missing starter identity text parity evidence.'
@@ -4349,6 +4612,9 @@ Assert-True ($runtimePlaybookText.Contains('ExternalStarterKitValidatorChecksEdi
 Assert-True ($runtimePlaybookText.Contains('ExternalStarterKitWritesVsCodeTasks = True')) 'Runtime playbook missing starter VS Code task output evidence.'
 Assert-True ($runtimePlaybookText.Contains('ExternalStarterKitVsCodeTasksPresent = True')) 'Runtime playbook missing versioned starter VS Code task evidence.'
 Assert-True ($runtimePlaybookText.Contains('ExternalStarterKitVsCodeTasksSupportDisabledAndReplace = True')) 'Runtime playbook missing starter VS Code disabled-node and replace task evidence.'
+Assert-True ($runtimePlaybookText.Contains('ExternalStarterKitVsCodeTasksSupportLocalInstall = True')) 'Runtime playbook missing starter VS Code local discovery install task evidence.'
+Assert-True ($runtimePlaybookText.Contains('ExternalStarterKitVsCodeTasksSupportLocalDiagnose = True')) 'Runtime playbook missing starter VS Code local Mods diagnosis task evidence.'
+Assert-True ($runtimePlaybookText.Contains('ExternalStarterKitVsCodeTasksSupportDependencies = True')) 'Runtime playbook missing starter VS Code dependency task evidence.'
 Assert-True ($runtimePlaybookText.Contains('ExternalStarterKitValidatorChecksVsCodeTasks = True')) 'Runtime playbook missing starter VS Code task validation evidence.'
 Assert-True ($runtimePlaybookText.Contains('ExternalStarterKitValidatorChecksSettingsAndLocaleContracts = True')) 'Runtime playbook missing starter settings/locale contract validation evidence.'
 Assert-True ($runtimePlaybookText.Contains('ExternalStarterKitValidatorChecksAssetManifestContracts = True')) 'Runtime playbook missing starter content asset manifest validation evidence.'
@@ -4554,6 +4820,7 @@ $result = [pscustomobject]@{
     ExternalStarterKitWorkbenchGeneratesAssetEntrySnippet = $externalStarterKitWorkbenchGeneratesAssetEntrySnippet
     ExternalStarterKitWorkbenchAppliesAssetEntrySnippet = $externalStarterKitWorkbenchAppliesAssetEntrySnippet
     ExternalStarterKitWorkbenchConfiguresManifestContract = $externalStarterKitWorkbenchConfiguresManifestContract
+    ExternalStarterKitWorkbenchConfiguresDependencies = $externalStarterKitWorkbenchConfiguresDependencies
     ExternalStarterKitWorkbenchChecksRootLauncher = $externalStarterKitWorkbenchChecksRootLauncher
     ExternalStarterKitGeneratorPresent = $externalStarterKitGeneratorPresent
     ExternalStarterKitWritesRootLauncher = $externalStarterKitWritesRootLauncher
@@ -4613,6 +4880,13 @@ $result = [pscustomobject]@{
     ExternalStarterKitWritesManifestContractTool = $externalStarterKitWritesManifestContractTool
     ExternalStarterKitManifestContractToolPasses = $externalStarterKitManifestContractToolPasses
     ExternalStarterKitManifestContractRejectsUnknownCapability = $externalStarterKitManifestContractRejectsUnknownCapability
+    ExternalStarterKitWritesFirstModTool = $externalStarterKitWritesFirstModTool
+    ExternalStarterKitWritesInstallLocalTool = $externalStarterKitWritesInstallLocalTool
+    ExternalStarterKitWritesDiagnoseLocalTool = $externalStarterKitWritesDiagnoseLocalTool
+    ExternalStarterKitDiagnoseLocalUsesRecursiveManifestDiscovery = $externalStarterKitDiagnoseLocalUsesRecursiveManifestDiscovery
+    ExternalStarterKitDiagnoseLocalChecksDependencyGraph = $externalStarterKitDiagnoseLocalChecksDependencyGraph
+    ExternalStarterKitWritesDependenciesTool = $externalStarterKitWritesDependenciesTool
+    ExternalStarterKitDependencyToolMirrorsBothManifests = $externalStarterKitDependencyToolMirrorsBothManifests
     ExternalStarterKitRootLauncherSupportsAuthoringSnippets = $externalStarterKitRootLauncherSupportsAuthoringSnippets
     ExternalStarterKitRootLauncherSupportsAuthoringSnippetApply = $externalStarterKitRootLauncherSupportsAuthoringSnippetApply
     ExternalStarterKitRootLauncherSupportsAssetEntrySnippet = $externalStarterKitRootLauncherSupportsAssetEntrySnippet
@@ -4624,6 +4898,10 @@ $result = [pscustomobject]@{
     ExternalStarterKitSubmissionPackageToolPasses = $externalStarterKitSubmissionPackageToolPasses
     ExternalStarterKitSubmissionPackageIncludesReviewManifest = $externalStarterKitSubmissionPackageIncludesReviewManifest
     ExternalStarterKitRootLauncherSupportsSubmissionPackage = $externalStarterKitRootLauncherSupportsSubmissionPackage
+    ExternalStarterKitRootLauncherSupportsFirstMod = $externalStarterKitRootLauncherSupportsFirstMod
+    ExternalStarterKitRootLauncherSupportsInstallLocal = $externalStarterKitRootLauncherSupportsInstallLocal
+    ExternalStarterKitRootLauncherSupportsDiagnoseLocal = $externalStarterKitRootLauncherSupportsDiagnoseLocal
+    ExternalStarterKitRootLauncherSupportsDependencies = $externalStarterKitRootLauncherSupportsDependencies
     ExternalStarterKitIdentityToolValidatesCanonicalId = $externalStarterKitIdentityToolValidatesCanonicalId
     ExternalStarterKitValidatorChecksSemver = $externalStarterKitValidatorChecksSemver
     ExternalStarterKitValidatorChecksManifestIdentityTextParity = $externalStarterKitValidatorChecksManifestIdentityTextParity
@@ -4637,6 +4915,9 @@ $result = [pscustomobject]@{
     ExternalStarterKitWritesVsCodeTasks = $externalStarterKitWritesVsCodeTasks
     ExternalStarterKitVsCodeTasksPresent = $externalStarterKitVsCodeTasksPresent
     ExternalStarterKitVsCodeTasksSupportDisabledAndReplace = $externalStarterKitVsCodeTasksSupportDisabledAndReplace
+    ExternalStarterKitVsCodeTasksSupportLocalInstall = $externalStarterKitVsCodeTasksSupportLocalInstall
+    ExternalStarterKitVsCodeTasksSupportLocalDiagnose = $externalStarterKitVsCodeTasksSupportLocalDiagnose
+    ExternalStarterKitVsCodeTasksSupportDependencies = $externalStarterKitVsCodeTasksSupportDependencies
     ExternalStarterKitValidatorChecksVsCodeTasks = $externalStarterKitValidatorChecksVsCodeTasks
     ExternalStarterKitValidatorChecksSettingsAndLocaleContracts = $externalStarterKitValidatorChecksSettingsAndLocaleContracts
     ExternalStarterKitValidatorChecksAssetManifestContracts = $externalStarterKitValidatorChecksAssetManifestContracts

@@ -1518,8 +1518,9 @@ namespace Hecton8.Physics
         private const double FlushBudgetWarningMilliseconds = 0.2d;
         private const int FlushBudgetWarningCooldownFrames = 30;
         private const int ForcePacketWarningCooldownFrames = 30;
-        private const uint ValidationPacketsPin = 1u << 0;
-        private const uint ValidationMaskPin = 1u << 1;
+        private static readonly ulong ValidationScheduleMutationGuardMask =
+            PhysicsApplyMutationGuardBit(BufferID.PhysicsForceValidationPackets) |
+            PhysicsApplyMutationGuardBit(BufferID.PhysicsForceValidationMask);
         private static readonly uint ForcePacketClipWarningHash = unchecked((uint)LocHash.Compute("PhysicsApplySystem.ForcePacketClip"));
         private static readonly uint ForcePacketQueueHash = unchecked((uint)LocHash.Compute("PhysicsApplySystem.ForcePacketQueue"));
         private static readonly uint PhysicsFlushBudgetWarningHash = unchecked((uint)LocHash.Compute("PhysicsApplySystem.FlushBudget"));
@@ -1594,7 +1595,8 @@ namespace Hecton8.Physics
         private bool _frontBufferValidationReady;
         private bool _packetValidationScheduled;
         private JobHandle _packetValidationHandle;
-        private uint _validationSchedulePinMask;
+        private IDataVault _validationScheduleGuardVault;
+        private bool _validationScheduleGuardHeld;
         private bool _contactModifySubscribed;
         private bool _submarineModifiableContactsArmed;
         private ulong _submarineHullEntityId;
@@ -3472,31 +3474,37 @@ namespace Hecton8.Physics
             _dataVault?.ReleaseWriteLock(in handle, OwnerSystemId);
         }
 
-        private bool TryLockValidationScheduleBuffers(
+        private bool TryAcquireValidationScheduleBufferGuard(
             out NativeArray<ForcePacket> validationPackets,
             out NativeArray<byte> validationMask)
         {
             validationPackets = default;
             validationMask = default;
-            if (_validationSchedulePinMask != 0u)
+            if (_validationScheduleGuardHeld)
+                return false;
+
+            IDataVault dataVault = _dataVault;
+            if (dataVault == null ||
+                dataVault.IsCompactionFenceActive ||
+                !dataVault.TryAcquireMutationGuard(ValidationScheduleMutationGuardMask))
                 return false;
 
             bool success = false;
+            _validationScheduleGuardVault = dataVault;
+            _validationScheduleGuardHeld = true;
             try
             {
-                if (!TryPinValidationScheduleBuffer(
+                if (!TryResolveValidationScheduleBuffer(
                         in _validationPacketBufferHandle,
                         BufferID.PhysicsForceValidationPackets,
                         MaxQueuedPackets,
-                        ValidationPacketsPin,
                         out validationPackets))
                     return false;
 
-                if (!TryPinValidationScheduleBuffer(
+                if (!TryResolveValidationScheduleBuffer(
                         in _validationMaskBufferHandle,
                         BufferID.PhysicsForceValidationMask,
                         MaxQueuedPackets,
-                        ValidationMaskPin,
                         out validationMask))
                     return false;
 
@@ -3506,15 +3514,14 @@ namespace Hecton8.Physics
             finally
             {
                 if (!success)
-                    ReleaseValidationScheduleBufferPins();
+                    ReleaseValidationScheduleBufferGuard();
             }
         }
 
-        private bool TryPinValidationScheduleBuffer<T>(
+        private bool TryResolveValidationScheduleBuffer<T>(
             in VaultGenerationHandle<T> handle,
             BufferID bufferId,
             int requiredLength,
-            uint pinBit,
             out NativeArray<T> buffer)
             where T : struct
         {
@@ -3523,53 +3530,37 @@ namespace Hecton8.Physics
             if (dataVault == null ||
                 dataVault.IsCompactionFenceActive ||
                 requiredLength <= 0 ||
-                !IsPhysicsVaultHandle(in handle, bufferId) ||
-                !dataVault.TryLockBuffer(bufferId, OwnerSystemId))
+                !IsPhysicsVaultHandle(in handle, bufferId))
             {
                 return false;
             }
 
-            bool pinAcquired = true;
-            try
+            if (!dataVault.TryResolveHandle(in handle, out buffer) ||
+                !buffer.IsCreated ||
+                buffer.Length < requiredLength)
             {
-                if (!dataVault.TryResolveHandle(in handle, out buffer) ||
-                    !buffer.IsCreated ||
-                    buffer.Length < requiredLength)
-                {
-                    buffer = default;
-                    return false;
-                }
+                buffer = default;
+                return false;
+            }
 
-                _validationSchedulePinMask |= pinBit;
-                pinAcquired = false;
-                return true;
-            }
-            finally
-            {
-                if (pinAcquired)
-                {
-                    dataVault.TryUnlockBuffer(bufferId, OwnerSystemId);
-                    buffer = default;
-                }
-            }
+            return true;
         }
 
-        private void ReleaseValidationScheduleBufferPins()
+        private void ReleaseValidationScheduleBufferGuard()
         {
-            uint pinMask = _validationSchedulePinMask;
-            if (pinMask == 0u)
+            if (!_validationScheduleGuardHeld)
                 return;
 
-            IDataVault dataVault = _dataVault;
+            IDataVault dataVault = _validationScheduleGuardVault ?? _dataVault;
+            _validationScheduleGuardVault = null;
+            _validationScheduleGuardHeld = false;
             if (dataVault != null)
-            {
-                if ((pinMask & ValidationMaskPin) != 0u)
-                    dataVault.TryUnlockBuffer(BufferID.PhysicsForceValidationMask, OwnerSystemId);
-                if ((pinMask & ValidationPacketsPin) != 0u)
-                    dataVault.TryUnlockBuffer(BufferID.PhysicsForceValidationPackets, OwnerSystemId);
-            }
+                dataVault.ReleaseMutationGuard(ValidationScheduleMutationGuardMask);
+        }
 
-            _validationSchedulePinMask = 0u;
+        private static ulong PhysicsApplyMutationGuardBit(BufferID bufferId)
+        {
+            return 1UL << (unchecked((int)(uint)(int)bufferId) & 63);
         }
 
         private static void ClearForcePacketRange(NativeArray<ForcePacket> buffer, int count, int startIndex = 0)
@@ -3849,7 +3840,7 @@ namespace Hecton8.Physics
 
             int validationCount = math.min(queuedCount, MaxQueuedPackets);
             bool clipped = queuedCount > validationCount;
-            if (!TryLockValidationScheduleBuffers(
+            if (!TryAcquireValidationScheduleBufferGuard(
                     out NativeArray<ForcePacket> validationPackets,
                     out NativeArray<byte> validationMask))
             {
@@ -3864,7 +3855,7 @@ namespace Hecton8.Physics
                 out NativeArray<ForcePacket> frontPackets);
             if (!frontLocked)
             {
-                ReleaseValidationScheduleBufferPins();
+                ReleaseValidationScheduleBufferGuard();
                 _frontBufferValidationReady = false;
                 _frontCount = 0;
                 return;
@@ -3897,7 +3888,7 @@ namespace Hecton8.Physics
             {
                 ReleaseForcePacketBufferWriteLock(in _frontPacketBufferHandle);
                 if (!scheduled)
-                    ReleaseValidationScheduleBufferPins();
+                    ReleaseValidationScheduleBufferGuard();
             }
 
             if (clipped)
@@ -3915,7 +3906,7 @@ namespace Hecton8.Physics
                     return;
 
                 _packetValidationScheduled = false;
-                ReleaseValidationScheduleBufferPins();
+                ReleaseValidationScheduleBufferGuard();
                 _frontBufferValidationReady = _frontCount > 0;
                 H8Memory.RegisterActiveJob(OwnerSystemId, default);
             }
@@ -4355,7 +4346,7 @@ namespace Hecton8.Physics
                 H8Memory.RegisterActiveJob(OwnerSystemId, default);
             }
 
-            ReleaseValidationScheduleBufferPins();
+            ReleaseValidationScheduleBufferGuard();
             ReleaseVaultBufferView(ref _validationPacketBufferHandle);
             ReleaseVaultBufferView(ref _validationMaskBufferHandle);
             _validationPacketBufferHandle = default;

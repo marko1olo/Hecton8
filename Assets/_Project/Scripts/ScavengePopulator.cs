@@ -520,6 +520,8 @@ namespace Hecton8.Core
                 return;
 
             RefreshRuntimeStreamingSettings();
+            ProcessSpawnQueue();
+            CullDistantChunks();
             _pendingScavengeVisualSync = true;
         }
 
@@ -529,8 +531,6 @@ namespace Hecton8.Core
                 return;
 
             _pendingScavengeVisualSync = false;
-            ProcessSpawnQueue();
-            CullDistantChunks();
             UpdateDiagnostics();
         }
 

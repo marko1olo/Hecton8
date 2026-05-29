@@ -7639,7 +7639,7 @@ namespace Hecton8.UI
         }
 
         /// <inheritdoc />
-        public void LateFrameTick()
+        public void DisabledVisualSync()
         {
             if (_pendingContentRootBootstrap)
                 return;

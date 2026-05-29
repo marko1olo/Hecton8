@@ -1154,3 +1154,63 @@ Rejected Alternatives: Re-syncing every hardcoded C# string was rejected because
 Scalability potential: Low tier authors get a consistent copied starter with no Unity required. Middle tier authors get the same files from Workbench refresh. High tier can add structured editors over one stable template source. Ultra tier can add simulation/package diagnostics without changing runtime truth ownership.
 
 Hardware Impact: Estimated runtime gain on i3/MX350 is 0 us/frame. This is editor/offline SDK generation only; runtime loader, FutureCommandEnvelope, HectonEventBus, SignalBus, GlobalRegistry, GlobalDataVault, save, rendering, Burst/jobs, telemetry, and GlobalQualityWeight are untouched.
+
+## Decision 97 - First playable mod must be one bounded command
+
+Problem: The External Starter Kit had safe individual tools, but a random public modder still needed to understand identity setup, capability metadata, graph snippet creation, graph apply, settings snippet creation, settings apply, locale snippet creation, locale apply, validation, and review manifest generation before seeing a first working draft. That is too much ceremony for onboarding and invites manual JSON mutation.
+
+Solution: Add `Tools/create_first_mod.ps1` and route it through `h8mod.ps1 -Action first-mod`, VS Code task `HECTON-8: create first playable mod`, SDK Hub checked-in template generation, local validation, schema revision 106, and docs. The helper composes only existing bounded tools, supports `-Replace` for rerunnable onboarding, supports clean `-Json` output for automation, and optionally builds the submission zip.
+
+Rejected Alternatives: A Unity-only wizard was rejected because the starter kit must work from a copied folder with VS Code and PowerShell/pwsh. Direct file writes were rejected because graph/settings/locale/manifest helpers already provide validation, atomic repair, and duplicate handling. Runtime DLL/Harmony/BepInEx expansion was rejected because current public runtime ingress remains envelope-only and lacks sandbox/save/hot-lane proof.
+
+Scalability potential: Low tier authors can create a valid graph/settings/locale/review draft with one command and no Unity project. Middle tier authors can use VS Code tasks over the same root launcher. High tier can add structured editors and simulation previews over the same files. Ultra tier can add package diffing, conflict diagnostics, asset previews, and guided graph design without changing runtime truth ownership.
+
+Hardware Impact: Estimated runtime gain on i3/MX350 is 0 us/frame. This is offline SDK authoring only; it prevents malformed packages before runtime loader, FutureCommandEnvelope validation, HectonEventBus isolation, SignalBus, GlobalRegistry, GlobalDataVault, save, rendering, Burst/jobs, telemetry, or GlobalQualityWeight are touched.
+
+## Decision 98 - APEX proof must be source-enforced, not chat-enforced
+
+Problem: The existing APEX source guard was correct in shape but too narrow. It scanned a small hand-picked file list and did not cover the real mod sandbox file that owns GlobalDataVault write-lock lanes. That left lock-flattening and hot-path lookup proof dependent on manual claims.
+
+Solution: Expand the guard scope to the full mod/API and ModdingSDK editor directories. Keep the scanner editor-only, in-memory, and no-report. Add hot-GC token checks for runtime hot methods, wrapper-aware DataVault write-lock checks for `TryAcquireVaultLaneWrite`, masked source build-token checks, and deterministic source enumeration. Refactor `TryAcquireVaultLaneWrite` so failed acquisitions release through `finally`, while successful lock transfer remains paired with caller `finally` release.
+
+Rejected Alternatives: Running another compiler build was rejected because CPU was above the project threshold and compiler processes were already active. A report-only proof was rejected because it would not prevent drift. Delegate/callback lock wrappers were rejected because they risk managed allocation and make Burst-adjacent source harder to audit.
+
+Scalability potential: Low tier pays no runtime frame cost; the guard is editor-only and the runtime helper adds only a local bool on lock acquisition. Middle/High/Ultra tiers gain stronger mod sandbox invariants without changing runtime authority, DTO layout, save identity, SignalBus lanes, or GlobalQualityWeight behavior.
+
+Hardware Impact: Estimated runtime gain on i3/MX350 is 0 us/frame. Risk reduction is deadlock/leak prevention on rare write-lock failure paths and source-level protection against future hot-polling or phase drift.
+
+## Decision 99 - Local install must be a reviewed discovery copy, not runtime activation
+
+Problem: After one-command first-mod onboarding, a random external author could create and submit a reviewed starter package, but there was no obvious safe path to place that package into a local HECTON-8 project for loader discovery. Blind copy into `Mods/` would skip review proof, leave stale Generated artifacts, and imply runtime rights the loader does not grant.
+
+Solution: Add `Tools/install_local_mod.ps1` and expose it through `h8mod.ps1 -Action install-local`, VS Code tasks, Unity Workbench, SDK Hub generated templates, local validation, schema 107, static validator proof, runtime playbook, file contract, and starter docs. The helper runs prepare/review, validates `hecton8.external_review_manifest.v1`, enforces `Runtime=envelope-only`, checks root/id parity, verifies every reviewed file byte count and SHA-256, stages under `Mods`, replaces only with explicit `-Replace`, bounds cleanup to `Mods`, copies `Reports/review_manifest.json`, and supports `-ProjectRoot`, `-ModsRoot`, and `-Json`.
+
+Rejected Alternatives: Runtime DLL/Harmony/BepInEx activation was rejected because current public ingress is still envelope-only and lacks save/hot-lane/sandbox authority proof. Loose content ingestion was rejected because the loader explicitly disables filesystem content ingestion until CRC-approved engine-owned bake routes exist. Direct recursive copy was rejected because it would bypass file hash proof and could leave stale `Generated/` or temp artifacts.
+
+Scalability potential: Low tier authors use VS Code or one PowerShell command without Unity. Middle tier authors use the Workbench local install panel. High tier can add package diff/conflict simulation over the same reviewed manifest. Ultra tier can add signed package review, local mod registry previews, and conflict dashboards without changing runtime truth ownership.
+
+Hardware Impact: Estimated runtime gain on i3/MX350 is 0 us/frame. This is offline SDK/install UX only. It reduces malformed local mod folders before runtime loader discovery and does not touch FutureCommandEnvelope layout, HectonEventBus isolation, SignalBus lanes, GlobalRegistry routes, GlobalDataVault ownership, save identity, Burst/jobs, telemetry, or continuous GlobalQualityWeight behavior.
+
+## Decision 100 - Local Mods diagnosis must explain loader discovery without granting runtime rights
+
+Problem: After schema 107, external authors could create and install a reviewed package into a local `Mods/<mod-id>` folder, but the SDK still did not answer the next practical question: what does the game loader see, why is the package not active, and did the installed copy still match review proof. Manual folder inspection is not a contract and random public authors will miss byte caps, review drift, discovery caps, and the envelope-only runtime boundary.
+
+Solution: Add a read-only diagnosis tool, `Tools/diagnose_local_mods.ps1`, and expose it through `h8mod.ps1 -Action diagnose-local`, VS Code, Workbench, SDK Hub generated templates, local validation, schema 108, static validator flags, docs, review manifest, and submission zip. The tool mirrors loader package caps, validates `mod.json`, verifies `Reports/review_manifest.json` file existence/byte count/SHA-256 when present, reports package status, and states explicitly that managed entries and loose content remain disabled by the runtime boundary.
+
+Rejected Alternatives: Runtime managed DLL/Harmony/BepInEx activation was rejected because no save authority, hot-lane budget, sandbox, review trust, or telemetry proof exists. Loose filesystem content ingestion was rejected because asset usage must stay CRC-approved and engine-owned. A Unity-only inspector was rejected because the external starter kit must work from VS Code and PowerShell/pwsh without the full Unity project. A blind `Mods` folder listing was rejected because it would not prove review integrity.
+
+Scalability potential: Low tier authors use one no-Unity CLI/VS Code task and get deterministic text/JSON diagnosis. Middle tier authors use the Workbench panel over the same launcher. High tier can add package conflict and dependency simulation over the same diagnosis schema. Ultra tier can add signed package state, local registry previews, visual diff dashboards, and loader timeline views without changing runtime truth ownership.
+
+Hardware Impact: Estimated runtime gain on i3/MX350 is 0 us/frame. This is offline SDK/local diagnosis only. It prevents malformed or tampered local packages from being misread by authors before runtime loader discovery and does not touch FutureCommandEnvelope layout, HectonEventBus isolation, SignalBus lanes, GlobalRegistry routes, GlobalDataVault ownership, save identity, Burst/jobs, telemetry, or continuous GlobalQualityWeight behavior.
+
+## Decision 101 - Local Mods diagnosis must model loader dependency ordering
+
+Problem: Schema 108 diagnosed installed package integrity and boundary status, but it still scanned only first-level folders and did not model the runtime loader's recursive `mod.json` discovery or `BuildLoadOrder` dependency rules. A modder could receive a clean local diagnosis while the real loader later discovers a nested package, disables a duplicate ID, blocks on a missing dependency, or deadlocks a dependency cycle.
+
+Solution: Change `Tools/diagnose_local_mods.ps1` to recursively enumerate `mod.json` files with the loader's 64-manifest cap, capture manifest path/discovery index/dependencies, and resolve an offline dependency graph. The graph keeps the first duplicate ID, marks later duplicates invalid, marks absent or invalid dependencies as missing, marks no-progress unresolved sets as `cycle_or_deadlock`, and emits ordered package IDs plus per-package load-order indices. Schema revision 109 and the static validator now require `RecursiveManifestDiscovery` and dependency graph diagnosis. Starter docs, Workbench help, Hub fallback templates, capability guide, and runtime playbook now describe the graph result.
+
+Rejected Alternatives: Runtime probing was rejected because diagnosis must be safe for copied starter folders and built-game Mods folders without activating user code. Sorting by `ModPriority` was rejected for this tool because runtime load ordering is dependency-first; `ModPriority` remains command arbitration metadata, not package load order. Loose managed DLL/Harmony/BepInEx activation was rejected because save authority, hot-lane budgets, sandbox proof, and telemetry proof still do not exist.
+
+Scalability potential: Low tier authors get a deterministic no-Unity command that explains why local mods will not load. Middle tier authors get the same explanation through the Unity Workbench. High tier can add conflict dashboards over the same JSON graph. Ultra tier can add signed dependency manifests, package marketplace compatibility previews, and visual loader timelines without changing runtime truth ownership.
+
+Hardware Impact: Estimated runtime gain on i3/MX350 is 0 us/frame. This is offline SDK diagnosis only. It reduces failed local boot/debug loops and does not touch runtime loader allocation strategy, FutureCommandEnvelope layout, HectonEventBus isolation, SignalBus lanes, GlobalRegistry routes, GlobalDataVault ownership, save identity, Burst/jobs, telemetry, or continuous GlobalQualityWeight behavior.

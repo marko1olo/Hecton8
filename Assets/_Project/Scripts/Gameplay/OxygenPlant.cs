@@ -114,6 +114,7 @@ namespace Hecton8.Gameplay
             }
 
             RegisterToTick();
+            RegisterToLateFrame();
         }
 
         private void OnDisable()
@@ -152,7 +153,6 @@ namespace Hecton8.Gameplay
         {
             if (_pendingBubbleReleaseCount < MaxPendingBubbleReleases)
                 _pendingBubbleReleaseCount++;
-            RegisterToLateFrame();
         }
 
         private void FlushBubbleRelease()
@@ -199,15 +199,12 @@ namespace Hecton8.Gameplay
                     audio.PlayAtPoint(releaseSound, _pendingReleaseAudioPosition, releaseVolume);
             }
 
-            UnregisterFromLateFrame();
         }
 
         private void QueueReleaseAudio(Vector3 position)
         {
             _pendingReleaseAudioPosition = position;
             _pendingReleaseAudio = releaseSound != null;
-            if (_pendingReleaseAudio)
-                RegisterToLateFrame();
         }
 
         private void CalculateNextReleaseTime()
@@ -340,7 +337,10 @@ namespace Hecton8.Gameplay
                     _isRegistered = false;
                     _lateFrameRegistered = false;
                     if (currentService != null)
+                    {
                         RegisterToTick();
+                        RegisterToLateFrame();
+                    }
                     break;
             }
         }

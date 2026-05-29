@@ -184,7 +184,7 @@ namespace Hecton8.AI.Cognition
             ApexStateDTO state = States[index];
             ushort slot = (ushort)math.min(index, ushort.MaxValue);
             byte flags = ApexBrainFlags.Active;
-            flags = (byte)(flags | (byte)ResolveReducedQualityNodeBudgetFlag(quality));
+            flags = (byte)(flags | (byte)ResolveSurvivalNodeBudgetPressureFlag(quality));
             if ((tuning.Flags & ApexBrainFlags.EmergencyMockStats) != 0u)
                 flags = (byte)(flags | ApexBrainFlags.EmergencyMockStats);
 
@@ -547,7 +547,7 @@ namespace Hecton8.AI.Cognition
                         SweetLieWeight01 = sweetLieShadow,
                         FractionalWeight01 = fractionalWeight,
                         NodeIndex = (uint)i,
-                        Flags = ResolveReducedQualityNodeBudgetFlag(quality)
+                        Flags = ResolveSurvivalNodeBudgetPressureFlag(quality)
                     };
                 }
 
@@ -806,9 +806,9 @@ namespace Hecton8.AI.Cognition
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        private static uint ResolveReducedQualityNodeBudgetFlag(float quality)
+        private static uint ResolveSurvivalNodeBudgetPressureFlag(float quality)
         {
-            return math.select((uint)ApexBrainFlags.ReducedQualityNodeBudget, 0u, quality >= ApexBrainConstants.MinimumQualityNodeHold);
+            return math.select((uint)ApexBrainFlags.SurvivalNodeBudgetPressure, 0u, quality >= ApexBrainConstants.MinimumQualityNodeHold);
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]

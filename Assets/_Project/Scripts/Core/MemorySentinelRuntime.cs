@@ -86,7 +86,9 @@ namespace Hecton8.Core
         private VaultGenerationHandle<MemorySentinelRuntimeStateDTO> _runtimeStateHandle;
         private VaultGenerationHandle<MemorySentinelAupSnapshotDTO> _aupSnapshotHandle;
         private VaultGenerationHandle<byte> _csvScratchHandle;
-        private FixedList128Bytes<BufferID> _lockedBuffers;
+        private IDataVault _targetBufferGuardVault;
+        private ulong _targetBufferGuardMask;
+        private bool _targetBufferGuardHeld;
         private SimulationPhaseSystem _simulationPhase;
         private PostSimulationPhaseSystem _postSimulationPhase;
         private JobHandle _validationHandle;
@@ -546,6 +548,12 @@ namespace Hecton8.Core
             {
                 handle = existing;
                 return true;
+            }
+
+            if (vault.IsAllocationLocked || vault.IsCompactionFenceActive)
+            {
+                buffer = default;
+                return false;
             }
 
             handle = vault.EnsureGenerationHandle<T>(
@@ -1101,72 +1109,53 @@ namespace Hecton8.Core
 
         private bool LockTargetBuffers(IDataVault vault, NativeArray<MemorySentinelTargetDTO> targets, int targetCount)
         {
-            _lockedBuffers.Clear();
-            if (!TryLockOne(vault, ValidationStatesBuffer) ||
-                !TryLockOne(vault, TargetsBuffer) ||
-                !TryLockOne(vault, ResultsBuffer))
-            {
-                UnlockTargetBuffers();
+            if (_targetBufferGuardHeld)
                 return false;
-            }
+
+            if (vault == null)
+                return false;
+
+            ulong guardMask =
+                TargetBufferMutationGuardBit(ValidationStatesBuffer) |
+                TargetBufferMutationGuardBit(TargetsBuffer) |
+                TargetBufferMutationGuardBit(ResultsBuffer);
 
             for (int i = 0; i < targetCount; i++)
             {
                 BufferID bufferId = (BufferID)targets[i].BufferId;
-                if (bufferId == BufferID.Unknown || IsBufferAlreadyLocked(bufferId))
+                if (bufferId == BufferID.Unknown)
                     continue;
 
-                if (!TryLockOne(vault, bufferId))
-                {
-                    UnlockTargetBuffers();
-                    return false;
-                }
+                guardMask |= TargetBufferMutationGuardBit(bufferId);
             }
 
+            if (!vault.TryAcquireMutationGuard(guardMask))
+                return false;
+
+            _targetBufferGuardVault = vault;
+            _targetBufferGuardMask = guardMask;
+            _targetBufferGuardHeld = true;
             return true;
         }
 
-        private bool TryLockOne(IDataVault vault, BufferID bufferId)
+        private static ulong TargetBufferMutationGuardBit(BufferID bufferId)
         {
-            if (bufferId == BufferID.Unknown || IsBufferAlreadyLocked(bufferId))
-                return true;
-            if (_lockedBuffers.Length >= _lockedBuffers.Capacity)
-                return false;
-            if (!vault.TryLockBuffer(bufferId, OwnerSystemId))
-                return false;
-
-            _lockedBuffers.Add(bufferId);
-            return true;
-        }
-
-        private bool IsBufferAlreadyLocked(BufferID bufferId)
-        {
-            for (int i = 0; i < _lockedBuffers.Length; i++)
-            {
-                if (_lockedBuffers[i] == bufferId)
-                    return true;
-            }
-
-            return false;
+            return 1UL << (unchecked((int)(uint)(int)bufferId) & 63);
         }
 
         private void UnlockTargetBuffers()
         {
-            IDataVault vault = _dataVault;
-            if (vault == null)
-            {
-                _lockedBuffers.Clear();
+            if (!_targetBufferGuardHeld)
                 return;
-            }
 
-            for (int i = 0; i < _lockedBuffers.Length; i++)
-            {
-                BufferID bufferId = _lockedBuffers[i];
-                if (bufferId != BufferID.Unknown)
-                    vault.TryUnlockBuffer(bufferId, OwnerSystemId);
-            }
+            IDataVault vault = _targetBufferGuardVault ?? _dataVault;
+            ulong guardMask = _targetBufferGuardMask;
+            _targetBufferGuardVault = null;
+            _targetBufferGuardMask = 0UL;
+            _targetBufferGuardHeld = false;
 
-            _lockedBuffers.Clear();
+            if (vault != null && guardMask != 0UL)
+                vault.ReleaseMutationGuard(guardMask);
         }
 
         private bool CompleteValidationJob(bool forceComplete)

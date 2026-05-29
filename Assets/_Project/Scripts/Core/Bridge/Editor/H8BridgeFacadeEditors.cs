@@ -1,4 +1,5 @@
 using Hecton8.Core.Contracts.Signals;
+using System.Globalization;
 using UnityEditor;
 using UnityEngine;
 using H8DesignDataFacade = global::Hecton8.Core.Bridge.H8DesignDataFacade;
@@ -19,6 +20,15 @@ namespace Hecton8.Core.Bridge.EditorTools
             EditorGUILayout.Space(6f);
             long bytes = facade.EstimateVramBytes();
             EditorGUILayout.LabelField("VRAM Cost Meter", (bytes >> 20) + " MB");
+            EditorGUILayout.LabelField("Validation", facade.HasValidationErrors ? "ERRORS" : "OK");
+            EditorGUILayout.LabelField("Runtime Bindings", facade.ValidationRuntimeBindingCount.ToString(CultureInfo.InvariantCulture));
+            EditorGUILayout.LabelField("Disabled Bindings", facade.ValidationDisabledBindingCount.ToString(CultureInfo.InvariantCulture));
+            if (facade.HasValidationErrors)
+            {
+                EditorGUILayout.LabelField("Null Binding Rows", facade.ValidationNullBindingCount + " first " + facade.ValidationFirstNullBindingIndex);
+                EditorGUILayout.LabelField("Duplicate Field Hash Rows", facade.ValidationDuplicateFieldHashCount + " first " + facade.ValidationFirstDuplicateFieldHashIndex);
+            }
+
             Rect meterRect = GUILayoutUtility.GetRect(0f, 14f, GUILayout.ExpandWidth(true));
             float normalized = Mathf.Clamp01(bytes / (1024f * 1024f * 1024f));
             EditorGUI.ProgressBar(meterRect, normalized, bytes + " bytes");
@@ -26,11 +36,23 @@ namespace Hecton8.Core.Bridge.EditorTools
             using (new EditorGUILayout.HorizontalScope())
             {
                 if (GUILayout.Button("Sync DataVault"))
-                    facade.SyncToVault(Hecton8.Core.GlobalRegistry.DataVault);
+                    TrySyncDesignFacade(facade);
 
                 if (GUILayout.Button("Generate Contracts"))
                     H8BridgeContractGenerator.GenerateAllContracts();
             }
+        }
+
+        private static void TrySyncDesignFacade(H8DesignDataFacade facade)
+        {
+            if (facade == null)
+                return;
+
+            bool synced = facade.SyncToVault(
+                Hecton8.Core.GlobalRegistry.DataVault,
+                Hecton8.Core.GlobalRegistry.MacroDatabase);
+            if (!synced)
+                Debug.LogError("[H8Bridge] Design DataVault sync failed. Fix duplicate field hashes or wait for DataVault allocation fences to clear.");
         }
     }
 
@@ -109,8 +131,27 @@ namespace Hecton8.Core.Bridge.EditorTools
             serializedObject.ApplyModifiedProperties();
 
             H8InputMappingFacade facade = (H8InputMappingFacade)target;
+            EditorGUILayout.Space(6f);
+            EditorGUILayout.LabelField("Validation", facade.HasValidationErrors ? "ERRORS" : "OK");
+            EditorGUILayout.LabelField("Runtime Bindings", facade.ValidationRuntimeBindingCount.ToString(CultureInfo.InvariantCulture));
+            if (facade.HasValidationErrors)
+            {
+                EditorGUILayout.LabelField("Null Binding Rows", facade.ValidationNullBindingCount + " first " + facade.ValidationFirstNullBindingIndex);
+                EditorGUILayout.LabelField("Duplicate Action Hash Rows", facade.ValidationDuplicateActionHashCount + " first " + facade.ValidationFirstDuplicateActionHashIndex);
+            }
+
             if (GUILayout.Button("Sync Input Map"))
-                facade.SyncToVault(Hecton8.Core.GlobalRegistry.DataVault);
+                TrySyncInputFacade(facade);
+        }
+
+        private static void TrySyncInputFacade(H8InputMappingFacade facade)
+        {
+            if (facade == null)
+                return;
+
+            bool synced = facade.SyncToVault(Hecton8.Core.GlobalRegistry.DataVault);
+            if (!synced)
+                Debug.LogError("[H8Bridge] Input map sync failed. Fix duplicate action hashes or wait for DataVault allocation fences to clear.");
         }
 
         private static int FindCommandIndex(byte command)

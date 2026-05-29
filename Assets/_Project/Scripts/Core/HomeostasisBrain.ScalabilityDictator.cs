@@ -211,6 +211,8 @@ namespace Hecton8.Core
         private const string ScalabilityH8DumpFileName = "Dump_SCALABILITY_DICTATOR.h8dump";
         private const string ScalabilityCsvFileName = "scalability_curves.csv";
 
+        private static readonly ulong MockTerrainSamplerMutationGuardMask =
+            VaultMutationGuardBit(BufferID.ShinobuScalabilityMockScatterDensity);
         private static readonly int _mathLodLowScalarId = Shader.PropertyToID("_HectonMathLodLowWeight");
         private static readonly int _cullingMultiplierId = Shader.PropertyToID("_H8CullingMultiplier");
         private static readonly int _globalQualityWeightId = Shader.PropertyToID("_GlobalQualityWeight");
@@ -282,7 +284,7 @@ namespace Hecton8.Core
         private static float _qualityPidPreviousError;
         private static int _scalabilityTelemetryCursor;
         private static int _scalabilityTelemetrySampleCount;
-        private static bool _mockTerrainSamplerBufferLocked;
+        private static bool _mockTerrainSamplerGuardHeld;
 
         /// <summary>Current culling multiplier written by the dictator.</summary>
         public static float CullingMultiplier => SanitizeCullingMultiplier(_cullingMultiplier);
@@ -438,7 +440,7 @@ namespace Hecton8.Core
             _pendingMathLodLowScalar = 0f;
             _pendingCullingMultiplier = 1f;
             _pendingGlobalQualityWeight = 1f;
-            ReleaseMockTerrainSamplerJobBufferLock(_dataVault);
+            ReleaseMockTerrainSamplerJobGuard(_dataVault);
             ReleaseScalabilityDictatorVaultHandles(_dataVault);
             _systemHealthDtoHandle = default;
             _scalabilityStateHandle = default;
@@ -469,7 +471,7 @@ namespace Hecton8.Core
         {
             ForceCompleteMockTerrainSamplerJobInPostSimulationWindow(releaseVault);
 
-            ReleaseMockTerrainSamplerJobBufferLock(releaseVault);
+            ReleaseMockTerrainSamplerJobGuard(releaseVault);
             ReleaseScalabilityDictatorVaultHandles(releaseVault);
             _systemHealthDtoHandle = default;
             _scalabilityStateHandle = default;
@@ -499,7 +501,7 @@ namespace Hecton8.Core
             finally
             {
                 DispatcherJobFence.EndPostSimulationSwapWindow();
-                ReleaseMockTerrainSamplerJobBufferLock(releaseVault);
+                ReleaseMockTerrainSamplerJobGuard(releaseVault);
             }
         }
 
@@ -786,7 +788,7 @@ namespace Hecton8.Core
                 math.max(hardwareMathLodPressure01, emergencyMathLodPressure01));
             if (_survivalEmergencyActive)
             {
-                targetMask |= Level3Mask | (ulong)SystemBit.LowTierEmergency;
+                targetMask |= Level3Mask | (ulong)SystemBit.SurvivalPressureEmergency;
                 if (targetLevel < 3)
                     targetLevel = 3;
                 flags |= (ushort)(HomeostasisSignalFlags.Emergency | HomeostasisSignalFlags.HudWarning);
@@ -796,7 +798,7 @@ namespace Hecton8.Core
             }
             else
             {
-                targetMask &= ~(ulong)SystemBit.LowTierEmergency;
+                targetMask &= ~(ulong)SystemBit.SurvivalPressureEmergency;
             }
 
             if (mathLodLow)
@@ -848,7 +850,7 @@ namespace Hecton8.Core
 
             bool survivalFailure = safeFrameMs > ScalabilityHardFailFrameMs && GlobalQualityWeight <= 0.0001f;
             bool emergencyFailure = safeFrameMs > CriticalFrameDumpThresholdMs &&
-                                    (targetMask & (ulong)SystemBit.LowTierEmergency) != 0UL;
+                                    (targetMask & (ulong)SystemBit.SurvivalPressureEmergency) != 0UL;
             if (!_scalabilityDumped && (survivalFailure || emergencyFailure))
             {
                 if (TryResolveRuntimeBuffers(
@@ -1686,7 +1688,7 @@ namespace Hecton8.Core
             _mockTerrainSamplerJobPending = false;
 #else
             if (!TryResolveMockTerrainSamplerStatus(out NativeArray<MockTerrainSamplerStatus> terrainSampler) ||
-                !TryLockMockTerrainSamplerJobBuffer())
+                !TryAcquireMockTerrainSamplerJobGuard())
             {
                 return;
             }
@@ -1706,7 +1708,7 @@ namespace Hecton8.Core
             finally
             {
                 if (!scheduled)
-                    ReleaseMockTerrainSamplerJobBufferLock(_dataVault);
+                    ReleaseMockTerrainSamplerJobGuard(_dataVault);
             }
 #endif
             _lastMockTerrainScheduleFrame = frame;
@@ -1721,31 +1723,37 @@ namespace Hecton8.Core
 
             DispatcherJobFence.TryFinalizeCompleted(ref _mockTerrainSamplerJobHandle);
             _mockTerrainSamplerJobPending = false;
-            ReleaseMockTerrainSamplerJobBufferLock(_dataVault);
+            ReleaseMockTerrainSamplerJobGuard(_dataVault);
         }
 
-        private static bool TryLockMockTerrainSamplerJobBuffer()
+        private static bool TryAcquireMockTerrainSamplerJobGuard()
         {
             IDataVault vault = _dataVault;
-            if (vault == null || _mockTerrainSamplerBufferLocked)
+            if (vault == null || vault.IsCompactionFenceActive || _mockTerrainSamplerGuardHeld)
                 return false;
 
-            if (!vault.TryLockBuffer(BufferID.ShinobuScalabilityMockScatterDensity, SystemID.HardwareHomeostasis))
+            if (!vault.TryAcquireMutationGuard(MockTerrainSamplerMutationGuardMask))
                 return false;
 
-            _mockTerrainSamplerBufferLocked = true;
+            _mockTerrainSamplerGuardHeld = true;
             return true;
         }
 
-        private static void ReleaseMockTerrainSamplerJobBufferLock(IDataVault vault)
+        private static void ReleaseMockTerrainSamplerJobGuard(IDataVault vault)
         {
-            if (!_mockTerrainSamplerBufferLocked)
+            if (!_mockTerrainSamplerGuardHeld)
                 return;
 
             if (vault != null)
-                vault.TryUnlockBuffer(BufferID.ShinobuScalabilityMockScatterDensity, SystemID.HardwareHomeostasis);
+                vault.ReleaseMutationGuard(MockTerrainSamplerMutationGuardMask);
 
-            _mockTerrainSamplerBufferLocked = false;
+            _mockTerrainSamplerGuardHeld = false;
+        }
+
+        private static ulong VaultMutationGuardBit(BufferID bufferId)
+        {
+            int bitIndex = unchecked((int)((uint)(int)bufferId & 63u));
+            return 1UL << bitIndex;
         }
 
         [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]

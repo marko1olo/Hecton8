@@ -44,7 +44,6 @@ Shader "Hecton8/Ambient/BiotaIndirect"
 
             #include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/Core.hlsl"
 
-            #define HECTON_BIOTA_MINIMUM_QUALITY_BILLBOARD 2u
             #define HECTON_BIOTA_REACTIVE 16u
 
             struct AmbientBiotaGpuInstance
@@ -136,18 +135,12 @@ Shader "Hecton8/Ambient/BiotaIndirect"
                 return lengthSq > 1e-8 ? value * invLength : fallback;
             }
 
-            float2 Parallax16(float2 uv, float hash, float overkill01)
+            float2 ParallaxCheat(float2 uv, float hash, float overkill01)
             {
                 float2 flow = SafeNormalize2(_HectonBiotaFlowVector.xz + float2(0.07, 0.11), float2(0.70710678, 0.70710678));
-                float2 offset = flow * (0.0016 + 0.0032 * overkill01);
-                [unroll]
-                for (int i = 0; i < 16; i++)
-                {
-                    float tap = ((float)i + 1.0) * 0.0625;
-                    float height = TriangleSigned(dot(uv + offset * tap, float2(17.0, 23.0)) + hash * 13.1 + tap);
-                    uv += offset * height * overkill01;
-                }
-                return uv;
+                float quality = saturate(overkill01);
+                float wave = TriangleSigned(dot(uv, float2(17.0, 23.0)) + hash * 13.1 + _HectonBiotaVisualTime * 0.03);
+                return uv + flow * wave * (0.0008 + 0.0032 * quality) * quality;
             }
 
             float3 CameraRightWS()
@@ -173,13 +166,13 @@ Shader "Hecton8/Ambient/BiotaIndirect"
             #endif
                 AmbientBiotaGpuInstance biota = _HectonBiotaInstances[instanceID];
                 float active = step(0.0001, biota.PositionScale.w);
-                float minimumQualityBillboard = (biota.StateFlags & HECTON_BIOTA_MINIMUM_QUALITY_BILLBOARD) != 0u ? 1.0 : 0.0;
+                float survivalBillboardPressure = saturate(max(1.0 - _HectonBiotaQualityProfile, _HectonBiotaSystemStress01));
                 float hash = biota.VisualParams.z;
                 float age01 = biota.VisualParams.x;
                 float pulse = TriangleSigned(hash + _HectonBiotaVisualTime * lerp(0.17, 0.41, _HectonBiotaOverkill01));
                 float squash = lerp(1.0, 1.0 + pulse * 0.16, _HectonBiotaOverkill01);
                 float2 quad = input.positionOS.xy;
-                quad.x *= lerp(1.0, 1.0 + age01 * 0.22, minimumQualityBillboard);
+                quad.x *= lerp(1.0, 1.0 + age01 * 0.22, survivalBillboardPressure);
                 quad.y *= squash;
 
                 float3 velocity = biota.VelocityEmission.xyz;
@@ -212,8 +205,7 @@ Shader "Hecton8/Ambient/BiotaIndirect"
 
                 float2 uv = input.uv;
                 float hash = input.visualParams.z;
-                if (_HectonBiotaOverkill01 > 0.5)
-                    uv = Parallax16(uv, hash, _HectonBiotaOverkill01);
+                uv = ParallaxCheat(uv, hash, _HectonBiotaOverkill01);
 
                 float2 centered = uv * 2.0 - 1.0;
                 float radial = saturate(1.0 - dot(centered, centered));

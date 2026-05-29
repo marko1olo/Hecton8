@@ -27,6 +27,7 @@ namespace Hecton8.Environment
     [DisallowMultipleComponent]
     public sealed class HectonMarineSnowRenderer : MonoBehaviour,
         ILateFrameTickable,
+        ISlowTickable,
         IOriginShiftListener,
         IVehicleCommandSignalListener,
         IGlobalRegistryHotSwapListener,
@@ -599,6 +600,7 @@ namespace Hecton8.Environment
         private float _resolvedGlobalQualityWeight = -1f;
         private ulong _resolvedKillSwitchMask = ulong.MaxValue;
         private bool _registeredLateFrame;
+        private bool _registeredSlowTick;
         private bool _pendingVisualTickDirty;
         private float _pendingVisualTickDeltaTime;
         private bool _buffersReady;
@@ -644,6 +646,7 @@ namespace Hecton8.Environment
         private Vector4 _lastPublishedFogDensityParams;
         private Texture _lastPublishedFogDensityTexture;
         private Texture _boundCameraDepthTexture;
+        private Texture _cameraDepthTextureSnapshot;
         private Texture _boundTerrainHeightTexture;
         private Texture _boundCaveSdfTexture;
         private Texture _boundAbyssalFlowTexture;
@@ -668,6 +671,16 @@ namespace Hecton8.Environment
         private Vector4 _boundTerrainHeightScale;
         private Vector4 _boundSubmarineWashSphere;
         private Vector4 _boundSubmarineWashVelocity;
+        private Vector4 _cachedSubmarineWashSphere;
+        private Vector4 _cachedSubmarineWashVelocity;
+        private Vector4 _cachedFlashlightPositionWS;
+        private Vector4 _cachedFlashlightDirectionWS;
+        private Vector4 _cachedFlashlightColor;
+        private Vector4 _cachedFlashlightConeData;
+        private Vector4 _cachedFlowSynchronyParams = DefaultFlowSynchronyParams;
+        private Vector4 _cachedZBufferParams;
+        private float _cachedFlashlightActive;
+        private float _cachedSonarRevealExpireTime;
         private Vector4 _boundFloatingOriginOffset = InvalidVector;
         private Vector4 _boundAupShiftOffset = InvalidVector;
         private Vector4 _boundFlashlightPositionWS = InvalidVector;
@@ -813,12 +826,30 @@ namespace Hecton8.Environment
                 : TextureFormat.RGBA32;
         }
 
+        private void RefreshExternalShaderGlobalsCold()
+        {
+            _cachedSubmarineWashSphere = Shader.GetGlobalVector(ShaderIds.SubmarineWashSphereId);
+            _cachedSubmarineWashVelocity = Shader.GetGlobalVector(ShaderIds.SubmarineWashVelocityId);
+            _cachedFlashlightPositionWS = Shader.GetGlobalVector(ShaderIds.FlashlightPositionWSId);
+            _cachedFlashlightDirectionWS = Shader.GetGlobalVector(ShaderIds.FlashlightDirectionWSId);
+            _cachedFlashlightColor = Shader.GetGlobalVector(ShaderIds.FlashlightColorId);
+            _cachedFlashlightConeData = Shader.GetGlobalVector(ShaderIds.FlashlightConeDataId);
+            _cachedFlashlightActive = Shader.GetGlobalFloat(ShaderIds.FlashlightActiveId);
+            _cachedSonarRevealExpireTime = Shader.GetGlobalFloat(ShaderIds.SonarRevealExpireTimeId);
+            _cameraDepthTextureSnapshot = Shader.GetGlobalTexture(ShaderIds.CameraDepthTextureId);
+            _cachedZBufferParams = Shader.GetGlobalVector(ShaderIds.GlobalZBufferParamsId);
+
+            Vector4 synchronyParams = Shader.GetGlobalVector(ShaderIds.FlowSynchronyParamsId);
+            _cachedFlowSynchronyParams = synchronyParams.x > 0f ? synchronyParams : DefaultFlowSynchronyParams;
+        }
+
         private void OnEnable()
         {
             RefreshSpeedLineCache();
             CacheGraphicsCapabilitySnapshotCold();
             ResolveTargetCameraCold();
             TryRegisterHotSwapListener();
+            RefreshExternalShaderGlobalsCold();
             RefreshFluidBinding(force: true);
             RefreshDataVaultBinding(force: true);
             EnsureNativeState();
@@ -826,6 +857,7 @@ namespace Hecton8.Environment
             HectonFloatingOrigin.RegisterListener(this);
             EnsureCsvProfileBackgroundReader();
             TryRegisterLateFrame();
+            TryRegisterSlowTick();
         }
 
         private void OnValidate()
@@ -848,6 +880,12 @@ namespace Hecton8.Environment
                 _registeredLateFrame = false;
             }
 
+            if (_registeredSlowTick)
+            {
+                GlobalRegistry.UnregisterSlowTickable(this, PriorityLayer.Environment);
+                _registeredSlowTick = false;
+            }
+
             ReleaseBuffers();
             ClearNativeStateLease();
             _abyssalFlowGpuReadModel = null;
@@ -867,6 +905,12 @@ namespace Hecton8.Environment
             UnregisterVehicleCommandListener();
             TryUnregisterHotSwapListener();
             StopCsvProfileBackgroundReader();
+            if (_registeredSlowTick)
+            {
+                GlobalRegistry.UnregisterSlowTickable(this, PriorityLayer.Environment);
+                _registeredSlowTick = false;
+            }
+
             ClearNativeStateLease();
         }
 
@@ -1014,6 +1058,12 @@ namespace Hecton8.Environment
                             _registeredLateFrame = false;
                         }
 
+                        if (_registeredSlowTick)
+                        {
+                            GlobalRegistry.UnregisterSlowTickable(this, PriorityLayer.Environment);
+                            _registeredSlowTick = false;
+                        }
+
                         _tickDispatcher = tickDispatcher;
                     }
 
@@ -1021,6 +1071,7 @@ namespace Hecton8.Environment
                     if (_dispatcherReady)
                     {
                         TryRegisterLateFrame();
+                        TryRegisterSlowTick();
                     }
                     break;
                 case GlobalRegistryServiceSlot.FluidRuntime:
@@ -1121,6 +1172,29 @@ namespace Hecton8.Environment
             RunMarineSnowVisualTick(dt);
         }
 
+        public void SlowTick()
+        {
+            CacheGraphicsCapabilitySnapshotCold();
+            ResolveTargetCameraCold();
+            RefreshExternalShaderGlobalsCold();
+
+            if (!enabled || marineSnowCompute == null || marineSnowMaterial == null || !HasCachedTargetCamera())
+                return;
+
+            EnsureNativeState();
+            EnsureBuffers();
+            if (!_buffersReady)
+                return;
+
+            RefreshSiltProfileCsv();
+#if UNITY_EDITOR
+            RefreshPropwashWakeProfileCsv();
+#endif
+            EnsureSonarGlowTexture();
+            EnsureFogDensityTexture();
+            RefreshColdGpuBindings(ExternalGpuBindingColdTickSeconds);
+        }
+
         private void RunMarineSnowVisualTick(float dt)
         {
             if (!enabled || marineSnowCompute == null || marineSnowMaterial == null)
@@ -1139,16 +1213,9 @@ namespace Hecton8.Environment
                 return;
             }
 
-            EnsureBuffers();
-            if (!_buffersReady)
-                return;
-            if (!EnsureNativeState())
+            if (!AreMarineSnowRuntimeResourcesReady())
                 return;
 
-            RefreshSiltProfileCsv();
-#if UNITY_EDITOR
-            RefreshPropwashWakeProfileCsv();
-#endif
             RefreshMockWakeSignals(math.max(0f, dt));
             HarvestProceduralWakeSourcesIntoPropwash();
             RefreshMockAcousticSignal(math.max(0f, dt));
@@ -1167,7 +1234,6 @@ namespace Hecton8.Environment
             UpdateFrameConstants(math.max(0f, dt), effectiveDensityScale);
             RefreshHotGpuBindings();
             PublishVehicleWakeImpulse(math.max(0f, dt));
-            RefreshColdGpuBindings(dt);
             DispatchParticleInitializationIfNeeded();
             DispatchVisibleClear();
             DispatchFogDensityClear();
@@ -1320,6 +1386,17 @@ namespace Hecton8.Environment
             InitializeDefaultPropwashTuning(vault);
             InitializeDefaultPropwashWakeProfiles(vault);
             return _nativeStateReady;
+        }
+
+        private bool AreMarineSnowRuntimeResourcesReady()
+        {
+            if (!_buffersReady || !_nativeStateReady)
+                return false;
+
+            IDataVault vault = _dataVault;
+            return vault != null &&
+                   !vault.IsCompactionFenceActive &&
+                   AreOwnedVaultBuffersReady(vault);
         }
 
         private void RefreshProceduralWakeSourcesHandle(IDataVault vault, bool force)
@@ -1683,8 +1760,8 @@ namespace Hecton8.Environment
                 return;
             }
 
-            Vector4 washSphere = Shader.GetGlobalVector(ShaderIds.SubmarineWashSphereId);
-            Vector4 washVelocity = Shader.GetGlobalVector(ShaderIds.SubmarineWashVelocityId);
+            Vector4 washSphere = _cachedSubmarineWashSphere;
+            Vector4 washVelocity = _cachedSubmarineWashVelocity;
             BuildVehicleWakeSignalJob job = new BuildVehicleWakeSignalJob
             {
                 WashSphere = new float4(washSphere.x, washSphere.y, washSphere.z, washSphere.w),
@@ -2512,6 +2589,16 @@ namespace Hecton8.Environment
             _registeredLateFrame = GlobalRegistry.TryRegisterLateFrameTickable(this, PriorityLayer.Environment);
         }
 
+        private void TryRegisterSlowTick()
+        {
+            if (_registeredSlowTick)
+                return;
+            if (!Application.isPlaying || !_dispatcherReady)
+                return;
+
+            _registeredSlowTick = GlobalRegistry.TryRegisterSlowTickable(this, PriorityLayer.Environment);
+        }
+
         private void EnsureBuffers()
         {
             if (_buffersReady)
@@ -3199,7 +3286,7 @@ namespace Hecton8.Environment
             SetComputeVectorHotIfChanged(ShaderIds.BubbleParamsId, bubbleParams, ref _boundBubbleParams);
             if (_targetCameraComponent != null)
             {
-                Texture depthTexture = Shader.GetGlobalTexture(ShaderIds.CameraDepthTextureId);
+                Texture depthTexture = _cameraDepthTextureSnapshot;
                 if (depthTexture != null)
                     SetKernelTextureIfChanged(_kernelIndex, ShaderIds.CameraDepthTextureId, depthTexture, ref _boundCameraDepthTexture);
 
@@ -3214,7 +3301,7 @@ namespace Hecton8.Environment
                     pixelHeight);
                 SetComputeMatrixHotIfChanged(ShaderIds.ViewProjectionId, viewProjection, ref _boundViewProjection);
                 SetComputeMatrixHotIfChanged(ShaderIds.ViewMatrixId, worldToCameraMatrix, ref _boundViewMatrix);
-                SetComputeVectorHotIfChanged(ShaderIds.ZBufferParamsId, Shader.GetGlobalVector(ShaderIds.GlobalZBufferParamsId), ref _boundZBufferParams);
+                SetComputeVectorHotIfChanged(ShaderIds.ZBufferParamsId, _cachedZBufferParams, ref _boundZBufferParams);
                 SetComputeVectorHotIfChanged(ShaderIds.DepthTextureTexelSizeId, depthTextureTexelSize, ref _boundDepthTextureTexelSize);
             }
         }
@@ -3233,11 +3320,11 @@ namespace Hecton8.Environment
             SetComputeVectorHotIfChanged(ShaderIds.MockAcousticParamsId, mockAcousticParams, ref _boundMockAcousticParams);
             SetComputeVectorHotIfChanged(
                 ShaderIds.SubmarineWashSphereId,
-                Shader.GetGlobalVector(ShaderIds.SubmarineWashSphereId),
+                _cachedSubmarineWashSphere,
                 ref _boundSubmarineWashSphere);
             SetComputeVectorHotIfChanged(
                 ShaderIds.SubmarineWashVelocityId,
-                Shader.GetGlobalVector(ShaderIds.SubmarineWashVelocityId),
+                _cachedSubmarineWashVelocity,
                 ref _boundSubmarineWashVelocity);
             SetComputeVectorHotIfChanged(ShaderIds.PropwashParamsId, DefaultPropwashParams, ref _boundPropwashParams);
             if (_propwashEventBuffer != null)
@@ -3260,22 +3347,22 @@ namespace Hecton8.Environment
                 ref _boundVelocityParams);
             SetComputeVectorHotIfChanged(
                 ShaderIds.FlashlightPositionWSId,
-                Shader.GetGlobalVector(ShaderIds.FlashlightPositionWSId),
+                _cachedFlashlightPositionWS,
                 ref _boundFlashlightPositionWS);
             SetComputeVectorHotIfChanged(
                 ShaderIds.FlashlightDirectionWSId,
-                Shader.GetGlobalVector(ShaderIds.FlashlightDirectionWSId),
+                _cachedFlashlightDirectionWS,
                 ref _boundFlashlightDirectionWS);
-            Vector4 flashlightColor = Shader.GetGlobalVector(ShaderIds.FlashlightColorId);
+            Vector4 flashlightColor = _cachedFlashlightColor;
             SetComputeVectorHotIfChanged(
                 ShaderIds.FlashlightColorId,
                 flashlightColor,
                 ref _boundFlashlightColor);
             SetComputeVectorHotIfChanged(
                 ShaderIds.FlashlightConeDataId,
-                Shader.GetGlobalVector(ShaderIds.FlashlightConeDataId),
+                _cachedFlashlightConeData,
                 ref _boundFlashlightConeData);
-            float flashlightActive = Shader.GetGlobalFloat(ShaderIds.FlashlightActiveId);
+            float flashlightActive = _cachedFlashlightActive;
             _lastHeadlightBoost = math.saturate((flashlightActive >= 0.5f ? 1f : 0f) * flashlightColor.w * math.max(0f, headlightEmissionMultiplier));
             SetComputeBinaryFloatHotIfChanged(
                 ShaderIds.FlashlightActiveId,
@@ -3615,7 +3702,6 @@ namespace Hecton8.Environment
                 return;
             }
 
-            EnsureFogDensityTexture();
             if (_fogDensityTexture == null)
             {
                 SetComputeVectorHotIfChanged(ShaderIds.FogDensityParamsId, Vector4.zero, ref _boundFogDensityParams);
@@ -3674,13 +3760,9 @@ namespace Hecton8.Environment
             return math.saturate((12f * x) * math.rcp(math.max(12f + (6f * x) + (x * x), 0.0001f)));
         }
 
-        private static Vector4 ResolveFlowSynchronyParams()
+        private Vector4 ResolveFlowSynchronyParams()
         {
-            Vector4 synchronyParams = Shader.GetGlobalVector(ShaderIds.FlowSynchronyParamsId);
-            if (synchronyParams.x <= 0f)
-                return DefaultFlowSynchronyParams;
-
-            return synchronyParams;
+            return _cachedFlowSynchronyParams.x > 0f ? _cachedFlowSynchronyParams : DefaultFlowSynchronyParams;
         }
 
         private void DispatchSimulation()
@@ -3881,7 +3963,6 @@ namespace Hecton8.Environment
                 return;
             }
 
-            EnsureSonarGlowTexture();
             if (_sonarGlowTexture == null)
             {
                 PublishSonarGlowGlobals(Vector4.zero, Vector4.zero, null);
@@ -3928,7 +4009,7 @@ namespace Hecton8.Environment
                 return false;
             }
 
-            return (float)SystemDispatcher.CurrentUnscaledTimeSeconds <= Shader.GetGlobalFloat(ShaderIds.SonarRevealExpireTimeId);
+            return (float)SystemDispatcher.CurrentUnscaledTimeSeconds <= _cachedSonarRevealExpireTime;
         }
 
         private bool IsFogDensityInjectionActive()

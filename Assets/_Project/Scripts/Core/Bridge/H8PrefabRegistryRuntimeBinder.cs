@@ -11,74 +11,80 @@ namespace Hecton8.Core.Bridge
     public static unsafe class H8PrefabRegistryRuntimeBinder
     {
         private const int RuntimePrefabIdScratchCapacity = 1024;
+        private const ulong PrefabRegistryBindMutationGuardMask =
+            (1UL << (unchecked((int)(uint)(int)BufferID.BridgePrefabMapping) & 31)) |
+            (1UL << (unchecked((int)(uint)(int)BufferID.BridgePrefabLoreLinks) & 31));
         private static int s_x001H8PrefabRegistryRuntimeBinderSignalPushDropCount;
-        public static bool Bind(H8PrefabRegistry registry, IDataVault vault)
+        public static bool Bind(H8PrefabRegistry registry, IDataVault vault, PrefabRegistry runtimeRegistry)
         {
             if (registry == null || vault == null)
                 return false;
 
-            int count = registry.EntryCount;
-            if (count <= 0)
+            int runtimeBindableCount = registry.RefreshRuntimeBindingStateForSync();
+            int rawCount = registry.EntryCount;
+            if (registry.ValidationDuplicateHashCount > 0)
+                return false;
+
+            if (runtimeBindableCount <= 0)
             {
-                ClearExistingBuffers(vault);
+                if (!ClearExistingBuffers(vault))
+                    return false;
+
                 VRAMBudgetTracker.Unregister(registry.RegistryHash);
                 PublishRegistryUpdateSignal(registry.RegistryHash, BufferID.BridgePrefabMapping, 0);
                 PublishRegistryUpdateSignal(registry.RegistryHash, BufferID.BridgePrefabLoreLinks, 0);
                 return true;
             }
 
-            if (count > RuntimePrefabIdScratchCapacity)
-            {
-                ClearExistingBuffers(vault);
+            if (runtimeBindableCount > RuntimePrefabIdScratchCapacity)
                 return false;
-            }
+
+            if (!TryValidateRuntimeBindableCount(registry, rawCount, runtimeBindableCount))
+                return false;
 
             bool publishRuntimeSignals = Application.isPlaying;
-            PrefabRegistry runtimeRegistry = publishRuntimeSignals ? GlobalRegistry.PrefabRegistryRuntime : null;
+            if (!publishRuntimeSignals)
+                runtimeRegistry = null;
+
             uint frame = publishRuntimeSignals ? Hecton8.Core.SystemDispatcher.CurrentFrameId : 0u;
 
             uint* runtimePrefabIds = stackalloc uint[RuntimePrefabIdScratchCapacity];
-            for (int i = 0; i < count; i++)
+            for (int i = 0; i < runtimeBindableCount; i++)
                 runtimePrefabIds[i] = 0u;
 
             if (runtimeRegistry != null)
             {
-                for (int i = 0; i < count; i++)
+                int runtimeIndex = 0;
+                for (int i = 0; i < rawCount; i++)
                 {
                     H8PrefabRegistry.Entry entry = registry.GetEntry(i);
-                    if (entry != null && entry.IsRuntimeBindable && entry.Prefab != null)
-                        runtimePrefabIds[i] = unchecked((uint)runtimeRegistry.GetOrRegisterPrefab(entry.Prefab));
+                    if (entry == null || !entry.IsRuntimeBindable)
+                        continue;
+
+                    if (entry.Prefab != null)
+                        runtimePrefabIds[runtimeIndex] = unchecked((uint)runtimeRegistry.GetOrRegisterPrefab(entry.Prefab));
+
+                    runtimeIndex++;
                 }
             }
 
-            VaultGenerationHandle<H8PrefabMappingEntry> mappingHandle = vault.EnsureGenerationHandle<H8PrefabMappingEntry>(
-                BufferID.BridgePrefabMapping,
-                count,
-                SystemID.CoreBridge,
-                NativeArrayOptions.ClearMemory);
-            VaultGenerationHandle<H8PrefabLoreLinkEntry> loreLinksHandle = vault.EnsureGenerationHandle<H8PrefabLoreLinkEntry>(
-                BufferID.BridgePrefabLoreLinks,
-                count,
-                SystemID.CoreBridge,
-                NativeArrayOptions.ClearMemory);
-
-            if (mappingHandle.BufferID == 0u ||
-                loreLinksHandle.BufferID == 0u)
-            {
-                return false;
-            }
-
-            if (!TryWriteMappingBuffer(vault, in mappingHandle, registry, runtimePrefabIds, count, out int activeCount, out long totalVramBytes))
+            if (vault.IsAllocationLocked || vault.IsCompactionFenceActive)
                 return false;
 
-            if (!TryWriteLoreLinksBuffer(vault, in loreLinksHandle, registry, count))
+            if (!TryWritePrefabBuffers(
+                    vault,
+                    registry,
+                    runtimePrefabIds,
+                    rawCount,
+                    runtimeBindableCount,
+                    out int activeCount,
+                    out long totalVramBytes))
             {
-                ClearMappingBuffer(vault);
                 return false;
             }
 
             if (publishRuntimeSignals)
-                PublishPrefabSignals(registry, count, frame);
+                PublishPrefabSignals(registry, rawCount, frame);
 
             PublishRegistryUpdateSignal(registry.RegistryHash, BufferID.BridgePrefabMapping, activeCount);
             PublishRegistryUpdateSignal(registry.RegistryHash, BufferID.BridgePrefabLoreLinks, activeCount);
@@ -91,80 +97,119 @@ namespace Hecton8.Core.Bridge
             return true;
         }
 
-        private static bool TryWriteMappingBuffer(
+        private static bool TryValidateRuntimeBindableCount(H8PrefabRegistry registry, int rawCount, int runtimeBindableCount)
+        {
+            if (registry == null || rawCount < 0 || runtimeBindableCount <= 0)
+                return false;
+
+            int counted = 0;
+            for (int i = 0; i < rawCount; i++)
+            {
+                H8PrefabRegistry.Entry entry = registry.GetEntry(i);
+                if (entry != null && entry.IsRuntimeBindable)
+                    counted++;
+            }
+
+            return counted == runtimeBindableCount;
+        }
+
+        private static bool TryWritePrefabBuffers(
             IDataVault vault,
-            in VaultGenerationHandle<H8PrefabMappingEntry> mappingHandle,
             H8PrefabRegistry registry,
             uint* runtimePrefabIds,
-            int count,
+            int rawCount,
+            int runtimeBindableCount,
             out int activeCount,
             out long totalVramBytes)
         {
             activeCount = 0;
             totalVramBytes = 0L;
-            if (!vault.TryAcquireWriteLock(in mappingHandle, SystemID.CoreBridge, out NativeArray<H8PrefabMappingEntry> mapping))
+            if (vault == null ||
+                registry == null ||
+                runtimeBindableCount <= 0 ||
+                vault.IsAllocationLocked ||
+                vault.IsCompactionFenceActive ||
+                !vault.TryAcquireMutationGuard(PrefabRegistryBindMutationGuardMask))
+            {
                 return false;
+            }
 
+            bool written = false;
             try
             {
-                if (!mapping.IsCreated || mapping.Length < count)
+                if (!TryResolveGuardedBuffer(
+                        vault,
+                        BufferID.BridgePrefabMapping,
+                        runtimeBindableCount,
+                        NativeArrayOptions.ClearMemory,
+                        out NativeArray<H8PrefabMappingEntry> mapping) ||
+                    !TryResolveGuardedBuffer(
+                        vault,
+                        BufferID.BridgePrefabLoreLinks,
+                        runtimeBindableCount,
+                        NativeArrayOptions.ClearMemory,
+                        out NativeArray<H8PrefabLoreLinkEntry> loreLinks))
+                {
                     return false;
+                }
 
                 ClearBuffer(mapping);
-
-                for (int i = 0; i < count; i++)
-                {
-                    H8PrefabRegistry.Entry entry = registry.GetEntry(i);
-                    if (entry == null || !entry.IsRuntimeBindable)
-                        continue;
-
-                    int writeIndex = activeCount++;
-                    mapping[writeIndex] = entry.ToMappingEntry(runtimePrefabIds[i]);
-                    totalVramBytes += entry.EstimatedVramBytes > 0L ? entry.EstimatedVramBytes : 0L;
-                }
-
-                Thread.MemoryBarrier();
-                return true;
-            }
-            finally
-            {
-                vault.ReleaseWriteLock(in mappingHandle, SystemID.CoreBridge);
-            }
-        }
-
-        private static bool TryWriteLoreLinksBuffer(
-            IDataVault vault,
-            in VaultGenerationHandle<H8PrefabLoreLinkEntry> loreLinksHandle,
-            H8PrefabRegistry registry,
-            int count)
-        {
-            if (!vault.TryAcquireWriteLock(in loreLinksHandle, SystemID.CoreBridge, out NativeArray<H8PrefabLoreLinkEntry> loreLinks))
-                return false;
-
-            try
-            {
-                if (!loreLinks.IsCreated || loreLinks.Length < count)
-                    return false;
-
                 ClearBuffer(loreLinks);
 
-                int loreWriteIndex = 0;
-                for (int i = 0; i < count; i++)
+                int writeIndex = 0;
+                long vramBytes = 0L;
+                for (int i = 0; i < rawCount; i++)
                 {
                     H8PrefabRegistry.Entry entry = registry.GetEntry(i);
                     if (entry == null || !entry.IsRuntimeBindable)
                         continue;
 
-                    loreLinks[loreWriteIndex++] = entry.ToLoreLinkEntry();
+                    if (writeIndex >= runtimeBindableCount)
+                        return false;
+
+                    mapping[writeIndex] = entry.ToMappingEntry(runtimePrefabIds[writeIndex]);
+                    loreLinks[writeIndex] = entry.ToLoreLinkEntry();
+                    vramBytes += entry.EstimatedVramBytes > 0L ? entry.EstimatedVramBytes : 0L;
+                    writeIndex++;
                 }
 
+                if (writeIndex != runtimeBindableCount)
+                    return false;
+
                 Thread.MemoryBarrier();
-                return true;
+                activeCount = writeIndex;
+                totalVramBytes = vramBytes;
+                written = true;
             }
             finally
             {
-                vault.ReleaseWriteLock(in loreLinksHandle, SystemID.CoreBridge);
+                vault.ReleaseMutationGuard(PrefabRegistryBindMutationGuardMask);
             }
+
+            return written;
+        }
+
+        private static bool TryResolveGuardedBuffer<T>(
+            IDataVault vault,
+            BufferID bufferId,
+            int requiredLength,
+            NativeArrayOptions options,
+            out NativeArray<T> buffer) where T : struct
+        {
+            buffer = default;
+            if (vault == null || requiredLength <= 0 || vault.IsAllocationLocked || vault.IsCompactionFenceActive)
+                return false;
+
+            VaultGenerationHandle<T> handle = vault.EnsureGenerationHandle<T>(
+                bufferId,
+                requiredLength,
+                SystemID.CoreBridge,
+                options);
+
+            return handle.BufferID != 0u &&
+                   vault.TryReadHandle(in handle, out buffer) &&
+                   buffer.IsCreated &&
+                   buffer.Length >= requiredLength;
         }
 
         private static void PublishPrefabSignals(H8PrefabRegistry registry, int count, uint frame)
@@ -196,55 +241,74 @@ namespace Hecton8.Core.Bridge
             }
         }
 
-        private static void ClearMappingBuffer(IDataVault vault)
-        {
-            if (vault == null ||
-                !vault.TryGetGenerationHandle<H8PrefabMappingEntry>(BufferID.BridgePrefabMapping, out VaultGenerationHandle<H8PrefabMappingEntry> mappingHandle) ||
-                mappingHandle.BufferID == 0u ||
-                !vault.TryAcquireWriteLock(in mappingHandle, SystemID.CoreBridge, out NativeArray<H8PrefabMappingEntry> mapping))
-            {
-                return;
-            }
-
-            try
-            {
-                if (mapping.IsCreated)
-                    ClearBuffer(mapping);
-            }
-            finally
-            {
-                vault.ReleaseWriteLock(in mappingHandle, SystemID.CoreBridge);
-            }
-        }
-
-        private static void ClearExistingBuffers(IDataVault vault)
+        private static bool ClearExistingBuffers(IDataVault vault)
         {
             if (vault == null)
-                return;
+                return false;
 
-            ClearMappingBuffer(vault);
-            ClearLoreLinksBuffer(vault);
-        }
-
-        private static void ClearLoreLinksBuffer(IDataVault vault)
-        {
-            if (vault == null ||
-                !vault.TryGetGenerationHandle<H8PrefabLoreLinkEntry>(BufferID.BridgePrefabLoreLinks, out VaultGenerationHandle<H8PrefabLoreLinkEntry> loreLinksHandle) ||
-                loreLinksHandle.BufferID == 0u ||
-                !vault.TryAcquireWriteLock(in loreLinksHandle, SystemID.CoreBridge, out NativeArray<H8PrefabLoreLinkEntry> loreLinks))
+            if (vault.IsAllocationLocked ||
+                vault.IsCompactionFenceActive ||
+                !vault.TryAcquireMutationGuard(PrefabRegistryBindMutationGuardMask))
             {
-                return;
+                return false;
             }
 
+            bool cleared = false;
             try
             {
-                if (loreLinks.IsCreated)
+                if (!TryReadExistingGuardedBuffer(
+                        vault,
+                        BufferID.BridgePrefabMapping,
+                        out NativeArray<H8PrefabMappingEntry> mapping,
+                        out bool hasMapping) ||
+                    !TryReadExistingGuardedBuffer(
+                        vault,
+                        BufferID.BridgePrefabLoreLinks,
+                        out NativeArray<H8PrefabLoreLinkEntry> loreLinks,
+                        out bool hasLoreLinks))
+                {
+                    return false;
+                }
+
+                if (hasMapping)
+                    ClearBuffer(mapping);
+
+                if (hasLoreLinks)
                     ClearBuffer(loreLinks);
+
+                cleared = true;
             }
             finally
             {
-                vault.ReleaseWriteLock(in loreLinksHandle, SystemID.CoreBridge);
+                vault.ReleaseMutationGuard(PrefabRegistryBindMutationGuardMask);
             }
+
+            return cleared;
+        }
+
+        private static bool TryReadExistingGuardedBuffer<T>(
+            IDataVault vault,
+            BufferID bufferId,
+            out NativeArray<T> buffer,
+            out bool exists) where T : struct
+        {
+            buffer = default;
+            exists = false;
+            if (vault == null ||
+                !vault.TryGetGenerationHandle<T>(bufferId, out VaultGenerationHandle<T> handle) ||
+                handle.BufferID == 0u)
+            {
+                return true;
+            }
+
+            if (!vault.TryReadHandle(in handle, out buffer))
+                return false;
+
+            if (!buffer.IsCreated)
+                return false;
+
+            exists = true;
+            return true;
         }
 
         private static void ClearBuffer<T>(NativeArray<T> buffer)
@@ -296,7 +360,7 @@ namespace Hecton8.Core.Bridge
         [ContextMenu("Bind Prefab Registry Now")]
         public void BindNow()
         {
-            H8PrefabRegistryRuntimeBinder.Bind(registry, GlobalRegistry.DataVault);
+            H8PrefabRegistryRuntimeBinder.Bind(registry, GlobalRegistry.DataVault, GlobalRegistry.PrefabRegistryRuntime);
         }
     }
 }

@@ -168,7 +168,7 @@
         "call": "buf.DispatchCompute(_shader, krnl_ShaderSim, groupsX, groupsY, lodDispatchCount);",
         "executionSurface": "Runtime",
         "fileHasThreadGroupQuery": false,
-        "line": 202,
+        "line": 210,
         "owner": "Vendor",
         "path": "Assets/Crest/Crest/Scripts/LodData/LodDataMgrPersistent.cs",
         "payloadSizedDispatch": false
@@ -186,7 +186,7 @@
         "call": "buf.DispatchCompute(_shaderSpectrum, _kernelSpectrumInit, groups, groups, CASCADE_COUNT);",
         "executionSurface": "Runtime",
         "fileHasThreadGroupQuery": false,
-        "line": 453,
+        "line": 452,
         "owner": "Vendor",
         "path": "Assets/Crest/Crest/Scripts/Shapes/FFT/FFTCompute.cs",
         "payloadSizedDispatch": false
@@ -195,7 +195,7 @@
         "call": "buf.DispatchCompute(_shaderSpectrum, _kernelSpectrumUpdate, groups, groups, CASCADE_COUNT);",
         "executionSurface": "Runtime",
         "fileHasThreadGroupQuery": false,
-        "line": 477,
+        "line": 476,
         "owner": "Vendor",
         "path": "Assets/Crest/Crest/Scripts/Shapes/FFT/FFTCompute.cs",
         "payloadSizedDispatch": false
@@ -204,7 +204,7 @@
         "call": "buf.DispatchCompute(_shaderFFT, kernelOffset, 1, _resolution, CASCADE_COUNT);",
         "executionSurface": "Runtime",
         "fileHasThreadGroupQuery": false,
-        "line": 499,
+        "line": 498,
         "owner": "Vendor",
         "path": "Assets/Crest/Crest/Scripts/Shapes/FFT/FFTCompute.cs",
         "payloadSizedDispatch": false
@@ -213,7 +213,7 @@
         "call": "buf.DispatchCompute(_shaderFFT, kernelOffset + 1, _resolution, 1, CASCADE_COUNT);",
         "executionSurface": "Runtime",
         "fileHasThreadGroupQuery": false,
-        "line": 506,
+        "line": 505,
         "owner": "Vendor",
         "path": "Assets/Crest/Crest/Scripts/Shapes/FFT/FFTCompute.cs",
         "payloadSizedDispatch": false
@@ -222,7 +222,7 @@
         "call": "buf.DispatchCompute(_shaderGerstner, _krnlGerstner, groupsX, groupsY, cascadeCount);",
         "executionSurface": "Runtime",
         "fileHasThreadGroupQuery": false,
-        "line": 397,
+        "line": 396,
         "owner": "Vendor",
         "path": "Assets/Crest/Crest/Scripts/Shapes/ShapeGerstner.cs",
         "payloadSizedDispatch": false
@@ -523,7 +523,7 @@
     "firstPartyRuntimePayloadSizedDispatchCallsWithoutThreadGroupQueryCount": 4,
     "numthreadsDeclarations": 156,
     "referenceFileMaxBytes": 2000000,
-    "referenceFilesScanned": 9604,
+    "referenceFilesScanned": 9605,
     "riskyThreadGroupCount": 4,
     "riskyThreadGroupCountByExecutionSurface": {
       "Editor": 2,
@@ -685,7 +685,7 @@
         "call": "buf.DispatchCompute(_shader, krnl_ShaderSim, groupsX, groupsY, lodDispatchCount);",
         "executionSurface": "Runtime",
         "fileHasThreadGroupQuery": false,
-        "line": 202,
+        "line": 210,
         "owner": "Vendor",
         "path": "Assets/Crest/Crest/Scripts/LodData/LodDataMgrPersistent.cs",
         "payloadSizedDispatch": false
@@ -703,7 +703,7 @@
         "call": "buf.DispatchCompute(_shaderSpectrum, _kernelSpectrumInit, groups, groups, CASCADE_COUNT);",
         "executionSurface": "Runtime",
         "fileHasThreadGroupQuery": false,
-        "line": 453,
+        "line": 452,
         "owner": "Vendor",
         "path": "Assets/Crest/Crest/Scripts/Shapes/FFT/FFTCompute.cs",
         "payloadSizedDispatch": false
@@ -712,7 +712,7 @@
         "call": "buf.DispatchCompute(_shaderSpectrum, _kernelSpectrumUpdate, groups, groups, CASCADE_COUNT);",
         "executionSurface": "Runtime",
         "fileHasThreadGroupQuery": false,
-        "line": 477,
+        "line": 476,
         "owner": "Vendor",
         "path": "Assets/Crest/Crest/Scripts/Shapes/FFT/FFTCompute.cs",
         "payloadSizedDispatch": false
@@ -721,7 +721,7 @@
         "call": "buf.DispatchCompute(_shaderFFT, kernelOffset, 1, _resolution, CASCADE_COUNT);",
         "executionSurface": "Runtime",
         "fileHasThreadGroupQuery": false,
-        "line": 499,
+        "line": 498,
         "owner": "Vendor",
         "path": "Assets/Crest/Crest/Scripts/Shapes/FFT/FFTCompute.cs",
         "payloadSizedDispatch": false
@@ -730,7 +730,7 @@
         "call": "buf.DispatchCompute(_shaderFFT, kernelOffset + 1, _resolution, 1, CASCADE_COUNT);",
         "executionSurface": "Runtime",
         "fileHasThreadGroupQuery": false,
-        "line": 506,
+        "line": 505,
         "owner": "Vendor",
         "path": "Assets/Crest/Crest/Scripts/Shapes/FFT/FFTCompute.cs",
         "payloadSizedDispatch": false
@@ -739,7 +739,7 @@
         "call": "buf.DispatchCompute(_shaderGerstner, _krnlGerstner, groupsX, groupsY, cascadeCount);",
         "executionSurface": "Runtime",
         "fileHasThreadGroupQuery": false,
-        "line": 397,
+        "line": 396,
         "owner": "Vendor",
         "path": "Assets/Crest/Crest/Scripts/Shapes/ShapeGerstner.cs",
         "payloadSizedDispatch": false
@@ -946,16 +946,16 @@
         "call": "grassComputeShader.Dispatch(grassInstantiationComputeKernelId, dispatchGroupsX, 1, dispatchGroupsY);",
         "executionSurface": "Runtime",
         "fileHasThreadGroupQuery": false,
-        "line": 737,
+        "line": 756,
         "owner": "Vendor",
         "path": "Assets/GPUInstancer/Scripts/GPUInstancerDetailManager.cs",
         "payloadSizedDispatch": false
       },
       {
-        "call": "_treeInstantiationComputeShader.Dispatch(0, GPUInstancerConstants.GetComputeThreadGroupCount(instanceTotal), 1, 1);",
+        "call": "_treeInstantiationComputeShader.Dispatch(_treeInstantiationKernelId, GPUInstancerConstants.GetComputeThreadGroupCount(instanceTotal), 1, 1);",
         "executionSurface": "Runtime",
         "fileHasThreadGroupQuery": false,
-        "line": 272,
+        "line": 322,
         "owner": "Vendor",
         "path": "Assets/GPUInstancer/Scripts/GPUInstancerTreeManager.cs",
         "payloadSizedDispatch": false

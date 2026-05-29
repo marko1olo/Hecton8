@@ -188,12 +188,12 @@ namespace Hecton8.Gameplay
 
         string IInteractable.GetInteractText()
         {
-            return _fuelItems.Count >= maxFuelSlots ? DefaultInteractFullText : DefaultInteractText;
+            return ActiveFuelCount >= maxFuelSlots ? DefaultInteractFullText : DefaultInteractText;
         }
 
         public bool TryCopyInteractText(System.Span<char> destination, out int length)
         {
-            ReadOnlySpan<char> text = _fuelItems.Count >= maxFuelSlots
+            ReadOnlySpan<char> text = ActiveFuelCount >= maxFuelSlots
                 ? _cachedInteractFullTextBuffer.AsSpan(0, _cachedInteractFullTextLength)
                 : _cachedInteractTextBuffer.AsSpan(0, _cachedInteractTextLength);
             return InteractableTextCopy.TryCopy(text, destination, out length);
@@ -214,7 +214,8 @@ namespace Hecton8.Gameplay
             if (playerInventory == null || playerInventory.Grid == null)
                 return false;
 
-            if (_fuelItems.Count >= maxFuelSlots)
+            CompactFuelListCold();
+            if (ActiveFuelCount >= maxFuelSlots)
                 return false;
 
             InventoryGrid grid = playerInventory.Grid;
@@ -264,7 +265,8 @@ namespace Hecton8.Gameplay
             if (playerInventory == null || item == null)
                 return false;
 
-            if (_fuelItems.Count >= maxFuelSlots)
+            CompactFuelListCold();
+            if (ActiveFuelCount >= maxFuelSlots)
                 return false;
 
             if (!IsAcceptedFuel(item))
@@ -321,6 +323,7 @@ namespace Hecton8.Gameplay
         // ══════════════════════════════════════════════════════════
 
         private List<FuelItem> _fuelItems;
+        private int _fuelHeadIndex;
         private float _totalFuelCapacity;
         private float _currentFuelLevel;
         private bool _isProducing;
@@ -336,6 +339,11 @@ namespace Hecton8.Gameplay
         private bool _fuelIndicatorDirty;
         private bool _pendingInsertAudio;
         private bool _pendingDepletedAudio;
+        private bool _pendingReactorStartedEvent;
+        private bool _pendingReactorStoppedEvent;
+        private bool _pendingFuelLevelChangedEvent;
+        private float _pendingFuelLevelChangedValue;
+        private int _pendingFuelDepletedEvents;
         private IAudioService _audioService;
         private IPlayerRuntimeContext _playerRuntime;
         private ILocalizationTextReadModel _localizationRuntime;
@@ -392,10 +400,12 @@ namespace Hecton8.Gameplay
         public float FuelLevel => _totalFuelCapacity > 0 ? _currentFuelLevel / _totalFuelCapacity : 0f;
 
         /// <summary>Number of fuel slots in use.</summary>
-        public int FuelSlotCount => _fuelItems?.Count ?? 0;
+        public int FuelSlotCount => ActiveFuelCount;
 
         /// <summary>Maximum fuel slots.</summary>
         public int MaxFuelSlots => maxFuelSlots;
+
+        private int ActiveFuelCount => _fuelItems != null ? math.max(0, _fuelItems.Count - _fuelHeadIndex) : 0;
 
         // ══════════════════════════════════════════════════════════
         //  LIFECYCLE
@@ -471,6 +481,10 @@ namespace Hecton8.Gameplay
             _fuelIndicatorDirty = false;
             _pendingInsertAudio = false;
             _pendingDepletedAudio = false;
+            _pendingReactorStartedEvent = false;
+            _pendingReactorStoppedEvent = false;
+            _pendingFuelLevelChangedEvent = false;
+            _pendingFuelDepletedEvents = 0;
         }
 
         private void TryRegisterHotSwap()
@@ -524,12 +538,12 @@ namespace Hecton8.Gameplay
         /// </summary>
         public void Tick(float deltaTime)
         {
-            if (_fuelItems.Count == 0)
+            if (ActiveFuelCount == 0)
             {
                 if (_isProducing)
                 {
                     _isProducing = false;
-                    OnReactorStopped?.Invoke();
+                    QueueReactorStoppedEvent();
                     NotifyGridBalanceChanged();
                     QueueFuelIndicatorUpdate();
                 }
@@ -543,10 +557,10 @@ namespace Hecton8.Gameplay
             ConsumeFuel(fuelToConsume);
 
             // Update production state
-            if (!_isProducing && _fuelItems.Count > 0)
+            if (!_isProducing && ActiveFuelCount > 0)
             {
                 _isProducing = true;
-                OnReactorStarted?.Invoke();
+                QueueReactorStartedEvent();
                 NotifyGridBalanceChanged();
             }
 
@@ -577,6 +591,8 @@ namespace Hecton8.Gameplay
                 if (depletedSound != null && audio != null)
                     audio.PlayAtPoint(depletedSound, audioPosition);
             }
+
+            FlushPendingUnityEvents();
         }
 
         // ══════════════════════════════════════════════════════════
@@ -590,7 +606,8 @@ namespace Hecton8.Gameplay
         /// <returns>True if the item was accepted.</returns>
         public bool InsertFuel(ItemData item)
         {
-            if (item == null || _fuelItems.Count >= maxFuelSlots)
+            CompactFuelListCold();
+            if (item == null || ActiveFuelCount >= maxFuelSlots)
                 return false;
 
             // Check if item category is accepted
@@ -612,8 +629,8 @@ namespace Hecton8.Gameplay
 
             _pendingInsertAudio = insertSound != null;
 
-            OnFuelInserted?.Invoke(_fuelItems.Count - 1);
-            OnFuelLevelChanged?.Invoke(FuelLevel);
+            OnFuelInserted?.Invoke(ActiveFuelCount - 1);
+            QueueFuelLevelChangedEvent();
 
             return true;
         }
@@ -659,9 +676,10 @@ namespace Hecton8.Gameplay
             float previousLevel = _currentFuelLevel;
             int depletedCount = 0;
 
-            while (amount > 0 && depletedCount < _fuelItems.Count)
+            int activeCount = ActiveFuelCount;
+            while (amount > 0 && depletedCount < activeCount)
             {
-                FuelItem firstItem = _fuelItems[depletedCount];
+                FuelItem firstItem = _fuelItems[_fuelHeadIndex + depletedCount];
 
                 if (firstItem.remainingFuel <= amount)
                 {
@@ -672,7 +690,7 @@ namespace Hecton8.Gameplay
                     depletedCount++;
 
                     _pendingDepletedAudio = depletedSound != null;
-                    OnFuelDepleted?.Invoke(0);
+                    QueueFuelDepletedEvent();
                 }
                 else
                 {
@@ -684,12 +702,12 @@ namespace Hecton8.Gameplay
             }
 
             if (depletedCount > 0)
-                _fuelItems.RemoveRange(0, depletedCount);
+                _fuelHeadIndex += depletedCount;
 
             // Fire event if level changed significantly
             if (math.abs(_currentFuelLevel - previousLevel) > 0.1f)
             {
-                OnFuelLevelChanged?.Invoke(FuelLevel);
+                QueueFuelLevelChangedEvent();
             }
         }
 
@@ -701,6 +719,73 @@ namespace Hecton8.Gameplay
         /// Updates the fuel level indicator using MaterialPropertyBlock.
         /// Zero GC: uses cached MaterialPropertyBlock.
         /// </summary>
+        private void CompactFuelListCold()
+        {
+            if (_fuelHeadIndex <= 0 || _fuelItems == null)
+                return;
+
+            if (_fuelHeadIndex >= _fuelItems.Count)
+            {
+                _fuelItems.Clear();
+                _fuelHeadIndex = 0;
+                return;
+            }
+
+            _fuelItems.RemoveRange(0, _fuelHeadIndex);
+            _fuelHeadIndex = 0;
+        }
+
+        private void QueueReactorStartedEvent()
+        {
+            _pendingReactorStartedEvent = true;
+        }
+
+        private void QueueReactorStoppedEvent()
+        {
+            _pendingReactorStoppedEvent = true;
+        }
+
+        private void QueueFuelDepletedEvent()
+        {
+            if (_pendingFuelDepletedEvents < int.MaxValue)
+                _pendingFuelDepletedEvents++;
+        }
+
+        private void QueueFuelLevelChangedEvent()
+        {
+            _pendingFuelLevelChangedValue = FuelLevel;
+            _pendingFuelLevelChangedEvent = true;
+        }
+
+        private void FlushPendingUnityEvents()
+        {
+            if (_pendingReactorStoppedEvent)
+            {
+                _pendingReactorStoppedEvent = false;
+                OnReactorStopped?.Invoke();
+            }
+
+            if (_pendingReactorStartedEvent)
+            {
+                _pendingReactorStartedEvent = false;
+                OnReactorStarted?.Invoke();
+            }
+
+            int depletedEvents = _pendingFuelDepletedEvents;
+            if (depletedEvents > 0)
+            {
+                _pendingFuelDepletedEvents = 0;
+                for (int i = 0; i < depletedEvents; i++)
+                    OnFuelDepleted?.Invoke(0);
+            }
+
+            if (_pendingFuelLevelChangedEvent)
+            {
+                _pendingFuelLevelChangedEvent = false;
+                OnFuelLevelChanged?.Invoke(_pendingFuelLevelChangedValue);
+            }
+        }
+
         private void UpdateOverheat(float deltaTime)
         {
             if (_meltdownTriggered)
@@ -763,7 +848,8 @@ namespace Hecton8.Gameplay
             _currentFuelLevel = 0f;
             _totalFuelCapacity = 0f;
             _fuelItems.Clear();
-            OnReactorStopped?.Invoke();
+            _fuelHeadIndex = 0;
+            QueueReactorStoppedEvent();
             QueueFuelIndicatorUpdate();
             NotifyGridBalanceChanged();
 
@@ -806,7 +892,7 @@ namespace Hecton8.Gameplay
             IPlayerRuntimeContext playerContext = _playerRuntime;
             Transform playerTransform = playerContext != null ? playerContext.PlayerTransform : null;
             HectonSurvivalSystem survival = playerTransform != null
-                ? playerTransform.GetComponentInParent<HectonSurvivalSystem>()
+                ? playerContext.SurvivalSystem
                 : null;
             if (survival != null && playerTransform != null)
             {
@@ -819,7 +905,7 @@ namespace Hecton8.Gameplay
                         int survivalId = GetRuntimeId(survival);
                         if (TryRegisterUniqueId(_damagedSurvivalIds, ref damagedSurvivalCount, survivalId))
                         {
-                            QueueMeltdownPlayerStatus(survival, damage01);
+                            QueueMeltdownPlayerStatus(survival, playerContext.PlayerHealth, damage01);
                             PublishMeltdownRadiationDose(origin, damage01);
                         }
                     }
@@ -854,9 +940,9 @@ namespace Hecton8.Gameplay
             SignalBus<ReactorDamageSignal>.TryPushTracked(in signal, ref s_x001BioReactorSignalPushDropCount);
         }
 
-        private void QueueMeltdownPlayerStatus(HectonSurvivalSystem survival, float damage01)
+        private void QueueMeltdownPlayerStatus(HectonSurvivalSystem survival, HectonPlayerHealth playerHealth, float damage01)
         {
-            int targetId = ResolveSurvivalCombatTargetId(survival);
+            int targetId = ResolveSurvivalCombatTargetId(survival, playerHealth);
             if (targetId == 0 || !CombatDamageRuntime.IsTargetRegistered(targetId))
                 return;
 
@@ -878,12 +964,12 @@ namespace Hecton8.Gameplay
                 severity01);
         }
 
-        private static int ResolveSurvivalCombatTargetId(HectonSurvivalSystem survival)
+        private static int ResolveSurvivalCombatTargetId(HectonSurvivalSystem survival, HectonPlayerHealth playerHealth)
         {
             if (survival == null)
                 return 0;
 
-            if (survival.TryGetComponent(out HectonPlayerHealth playerHealth))
+            if (playerHealth != null)
                 return CombatDamageRuntime.ResolveTargetId(playerHealth.gameObject);
 
             return CombatDamageRuntime.ResolveTargetId(survival.gameObject);

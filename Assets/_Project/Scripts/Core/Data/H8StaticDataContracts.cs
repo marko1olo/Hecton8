@@ -703,6 +703,9 @@ namespace Hecton8.Core.Data
             if (vault == null)
                 return false;
 
+            if (vault.IsAllocationLocked || vault.IsCompactionFenceActive)
+                return false;
+
             VaultGenerationHandle<BTreeTelemetryEntry> ringHandle = vault.EnsureGenerationHandle<BTreeTelemetryEntry>(
                 BTreeTelemetryRingBufferId,
                 H8StaticDataFormat.TelemetryFrameCount,
@@ -798,6 +801,9 @@ namespace Hecton8.Core.Data
         {
             profiles = default;
             if (vault == null)
+                return false;
+
+            if (vault.IsAllocationLocked || vault.IsCompactionFenceActive)
                 return false;
 
             VaultGenerationHandle<BTreeTuningProfileDTO> handle = vault.EnsureGenerationHandle<BTreeTuningProfileDTO>(

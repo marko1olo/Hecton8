@@ -14,8 +14,11 @@ Runtime rule: public gameplay ingress is envelope-only. Mods author data and rev
 | Locale | Locales/en.h8loc.json | Provide keyed localized text in canonical key form. | Authoring/review contract now; runtime injection is not a public right. |
 | Content manifest | Content/assets.h8manifest.json, Content/Assets/ | Declare content ids, paths, CRCs, and byte budgets through bounded snippet/apply tools. | Approval required; no loose runtime ingestion from this folder. |
 | Manifest contract | mod.h8manifest.json | Enable public authoring capability declarations and set capped review budgets through `configure_manifest_contract.ps1`. | Review metadata only; not runtime authority. |
-| VS Code task surface | .vscode/tasks.json, .vscode/settings.json | Run setup, validate, prepare, submission, capability/opcode discovery, snippet creation/apply, disabled graph node creation, explicit replace apply actions, and manifest contract actions from `Tasks: Run Task`. | Editor/offline helper only; routes through `h8mod.ps1`. |
+| Dependency contract | mod.h8manifest.json, mod.json | Add, remove, list, or clear package dependencies through `configure_dependencies.ps1`; both manifests stay in sync and validation rejects invalid IDs, duplicates, and self-dependencies. | Loader ordering metadata only; not runtime authority. |
+| VS Code task surface | .vscode/tasks.json, .vscode/settings.json | Run setup, validate, prepare, submission, local install/diagnosis, capability/opcode discovery, snippet creation/apply, disabled graph node creation, explicit replace apply actions, and manifest contract actions from `Tasks: Run Task`. | Editor/offline helper only; routes through `h8mod.ps1`. |
 | Review package | Reports/review_manifest.json, Generated/*_submission.zip | Produce one hashed handoff artifact for review. | Not a runtime install stamp. |
+| Local discovery copy | Mods/<mod-id> | Copy the reviewed starter source set plus Reports/review_manifest.json into a project or game Mods folder through `install_local_mod.ps1`. | Loader discovery only; managed entry and loose content ingestion remain blocked. |
+| Local Mods diagnosis | Mods/<mod-id>, Reports/review_manifest.json | Inspect a project or game Mods folder through `diagnose_local_mods.ps1`; shows recursive manifest discovery, loader caps, manifest health, duplicate IDs, missing dependencies, dependency cycles, load order, review hash drift, DLL/bundle/lang counts, and the exact envelope-only disable reason. | Read-only diagnostic; no runtime rights. |
 
 ## Not public rights
 
@@ -31,18 +34,21 @@ Runtime rule: public gameplay ingress is envelope-only. Mods author data and rev
 2. If using VS Code, run `Tasks: Run Task` and choose the matching HECTON-8 task; disabled graph node creation and explicit graph/settings/locale/asset replace applies have separate task labels. Change `hecton8.powerShellExecutable` in `.vscode/settings.json` to `pwsh` on macOS/Linux.
 3. Inspect h8mod.ps1 -Action capabilities and h8mod.ps1 -Action opcodes.
 4. Use h8mod.ps1 -Action manifest-contract or Tools/configure_manifest_contract.ps1 to declare allowed capabilities and capped budgets without hand-editing mod.h8manifest.json.
-5. Put content files under Content/Assets/ when declaring data blobs, raw textures, or audio clips for review.
-6. Use h8mod.ps1 -Action node-snippet -NodeParametersJson '{}' and optional -NodeDisabled to generate safe graph node JSON under Generated/. For non-empty CLI parameters, strict JSON and flat fallback forms such as {Quantity:3,Item:demo} are accepted.
-7. Use h8mod.ps1 -Action apply-node-snippet to insert the generated graph node with duplicate checks, budget repair, validation, and rollback.
-8. Use h8mod.ps1 -Action setting-snippet and h8mod.ps1 -Action locale-snippet to generate safe settings/locale JSON under Generated/.
-9. Use h8mod.ps1 -Action apply-setting-snippet and h8mod.ps1 -Action apply-locale-snippet to insert the generated settings/locale snippets into Tables/settings.h8table.json and Locales/en.h8loc.json with duplicate checks and validation.
-10. Use h8mod.ps1 -Action asset-snippet -AssetCrc32 auto -AssetBytes -1 to generate a safe content asset entry, then h8mod.ps1 -Action apply-asset-snippet to insert it into Content/assets.h8manifest.json with CRC/byte proof, budget repair, validation, and rollback.
-11. Run h8mod.ps1 -Action validate.
-12. Run h8mod.ps1 -Action submission and hand off Generated/<mod-id>_submission.zip.
+5. Use h8mod.ps1 -Action dependencies or Tools/configure_dependencies.ps1 to add/remove/list/clear package dependencies without hand-editing both manifests.
+6. Put content files under Content/Assets/ when declaring data blobs, raw textures, or audio clips for review.
+7. Use h8mod.ps1 -Action node-snippet -NodeParametersJson '{}' and optional -NodeDisabled to generate safe graph node JSON under Generated/. For non-empty CLI parameters, strict JSON and flat fallback forms such as {Quantity:3,Item:demo} are accepted.
+8. Use h8mod.ps1 -Action apply-node-snippet to insert the generated graph node with duplicate checks, budget repair, validation, and rollback.
+9. Use h8mod.ps1 -Action setting-snippet and h8mod.ps1 -Action locale-snippet to generate safe settings/locale JSON under Generated/.
+10. Use h8mod.ps1 -Action apply-setting-snippet and h8mod.ps1 -Action apply-locale-snippet to insert the generated settings/locale snippets into Tables/settings.h8table.json and Locales/en.h8loc.json with duplicate checks and validation.
+11. Use h8mod.ps1 -Action asset-snippet -AssetCrc32 auto -AssetBytes -1 to generate a safe content asset entry, then h8mod.ps1 -Action apply-asset-snippet to insert it into Content/assets.h8manifest.json with CRC/byte proof, budget repair, validation, and rollback.
+12. Run h8mod.ps1 -Action validate.
+13. Run h8mod.ps1 -Action submission and hand off Generated/<mod-id>_submission.zip.
+14. For local project discovery only, run h8mod.ps1 -Action install-local -ProjectRoot <HECTON-8 project root> -Replace. This writes Mods/<mod-id> after hash/byte verification; it does not grant runtime execution rights.
+15. Run h8mod.ps1 -Action diagnose-local -ProjectRoot <HECTON-8 project root> to inspect the local Mods folder and see whether each package is missing metadata, hash-stale, duplicate, dependency-blocked, cycle-blocked, or discoverable but disabled by the managed/loose-content runtime boundary.
 
 ## How to create a mod inside the HECTON-8 Unity project
 
-Open Hecton/Modding/External Starter Kit Workbench. Use Starter Health, Capability Matrix, Graph Contract Preview, Authoring Data Preview, Manifest Contract, Authoring Snippets, Content Asset Snippet, Graph Node Snippet, Validation And Review, and Submission Package panels. The Workbench can configure manifest capabilities/budgets and generate/apply graph/settings/locale/content asset snippets through the same bounded starter tools, including Graph Opcode Picker, Parameters JSON, disabled-node, asset kind picker, CRC/byte fields, and replace-on-apply controls; it does not grant extra runtime rights.
+Open Hecton/Modding/External Starter Kit Workbench. Use Starter Health, Capability Matrix, Graph Contract Preview, Authoring Data Preview, Manifest Contract, Dependency Contract, Authoring Snippets, Content Asset Snippet, Graph Node Snippet, Validation And Review, Submission Package, and Local Discovery Install panels. The Workbench can configure manifest capabilities/budgets/dependencies, generate/apply graph/settings/locale/content asset snippets through the same bounded starter tools, copy the reviewed package into Mods/<mod-id>, and diagnose the local Mods folder through the read-only local diagnosis tool, including Graph Opcode Picker, Parameters JSON, disabled-node, asset kind picker, CRC/byte fields, and replace-on-apply controls; it does not grant extra runtime rights.
 
 ## Expansion route
 

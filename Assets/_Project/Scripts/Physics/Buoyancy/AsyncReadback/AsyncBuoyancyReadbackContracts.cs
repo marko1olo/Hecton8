@@ -37,7 +37,6 @@ namespace Hecton8.Physics
         public const uint FlagReadbackError = 1u << 5;
         public const uint FlagDroppedSlot = 1u << 6;
         public const uint FlagDumpedLatency = 1u << 7;
-        public const uint FlagApplyMicrosScheduleOnly = 1u << 8;
         public const uint FlagNonFinite = 1u << 31;
     }
 

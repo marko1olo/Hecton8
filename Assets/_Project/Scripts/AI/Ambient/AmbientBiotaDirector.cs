@@ -51,12 +51,8 @@ namespace Hecton8.AI.Ambient
         private const float PrecisionAvoidanceMetersPerSecond = 0.42f;
         private const ushort TelemetryFlagFaultSanitized = 1 << 0;
         private const ushort TelemetryFlagSurvivalPressure = 1 << 1;
-        private const ushort TelemetryFlagVisualOverkill = 1 << 2;
         private const ushort TelemetryFlagPendingDebris = 1 << 3;
-        private const byte EntitySpawnMinimumQualityVisualFlag = 1 << 1;
-        private const byte EntitySpawnVisualOverkillFlag = 1 << 3;
-        private const uint AmbientStateMinimumQualityBillboardFlag = 1u << 1;
-        private const uint AmbientStateVisualOverkillReactiveFlag = 1u << 4;
+        private const uint AmbientStateHeadlightReactiveFlag = AmbientBiotaState.FlagHeadlightReactive;
         private const string AgentDumpFileName = "Dump_13AI.bin";
         private static readonly int BiotaInstancesShaderId = Shader.PropertyToID("_HectonBiotaInstances");
         private static readonly int BiotaCapacityShaderId = Shader.PropertyToID("_HectonBiotaCapacity");
@@ -488,10 +484,9 @@ namespace Hecton8.AI.Ambient
                     SpawnedCount = (ushort)math.clamp(spawnedBoidCount, 0, ushort.MaxValue),
                     RequestedCount = (ushort)math.clamp(counters[1], 0, ushort.MaxValue),
                     EntityKind = EntitySpawnSignal.KindEcology,
-                    QualityTier = spawnQualityByte,
-                    Flags = (byte)(EntitySpawnSignal.FlagEcology |
-                                   (macroSurvivalPressure01 >= 0.75f ? EntitySpawnMinimumQualityVisualFlag : 0) |
-                                   (macroQualityWeight01 >= 0.95f ? EntitySpawnVisualOverkillFlag : 0)),
+                    QualityWeightQ8 = spawnQualityByte,
+                    Flags = EntitySpawnSignal.FlagEcology,
+                    SurvivalPressureQ8 = EncodeMacroSurvivalPressureSignalByte(macroSurvivalPressure01),
                     Frame = _frameIndex
                 };
                 SignalBus<EntitySpawnSignal>.TryPushTracked(in spawnSignal, ref s_x001AmbientBiotaDirectorSignalPushDropCount);
@@ -1852,8 +1847,6 @@ namespace Hecton8.AI.Ambient
             _pendingDebrisDrainActive = _pendingDebrisDrainActive || pendingDebris > 0;
             if (ResolveSurvivalPressure01() >= 0.75f)
                 flags = (ushort)(flags | TelemetryFlagSurvivalPressure);
-            if (_visualOverkillWeight01 >= 0.6f)
-                flags = (ushort)(flags | TelemetryFlagVisualOverkill);
             if (_pendingDebrisDrainActive)
                 flags = (ushort)(flags | TelemetryFlagPendingDebris);
             _lastTelemetryFlags = flags;
@@ -2050,10 +2043,7 @@ namespace Hecton8.AI.Ambient
                         States[slot] = new AmbientBiotaState
                         {
                             StateFlags = AmbientBiotaState.FlagActive |
-                                         AmbientBiotaState.FlagMacroHydrated |
-                                         (survivalPressure01 >= 0.75f
-                                             ? AmbientStateMinimumQualityBillboardFlag
-                                             : 0u),
+                                         AmbientBiotaState.FlagMacroHydrated,
                             StableHash = hash,
                             SpeciesId = (ushort)(BaseSpeciesId + 8 + (Hash32(hash ^ CurrentBiomeHash) & 7u)),
                             BucketId = (ushort)(hash & BucketMask),
@@ -2259,8 +2249,7 @@ namespace Hecton8.AI.Ambient
                     Velocities[i] = new float4(velocity, normA);
                     States[i] = new AmbientBiotaState
                     {
-                        StateFlags = AmbientBiotaState.FlagActive |
-                                     (survivalPressure01 >= 0.75f ? AmbientStateMinimumQualityBillboardFlag : 0u),
+                        StateFlags = AmbientBiotaState.FlagActive,
                         StableHash = hash,
                         SpeciesId = (ushort)(BaseSpeciesId + (Hash32(hash ^ CurrentBiomeHash) & 7u)),
                         BucketId = (ushort)(hash & BucketMask),
@@ -2336,10 +2325,10 @@ namespace Hecton8.AI.Ambient
                 bool shouldAvoidLight = shouldSimulate & (avoidanceWeight01 > 0.0001f);
                 faultSanitized |= shouldSimulate & (visualOverkill01 > 0.0001f) & !frontDotFinite;
                 targetVelocity += math.select(float3.zero, outward * AvoidanceMetersPerSecond * avoidanceWeight01, shouldAvoidLight);
-                uint stateFlagsWithoutReactive = state.StateFlags & ~AmbientStateVisualOverkillReactiveFlag;
+                uint stateFlagsWithoutReactive = state.StateFlags & ~AmbientStateHeadlightReactiveFlag;
                 state.StateFlags = math.select(
                     stateFlagsWithoutReactive,
-                    stateFlagsWithoutReactive | AmbientStateVisualOverkillReactiveFlag,
+                    stateFlagsWithoutReactive | AmbientStateHeadlightReactiveFlag,
                     shouldAvoidLight);
                 float relaxedEmission = math.saturate(state.Emission01 - safeDeltaTime * math.lerp(0.18f, 0.08f, survivalPressure01));
                 float panicEmission = math.saturate(state.Emission01 + safeDeltaTime * 0.9f);
@@ -2550,6 +2539,11 @@ namespace Hecton8.AI.Ambient
         private static byte EncodeMacroVisualQualitySignalByte(float qualityWeight01)
         {
             return (byte)math.clamp((int)math.round(math.saturate(qualityWeight01) * 255f), 0, 255);
+        }
+
+        private static byte EncodeMacroSurvivalPressureSignalByte(float survivalPressure01)
+        {
+            return (byte)math.clamp((int)math.round(math.saturate(survivalPressure01) * 255f), 0, 255);
         }
 
         private static double3 DeltaMeters(in AbsoluteUniversePosition a, in AbsoluteUniversePosition b)

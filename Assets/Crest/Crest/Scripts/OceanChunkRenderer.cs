@@ -71,6 +71,7 @@ namespace Crest
         {
             _index = s_Count;
             s_Count += 1;
+            EnsurePropertyWrapper();
         }
 
         void OnDisable()
@@ -83,17 +84,26 @@ namespace Crest
             Rend = GetComponent<Renderer>();
             // Meshes are cloned so it is safe to use sharedMesh in play mode. We need clones to modify the render bounds.
             _mesh = GetComponent<MeshFilter>().sharedMesh;
+            EnsurePropertyWrapper();
 
             UpdateMeshBounds();
 
             SetOneTimeMPBParams();
         }
 
-        void SetOneTimeMPBParams()
+        void EnsurePropertyWrapper()
         {
             if (_mpb == null)
             {
                 _mpb = new PropertyWrapperMPB();
+            }
+        }
+
+        void SetOneTimeMPBParams()
+        {
+            if (_mpb == null)
+            {
+                return;
             }
 
             Rend.GetPropertyBlock(_mpb.materialPropertyBlock);
@@ -174,7 +184,7 @@ namespace Crest
 
             if (_mpb == null)
             {
-                _mpb = new PropertyWrapperMPB();
+                return;
             }
             Rend.GetPropertyBlock(_mpb.materialPropertyBlock);
 
@@ -264,8 +274,10 @@ namespace Crest
                 var totalHorizontal = 0f;
                 var totalVertical = 0f;
 
-                foreach (var reporter in s_DisplacementReporters)
+                var displacementReporterCount = s_DisplacementReporters.Count;
+                for (var i = 0; i < displacementReporterCount; i++)
                 {
+                    var reporter = s_DisplacementReporters[i];
                     var horizontal = 0f;
                     var vertical = 0f;
                     if (reporter.ReportDisplacement(ref rect, ref horizontal, ref vertical))
@@ -287,8 +299,10 @@ namespace Crest
                 var minimumWaterLevelBounds = 0f;
                 var maximumWaterLevelBounds = 0f;
 
-                foreach (var reporter in s_HeightReporters)
+                var heightReporterCount = s_HeightReporters.Count;
+                for (var i = 0; i < heightReporterCount; i++)
                 {
+                    var reporter = s_HeightReporters[i];
                     var minimum = 0f;
                     var maximum = 0f;
                     if (reporter.ReportHeight(ref rect, ref minimum, ref maximum))
