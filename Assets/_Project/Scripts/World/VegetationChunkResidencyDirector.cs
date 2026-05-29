@@ -279,60 +279,31 @@ namespace Hecton8.World
                     return false;
                 }
 
-                if (!TryAcquireActiveAggregateDirtyPagesForWrite(
-                        ref _surfaceAggregateBackBuffers,
-                        totalSurfaceCount,
-                        out IDataVault surfaceDirtyVault,
-                        out NativeArray<byte> surfaceMatrixDirtyPages,
-                        out NativeArray<byte> surfaceMetadataDirtyPages))
-                {
-                    return false;
-                }
-
                 int writeIndex = 0;
-                try
+                for (int i = 0; i < _selectedChunkCount; i++)
                 {
-                    GraphicsBufferUploadUtility.ClearDirtyPages(surfaceMatrixDirtyPages, totalSurfaceCount, ActiveAggregateDirtyPageSize);
-                    GraphicsBufferUploadUtility.ClearDirtyPages(surfaceMetadataDirtyPages, totalSurfaceCount, ActiveAggregateDirtyPageSize);
-                    for (int i = 0; i < _selectedChunkCount; i++)
+                    if (!_chunkPayloads.TryGetValue(_selectedChunkKeys[i], out ChunkPayload payload) || !payload.HasSurface)
+                        continue;
+                    if (!_selectedChunkVisibility[i])
+                        continue;
+
+                    int copyCount = payload.SurfaceCount;
+                    if (!CopyChunkSliceToAggregate(
+                        ResolveChunkPool(isSurface: true, payload),
+                        payload.SurfaceOffset,
+                        ref _surfaceAggregateBackBuffers,
+                        writeIndex,
+                        copyCount))
                     {
-                        if (!_chunkPayloads.TryGetValue(_selectedChunkKeys[i], out ChunkPayload payload) || !payload.HasSurface)
-                            continue;
-                        if (!_selectedChunkVisibility[i])
-                            continue;
-
-                        int copyCount = payload.SurfaceCount;
-                        if (!CopyChunkSliceToAggregate(
-                            ResolveChunkPool(isSurface: true, payload),
-                            payload.SurfaceOffset,
-                            ref _surfaceAggregateBackBuffers,
-                            writeIndex,
-                            copyCount))
-                        {
-                            return false;
-                        }
-
-                        GraphicsBufferUploadUtility.MarkDirtyPageRange(
-                            surfaceMatrixDirtyPages,
-                            writeIndex,
-                            copyCount,
-                            totalSurfaceCount,
-                            ActiveAggregateDirtyPageSize);
-                        GraphicsBufferUploadUtility.MarkDirtyPageRange(
-                            surfaceMetadataDirtyPages,
-                            writeIndex,
-                            copyCount,
-                            totalSurfaceCount,
-                            ActiveAggregateDirtyPageSize);
-                        writeIndex += copyCount;
+                        return false;
                     }
+
+                    writeIndex += copyCount;
                 }
-                finally
-                {
-                    ReleaseActiveAggregateDirtyPageWriteLocks(
-                        in _surfaceAggregateBackBuffers,
-                        surfaceDirtyVault);
-                }
+
+                if (!MarkActiveAggregateDirtyPagesOneLock(ref _surfaceAggregateBackBuffers.MatrixDirtyPagesHandle, totalSurfaceCount) ||
+                    !MarkActiveAggregateDirtyPagesOneLock(ref _surfaceAggregateBackBuffers.MetadataDirtyPagesHandle, totalSurfaceCount))
+                    return false;
 
                 _surfaceBackCount = totalSurfaceCount;
                 _surfaceBackDrawBounds = surfaceBounds;
@@ -370,60 +341,31 @@ namespace Hecton8.World
                     return false;
                 }
 
-                if (!TryAcquireActiveAggregateDirtyPagesForWrite(
-                        ref _underwaterAggregateBackBuffers,
-                        totalUnderwaterCount,
-                        out IDataVault underwaterDirtyVault,
-                        out NativeArray<byte> underwaterMatrixDirtyPages,
-                        out NativeArray<byte> underwaterMetadataDirtyPages))
-                {
-                    return false;
-                }
-
                 int writeIndex = 0;
-                try
+                for (int i = 0; i < _selectedChunkCount; i++)
                 {
-                    GraphicsBufferUploadUtility.ClearDirtyPages(underwaterMatrixDirtyPages, totalUnderwaterCount, ActiveAggregateDirtyPageSize);
-                    GraphicsBufferUploadUtility.ClearDirtyPages(underwaterMetadataDirtyPages, totalUnderwaterCount, ActiveAggregateDirtyPageSize);
-                    for (int i = 0; i < _selectedChunkCount; i++)
+                    if (!_chunkPayloads.TryGetValue(_selectedChunkKeys[i], out ChunkPayload payload) || !payload.HasUnderwater)
+                        continue;
+                    if (!_selectedChunkVisibility[i])
+                        continue;
+
+                    int copyCount = payload.UnderwaterCount;
+                    if (!CopyChunkSliceToAggregate(
+                        ResolveChunkPool(isSurface: false, payload),
+                        payload.UnderwaterOffset,
+                        ref _underwaterAggregateBackBuffers,
+                        writeIndex,
+                        copyCount))
                     {
-                        if (!_chunkPayloads.TryGetValue(_selectedChunkKeys[i], out ChunkPayload payload) || !payload.HasUnderwater)
-                            continue;
-                        if (!_selectedChunkVisibility[i])
-                            continue;
-
-                        int copyCount = payload.UnderwaterCount;
-                        if (!CopyChunkSliceToAggregate(
-                            ResolveChunkPool(isSurface: false, payload),
-                            payload.UnderwaterOffset,
-                            ref _underwaterAggregateBackBuffers,
-                            writeIndex,
-                            copyCount))
-                        {
-                            return false;
-                        }
-
-                        GraphicsBufferUploadUtility.MarkDirtyPageRange(
-                            underwaterMatrixDirtyPages,
-                            writeIndex,
-                            copyCount,
-                            totalUnderwaterCount,
-                            ActiveAggregateDirtyPageSize);
-                        GraphicsBufferUploadUtility.MarkDirtyPageRange(
-                            underwaterMetadataDirtyPages,
-                            writeIndex,
-                            copyCount,
-                            totalUnderwaterCount,
-                            ActiveAggregateDirtyPageSize);
-                        writeIndex += copyCount;
+                        return false;
                     }
+
+                    writeIndex += copyCount;
                 }
-                finally
-                {
-                    ReleaseActiveAggregateDirtyPageWriteLocks(
-                        in _underwaterAggregateBackBuffers,
-                        underwaterDirtyVault);
-                }
+
+                if (!MarkActiveAggregateDirtyPagesOneLock(ref _underwaterAggregateBackBuffers.MatrixDirtyPagesHandle, totalUnderwaterCount) ||
+                    !MarkActiveAggregateDirtyPagesOneLock(ref _underwaterAggregateBackBuffers.MetadataDirtyPagesHandle, totalUnderwaterCount))
+                    return false;
 
                 DistortAggregateFlowVectorsByThreat(ref _underwaterAggregateBackBuffers, totalUnderwaterCount);
                 _underwaterBackCount = totalUnderwaterCount;
@@ -1091,6 +1033,282 @@ namespace Hecton8.World
 
             writeIndex = startIndex + validCount;
             return writeIndex <= poolView.Capacity;
+        }
+
+        private bool WriteJobRecordMatricesToPool(
+            NativeArray<JobInstanceRecord> source,
+            ref VaultGenerationHandle<Matrix4x4> handle,
+            int requiredCount,
+            int startIndex,
+            double3 universeOffset)
+        {
+            if (!TryAcquireAggregateWriteBuffer(ref handle, requiredCount, out IDataVault vault, out NativeArray<Matrix4x4> matrices))
+                return false;
+
+            try
+            {
+                int write = startIndex;
+                for (int i = 0; i < source.Length; i++)
+                {
+                    JobInstanceRecord record = source[i];
+                    if (record.IsValid == 0)
+                        continue;
+
+                    if ((uint)write >= (uint)matrices.Length)
+                        return false;
+
+                    matrices[write] = ConvertMatrixToStableUniverseSpace(ToMatrix4x4(record.Matrix), universeOffset);
+                    write++;
+                }
+
+                return true;
+            }
+            finally
+            {
+                vault.ReleaseWriteLock(in handle, VegetationMemorySovereigntyConstants.OwnerSystemId);
+            }
+        }
+
+        private bool WriteJobRecordMetadataToPool(
+            NativeArray<JobInstanceRecord> source,
+            ref VaultGenerationHandle<HectonVegetationInstanceData> handle,
+            int requiredCount,
+            int startIndex,
+            FloraDataTemplate[] floraTemplates,
+            FloraDataTemplate.RuntimeDescriptor[] floraTemplateRuntimeDescriptors)
+        {
+            if (!TryAcquireAggregateWriteBuffer(ref handle, requiredCount, out IDataVault vault, out NativeArray<HectonVegetationInstanceData> metadata))
+                return false;
+
+            try
+            {
+                int write = startIndex;
+                for (int i = 0; i < source.Length; i++)
+                {
+                    JobInstanceRecord record = source[i];
+                    if (record.IsValid == 0)
+                        continue;
+
+                    if ((uint)write >= (uint)metadata.Length)
+                        return false;
+
+                    ResolveFloraDescriptor(
+                        floraTemplates,
+                        floraTemplateRuntimeDescriptors,
+                        record.Type,
+                        record.SemanticType,
+                        record.BiomeLayer,
+                        record.Variation,
+                        out int floraTemplateIndex,
+                        out FloraDataTemplate.RuntimeDescriptor floraDescriptor);
+                    byte geneticTraits = ResolveGeneticTraitByte(floraTemplates, floraTemplateIndex, floraDescriptor);
+                    metadata[write] = new HectonVegetationInstanceData(
+                        (HectonVegetationInstanceType)record.Type,
+                        record.HeightScale,
+                        record.WidthScale,
+                        ResolveDeterministicVatPhase01(record.Variation, record.Type, record.SemanticType, record.BiomeLayer),
+                        floraTemplateIndex,
+                        HectonVegetationInstanceData.RuntimeStateIdle,
+                        HectonVegetationRuntimeFlagEncoding.Encode(record.BiomeLayer, 0, geneticTraits),
+                        floraDescriptor.PulseFrequency,
+                        new Vector4(
+                            floraDescriptor.BioluminescenceColor.x,
+                            floraDescriptor.BioluminescenceColor.y,
+                            floraDescriptor.BioluminescenceColor.z,
+                            floraDescriptor.BioluminescenceColor.w),
+                        floraDescriptor.SwaySpeed,
+                        floraDescriptor.BendAmplitude,
+                        1f,
+                        0f);
+                    write++;
+                }
+
+                return true;
+            }
+            finally
+            {
+                vault.ReleaseWriteLock(in handle, VegetationMemorySovereigntyConstants.OwnerSystemId);
+            }
+        }
+
+        private bool WriteJobRecordTypesToPool(
+            NativeArray<JobInstanceRecord> source,
+            ref VaultGenerationHandle<int> handle,
+            int requiredCount,
+            int startIndex)
+        {
+            if (!TryAcquireAggregateWriteBuffer(ref handle, requiredCount, out IDataVault vault, out NativeArray<int> types))
+                return false;
+
+            try
+            {
+                int write = startIndex;
+                for (int i = 0; i < source.Length; i++)
+                {
+                    JobInstanceRecord record = source[i];
+                    if (record.IsValid == 0)
+                        continue;
+                    if ((uint)write >= (uint)types.Length)
+                        return false;
+                    types[write++] = record.Type;
+                }
+
+                return true;
+            }
+            finally
+            {
+                vault.ReleaseWriteLock(in handle, VegetationMemorySovereigntyConstants.OwnerSystemId);
+            }
+        }
+
+        private bool WriteJobRecordSemanticTypesToPool(
+            NativeArray<JobInstanceRecord> source,
+            ref VaultGenerationHandle<int> handle,
+            int requiredCount,
+            int startIndex)
+        {
+            if (!TryAcquireAggregateWriteBuffer(ref handle, requiredCount, out IDataVault vault, out NativeArray<int> semanticTypes))
+                return false;
+
+            try
+            {
+                int write = startIndex;
+                for (int i = 0; i < source.Length; i++)
+                {
+                    JobInstanceRecord record = source[i];
+                    if (record.IsValid == 0)
+                        continue;
+                    if ((uint)write >= (uint)semanticTypes.Length)
+                        return false;
+                    semanticTypes[write++] = record.SemanticType;
+                }
+
+                return true;
+            }
+            finally
+            {
+                vault.ReleaseWriteLock(in handle, VegetationMemorySovereigntyConstants.OwnerSystemId);
+            }
+        }
+
+        private bool WriteJobRecordBiomeLayersToPool(
+            NativeArray<JobInstanceRecord> source,
+            ref VaultGenerationHandle<byte> handle,
+            int requiredCount,
+            int startIndex)
+        {
+            if (!TryAcquireAggregateWriteBuffer(ref handle, requiredCount, out IDataVault vault, out NativeArray<byte> biomeLayers))
+                return false;
+
+            try
+            {
+                int write = startIndex;
+                for (int i = 0; i < source.Length; i++)
+                {
+                    JobInstanceRecord record = source[i];
+                    if (record.IsValid == 0)
+                        continue;
+                    if ((uint)write >= (uint)biomeLayers.Length)
+                        return false;
+                    biomeLayers[write++] = record.BiomeLayer;
+                }
+
+                return true;
+            }
+            finally
+            {
+                vault.ReleaseWriteLock(in handle, VegetationMemorySovereigntyConstants.OwnerSystemId);
+            }
+        }
+
+        private bool WriteJobRecordEdgeDistancesToPool(
+            NativeArray<JobInstanceRecord> source,
+            ref VaultGenerationHandle<float> handle,
+            int requiredCount,
+            int startIndex)
+        {
+            if (!TryAcquireAggregateWriteBuffer(ref handle, requiredCount, out IDataVault vault, out NativeArray<float> edgeDistances))
+                return false;
+
+            try
+            {
+                int write = startIndex;
+                for (int i = 0; i < source.Length; i++)
+                {
+                    JobInstanceRecord record = source[i];
+                    if (record.IsValid == 0)
+                        continue;
+                    if ((uint)write >= (uint)edgeDistances.Length)
+                        return false;
+                    edgeDistances[write++] = record.EdgeDistance;
+                }
+
+                return true;
+            }
+            finally
+            {
+                vault.ReleaseWriteLock(in handle, VegetationMemorySovereigntyConstants.OwnerSystemId);
+            }
+        }
+
+        private bool WriteJobRecordFlowDirectionsToPool(
+            NativeArray<JobInstanceRecord> source,
+            ref VaultGenerationHandle<Vector2> handle,
+            int requiredCount,
+            int startIndex)
+        {
+            if (!TryAcquireAggregateWriteBuffer(ref handle, requiredCount, out IDataVault vault, out NativeArray<Vector2> flowDirections))
+                return false;
+
+            try
+            {
+                int write = startIndex;
+                for (int i = 0; i < source.Length; i++)
+                {
+                    JobInstanceRecord record = source[i];
+                    if (record.IsValid == 0)
+                        continue;
+                    if ((uint)write >= (uint)flowDirections.Length)
+                        return false;
+                    flowDirections[write++] = new Vector2(record.FlowDirection.x, record.FlowDirection.y);
+                }
+
+                return true;
+            }
+            finally
+            {
+                vault.ReleaseWriteLock(in handle, VegetationMemorySovereigntyConstants.OwnerSystemId);
+            }
+        }
+
+        private bool WriteJobRecordFlowVectorsToPool(
+            NativeArray<JobInstanceRecord> source,
+            ref VaultGenerationHandle<Vector3> handle,
+            int requiredCount,
+            int startIndex)
+        {
+            if (!TryAcquireAggregateWriteBuffer(ref handle, requiredCount, out IDataVault vault, out NativeArray<Vector3> flowVectors))
+                return false;
+
+            try
+            {
+                int write = startIndex;
+                for (int i = 0; i < source.Length; i++)
+                {
+                    JobInstanceRecord record = source[i];
+                    if (record.IsValid == 0)
+                        continue;
+                    if ((uint)write >= (uint)flowVectors.Length)
+                        return false;
+                    flowVectors[write++] = new Vector3(record.FlowVector.x, record.FlowVector.y, record.FlowVector.z);
+                }
+
+                return true;
+            }
+            finally
+            {
+                vault.ReleaseWriteLock(in handle, VegetationMemorySovereigntyConstants.OwnerSystemId);
+            }
         }
 
         private static float ResolveDeterministicVatPhase01(

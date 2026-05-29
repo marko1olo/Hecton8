@@ -4759,3 +4759,13 @@ What was done: added `ShaderGlobalStateMutationGuardMask`; replaced the legacy l
 Cinematic cheats used: preserved the existing shader/global-vector fake path for AUP, water extinction, physiology discomfort, power brownout, respawn cover, suit crush, and radiation mutation. No physical simulation, new renderer pass, or binary quality branch was added.
 
 Exact microseconds saved: 0 us measured; expected steady-frame delta 0 us. Static value is removal of one legacy DataVault pin from a shader presentation bridge and alignment with `GlobalShaderDispatcher` guard topology. Proof: source scan has no `TryLockBuffer/TryUnlockBuffer` in the file; mutation scan has one acquire/release site; added diff Zero-GC/dependency scan returns no hits; scoped `git diff --check` exits 0 with LF/CRLF warning only. Compile/import/profiler proof not run.
+
+## 2026-05-29 - WfcOutpostGridRegistry Slot Lease Guard Flattening
+
+What was wrong: `Assets/_Project/Scripts/Power/WfcOutpostGridRegistry.cs` still protected fixed WFC outpost grid slots with direct `TryLockBuffer/TryUnlockBuffer` calls in registration, lease acquisition, and release/clear paths. A lease can outlive the immediate call while `WfcOutpostGraphTranslationJob` consumes it, so the old topology kept legacy per-buffer pins in a cross-domain native handoff.
+
+What was done: replaced slot pins with mutation guard masks derived from `GridSlotBase + slot`; strengthened slot resolution to use the same granting `IDataVault`; added exact `BufferID`, `SystemID` `512`, and generation validation; preserved the existing `WfcOutpostGridLease` public API and release call shape.
+
+Cinematic cheats used: none added. The route remains a fixed native WFC grid handoff to logistics/power boot, not a new physical simulation or quality-tier split.
+
+Exact microseconds saved: 0 us measured; expected steady-frame delta 0 us. Static value is removal of legacy DataVault buffer pins from three WFC slot lease routes. Proof: source scan has no `TryLockBuffer/TryUnlockBuffer` in the file; mutation scan reports guarded acquire/release sites; hot dependency/GC scan returns no hits for `GlobalRegistry.Get<`, direct `GetComponent(`, formatting, LINQ, or `foreach`; scoped `git diff --check` exits 0 with LF/CRLF warning only. Compile/import/profiler proof not run.

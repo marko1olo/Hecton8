@@ -2958,3 +2958,27 @@ Verification:
 - Scoped `git diff --check`: exit `0`, LF/CRLF warnings only.
 - `dotnet build` invocations: 0; CPU sample `100%`; active `dotnet/csc/VBCSCompiler` processes: 0.
 - Runtime verification absent: no Unity import, Console check, Play Mode, profiler, GCMonitor, player build, device run, StaticData bake/import test, or VaultSovereignty crash dump.
+
+## 2026-05-29 - UNKNOWN - Core/Physics Mutation Guard Width Recheck
+
+What was wrong:
+- Core/Physics mutation guard folding needed verification against the 64-bit DataVault mutation mask. A `BufferID &31` mutation fold is too narrow and can create false guard collisions.
+- The current workspace was already checkpointed by another process, so the proof had to be taken from current `HEAD` and source scans, not a stale local diff.
+
+What was done:
+- Verified current Core/Physics mutation guard helpers/constants use `& 63` / `63u` at `AbyssalCavitationRuntime.cs:399`, `CablePhysicsSolver132.cs:773`, `VehicleComponentDamageRuntime.cs:121`, `HectonInputRuntime_HapticSynth.cs:1077`, `FoveatedSimulationManager.cs:226`, `TetherAupVerletJobs.cs:1461`, `AnalyticalGerstnerWaveRuntime.cs:667`, `BuoyancyDisplacementRuntime.cs:1623`, `TetherVerletJobs.cs:531-542`, and `ExosuitKinematicsRuntime.cs:77-92`.
+- Preserved `GlobalDataVault.cs:2859` as `&31` because it is the older 32-bit active write-lock bit, not the 64-bit mutation guard bit.
+
+Cinematic cheats used:
+- None. This was DataVault ownership math, not physical simulation or presentation.
+
+Exact microseconds saved:
+- Claimed runtime savings: `0 us`; no profiler proof.
+- Expected value is stability: fewer false mutation guard collisions and clearer separation between active write-lock bits and mutation guard bits.
+
+Verification:
+- Hashes: `AbyssalCavitationRuntime.cs=C3080B716453583C6085A9E0ED03EFA964D83A5B347B6E33DE94E1A9052FE9B3`; `CablePhysicsSolver132.cs=C875D2E894CC988C43957A7789EE4C4F97752FF1DA54742AA837938A52404BB8`; `VehicleComponentDamageRuntime.cs=38EB2AEA20F1B0CD425D5027E359BABFE171BD86713D996B3A07957E929ADFC2`; `HectonInputRuntime_HapticSynth.cs=9DA7DC567764F10904408FF7D839DC6242C2EECEBBF2DCC81379656F819050C0`; `FoveatedSimulationManager.cs=10D36DE157916FB225EE04D771CA07B8725BD6F6766C6F63D85284DD9F3624E9`; `TetherAupVerletJobs.cs=2268D9F09433761A8D1534B753B5F92AECF8BF43E007C22E4384C3430A292864`; `AnalyticalGerstnerWaveRuntime.cs=2024B713EA5CCDB4A4DCC4A01148922215049F778A4973AC80895033A5654D6F`; `BuoyancyDisplacementRuntime.cs=7623A10DE1782A1D93159F36D3419DC3100C7FE82119C306DD247F19D2E79AC8`; `TetherVerletJobs.cs=D4C5076F3D3F13C2A25495E69084A16287BFBF70B567F92D1D31A80290ACE181`; `ExosuitKinematicsRuntime.cs=670C54E13E7D6F44F62116BB15A444E1A967C1BB0C540734F42C6F89251CB14A`.
+- Residual Core/Physics `BufferID/bufferId &31` scan found only `Assets/_Project/Scripts/Core/Memory/GlobalDataVault.cs:2859`.
+- Scoped hot lookup scan over the ten verified files found no `GlobalRegistry.Get<`, `GetComponent<`, or `TryGetComponent<`.
+- `dotnet build` invocations: 0; CPU sample `91%`; active `dotnet/csc/VBCSCompiler` processes: 0. Build stayed blocked by AGENTS CPU throttle.
+- Runtime verification absent: no Unity import, Console, Play Mode, profiler, GCMonitor, player build, device run, or crash dump.

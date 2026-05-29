@@ -2001,7 +2001,7 @@ namespace Hecton8.Modding
 
         private static float ResolveGlobalQualityWeight()
         {
-            NativeArray<FutureCommandSandboxTuning> tuningBuffer = OpenVaultLane(ref _tuningHandle);
+            TryOpenVaultLaneRead(ref _tuningHandle, out NativeArray<FutureCommandSandboxTuning>.ReadOnly tuningBuffer);
             return ResolveGlobalQualityWeight(tuningBuffer);
         }
 
@@ -2009,6 +2009,26 @@ namespace Hecton8.Modding
         {
             float weight = HomeostasisBrain.GlobalQualityWeight;
             if (tuningBuffer.IsCreated && tuningBuffer.Length > 0)
+            {
+                FutureCommandSandboxTuning stored = tuningBuffer[0];
+                float overrideWeight = stored.GlobalQualityWeightOverride;
+                if (math.isfinite(overrideWeight) && overrideWeight >= 0f)
+                    weight = overrideWeight;
+
+                float pressure = math.saturate(math.isfinite(stored.CpuThermalPressure01)
+                    ? stored.CpuThermalPressure01
+                    : 1f);
+                float pressureCurve = pressure * pressure * (3f - 2f * pressure);
+                weight = math.lerp(weight, 0f, pressureCurve);
+            }
+
+            return math.saturate(math.isfinite(weight) ? weight : 0f);
+        }
+
+        private static float ResolveGlobalQualityWeight(NativeArray<FutureCommandSandboxTuning>.ReadOnly tuningBuffer)
+        {
+            float weight = HomeostasisBrain.GlobalQualityWeight;
+            if (tuningBuffer.Length > 0)
             {
                 FutureCommandSandboxTuning stored = tuningBuffer[0];
                 float overrideWeight = stored.GlobalQualityWeightOverride;
