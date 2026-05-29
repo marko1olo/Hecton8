@@ -103,26 +103,6 @@ namespace Hecton8.World
                                       FlowVectors.IsCreated;
         }
 
-        private struct NativeChunkPoolWriteLocks
-        {
-            public IDataVault MatricesVault;
-            public IDataVault MetadataVault;
-            public IDataVault TypesVault;
-            public IDataVault SemanticTypesVault;
-            public IDataVault BiomeLayersVault;
-            public IDataVault EdgeDistancesVault;
-            public IDataVault FlowDirectionsVault;
-            public IDataVault FlowVectorsVault;
-            public bool MatricesLocked;
-            public bool MetadataLocked;
-            public bool TypesLocked;
-            public bool SemanticTypesLocked;
-            public bool BiomeLayersLocked;
-            public bool EdgeDistancesLocked;
-            public bool FlowDirectionsLocked;
-            public bool FlowVectorsLocked;
-        }
-
         [System.Runtime.InteropServices.StructLayout(System.Runtime.InteropServices.LayoutKind.Sequential)]
         private struct ActiveAggregateNativeBufferSet : IDisposable
         {

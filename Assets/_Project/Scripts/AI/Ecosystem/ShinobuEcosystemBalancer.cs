@@ -2445,6 +2445,8 @@ namespace Hecton8.AI.Ecosystem
         private void FinishFrameJobCompletion()
         {
             byte pipelineKind = _scheduledPipelineKind;
+            bool publishDebugCells = pipelineKind == ScheduledPipelineFrame && _debugCellPublishPending;
+            _debugCellPublishPending = false;
             _jobScheduled = false;
             _scheduledPipelineKind = ScheduledPipelineNone;
             long completeTicks = Stopwatch.GetTimestamp();
@@ -2508,6 +2510,8 @@ namespace Hecton8.AI.Ecosystem
                     flockingTelemetry.MatrixUploadMicroseconds = math.max(0f, _lastMatrixUploadMs) * 1000f;
                 WriteRenderPayloadAfterRelease(vault, _lastActiveBudget);
                 WriteFlockingCountersAfterRelease(vault);
+                if (publishDebugCells && !WriteDebugCellsAfterRelease(vault) && hasEcosystemTelemetry)
+                    ecosystemTelemetry.DebugCellCount = 0;
             }
 
             if (hasEcosystemTelemetry)
@@ -2760,6 +2764,51 @@ namespace Hecton8.AI.Ecosystem
             return args;
         }
 
+        private unsafe bool WriteDebugCellsAfterRelease(IDataVault vault)
+        {
+            int count = ReadDebugCellScratchCount();
+            if (vault == null ||
+                !_debugCellJobScratch.IsCreated ||
+                !vault.TryLockBuffer(BufferID.ShinobuSpatialHashDebugCells, SystemID.AIEcology))
+            {
+                return false;
+            }
+
+            try
+            {
+                if (!TryOpenVaultView(vault, in _debugCellHandle, BufferID.ShinobuSpatialHashDebugCells, DebugCellCapacity, out NativeArray<ShinobuSpatialHashDebugCell> cells))
+                    return false;
+
+                int copyCount = math.min(count, cells.Length);
+                int cellSize = UnsafeUtility.SizeOf<ShinobuSpatialHashDebugCell>();
+                void* dst = NativeArrayUnsafeUtility.GetUnsafePtr(cells);
+                UnsafeUtility.MemClear(dst, (long)cells.Length * cellSize);
+                if (copyCount > 0)
+                {
+                    void* src = NativeArrayUnsafeUtility.GetUnsafeReadOnlyPtr(_debugCellJobScratch);
+                    UnsafeUtility.MemCpy(dst, src, (long)copyCount * cellSize);
+                }
+            }
+            finally
+            {
+                vault.TryUnlockBuffer(BufferID.ShinobuSpatialHashDebugCells, SystemID.AIEcology);
+            }
+
+            return TryWriteCounterValue(vault, CounterDebugCellCount, count);
+        }
+
+        private int ReadDebugCellScratchCount()
+        {
+            if (!_debugCellJobScratch.IsCreated ||
+                !_debugCellCountJobScratch.IsCreated ||
+                _debugCellCountJobScratch.Length <= 0)
+            {
+                return 0;
+            }
+
+            return math.clamp(_debugCellCountJobScratch[0], 0, math.min(DebugCellCapacity, _debugCellJobScratch.Length));
+        }
+
         private bool TryBuildFrameTelemetryEntries(
             IDataVault vault,
             out EcosystemTelemetryEntry ecosystemEntry,
@@ -2809,7 +2858,9 @@ namespace Hecton8.AI.Ecosystem
             ecosystemEntry.MatrixUploadTimeMs = math.max(0f, _lastMatrixUploadMs);
             ecosystemEntry.ReproducedCount = ReadCounter(counters, CounterReproduced);
             ecosystemEntry.TombstonedCount = ReadCounter(counters, CounterTombstoned);
-            ecosystemEntry.DebugCellCount = ReadCounter(counters, CounterDebugCellCount);
+            ecosystemEntry.DebugCellCount = _debugCellPublishPending
+                ? ReadDebugCellScratchCount()
+                : ReadCounter(counters, CounterDebugCellCount);
             ecosystemEntry.Pad0 = 0u;
             ecosystemEntry.CsvLoadedCount = (ushort)math.clamp(ReadCounter(counters, CounterCsvLoaded), 0, ushort.MaxValue);
             ecosystemEntry.ProfileLoadedCount = (ushort)math.clamp(ReadCounter(counters, CounterProfileLoaded), 0, ushort.MaxValue);
@@ -3148,6 +3199,7 @@ namespace Hecton8.AI.Ecosystem
             _dumpedFlockingFault = false;
             _dumpedSpatialGridFault = false;
             _spatialGridTelemetryMirrorValid = false;
+            _debugCellPublishPending = false;
             _ecosystemLegacyManagedScratch = null;
 #if UNITY_EDITOR
             _ecosystemCsvManagedScratch = null;

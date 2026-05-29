@@ -701,12 +701,13 @@ namespace Den.Tools
 			public virtual void OnAfterDeserialize ()
 			{
 				Dictionary<Coord,T> newTiles = new Dictionary<Coord,T>();
-				for (int i=0; i<serializedTiles.Length; i++) 
+				int serializedCount = serializedTiles != null && serializedCoords != null ? Math.Min(serializedTiles.Length, serializedCoords.Length) : 0;
+				for (int i=0; i<serializedCount; i++)
 				{
 					if (serializedTiles[i] != null)
 						newTiles.Add(serializedCoords[i], serializedTiles[i]);
 				}
-				lock (grid) { grid = newTiles; } 
+				lock (gridLocker) { grid = newTiles; }
 			}
 
 		#endregion
