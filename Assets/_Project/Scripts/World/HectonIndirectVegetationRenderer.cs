@@ -2498,10 +2498,6 @@ namespace Hecton8.World
             if (_material != null)
                 return true;
 
-#if UNITY_EDITOR
-            TryAutoAssignAssets();
-#endif
-
             return _material != null;
         }
 

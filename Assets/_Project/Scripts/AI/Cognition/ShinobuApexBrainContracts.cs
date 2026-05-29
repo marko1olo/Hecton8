@@ -77,7 +77,8 @@ namespace Hecton8.AI.Cognition
         public const byte SweetLieOccluded = 1 << 1;
         public const byte AcousticOverride = 1 << 2;
         public const byte StrikeCommitted = 1 << 3;
-        public const byte SurvivalNodeBudgetPressure = 1 << 4;
+        public const byte SurvivalNodeBudgetPressureCompatibility = 1 << 4;
+        public const byte SurvivalNodeBudgetPressure = SurvivalNodeBudgetPressureCompatibility;
         public const byte ReducedQualityNodeBudget = SurvivalNodeBudgetPressure;
         public const byte TailSdfSampled = 1 << 5;
         public const byte Fault = 1 << 6;
@@ -333,6 +334,7 @@ namespace Hecton8.AI.Cognition
         [FieldOffset(40)] public float FractionalWeight01;
         [FieldOffset(44)] public uint NodeIndex;
         [FieldOffset(48)] public uint Flags;
+        [FieldOffset(52)] public byte SurvivalNodeBudgetPressureQ8;
         [FieldOffset(52)] private uint _pad0;
         [FieldOffset(56)] private uint _pad1;
         [FieldOffset(60)] private uint _pad2;
@@ -368,6 +370,7 @@ namespace Hecton8.AI.Cognition
         [FieldOffset(152)] public ushort Slot;
         [FieldOffset(154)] public byte Phase;
         [FieldOffset(155)] public byte Flags;
+        [FieldOffset(156)] public byte SurvivalNodeBudgetPressureQ8;
         [FieldOffset(156)] private byte _pad0;
         [FieldOffset(157)] private byte _pad1;
         [FieldOffset(158)] private byte _pad2;
