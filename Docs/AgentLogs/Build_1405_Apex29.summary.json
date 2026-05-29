@@ -1,0 +1,17 @@
+{
+  "agent": "1405",
+  "apex": 29,
+  "timestampUtc": "2026-05-28T21:19:42.0647756Z",
+  "status": "BLOCKED_BY_CONTENTION",
+  "command": "dotnet build Assembly-CSharp.csproj --no-restore -m:1 /v:minimal",
+  "cpuLoadSamplesPercent": [
+    97,
+    99
+  ],
+  "cpuLoadMaxPercent": 99,
+  "compilerProcessCount": 0,
+  "compilerProcesses": [],
+  "launched": false,
+  "rule": "Do not launch dotnet build if CPU > 50 or dotnet/csc/VBCSCompiler is active.",
+  "reason": "CPU load samples 97 and 99 exceeded the 50 percent throttle limit."
+}

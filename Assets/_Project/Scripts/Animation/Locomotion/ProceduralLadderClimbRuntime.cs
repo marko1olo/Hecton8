@@ -38,6 +38,13 @@ namespace Hecton8.Animation.Locomotion
         private const string BlackBoxDumpDirectory = "Docs/AgentLogs";
         private const string BlackBoxDumpPath = "Docs/AgentLogs/Dump_LADDER_CLIMB_IK.bin";
         private const int BlackBoxDumpEntryBytes = 128;
+        private static readonly ulong LadderAupMutationGuardMask = LadderMutationGuardBit(BufferID.LadderAUPs);
+        private static readonly ulong SolveMutationGuardMask =
+            LadderMutationGuardBit(BufferID.LadderClimbIkInput) |
+            LadderMutationGuardBit(BufferID.LadderAUPs) |
+            LadderMutationGuardBit(BufferID.LadderClimbIkOutput) |
+            LadderMutationGuardBit(BufferID.LadderClimbIkTelemetryRing) |
+            LadderMutationGuardBit(BufferID.LadderClimbIkTelemetryCursor);
 
         [Header("IK Targets")]
         [SerializeField] private Transform leftHandIkTarget;
@@ -59,7 +66,9 @@ namespace Hecton8.Animation.Locomotion
         private VaultGenerationHandle<int> _telemetryCursorHandle;
 
         private JobHandle _solveHandle;
+        private IDataVault _solveMutationGuardVault;
         private bool _solveScheduled;
+        private bool _solveMutationGuardActive;
         private bool _registeredFastTick;
         private bool _registeredLateFrame;
         private bool _registeredHotSwap;
@@ -211,7 +220,7 @@ namespace Hecton8.Animation.Locomotion
 
             CacheColdDependencies();
             TryRegisterHotSwapListener();
-            EnsureVaultBuffers();
+            OpenOrAcquireVaultBuffersForOwnerRoute();
             PrepareBlackBoxDumpDirectoryCold();
         }
 
@@ -288,7 +297,18 @@ namespace Hecton8.Animation.Locomotion
                 return;
 
             _solveScheduled = false;
-            if (!TryReadOutput(out LadderClimbIkOutput output))
+            bool hasOutput;
+            LadderClimbIkOutput output;
+            try
+            {
+                hasOutput = TryReadOutput(out output);
+            }
+            finally
+            {
+                ReleaseSolveMutationGuard();
+            }
+
+            if (!hasOutput)
             {
                 StopClimb(false, true);
                 return;
@@ -327,7 +347,7 @@ namespace Hecton8.Animation.Locomotion
                 return false;
 
             if (!CacheVaultDependency() ||
-                !EnsureVaultBuffers())
+                !OpenOrAcquireVaultBuffersForOwnerRoute())
             {
                 return false;
             }
@@ -427,41 +447,41 @@ namespace Hecton8.Animation.Locomotion
             _dataVault = current;
             if (ensureBuffers && _dataVault != null && isActiveAndEnabled)
             {
-                EnsureVaultBuffers();
+                OpenOrAcquireVaultBuffersForOwnerRoute();
             }
         }
 
-        private bool EnsureVaultBuffers()
+        private bool OpenOrAcquireVaultBuffersForOwnerRoute()
         {
             IDataVault vault = _dataVault;
             if (vault == null)
                 return false;
 
-            return TryResolveOrAcquireVaultBuffer(
+            return OpenOrAcquireVaultBufferForOwnerRoute(
                        vault,
                        BufferID.LadderClimbIkInput,
                        1,
                        ref _inputHandle,
                        out _) &&
-                   TryResolveOrAcquireVaultBuffer(
+                   OpenOrAcquireVaultBufferForOwnerRoute(
                        vault,
                        BufferID.LadderClimbIkOutput,
                        1,
                        ref _outputHandle,
                        out _) &&
-                   TryResolveOrAcquireVaultBuffer(
+                   OpenOrAcquireVaultBufferForOwnerRoute(
                        vault,
                        BufferID.LadderAUPs,
                        LadderClimbIkConstants.MaxActiveLadders,
                        ref _ladderAupHandle,
                        out _) &&
-                   TryResolveOrAcquireVaultBuffer(
+                   OpenOrAcquireVaultBufferForOwnerRoute(
                        vault,
                        BufferID.LadderClimbIkTelemetryRing,
                        LadderClimbIkConstants.BlackBoxFrameCapacity,
                        ref _telemetryRingHandle,
                        out _) &&
-                   TryResolveOrAcquireVaultBuffer(
+                   OpenOrAcquireVaultBufferForOwnerRoute(
                        vault,
                        BufferID.LadderClimbIkTelemetryCursor,
                        LadderClimbIkConstants.TelemetryCursorElementCount,
@@ -475,16 +495,26 @@ namespace Hecton8.Animation.Locomotion
             int requiredLength,
             out NativeArray<T> buffer) where T : struct
         {
+            return TryResolveVaultBuffer(_dataVault, in handle, expectedBufferId, requiredLength, out buffer);
+        }
+
+        private static bool TryResolveVaultBuffer<T>(
+            IDataVault vault,
+            in VaultGenerationHandle<T> handle,
+            BufferID expectedBufferId,
+            int requiredLength,
+            out NativeArray<T> buffer) where T : struct
+        {
             buffer = default;
-            IDataVault vault = _dataVault;
             return vault != null &&
+                   !vault.IsCompactionFenceActive &&
                    IsLadderVaultHandle(in handle, expectedBufferId) &&
                    vault.TryResolveHandle(in handle, out buffer) &&
                    buffer.IsCreated &&
                    buffer.Length >= requiredLength;
         }
 
-        private static bool TryResolveOrAcquireVaultBuffer<T>(
+        private static bool OpenOrAcquireVaultBufferForOwnerRoute<T>(
             IDataVault vault,
             BufferID bufferId,
             int requiredLength,
@@ -524,16 +554,21 @@ namespace Hecton8.Animation.Locomotion
 
         private bool TryResolveVaultViews(out LadderClimbIkVaultViews views)
         {
+            return TryResolveVaultViews(_dataVault, out views);
+        }
+
+        private bool TryResolveVaultViews(IDataVault vault, out LadderClimbIkVaultViews views)
+        {
             views = default;
 
-            if (!EnsureVaultBuffers())
+            if (vault == null || vault.IsCompactionFenceActive)
                 return false;
 
-            bool hasInputs = TryResolveVaultBuffer(in _inputHandle, BufferID.LadderClimbIkInput, 1, out NativeArray<LadderClimbIkInput> inputs);
-            bool hasOutputs = TryResolveVaultBuffer(in _outputHandle, BufferID.LadderClimbIkOutput, 1, out NativeArray<LadderClimbIkOutput> outputs);
-            bool hasLadderAups = TryResolveVaultBuffer(in _ladderAupHandle, BufferID.LadderAUPs, LadderClimbIkConstants.MaxActiveLadders, out NativeArray<AbsoluteUniversePosition> ladderAups);
-            bool hasTelemetryRing = TryResolveVaultBuffer(in _telemetryRingHandle, BufferID.LadderClimbIkTelemetryRing, LadderClimbIkConstants.BlackBoxFrameCapacity, out NativeArray<LadderClimbTelemetryEntry> telemetryRing);
-            bool hasTelemetryCursor = TryResolveVaultBuffer(in _telemetryCursorHandle, BufferID.LadderClimbIkTelemetryCursor, LadderClimbIkConstants.TelemetryCursorElementCount, out NativeArray<int> telemetryCursor);
+            bool hasInputs = TryResolveVaultBuffer(vault, in _inputHandle, BufferID.LadderClimbIkInput, 1, out NativeArray<LadderClimbIkInput> inputs);
+            bool hasOutputs = TryResolveVaultBuffer(vault, in _outputHandle, BufferID.LadderClimbIkOutput, 1, out NativeArray<LadderClimbIkOutput> outputs);
+            bool hasLadderAups = TryResolveVaultBuffer(vault, in _ladderAupHandle, BufferID.LadderAUPs, LadderClimbIkConstants.MaxActiveLadders, out NativeArray<AbsoluteUniversePosition> ladderAups);
+            bool hasTelemetryRing = TryResolveVaultBuffer(vault, in _telemetryRingHandle, BufferID.LadderClimbIkTelemetryRing, LadderClimbIkConstants.BlackBoxFrameCapacity, out NativeArray<LadderClimbTelemetryEntry> telemetryRing);
+            bool hasTelemetryCursor = TryResolveVaultBuffer(vault, in _telemetryCursorHandle, BufferID.LadderClimbIkTelemetryCursor, LadderClimbIkConstants.TelemetryCursorElementCount, out NativeArray<int> telemetryCursor);
 
             views = new LadderClimbIkVaultViews
             {
@@ -559,11 +594,27 @@ namespace Hecton8.Animation.Locomotion
 
         private bool TryWriteLadderAup(AbsoluteUniversePosition aup)
         {
-            if (!TryResolveVaultViews(out LadderClimbIkVaultViews views) || !views.HasLadderAup)
+            IDataVault vault = _dataVault;
+            if (vault == null ||
+                !IsLadderVaultHandle(in _ladderAupHandle, BufferID.LadderAUPs) ||
+                vault.IsCompactionFenceActive ||
+                !vault.TryAcquireMutationGuard(LadderAupMutationGuardMask))
+            {
                 return false;
+            }
 
-            views.LadderAups[0] = aup;
-            return true;
+            try
+            {
+                if (!TryResolveVaultBuffer(vault, in _ladderAupHandle, BufferID.LadderAUPs, 1, out NativeArray<AbsoluteUniversePosition> ladderAups))
+                    return false;
+
+                ladderAups[0] = aup;
+                return true;
+            }
+            finally
+            {
+                vault.ReleaseMutationGuard(LadderAupMutationGuardMask);
+            }
         }
 
         private bool TryResolveEntryPointAup(Vector3 entryRuntimePosition, out AbsoluteUniversePosition entryAup)
@@ -660,6 +711,7 @@ namespace Hecton8.Animation.Locomotion
             if (vault == null)
                 return;
 
+            ReleaseSolveMutationGuard();
             ReleaseVaultHandle(vault, BufferID.LadderClimbIkInput, ref _inputHandle);
             ReleaseVaultHandle(vault, BufferID.LadderClimbIkOutput, ref _outputHandle);
             ReleaseVaultHandle(vault, BufferID.LadderAUPs, ref _ladderAupHandle);
@@ -679,11 +731,69 @@ namespace Hecton8.Animation.Locomotion
             handle = default;
         }
 
+        private bool TryAcquireSolveMutationGuard(out LadderClimbIkVaultViews views)
+        {
+            views = default;
+            IDataVault vault = _dataVault;
+            if (vault == null ||
+                _solveMutationGuardActive ||
+                !IsLadderVaultHandle(in _inputHandle, BufferID.LadderClimbIkInput) ||
+                !IsLadderVaultHandle(in _ladderAupHandle, BufferID.LadderAUPs) ||
+                !IsLadderVaultHandle(in _outputHandle, BufferID.LadderClimbIkOutput) ||
+                !IsLadderVaultHandle(in _telemetryRingHandle, BufferID.LadderClimbIkTelemetryRing) ||
+                !IsLadderVaultHandle(in _telemetryCursorHandle, BufferID.LadderClimbIkTelemetryCursor))
+            {
+                return false;
+            }
+
+            ulong guardMask = SolveMutationGuardMask;
+            bool success = false;
+            if (guardMask == 0ul ||
+                vault.IsCompactionFenceActive ||
+                !vault.TryAcquireMutationGuard(guardMask))
+            {
+                return false;
+            }
+
+            try
+            {
+                if (!TryResolveVaultViews(vault, out views))
+                    return false;
+
+                _solveMutationGuardVault = vault;
+                _solveMutationGuardActive = true;
+                success = true;
+                return true;
+            }
+            finally
+            {
+                if (!success)
+                    vault.ReleaseMutationGuard(guardMask);
+            }
+        }
+
+        private void ReleaseSolveMutationGuard()
+        {
+            if (!_solveMutationGuardActive)
+                return;
+
+            _solveMutationGuardActive = false;
+            IDataVault vault = _solveMutationGuardVault ?? _dataVault;
+            _solveMutationGuardVault = null;
+            if (vault != null)
+                vault.ReleaseMutationGuard(SolveMutationGuardMask);
+        }
+
         private static bool IsLadderVaultHandle<T>(in VaultGenerationHandle<T> handle, BufferID expectedBufferId) where T : struct
         {
             return handle.BufferID == unchecked((uint)(int)expectedBufferId) &&
                    handle.SystemID == (uint)OwnerSystemId &&
                    handle.Generation != 0u;
+        }
+
+        private static ulong LadderMutationGuardBit(BufferID bufferId)
+        {
+            return 1UL << (unchecked((int)(uint)(int)bufferId) & 31);
         }
 
         private bool TryRegisterTickables()
@@ -731,8 +841,7 @@ namespace Hecton8.Animation.Locomotion
 
         private void ScheduleSolve()
         {
-            if (!_active ||
-                !TryResolveVaultViews(out LadderClimbIkVaultViews views))
+            if (!_active)
             {
                 return;
             }
@@ -747,39 +856,52 @@ namespace Hecton8.Animation.Locomotion
             if (_pendingSlip)
                 flags |= LadderClimbIkConstants.FlagSlip;
 
-            views.Inputs[0] = new LadderClimbIkInput
-            {
-                PlayerRoot = playerRoot,
-                LadderUp = _ladderUp,
-                LadderForward = _ladderForward,
-                LeftShoulder = leftShoulder,
-                RightShoulder = rightShoulder,
-                LeftPole = leftPole,
-                RightPole = rightPole,
-                ProgressMeters = _climbProgressMeters,
-                LadderHeightMeters = _climbHeightMeters,
-                RungSpacingMeters = LadderClimbIkConstants.DefaultRungSpacingMeters,
-                UpperArmMeters = LadderClimbIkConstants.DefaultUpperArmMeters,
-                LowerArmMeters = LadderClimbIkConstants.DefaultLowerArmMeters,
-                Stamina01 = _stamina01,
-                LadderIndex = 0,
-                Frame = unchecked((int)Hecton8.Core.SystemDispatcher.CurrentFrameId),
-                Flags = flags
-            };
+            if (!TryAcquireSolveMutationGuard(out LadderClimbIkVaultViews views))
+                return;
 
-            _solveHandle = new LadderClimbIkSolveJob
+            bool scheduled = false;
+            try
             {
-                Inputs = views.Inputs,
-                LadderAups = views.LadderAups,
-                Outputs = views.Outputs,
-                TelemetryRing = views.TelemetryRing,
-                TelemetryCursor = views.TelemetryCursor,
-                CommittedOriginOffset = HectonFloatingOrigin.CurrentTotalOffsetDouble
-            }.Schedule();
+                views.Inputs[0] = new LadderClimbIkInput
+                {
+                    PlayerRoot = playerRoot,
+                    LadderUp = _ladderUp,
+                    LadderForward = _ladderForward,
+                    LeftShoulder = leftShoulder,
+                    RightShoulder = rightShoulder,
+                    LeftPole = leftPole,
+                    RightPole = rightPole,
+                    ProgressMeters = _climbProgressMeters,
+                    LadderHeightMeters = _climbHeightMeters,
+                    RungSpacingMeters = LadderClimbIkConstants.DefaultRungSpacingMeters,
+                    UpperArmMeters = LadderClimbIkConstants.DefaultUpperArmMeters,
+                    LowerArmMeters = LadderClimbIkConstants.DefaultLowerArmMeters,
+                    Stamina01 = _stamina01,
+                    LadderIndex = 0,
+                    Frame = unchecked((int)Hecton8.Core.SystemDispatcher.CurrentFrameId),
+                    Flags = flags
+                };
 
-            _solveScheduled = true;
-            H8Memory.RegisterActiveJob(OwnerSystemId, _solveHandle);
-            JobHandle.ScheduleBatchedJobs();
+                _solveHandle = new LadderClimbIkSolveJob
+                {
+                    Inputs = views.Inputs,
+                    LadderAups = views.LadderAups,
+                    Outputs = views.Outputs,
+                    TelemetryRing = views.TelemetryRing,
+                    TelemetryCursor = views.TelemetryCursor,
+                    CommittedOriginOffset = HectonFloatingOrigin.CurrentTotalOffsetDouble
+                }.Schedule();
+
+                _solveScheduled = true;
+                scheduled = true;
+                H8Memory.RegisterActiveJob(OwnerSystemId, _solveHandle);
+                JobHandle.ScheduleBatchedJobs();
+            }
+            finally
+            {
+                if (!scheduled)
+                    ReleaseSolveMutationGuard();
+            }
         }
 
         private float ResolveProgressDelta(float deltaTime)
@@ -1145,10 +1267,20 @@ namespace Hecton8.Animation.Locomotion
         private void CompleteOutstandingJobForBarrier()
         {
             if (!_solveScheduled)
+            {
+                ReleaseSolveMutationGuard();
                 return;
+            }
 
-            DispatcherJobFence.TryComplete(ref _solveHandle, forceComplete: true);
-            _solveScheduled = false;
+            try
+            {
+                DispatcherJobFence.TryComplete(ref _solveHandle, forceComplete: true);
+            }
+            finally
+            {
+                _solveScheduled = false;
+                ReleaseSolveMutationGuard();
+            }
         }
 
         private void ResolveLadderFrame(Vector3 entryPosition, Vector3 exitPosition, Transform ladderTransform)

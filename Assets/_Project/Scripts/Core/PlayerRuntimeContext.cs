@@ -129,6 +129,7 @@ namespace Hecton8.Core
         public GameObject PlayerObject { get; private set; }
         public Transform PlayerTransform { get; private set; }
         public HectonPlayerMovement PlayerMovement { get; private set; }
+        public IBuoyancyAirStateReadModel PlayerBuoyancyAirState { get; private set; }
         public Rigidbody PlayerRigidbody { get; private set; }
         public HectonSurvivalSystem SurvivalSystem { get; private set; }
         public HectonPlayerHealth PlayerHealth { get; private set; }
@@ -163,6 +164,7 @@ namespace Hecton8.Core
             PlayerObject = null;
             PlayerTransform = null;
             PlayerMovement = null;
+            PlayerBuoyancyAirState = null;
             PlayerRigidbody = null;
             SurvivalSystem = null;
             PlayerHealth = null;
@@ -194,6 +196,7 @@ namespace Hecton8.Core
             GameObject playerObject,
             Transform playerTransform,
             HectonPlayerMovement playerMovement,
+            IBuoyancyAirStateReadModel playerBuoyancyAirState,
             Rigidbody playerRigidbody,
             HectonSurvivalSystem survivalSystem,
             HectonPlayerHealth playerHealth,
@@ -215,6 +218,7 @@ namespace Hecton8.Core
             PlayerObject = playerObject;
             PlayerTransform = playerTransform;
             PlayerMovement = playerMovement;
+            PlayerBuoyancyAirState = playerBuoyancyAirState;
             PlayerRigidbody = playerRigidbody;
             SurvivalSystem = survivalSystem;
             PlayerHealth = playerHealth;

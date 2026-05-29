@@ -149,7 +149,7 @@ namespace NASAPunk.Visor
             if (!_pendingRefresh && !NeedsAutoResolve())
                 return;
 
-            RefreshCompositor(allowOverlayCreation: false);
+            RefreshCompositorHot();
             _pendingRefresh = false;
         }
 
@@ -160,6 +160,21 @@ namespace NASAPunk.Visor
             EnsureOverlay(allowOverlayCreation);
             EnsureProjection();
             BindTexture();
+        }
+
+        private void RefreshCompositorHot()
+        {
+            RefreshRuntimeReferenceCache();
+            EnsureCanvasState();
+            EnsureCachedOverlayState();
+            EnsureProjection();
+            BindTexture();
+        }
+
+        private void RefreshRuntimeReferenceCache()
+        {
+            if (sharedProjectionTexture == null && visorController != null)
+                sharedProjectionTexture = visorController.SharedRenderTexture;
         }
 
         private void AutoResolveReferences(bool force = false)
@@ -335,7 +350,7 @@ namespace NASAPunk.Visor
                 return;
 
             _overlayCanvasGroup = EnsureCanvasGroup(_overlayRect, allowOverlayCreation);
-            SetOverlayVisible(true, allowOverlayCreation);
+            SetOverlayVisible(true);
 
             if (showAsInsetPreview)
             {
@@ -403,11 +418,8 @@ namespace NASAPunk.Visor
             SetOverlayVisible(targetEnabled);
         }
 
-        private void SetOverlayVisible(bool visible, bool allowCanvasGroupCreation = false)
+        private void SetOverlayVisible(bool visible)
         {
-            if (_overlayCanvasGroup == null && _overlayRect != null)
-                _overlayCanvasGroup = EnsureCanvasGroup(_overlayRect, allowCanvasGroupCreation);
-
             if (_overlayCanvasGroup == null)
                 return;
 
@@ -422,6 +434,45 @@ namespace NASAPunk.Visor
             _overlayCanvasGroup.alpha = targetAlpha;
             _overlayCanvasGroup.interactable = false;
             _overlayCanvasGroup.blocksRaycasts = false;
+        }
+
+        private void EnsureCachedOverlayState()
+        {
+            debugOverlayReady = false;
+            if (_overlayRect == null || _overlayImage == null)
+                return;
+
+            Transform canvasTransform = targetCanvas != null ? targetCanvas.transform : null;
+            if (canvasTransform != null && _overlayRect.parent != canvasTransform)
+                return;
+
+            if (showAsInsetPreview)
+            {
+                Vector2 cornerAnchor = Vector2.one;
+                Vector2 targetPosition = new Vector2(-insetMargin.x, -insetMargin.y);
+                if (_overlayRect.anchorMin != cornerAnchor)
+                    _overlayRect.anchorMin = cornerAnchor;
+                if (_overlayRect.anchorMax != cornerAnchor)
+                    _overlayRect.anchorMax = cornerAnchor;
+                if (_overlayRect.pivot != cornerAnchor)
+                    _overlayRect.pivot = cornerAnchor;
+                if (_overlayRect.sizeDelta != insetSize)
+                    _overlayRect.sizeDelta = insetSize;
+                if (_overlayRect.anchoredPosition != targetPosition)
+                    _overlayRect.anchoredPosition = targetPosition;
+            }
+
+            if (_overlayRect.localScale != Vector3.one)
+                _overlayRect.localScale = Vector3.one;
+            if (_overlayRect.localRotation != Quaternion.identity)
+                _overlayRect.localRotation = Quaternion.identity;
+
+            Color color = new Color(0.92f, 1f, 0.96f, overlayAlpha);
+            if (_overlayImage.color != color)
+                _overlayImage.color = color;
+            if (_overlayImage.raycastTarget)
+                _overlayImage.raycastTarget = false;
+            debugOverlayReady = _overlayCanvasGroup != null;
         }
 
         private void HideExistingOverlay()

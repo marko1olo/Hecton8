@@ -70,33 +70,6 @@ namespace Hecton.Localization
             return UsesImperialUnits(language) ? "°F" : "°C";
         }
 
-        /// <summary>
-        /// Resolve a localized distance unit label.
-        /// </summary>
-        public static string ResolveDistanceUnitLabel(GameLanguage language)
-        {
-            ILocalizationTextReadModel manager = GlobalRegistry.LocalizationText;
-            return ResolveDistanceUnitLabel(language, manager);
-        }
-
-        /// <summary>
-        /// Resolve a localized distance unit label through a cached localization read model.
-        /// </summary>
-        public static string ResolveDistanceUnitLabel(GameLanguage language, ILocalizationTextReadModel manager)
-        {
-            string fallback = GetDistanceUnitFallback(language);
-            return fallback;
-        }
-
-        /// <summary>
-        /// Resolve a localized distance unit label through a cached localization owner.
-        /// </summary>
-        public static string ResolveDistanceUnitLabel(GameLanguage language, LocalizationManager manager)
-        {
-            string fallback = GetDistanceUnitFallback(language);
-            return fallback;
-        }
-
         public static ReadOnlySpan<char> ResolveDistanceUnitLabelSpan(GameLanguage language, ILocalizationTextReadModel manager)
         {
             string key = GetDistanceUnitKey(language);
@@ -105,33 +78,6 @@ namespace Hecton.Localization
             return manager != null
                 ? manager.GetRawSpanOrFallback(LocHash.Compute(key.AsSpan()), fallbackSpan)
                 : fallbackSpan;
-        }
-
-        /// <summary>
-        /// Resolve a localized temperature unit label.
-        /// </summary>
-        public static string ResolveTemperatureUnitLabel(GameLanguage language)
-        {
-            ILocalizationTextReadModel manager = GlobalRegistry.LocalizationText;
-            return ResolveTemperatureUnitLabel(language, manager);
-        }
-
-        /// <summary>
-        /// Resolve a localized temperature unit label through a cached localization read model.
-        /// </summary>
-        public static string ResolveTemperatureUnitLabel(GameLanguage language, ILocalizationTextReadModel manager)
-        {
-            string fallback = GetTemperatureUnitFallback(language);
-            return fallback;
-        }
-
-        /// <summary>
-        /// Resolve a localized temperature unit label through a cached localization owner.
-        /// </summary>
-        public static string ResolveTemperatureUnitLabel(GameLanguage language, LocalizationManager manager)
-        {
-            string fallback = GetTemperatureUnitFallback(language);
-            return fallback;
         }
 
         public static ReadOnlySpan<char> ResolveTemperatureUnitLabelSpan(GameLanguage language, ILocalizationTextReadModel manager)

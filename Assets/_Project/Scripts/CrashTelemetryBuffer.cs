@@ -69,6 +69,12 @@ namespace Hecton8.Core
         private const BufferID RingBufferId = BufferID.CrashTelemetryRing;
         private const BufferID ExportSnapshotBufferId = BufferID.CrashTelemetryExportSnapshot;
         private const BufferID ExportScratchBufferId = BufferID.CrashTelemetryExportScratch;
+        private const ulong ExportSnapshotMutationGuardMask =
+            (1UL << ((int)RingBufferId & 31)) |
+            (1UL << ((int)ExportSnapshotBufferId & 31));
+        private const ulong ExportScratchMutationGuardMask =
+            (1UL << ((int)ExportSnapshotBufferId & 31)) |
+            (1UL << ((int)ExportScratchBufferId & 31));
         private static readonly string[] _FrameTimeCandidates =
         {
             "CPU Total Frame Time",
@@ -3465,66 +3471,33 @@ namespace Hecton8.Core
 
             VaultGenerationHandle<CrashTelemetryEntry> ringHandle = _ringBuffer.Handle;
             VaultGenerationHandle<CrashTelemetryEntry> snapshotHandle = _exportSnapshot.Handle;
-            bool ringLocked = false;
-            bool snapshotLocked = false;
-            NativeArray<CrashTelemetryEntry> ringBuffer = default;
-            NativeArray<CrashTelemetryEntry> exportSnapshot = default;
+            if (!vault.TryAcquireMutationGuard(ExportSnapshotMutationGuardMask))
+                return 0;
+
             try
             {
-                ringLocked = vault.TryLockBuffer(RingBufferId, SystemID.CoreDiagnostics);
-                if (!ringLocked ||
-                    !vault.TryReadHandle(in ringHandle, out ringBuffer) ||
-                    !ringBuffer.IsCreated)
+                if (!vault.TryReadOnlyHandle(in ringHandle, out NativeArray<CrashTelemetryEntry>.ReadOnly ringBuffer) ||
+                    !vault.TryResolveHandle(in snapshotHandle, out NativeArray<CrashTelemetryEntry> exportSnapshot) ||
+                    !ringBuffer.IsCreated ||
+                    !exportSnapshot.IsCreated ||
+                    ringBuffer.Length < RingCapacity)
                 {
                     return 0;
                 }
 
-                snapshotLocked = vault.TryAcquireWriteLock(in snapshotHandle, SystemID.CoreDiagnostics, out exportSnapshot);
-                if (!snapshotLocked || !exportSnapshot.IsCreated)
-                    return 0;
-
-                unsafe
+                int copyCount = math.min(entryCount, math.min(RingCapacity, exportSnapshot.Length));
+                for (int i = 0; i < copyCount; i++)
                 {
-                    byte* sourceBase = (byte*)NativeArrayUnsafeUtility.GetUnsafeReadOnlyPtr(ringBuffer);
-                    byte* destinationBase = (byte*)NativeArrayUnsafeUtility.GetUnsafeBufferPointerWithoutChecks(exportSnapshot);
-                    int firstCopyCount = math.min(entryCount, RingCapacity - sourceStart);
-                    int firstCopyBytes = firstCopyCount * CrashTelemetryEntrySizeBytes;
-                    int totalCopyBytes = entryCount * CrashTelemetryEntrySizeBytes;
-                    int destinationBytes = exportSnapshot.Length * CrashTelemetryEntrySizeBytes;
-
-                    if (!UnsafeMemoryCopyGuard.TryMemCpy(
-                            destinationBase,
-                            destinationBytes,
-                            sourceBase + (sourceStart * CrashTelemetryEntrySizeBytes),
-                            firstCopyBytes))
-                    {
-                        UnsafeMemoryCopyGuard.ReportRejectedCopy(nameof(CrashTelemetryBuffer));
-                        return 0;
-                    }
-
-                    int remainingBytes = totalCopyBytes - firstCopyBytes;
-                    if (remainingBytes > 0 &&
-                        !UnsafeMemoryCopyGuard.TryMemCpy(
-                            destinationBase + firstCopyBytes,
-                            destinationBytes - firstCopyBytes,
-                            sourceBase,
-                            remainingBytes))
-                    {
-                        UnsafeMemoryCopyGuard.ReportRejectedCopy(nameof(CrashTelemetryBuffer));
-                        return 0;
-                    }
+                    int sourceIndex = (sourceStart + i) & RingCapacityMask;
+                    exportSnapshot[i] = ringBuffer[sourceIndex];
                 }
+
+                return copyCount;
             }
             finally
             {
-                if (snapshotLocked)
-                    vault.ReleaseWriteLock(in snapshotHandle, SystemID.CoreDiagnostics);
-
-                if (ringLocked)
-                    vault.TryUnlockBuffer(RingBufferId, SystemID.CoreDiagnostics);
+                vault.ReleaseMutationGuard(ExportSnapshotMutationGuardMask);
             }
-
-            return entryCount;
         }
 
         private int BuildExportScratch(int snapshotCount)
@@ -3535,46 +3508,39 @@ namespace Hecton8.Core
 
             VaultGenerationHandle<byte> scratchHandle = _exportScratch.Handle;
             VaultGenerationHandle<CrashTelemetryEntry> snapshotHandle = _exportSnapshot.Handle;
-            bool scratchLocked = false;
-            bool snapshotLocked = false;
-            NativeArray<byte> exportScratch = default;
-            NativeArray<CrashTelemetryEntry> exportSnapshot = default;
+            if (!vault.TryAcquireMutationGuard(ExportScratchMutationGuardMask))
+                return 0;
+
             try
             {
-                snapshotLocked = vault.TryLockBuffer(ExportSnapshotBufferId, SystemID.CoreDiagnostics);
-                if (!snapshotLocked ||
-                    !vault.TryReadHandle(in snapshotHandle, out exportSnapshot) ||
-                    !exportSnapshot.IsCreated)
+                if (!vault.TryReadOnlyHandle(in snapshotHandle, out NativeArray<CrashTelemetryEntry>.ReadOnly exportSnapshot) ||
+                    !vault.TryResolveHandle(in scratchHandle, out NativeArray<byte> exportScratch) ||
+                    !exportSnapshot.IsCreated ||
+                    !exportScratch.IsCreated)
                 {
                     return 0;
                 }
 
-                scratchLocked = vault.TryAcquireWriteLock(in scratchHandle, SystemID.CoreDiagnostics, out exportScratch);
-                if (!scratchLocked || !exportScratch.IsCreated)
-                    return 0;
-
                 unsafe
                 {
+                    int safeSnapshotCount = math.min(snapshotCount, exportSnapshot.Length);
+                    int entryBytes = safeSnapshotCount * CrashTelemetryEntrySizeBytes;
+                    int totalBytes = CrashExportHeaderSizeBytes + entryBytes;
+                    if (safeSnapshotCount <= 0 || exportScratch.Length < totalBytes)
+                        return 0;
+
                     CrashExportHeader header = default;
                     header.Magic = BinaryMagic;
-                    header.EntryCount = unchecked((uint)snapshotCount);
+                    header.EntryCount = unchecked((uint)safeSnapshotCount);
                     header.StructSizeBytes = CrashTelemetryEntrySizeBytes;
-
-                    int entryBytes = snapshotCount * CrashTelemetryEntrySizeBytes;
-                    int totalBytes = CrashExportHeaderSizeBytes + entryBytes;
 
                     byte* destination = (byte*)NativeArrayUnsafeUtility.GetUnsafeBufferPointerWithoutChecks(exportScratch);
                     UnsafeUtility.CopyStructureToPtr(ref header, destination);
-                    void* snapshotPtr = NativeArrayUnsafeUtility.GetUnsafeReadOnlyPtr(exportSnapshot);
-                    int destinationBytes = exportScratch.Length - CrashExportHeaderSizeBytes;
-                    if (!UnsafeMemoryCopyGuard.TryMemCpy(
-                            destination + CrashExportHeaderSizeBytes,
-                            destinationBytes,
-                            snapshotPtr,
-                            entryBytes))
+                    byte* entryDestination = destination + CrashExportHeaderSizeBytes;
+                    for (int i = 0; i < safeSnapshotCount; i++)
                     {
-                        UnsafeMemoryCopyGuard.ReportRejectedCopy(nameof(CrashTelemetryBuffer));
-                        return 0;
+                        CrashTelemetryEntry entry = exportSnapshot[i];
+                        UnsafeUtility.CopyStructureToPtr(ref entry, entryDestination + (i * CrashTelemetryEntrySizeBytes));
                     }
 
                     fixed (byte* managedDestination = _crashExportFileScratch)
@@ -3596,11 +3562,7 @@ namespace Hecton8.Core
             }
             finally
             {
-                if (scratchLocked)
-                    vault.ReleaseWriteLock(in scratchHandle, SystemID.CoreDiagnostics);
-
-                if (snapshotLocked)
-                    vault.TryUnlockBuffer(ExportSnapshotBufferId, SystemID.CoreDiagnostics);
+                vault.ReleaseMutationGuard(ExportScratchMutationGuardMask);
             }
         }
 

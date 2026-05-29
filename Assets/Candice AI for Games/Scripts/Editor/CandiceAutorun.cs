@@ -4,7 +4,6 @@ using UnityEngine;
 using UnityEditor;
 using UnityEditorInternal;
 using System;
-using System.Runtime.Serialization.Formatters.Binary;
 using System.IO;
 
 namespace CandiceAIforGames.AI
@@ -40,10 +39,9 @@ namespace CandiceAIforGames.AI
             {
                 object obj = LoadFromFile();
 
-                if (obj != null)
+                if (obj is string data)
                 {
-                    int i = Convert.ToInt32(obj.ToString());
-                    if (i == 1)
+                    if (data == "1")
                     {
                         LaunchStartupWindow();
                     }
@@ -69,14 +67,11 @@ namespace CandiceAIforGames.AI
             bool isSaved = false;
             try
             {
-                BinaryFormatter bf = new BinaryFormatter();
                 if (File.Exists(storagePath))
                 {
                     File.Delete(storagePath);
                 }
-                FileStream file = File.Create(storagePath);
-                bf.Serialize(file, data);
-                file.Close();
+                File.WriteAllText(storagePath, data ?? string.Empty);
                 isSaved = true;
             }
             catch (Exception e)
@@ -94,10 +89,7 @@ namespace CandiceAIforGames.AI
             {
                 if (File.Exists(storagePath))
                 {
-                    BinaryFormatter bf = new BinaryFormatter();
-                    FileStream file = File.Open(storagePath, FileMode.Open);
-                    obj = bf.Deserialize(file);
-                    file.Close();
+                    obj = File.ReadAllText(storagePath);
                 }
             }
             catch (Exception e)

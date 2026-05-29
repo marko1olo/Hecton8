@@ -98,7 +98,7 @@ namespace Hecton8.Construction
         private AutoResetEvent _dumpSignal;
         private byte[] _dumpBytes;
         private string _dumpPath;
-        private ulong _activeVaultGuardMask;
+        private ulong _activeMutationGuardMask;
         private long _solverScheduleTimestamp;
         private uint _frameIndex;
         private int _dumpByteCount;
@@ -206,7 +206,7 @@ namespace Hecton8.Construction
         {
             CompleteMockSeedForTeardown();
             CompleteScheduledSolverForTeardown();
-            UnlockJobBuffers();
+            ReleaseDrainageMutationGuard();
             if (_buffersReady && TryReadTuning(out DrainageTuningDTO tuning))
                 s_offlineTuning = tuning;
 
@@ -259,7 +259,7 @@ namespace Hecton8.Construction
             {
                 CompleteMockSeedForTeardown();
                 CompleteScheduledSolverForTeardown();
-                UnlockJobBuffers();
+                ReleaseDrainageMutationGuard();
                 BindDataVaultForLifecycle(currentService is IDataVault currentVault ? currentVault : null);
                 _buffersReady = _vault != null && TryInitializeBuffers();
                 if (_buffersReady && generateMockOnEnable)
@@ -340,7 +340,7 @@ namespace Hecton8.Construction
                 }
                 finally
                 {
-                    UnlockJobBuffers();
+                    ReleaseDrainageMutationGuard();
                 }
             }
             else
@@ -371,7 +371,7 @@ namespace Hecton8.Construction
             if (!_buffersReady)
                 return false;
 
-            if (!_vault.TryLockBuffer(SumpPumpDrainageBufferIds.PipeProfiles, OwnerSystem))
+            if (!TryAcquireLocalDrainageMutationGuard(out ulong guardMask))
                 return false;
 
             try
@@ -382,7 +382,7 @@ namespace Hecton8.Construction
             }
             finally
             {
-                _vault.TryUnlockBuffer(SumpPumpDrainageBufferIds.PipeProfiles, OwnerSystem);
+                ReleaseLocalDrainageMutationGuard(guardMask);
             }
         }
 #endif
@@ -396,8 +396,8 @@ namespace Hecton8.Construction
             if (!_buffersReady)
                 return;
 
-            UnlockJobBuffers();
-            if (!TryLockJobBuffers())
+            ReleaseDrainageMutationGuard();
+            if (!TryAcquireDrainageMutationGuard())
                 return;
 
             bool scheduled = false;
@@ -444,7 +444,7 @@ namespace Hecton8.Construction
             finally
             {
                 if (!scheduled)
-                    UnlockJobBuffers();
+                    ReleaseDrainageMutationGuard();
             }
         }
 
@@ -574,7 +574,7 @@ namespace Hecton8.Construction
 
         private bool ScheduleDrainageSolve(float deltaTime, float quality)
         {
-            if (!TryLockJobBuffers())
+            if (!TryAcquireDrainageMutationGuard())
                 return false;
 
             if (!TryBorrowMutable(in _pumpNodesHandle, SumpPumpDrainageBufferIds.PumpNodes, out NativeArray<DrainageNodeDTO> pumps) ||
@@ -608,7 +608,7 @@ namespace Hecton8.Construction
                 !pumpRemainder.IsCreated || !pumpMassError.IsCreated || !roomDrainLocks.IsCreated || !tuning.IsCreated || !telemetry.IsCreated ||
                 !telemetryCursor.IsCreated || !counters.IsCreated || !frameSummary.IsCreated || !flowGpu.IsCreated)
             {
-                UnlockJobBuffers();
+                ReleaseDrainageMutationGuard();
                 return false;
             }
 
@@ -794,7 +794,7 @@ namespace Hecton8.Construction
                     if (hasPendingJob)
                         DispatcherJobFence.TryComplete(ref pendingJob, forceComplete: true);
 
-                    UnlockJobBuffers();
+                    ReleaseDrainageMutationGuard();
                 }
             }
 
@@ -821,11 +821,18 @@ namespace Hecton8.Construction
             if (!DispatcherJobFence.TryFinalizeCompleted(ref _mockSeedHandle))
                 return false;
 
-            ClearRuntimeScalarBuffers();
-            _topologyDirty = true;
-            _pressureFrontIsA = true;
-            _mockSeedScheduled = false;
-            UnlockJobBuffers();
+            try
+            {
+                ClearRuntimeScalarBuffers();
+                _topologyDirty = true;
+                _pressureFrontIsA = true;
+                _mockSeedScheduled = false;
+            }
+            finally
+            {
+                ReleaseDrainageMutationGuard();
+            }
+
             return true;
         }
 
@@ -837,10 +844,17 @@ namespace Hecton8.Construction
             if (!DispatcherJobFence.TryComplete(ref _mockSeedHandle, forceComplete: true))
                 return;
 
-            ClearRuntimeScalarBuffers();
-            _topologyDirty = true;
-            _pressureFrontIsA = true;
-            _mockSeedScheduled = false;
+            try
+            {
+                ClearRuntimeScalarBuffers();
+                _topologyDirty = true;
+                _pressureFrontIsA = true;
+                _mockSeedScheduled = false;
+            }
+            finally
+            {
+                ReleaseDrainageMutationGuard();
+            }
         }
 
         private void CompleteScheduledSolverForTeardown()
@@ -851,31 +865,51 @@ namespace Hecton8.Construction
             if (!DispatcherJobFence.TryComplete(ref _solverHandle, forceComplete: true))
                 return;
 
-            _solverScheduled = false;
+            try
+            {
+                _solverScheduled = false;
+            }
+            finally
+            {
+                ReleaseDrainageMutationGuard();
+            }
         }
 
-        private bool TryLockJobBuffers()
+        private bool TryAcquireDrainageMutationGuard()
         {
-            if (_activeVaultGuardMask != 0UL)
+            if (_activeMutationGuardMask != 0UL)
                 return true;
 
             if (_vault == null || !_vault.TryAcquireMutationGuard(DrainageVaultMutationGuardMask))
                 return false;
 
-            _activeVaultGuardMask = DrainageVaultMutationGuardMask;
+            _activeMutationGuardMask = DrainageVaultMutationGuardMask;
             return true;
         }
 
-        private bool TryLockTelemetryWriteBuffers()
+        private bool TryAcquireTelemetryMutationGuard()
         {
-            return TryLockJobBuffers();
+            return TryAcquireDrainageMutationGuard();
+        }
+
+        private bool TryAcquireLocalDrainageMutationGuard(out ulong guardMask)
+        {
+            guardMask = 0UL;
+            if (_vault == null || _activeMutationGuardMask != 0UL)
+                return false;
+
+            if (!_vault.TryAcquireMutationGuard(DrainageVaultMutationGuardMask))
+                return false;
+
+            guardMask = DrainageVaultMutationGuardMask;
+            return true;
         }
 
         private bool TryGuardAndBorrowMutableExistingBuffer<T>(BufferID bufferId, out NativeArray<T> buffer) where T : struct
         {
             buffer = default;
             if (_vault == null ||
-                _activeVaultGuardMask == 0UL ||
+                _activeMutationGuardMask == 0UL ||
                 !_vault.TryGetGenerationHandle<T>(bufferId, out VaultGenerationHandle<T> handle))
                 return false;
 
@@ -890,7 +924,7 @@ namespace Hecton8.Construction
         {
             buffer = default;
             if (_vault == null ||
-                _activeVaultGuardMask == 0UL ||
+                _activeMutationGuardMask == 0UL ||
                 !_vault.TryGetGenerationHandle<T>(bufferId, out VaultGenerationHandle<T> handle))
                 return false;
 
@@ -901,12 +935,18 @@ namespace Hecton8.Construction
             return false;
         }
 
-        private void UnlockJobBuffers()
+        private void ReleaseDrainageMutationGuard()
         {
-            ulong guardMask = _activeVaultGuardMask;
+            ulong guardMask = _activeMutationGuardMask;
             if (guardMask != 0UL)
                 _vault?.ReleaseMutationGuard(guardMask);
-            _activeVaultGuardMask = 0UL;
+            _activeMutationGuardMask = 0UL;
+        }
+
+        private void ReleaseLocalDrainageMutationGuard(ulong guardMask)
+        {
+            if (guardMask != 0UL)
+                _vault?.ReleaseMutationGuard(guardMask);
         }
 
         private void ResetFrameCounters(NativeArray<int> counters, int nodeCount, int edgeCount)
@@ -934,7 +974,7 @@ namespace Hecton8.Construction
 
         private void InitializeTuningIfNeeded()
         {
-            if (_vault == null || !_vault.TryLockBuffer(SumpPumpDrainageBufferIds.Tuning, OwnerSystem))
+            if (!TryAcquireLocalDrainageMutationGuard(out ulong guardMask))
                 return;
 
             try
@@ -951,7 +991,7 @@ namespace Hecton8.Construction
             }
             finally
             {
-                _vault.TryUnlockBuffer(SumpPumpDrainageBufferIds.Tuning, OwnerSystem);
+                ReleaseLocalDrainageMutationGuard(guardMask);
             }
         }
 
@@ -1081,7 +1121,7 @@ namespace Hecton8.Construction
             if (!_buffersReady || _solverScheduled || _mockSeedScheduled)
                 return;
 
-            if (!TryLockTelemetryWriteBuffers())
+            if (!TryAcquireTelemetryMutationGuard())
                 return;
 
             try
@@ -1129,7 +1169,7 @@ namespace Hecton8.Construction
             }
             finally
             {
-                UnlockJobBuffers();
+                ReleaseDrainageMutationGuard();
             }
         }
 
@@ -1200,7 +1240,7 @@ namespace Hecton8.Construction
             if (_solverScheduled)
                 return false;
 
-            if (!_vault.TryLockBuffer(SumpPumpDrainageBufferIds.Tuning, OwnerSystem))
+            if (!TryAcquireLocalDrainageMutationGuard(out ulong guardMask))
                 return false;
 
             try
@@ -1216,7 +1256,7 @@ namespace Hecton8.Construction
             }
             finally
             {
-                _vault.TryUnlockBuffer(SumpPumpDrainageBufferIds.Tuning, OwnerSystem);
+                ReleaseLocalDrainageMutationGuard(guardMask);
             }
         }
 
@@ -1439,7 +1479,7 @@ namespace Hecton8.Construction
         {
             _solverHandle = default;
             _mockSeedHandle = default;
-            _activeVaultGuardMask = 0UL;
+            _activeMutationGuardMask = 0UL;
             _solverScheduleTimestamp = 0L;
             _frameIndex = 0u;
             _flowBufferWriteIndex = 0;

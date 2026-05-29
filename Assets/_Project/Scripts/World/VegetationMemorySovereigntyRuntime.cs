@@ -145,34 +145,16 @@ namespace Hecton8.World
                 return;
 
             if (!vault.TryAcquireWriteLock(
-                    in _vegetationMemoryTelemetryHandle,
+                    in _vegetationMemoryTelemetryCursorHandle,
                     VegetationMemorySovereigntyConstants.OwnerSystemId,
-                    out NativeArray<VegetationMemoryTelemetryEntry> telemetry))
+                    out NativeArray<int> cursorBuffer))
             {
                 return;
             }
 
-            bool cursorLocked = false;
+            int cursor = 0;
             try
             {
-                if (vault.IsCompactionFenceActive)
-                    return;
-
-                if (!telemetry.IsCreated ||
-                    telemetry.Length < VegetationMemorySovereigntyConstants.TelemetryFrameCount)
-                {
-                    return;
-                }
-
-                if (!vault.TryAcquireWriteLock(
-                        in _vegetationMemoryTelemetryCursorHandle,
-                        VegetationMemorySovereigntyConstants.OwnerSystemId,
-                        out NativeArray<int> cursorBuffer))
-                {
-                    return;
-                }
-
-                cursorLocked = true;
                 if (vault.IsCompactionFenceActive)
                     return;
 
@@ -182,9 +164,39 @@ namespace Hecton8.World
                     return;
                 }
 
-                int cursor = cursorBuffer[0];
+                cursor = cursorBuffer[0];
                 if ((uint)cursor >= (uint)VegetationMemorySovereigntyConstants.TelemetryFrameCount)
                     cursor = 0;
+
+                int nextCursor = cursor + 1;
+                if (nextCursor >= VegetationMemorySovereigntyConstants.TelemetryFrameCount)
+                    nextCursor = 0;
+
+                cursorBuffer[0] = nextCursor;
+            }
+            finally
+            {
+                vault.ReleaseWriteLock(
+                    in _vegetationMemoryTelemetryCursorHandle,
+                    VegetationMemorySovereigntyConstants.OwnerSystemId);
+            }
+
+            if (vault.IsCompactionFenceActive ||
+                !vault.TryAcquireWriteLock(
+                    in _vegetationMemoryTelemetryHandle,
+                    VegetationMemorySovereigntyConstants.OwnerSystemId,
+                    out NativeArray<VegetationMemoryTelemetryEntry> telemetry))
+            {
+                return;
+            }
+
+            try
+            {
+                if (!telemetry.IsCreated ||
+                    telemetry.Length < VegetationMemorySovereigntyConstants.TelemetryFrameCount)
+                {
+                    return;
+                }
 
                 uint frame = unchecked((uint)SystemDispatcher.CurrentFrameIndex);
                 float rawQuality = HomeostasisBrain.GlobalQualityWeight;
@@ -204,21 +216,9 @@ namespace Hecton8.World
                 entry.Position = position;
                 entry.StateHash = HashVegetationMemoryTelemetry(entry);
                 telemetry[cursor] = entry;
-
-                cursor++;
-                if (cursor >= VegetationMemorySovereigntyConstants.TelemetryFrameCount)
-                    cursor = 0;
-                cursorBuffer[0] = cursor;
             }
             finally
             {
-                if (cursorLocked)
-                {
-                    vault.ReleaseWriteLock(
-                        in _vegetationMemoryTelemetryCursorHandle,
-                        VegetationMemorySovereigntyConstants.OwnerSystemId);
-                }
-
                 vault.ReleaseWriteLock(
                     in _vegetationMemoryTelemetryHandle,
                     VegetationMemorySovereigntyConstants.OwnerSystemId);

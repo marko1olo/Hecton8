@@ -423,7 +423,9 @@ namespace Hecton8.Atmosphere
             switch (serviceSlot)
             {
                 case GlobalRegistryServiceSlot.DataVault:
-                    RebindDataVaultForLifecycle(currentService as IDataVault, previousService as IDataVault);
+                    IDataVault nextVault = currentService is IDataVault currentDataVault ? currentDataVault : null;
+                    IDataVault previousVault = previousService is IDataVault previousDataVault ? previousDataVault : null;
+                    RebindDataVaultForLifecycle(nextVault, previousVault);
                     if (!_coldTickRunning && TryFinalizeDeferredNativeDisposal())
                         RebindNativeStateAfterVaultReplacement();
                     break;
@@ -496,7 +498,7 @@ namespace Hecton8.Atmosphere
                 NativeArrayOptions.ClearMemory);
 
             if (!TryOpenBlackBox(out _))
-                ReleaseVaultHandle(vault, ref _blackBoxHandle);
+                ReleaseVaultHandle(vault, ref _blackBoxHandle, BlackBoxBufferId);
         }
 
         private void SeedDefaultAtmosphereIfNeeded()
@@ -697,9 +699,9 @@ namespace Hecton8.Atmosphere
             back = default;
             carbonDioxideByteLane = default;
             IDataVault vault = _dataVault;
-            return TryOpenVaultView(vault, in _frontHandle, requiredLength, out front) &&
-                   TryOpenVaultView(vault, in _backHandle, requiredLength, out back) &&
-                   TryOpenVaultView(vault, in _carbonDioxideByteLaneHandle, requiredLength, out carbonDioxideByteLane) &&
+            return TryOpenVaultView(vault, in _frontHandle, FrontBufferId, requiredLength, out front) &&
+                   TryOpenVaultView(vault, in _backHandle, BackBufferId, requiredLength, out back) &&
+                   TryOpenVaultView(vault, in _carbonDioxideByteLaneHandle, CarbonDioxideByteLaneBufferId, requiredLength, out carbonDioxideByteLane) &&
                    back.Length >= front.Length &&
                    carbonDioxideByteLane.Length >= front.Length;
         }
@@ -707,7 +709,7 @@ namespace Hecton8.Atmosphere
         private bool TryReadFront(out NativeArray<CompartmentState>.ReadOnly front)
         {
             front = default;
-            if (!TryReadVaultView(_dataVault, in _frontHandle, 1, out NativeArray<CompartmentState> mutableFront))
+            if (!TryReadVaultView(_dataVault, in _frontHandle, FrontBufferId, 1, out NativeArray<CompartmentState> mutableFront))
                 return false;
 
             front = mutableFront.AsReadOnly();
@@ -716,19 +718,20 @@ namespace Hecton8.Atmosphere
 
         private bool TryOpenBlackBox(out NativeArray<BaseAtmosphereTelemetryEntry> blackBox)
         {
-            return TryOpenVaultView(_dataVault, in _blackBoxHandle, BlackBoxCapacity, out blackBox);
+            return TryOpenVaultView(_dataVault, in _blackBoxHandle, BlackBoxBufferId, BlackBoxCapacity, out blackBox);
         }
 
         private static bool TryOpenVaultView<T>(
             IDataVault vault,
             in VaultGenerationHandle<T> handle,
+            BufferID expectedBufferId,
             int requiredLength,
             out NativeArray<T> buffer)
             where T : struct
         {
             buffer = default;
             return vault != null &&
-                   IsHandleCreated(in handle) &&
+                   IsOwnedVaultHandle(in handle, expectedBufferId) &&
                    requiredLength >= 0 &&
                    vault.TryResolveHandle(in handle, out buffer) &&
                    buffer.IsCreated &&
@@ -738,23 +741,26 @@ namespace Hecton8.Atmosphere
         private static bool TryReadVaultView<T>(
             IDataVault vault,
             in VaultGenerationHandle<T> handle,
+            BufferID expectedBufferId,
             int requiredLength,
             out NativeArray<T> buffer)
             where T : struct
         {
             buffer = default;
             return vault != null &&
-                   IsHandleCreated(in handle) &&
+                   IsOwnedVaultHandle(in handle, expectedBufferId) &&
                    requiredLength >= 0 &&
                    vault.TryReadHandle(in handle, out buffer) &&
                    buffer.IsCreated &&
                    buffer.Length >= requiredLength;
         }
 
-        private static bool IsHandleCreated<T>(in VaultGenerationHandle<T> handle)
+        private static bool IsOwnedVaultHandle<T>(in VaultGenerationHandle<T> handle, BufferID expectedBufferId)
             where T : struct
         {
-            return handle.BufferID != 0u && handle.Generation != 0u;
+            return handle.BufferID == (uint)expectedBufferId &&
+                   handle.SystemID == (uint)OwnerSystemId &&
+                   handle.Generation != 0u;
         }
 
         private bool TryFinalizeDeferredNativeDisposal()
@@ -786,10 +792,10 @@ namespace Hecton8.Atmosphere
 
         private bool HasNativeStateHandle()
         {
-            return IsHandleCreated(in _frontHandle) ||
-                   IsHandleCreated(in _backHandle) ||
-                   IsHandleCreated(in _carbonDioxideByteLaneHandle) ||
-                   IsHandleCreated(in _blackBoxHandle);
+            return IsOwnedVaultHandle(in _frontHandle, FrontBufferId) ||
+                   IsOwnedVaultHandle(in _backHandle, BackBufferId) ||
+                   IsOwnedVaultHandle(in _carbonDioxideByteLaneHandle, CarbonDioxideByteLaneBufferId) ||
+                   IsOwnedVaultHandle(in _blackBoxHandle, BlackBoxBufferId);
         }
 
         private void RebindNativeStateAfterVaultReplacement()
@@ -842,10 +848,10 @@ namespace Hecton8.Atmosphere
             _pendingReleaseBlackBoxHandle = _blackBoxHandle;
             _pendingNativeStateRelease =
                 vault != null &&
-                (IsHandleCreated(in _pendingReleaseFrontHandle) ||
-                 IsHandleCreated(in _pendingReleaseBackHandle) ||
-                 IsHandleCreated(in _pendingReleaseCarbonDioxideByteLaneHandle) ||
-                 IsHandleCreated(in _pendingReleaseBlackBoxHandle));
+                (IsOwnedVaultHandle(in _pendingReleaseFrontHandle, FrontBufferId) ||
+                 IsOwnedVaultHandle(in _pendingReleaseBackHandle, BackBufferId) ||
+                 IsOwnedVaultHandle(in _pendingReleaseCarbonDioxideByteLaneHandle, CarbonDioxideByteLaneBufferId) ||
+                 IsOwnedVaultHandle(in _pendingReleaseBlackBoxHandle, BlackBoxBufferId));
         }
 
         private void ReleasePendingNativeState()
@@ -853,10 +859,10 @@ namespace Hecton8.Atmosphere
             IDataVault vault = _pendingReleaseVault;
             if (vault != null)
             {
-                ReleaseVaultHandle(vault, ref _pendingReleaseFrontHandle);
-                ReleaseVaultHandle(vault, ref _pendingReleaseBackHandle);
-                ReleaseVaultHandle(vault, ref _pendingReleaseCarbonDioxideByteLaneHandle);
-                ReleaseVaultHandle(vault, ref _pendingReleaseBlackBoxHandle);
+                ReleaseVaultHandle(vault, ref _pendingReleaseFrontHandle, FrontBufferId);
+                ReleaseVaultHandle(vault, ref _pendingReleaseBackHandle, BackBufferId);
+                ReleaseVaultHandle(vault, ref _pendingReleaseCarbonDioxideByteLaneHandle, CarbonDioxideByteLaneBufferId);
+                ReleaseVaultHandle(vault, ref _pendingReleaseBlackBoxHandle, BlackBoxBufferId);
             }
 
             _pendingReleaseFrontHandle = default;
@@ -871,10 +877,10 @@ namespace Hecton8.Atmosphere
         {
             if (vault != null)
             {
-                ReleaseVaultHandle(vault, ref _frontHandle);
-                ReleaseVaultHandle(vault, ref _backHandle);
-                ReleaseVaultHandle(vault, ref _carbonDioxideByteLaneHandle);
-                ReleaseVaultHandle(vault, ref _blackBoxHandle);
+                ReleaseVaultHandle(vault, ref _frontHandle, FrontBufferId);
+                ReleaseVaultHandle(vault, ref _backHandle, BackBufferId);
+                ReleaseVaultHandle(vault, ref _carbonDioxideByteLaneHandle, CarbonDioxideByteLaneBufferId);
+                ReleaseVaultHandle(vault, ref _blackBoxHandle, BlackBoxBufferId);
                 return;
             }
 
@@ -884,21 +890,13 @@ namespace Hecton8.Atmosphere
             _blackBoxHandle = default;
         }
 
-        private static void ReleaseVaultHandle<T>(IDataVault vault, ref VaultGenerationHandle<T> handle)
+        private static void ReleaseVaultHandle<T>(IDataVault vault, ref VaultGenerationHandle<T> handle, BufferID expectedBufferId)
             where T : struct
         {
-            if (IsOwnedVaultHandle(in handle))
+            if (IsOwnedVaultHandle(in handle, expectedBufferId))
                 vault.ReleaseBuffer(in handle);
 
             handle = default;
-        }
-
-        private static bool IsOwnedVaultHandle<T>(in VaultGenerationHandle<T> handle)
-            where T : struct
-        {
-            return IsHandleCreated(in handle) &&
-                   handle.Generation != 0u &&
-                   handle.SystemID == (uint)OwnerSystemId;
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]

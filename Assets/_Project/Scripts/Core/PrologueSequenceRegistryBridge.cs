@@ -29,11 +29,10 @@ namespace Hecton8.Core
         private const uint ManualReleaseHash = 0x4D52454Cu; // MREL
         private const uint ManualReleaseContextHash = 0x434F434Bu; // COCK
         private const uint ShallowWaterChunkHash = 0x53484C57u; // SHLW
-        private const int LowTierHysteresisFrames = 150;
-        private const int LowTierProbeIntervalFrames = 30;
+        private const int SurvivalProxyHysteresisFrames = 150;
+        private const int SurvivalProxyProbeIntervalFrames = 30;
         private const int StandaloneOrbitWhiteoutFallbackFrames = 180;
         private const byte CriticalMemoryPressureSeverity = 2;
-        private const float SurvivalQualityPolicyThreshold01 = 0.65f;
         private const float ForcedMemoryPressureThreshold01 = 0.85f;
         private const float ForcedMemoryQualityThreshold01 = 0.12f;
         private const float MassiveImpactSeverity = 1f;
@@ -56,18 +55,18 @@ namespace Hecton8.Core
         private bool _registeredService;
         private bool _registeredHotSwap;
         private bool _isDevelopmentBuild;
-        private bool _cachedLowTier;
-        private bool _pendingLowTier;
-        private bool _hasLowTierCache;
-        private bool _lastObservedLowTierPolicy;
+        private float _cachedSurvivalProxyPressure01;
+        private float _pendingSurvivalProxyPressure01;
+        private bool _hasSurvivalProxyCache;
+        private float _lastObservedSurvivalProxyPressure01;
         private bool _lastObservedForcedLowMemory;
         private bool _skipRequested;
         private bool _observedHighResSurfaceReady;
         private bool _observedProxySurfaceReady;
         private bool _standaloneOrbitSceneActive;
         private bool _hasStandaloneWhiteoutFallback;
-        private int _lowTierCandidateFrame;
-        private int _lowTierPolicyProbeFrame = -1;
+        private int _survivalProxyCandidateFrame;
+        private int _survivalProxyPolicyProbeFrame = -1;
         private int _memoryPressureSnapshotFrame = -1;
         private int _memoryPressureSnapshotCursor;
         private int _atmosphereSnapshotFrame = -1;
@@ -83,11 +82,19 @@ namespace Hecton8.Core
 
         public bool IsDevelopmentBuild => _isDevelopmentBuild;
 
+        public float SurvivalProxyPressure01
+        {
+            get
+            {
+                return ResolveSurvivalProxyPressureWithHysteresis();
+            }
+        }
+
         public bool IsLowTier
         {
             get
             {
-                return ResolveLowTierWithHysteresis();
+                return SurvivalProxyPressure01 >= PrologueSequenceQualityPolicy.SurvivalProxyActivationThreshold01;
             }
         }
 
@@ -591,18 +598,18 @@ namespace Hecton8.Core
             _orbitalDirector = null;
             _streamingBackpressure = null;
             _tickDispatcher = null;
-            ResetLowTierCache();
+            ResetSurvivalProxyCache();
         }
 
-        private void ResetLowTierCache()
+        private void ResetSurvivalProxyCache()
         {
-            _cachedLowTier = false;
-            _pendingLowTier = false;
-            _hasLowTierCache = false;
-            _lastObservedLowTierPolicy = false;
+            _cachedSurvivalProxyPressure01 = 0f;
+            _pendingSurvivalProxyPressure01 = 0f;
+            _hasSurvivalProxyCache = false;
+            _lastObservedSurvivalProxyPressure01 = 0f;
             _lastObservedForcedLowMemory = false;
-            _lowTierCandidateFrame = 0;
-            _lowTierPolicyProbeFrame = -1;
+            _survivalProxyCandidateFrame = 0;
+            _survivalProxyPolicyProbeFrame = -1;
             _memoryPressureSnapshotFrame = -1;
             _memoryPressureSnapshotCursor = 0;
         }
@@ -772,75 +779,80 @@ namespace Hecton8.Core
             return string.Equals(sceneName, StandaloneOrbitSceneName, StringComparison.Ordinal);
         }
 
-        private bool ResolveLowTierWithHysteresis()
+        private float ResolveSurvivalProxyPressureWithHysteresis()
         {
             int frame = SystemDispatcher.CurrentFrameIndex;
             bool forcedLowMemory;
-            bool requestedLowTier = ResolveObservedLowTierPolicy(frame, out forcedLowMemory);
+            float requestedPressure01 = ResolveObservedSurvivalProxyPressure(frame, out forcedLowMemory);
 
-            if (!_hasLowTierCache)
+            if (!_hasSurvivalProxyCache)
             {
-                _cachedLowTier = requestedLowTier;
-                _pendingLowTier = requestedLowTier;
-                _lowTierCandidateFrame = frame;
-                _hasLowTierCache = true;
-                return _cachedLowTier;
+                _cachedSurvivalProxyPressure01 = requestedPressure01;
+                _pendingSurvivalProxyPressure01 = requestedPressure01;
+                _survivalProxyCandidateFrame = frame;
+                _hasSurvivalProxyCache = true;
+                return _cachedSurvivalProxyPressure01;
             }
 
-            if (forcedLowMemory && !_cachedLowTier)
+            if (forcedLowMemory &&
+                _cachedSurvivalProxyPressure01 < PrologueSequenceQualityPolicy.SurvivalProxyActivationThreshold01)
             {
-                _cachedLowTier = true;
-                _pendingLowTier = true;
-                _lowTierCandidateFrame = frame;
-                return true;
+                _cachedSurvivalProxyPressure01 = 1f;
+                _pendingSurvivalProxyPressure01 = 1f;
+                _survivalProxyCandidateFrame = frame;
+                return _cachedSurvivalProxyPressure01;
             }
 
-            if (requestedLowTier == _cachedLowTier)
+            bool requestedProxy = requestedPressure01 >= PrologueSequenceQualityPolicy.SurvivalProxyActivationThreshold01;
+            bool cachedProxy = _cachedSurvivalProxyPressure01 >= PrologueSequenceQualityPolicy.SurvivalProxyActivationThreshold01;
+            if (requestedProxy == cachedProxy)
             {
-                _pendingLowTier = requestedLowTier;
-                _lowTierCandidateFrame = frame;
-                return _cachedLowTier;
+                _cachedSurvivalProxyPressure01 = requestedPressure01;
+                _pendingSurvivalProxyPressure01 = requestedPressure01;
+                _survivalProxyCandidateFrame = frame;
+                return _cachedSurvivalProxyPressure01;
             }
 
-            if (requestedLowTier != _pendingLowTier)
+            bool pendingProxy = _pendingSurvivalProxyPressure01 >= PrologueSequenceQualityPolicy.SurvivalProxyActivationThreshold01;
+            if (requestedProxy != pendingProxy)
             {
-                _pendingLowTier = requestedLowTier;
-                _lowTierCandidateFrame = frame;
-                return _cachedLowTier;
+                _pendingSurvivalProxyPressure01 = requestedPressure01;
+                _survivalProxyCandidateFrame = frame;
+                return _cachedSurvivalProxyPressure01;
             }
 
-            if (frame - _lowTierCandidateFrame >= LowTierHysteresisFrames)
+            if (frame - _survivalProxyCandidateFrame >= SurvivalProxyHysteresisFrames)
             {
-                _cachedLowTier = requestedLowTier;
-                _pendingLowTier = requestedLowTier;
-                _lowTierCandidateFrame = frame;
+                _cachedSurvivalProxyPressure01 = requestedPressure01;
+                _pendingSurvivalProxyPressure01 = requestedPressure01;
+                _survivalProxyCandidateFrame = frame;
             }
 
-            return _cachedLowTier;
+            return _cachedSurvivalProxyPressure01;
         }
 
-        private bool ResolveObservedLowTierPolicy(int frame, out bool forcedLowMemory)
+        private float ResolveObservedSurvivalProxyPressure(int frame, out bool forcedLowMemory)
         {
             if (TryObserveCriticalMemoryPressure(frame))
             {
                 forcedLowMemory = true;
                 _lastObservedForcedLowMemory = true;
-                _lastObservedLowTierPolicy = true;
-                _lowTierPolicyProbeFrame = frame;
-                return true;
+                _lastObservedSurvivalProxyPressure01 = 1f;
+                _survivalProxyPolicyProbeFrame = frame;
+                return 1f;
             }
 
-            if (_lowTierPolicyProbeFrame < 0 ||
-                frame - _lowTierPolicyProbeFrame >= LowTierProbeIntervalFrames)
+            if (_survivalProxyPolicyProbeFrame < 0 ||
+                frame - _survivalProxyPolicyProbeFrame >= SurvivalProxyProbeIntervalFrames)
             {
-                _lastObservedLowTierPolicy = ReadLowTierPolicy(out forcedLowMemory);
+                _lastObservedSurvivalProxyPressure01 = ReadSurvivalProxyPressurePolicy(out forcedLowMemory);
                 _lastObservedForcedLowMemory = forcedLowMemory;
-                _lowTierPolicyProbeFrame = frame;
-                return _lastObservedLowTierPolicy;
+                _survivalProxyPolicyProbeFrame = frame;
+                return _lastObservedSurvivalProxyPressure01;
             }
 
             forcedLowMemory = _lastObservedForcedLowMemory;
-            return _lastObservedLowTierPolicy;
+            return _lastObservedSurvivalProxyPressure01;
         }
 
         private bool TryObserveCriticalMemoryPressure(int frame)
@@ -862,7 +874,7 @@ namespace Hecton8.Core
             return false;
         }
 
-        private static bool ReadLowTierPolicy(out bool forcedLowMemory)
+        private static float ReadSurvivalProxyPressurePolicy(out bool forcedLowMemory)
         {
             float qualityWeight01 = ResolveGlobalQualityWeight01();
             float survivalPressure01 = 1.0f - SmoothStep01(qualityWeight01);
@@ -870,7 +882,7 @@ namespace Hecton8.Core
             float pressure01 = math.max(survivalPressure01, homeostasisPressure01);
             forcedLowMemory = qualityWeight01 <= ForcedMemoryQualityThreshold01 ||
                               pressure01 >= ForcedMemoryPressureThreshold01;
-            return forcedLowMemory || pressure01 >= SurvivalQualityPolicyThreshold01;
+            return forcedLowMemory ? 1f : pressure01;
         }
 
         private static float ResolveGlobalQualityWeight01()
@@ -954,7 +966,7 @@ namespace Hecton8.Core
             _completeSnapshotCursor = 0;
             _residencySnapshotCursor = 0;
             ClearStandaloneWhiteoutFallback();
-            ResetLowTierCache();
+            ResetSurvivalProxyCache();
         }
 
         private void RequestRunCancellation(byte reason)

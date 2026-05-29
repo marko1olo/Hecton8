@@ -103,6 +103,8 @@ namespace Hecton8.UI
         private int _selectedIndex;
         private bool _subscribed;
         private bool _ownsActiveRebind;
+        private INativeInputManagerRuntime _cachedInput;
+        private IInputBindingService _cachedRebindingService;
         private INativeInputManagerRuntime _subscribedInput;
         private IInputBindingService _subscribedRebindingService;
         private bool _hotSwapListenerRegistered;
@@ -184,6 +186,7 @@ namespace Hecton8.UI
 
         private void OnEnable()
         {
+            CacheInputServicesCold();
             TryRegisterHotSwapListener();
             Subscribe();
             RefreshAllIfControlsTabActive();
@@ -300,6 +303,10 @@ namespace Hecton8.UI
 
             CancelOwnedRebindIfNeeded(_subscribedRebindingService);
             Unsubscribe();
+            if (serviceSlot == GlobalRegistryServiceSlot.Input)
+                _cachedInput = currentService as INativeInputManagerRuntime;
+            else
+                _cachedRebindingService = currentService as IInputBindingService;
 
             if (!isActiveAndEnabled)
                 return;
@@ -1576,14 +1583,20 @@ namespace Hecton8.UI
         {
             return _subscribedRebindingService != null
                 ? _subscribedRebindingService
-                : GlobalRegistry.InputBinding;
+                : _cachedRebindingService;
         }
 
         private INativeInputManagerRuntime ResolveInputManager()
         {
             return _subscribedInput != null
                 ? _subscribedInput
-                : GlobalRegistry.NativeInputRuntime;
+                : _cachedInput;
+        }
+
+        private void CacheInputServicesCold()
+        {
+            _cachedInput = GlobalRegistry.NativeInputRuntime;
+            _cachedRebindingService = GlobalRegistry.InputBinding;
         }
 
         public void Configure(PlayerPDA pda, TextMeshProUGUI statusOutput, int tabIndex)

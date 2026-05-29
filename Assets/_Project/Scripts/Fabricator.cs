@@ -199,6 +199,7 @@ namespace Hecton8.Crafting
         /// <summary>Transform igroka dlya proverki distantsii.</summary>
         private Transform _playerTransform;
         private HectonPlayerMovement _playerMovement;
+        private IPlayerRuntimeContext _cachedPlayerContext;
         private bool _playerMovementLookupAttempted;
         private AbsoluteUniversePosition _fabricatorAup;
         private bool _fabricatorAupCached;
@@ -221,6 +222,10 @@ namespace Hecton8.Crafting
         private ILocalizationTextReadModel _localizationManager;
         private uint _observedScanLogRevision;
         private readonly List<RecipeData> _visibleRecipes = new List<RecipeData>(MaxRecipeCacheEntries);
+        private ItemData[] _assemblySourceItems;
+        private Mesh[] _assemblySourceMeshes;
+        private Material[] _assemblySourceMaterials;
+        private int _assemblySourceCount;
         private bool _recipeCacheDirty = true;
         private bool _tickRegistered;
         private bool _lateFrameRegistered;
@@ -273,6 +278,10 @@ namespace Hecton8.Crafting
         private RecipeData _activeRecipe;
         private float      _craftProgressSecondsMirror;
         private float      _lastPublishedProgress;
+        private RecipeData _pendingCraftOutputRecipe;
+        private ItemData   _pendingCraftOutputItem;
+        private int        _pendingCraftOutputQuantity;
+        private int        _pendingCraftOutputTotalQuantity;
 
         // -- Power State --
         private bool _hasPower = true;
@@ -292,6 +301,7 @@ namespace Hecton8.Crafting
         private const int MaxNetworkCraftCosts = 32;
         private const int MaxUnlockedRecipeWords = 8;
         internal const int MaxRecipeCacheEntries = MaxUnlockedRecipeWords * 64;
+        private const int CraftInventoryScratchCapacity = 128;
         private const int RecipeUnlockWordShift = 6;
         private const int RecipeUnlockBitMask = 63;
         private const float SlowTickDeltaSeconds = 0.5f;
@@ -377,20 +387,20 @@ namespace Hecton8.Crafting
         private PlayerInventory _craftReservationOwner;
         private int _networkCostCount;
         private IDataVault _dataVault;
-        private VaultGenerationHandle<int2> _craftInventoryCountsHandle;
-        private VaultGenerationHandle<int2> _craftRecipeCostsHandle;
-        private VaultGenerationHandle<byte> _craftRecipeEvaluationResultHandle;
-        private VaultGenerationHandle<int2> _deconstructionRecipeOutputsHandle;
-        private VaultGenerationHandle<int> _deconstructionOutputCountHandle;
+        private int2[] _craftInventoryCountsScratch;
+        private int2[] _craftRecipeCostsScratch;
+        private byte[] _craftRecipeEvaluationResultScratch;
+        private int2[] _deconstructionRecipeOutputsScratch;
+        private int[] _deconstructionOutputCountScratch;
         private CraftingTask _activeCraftingTask;
         private bool _hasActiveCraftingTask;
-        private VaultGenerationHandle<int2> _complexRecipeGraphNodesHandle;
-        private VaultGenerationHandle<int2> _complexRecipeGraphEdgesHandle;
-        private VaultGenerationHandle<int> _complexRecipeGraphInDegreesHandle;
-        private VaultGenerationHandle<int> _complexRecipeGraphQueueHandle;
-        private VaultGenerationHandle<int2> _complexRecipeRawCostsHandle;
-        private VaultGenerationHandle<int> _complexRecipeRawCostCountHandle;
-        private VaultGenerationHandle<byte> _complexRecipeGraphStatusHandle;
+        private int2[] _complexRecipeGraphNodesScratch;
+        private int2[] _complexRecipeGraphEdgesScratch;
+        private int[] _complexRecipeGraphInDegreesScratch;
+        private int[] _complexRecipeGraphQueueScratch;
+        private int2[] _complexRecipeRawCostsScratch;
+        private int[] _complexRecipeRawCostCountScratch;
+        private byte[] _complexRecipeGraphStatusScratch;
         private VaultGenerationHandle<ulong> _unlockedRecipesHandle;
         private VaultGenerationHandle<FabricatorMemoryTelemetryEntry> _fabricatorMemoryTelemetryRingHandle;
         private int _fabricatorMemoryTelemetryCursor;
@@ -421,6 +431,8 @@ namespace Hecton8.Crafting
         public float CraftProgress => ResolveCraftProgress01();
 
         public float CraftingProgress01 => CraftProgress;
+
+        private bool HasPendingCraftOutput => _pendingCraftOutputItem != null && _pendingCraftOutputQuantity > 0;
 
         private float ResolveCraftProgress01()
         {
@@ -562,7 +574,9 @@ namespace Hecton8.Crafting
                 EnsureSharedAssemblyFallbackMesh();
             FlushEndAssemblyVisual();
             ToolHapticsRuntime.EnsureRuntimeInstance();
-            EnsureCraftingScratch();
+            CacheThermalHostModule();
+            EnsureCraftingScratchCold();
+            RebuildAssemblySourceCacheCold();
             EnsureRecipeCache();
             CacheFabricatorAup();
         }
@@ -584,8 +598,13 @@ namespace Hecton8.Crafting
             ModRegistryEvents.Register(GetModRegistryEventAdapter());
             RebuildInteractText();
             TryRegister();
+            TryRegisterLateFrame();
+            TryRegisterSparkLightTick();
+            _sparkLightTickSleeping = true;
+            CacheThermalHostModule();
             MarkRecipeCacheDirty();
-            EnsureCraftingScratch();
+            EnsureCraftingScratchCold();
+            RebuildAssemblySourceCacheCold();
             EnsureRecipeCache();
             ApplyEmergencyPowerLock(s_emergencyPowerLockActive);
             CacheFabricatorAup();
@@ -700,6 +719,7 @@ namespace Hecton8.Crafting
         {
             if (recipe == null) return false;
             if (_isCrafting) return false;
+            if (HasPendingCraftOutput) return false;
             if (!HasOperationalPower) return false;
             if (_playerInventory == null || _playerInventory.Grid == null) return false;
             if (recipe.ingredients == null || recipe.ingredients.Count == 0) return false;
@@ -969,8 +989,9 @@ namespace Hecton8.Crafting
 
         public void SlowTick()
         {
-            EnsureRecipeCache();
+            RefreshScanLogRevision();
             UpdateErrorFeedback(SlowTickDeltaSeconds);
+            TryFlushPendingCraftOutput();
 
             if (!_isCrafting)
             {
@@ -1259,6 +1280,7 @@ namespace Hecton8.Crafting
             {
                 BaseLogisticsNetwork.CommitReserved(_networkReservation);
                 _networkReservation = null;
+                _networkCostCount = 0;
             }
 
             // -- Uvedomlyaem energoset: PowerRating izmenilsya (-craftPowerDraw ? 0) --
@@ -1273,43 +1295,7 @@ namespace Hecton8.Crafting
             ApplyCraftingThermodynamics(craftTemperatureDelta);
             CompleteAssemblyVisual();
 
-            int deliveredQuantity = 0;
-            bool outputDeliveryFault = false;
-            if (result != null && outputQuantity > 0)
-            {
-                if (TrySynthesizeCraftOutput(recipe, result, outputQuantity))
-                {
-                    deliveredQuantity = outputQuantity;
-                }
-                else if (_playerInventory != null)
-                {
-                    int resultHashId = ComputeItemHash(result);
-                    int addedQuantity = 0;
-                    if (resultHashId != 0)
-                    {
-                        PlayerInventory.ScavengeAttemptResult addResult = _playerInventory.ScavengeAttempt(resultHashId, outputQuantity, null);
-                        addedQuantity = addResult.AddedQuantity;
-                        deliveredQuantity += addedQuantity;
-                    }
-
-                    if (addedQuantity < outputQuantity)
-                    {
-                        int remainingQuantity = outputQuantity - addedQuantity;
-                        bool overflowDelivered = TryEmitCraftOverflowStack(result, remainingQuantity);
-                        if (overflowDelivered)
-                            deliveredQuantity += remainingQuantity;
-                        else
-                            outputDeliveryFault = true;
-
-                        RaiseStorageCapacityExceededBark();
-                        if (!overflowDelivered)
-                            TriggerCraftFailureFeedback();
-#if UNITY_EDITOR || DEVELOPMENT_BUILD
-                        Hecton8.Core.H8Debug.LogWarning("[Fabricator] Craft output overflow; routed to diegetic bark/drop fallback.");
-#endif
-                    }
-                }
-            }
+            int deliveredQuantity = TryDeliverCraftOutput(recipe, result, outputQuantity, out bool outputDeliveryFault);
 
             if (result != null && deliveredQuantity > 0)
                 PublishCraftItemAcquiredSignal(result, deliveredQuantity);
@@ -1317,7 +1303,23 @@ namespace Hecton8.Crafting
             bool craftOutputFullyDelivered = result != null &&
                                              outputQuantity > 0 &&
                                              deliveredQuantity == outputQuantity;
-            CraftingEvents.TryRaiseCraftProgressUpdated(craftOutputFullyDelivered ? 1f : 0f);
+            bool craftOutputTruthPreserved = craftOutputFullyDelivered;
+            if (!craftOutputFullyDelivered && result != null && outputQuantity > 0)
+            {
+                int pendingQuantity = outputQuantity - Mathf.Max(0, deliveredQuantity);
+                craftOutputTruthPreserved = TryStorePendingCraftOutput(recipe, result, pendingQuantity, outputQuantity);
+            }
+
+            CraftingEvents.TryRaiseCraftProgressUpdated(craftOutputTruthPreserved ? 1f : 0f);
+
+            if (!craftOutputTruthPreserved)
+            {
+                if (!outputDeliveryFault)
+                    TriggerCraftFailureFeedback();
+
+                PublishFabricatorActiveCountBlackBox();
+                return;
+            }
 
             if (!craftOutputFullyDelivered)
             {
@@ -1401,9 +1403,6 @@ namespace Hecton8.Crafting
         {
             if (recipe == null || !recipe.RequiresAnchoredBiomeLock)
                 return true;
-
-            if (thermalHostModule == null)
-                CacheThermalHostModule();
 
             if (thermalHostModule == null || thermalHostModule.IsUnmoored || thermalHostModule.IsDetachedDebris)
                 return false;
@@ -1538,9 +1537,6 @@ namespace Hecton8.Crafting
         private float ResolveCraftThermalThrottleMultiplier()
         {
             if (thermalHostModule == null)
-                CacheThermalHostModule();
-
-            if (thermalHostModule == null)
                 return 1f;
 
             float hostRoomTemperatureCelsius = thermalHostModule.ResolveHostRoomTemperatureCelsius();
@@ -1564,9 +1560,6 @@ namespace Hecton8.Crafting
                 return;
 
             if (thermalHostModule == null)
-                CacheThermalHostModule();
-
-            if (thermalHostModule == null)
                 return;
 
             thermalHostModule.TryInjectHostRoomTemperatureDeltaCelsius(deltaCelsius);
@@ -1577,160 +1570,33 @@ namespace Hecton8.Crafting
             if (recipe == null || _playerInventory == null)
                 return false;
 
-            NativeArray<int2> availableCounts = default;
-            NativeArray<int2> recipeCosts = default;
-            NativeArray<byte> result = default;
-            NativeArray<int2> graphNodes = default;
-            NativeArray<int2> graphEdges = default;
-            NativeArray<int> graphInDegrees = default;
-            NativeArray<int> graphQueue = default;
-            NativeArray<int2> rawCosts = default;
-            NativeArray<int> rawCostCount = default;
-            NativeArray<byte> graphStatus = default;
-            bool availableLocked = false;
-            bool recipeLocked = false;
-            bool resultLocked = false;
-            bool graphNodesLocked = false;
-            bool graphEdgesLocked = false;
-            bool graphInDegreesLocked = false;
-            bool graphQueueLocked = false;
-            bool rawCostsLocked = false;
-            bool rawCostCountLocked = false;
-            bool graphStatusLocked = false;
+            if (!HasCraftingScratchReady())
+                return false;
 
-            try
-            {
-                if (!TryAcquireFabricatorWrite(ref _craftInventoryCountsHandle, BufferID.ShinobuFabricatorInventoryCountPairs, 128, NativeArrayOptions.ClearMemory, out availableCounts))
-                    return false;
-                availableLocked = true;
-                if (!TryAcquireFabricatorWrite(ref _craftRecipeCostsHandle, BufferID.ShinobuFabricatorRecipeCosts, CraftingSystem.MaxRecipeIngredientCount, NativeArrayOptions.ClearMemory, out recipeCosts))
-                    return false;
-                recipeLocked = true;
-                if (!TryAcquireFabricatorWrite(ref _craftRecipeEvaluationResultHandle, BufferID.ShinobuFabricatorRecipeEvaluationResult, 1, NativeArrayOptions.ClearMemory, out result))
-                    return false;
-                resultLocked = true;
-                if (!TryAcquireFabricatorWrite(ref _complexRecipeGraphNodesHandle, BufferID.ShinobuFabricatorComplexRecipeGraphNodes, CraftingSystem.MaxComplexRecipeNodeCount, NativeArrayOptions.ClearMemory, out graphNodes))
-                    return false;
-                graphNodesLocked = true;
-                if (!TryAcquireFabricatorWrite(ref _complexRecipeGraphEdgesHandle, BufferID.ShinobuFabricatorComplexRecipeGraphEdges, CraftingSystem.MaxComplexRecipeEdgeCount, NativeArrayOptions.ClearMemory, out graphEdges))
-                    return false;
-                graphEdgesLocked = true;
-                if (!TryAcquireFabricatorWrite(ref _complexRecipeGraphInDegreesHandle, BufferID.ShinobuFabricatorComplexRecipeGraphInDegrees, CraftingSystem.MaxComplexRecipeNodeCount, NativeArrayOptions.ClearMemory, out graphInDegrees))
-                    return false;
-                graphInDegreesLocked = true;
-                if (!TryAcquireFabricatorWrite(ref _complexRecipeGraphQueueHandle, BufferID.ShinobuFabricatorComplexRecipeGraphQueue, CraftingSystem.MaxComplexRecipeNodeCount, NativeArrayOptions.ClearMemory, out graphQueue))
-                    return false;
-                graphQueueLocked = true;
-                if (!TryAcquireFabricatorWrite(ref _complexRecipeRawCostsHandle, BufferID.ShinobuFabricatorComplexRecipeRawCosts, CraftingSystem.MaxRecipeIngredientCount, NativeArrayOptions.ClearMemory, out rawCosts))
-                    return false;
-                rawCostsLocked = true;
-                if (!TryAcquireFabricatorWrite(ref _complexRecipeRawCostCountHandle, BufferID.ShinobuFabricatorComplexRecipeRawCostCount, 1, NativeArrayOptions.ClearMemory, out rawCostCount))
-                    return false;
-                rawCostCountLocked = true;
-                if (!TryAcquireFabricatorWrite(ref _complexRecipeGraphStatusHandle, BufferID.ShinobuFabricatorComplexRecipeGraphStatus, 1, NativeArrayOptions.ClearMemory, out graphStatus))
-                    return false;
-                graphStatusLocked = true;
-
-                return CraftingSystem.CanCraft(
-                    recipe,
-                    this,
-                    _playerInventory,
-                    availableCounts,
-                    recipeCosts,
-                    result,
-                    graphNodes,
-                    graphEdges,
-                    graphInDegrees,
-                    graphQueue,
-                    rawCosts,
-                    rawCostCount,
-                    graphStatus,
-                    Mathf.Max(1, multiplier));
-            }
-            finally
-            {
-                if (graphStatusLocked) ReleaseFabricatorWrite(in _complexRecipeGraphStatusHandle);
-                if (rawCostCountLocked) ReleaseFabricatorWrite(in _complexRecipeRawCostCountHandle);
-                if (rawCostsLocked) ReleaseFabricatorWrite(in _complexRecipeRawCostsHandle);
-                if (graphQueueLocked) ReleaseFabricatorWrite(in _complexRecipeGraphQueueHandle);
-                if (graphInDegreesLocked) ReleaseFabricatorWrite(in _complexRecipeGraphInDegreesHandle);
-                if (graphEdgesLocked) ReleaseFabricatorWrite(in _complexRecipeGraphEdgesHandle);
-                if (graphNodesLocked) ReleaseFabricatorWrite(in _complexRecipeGraphNodesHandle);
-                if (resultLocked) ReleaseFabricatorWrite(in _craftRecipeEvaluationResultHandle);
-                if (recipeLocked) ReleaseFabricatorWrite(in _craftRecipeCostsHandle);
-                if (availableLocked) ReleaseFabricatorWrite(in _craftInventoryCountsHandle);
-            }
+            return CraftingSystem.CanCraft(
+                recipe,
+                this,
+                _playerInventory,
+                _craftInventoryCountsScratch,
+                _craftRecipeCostsScratch,
+                _craftRecipeEvaluationResultScratch,
+                _complexRecipeGraphNodesScratch,
+                _complexRecipeGraphEdgesScratch,
+                _complexRecipeGraphInDegreesScratch,
+                _complexRecipeGraphQueueScratch,
+                _complexRecipeRawCostsScratch,
+                _complexRecipeRawCostCountScratch,
+                _complexRecipeGraphStatusScratch,
+                Mathf.Max(1, multiplier));
         }
 
-        private bool EnsureCraftingScratch()
+        private bool EnsureCraftingScratchCold()
         {
+            if (!EnsureManagedCraftingScratchCold())
+                return false;
+
             if (!TryAcquireDataVaultCold())
                 return false;
-
-            if (!TryEnsureFabricatorVaultBuffer(ref _craftInventoryCountsHandle, BufferID.ShinobuFabricatorInventoryCountPairs, 128, NativeArrayOptions.ClearMemory))
-            {
-                // COLD VAULT: int2[128] temporary per-craft accessible item counts.
-                return false;
-            }
-
-            if (!TryEnsureFabricatorVaultBuffer(ref _craftRecipeCostsHandle, BufferID.ShinobuFabricatorRecipeCosts, CraftingSystem.MaxRecipeIngredientCount, NativeArrayOptions.ClearMemory))
-            {
-                // COLD VAULT: int2[32] flattened recipe ingredient cost buffer.
-                return false;
-            }
-
-            if (!TryEnsureFabricatorVaultBuffer(ref _craftRecipeEvaluationResultHandle, BufferID.ShinobuFabricatorRecipeEvaluationResult, 1, NativeArrayOptions.ClearMemory))
-            {
-                // COLD VAULT: byte[1] Burst crafting-availability result cell.
-                return false;
-            }
-
-            if (!TryEnsureFabricatorVaultBuffer(ref _deconstructionRecipeOutputsHandle, BufferID.ShinobuFabricatorDeconstructionRecipeOutputs, CraftingSystem.MaxDeconstructionOutputCount, NativeArrayOptions.ClearMemory))
-            {
-                // COLD VAULT: int2[32] deconstruction output yield scratch.
-                return false;
-            }
-
-            if (!TryEnsureFabricatorVaultBuffer(ref _deconstructionOutputCountHandle, BufferID.ShinobuFabricatorDeconstructionOutputCount, 1, NativeArrayOptions.ClearMemory))
-            {
-                // COLD VAULT: int[1] deconstruction output count cell.
-                return false;
-            }
-
-            if (!TryEnsureFabricatorVaultBuffer(ref _complexRecipeGraphNodesHandle, BufferID.ShinobuFabricatorComplexRecipeGraphNodes, CraftingSystem.MaxComplexRecipeNodeCount, NativeArrayOptions.ClearMemory))
-            {
-                return false;
-            }
-
-            if (!TryEnsureFabricatorVaultBuffer(ref _complexRecipeGraphEdgesHandle, BufferID.ShinobuFabricatorComplexRecipeGraphEdges, CraftingSystem.MaxComplexRecipeEdgeCount, NativeArrayOptions.ClearMemory))
-            {
-                return false;
-            }
-
-            if (!TryEnsureFabricatorVaultBuffer(ref _complexRecipeGraphInDegreesHandle, BufferID.ShinobuFabricatorComplexRecipeGraphInDegrees, CraftingSystem.MaxComplexRecipeNodeCount, NativeArrayOptions.ClearMemory))
-            {
-                return false;
-            }
-
-            if (!TryEnsureFabricatorVaultBuffer(ref _complexRecipeGraphQueueHandle, BufferID.ShinobuFabricatorComplexRecipeGraphQueue, CraftingSystem.MaxComplexRecipeNodeCount, NativeArrayOptions.ClearMemory))
-            {
-                return false;
-            }
-
-            if (!TryEnsureFabricatorVaultBuffer(ref _complexRecipeRawCostsHandle, BufferID.ShinobuFabricatorComplexRecipeRawCosts, CraftingSystem.MaxRecipeIngredientCount, NativeArrayOptions.ClearMemory))
-            {
-                return false;
-            }
-
-            if (!TryEnsureFabricatorVaultBuffer(ref _complexRecipeRawCostCountHandle, BufferID.ShinobuFabricatorComplexRecipeRawCostCount, 1, NativeArrayOptions.ClearMemory))
-            {
-                return false;
-            }
-
-            if (!TryEnsureFabricatorVaultBuffer(ref _complexRecipeGraphStatusHandle, BufferID.ShinobuFabricatorComplexRecipeGraphStatus, 1, NativeArrayOptions.ClearMemory))
-            {
-                return false;
-            }
 
             if (!TryEnsureFabricatorVaultBuffer(ref _unlockedRecipesHandle, BufferID.ShinobuFabricatorUnlockedRecipes, MaxUnlockedRecipeWords, NativeArrayOptions.ClearMemory))
             {
@@ -1745,26 +1611,120 @@ namespace Hecton8.Crafting
             return true;
         }
 
+        private bool EnsureManagedCraftingScratchCold()
+        {
+            if (_craftInventoryCountsScratch == null || _craftInventoryCountsScratch.Length < CraftInventoryScratchCapacity)
+            {
+                // COLD ALLOC: int2[128] — fabricator inventory-count scratch — owner: Fabricator
+                _craftInventoryCountsScratch = new int2[CraftInventoryScratchCapacity];
+            }
+
+            if (_craftRecipeCostsScratch == null || _craftRecipeCostsScratch.Length < CraftingSystem.MaxRecipeIngredientCount)
+            {
+                // COLD ALLOC: int2[32] — fabricator direct recipe-cost scratch — owner: Fabricator
+                _craftRecipeCostsScratch = new int2[CraftingSystem.MaxRecipeIngredientCount];
+            }
+
+            if (_craftRecipeEvaluationResultScratch == null || _craftRecipeEvaluationResultScratch.Length < 1)
+            {
+                // COLD ALLOC: byte[1] — fabricator recipe availability result scratch — owner: Fabricator
+                _craftRecipeEvaluationResultScratch = new byte[1];
+            }
+
+            if (_deconstructionRecipeOutputsScratch == null || _deconstructionRecipeOutputsScratch.Length < CraftingSystem.MaxDeconstructionOutputCount)
+            {
+                // COLD ALLOC: int2[32] — fabricator deconstruction output scratch — owner: Fabricator
+                _deconstructionRecipeOutputsScratch = new int2[CraftingSystem.MaxDeconstructionOutputCount];
+            }
+
+            if (_deconstructionOutputCountScratch == null || _deconstructionOutputCountScratch.Length < 1)
+            {
+                // COLD ALLOC: int[1] — fabricator deconstruction output count scratch — owner: Fabricator
+                _deconstructionOutputCountScratch = new int[1];
+            }
+
+            if (_complexRecipeGraphNodesScratch == null || _complexRecipeGraphNodesScratch.Length < CraftingSystem.MaxComplexRecipeNodeCount)
+            {
+                // COLD ALLOC: int2[64] — fabricator complex recipe graph nodes — owner: Fabricator
+                _complexRecipeGraphNodesScratch = new int2[CraftingSystem.MaxComplexRecipeNodeCount];
+            }
+
+            if (_complexRecipeGraphEdgesScratch == null || _complexRecipeGraphEdgesScratch.Length < CraftingSystem.MaxComplexRecipeEdgeCount)
+            {
+                // COLD ALLOC: int2[128] — fabricator complex recipe graph edges — owner: Fabricator
+                _complexRecipeGraphEdgesScratch = new int2[CraftingSystem.MaxComplexRecipeEdgeCount];
+            }
+
+            if (_complexRecipeGraphInDegreesScratch == null || _complexRecipeGraphInDegreesScratch.Length < CraftingSystem.MaxComplexRecipeNodeCount)
+            {
+                // COLD ALLOC: int[64] — fabricator complex recipe graph in-degrees — owner: Fabricator
+                _complexRecipeGraphInDegreesScratch = new int[CraftingSystem.MaxComplexRecipeNodeCount];
+            }
+
+            if (_complexRecipeGraphQueueScratch == null || _complexRecipeGraphQueueScratch.Length < CraftingSystem.MaxComplexRecipeNodeCount)
+            {
+                // COLD ALLOC: int[64] — fabricator complex recipe graph queue — owner: Fabricator
+                _complexRecipeGraphQueueScratch = new int[CraftingSystem.MaxComplexRecipeNodeCount];
+            }
+
+            if (_complexRecipeRawCostsScratch == null || _complexRecipeRawCostsScratch.Length < CraftingSystem.MaxRecipeIngredientCount)
+            {
+                // COLD ALLOC: int2[32] — fabricator expanded raw-cost scratch — owner: Fabricator
+                _complexRecipeRawCostsScratch = new int2[CraftingSystem.MaxRecipeIngredientCount];
+            }
+
+            if (_complexRecipeRawCostCountScratch == null || _complexRecipeRawCostCountScratch.Length < 1)
+            {
+                // COLD ALLOC: int[1] — fabricator expanded raw-cost count scratch — owner: Fabricator
+                _complexRecipeRawCostCountScratch = new int[1];
+            }
+
+            if (_complexRecipeGraphStatusScratch == null || _complexRecipeGraphStatusScratch.Length < 1)
+            {
+                // COLD ALLOC: byte[1] — fabricator complex recipe graph status scratch — owner: Fabricator
+                _complexRecipeGraphStatusScratch = new byte[1];
+            }
+
+            return HasCraftingScratchReady();
+        }
+
+        private bool HasCraftingScratchReady()
+        {
+            return _craftInventoryCountsScratch != null &&
+                   _craftInventoryCountsScratch.Length >= CraftInventoryScratchCapacity &&
+                   _craftRecipeCostsScratch != null &&
+                   _craftRecipeCostsScratch.Length >= CraftingSystem.MaxRecipeIngredientCount &&
+                   _craftRecipeEvaluationResultScratch != null &&
+                   _craftRecipeEvaluationResultScratch.Length >= 1 &&
+                   _deconstructionRecipeOutputsScratch != null &&
+                   _deconstructionRecipeOutputsScratch.Length >= CraftingSystem.MaxDeconstructionOutputCount &&
+                   _deconstructionOutputCountScratch != null &&
+                   _deconstructionOutputCountScratch.Length >= 1 &&
+                   _complexRecipeGraphNodesScratch != null &&
+                   _complexRecipeGraphNodesScratch.Length >= CraftingSystem.MaxComplexRecipeNodeCount &&
+                   _complexRecipeGraphEdgesScratch != null &&
+                   _complexRecipeGraphEdgesScratch.Length >= CraftingSystem.MaxComplexRecipeEdgeCount &&
+                   _complexRecipeGraphInDegreesScratch != null &&
+                   _complexRecipeGraphInDegreesScratch.Length >= CraftingSystem.MaxComplexRecipeNodeCount &&
+                   _complexRecipeGraphQueueScratch != null &&
+                   _complexRecipeGraphQueueScratch.Length >= CraftingSystem.MaxComplexRecipeNodeCount &&
+                   _complexRecipeRawCostsScratch != null &&
+                   _complexRecipeRawCostsScratch.Length >= CraftingSystem.MaxRecipeIngredientCount &&
+                   _complexRecipeRawCostCountScratch != null &&
+                   _complexRecipeRawCostCountScratch.Length >= 1 &&
+                   _complexRecipeGraphStatusScratch != null &&
+                   _complexRecipeGraphStatusScratch.Length >= 1;
+        }
+
         private void DisposeCraftingScratch()
         {
             RefundIngredients();
+            ClearManagedCraftingScratch();
             ClearCraftingScratchHandles();
         }
 
         private void ClearCraftingScratchHandles()
         {
-            _craftInventoryCountsHandle = default;
-            _craftRecipeCostsHandle = default;
-            _craftRecipeEvaluationResultHandle = default;
-            _deconstructionRecipeOutputsHandle = default;
-            _deconstructionOutputCountHandle = default;
-            _complexRecipeGraphNodesHandle = default;
-            _complexRecipeGraphEdgesHandle = default;
-            _complexRecipeGraphInDegreesHandle = default;
-            _complexRecipeGraphQueueHandle = default;
-            _complexRecipeRawCostsHandle = default;
-            _complexRecipeRawCostCountHandle = default;
-            _complexRecipeGraphStatusHandle = default;
             _unlockedRecipesHandle = default;
             _fabricatorMemoryTelemetryRingHandle = default;
             _fabricatorMemoryTelemetryCursor = 0;
@@ -1772,12 +1732,24 @@ namespace Hecton8.Crafting
             _fabricatorBlackBoxDumped = false;
         }
 
+        private void ClearManagedCraftingScratch()
+        {
+            _craftInventoryCountsScratch = null;
+            _craftRecipeCostsScratch = null;
+            _craftRecipeEvaluationResultScratch = null;
+            _deconstructionRecipeOutputsScratch = null;
+            _deconstructionOutputCountScratch = null;
+            _complexRecipeGraphNodesScratch = null;
+            _complexRecipeGraphEdgesScratch = null;
+            _complexRecipeGraphInDegreesScratch = null;
+            _complexRecipeGraphQueueScratch = null;
+            _complexRecipeRawCostsScratch = null;
+            _complexRecipeRawCostCountScratch = null;
+            _complexRecipeGraphStatusScratch = null;
+        }
+
         private bool TryAcquireDataVaultCold()
         {
-            if (_dataVault != null)
-                return true;
-
-            _dataVault = GlobalRegistry.DataVault;
             return _dataVault != null;
         }
 
@@ -1818,28 +1790,46 @@ namespace Hecton8.Crafting
                    buffer.Length >= requiredLength;
         }
 
+        private bool IsFabricatorVaultBufferReady<T>(
+            in VaultGenerationHandle<T> handle,
+            BufferID bufferId,
+            int requiredLength,
+            out IDataVault vault) where T : struct
+        {
+            vault = _dataVault;
+            return vault != null &&
+                   requiredLength > 0 &&
+                   handle.BufferID == (uint)bufferId &&
+                   handle.SystemID == (uint)SystemID.Crafting &&
+                   handle.Generation != 0u &&
+                   vault.TryResolveHandle(in handle, out NativeArray<T> buffer) &&
+                   buffer.IsCreated &&
+                   buffer.Length >= requiredLength;
+        }
+
         private bool TryAcquireFabricatorWrite<T>(
             ref VaultGenerationHandle<T> handle,
             BufferID bufferId,
             int requiredLength,
             NativeArrayOptions options,
-            out NativeArray<T> buffer) where T : struct
+            out NativeArray<T> buffer,
+            out IDataVault lockedVault) where T : struct
         {
             buffer = default;
-            if (!TryAcquireDataVaultCold() ||
-                !TryEnsureFabricatorVaultBuffer(ref handle, bufferId, requiredLength, options))
+            lockedVault = null;
+            if (!IsFabricatorVaultBufferReady(in handle, bufferId, requiredLength, out IDataVault vault))
             {
                 RecordFabricatorVaultFailure(bufferId, handle.Generation, FabricatorVaultFailureEnsure, requiredLength);
                 return false;
             }
 
-            IDataVault vault = _dataVault;
             bool lockAcquired = vault.TryAcquireWriteLock(in handle, SystemID.Crafting, out buffer);
             if (lockAcquired &&
                 buffer.IsCreated &&
                 buffer.Length >= requiredLength)
             {
                 _fabricatorVaultFailureStreak = 0;
+                lockedVault = vault;
                 return true;
             }
 
@@ -1851,11 +1841,10 @@ namespace Hecton8.Crafting
             return false;
         }
 
-        private void ReleaseFabricatorWrite<T>(in VaultGenerationHandle<T> handle) where T : struct
+        private static void ReleaseFabricatorWrite<T>(IDataVault lockedVault, in VaultGenerationHandle<T> handle) where T : struct
         {
-            IDataVault vault = _dataVault;
-            if (vault != null && handle.BufferID != 0u)
-                vault.ReleaseWriteLock(in handle, SystemID.Crafting);
+            if (lockedVault != null && handle.BufferID != 0u)
+                lockedVault.ReleaseWriteLock(in handle, SystemID.Crafting);
         }
 
         private bool TryReadFabricatorBuffer<T>(
@@ -1880,23 +1869,29 @@ namespace Hecton8.Crafting
                 return;
 
             _fabricatorVaultFailureStreak++;
-            if (!TryEnsureFabricatorVaultBuffer(ref _fabricatorMemoryTelemetryRingHandle, BufferID.ShinobuFabricatorMemoryTelemetryRing, FabricatorMemoryTelemetryRingCapacity, NativeArrayOptions.ClearMemory))
+            if (!IsFabricatorVaultBufferReady(
+                    in _fabricatorMemoryTelemetryRingHandle,
+                    BufferID.ShinobuFabricatorMemoryTelemetryRing,
+                    FabricatorMemoryTelemetryRingCapacity,
+                    out IDataVault lockedVault))
+            {
                 return;
+            }
 
-            bool telemetryLocked = vault.TryAcquireWriteLock(in _fabricatorMemoryTelemetryRingHandle, SystemID.Crafting, out NativeArray<FabricatorMemoryTelemetryEntry> telemetry);
+            bool telemetryLocked = lockedVault.TryAcquireWriteLock(in _fabricatorMemoryTelemetryRingHandle, SystemID.Crafting, out NativeArray<FabricatorMemoryTelemetryEntry> telemetry);
             if (!telemetryLocked ||
                 !telemetry.IsCreated ||
                 telemetry.Length < FabricatorMemoryTelemetryRingCapacity)
             {
                 if (telemetryLocked)
-                    vault.ReleaseWriteLock(in _fabricatorMemoryTelemetryRingHandle, SystemID.Crafting);
+                    lockedVault.ReleaseWriteLock(in _fabricatorMemoryTelemetryRingHandle, SystemID.Crafting);
                 return;
             }
 
             try
             {
                 int slot = _fabricatorMemoryTelemetryCursor % FabricatorMemoryTelemetryRingCapacity;
-                uint vaultGeneration = vault.VaultGenerationID;
+                uint vaultGeneration = lockedVault.VaultGenerationID;
                 telemetry[slot] = new FabricatorMemoryTelemetryEntry
                 {
                     Sequence = unchecked((ulong)_fabricatorMemoryTelemetryCursor + 1UL),
@@ -1918,11 +1913,11 @@ namespace Hecton8.Crafting
             }
             finally
             {
-                vault.ReleaseWriteLock(in _fabricatorMemoryTelemetryRingHandle, SystemID.Crafting);
+                lockedVault.ReleaseWriteLock(in _fabricatorMemoryTelemetryRingHandle, SystemID.Crafting);
             }
 
             if (_fabricatorVaultFailureStreak >= FabricatorVaultFailureDumpThreshold)
-                TryDumpFabricatorMemoryBlackBox(vault);
+                TryDumpFabricatorMemoryBlackBox(lockedVault);
         }
 
         private void TryDumpFabricatorMemoryBlackBox(IDataVault vault)
@@ -2119,6 +2114,119 @@ namespace Hecton8.Crafting
                    Marshal.OffsetOf<FabricatorMemoryTelemetryEntry>(nameof(FabricatorMemoryTelemetryEntry.SystemId)).ToInt32() == 56;
         }
 
+        private int TryDeliverCraftOutput(RecipeData recipe, ItemData result, int outputQuantity, out bool outputDeliveryFault, bool emitFaultFeedback = true)
+        {
+            outputDeliveryFault = false;
+            if (result == null || outputQuantity <= 0)
+                return 0;
+
+            if (TrySynthesizeCraftOutput(recipe, result, outputQuantity))
+                return outputQuantity;
+
+            int deliveredQuantity = 0;
+            if (_playerInventory != null)
+            {
+                int resultHashId = ComputeItemHash(result);
+                int addedQuantity = 0;
+                if (resultHashId != 0)
+                {
+                    PlayerInventory.ScavengeAttemptResult addResult = _playerInventory.ScavengeAttempt(resultHashId, outputQuantity, null);
+                    addedQuantity = addResult.AddedQuantity;
+                    deliveredQuantity += addedQuantity;
+                }
+
+                if (addedQuantity < outputQuantity)
+                {
+                    int remainingQuantity = outputQuantity - addedQuantity;
+                    bool overflowDelivered = TryEmitCraftOverflowStack(result, remainingQuantity);
+                    if (overflowDelivered)
+                        deliveredQuantity += remainingQuantity;
+                    else
+                        outputDeliveryFault = true;
+
+                    if (emitFaultFeedback)
+                    {
+                        RaiseStorageCapacityExceededBark();
+                        if (!overflowDelivered)
+                            TriggerCraftFailureFeedback();
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+                        Hecton8.Core.H8Debug.LogWarning("[Fabricator] Craft output overflow; routed to diegetic bark/drop fallback.");
+#endif
+                    }
+                }
+            }
+
+            return deliveredQuantity;
+        }
+
+        private bool TryStorePendingCraftOutput(RecipeData recipe, ItemData result, int quantity, int totalQuantity)
+        {
+            if (result == null || quantity <= 0)
+                return false;
+
+            if (HasPendingCraftOutput && !ReferenceEquals(_pendingCraftOutputItem, result))
+                return false;
+
+            if (HasPendingCraftOutput)
+            {
+                int mergedQuantity = _pendingCraftOutputQuantity + quantity;
+                int mergedTotalQuantity = _pendingCraftOutputTotalQuantity + Mathf.Max(1, totalQuantity);
+                if (mergedQuantity <= _pendingCraftOutputQuantity || mergedTotalQuantity <= _pendingCraftOutputTotalQuantity)
+                    return false;
+
+                _pendingCraftOutputQuantity = mergedQuantity;
+                _pendingCraftOutputTotalQuantity = mergedTotalQuantity;
+                if (_pendingCraftOutputRecipe == null)
+                    _pendingCraftOutputRecipe = recipe;
+                return true;
+            }
+
+            _pendingCraftOutputRecipe = recipe;
+            _pendingCraftOutputItem = result;
+            _pendingCraftOutputQuantity = quantity;
+            _pendingCraftOutputTotalQuantity = Mathf.Max(quantity, totalQuantity);
+            return true;
+        }
+
+        private void ClearPendingCraftOutput()
+        {
+            _pendingCraftOutputRecipe = null;
+            _pendingCraftOutputItem = null;
+            _pendingCraftOutputQuantity = 0;
+            _pendingCraftOutputTotalQuantity = 0;
+        }
+
+        private bool TryFlushPendingCraftOutput()
+        {
+            if (!HasPendingCraftOutput)
+                return true;
+
+            RecipeData recipe = _pendingCraftOutputRecipe;
+            ItemData result = _pendingCraftOutputItem;
+            int requestedQuantity = _pendingCraftOutputQuantity;
+            int completedTotalQuantity = Mathf.Max(requestedQuantity, _pendingCraftOutputTotalQuantity);
+            int deliveredQuantity = TryDeliverCraftOutput(recipe, result, requestedQuantity, out _, emitFaultFeedback: false);
+            if (deliveredQuantity <= 0)
+                return false;
+
+            PublishCraftItemAcquiredSignal(result, deliveredQuantity);
+
+            int remainingQuantity = requestedQuantity - deliveredQuantity;
+            if (remainingQuantity > 0)
+            {
+                _pendingCraftOutputQuantity = remainingQuantity;
+                return false;
+            }
+
+            ClearPendingCraftOutput();
+            if (recipe != null)
+                PublishCraftingCompletedSignal(recipe, result, completedTotalQuantity);
+            CraftingEvents.TryRaiseCraftCompleted(result);
+            PublishFabricatorActiveCountBlackBox();
+            PlaySound(craftCompleteSound);
+            return true;
+        }
+
         private bool TrySynthesizeCraftOutput(RecipeData recipe, ItemData result, int quantityOverride)
         {
             if (recipe == null || result == null)
@@ -2175,103 +2283,83 @@ namespace Hecton8.Crafting
             if (targetItem == null || targetItem.DeconstructYieldCount <= 0)
                 return false;
 
-            NativeArray<int2> outputs = default;
-            NativeArray<int> outputCountBuffer = default;
-            bool outputsLocked = false;
-            bool countLocked = false;
+            if (!HasCraftingScratchReady())
+                return false;
 
-            try
+            int2[] outputs = _deconstructionRecipeOutputsScratch;
+            int[] outputCountBuffer = _deconstructionOutputCountScratch;
+            if (!CraftingSystem.TryBuildDeconstructionYieldBuffer(
+                    targetItem,
+                    outputs,
+                    outputCountBuffer))
             {
-                if (!TryAcquireFabricatorWrite(ref _deconstructionRecipeOutputsHandle, BufferID.ShinobuFabricatorDeconstructionRecipeOutputs, CraftingSystem.MaxDeconstructionOutputCount, NativeArrayOptions.ClearMemory, out outputs))
-                {
-                    return false;
-                }
-                outputsLocked = true;
+                return false;
+            }
 
-                if (!TryAcquireFabricatorWrite(ref _deconstructionOutputCountHandle, BufferID.ShinobuFabricatorDeconstructionOutputCount, 1, NativeArrayOptions.ClearMemory, out outputCountBuffer))
-                {
-                    return false;
-                }
-                countLocked = true;
+            int outputCount = outputCountBuffer[0];
+            if (outputCount <= 0)
+            {
+                return false;
+            }
 
-                if (!CraftingSystem.TryBuildDeconstructionYieldBuffer(
-                        targetItem,
-                        outputs,
-                        outputCountBuffer))
-                {
-                    return false;
-                }
+            if (!TryValidateDeconstructionYieldBuffer(outputs, outputCount, itemCatalog))
+            {
+                return false;
+            }
 
-                int outputCount = outputCountBuffer[0];
-                if (outputCount <= 0)
-                {
-                    return false;
-                }
+            if (!inventory.TryRemoveFirstMatchingItemByHash(itemHashId))
+                return false;
 
-                if (!TryValidateDeconstructionYieldBuffer(outputs, outputCount, itemCatalog))
-                {
-                    return false;
-                }
+            if (!CanInventoryAcceptDeconstructionYieldBuffer(inventory, outputs, outputCount))
+            {
+                inventory.TryAddItem(itemHashId, 1);
+                return false;
+            }
 
-                if (!inventory.TryRemoveFirstMatchingItemByHash(itemHashId))
-                    return false;
+            Span<int> emittedItemHashIds = stackalloc int[CraftingSystem.MaxDeconstructionOutputCount];
+            Span<int> emittedQuantities = stackalloc int[CraftingSystem.MaxDeconstructionOutputCount];
+            int emittedCount = 0;
 
-                if (!CanInventoryAcceptDeconstructionYieldBuffer(inventory, outputs, outputCount))
+            for (int outputIndex = 0; outputIndex < outputCount; outputIndex++)
+            {
+                int2 output = outputs[outputIndex];
+                ItemData outputItem = itemCatalog.FindByHash(output.x);
+                if (!TryEmitDeconstructionYield(outputItem, output.x, output.y, inventory))
                 {
+                    RollbackDeconstructionInventoryOutputs(inventory, emittedItemHashIds, emittedQuantities, emittedCount);
                     inventory.TryAddItem(itemHashId, 1);
                     return false;
                 }
 
-                Span<int> emittedItemHashIds = stackalloc int[CraftingSystem.MaxDeconstructionOutputCount];
-                Span<int> emittedQuantities = stackalloc int[CraftingSystem.MaxDeconstructionOutputCount];
-                int emittedCount = 0;
-
-                for (int outputIndex = 0; outputIndex < outputCount; outputIndex++)
-                {
-                    int2 output = outputs[outputIndex];
-                    ItemData outputItem = itemCatalog.FindByHash(output.x);
-                    if (!TryEmitDeconstructionYield(outputItem, output.x, output.y, inventory))
-                    {
-                        RollbackDeconstructionInventoryOutputs(inventory, emittedItemHashIds, emittedQuantities, emittedCount);
-                        inventory.TryAddItem(itemHashId, 1);
-                        return false;
-                    }
-
-                    emittedItemHashIds[emittedCount] = output.x;
-                    emittedQuantities[emittedCount] = output.y;
-                    emittedCount++;
-                }
-
-                if (emittedCount <= 0)
-                {
-                    inventory.TryAddItem(itemHashId, 1);
-                    return false;
-                }
-
-                ResolveDeconstructionOutputPose(out Vector3 spawnPosition, out Vector3 velocityChange);
-                for (int outputIndex = 0; outputIndex < outputCount; outputIndex++)
-                {
-                    int2 output = outputs[outputIndex];
-                    ItemData outputItem = itemCatalog.FindByHash(output.x);
-                    CraftingEvents.TryRaiseCraftOutputSynthesized(
-                        new CraftedItemSynthesisEvent(outputItem, output.y, spawnPosition, velocityChange));
-                }
-
-                return true;
+                emittedItemHashIds[emittedCount] = output.x;
+                emittedQuantities[emittedCount] = output.y;
+                emittedCount++;
             }
-            finally
+
+            if (emittedCount <= 0)
             {
-                if (countLocked) ReleaseFabricatorWrite(in _deconstructionOutputCountHandle);
-                if (outputsLocked) ReleaseFabricatorWrite(in _deconstructionRecipeOutputsHandle);
+                inventory.TryAddItem(itemHashId, 1);
+                return false;
             }
+
+            ResolveDeconstructionOutputPose(out Vector3 spawnPosition, out Vector3 velocityChange);
+            for (int outputIndex = 0; outputIndex < outputCount; outputIndex++)
+            {
+                int2 output = outputs[outputIndex];
+                ItemData outputItem = itemCatalog.FindByHash(output.x);
+                CraftingEvents.TryRaiseCraftOutputSynthesized(
+                    new CraftedItemSynthesisEvent(outputItem, output.y, spawnPosition, velocityChange));
+            }
+
+            return true;
         }
 
         private bool TryValidateDeconstructionYieldBuffer(
-            NativeArray<int2> outputs,
+            int2[] outputs,
             int outputCount,
             Hecton8.SaveSystem.ItemCatalog itemCatalog)
         {
-            if (!outputs.IsCreated ||
+            if (outputs == null ||
                 itemCatalog == null ||
                 outputCount <= 0 ||
                 outputCount > outputs.Length)
@@ -2289,9 +2377,9 @@ namespace Hecton8.Crafting
             return true;
         }
 
-        private static bool CanInventoryAcceptDeconstructionYieldBuffer(PlayerInventory inventory, NativeArray<int2> outputs, int outputCount)
+        private static bool CanInventoryAcceptDeconstructionYieldBuffer(PlayerInventory inventory, int2[] outputs, int outputCount)
         {
-            if (!outputs.IsCreated ||
+            if (outputs == null ||
                 outputCount <= 0 ||
                 outputCount > outputs.Length ||
                 outputCount > CraftingSystem.MaxDeconstructionOutputCount ||
@@ -2450,7 +2538,8 @@ namespace Hecton8.Crafting
 
             RefundIngredients();
             _craftReservationOwner = _playerInventory;
-            EnsureCraftingScratch();
+            if (!HasCraftingScratchReady())
+                return false;
 
             int safeMultiplier = Mathf.Max(1, multiplier);
             if (TryReserveDirectFastFailRecipeCosts(recipe, safeMultiplier))
@@ -2458,96 +2547,41 @@ namespace Hecton8.Crafting
 
             RefundIngredients();
 
-            NativeArray<int2> recipeCosts = default;
-            NativeArray<int2> graphNodes = default;
-            NativeArray<int2> graphEdges = default;
-            NativeArray<int> graphInDegrees = default;
-            NativeArray<int> graphQueue = default;
-            NativeArray<int2> rawCosts = default;
-            NativeArray<int> rawCostCount = default;
-            NativeArray<byte> graphStatus = default;
-            bool recipeLocked = false;
-            bool graphNodesLocked = false;
-            bool graphEdgesLocked = false;
-            bool graphInDegreesLocked = false;
-            bool graphQueueLocked = false;
-            bool rawCostsLocked = false;
-            bool rawCostCountLocked = false;
-            bool graphStatusLocked = false;
-
-            try
+            int2[] recipeCosts = _craftRecipeCostsScratch;
+            if (CraftingSystem.TryBuildRecipeCostBuffer(recipe, this, recipeCosts, out int recipeCostCount, safeMultiplier) &&
+                TryReserveIngredientCostBuffer(recipeCosts, recipeCostCount))
             {
-                if (!TryAcquireFabricatorWrite(ref _craftRecipeCostsHandle, BufferID.ShinobuFabricatorRecipeCosts, CraftingSystem.MaxRecipeIngredientCount, NativeArrayOptions.ClearMemory, out recipeCosts))
-                    return false;
-                recipeLocked = true;
+                return true;
+            }
 
-                if (CraftingSystem.TryBuildRecipeCostBuffer(recipe, this, recipeCosts, out int recipeCostCount, safeMultiplier) &&
-                    TryReserveIngredientCostBuffer(recipeCosts, recipeCostCount))
-                {
+            RefundIngredients();
+            int2[] rawCosts = _complexRecipeRawCostsScratch;
+            int[] rawCostCount = _complexRecipeRawCostCountScratch;
+            if (CraftingSystem.TryBuildTotalRawCostBuffer(
+                    recipe,
+                    this,
+                    _playerInventory.ItemCatalog,
+                    _complexRecipeGraphNodesScratch,
+                    _complexRecipeGraphEdgesScratch,
+                    _complexRecipeGraphInDegreesScratch,
+                    _complexRecipeGraphQueueScratch,
+                    rawCosts,
+                    rawCostCount,
+                    _complexRecipeGraphStatusScratch,
+                    safeMultiplier))
+            {
+                if (TryReserveIngredientCostBuffer(rawCosts, rawCostCount[0]))
                     return true;
-                }
 
                 RefundIngredients();
-
-                if (!TryAcquireFabricatorWrite(ref _complexRecipeGraphNodesHandle, BufferID.ShinobuFabricatorComplexRecipeGraphNodes, CraftingSystem.MaxComplexRecipeNodeCount, NativeArrayOptions.ClearMemory, out graphNodes))
-                    return false;
-                graphNodesLocked = true;
-                if (!TryAcquireFabricatorWrite(ref _complexRecipeGraphEdgesHandle, BufferID.ShinobuFabricatorComplexRecipeGraphEdges, CraftingSystem.MaxComplexRecipeEdgeCount, NativeArrayOptions.ClearMemory, out graphEdges))
-                    return false;
-                graphEdgesLocked = true;
-                if (!TryAcquireFabricatorWrite(ref _complexRecipeGraphInDegreesHandle, BufferID.ShinobuFabricatorComplexRecipeGraphInDegrees, CraftingSystem.MaxComplexRecipeNodeCount, NativeArrayOptions.ClearMemory, out graphInDegrees))
-                    return false;
-                graphInDegreesLocked = true;
-                if (!TryAcquireFabricatorWrite(ref _complexRecipeGraphQueueHandle, BufferID.ShinobuFabricatorComplexRecipeGraphQueue, CraftingSystem.MaxComplexRecipeNodeCount, NativeArrayOptions.ClearMemory, out graphQueue))
-                    return false;
-                graphQueueLocked = true;
-                if (!TryAcquireFabricatorWrite(ref _complexRecipeRawCostsHandle, BufferID.ShinobuFabricatorComplexRecipeRawCosts, CraftingSystem.MaxRecipeIngredientCount, NativeArrayOptions.ClearMemory, out rawCosts))
-                    return false;
-                rawCostsLocked = true;
-                if (!TryAcquireFabricatorWrite(ref _complexRecipeRawCostCountHandle, BufferID.ShinobuFabricatorComplexRecipeRawCostCount, 1, NativeArrayOptions.ClearMemory, out rawCostCount))
-                    return false;
-                rawCostCountLocked = true;
-                if (!TryAcquireFabricatorWrite(ref _complexRecipeGraphStatusHandle, BufferID.ShinobuFabricatorComplexRecipeGraphStatus, 1, NativeArrayOptions.ClearMemory, out graphStatus))
-                    return false;
-                graphStatusLocked = true;
-
-                if (CraftingSystem.TryBuildTotalRawCostBuffer(
-                        recipe,
-                        this,
-                        _playerInventory.ItemCatalog,
-                        graphNodes,
-                        graphEdges,
-                        graphInDegrees,
-                        graphQueue,
-                        rawCosts,
-                        rawCostCount,
-                        graphStatus,
-                        safeMultiplier))
-                {
-                    if (TryReserveIngredientCostBuffer(rawCosts, rawCostCount[0]))
-                        return true;
-
-                    RefundIngredients();
-                }
-
-                return false;
             }
-            finally
-            {
-                if (graphStatusLocked) ReleaseFabricatorWrite(in _complexRecipeGraphStatusHandle);
-                if (rawCostCountLocked) ReleaseFabricatorWrite(in _complexRecipeRawCostCountHandle);
-                if (rawCostsLocked) ReleaseFabricatorWrite(in _complexRecipeRawCostsHandle);
-                if (graphQueueLocked) ReleaseFabricatorWrite(in _complexRecipeGraphQueueHandle);
-                if (graphInDegreesLocked) ReleaseFabricatorWrite(in _complexRecipeGraphInDegreesHandle);
-                if (graphEdgesLocked) ReleaseFabricatorWrite(in _complexRecipeGraphEdgesHandle);
-                if (graphNodesLocked) ReleaseFabricatorWrite(in _complexRecipeGraphNodesHandle);
-                if (recipeLocked) ReleaseFabricatorWrite(in _craftRecipeCostsHandle);
-            }
+
+            return false;
         }
 
-        private bool TryReserveIngredientCostBuffer(NativeArray<int2> costs, int costCount)
+        private bool TryReserveIngredientCostBuffer(int2[] costs, int costCount)
         {
-            if (!costs.IsCreated || costCount <= 0 || _playerInventory == null)
+            if (costs == null || costCount <= 0 || costCount > costs.Length || _playerInventory == null)
                 return false;
 
             PlayerInventory reservationOwner = _playerInventory;
@@ -2684,10 +2718,23 @@ namespace Hecton8.Crafting
                 return true;
             }
 
-            TryCachePlayerMovement(_playerTransform);
-            if (_playerMovement != null)
+            IPlayerRuntimeContext playerContext = _cachedPlayerContext;
+            HectonPlayerMovement cachedMovement = playerContext != null ? playerContext.PlayerMovement : null;
+            if (cachedMovement != null)
             {
-                playerAup = _playerMovement.CurrentAup;
+                _playerMovement = cachedMovement;
+                if (_playerTransform == null)
+                    _playerTransform = playerContext.PlayerTransform;
+
+                playerAup = cachedMovement.CurrentAup;
+                return true;
+            }
+
+            if (playerContext != null &&
+                playerContext.TryGetPlayerPoseSnapshot(out PlayerRuntimePoseSnapshot snapshot) &&
+                snapshot.Aup.IsFinite())
+            {
+                playerAup = snapshot.Aup;
                 return true;
             }
 
@@ -2716,7 +2763,6 @@ namespace Hecton8.Crafting
             _pendingAudioClip = clip;
             _pendingAudioPosition = transform.position;
             _pendingAudioDirty = true;
-            TryRegisterLateFrame();
         }
 
         private void FlushPendingAudio()
@@ -2761,7 +2807,6 @@ namespace Hecton8.Crafting
                 _pendingProceduralAudioPingCount = 2;
             }
 
-            TryRegisterLateFrame();
         }
 
         private void FlushPendingProceduralAudioPings()
@@ -2818,7 +2863,6 @@ namespace Hecton8.Crafting
             _pendingProgressHaptic.Priority = finalPulse01 > 0f ? FabricatorFinalHapticPriority : FabricatorHapticPriority;
             _pendingProgressHaptic.MotorMask = FabricatorHapticMotorMask;
             _pendingProgressHapticDirty = true;
-            TryRegisterLateFrame();
         }
 
         private void FlushPendingProgressHaptics()
@@ -2858,7 +2902,6 @@ namespace Hecton8.Crafting
             _sparkProxyLightRemainingSeconds = Mathf.Max(_sparkProxyLightRemainingSeconds, Mathf.Max(0.01f, sparkProxyLightDurationSeconds));
             _sparkLightTickSleeping = false;
             UpdateSparkProxyLightRegistration();
-            TryRegisterSparkLightTick();
         }
 
         private void UpdateSparkProxyLightRegistration()
@@ -2903,7 +2946,6 @@ namespace Hecton8.Crafting
         {
             _pendingAssemblyBeginRecipe = recipe;
             _pendingAssemblyVisualCommand = 1;
-            TryRegisterLateFrame();
         }
 
         private void FlushBeginAssemblyVisual(RecipeData recipe)
@@ -2981,12 +3023,112 @@ namespace Hecton8.Crafting
         {
             sourceMesh = null;
             actualMaterial = null;
-            GameObject prefab = item != null ? item.worldPrefab : null;
-            if (prefab == null)
+
+            if (item != null)
+            {
+                for (int index = 0; index < _assemblySourceCount; index++)
+                {
+                    if (!ReferenceEquals(_assemblySourceItems[index], item))
+                        continue;
+
+                    sourceMesh = _assemblySourceMeshes[index];
+                    actualMaterial = _assemblySourceMaterials[index];
+                    return sourceMesh != null;
+                }
+            }
+
+            sourceMesh = ResolveAssemblyFallbackMesh();
+            return sourceMesh != null;
+        }
+
+        private void RebuildAssemblySourceCacheCold()
+        {
+            if (!EnsureAssemblySourceCacheCapacityCold(MaxRecipeCacheEntries))
+                return;
+
+            Array.Clear(_assemblySourceItems, 0, _assemblySourceItems.Length);
+            Array.Clear(_assemblySourceMeshes, 0, _assemblySourceMeshes.Length);
+            Array.Clear(_assemblySourceMaterials, 0, _assemblySourceMaterials.Length);
+            _assemblySourceCount = 0;
+
+            if (availableRecipes != null)
+            {
+                for (int i = 0; i < availableRecipes.Count; i++)
+                    AppendAssemblySourceCacheCold(availableRecipes[i]);
+            }
+
+            int runtimeRecipeCount = ModRecipeRegistry.Count;
+            for (int i = 0; i < runtimeRecipeCount; i++)
+            {
+                RecipeData runtimeRecipe = ModRecipeRegistry.GetAt(i);
+                if (runtimeRecipe == null || ContainsAuthoredRecipeReference(runtimeRecipe))
+                    continue;
+
+                AppendAssemblySourceCacheCold(runtimeRecipe);
+            }
+        }
+
+        private bool EnsureAssemblySourceCacheCapacityCold(int requiredCapacity)
+        {
+            if (requiredCapacity <= 0)
+                return false;
+
+            if (_assemblySourceItems != null &&
+                _assemblySourceMeshes != null &&
+                _assemblySourceMaterials != null &&
+                _assemblySourceItems.Length >= requiredCapacity &&
+                _assemblySourceMeshes.Length >= requiredCapacity &&
+                _assemblySourceMaterials.Length >= requiredCapacity)
+            {
+                return true;
+            }
+
+            _assemblySourceItems = new ItemData[requiredCapacity];
+            _assemblySourceMeshes = new Mesh[requiredCapacity];
+            _assemblySourceMaterials = new Material[requiredCapacity];
+            _assemblySourceCount = 0;
+            return true;
+        }
+
+        private void AppendAssemblySourceCacheCold(RecipeData recipe)
+        {
+            ItemData item = recipe != null ? recipe.resultItem : null;
+            if (item == null || _assemblySourceItems == null || _assemblySourceCount >= _assemblySourceItems.Length)
+                return;
+
+            for (int index = 0; index < _assemblySourceCount; index++)
+            {
+                if (ReferenceEquals(_assemblySourceItems[index], item))
+                    return;
+            }
+
+            if (!TryResolveAssemblySourceFromPrefabCold(
+                    item.worldPrefab,
+                    out Mesh sourceMesh,
+                    out Material actualMaterial))
             {
                 sourceMesh = ResolveAssemblyFallbackMesh();
-                return sourceMesh != null;
+                actualMaterial = null;
             }
+
+            if (sourceMesh == null)
+                return;
+
+            int targetIndex = _assemblySourceCount++;
+            _assemblySourceItems[targetIndex] = item;
+            _assemblySourceMeshes[targetIndex] = sourceMesh;
+            _assemblySourceMaterials[targetIndex] = actualMaterial;
+        }
+
+        private static bool TryResolveAssemblySourceFromPrefabCold(
+            GameObject prefab,
+            out Mesh sourceMesh,
+            out Material actualMaterial)
+        {
+            sourceMesh = null;
+            actualMaterial = null;
+            if (prefab == null)
+                return false;
 
             MeshFilter sourceFilter = prefab.GetComponent<MeshFilter>();
             MeshRenderer sourceRenderer = prefab.GetComponent<MeshRenderer>();
@@ -3007,7 +3149,7 @@ namespace Hecton8.Crafting
             SkinnedMeshRenderer skinnedRenderer = prefab.GetComponentInChildren<SkinnedMeshRenderer>(true);
             if (skinnedRenderer == null)
             {
-                sourceMesh = ResolveAssemblyFallbackMesh();
+                sourceMesh = EnsureSharedAssemblyFallbackMesh();
                 return sourceMesh != null;
             }
 
@@ -3016,9 +3158,7 @@ namespace Hecton8.Crafting
             if (sourceMesh != null)
                 return true;
 
-            sourceMesh = ResolveAssemblyFallbackMesh();
-            actualMaterial = null;
-            return sourceMesh != null;
+            return false;
         }
 
         private Mesh ResolveAssemblyFallbackMesh()
@@ -3026,7 +3166,7 @@ namespace Hecton8.Crafting
             if (assemblyFallbackMesh != null)
                 return assemblyFallbackMesh;
 
-            return EnsureSharedAssemblyFallbackMesh();
+            return s_sharedAssemblyFallbackMesh;
         }
 
         private static Mesh EnsureSharedAssemblyFallbackMesh()
@@ -3153,7 +3293,6 @@ namespace Hecton8.Crafting
         private void CompleteAssemblyVisual()
         {
             _pendingAssemblyVisualCommand = 2;
-            TryRegisterLateFrame();
         }
 
         private void FlushCompleteAssemblyVisual()
@@ -3185,7 +3324,6 @@ namespace Hecton8.Crafting
         {
             _pendingAssemblyVisualCommand = 3;
             _pendingAssemblyBeginRecipe = null;
-            TryRegisterLateFrame();
         }
 
         private void FlushEndAssemblyVisual()
@@ -3339,7 +3477,6 @@ namespace Hecton8.Crafting
         {
             _pendingFabricationSparksActive = active;
             _pendingFabricationSparksDirty = true;
-            TryRegisterLateFrame();
         }
 
         private void FlushSetFabricationSparksActive(bool active)
@@ -3361,7 +3498,6 @@ namespace Hecton8.Crafting
 
             _sparkProxyLightRemainingSeconds = 0f;
             UnregisterSparkProxyLight();
-            TryUnregisterSparkLightTick();
             if (_fabricationSparksPlaying)
             {
                 fabricationSparks.Stop(false, ParticleSystemStopBehavior.StopEmitting);
@@ -3424,7 +3560,6 @@ namespace Hecton8.Crafting
         {
             _pendingErrorFeedbackIntensity = Mathf.Clamp01(intensity);
             _pendingErrorFeedbackDirty = true;
-            TryRegisterLateFrame();
         }
 
         private void FlushApplyErrorFeedback(float intensity)
@@ -3566,8 +3701,16 @@ namespace Hecton8.Crafting
             if (!_unlockMaskDirty)
                 return true;
 
-            if (!TryAcquireFabricatorWrite(ref _unlockedRecipesHandle, BufferID.ShinobuFabricatorUnlockedRecipes, MaxUnlockedRecipeWords, NativeArrayOptions.ClearMemory, out NativeArray<ulong> unlockedRecipes))
+            if (!TryAcquireFabricatorWrite(
+                    ref _unlockedRecipesHandle,
+                    BufferID.ShinobuFabricatorUnlockedRecipes,
+                    MaxUnlockedRecipeWords,
+                    NativeArrayOptions.ClearMemory,
+                    out NativeArray<ulong> unlockedRecipes,
+                    out IDataVault lockedVault))
+            {
                 return false;
+            }
 
             try
             {
@@ -3596,7 +3739,7 @@ namespace Hecton8.Crafting
             }
             finally
             {
-                ReleaseFabricatorWrite(in _unlockedRecipesHandle);
+                ReleaseFabricatorWrite(lockedVault, in _unlockedRecipesHandle);
             }
         }
 
@@ -3789,6 +3932,7 @@ namespace Hecton8.Crafting
                 return;
 
             MarkRecipeCacheDirty();
+            RebuildAssemblySourceCacheCold();
             EnsureRecipeCache();
         }
 
@@ -3962,7 +4106,7 @@ namespace Hecton8.Crafting
         {
             return owner != null
                 ? Mathf.Max(1f, owner.GetRecipeInflationMultiplier(recipe))
-                : Mathf.Max(1f, GlobalRegistry.ResourceScarcityReadModel?.GetCraftPowerMultiplier(recipe) ?? 1f);
+                : 1f;
         }
 
         private float ResolveCraftPowerCost(RecipeData recipe)
@@ -4055,6 +4199,21 @@ namespace Hecton8.Crafting
                 case GlobalRegistryServiceSlot.PersistentWorldRegistry:
                     _persistentWorldRegistry = currentService as PersistentWorldRegistry;
                     break;
+                case GlobalRegistryServiceSlot.Player:
+                    _cachedPlayerContext = currentService as IPlayerRuntimeContext;
+                    if (_cachedPlayerContext != null)
+                    {
+                        _playerMovement = _cachedPlayerContext.PlayerMovement;
+                        _playerTransform = _cachedPlayerContext.PlayerTransform;
+                        _playerMovementLookupAttempted = _playerMovement != null;
+                    }
+                    else
+                    {
+                        _playerMovement = null;
+                        _playerTransform = null;
+                        _playerMovementLookupAttempted = false;
+                    }
+                    break;
                 case GlobalRegistryServiceSlot.Audio:
                     _audioService = currentService as IAudioService;
                     break;
@@ -4070,7 +4229,7 @@ namespace Hecton8.Crafting
                     _dataVault = currentService as IDataVault;
                     ClearCraftingScratchHandles();
                     MarkRecipeCacheDirty();
-                    EnsureCraftingScratch();
+                    EnsureCraftingScratchCold();
                     EnsureRecipeCache();
                     break;
             }
@@ -4082,6 +4241,13 @@ namespace Hecton8.Crafting
             _resourceScarcityDirector = GlobalRegistry.ResourceScarcityReadModel;
             _powerGridService = GlobalRegistry.PowerGrid;
             _persistentWorldRegistry = GlobalRegistry.PersistentWorldRegistry;
+            _cachedPlayerContext = GlobalRegistry.Player;
+            if (_playerMovement == null && _cachedPlayerContext != null)
+            {
+                _playerMovement = _cachedPlayerContext.PlayerMovement;
+                if (_playerTransform == null)
+                    _playerTransform = _cachedPlayerContext.PlayerTransform;
+            }
             _audioService = GlobalRegistry.Audio;
             _localizationManager = Hecton8.Core.GlobalRegistry.LocalizationText;
             CacheScanLogSystem(Hecton8.Core.GlobalRegistry.ScanLogService);

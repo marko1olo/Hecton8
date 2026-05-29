@@ -2,7 +2,6 @@
 using System.Collections;
 using System.Collections.Generic;
 using System.IO;
-using System.Runtime.Serialization.Formatters.Binary;
 using UnityEngine;
 
 namespace CandiceAIforGames.AI
@@ -10,6 +9,10 @@ namespace CandiceAIforGames.AI
     public class BasicSaveSystem
     {
         string storagePath;
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+        private const string LegacyFormatterDisabledMessage = "Candice BasicSaveSystem legacy formatter path is disabled. Use the first-party save authority.";
+        private static bool s_loggedLegacyFormatterDisabled;
+#endif
         public BasicSaveSystem(string filename)
         {
             storagePath = Application.dataPath + "//Candice Behavior Designer/Resources/Datastore/" + filename + ".bin";
@@ -18,22 +21,7 @@ namespace CandiceAIforGames.AI
         {
 
             bool isSaved = false;
-            try
-            {
-                BinaryFormatter bf = new BinaryFormatter();
-                if (File.Exists(storagePath))
-                {
-                    File.Delete(storagePath);
-                }
-                FileStream file = File.Create(storagePath);
-                bf.Serialize(file, data);
-                file.Close();
-                isSaved = true;
-            }
-            catch (Exception e)
-            {
-                Debug.Log("ERROR: " + e.Message);
-            }
+            LogLegacyFormatterDisabledOnce();
             return isSaved;
 
         }
@@ -41,21 +29,21 @@ namespace CandiceAIforGames.AI
         public object LoadFromFile()
         {
             object obj = null;
-            try
-            {
-                if (File.Exists(storagePath))
-                {
-                    BinaryFormatter bf = new BinaryFormatter();
-                    FileStream file = File.Open(storagePath, FileMode.Open);
-                    obj = bf.Deserialize(file);
-                    file.Close();
-                }
-            }
-            catch (Exception e)
-            {
-                Debug.Log("ERROR: " + e.Message);
-            }
+            LogLegacyFormatterDisabledOnce();
             return obj;
+        }
+
+        private static void LogLegacyFormatterDisabledOnce()
+        {
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+            if (s_loggedLegacyFormatterDisabled)
+            {
+                return;
+            }
+
+            s_loggedLegacyFormatterDisabled = true;
+            Debug.LogWarning(LegacyFormatterDisabledMessage);
+#endif
         }
 
     }

@@ -43,7 +43,6 @@ namespace Hecton8.Power
         private const uint FnvPrime = 16777619u;
 
         private const BufferID GridSlotBase = (BufferID)731620;
-
         private static readonly VaultGenerationHandle<byte>[] _gridSlots = new VaultGenerationHandle<byte>[DataVaultExemptGridSlotCount];
         // COLD ALLOC: WfcOutpostGridDescriptor[4] - registered WFC grid descriptors - owner: WfcOutpostGridRegistry
         private static readonly WfcOutpostGridDescriptor[] _descriptors = new WfcOutpostGridDescriptor[SlotCount];
@@ -100,13 +99,16 @@ namespace Hecton8.Power
 
             if (!TryResolveVault(out IDataVault vault) ||
                 vault.IsCompactionFenceActive ||
-                !vault.TryLockBuffer(ResolveSlotBufferId(slot), LogisticsGridSystemId))
+                !vault.TryAcquireMutationGuard(ResolveSlotMutationGuardMask(slot)))
             {
                 return false;
             }
 
             try
             {
+                if (!TryResolveSlot(slot, out destination))
+                    return false;
+
                 _handles[slot] = 0u;
                 _descriptors[slot] = default;
                 for (int i = 0; i < cellCount; i++)
@@ -126,7 +128,7 @@ namespace Hecton8.Power
             }
             finally
             {
-                vault.TryUnlockBuffer(ResolveSlotBufferId(slot), LogisticsGridSystemId);
+                vault.ReleaseMutationGuard(ResolveSlotMutationGuardMask(slot));
             }
         }
 
@@ -177,13 +179,13 @@ namespace Hecton8.Power
 
                 BufferID bufferId = ResolveSlotBufferId(i);
                 if (vault.IsCompactionFenceActive ||
-                    !vault.TryLockBuffer(bufferId, LogisticsGridSystemId))
+                    !vault.TryAcquireMutationGuard(ResolveSlotMutationGuardMask(i)))
                     return false;
 
                 if (!TryResolveSlot(i, out NativeArray<byte> cells) ||
                     _handles[i] != handle)
                 {
-                    vault.TryUnlockBuffer(bufferId, LogisticsGridSystemId);
+                    vault.ReleaseMutationGuard(ResolveSlotMutationGuardMask(i));
                     return false;
                 }
 
@@ -201,10 +203,15 @@ namespace Hecton8.Power
 
         public static void ReleaseGridLease(BufferID bufferId, SystemID systemId)
         {
-            if (bufferId == BufferID.Unknown || systemId == SystemID.Unknown || !TryResolveVault(out IDataVault vault))
+            if (bufferId == BufferID.Unknown ||
+                systemId != LogisticsGridSystemId ||
+                !TryResolveSlotIndex(bufferId, out int slot) ||
+                !TryResolveVault(out IDataVault vault))
+            {
                 return;
+            }
 
-            vault.TryUnlockBuffer(bufferId, systemId);
+            vault.ReleaseMutationGuard(ResolveSlotMutationGuardMask(slot));
         }
 
         public static void ReleaseGrid(uint handle)
@@ -216,7 +223,7 @@ namespace Hecton8.Power
 
                 if (!TryResolveVault(out IDataVault vault) ||
                     vault.IsCompactionFenceActive ||
-                    !vault.TryLockBuffer(ResolveSlotBufferId(i), LogisticsGridSystemId))
+                    !vault.TryAcquireMutationGuard(ResolveSlotMutationGuardMask(i)))
                 {
                     return;
                 }
@@ -233,7 +240,7 @@ namespace Hecton8.Power
                 }
                 finally
                 {
-                    vault.TryUnlockBuffer(ResolveSlotBufferId(i), LogisticsGridSystemId);
+                    vault.ReleaseMutationGuard(ResolveSlotMutationGuardMask(i));
                 }
 
                 return;
@@ -293,15 +300,50 @@ namespace Hecton8.Power
             return (BufferID)((int)GridSlotBase + slot);
         }
 
+        private static ulong ResolveSlotMutationGuardMask(int slot)
+        {
+            return SlotMutationGuardBit(ResolveSlotBufferId(slot));
+        }
+
+        private static ulong SlotMutationGuardBit(BufferID bufferId)
+        {
+            return 1UL << (unchecked((int)(uint)(int)bufferId) & 31);
+        }
+
         private static bool TryResolveSlot(int slot, out NativeArray<byte> cells)
         {
             cells = default;
-            if ((uint)slot >= SlotCount || _gridSlots[slot].BufferID == 0u || !TryResolveVault(out IDataVault vault))
+            if ((uint)slot >= SlotCount ||
+                !IsSlotHandle(slot, in _gridSlots[slot]) ||
+                !TryResolveVault(out IDataVault vault))
+            {
                 return false;
+            }
 
             return vault.TryResolveHandle(in _gridSlots[slot], out cells) &&
                    cells.IsCreated &&
                    cells.Length >= WfcOutpostGridConstants.MaxCellCount;
+        }
+
+        private static bool TryResolveSlotIndex(BufferID bufferId, out int slot)
+        {
+            int rawSlot = (int)bufferId - (int)GridSlotBase;
+            if ((uint)rawSlot >= SlotCount)
+            {
+                slot = -1;
+                return false;
+            }
+
+            slot = rawSlot;
+            return true;
+        }
+
+        private static bool IsSlotHandle(int slot, in VaultGenerationHandle<byte> handle)
+        {
+            return (uint)slot < SlotCount &&
+                   handle.BufferID == unchecked((uint)(int)ResolveSlotBufferId(slot)) &&
+                   handle.SystemID == (uint)LogisticsGridSystemId &&
+                   handle.Generation != 0u;
         }
 
         private static bool TryResolveVault(out IDataVault vault)

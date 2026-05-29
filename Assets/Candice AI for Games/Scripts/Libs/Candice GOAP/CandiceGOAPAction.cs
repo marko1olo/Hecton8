@@ -1,6 +1,5 @@
 using System;
 using System.Collections.Generic;
-using System.Linq;
 using UnityEngine;
 
 namespace CandiceAIforGames.AI
@@ -36,15 +35,10 @@ namespace CandiceAIforGames.AI
             if (_behaviorTreeS != null)
             {
                 behaviorTreeS = _behaviorTreeS;
-                Debug.Log("Behavior Tree Not null. Name: " + behaviorTreeS.name);
                 behaviorTree = new CandiceBehaviorTree();
                 behaviorTree.nodes = behaviorTreeS.GetNodes();
                 behaviorTree.Initialise();
                 behaviorTree.CreateBehaviorTree(aiController, onBTComplete);
-            }
-            else
-            {
-                Debug.Log("Behavior Tree is Null");
             }
             
         }
@@ -64,19 +58,7 @@ namespace CandiceAIforGames.AI
                 // If the behavior tree evaluation result is SUCCESS, apply each effect of the action to the state.
                 if (btEvent.behaviorState == CandiceBehaviorStates.SUCCESS)
                 {
-                    foreach (KeyValuePair<string, int> effect in effects)
-                    {
-                        // If the state already contains the effect key, add the effect value to the existing value.
-                        if (aiController.agentState.state.ContainsKey(effect.Key))
-                        {
-                            aiController.agentState.state[effect.Key] += effect.Value;
-                        }
-                        // If the state does not contain the effect key, add the effect key-value pair to the state.
-                        else
-                        {
-                            aiController.agentState.state[effect.Key] = effect.Value;
-                        }
-                    }
+                    ApplyEffects(effects, aiController.agentState.state);
                     isComplete = true;
                 }
 
@@ -105,8 +87,10 @@ namespace CandiceAIforGames.AI
         public bool IsAchievable(Dictionary<string, int> state)
         {
             // Check each precondition of the action and ensure it is satisfied in the state
-            foreach (KeyValuePair<string, int> precondition in preconditions)
+            Dictionary<string, int>.Enumerator enumerator = preconditions.GetEnumerator();
+            while (enumerator.MoveNext())
             {
+                KeyValuePair<string, int> precondition = enumerator.Current;
                 if (!state.ContainsKey(precondition.Key) || state[precondition.Key] < precondition.Value)
                 {
                     // If the state does not contain the precondition or if it does not meet the required value, return false.
@@ -138,19 +122,7 @@ namespace CandiceAIforGames.AI
             // Only apply the effects if the behavior tree is null. If it is not null, the behavior tree will trigger an event when it completes. The callback function is where the apply effects logic lies.
             if (behaviorState == CandiceBehaviorStates.SUCCESS && behaviorTree == null)
             {
-                foreach (KeyValuePair<string, int> effect in effects)
-                {
-                    // If the state already contains the effect key, add the effect value to the existing value.
-                    if (state.ContainsKey(effect.Key))
-                    {
-                        state[effect.Key] += effect.Value;
-                    }
-                    // If the state does not contain the effect key, add the effect key-value pair to the state.
-                    else
-                    {
-                        state[effect.Key] = effect.Value;
-                    }
-                }
+                ApplyEffects(effects, state);
                 isComplete = true;
             }
 
@@ -163,19 +135,7 @@ namespace CandiceAIforGames.AI
             // By default, assume the behavior state of the action is SUCCESS.
             CandiceBehaviorStates behaviorState = CandiceBehaviorStates.SUCCESS;
 
-            foreach (KeyValuePair<string, int> effect in effects)
-            {
-                // If the state already contains the effect key, add the effect value to the existing value.
-                if (state.ContainsKey(effect.Key))
-                {
-                    state[effect.Key] += effect.Value;
-                }
-                // If the state does not contain the effect key, add the effect key-value pair to the state.
-                else
-                {
-                    state[effect.Key] = effect.Value;
-                }
-            }
+            ApplyEffects(effects, state);
             //isComplete = true;
 
             // Return the behavior state of the action after the application of the effects to the state.
@@ -183,19 +143,58 @@ namespace CandiceAIforGames.AI
         }
         public CandiceGOAPActionS ConvertToGOAPActionS()
         {
-            List<CandiceKeyValuePair<string, int>> _preconditions = new List<CandiceKeyValuePair<string, int>>();
-            List<CandiceKeyValuePair<string, int>> _effects = new List<CandiceKeyValuePair<string, int>>();
+            List<CandiceKeyValuePair<string, int>> _preconditions = new List<CandiceKeyValuePair<string, int>>(preconditions.Count);
+            List<CandiceKeyValuePair<string, int>> _effects = new List<CandiceKeyValuePair<string, int>>(effects.Count);
 
-            foreach (KeyValuePair<string, int> item in preconditions)
+            Dictionary<string, int>.Enumerator preconditionEnumerator = preconditions.GetEnumerator();
+            while (preconditionEnumerator.MoveNext())
             {
+                KeyValuePair<string, int> item = preconditionEnumerator.Current;
                 _preconditions.Add(new CandiceKeyValuePair<string, int>(item.Key, item.Value));
             }
-            foreach (KeyValuePair<string, int> item in effects)
+
+            Dictionary<string, int>.Enumerator effectEnumerator = effects.GetEnumerator();
+            while (effectEnumerator.MoveNext())
             {
+                KeyValuePair<string, int> item = effectEnumerator.Current;
                 _effects.Add(new CandiceKeyValuePair<string, int>(item.Key, item.Value));
             }
             CandiceGOAPActionS action = new CandiceGOAPActionS(name, cost, _preconditions, _effects, behaviorTreeS, isComplete);
             return action;
+        }
+
+        private static void ApplyEffects(Dictionary<string, int> effects, CandiceDictionary<string, int> state)
+        {
+            Dictionary<string, int>.Enumerator enumerator = effects.GetEnumerator();
+            while (enumerator.MoveNext())
+            {
+                KeyValuePair<string, int> effect = enumerator.Current;
+                if (state.ContainsKey(effect.Key))
+                {
+                    state[effect.Key] += effect.Value;
+                }
+                else
+                {
+                    state[effect.Key] = effect.Value;
+                }
+            }
+        }
+
+        private static void ApplyEffects(Dictionary<string, int> effects, Dictionary<string, int> state)
+        {
+            Dictionary<string, int>.Enumerator enumerator = effects.GetEnumerator();
+            while (enumerator.MoveNext())
+            {
+                KeyValuePair<string, int> effect = enumerator.Current;
+                if (state.ContainsKey(effect.Key))
+                {
+                    state[effect.Key] += effect.Value;
+                }
+                else
+                {
+                    state[effect.Key] = effect.Value;
+                }
+            }
         }
 
     }

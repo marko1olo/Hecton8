@@ -34,8 +34,7 @@ namespace Hecton8.World
         private const int InitialMetamorphismCapacity = 128;
         private const int GhostProxySnapBatchCapacity = 32;
         private const SystemID VaultOwnerSystemId = SystemID.WorldResourceSpawnerRuntime;
-        private const BufferID MetamorphismInputsBufferId = BufferID.ResourceDistributionMetamorphismInputs;
-        private const BufferID MetamorphismResultsBufferId = BufferID.ResourceDistributionMetamorphismResults;
+        private const BufferID MetamorphismWorkspaceBufferId = BufferID.ResourceDistributionMetamorphismInputs;
         private const float GameSecondsPerDay = 86400f;
         private const float DefaultSlopeSampleDistanceMeters = 4f;
         private const float DefaultVoxelSolidThreshold = 0.08f;
@@ -127,8 +126,8 @@ namespace Hecton8.World
             public byte RequiresGhostProxySnap;
         }
 
-        [StructLayout(LayoutKind.Explicit, Size = 16)]
-        private struct PressureMetamorphismInput
+        [StructLayout(LayoutKind.Explicit, Size = 24)]
+        private struct PressureMetamorphismSample
         {
             [FieldOffset(0)]
             public float DepthMeters;
@@ -142,26 +141,20 @@ namespace Hecton8.World
             public byte _pad0;
             [FieldOffset(14)]
             public ushort _pad1;
-        }
-
-        [StructLayout(LayoutKind.Explicit, Size = 8)]
-        private struct PressureMetamorphismResult
-        {
-            [FieldOffset(0)]
-            public float ProgressSeconds;
-            [FieldOffset(4)]
+            [FieldOffset(16)]
+            public float ResultProgressSeconds;
+            [FieldOffset(20)]
             public byte TransformToDiamond;
-            [FieldOffset(5)]
-            public byte _pad0;
-            [FieldOffset(6)]
-            public ushort _pad1;
+            [FieldOffset(21)]
+            public byte _pad2;
+            [FieldOffset(22)]
+            public ushort _pad3;
         }
 
         [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Deterministic, FloatPrecision = FloatPrecision.Standard)]
         private struct PressureMetamorphismJob : IJobParallelFor
         {
-            [ReadOnly, NoAlias] public NativeArray<PressureMetamorphismInput> Inputs;
-            [NoAlias] public NativeArray<PressureMetamorphismResult> Results;
+            [NoAlias] public NativeArray<PressureMetamorphismSample> Workspace;
             public float DeltaSeconds;
             public float DepthThresholdMeters;
             public float RequiredSeconds;
@@ -169,26 +162,23 @@ namespace Hecton8.World
 
             public void Execute(int index)
             {
-                PressureMetamorphismInput input = Inputs[index];
-                PressureMetamorphismResult result = new PressureMetamorphismResult
-                {
-                    ProgressSeconds = math.max(0f, input.ProgressSeconds),
-                    TransformToDiamond = 0
-                };
+                PressureMetamorphismSample sample = Workspace[index];
+                sample.ResultProgressSeconds = math.max(0f, sample.ProgressSeconds);
+                sample.TransformToDiamond = 0;
 
-                bool eligible = input.Active != 0 &&
-                                input.TemplateHashId == CarbonTemplateHashId &&
-                                input.DepthMeters > DepthThresholdMeters &&
+                bool eligible = sample.Active != 0 &&
+                                sample.TemplateHashId == CarbonTemplateHashId &&
+                                sample.DepthMeters > DepthThresholdMeters &&
                                 RequiredSeconds > 0f;
                 if (!eligible)
                 {
-                    Results[index] = result;
+                    Workspace[index] = sample;
                     return;
                 }
 
-                result.ProgressSeconds = math.min(RequiredSeconds, result.ProgressSeconds + math.max(0f, DeltaSeconds));
-                result.TransformToDiamond = result.ProgressSeconds >= RequiredSeconds ? (byte)1 : (byte)0;
-                Results[index] = result;
+                sample.ResultProgressSeconds = math.min(RequiredSeconds, sample.ResultProgressSeconds + math.max(0f, DeltaSeconds));
+                sample.TransformToDiamond = sample.ResultProgressSeconds >= RequiredSeconds ? (byte)1 : (byte)0;
+                Workspace[index] = sample;
             }
         }
 
@@ -386,9 +376,9 @@ namespace Hecton8.World
         private int _computedPoolWarmupCount;
         private float _meteorImpactTimerSeconds;
         private uint _meteorImpactSequence;
-        private VaultGenerationHandle<PressureMetamorphismInput> _metamorphismInputsHandle;
-        private VaultGenerationHandle<PressureMetamorphismResult> _metamorphismResultsHandle;
+        private VaultGenerationHandle<PressureMetamorphismSample> _metamorphismWorkspaceHandle;
         private IDataVault _dataVault;
+        private HazardZoneManager _hazardZoneManager;
         private JobHandle _metamorphismJobHandle;
         private bool _metamorphismJobActive;
         private bool _metamorphismBuffersLocked;
@@ -446,6 +436,7 @@ namespace Hecton8.World
             CacheRegistryServicesCold();
             CacheWorldgenRuntimeReferencesCold();
             CacheSpawnSdfValidationServicesCold();
+            EnsureMetamorphismCapacityCold(ResolveMetamorphismColdCapacity());
             EnsureRuntimePrefab();
             UpdateDiagnostics(default);
         }
@@ -459,6 +450,9 @@ namespace Hecton8.World
             CacheRegistryServicesCold();
             CacheWorldgenRuntimeReferencesCold();
             CacheSpawnSdfValidationServicesCold();
+            EnsureMetamorphismCapacityCold(ResolveMetamorphismColdCapacity());
+            EnsureRuntimePrefab();
+            EnsureRuntimePool();
             TryRegisterHotSwapListener();
             EnsureGhostProxySnapStaging();
 
@@ -548,6 +542,9 @@ namespace Hecton8.World
 
             if (_dataVault == null)
                 _dataVault = GlobalRegistry.DataVault;
+
+            if (_hazardZoneManager == null)
+                _hazardZoneManager = GlobalRegistry.HazardZones;
         }
 
         private void CacheWorldgenRuntimeReferencesCold()
@@ -622,14 +619,6 @@ namespace Hecton8.World
                 voxelEngine = null;
         }
 
-        private IDataVault CacheDataVaultCold()
-        {
-            if (_dataVault == null)
-                _dataVault = GlobalRegistry.DataVault;
-
-            return _dataVault;
-        }
-
         private void ClearCachedRegistryServices()
         {
             _objectPool = null;
@@ -637,6 +626,7 @@ namespace Hecton8.World
             _dispatcher = null;
             _playerRuntimeContext = null;
             _dataVault = null;
+            _hazardZoneManager = null;
         }
 
         private void TryRegisterHotSwapListener()
@@ -665,6 +655,8 @@ namespace Hecton8.World
             {
                 case GlobalRegistryServiceSlot.ObjectPool:
                     _objectPool = currentService as IObjectPoolService;
+                    _runtimePoolReady = false;
+                    EnsureRuntimePool();
                     break;
                 case GlobalRegistryServiceSlot.PersistentWorldRegistry:
                     _persistentWorldRegistry = currentService as PersistentWorldRegistry;
@@ -695,6 +687,10 @@ namespace Hecton8.World
                     CancelMetamorphismJobForTeardown();
                     ReleaseMetamorphismBuffers(previousService as IDataVault);
                     _dataVault = currentService as IDataVault;
+                    EnsureMetamorphismCapacityCold(ResolveMetamorphismColdCapacity());
+                    break;
+                case GlobalRegistryServiceSlot.HazardZoneRuntime:
+                    _hazardZoneManager = currentService as HazardZoneManager;
                     break;
             }
         }
@@ -741,7 +737,6 @@ namespace Hecton8.World
         /// </summary>
         public void LateFrameTick()
         {
-            EnsureRuntimePool();
             FlushPendingNodeDeactivations();
             ProcessPendingSpawns();
 
@@ -804,7 +799,7 @@ namespace Hecton8.World
             if (instance == null)
                 return false;
 
-            if (!instance.TryGetComponent(out ResourceNode node))
+            if (!TryResolvePooledResourceNode(pool, instance, out ResourceNode node))
             {
                 pool.Despawn(instance);
                 return false;
@@ -863,7 +858,7 @@ namespace Hecton8.World
             if (instance == null)
                 return false;
 
-            if (!instance.TryGetComponent(out ResourceNode node))
+            if (!TryResolvePooledResourceNode(pool, instance, out ResourceNode node))
             {
                 pool.Despawn(instance);
                 return false;
@@ -986,7 +981,7 @@ namespace Hecton8.World
             if (instance == null)
                 return false;
 
-            if (!instance.TryGetComponent(out ResourceNode node))
+            if (!TryResolvePooledResourceNode(pool, instance, out ResourceNode node))
             {
                 pool.Despawn(instance);
                 return false;
@@ -1079,7 +1074,7 @@ namespace Hecton8.World
             if (instance == null)
                 return false;
 
-            if (!instance.TryGetComponent(out ResourceNode node))
+            if (!TryResolvePooledResourceNode(pool, instance, out ResourceNode node))
             {
                 pool.Despawn(instance);
                 return false;
@@ -1679,7 +1674,7 @@ namespace Hecton8.World
                 _pendingSpawns.Dequeue();
                 processedCount++;
 
-                if (!instance.TryGetComponent(out ResourceNode node))
+                if (!TryResolvePooledResourceNode(pool, instance, out ResourceNode node))
                 {
                     pool.Despawn(instance);
                     continue;
@@ -1691,6 +1686,17 @@ namespace Hecton8.World
                 sectorState.ActiveNodes.Add(node);
                 _debugLastAcceptedTemplateHash = template.StableHashId;
             }
+        }
+
+        private static bool TryResolvePooledResourceNode(
+            IObjectPoolService pool,
+            GameObject instance,
+            out ResourceNode node)
+        {
+            node = null;
+            return pool != null &&
+                   instance != null &&
+                   pool.TryGetPooledComponent(instance, out node);
         }
 
         private void SchedulePressureMetamorphismJob()
@@ -1708,15 +1714,13 @@ namespace Hecton8.World
 
             int nodeCount = BuildPressureMetamorphismInputs(
                 carbonTemplate.StableHashId,
-                out NativeArray<PressureMetamorphismInput> inputs,
-                out NativeArray<PressureMetamorphismResult> results);
+                out NativeArray<PressureMetamorphismSample> workspace);
             if (nodeCount <= 0)
                 return;
 
             PressureMetamorphismJob job = new PressureMetamorphismJob
             {
-                Inputs = inputs,
-                Results = results,
+                Workspace = workspace,
                 DeltaSeconds = 0.5f,
                 DepthThresholdMeters = pressureMetamorphismDepthMeters,
                 RequiredSeconds = pressureMetamorphismDays * GameSecondsPerDay,
@@ -1730,11 +1734,9 @@ namespace Hecton8.World
 
         private int BuildPressureMetamorphismInputs(
             int carbonTemplateHashId,
-            out NativeArray<PressureMetamorphismInput> inputs,
-            out NativeArray<PressureMetamorphismResult> results)
+            out NativeArray<PressureMetamorphismSample> workspace)
         {
-            inputs = default;
-            results = default;
+            workspace = default;
             _metamorphismNodeScratch.Clear();
 
             int estimatedCount = 0;
@@ -1747,7 +1749,7 @@ namespace Hecton8.World
             }
             estimateEnumerator.Dispose();
 
-            if (!TryAcquireMetamorphismJobBuffers(math.max(1, estimatedCount), out inputs, out results))
+            if (!TryAcquireMetamorphismJobBuffer(math.max(1, estimatedCount), out workspace))
                 return 0;
 
             int writeIndex = 0;
@@ -1759,7 +1761,7 @@ namespace Hecton8.World
                 if (state == null || state.ActiveNodes == null)
                     continue;
 
-                for (int i = 0; i < state.ActiveNodes.Count && writeIndex < inputs.Length; i++)
+                for (int i = 0; i < state.ActiveNodes.Count && writeIndex < workspace.Length; i++)
                 {
                     ResourceNode node = state.ActiveNodes[i];
                     if (node == null || node.IsDepleted || !node.gameObject.activeInHierarchy)
@@ -1777,14 +1779,15 @@ namespace Hecton8.World
                         continue;
 
                     float depthMeters = math.max(0f, waterSurface - (float)nodeAbsolute.y);
-                    inputs[writeIndex] = new PressureMetamorphismInput
+                    workspace[writeIndex] = new PressureMetamorphismSample
                     {
                         DepthMeters = depthMeters,
                         ProgressSeconds = node.PressureMetamorphismProgressSeconds,
                         TemplateHashId = template.StableHashId,
-                        Active = (byte)(depthMeters > pressureMetamorphismDepthMeters ? 1 : 0)
+                        Active = (byte)(depthMeters > pressureMetamorphismDepthMeters ? 1 : 0),
+                        ResultProgressSeconds = 0f,
+                        TransformToDiamond = 0
                     };
-                    results[writeIndex] = default;
                     _metamorphismNodeScratch.Add(node);
                     writeIndex++;
                 }
@@ -1794,8 +1797,7 @@ namespace Hecton8.World
             if (writeIndex <= 0)
             {
                 ReleaseMetamorphismJobBufferLocks();
-                inputs = default;
-                results = default;
+                workspace = default;
             }
 
             return writeIndex;
@@ -1811,7 +1813,7 @@ namespace Hecton8.World
             try
             {
                 if (!TryResolvePressureDiamondTemplate(out ResourceNodeTemplate diamondTemplate) ||
-                    !TryReadMetamorphismResults(_scheduledMetamorphismCount, out NativeArray<PressureMetamorphismResult>.ReadOnly metamorphismResults))
+                    !TryReadMetamorphismWorkspace(_scheduledMetamorphismCount, out NativeArray<PressureMetamorphismSample>.ReadOnly metamorphismResults))
                 {
                     _scheduledMetamorphismCount = 0;
                     _metamorphismNodeScratch.Clear();
@@ -1826,10 +1828,10 @@ namespace Hecton8.World
                     if (node == null || node.IsDepleted || !node.gameObject.activeInHierarchy)
                         continue;
 
-                    PressureMetamorphismResult result = metamorphismResults[i];
+                    PressureMetamorphismSample result = metamorphismResults[i];
                     if (result.TransformToDiamond == 0)
                     {
-                        node.SetPressureMetamorphismProgressSeconds(result.ProgressSeconds);
+                        node.SetPressureMetamorphismProgressSeconds(result.ResultProgressSeconds);
                         continue;
                     }
 
@@ -1870,34 +1872,29 @@ namespace Hecton8.World
             if (requiredCount <= 0 || _metamorphismJobActive || _metamorphismBuffersLocked)
                 return false;
 
-            int currentCapacity = _metamorphismCapacity;
-            if (currentCapacity >= requiredCount &&
-                TryReadMetamorphismInputs(requiredCount, out _) &&
-                TryReadMetamorphismResults(requiredCount, out _))
-            {
-                return true;
-            }
+            return _metamorphismCapacity >= requiredCount &&
+                   TryReadMetamorphismWorkspace(requiredCount, out _);
+        }
 
-            int nextCapacity = math.max(requiredCount, math.max(InitialMetamorphismCapacity, currentCapacity * 2));
-            bool inputsReady = EnsureMetamorphismVaultBuffer(
-                ref _metamorphismInputsHandle,
-                MetamorphismInputsBufferId,
-                nextCapacity,
-                NativeArrayOptions.ClearMemory);
-            bool resultsReady = EnsureMetamorphismVaultBuffer(
-                ref _metamorphismResultsHandle,
-                MetamorphismResultsBufferId,
-                nextCapacity,
-                NativeArrayOptions.ClearMemory);
+        private int ResolveMetamorphismColdCapacity()
+        {
+            return math.max(InitialMetamorphismCapacity, ComputeRequiredPoolWarmupCount());
+        }
 
-            if (inputsReady && resultsReady)
+        private void EnsureMetamorphismCapacityCold(int requiredCount)
+        {
+            if (!Application.isPlaying || requiredCount <= 0 || _metamorphismJobActive || _metamorphismBuffersLocked)
+                return;
+
+            int nextCapacity = math.max(requiredCount, InitialMetamorphismCapacity);
+            if (EnsureMetamorphismVaultBuffer(
+                    ref _metamorphismWorkspaceHandle,
+                    MetamorphismWorkspaceBufferId,
+                    nextCapacity,
+                    NativeArrayOptions.ClearMemory))
             {
                 _metamorphismCapacity = nextCapacity;
-                return true;
             }
-
-            ReleaseMetamorphismBuffers();
-            return false;
         }
 
         private void DisposeMetamorphismBuffers()
@@ -1911,7 +1908,7 @@ namespace Hecton8.World
             int requiredCapacity,
             NativeArrayOptions options) where T : struct
         {
-            IDataVault vault = CacheDataVaultCold();
+            IDataVault vault = _dataVault;
             if (vault == null || requiredCapacity <= 0)
                 return false;
 
@@ -1936,13 +1933,11 @@ namespace Hecton8.World
                    resolved.Length >= requiredCapacity;
         }
 
-        private bool TryAcquireMetamorphismJobBuffers(
+        private bool TryAcquireMetamorphismJobBuffer(
             int requiredCount,
-            out NativeArray<PressureMetamorphismInput> inputs,
-            out NativeArray<PressureMetamorphismResult> results)
+            out NativeArray<PressureMetamorphismSample> workspace)
         {
-            inputs = default;
-            results = default;
+            workspace = default;
             if (!EnsureMetamorphismCapacity(requiredCount) || _metamorphismBuffersLocked)
                 return false;
 
@@ -1950,27 +1945,16 @@ namespace Hecton8.World
             if (vault == null)
                 return false;
 
-            bool inputsLocked = false;
-            bool resultsLocked = false;
             bool success = false;
             try
             {
-                if (!IsExactVaultHandle(in _metamorphismInputsHandle, MetamorphismInputsBufferId) ||
-                    !vault.TryAcquireWriteLock(in _metamorphismInputsHandle, VaultOwnerSystemId, out inputs))
+                if (!IsExactVaultHandle(in _metamorphismWorkspaceHandle, MetamorphismWorkspaceBufferId) ||
+                    !vault.TryAcquireWriteLock(in _metamorphismWorkspaceHandle, VaultOwnerSystemId, out workspace))
                 {
                     return false;
                 }
-                inputsLocked = true;
 
-                if (!IsExactVaultHandle(in _metamorphismResultsHandle, MetamorphismResultsBufferId) ||
-                    !vault.TryAcquireWriteLock(in _metamorphismResultsHandle, VaultOwnerSystemId, out results))
-                {
-                    return false;
-                }
-                resultsLocked = true;
-
-                if (!inputs.IsCreated || inputs.Length < requiredCount ||
-                    !results.IsCreated || results.Length < requiredCount)
+                if (!workspace.IsCreated || workspace.Length < requiredCount)
                 {
                     return false;
                 }
@@ -1983,36 +1967,22 @@ namespace Hecton8.World
             {
                 if (!success)
                 {
-                    if (resultsLocked)
-                        vault.ReleaseWriteLock(in _metamorphismResultsHandle, VaultOwnerSystemId);
-                    if (inputsLocked)
-                        vault.ReleaseWriteLock(in _metamorphismInputsHandle, VaultOwnerSystemId);
-                    inputs = default;
-                    results = default;
+                    if (IsExactVaultHandle(in _metamorphismWorkspaceHandle, MetamorphismWorkspaceBufferId))
+                        vault.ReleaseWriteLock(in _metamorphismWorkspaceHandle, VaultOwnerSystemId);
+                    workspace = default;
                 }
             }
         }
 
-        private bool TryReadMetamorphismInputs(
+        private bool TryReadMetamorphismWorkspace(
             int requiredCount,
-            out NativeArray<PressureMetamorphismInput>.ReadOnly inputs)
+            out NativeArray<PressureMetamorphismSample>.ReadOnly workspace)
         {
             return TryReadMetamorphismVaultBuffer(
-                in _metamorphismInputsHandle,
-                MetamorphismInputsBufferId,
+                in _metamorphismWorkspaceHandle,
+                MetamorphismWorkspaceBufferId,
                 requiredCount,
-                out inputs);
-        }
-
-        private bool TryReadMetamorphismResults(
-            int requiredCount,
-            out NativeArray<PressureMetamorphismResult>.ReadOnly results)
-        {
-            return TryReadMetamorphismVaultBuffer(
-                in _metamorphismResultsHandle,
-                MetamorphismResultsBufferId,
-                requiredCount,
-                out results);
+                out workspace);
         }
 
         private bool TryReadMetamorphismVaultBuffer<T>(
@@ -2043,10 +2013,8 @@ namespace Hecton8.World
 
             if (vault != null)
             {
-                if (IsExactVaultHandle(in _metamorphismResultsHandle, MetamorphismResultsBufferId))
-                    vault.ReleaseWriteLock(in _metamorphismResultsHandle, VaultOwnerSystemId);
-                if (IsExactVaultHandle(in _metamorphismInputsHandle, MetamorphismInputsBufferId))
-                    vault.ReleaseWriteLock(in _metamorphismInputsHandle, VaultOwnerSystemId);
+                if (IsExactVaultHandle(in _metamorphismWorkspaceHandle, MetamorphismWorkspaceBufferId))
+                    vault.ReleaseWriteLock(in _metamorphismWorkspaceHandle, VaultOwnerSystemId);
             }
 
             _metamorphismBuffersLocked = false;
@@ -2063,8 +2031,7 @@ namespace Hecton8.World
                 CancelMetamorphismJobForTeardown();
 
             ReleaseMetamorphismJobBufferLocks(vault);
-            ReleaseMetamorphismVaultHandle(vault, ref _metamorphismResultsHandle);
-            ReleaseMetamorphismVaultHandle(vault, ref _metamorphismInputsHandle);
+            ReleaseMetamorphismVaultHandle(vault, ref _metamorphismWorkspaceHandle);
             _metamorphismCapacity = 0;
         }
 
@@ -2413,7 +2380,7 @@ namespace Hecton8.World
                 return;
             }
 
-            HazardZoneManager hazardManager = HazardZoneManager.EnsureRuntimeInstance();
+            HazardZoneManager hazardManager = _hazardZoneManager;
             if (hazardManager == null)
                 return;
 
@@ -2454,7 +2421,7 @@ namespace Hecton8.World
             if (brinePool.HazardRegistered == 0)
                 return;
 
-            HazardZoneManager manager = Hecton8.Core.GlobalRegistry.HazardZones;
+            HazardZoneManager manager = _hazardZoneManager;
             if (manager != null)
                 manager.UnregisterZone(brinePool.HazardZoneId);
             HectonBrineToxicMudGrid.UnregisterCell(brinePool.HazardZoneId);

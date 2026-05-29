@@ -42,10 +42,11 @@ namespace GPUInstancer
         protected static ComputeShader _visibilityComputeShader;
         protected static int[] _instanceVisibilityComputeKernelIDs;
         protected static ComputeShader _bufferToTextureComputeShader;
-        protected static int _bufferToTextureComputeKernelID;
-        protected static int _bufferToTextureCrossFadeComputeKernelID;
+        protected static int _bufferToTextureComputeKernelID = -1;
+        protected static int _bufferToTextureCrossFadeComputeKernelID = -1;
         protected static ComputeShader _argsBufferComputeShader;
-        protected static int _argsBufferDoubleInstanceCountComputeKernelID;
+        protected static int _argsBufferDoubleInstanceCountComputeKernelID = -1;
+        protected static GPUIMatrixHandlingType _computeShaderMatrixHandlingType = (GPUIMatrixHandlingType)(-1);
 
 #if UNITY_EDITOR
         public List<GPUInstancerPrototype> selectedPrototypeList;
@@ -119,6 +120,9 @@ namespace GPUInstancer
 
             GPUInstancerConstants.gpuiSettings.SetDefultBindings();
             GPUInstancerUtility.SetPlatformDependentVariables();
+            GPUIMatrixHandlingType matrixHandlingType = GPUInstancerUtility.matrixHandlingType;
+            GPUInstancerConstants.DETAIL_STORE_INSTANCE_DATA = matrixHandlingType == GPUIMatrixHandlingType.MatrixAppend;
+            GPUInstancerConstants.COMPUTE_MAX_LOD_BUFFER = matrixHandlingType == GPUIMatrixHandlingType.MatrixAppend ? 2 : 3;
 
 #if UNITY_EDITOR
             if (!Application.isPlaying)
@@ -129,24 +133,43 @@ namespace GPUInstancer
 
             if (SystemInfo.supportsComputeShaders)
             {
-                if (_visibilityComputeShader == null || _instanceVisibilityComputeKernelIDs == null || _cameraComputeKernelIDs == null)
+                if (_visibilityComputeShader == null || _instanceVisibilityComputeKernelIDs == null || _cameraComputeKernelIDs == null
+                    || _argsBufferComputeShader == null || _computeShaderMatrixHandlingType != matrixHandlingType
+                    || (matrixHandlingType == GPUIMatrixHandlingType.CopyToTexture && _bufferToTextureComputeShader == null))
                 {
-                    switch (GPUInstancerUtility.matrixHandlingType)
+                    _computeShaderMatrixHandlingType = matrixHandlingType;
+                    switch (matrixHandlingType)
                     {
                         case GPUIMatrixHandlingType.MatrixAppend:
                             _visibilityComputeShader = (ComputeShader)Resources.Load(GPUInstancerConstants.VISIBILITY_COMPUTE_RESOURCE_PATH_VULKAN);
-                            GPUInstancerConstants.DETAIL_STORE_INSTANCE_DATA = true;
-                            GPUInstancerConstants.COMPUTE_MAX_LOD_BUFFER = 2;
                             break;
                         case GPUIMatrixHandlingType.CopyToTexture:
                             _visibilityComputeShader = (ComputeShader)Resources.Load(GPUInstancerConstants.VISIBILITY_COMPUTE_RESOURCE_PATH);
                             _bufferToTextureComputeShader = (ComputeShader)Resources.Load(GPUInstancerConstants.BUFFER_TO_TEXTURE_COMPUTE_RESOURCE_PATH);
+                            if (_bufferToTextureComputeShader == null ||
+                                !_bufferToTextureComputeShader.HasKernel(GPUInstancerConstants.BUFFER_TO_TEXTURE_KERNEL) ||
+                                !_bufferToTextureComputeShader.HasKernel(GPUInstancerConstants.BUFFER_TO_TEXTURE_CROSSFADE_KERNEL))
+                            {
+                                _bufferToTextureComputeShader = null;
+                                _bufferToTextureComputeKernelID = -1;
+                                _bufferToTextureCrossFadeComputeKernelID = -1;
+                                this.enabled = false;
+                                return;
+                            }
                             _bufferToTextureComputeKernelID = _bufferToTextureComputeShader.FindKernel(GPUInstancerConstants.BUFFER_TO_TEXTURE_KERNEL);
                             _bufferToTextureCrossFadeComputeKernelID = _bufferToTextureComputeShader.FindKernel(GPUInstancerConstants.BUFFER_TO_TEXTURE_CROSSFADE_KERNEL);
                             break;
                         default:
                             _visibilityComputeShader = (ComputeShader)Resources.Load(GPUInstancerConstants.VISIBILITY_COMPUTE_RESOURCE_PATH);
                             break;
+                    }
+
+                    if (_visibilityComputeShader == null || !HasAllKernels(_visibilityComputeShader, GPUInstancerConstants.VISIBILITY_COMPUTE_KERNELS))
+                    {
+                        _visibilityComputeShader = null;
+                        _instanceVisibilityComputeKernelIDs = null;
+                        this.enabled = false;
+                        return;
                     }
 
                     _instanceVisibilityComputeKernelIDs = new int[GPUInstancerConstants.VISIBILITY_COMPUTE_KERNELS.Length];
@@ -156,11 +179,28 @@ namespace GPUInstancer
 
                     _cameraComputeShader = (ComputeShader)Resources.Load(GPUInstancerConstants.CAMERA_COMPUTE_RESOURCE_PATH);
                     _cameraComputeShaderVR = (ComputeShader)Resources.Load(GPUInstancerConstants.CAMERA_VR_COMPUTE_RESOURCE_PATH);
+                    if (_cameraComputeShader == null || _cameraComputeShaderVR == null ||
+                        !HasAllKernels(_cameraComputeShader, GPUInstancerConstants.CAMERA_COMPUTE_KERNELS) ||
+                        !HasAllKernels(_cameraComputeShaderVR, GPUInstancerConstants.CAMERA_COMPUTE_KERNELS))
+                    {
+                        _cameraComputeShader = null;
+                        _cameraComputeShaderVR = null;
+                        _cameraComputeKernelIDs = null;
+                        this.enabled = false;
+                        return;
+                    }
                     _cameraComputeKernelIDs = new int[GPUInstancerConstants.CAMERA_COMPUTE_KERNELS.Length];
                     for (int i = 0; i < _cameraComputeKernelIDs.Length; i++)
                         _cameraComputeKernelIDs[i] = _cameraComputeShader.FindKernel(GPUInstancerConstants.CAMERA_COMPUTE_KERNELS[i]);
 
                     _argsBufferComputeShader = Resources.Load<ComputeShader>(GPUInstancerConstants.ARGS_BUFFER_COMPUTE_RESOURCE_PATH);
+                    if (_argsBufferComputeShader == null || !_argsBufferComputeShader.HasKernel(GPUInstancerConstants.ARGS_BUFFER_DOUBLE_INSTANCE_COUNT_KERNEL))
+                    {
+                        _argsBufferComputeShader = null;
+                        _argsBufferDoubleInstanceCountComputeKernelID = -1;
+                        this.enabled = false;
+                        return;
+                    }
                     _argsBufferDoubleInstanceCountComputeKernelID = _argsBufferComputeShader.FindKernel(GPUInstancerConstants.ARGS_BUFFER_DOUBLE_INSTANCE_COUNT_KERNEL);
                 }
 
@@ -181,6 +221,20 @@ namespace GPUInstancer
             EditorApplication.playModeStateChanged -= HandlePlayModeStateChanged;
             EditorApplication.playModeStateChanged += HandlePlayModeStateChanged;
 #endif
+        }
+
+        static bool HasAllKernels(ComputeShader shader, string[] kernelNames)
+        {
+            if (shader == null || kernelNames == null)
+                return false;
+
+            for (int i = 0; i < kernelNames.Length; i++)
+            {
+                if (!shader.HasKernel(kernelNames[i]))
+                    return false;
+            }
+
+            return true;
         }
 
         public virtual void Start()

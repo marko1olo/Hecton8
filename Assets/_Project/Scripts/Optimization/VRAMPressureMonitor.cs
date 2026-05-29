@@ -13,7 +13,7 @@ namespace Hecton8.Optimization
     /// </summary>
     [DisallowMultipleComponent]
     [DefaultExecutionOrder(-8007)]
-    public sealed class VRAMPressureMonitor : MonoBehaviour, ITickable, IUpdatable, IVramPressureReadModel, IVramPressureSampleSink, IVramPressureMipBiasSink, IGlobalRegistryHotSwapListener
+    public sealed class VRAMPressureMonitor : MonoBehaviour, ILateFrameTickable, IVramPressureReadModel, IVramPressureSampleSink, IVramPressureMipBiasSink, IGlobalRegistryHotSwapListener
     {
         private static int s_x001VRAMPressureMonitorSignalPushDropCount;
         private const float BytesPerMegabyte = 1024f * 1024f;
@@ -48,9 +48,10 @@ namespace Hecton8.Optimization
         [Tooltip("Maximum number of forced evictions performed in a single emergency pass.")]
         [SerializeField, Range(1, 8)] private int maxEmergencyEvictionsPerPass = 4;
 
-        private bool _registeredTick;
+        private bool _registeredLateFrame;
         private bool _registeredService;
         private bool _registeredHotSwap;
+        private bool _forceSampleQueued;
         private int _framesUntilSample;
         private int _baselineMipLimit;
         private int _activeMipLimit;
@@ -59,6 +60,7 @@ namespace Hecton8.Optimization
         private bool _lodAggressionActive;
         private VRAMBudgetThresholds _runtimeBudgetThresholds;
         private long _runtimeTotalVramBudgetBytes;
+        private long _runtimeSystemRamBytes;
         private IVramBudgetReadModel _vramMonitor;
         private IVramBudgetSampleSink _vramBudgetSample;
         private IAssetLifecyclePressureSink _assetLifecycle;
@@ -102,6 +104,13 @@ namespace Hecton8.Optimization
             _activeMipLimit = _baselineMipLimit;
             _baselineLodBias = QualitySettings.lodBias;
             _framesUntilSample = Mathf.Max(1, sampleIntervalFrames);
+            _runtimeSystemRamBytes = ResolveSystemMemoryBytesCold();
+        }
+
+        private static long ResolveSystemMemoryBytesCold()
+        {
+            long memoryMb = SystemInfo.systemMemorySize;
+            return memoryMb > 0L ? memoryMb * 1024L * 1024L : 0L;
         }
 
         private void OnEnable()
@@ -121,9 +130,7 @@ namespace Hecton8.Optimization
 
         private void OnDisable()
         {
-            if (_lodAggressionActive)
-                BrgLodDistanceScalar = 1f;
-
+            RestoreGlobalQualityOverrides();
             TryUnregister();
             TryUnregisterHotSwap();
             TryUnregisterService();
@@ -132,9 +139,7 @@ namespace Hecton8.Optimization
 
         private void OnDestroy()
         {
-            if (_lodAggressionActive)
-                BrgLodDistanceScalar = 1f;
-
+            RestoreGlobalQualityOverrides();
             TryUnregister();
             TryUnregisterHotSwap();
             TryUnregisterService();
@@ -142,31 +147,34 @@ namespace Hecton8.Optimization
         }
 
         /// <inheritdoc />
-        public void Tick(float deltaTime)
+        public void LateFrameTick()
         {
-            _framesUntilSample--;
-            if (_framesUntilSample > 0)
-                return;
+            if (!_forceSampleQueued)
+            {
+                _framesUntilSample--;
+                if (_framesUntilSample > 0)
+                    return;
+            }
 
+            _forceSampleQueued = false;
             _framesUntilSample = Mathf.Max(1, sampleIntervalFrames);
             SampleAndRespond();
         }
 
         internal void ForceImmediateSampleAndResponse()
         {
-            _framesUntilSample = Mathf.Max(1, sampleIntervalFrames);
-            SampleAndRespond();
+            _forceSampleQueued = true;
         }
 
         private void TryRegister()
         {
-            if (_registeredTick || !Application.isPlaying || GlobalRegistry.Dispatcher == null)
+            if (_registeredLateFrame || !Application.isPlaying || GlobalRegistry.Dispatcher == null)
                 return;
             if (!ReferenceEquals(GlobalRegistry.VRAMPressure, this))
                 return;
 
             CacheDependencies();
-            _registeredTick = GlobalRegistry.TryRegisterUpdatable(this, PriorityLayer.Core);
+            _registeredLateFrame = GlobalRegistry.TryRegisterLateFrameTickable(this, PriorityLayer.Core);
         }
 
         private bool TryRegisterService()
@@ -190,11 +198,11 @@ namespace Hecton8.Optimization
 
         private void TryUnregister()
         {
-            if (!_registeredTick)
+            if (!_registeredLateFrame)
                 return;
 
-            GlobalRegistry.UnregisterUpdatable(this, PriorityLayer.Core);
-            _registeredTick = false;
+            GlobalRegistry.UnregisterLateFrameTickable(this, PriorityLayer.Core);
+            _registeredLateFrame = false;
         }
 
         private void TryRegisterHotSwap()
@@ -231,14 +239,14 @@ namespace Hecton8.Optimization
                 budgetSample.SampleVramCounters();
 
             IAssetLifecyclePressureSink governor = _assetLifecycle;
-            long maxSystemRamBytes = (long)SystemInfo.systemMemorySize * 1024L * 1024L;
+            long maxSystemRamBytes = _runtimeSystemRamBytes;
             long currentReservedBytes = Profiler.GetTotalReservedMemoryLong();
             if (governor != null)
                 currentReservedBytes += governor.NativeHeapEstimateBytes;
 
             VRAMBudgetThresholds thresholds = _runtimeBudgetThresholds;
             long vramBudgetBytes = thresholds.TotalVRAMBudgetBytes;
-            long usedVramBytes = monitor != null ? monitor.TotalVRAMBytes : 0L;
+            long usedVramBytes = monitor != null ? monitor.TotalVRAMBytes : LastUsedVramBytes;
             LastUsedVramBytes = usedVramBytes;
 
             float vramDenominator = math.max((float)vramBudgetBytes, 1f);
@@ -360,7 +368,7 @@ namespace Hecton8.Optimization
                 PressureFactor = math.saturate(math.max(VramPressureFactor, RamPressureFactor));
             }
 
-            ApplyMipBias();
+            _forceSampleQueued = true;
         }
 
         private void ApplyTextureMipLimit(int targetMipLimit)
@@ -380,6 +388,23 @@ namespace Hecton8.Optimization
                     : ResolutionChangedSignal.ReasonVramRecovered,
                 Flags = ResolutionChangedSignal.FlagTextureMipLimit
             }, ref s_x001VRAMPressureMonitorSignalPushDropCount);
+        }
+
+        private void RestoreGlobalQualityOverrides()
+        {
+            if (_activeMipLimit != _baselineMipLimit)
+            {
+                QualitySettings.globalTextureMipmapLimit = _baselineMipLimit;
+                _activeMipLimit = _baselineMipLimit;
+            }
+
+            if (_lodAggressionActive)
+            {
+                QualitySettings.lodBias = _baselineLodBias;
+                _lodAggressionActive = false;
+            }
+
+            BrgLodDistanceScalar = 1f;
         }
 
         private void ApplyLodAggression()
@@ -533,7 +558,7 @@ namespace Hecton8.Optimization
             long hardwareHeadroomBytes = long.MaxValue;
             if (monitor != null)
             {
-                hardwareHeadroomBytes = ((long)SystemInfo.graphicsMemorySize * 1024L * 1024L) - monitor.TotalVRAMBytes;
+                hardwareHeadroomBytes = _runtimeTotalVramBudgetBytes - monitor.TotalVRAMBytes;
                 if (hardwareHeadroomBytes < 0L)
                     hardwareHeadroomBytes = 0L;
             }

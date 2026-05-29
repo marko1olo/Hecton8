@@ -219,10 +219,10 @@ namespace Hecton8.Construction
                 return;
 
             float deltaTime = _solveAccumulator;
-            _solveAccumulator = 0f;
             ApplyPumpInputs(deltaTime);
             ApplyElectrolysisInputs(deltaTime);
-            ScheduleSolve(deltaTime);
+            if (ScheduleSolve(deltaTime))
+                _solveAccumulator = 0f;
         }
 
         public void LateFrameTick()
@@ -566,7 +566,7 @@ namespace Hecton8.Construction
             }
         }
 
-        private void ScheduleSolve(float deltaTime)
+        private bool ScheduleSolve(float deltaTime)
         {
             IDataVault vault = ResolveDataVault();
             if (!TryAcquireSolveWriteBuffers(
@@ -595,19 +595,21 @@ namespace Hecton8.Construction
                     out NativeArray<int> connectionWriteCursor,
                     out NativeArray<FluidPipeRuptureRecord> ruptureDispatch))
             {
-                return;
+                return false;
             }
 
             ResetRuptureQueueBudget(ruptureBudget);
 
             JobHandle dependency = default;
             bool topologyDirty = _connectionTopologyDirty;
+            int frameIndex = _frameIndex;
+            int telemetryIndex = _telemetryCursor;
             FluidPipePressureSolveJob job = new FluidPipePressureSolveJob
             {
                 NodeCount = _nodeCount,
                 ConnectionCount = _connectionCount,
-                FrameIndex = _frameIndex++,
-                TelemetryIndex = _telemetryCursor++,
+                FrameIndex = frameIndex,
+                TelemetryIndex = telemetryIndex,
                 DeltaTime = deltaTime,
                 DefaultFlowRate = math.max(0f, defaultPipeFlowRate),
                 ConnectionOffsets = connectionOffsets,
@@ -655,6 +657,8 @@ namespace Hecton8.Construction
                 _solveLockMask = lockMask;
                 _solveScheduled = true;
                 _connectionTopologyDirty = false;
+                _frameIndex = frameIndex + 1;
+                _telemetryCursor = telemetryIndex + 1;
                 scheduled = true;
             }
             finally
@@ -667,6 +671,8 @@ namespace Hecton8.Construction
                     ReleaseSolveWriteLocks(vault, lockMask);
                 }
             }
+
+            return scheduled;
         }
 
         private void ResetRuptureQueueBudget(NativeArray<int> ruptureBudget)
@@ -967,7 +973,7 @@ namespace Hecton8.Construction
                 string projectRoot = Path.GetFullPath(Path.Combine(Application.dataPath, ".."));
                 string logDirectory = Path.Combine(projectRoot, "Docs", "AgentLogs");
                 Directory.CreateDirectory(logDirectory);
-                string dumpPath = Path.Combine(logDirectory, "Dump_1306_Construction.bin");
+                string dumpPath = Path.Combine(logDirectory, "Dump_1421_FluidLogistics.bin");
                 using (FileStream stream = new FileStream(dumpPath, FileMode.Create, FileAccess.Write, FileShare.Read))
                 using (BinaryWriter writer = new BinaryWriter(stream))
                 {

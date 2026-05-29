@@ -286,7 +286,6 @@ namespace Hecton8.UI
             if (signal.PlayerEntityId == 0ul || signal.PlayerEntityId != ownerEntityId)
                 return;
 
-            RebindOwnerSubscriptions();
             if (ShouldArmLoadBootFromContext())
                 _awaitingLoadBoot = true;
 
@@ -370,7 +369,7 @@ namespace Hecton8.UI
 
         private void TryStartPendingLoadBoot()
         {
-            if (!_awaitingLoadBoot || !ResolveOwners())
+            if (!_awaitingLoadBoot || (_survivalSystem == null && _playerMovement == null))
                 return;
 
             string slotName = !string.IsNullOrWhiteSpace(_queuedSlotName)
@@ -382,7 +381,6 @@ namespace Hecton8.UI
 
         private void StartSequence(BootReason reason, string slotName)
         {
-            EnsureUiBuilt();
             if (_consoleLabel == null || _overlayGroup == null)
                 return;
 
@@ -396,13 +394,11 @@ namespace Hecton8.UI
             _overlayGroup.interactable = false;
             _state = SequenceState.Typing;
             _stateTimer = 0f;
-            RegisterToTickManager();
         }
 
         private int BuildSequenceText(char[] destination, BootReason reason, string slotName)
         {
             BootTextWriter writer = new BootTextWriter(destination);
-            ResolveOwners();
 
             ILocalizationTextReadModel manager = _localization;
             SurvivalStats stats = _survivalSystem != null ? _survivalSystem.Stats : null;

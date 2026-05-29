@@ -8,6 +8,7 @@ using System.IO;
 #if HECTON8_MMF_AVAILABLE
 using System.IO.MemoryMappedFiles;
 #endif
+using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 using System.Threading;
 using Hecton8.Interaction;
@@ -116,6 +117,30 @@ namespace Hecton8.Core
             PlayerInputAction.ToolSlot2 |
             PlayerInputAction.ToolSlot3 |
             PlayerInputAction.ToolSlot4);
+        private static readonly ulong InputOwnerMutationGuardMask =
+            MutationGuardBit(BufferID.ShinobuInputCurrentDto) |
+            MutationGuardBit(BufferID.ShinobuInputJournalRing) |
+            MutationGuardBit(BufferID.ShinobuPredictedInputRing) |
+            MutationGuardBit(BufferID.ShinobuPredictedInputAupTargets) |
+            MutationGuardBit(BufferID.ShinobuInputStateBridgeRing) |
+            MutationGuardBit(BufferID.ShinobuInputButtonMaskWindow) |
+            MutationGuardBit(BufferID.ShinobuInputBlockMask) |
+            MutationGuardBit(BufferID.ShinobuInputProfile) |
+            MutationGuardBit(BufferID.ShinobuInputTelemetryRing) |
+            MutationGuardBit(BufferID.ShinobuInputReplaySnapshot) |
+            MutationGuardBit(BufferID.ShinobuInputHapticCommands) |
+            MutationGuardBit(BufferID.ShinobuInputXRInputStates)
+#if UNITY_EDITOR
+            | MutationGuardBit(BufferID.ShinobuInputCsvScratch)
+#endif
+            ;
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private static ulong MutationGuardBit(BufferID bufferId)
+        {
+            int bitIndex = unchecked((int)(uint)(int)bufferId) & 63;
+            return 1UL << bitIndex;
+        }
         [StructLayout(LayoutKind.Explicit, Size = BufferedActionEntrySizeBytes)]
         private struct BufferedActionEntry
         {
@@ -274,6 +299,9 @@ namespace Hecton8.Core
         private bool _deterministicVaultBuffersReady;
         private bool _deterministicVaultBuffersCleared;
         private bool _xrVaultBuffersCleared;
+        private int _ownerThreadId;
+        private int _inputMutationGuardDepth;
+        private IDataVault _inputMutationGuardVault;
         private Vector2 _lookBlendFrom;
         private Vector2 _lastDeliveredLookDelta;
         private PlayerInputState _currentState;
@@ -405,6 +433,7 @@ namespace Hecton8.Core
         /// </summary>
         public void InitializeService()
         {
+            CaptureOwnerThread();
             if (_isInitialized)
             {
                 EnsureInputBinding();
@@ -435,6 +464,7 @@ namespace Hecton8.Core
 
         private void Awake()
         {
+            CaptureOwnerThread();
             if (ActiveRuntimeInstance == null)
                 ActiveRuntimeInstance = this;
 
@@ -452,6 +482,7 @@ namespace Hecton8.Core
 
         private void OnEnable()
         {
+            CaptureOwnerThread();
             ActiveRuntimeInstance = this;
 
             EnsureInputBinding();
@@ -620,63 +651,73 @@ namespace Hecton8.Core
             if (_lastDeterministicInputFrame == currentFrame)
                 return;
 
-            if (!TryResolveInputBuffer(in _inputJournalHandle, DeterministicInputRingCapacity, out NativeArray<InputStateDTO> inputJournal) ||
-                !TryResolveInputBuffer(in _predictedInputHandle, DeterministicInputRingCapacity, out NativeArray<PredictedInputDTO> predictedInputs) ||
-                !TryResolveInputBuffer(in _predictedInputAupTargetHandle, DeterministicInputRingCapacity, out NativeArray<PredictedInputAupTargetDTO> predictedInputTargets) ||
-                !TryResolveInputBuffer(in _inputStateBridgeRingHandle, DeterministicInputRingCapacity, out NativeArray<InputState> inputStateRing))
+            if (!TryAcquireInputMutationGuard())
                 return;
 
-            _lastDeterministicInputFrame = currentFrame;
-            InputState rawState = BuildInputState(_currentState, currentFrame, unchecked(++_inputStateSequence));
-            InputStateDTO rawDto = BuildInputStateDto(_currentState);
-            int ringIndex = (int)(currentFrame % DeterministicInputRingCapacity);
-            inputJournal[ringIndex] = rawDto;
-            inputStateRing[ringIndex] = rawState;
-            double3 targetAup = double3.zero;
-            PredictedInputRingWriter.WriteLocalInput(
-                predictedInputs,
-                predictedInputTargets,
-                in rawDto,
-                in targetAup,
-                currentFrame,
-                PredictedInputFlags.None);
-            WriteButtonMaskWindow(rawState.ButtonsBitmask);
-            if (_deterministicInputCount < DeterministicInputRingCapacity)
-                _deterministicInputCount++;
-
-            int delayFrames = _inputDelayFrames;
-            InputState resolvedState = rawState;
-            byte appliedDelayFrames = 0;
-            if (delayFrames > 0 &&
-                _deterministicInputCount > delayFrames &&
-                currentFrame >= delayFrames)
+            try
             {
-                uint delayedFrame = currentFrame - (uint)delayFrames;
-                if (TryGetInputState(delayedFrame, out InputState delayedState))
+                if (!TryResolveInputBuffer(in _inputJournalHandle, DeterministicInputRingCapacity, out NativeArray<InputStateDTO> inputJournal) ||
+                    !TryResolveInputBuffer(in _predictedInputHandle, DeterministicInputRingCapacity, out NativeArray<PredictedInputDTO> predictedInputs) ||
+                    !TryResolveInputBuffer(in _predictedInputAupTargetHandle, DeterministicInputRingCapacity, out NativeArray<PredictedInputAupTargetDTO> predictedInputTargets) ||
+                    !TryResolveInputBuffer(in _inputStateBridgeRingHandle, DeterministicInputRingCapacity, out NativeArray<InputState> inputStateRing))
+                    return;
+
+                _lastDeterministicInputFrame = currentFrame;
+                InputState rawState = BuildInputState(_currentState, currentFrame, unchecked(++_inputStateSequence));
+                InputStateDTO rawDto = BuildInputStateDto(_currentState);
+                int ringIndex = (int)(currentFrame % DeterministicInputRingCapacity);
+                inputJournal[ringIndex] = rawDto;
+                inputStateRing[ringIndex] = rawState;
+                double3 targetAup = double3.zero;
+                PredictedInputRingWriter.WriteLocalInput(
+                    predictedInputs,
+                    predictedInputTargets,
+                    in rawDto,
+                    in targetAup,
+                    currentFrame,
+                    PredictedInputFlags.None);
+                WriteButtonMaskWindow(rawState.ButtonsBitmask);
+                if (_deterministicInputCount < DeterministicInputRingCapacity)
+                    _deterministicInputCount++;
+
+                int delayFrames = _inputDelayFrames;
+                InputState resolvedState = rawState;
+                byte appliedDelayFrames = 0;
+                if (delayFrames > 0 &&
+                    _deterministicInputCount > delayFrames &&
+                    currentFrame >= delayFrames)
                 {
-                    resolvedState = delayedState;
-                    resolvedState.Flags |= (ushort)InputStateFlags.DelayApplied;
-                    appliedDelayFrames = (byte)delayFrames;
+                    uint delayedFrame = currentFrame - (uint)delayFrames;
+                    if (TryGetInputState(delayedFrame, out InputState delayedState))
+                    {
+                        resolvedState = delayedState;
+                        resolvedState.Flags |= (ushort)InputStateFlags.DelayApplied;
+                        appliedDelayFrames = (byte)delayFrames;
+                    }
                 }
+
+                _previousInputState = _currentInputState;
+                _currentInputState = resolvedState;
+                ApplyResolvedInputStateToPlayerSnapshot(resolvedState);
+                WriteCurrentInputDto(BuildInputStateDtoFromResolvedState(in resolvedState));
+
+                InputStateSignal signal = default;
+                signal.State = resolvedState;
+                signal.CurrentInputSchemeHash = _currentInputSchemeHash;
+                signal.InputDelayFrames = (byte)delayFrames;
+                signal.AppliedDelayFrames = appliedDelayFrames;
+                signal.Flags = resolvedState.Flags;
+                SignalBus<InputStateSignal>.TryPushTracked(in signal, ref s_x001InputDispatcherSignalPushDropCount);
+                PublishDiscreteInputSignals(resolvedState.ButtonsBitmask, _previousButtonMask);
+                _previousButtonMask = resolvedState.ButtonsBitmask;
+                WriteDeterministicInputBlackBox(in resolvedState, _currentInputSchemeHash);
+                if ((resolvedState.Sequence % StandardInputRingCapacity) == 0u)
+                    StageInputReplaySnapshot();
             }
-
-            _previousInputState = _currentInputState;
-            _currentInputState = resolvedState;
-            ApplyResolvedInputStateToPlayerSnapshot(resolvedState);
-            WriteCurrentInputDto(BuildInputStateDtoFromResolvedState(in resolvedState));
-
-            InputStateSignal signal = default;
-            signal.State = resolvedState;
-            signal.CurrentInputSchemeHash = _currentInputSchemeHash;
-            signal.InputDelayFrames = (byte)delayFrames;
-            signal.AppliedDelayFrames = appliedDelayFrames;
-            signal.Flags = resolvedState.Flags;
-            SignalBus<InputStateSignal>.TryPushTracked(in signal, ref s_x001InputDispatcherSignalPushDropCount);
-            PublishDiscreteInputSignals(resolvedState.ButtonsBitmask, _previousButtonMask);
-            _previousButtonMask = resolvedState.ButtonsBitmask;
-            WriteDeterministicInputBlackBox(in resolvedState, _currentInputSchemeHash);
-            if ((resolvedState.Sequence % StandardInputRingCapacity) == 0u)
-                StageInputReplaySnapshot();
+            finally
+            {
+                ReleaseInputMutationGuard();
+            }
         }
 
         private static InputStateDTO BuildInputStateDto(in PlayerInputState source)
@@ -945,20 +986,30 @@ namespace Hecton8.Core
             if (_deterministicVaultBuffersCleared)
                 return;
 
-            ClearVaultBuffer(ref _currentInputDtoHandle);
-            ClearVaultBuffer(ref _inputJournalHandle);
-            InitializePredictedInputBuffers(0u);
-            ClearVaultBuffer(ref _inputStateBridgeRingHandle);
-            ClearVaultBuffer(ref _buttonMaskWindowHandle);
-            ClearVaultBuffer(ref _inputBlockMaskHandle);
-            ClearVaultBuffer(ref _inputTelemetryHandle);
-            ClearVaultBuffer(ref _inputReplaySnapshotHandle);
-            ClearVaultBuffer(ref _hapticCommandDtoHandle);
+            if (!TryAcquireInputMutationGuard())
+                return;
+
+            try
+            {
+                ClearVaultBuffer(ref _currentInputDtoHandle);
+                ClearVaultBuffer(ref _inputJournalHandle);
+                InitializePredictedInputBuffers(0u);
+                ClearVaultBuffer(ref _inputStateBridgeRingHandle);
+                ClearVaultBuffer(ref _buttonMaskWindowHandle);
+                ClearVaultBuffer(ref _inputBlockMaskHandle);
+                ClearVaultBuffer(ref _inputTelemetryHandle);
+                ClearVaultBuffer(ref _inputReplaySnapshotHandle);
+                ClearVaultBuffer(ref _hapticCommandDtoHandle);
 #if UNITY_EDITOR
-            ClearVaultBuffer(ref _inputProfileCsvScratchHandle);
+                ClearVaultBuffer(ref _inputProfileCsvScratchHandle);
 #endif
-            InitializeDefaultInputProfile();
-            _deterministicVaultBuffersCleared = true;
+                InitializeDefaultInputProfile();
+                _deterministicVaultBuffersCleared = true;
+            }
+            finally
+            {
+                ReleaseInputMutationGuard();
+            }
         }
 
         private void DisposeDeterministicInputNativeBuffers(JobHandle dependency)
@@ -1051,49 +1102,120 @@ namespace Hecton8.Core
             return true;
         }
 
-        private void ClearVaultBuffer<T>(ref VaultGenerationHandle<T> handle) where T : struct
+        private bool TryAcquireInputMutationGuard()
         {
-            if (!TryResolveInputBuffer(in handle, 1, out NativeArray<T> buffer))
+            if (_inputMutationGuardDepth > 0)
+            {
+                _inputMutationGuardDepth++;
+                return true;
+            }
+
+            IDataVault vault = _dataVault;
+            if (vault == null || !IsOwnerThread() || !vault.TryAcquireMutationGuard(InputOwnerMutationGuardMask))
+                return false;
+
+            _inputMutationGuardVault = vault;
+            _inputMutationGuardDepth = 1;
+            return true;
+        }
+
+        private void ReleaseInputMutationGuard()
+        {
+            int depth = _inputMutationGuardDepth;
+            if (depth <= 0)
                 return;
 
-            UnsafeUtility.MemClear(
-                NativeArrayUnsafeUtility.GetUnsafePtr(buffer),
-                (long)buffer.Length * UnsafeUtility.SizeOf<T>());
+            depth--;
+            _inputMutationGuardDepth = depth;
+            if (depth != 0)
+                return;
+
+            IDataVault vault = _inputMutationGuardVault;
+            _inputMutationGuardVault = null;
+            if (vault != null)
+                vault.ReleaseMutationGuard(InputOwnerMutationGuardMask);
+        }
+
+        private void CaptureOwnerThread()
+        {
+            if (_ownerThreadId == 0)
+                _ownerThreadId = Thread.CurrentThread.ManagedThreadId;
+        }
+
+        private bool IsOwnerThread()
+        {
+            return _ownerThreadId != 0 && Thread.CurrentThread.ManagedThreadId == _ownerThreadId;
+        }
+
+        private void ClearVaultBuffer<T>(ref VaultGenerationHandle<T> handle) where T : struct
+        {
+            if (!TryAcquireInputMutationGuard())
+                return;
+
+            try
+            {
+                if (!TryResolveInputBuffer(in handle, 1, out NativeArray<T> buffer))
+                    return;
+
+                UnsafeUtility.MemClear(
+                    NativeArrayUnsafeUtility.GetUnsafePtr(buffer),
+                    (long)buffer.Length * UnsafeUtility.SizeOf<T>());
+            }
+            finally
+            {
+                ReleaseInputMutationGuard();
+            }
         }
 
         private void InitializePredictedInputBuffers(uint startTick)
         {
-            if (!TryResolveInputBuffer(in _predictedInputHandle, 1, out NativeArray<PredictedInputDTO> predictedInputs))
+            if (!TryAcquireInputMutationGuard())
                 return;
 
-            TryResolveInputBuffer(in _predictedInputAupTargetHandle, 1, out NativeArray<PredictedInputAupTargetDTO> targetAups);
-            InitializePredictedInputRingJob initialize = new InitializePredictedInputRingJob
+            try
             {
-                PredictedInputs = predictedInputs,
-                TargetAups = targetAups,
-                StartTick = startTick,
-                DefaultFlags = PredictedInputFlags.Local
-            };
-            initialize.Run();
+                if (!TryResolveInputBuffer(in _predictedInputHandle, 1, out NativeArray<PredictedInputDTO> predictedInputs))
+                    return;
+
+                TryResolveInputBuffer(in _predictedInputAupTargetHandle, 1, out NativeArray<PredictedInputAupTargetDTO> targetAups);
+                InitializePredictedInputRingJob initialize = default;
+                initialize.PredictedInputs = predictedInputs;
+                initialize.TargetAups = targetAups;
+                initialize.StartTick = startTick;
+                initialize.DefaultFlags = PredictedInputFlags.Local;
+                initialize.Run();
+            }
+            finally
+            {
+                ReleaseInputMutationGuard();
+            }
         }
 
         private bool GenerateMockInputHistoryOwnerCold(uint startTick, uint count, uint seed)
         {
             EnsureDeterministicInputNativeBuffers();
-            if (!TryResolveInputBuffer(in _predictedInputHandle, 1, out NativeArray<PredictedInputDTO> predictedInputs))
+            if (!TryAcquireInputMutationGuard())
                 return false;
 
-            TryResolveInputBuffer(in _predictedInputAupTargetHandle, 1, out NativeArray<PredictedInputAupTargetDTO> targetAups);
-            GenerateMockInputHistoryJob mock = new GenerateMockInputHistoryJob
+            try
             {
-                PredictedInputs = predictedInputs,
-                TargetAups = targetAups,
-                StartTick = startTick,
-                Count = math.min(count, (uint)predictedInputs.Length),
-                Seed = seed
-            };
-            mock.Run();
-            return true;
+                if (!TryResolveInputBuffer(in _predictedInputHandle, 1, out NativeArray<PredictedInputDTO> predictedInputs))
+                    return false;
+
+                TryResolveInputBuffer(in _predictedInputAupTargetHandle, 1, out NativeArray<PredictedInputAupTargetDTO> targetAups);
+                GenerateMockInputHistoryJob mock = default;
+                mock.PredictedInputs = predictedInputs;
+                mock.TargetAups = targetAups;
+                mock.StartTick = startTick;
+                mock.Count = math.min(count, (uint)predictedInputs.Length);
+                mock.Seed = seed;
+                mock.Run();
+                return true;
+            }
+            finally
+            {
+                ReleaseInputMutationGuard();
+            }
         }
 
         private void ReleaseInputVaultHandles(IDataVault vault)
@@ -1324,23 +1446,33 @@ namespace Hecton8.Core
 
         private bool ApplyStagedInputProfileCsvToVault()
         {
-            if (!TryResolveInputBuffer(in _inputProfileHandle, 1, out NativeArray<InputProfileDTO> profiles))
+            if (!TryAcquireInputMutationGuard())
                 return false;
 
-            InputProfileDTO stagedProfile;
-            int stagedVersion;
-            lock (_inputProfileCsvStageGate)
+            try
             {
-                stagedVersion = _inputProfileCsvStageVersion;
-                if (stagedVersion == _inputProfileCsvAppliedVersion)
+                if (!TryResolveInputBuffer(in _inputProfileHandle, 1, out NativeArray<InputProfileDTO> profiles))
                     return false;
 
-                stagedProfile = _stagedInputProfileCsv;
-            }
+                InputProfileDTO stagedProfile;
+                int stagedVersion;
+                lock (_inputProfileCsvStageGate)
+                {
+                    stagedVersion = _inputProfileCsvStageVersion;
+                    if (stagedVersion == _inputProfileCsvAppliedVersion)
+                        return false;
 
-            profiles[0] = stagedProfile;
-            _inputProfileCsvAppliedVersion = stagedVersion;
-            return true;
+                    stagedProfile = _stagedInputProfileCsv;
+                }
+
+                profiles[0] = stagedProfile;
+                _inputProfileCsvAppliedVersion = stagedVersion;
+                return true;
+            }
+            finally
+            {
+                ReleaseInputMutationGuard();
+            }
         }
 
         private static void ParseInputProfileCsvLine(ReadOnlySpan<byte> line, ref InputProfileDTO profile)
@@ -1848,10 +1980,20 @@ namespace Hecton8.Core
 
         public void SetInputBlockMask(uint mask)
         {
-            if (!TryResolveInputBuffer(in _inputBlockMaskHandle, 1, out NativeArray<uint> inputBlockMask))
+            if (!TryAcquireInputMutationGuard())
                 return;
 
-            inputBlockMask[0] = mask;
+            try
+            {
+                if (!TryResolveInputBuffer(in _inputBlockMaskHandle, 1, out NativeArray<uint> inputBlockMask))
+                    return;
+
+                inputBlockMask[0] = mask;
+            }
+            finally
+            {
+                ReleaseInputMutationGuard();
+            }
         }
 
         /// <inheritdoc />
@@ -2735,8 +2877,18 @@ namespace Hecton8.Core
             if (_xrVaultBuffersCleared)
                 return;
 
-            ClearVaultBuffer(ref _xrInputStatesHandle);
-            _xrVaultBuffersCleared = true;
+            if (!TryAcquireInputMutationGuard())
+                return;
+
+            try
+            {
+                ClearVaultBuffer(ref _xrInputStatesHandle);
+                _xrVaultBuffersCleared = true;
+            }
+            finally
+            {
+                ReleaseInputMutationGuard();
+            }
         }
 
         private bool TryResolveXRInputStates(out NativeArray<XRInputState> states)
@@ -2751,51 +2903,72 @@ namespace Hecton8.Core
 
         private void DisposeXRNativeBuffers(JobHandle dependency)
         {
-            ClearVaultBuffer(ref _xrInputStatesHandle);
+            if (TryAcquireInputMutationGuard())
+            {
+                try
+                {
+                    ClearVaultBuffer(ref _xrInputStatesHandle);
+                }
+                finally
+                {
+                    ReleaseInputMutationGuard();
+                }
+            }
+
             ReleaseVaultHandle(_dataVault, ref _xrInputStatesHandle);
             _xrVaultBuffersCleared = false;
         }
 
         private void RefreshXRInputSnapshot()
         {
-            if (!TryResolveXRInputStates(out NativeArray<XRInputState> xrInputStates))
+            if (!TryAcquireInputMutationGuard())
                 return;
 
-            if (!HectonXRRuntimeState.IsXRActive)
+            try
             {
-                ClearXRInputSnapshotIfActive();
-                return;
-            }
+                if (!TryResolveXRInputStates(out NativeArray<XRInputState> xrInputStates))
+                    return;
 
-            RefreshCachedXRControllerBindings();
-            xrInputStates[0] = CaptureXRController(
-                0,
-                _cachedLeftXRController,
-                _leftTriggerAxis,
-                _leftGripAxis,
-                _leftJoystickAxis,
-                _leftTriggerButton,
-                _leftGripButton,
-                _leftJoystickButton,
-                _leftPrimaryButton,
-                _leftSecondaryButton);
-            xrInputStates[1] = CaptureXRController(
-                1,
-                _cachedRightXRController,
-                _rightTriggerAxis,
-                _rightGripAxis,
-                _rightJoystickAxis,
-                _rightTriggerButton,
-                _rightGripButton,
-                _rightJoystickButton,
-                _rightPrimaryButton,
-                _rightSecondaryButton);
-            _xrRuntimeFlags |= XRRuntimeFlagInputSnapshotActive;
+                if (!HectonXRRuntimeState.IsXRActive)
+                {
+                    ClearXRInputSnapshotIfActive();
+                    return;
+                }
+
+                RefreshCachedXRControllerBindings();
+                xrInputStates[0] = CaptureXRController(
+                    0,
+                    _cachedLeftXRController,
+                    _leftTriggerAxis,
+                    _leftGripAxis,
+                    _leftJoystickAxis,
+                    _leftTriggerButton,
+                    _leftGripButton,
+                    _leftJoystickButton,
+                    _leftPrimaryButton,
+                    _leftSecondaryButton);
+                xrInputStates[1] = CaptureXRController(
+                    1,
+                    _cachedRightXRController,
+                    _rightTriggerAxis,
+                    _rightGripAxis,
+                    _rightJoystickAxis,
+                    _rightTriggerButton,
+                    _rightGripButton,
+                    _rightJoystickButton,
+                    _rightPrimaryButton,
+                    _rightSecondaryButton);
+                _xrRuntimeFlags |= XRRuntimeFlagInputSnapshotActive;
+            }
+            finally
+            {
+                ReleaseInputMutationGuard();
+            }
         }
 
         private uint CaptureXRToolActionBitsAndPublishSignal(int frame)
         {
-            if (!TryResolveXRInputStates(out NativeArray<XRInputState> xrInputStates))
+            if (!TryReadXRInputStates(out NativeArray<XRInputState>.ReadOnly xrInputStates))
                 return 0u;
 
             XRInputState left = xrInputStates[0];
@@ -2872,16 +3045,26 @@ namespace Hecton8.Core
 
         private void ClearXRInputSnapshotIfActive(bool forceWrite = false)
         {
-            if (!TryResolveXRInputStates(out NativeArray<XRInputState> xrInputStates))
+            if (!TryAcquireInputMutationGuard())
                 return;
 
-            if (!forceWrite && (_xrRuntimeFlags & XRRuntimeFlagInputSnapshotActive) == 0u)
-                return;
+            try
+            {
+                if (!TryResolveXRInputStates(out NativeArray<XRInputState> xrInputStates))
+                    return;
 
-            for (int i = 0; i < xrInputStates.Length; i++)
-                xrInputStates[i] = default;
+                if (!forceWrite && (_xrRuntimeFlags & XRRuntimeFlagInputSnapshotActive) == 0u)
+                    return;
 
-            _xrRuntimeFlags &= ~XRRuntimeFlagInputSnapshotActive;
+                for (int i = 0; i < xrInputStates.Length; i++)
+                    xrInputStates[i] = default;
+
+                _xrRuntimeFlags &= ~XRRuntimeFlagInputSnapshotActive;
+            }
+            finally
+            {
+                ReleaseInputMutationGuard();
+            }
         }
 
         private static XRInputState CaptureXRController(
@@ -3528,35 +3711,45 @@ namespace Hecton8.Core
 
         private void InsertHapticCommandDto(float lowFreqIntensity, float highFreqIntensity, float decayRate, uint motorMask)
         {
-            if (!TryResolveInputBuffer(in _hapticCommandDtoHandle, HapticCommandDtoCapacity, out NativeArray<HapticCommandDTO> commands))
+            if (!TryAcquireInputMutationGuard())
                 return;
 
-            HapticCommandDTO command = default;
-            command.LowFreqIntensity = ClampFinite01(lowFreqIntensity);
-            command.HighFreqIntensity = ClampFinite01(highFreqIntensity);
-            command.DecayRate = math.clamp(math.isfinite(decayRate) ? decayRate : 1f, 0.01f, 64f);
-            command.MotorMask = motorMask;
-
-            int weakestIndex = 0;
-            float weakestMagnitude = float.MaxValue;
-            for (int i = 0; i < commands.Length; i++)
+            try
             {
-                HapticCommandDTO existing = commands[i];
-                float magnitude = math.max(existing.LowFreqIntensity, existing.HighFreqIntensity);
-                if (magnitude <= HapticMotorWriteEpsilon)
-                {
-                    commands[i] = command;
+                if (!TryResolveInputBuffer(in _hapticCommandDtoHandle, HapticCommandDtoCapacity, out NativeArray<HapticCommandDTO> commands))
                     return;
+
+                HapticCommandDTO command = default;
+                command.LowFreqIntensity = ClampFinite01(lowFreqIntensity);
+                command.HighFreqIntensity = ClampFinite01(highFreqIntensity);
+                command.DecayRate = math.clamp(math.isfinite(decayRate) ? decayRate : 1f, 0.01f, 64f);
+                command.MotorMask = motorMask;
+
+                int weakestIndex = 0;
+                float weakestMagnitude = float.MaxValue;
+                for (int i = 0; i < commands.Length; i++)
+                {
+                    HapticCommandDTO existing = commands[i];
+                    float magnitude = math.max(existing.LowFreqIntensity, existing.HighFreqIntensity);
+                    if (magnitude <= HapticMotorWriteEpsilon)
+                    {
+                        commands[i] = command;
+                        return;
+                    }
+
+                    if (magnitude >= weakestMagnitude)
+                        continue;
+
+                    weakestMagnitude = magnitude;
+                    weakestIndex = i;
                 }
 
-                if (magnitude >= weakestMagnitude)
-                    continue;
-
-                weakestMagnitude = magnitude;
-                weakestIndex = i;
+                commands[weakestIndex] = command;
             }
-
-            commands[weakestIndex] = command;
+            finally
+            {
+                ReleaseInputMutationGuard();
+            }
         }
 
         private void RunMockCollisionHapticJob(uint frame)
@@ -3578,37 +3771,47 @@ namespace Hecton8.Core
             ref bool hasLowPriority,
             ref bool hasHighPriority)
         {
-            if (!TryResolveInputBuffer(in _hapticCommandDtoHandle, HapticCommandDtoCapacity, out NativeArray<HapticCommandDTO> commands))
+            if (!TryAcquireInputMutationGuard())
                 return 0;
 
-            float safeDeltaTime = math.clamp(math.isfinite(deltaTime) ? deltaTime : (float)StandardInputTickIntervalSeconds, 0f, 0.1f);
-            int activeCount = 0;
-            for (int i = 0; i < commands.Length; i++)
+            try
             {
-                HapticCommandDTO command = commands[i];
-                float low = (command.MotorMask & HapticLowMotorMask) != 0u ? ClampFinite01(command.LowFreqIntensity) : 0f;
-                float high = (command.MotorMask & HapticHighMotorMask) != 0u ? ClampFinite01(command.HighFreqIntensity) : 0f;
-                if (low <= HapticMotorWriteEpsilon && high <= HapticMotorWriteEpsilon)
+                if (!TryResolveInputBuffer(in _hapticCommandDtoHandle, HapticCommandDtoCapacity, out NativeArray<HapticCommandDTO> commands))
+                    return 0;
+
+                float safeDeltaTime = math.clamp(math.isfinite(deltaTime) ? deltaTime : (float)StandardInputTickIntervalSeconds, 0f, 0.1f);
+                int activeCount = 0;
+                for (int i = 0; i < commands.Length; i++)
                 {
-                    commands[i] = default;
-                    continue;
+                    HapticCommandDTO command = commands[i];
+                    float low = (command.MotorMask & HapticLowMotorMask) != 0u ? ClampFinite01(command.LowFreqIntensity) : 0f;
+                    float high = (command.MotorMask & HapticHighMotorMask) != 0u ? ClampFinite01(command.HighFreqIntensity) : 0f;
+                    if (low <= HapticMotorWriteEpsilon && high <= HapticMotorWriteEpsilon)
+                    {
+                        commands[i] = default;
+                        continue;
+                    }
+
+                    ApplyHapticContribution(low, 1, HapticBlendAdditive, ref lowMotor, ref lowPriority, ref hasLowPriority);
+                    ApplyHapticContribution(high, 1, HapticBlendAdditive, ref highMotor, ref highPriority, ref hasHighPriority);
+
+                    float decayFactor = ResolveHapticDecayFactor(command.DecayRate, safeDeltaTime);
+                    command.LowFreqIntensity = ClampFinite01(low * decayFactor);
+                    command.HighFreqIntensity = ClampFinite01(high * decayFactor);
+                    if (command.LowFreqIntensity <= HapticMotorWriteEpsilon && command.HighFreqIntensity <= HapticMotorWriteEpsilon)
+                        command = default;
+                    else
+                        activeCount++;
+
+                    commands[i] = command;
                 }
 
-                ApplyHapticContribution(low, 1, HapticBlendAdditive, ref lowMotor, ref lowPriority, ref hasLowPriority);
-                ApplyHapticContribution(high, 1, HapticBlendAdditive, ref highMotor, ref highPriority, ref hasHighPriority);
-
-                float decayFactor = ResolveHapticDecayFactor(command.DecayRate, safeDeltaTime);
-                command.LowFreqIntensity = ClampFinite01(low * decayFactor);
-                command.HighFreqIntensity = ClampFinite01(high * decayFactor);
-                if (command.LowFreqIntensity <= HapticMotorWriteEpsilon && command.HighFreqIntensity <= HapticMotorWriteEpsilon)
-                    command = default;
-                else
-                    activeCount++;
-
-                commands[i] = command;
+                return activeCount;
             }
-
-            return activeCount;
+            finally
+            {
+                ReleaseInputMutationGuard();
+            }
         }
 
         private static float ResolveHapticDecayFactor(float decayRate, float deltaTime)

@@ -61,6 +61,8 @@ namespace Hecton8.Building
         order    = 10)]
     public sealed class BuildableData : ScriptableObject
     {
+        private static IQuestSystem s_blueprintQuestSystem;
+
         // ─────────────────────── Identity ────────────────────────
         [Header("Identity")]
         [Tooltip("Nazvanie modulya dlya UI: 'Fundament', 'Koridor'")]
@@ -235,7 +237,12 @@ namespace Hecton8.Building
         /// </summary>
         public bool IsBlueprintViewable()
         {
-            return IsBlueprintViewable(GlobalRegistry.QuestSystem);
+            return IsBlueprintViewable(s_blueprintQuestSystem);
+        }
+
+        internal static void ConfigureBlueprintQuestSystem(IQuestSystem questSystem)
+        {
+            s_blueprintQuestSystem = questSystem;
         }
 
         /// <summary>

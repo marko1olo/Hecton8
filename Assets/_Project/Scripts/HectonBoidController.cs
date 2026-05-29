@@ -797,7 +797,7 @@ namespace Hecton8.AI.GPU
         /// </summary>
         private bool InitializeCompute()
         {
-            if (boidShader == null || !HardwareTierDetector.AllowHighResourceComputeShaders)
+            if (boidShader == null || !SystemInfo.supportsComputeShaders)
                 return false;
 
             if (!TryResolveKernel("CSMain", out _kernelCSMain) ||
@@ -1608,7 +1608,7 @@ namespace Hecton8.AI.GPU
         private bool TryResolveKernel(string kernelName, out int kernelIndex)
         {
             kernelIndex = -1;
-            if (boidShader == null || !HardwareTierDetector.AllowHighResourceComputeShaders || !boidShader.HasKernel(kernelName))
+            if (boidShader == null || !SystemInfo.supportsComputeShaders || !boidShader.HasKernel(kernelName))
                 return false;
 
             kernelIndex = boidShader.FindKernel(kernelName);
@@ -1630,7 +1630,7 @@ namespace Hecton8.AI.GPU
             groupSizeX = 0;
             if (boidShader == null ||
                 kernelIndex < 0 ||
-                !HardwareTierDetector.AllowHighResourceComputeShaders ||
+                !SystemInfo.supportsComputeShaders ||
                 !boidShader.IsSupported(kernelIndex))
                 return false;
 

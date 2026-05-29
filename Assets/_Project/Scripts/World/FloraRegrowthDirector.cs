@@ -287,7 +287,7 @@ namespace Hecton8.World
 
         private void CacheRegistryServicesCold()
         {
-            _persistentWorldRegistry = PersistentWorldRegistry.Instance;
+            _persistentWorldRegistry = GlobalRegistry.PersistentWorldRegistry;
             _saveService = GlobalRegistry.Save;
         }
 

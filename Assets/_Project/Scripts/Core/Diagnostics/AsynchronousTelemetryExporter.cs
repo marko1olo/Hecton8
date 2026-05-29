@@ -790,7 +790,7 @@ namespace Hecton8.Core.Diagnostics
             if (active == null)
                 return false;
 
-            if (Volatile.Read(ref active._acceptingIngress) == 0 || Thread.CurrentThread.ManagedThreadId != active._mainThreadId)
+            if (Volatile.Read(ref active._acceptingIngress) == 0 || !active.IsOwnerThread())
             {
                 active.NoteHotPathDropped();
                 return false;
@@ -855,7 +855,9 @@ namespace Hecton8.Core.Diagnostics
         public static bool TryWriteTuning(in AnalyticsTuningDTO tuning)
         {
             AsynchronousTelemetryExporter active = s_active;
-            if (active == null || !active.TryResolveTuning(out NativeArray<AnalyticsTuningDTO> buffer))
+            if (active == null ||
+                !active.IsOwnerThread() ||
+                !active.TryResolveTuning(out NativeArray<AnalyticsTuningDTO> buffer))
                 return false;
 
             AnalyticsTuningDTO sanitized = active.SanitizeTuning(tuning);
@@ -863,6 +865,11 @@ namespace Hecton8.Core.Diagnostics
             active._cachedTuning = sanitized;
             active.ApplyWorkerTuningSnapshot(in sanitized);
             return true;
+        }
+
+        private bool IsOwnerThread()
+        {
+            return _mainThreadId != 0 && Thread.CurrentThread.ManagedThreadId == _mainThreadId;
         }
 
         public static bool TryReadLatestTelemetry(out AnalyticsExporterTelemetryEntry entry)
@@ -1009,27 +1016,6 @@ namespace Hecton8.Core.Diagnostics
             return handle.BufferID != 0u && handle.Generation != 0u;
         }
 
-        private bool TryResolveVaultBuffer<T>(
-            in VaultGenerationHandle<T> handle,
-            int requiredLength,
-            out NativeArray<T> buffer) where T : struct
-        {
-            buffer = default;
-            IDataVault vault = _dataVault;
-            if (vault == null ||
-                requiredLength <= 0 ||
-                !IsVaultHandleCreated(in handle) ||
-                !vault.TryResolveHandle(in handle, out NativeArray<T> resolved) ||
-                !resolved.IsCreated ||
-                resolved.Length < requiredLength)
-            {
-                return false;
-            }
-
-            buffer = resolved;
-            return true;
-        }
-
         private bool TryResolveWorkerBuffer<T>(
             in VaultGenerationHandle<T> handle,
             int requiredLength,
@@ -1063,6 +1049,8 @@ namespace Hecton8.Core.Diagnostics
 
         private void ReleaseVaultHandles()
         {
+            UnlockWorkerVaultBuffers();
+
             ReleaseVaultHandle(ref _eventRingHandle);
             ReleaseVaultHandle(ref _stagingHandle);
             ReleaseVaultHandle(ref _routineIngressHandle);
@@ -1176,11 +1164,6 @@ namespace Hecton8.Core.Diagnostics
                 NativeArrayOptions.UninitializedMemory);
 
             _cachedTuning = CreateDefaultTuning();
-            if (TryResolveTuning(out NativeArray<AnalyticsTuningDTO> tuning))
-                tuning[0] = _cachedTuning;
-            ApplyWorkerTuningSnapshot(in _cachedTuning);
-            bool ingressReady = InitializeIngressCursor();
-
             bool ready =
                 IsVaultHandleCreated(in _eventRingHandle) &&
                 IsVaultHandleCreated(in _stagingHandle) &&
@@ -1198,13 +1181,31 @@ namespace Hecton8.Core.Diagnostics
                 IsVaultHandleCreated(in _workerAccumHandle) &&
                 IsVaultHandleCreated(in _rawBatchScratchHandle) &&
                 IsVaultHandleCreated(in _dumpSnapshotHandle) &&
-                IsVaultHandleCreated(in _compressedScratchHandle) &&
-                ingressReady;
+                IsVaultHandleCreated(in _compressedScratchHandle);
             if (ready)
                 ready = LockWorkerVaultBuffers();
 
+            if (ready)
+            {
+                if (TryResolveTuning(out NativeArray<AnalyticsTuningDTO> tuning))
+                {
+                    tuning[0] = _cachedTuning;
+                    ApplyWorkerTuningSnapshot(in _cachedTuning);
+                }
+                else
+                {
+                    ready = false;
+                }
+            }
+
+            if (ready)
+                ready = InitializeIngressCursor();
+
             if (!ready)
+            {
+                UnlockWorkerVaultBuffers();
                 ReleaseVaultHandles();
+            }
 
             return ready;
         }
@@ -1255,15 +1256,15 @@ namespace Hecton8.Core.Diagnostics
 
         private bool InitializeIngressCursor()
         {
-            if (!TryResolveVaultBuffer(
+            if (!TryResolveWorkerBuffer(
                     in _ingressCursorHandle,
                     1,
                     out NativeArray<AnalyticsIngressCursorDTO> cursorBuffer) ||
-                !TryResolveVaultBuffer(
+                !TryResolveWorkerBuffer(
                     in _routineIngressHandle,
                     1,
                     out NativeArray<AnalyticEventDTO> routineIngress) ||
-                !TryResolveVaultBuffer(
+                !TryResolveWorkerBuffer(
                     in _criticalIngressHandle,
                     1,
                     out NativeArray<AnalyticEventDTO> criticalIngress))
@@ -1768,7 +1769,7 @@ namespace Hecton8.Core.Diagnostics
             uint drainedBefore = counters[0].DrainedEvents;
             using (ProcessQueueMarker.Auto())
             {
-                TryResolveVaultBuffer(
+                TryResolveWorkerBuffer(
                     in _heatmapDebugHandle,
                     1,
                     out NativeArray<AnalyticEventDTO> heatmapDebug);
@@ -1845,17 +1846,9 @@ namespace Hecton8.Core.Diagnostics
 
         private NativeArray<AnalyticEventDTO> ResolveHandoffBuffer(int batchIndex)
         {
-            NativeArray<AnalyticEventDTO> handoff;
-            if (batchIndex == 0)
-            {
-                TryResolveVaultBuffer(in _handoffAHandle, MaxHandoffEvents, out handoff);
-            }
-            else
-            {
-                TryResolveVaultBuffer(in _handoffBHandle, MaxHandoffEvents, out handoff);
-            }
-
-            return handoff;
+            return batchIndex == 0
+                ? CreateLockedWorkerView(in _handoffAHandle, MaxHandoffEvents)
+                : CreateLockedWorkerView(in _handoffBHandle, MaxHandoffEvents);
         }
 
         private void StartWorker()
@@ -2495,7 +2488,7 @@ namespace Hecton8.Core.Diagnostics
 
             try
             {
-                if (!TryResolveVaultBuffer(in _dumpSnapshotHandle, DumpSnapshotBytes, out NativeArray<byte> snapshot))
+                if (!TryResolveWorkerBuffer(in _dumpSnapshotHandle, DumpSnapshotBytes, out NativeArray<byte> snapshot))
                 {
                     Interlocked.Exchange(ref _pendingDumpState, DumpStateIdle);
                     return;
@@ -2682,12 +2675,12 @@ namespace Hecton8.Core.Diagnostics
             routineIngress = default;
             criticalIngress = default;
             ingressCursor = default;
-            TryResolveVaultBuffer(in _eventRingHandle, 1, out eventRing);
-            TryResolveVaultBuffer(in _stagingHandle, 1, out staging);
-            TryResolveVaultBuffer(in _countersHandle, 1, out counters);
-            TryResolveVaultBuffer(in _routineIngressHandle, 1, out routineIngress);
-            TryResolveVaultBuffer(in _criticalIngressHandle, 1, out criticalIngress);
-            TryResolveVaultBuffer(in _ingressCursorHandle, 1, out ingressCursor);
+            TryResolveWorkerBuffer(in _eventRingHandle, 1, out eventRing);
+            TryResolveWorkerBuffer(in _stagingHandle, 1, out staging);
+            TryResolveWorkerBuffer(in _countersHandle, 1, out counters);
+            TryResolveWorkerBuffer(in _routineIngressHandle, 1, out routineIngress);
+            TryResolveWorkerBuffer(in _criticalIngressHandle, 1, out criticalIngress);
+            TryResolveWorkerBuffer(in _ingressCursorHandle, 1, out ingressCursor);
             return eventRing.IsCreated &&
                    staging.IsCreated &&
                    counters.IsCreated &&
@@ -2705,9 +2698,9 @@ namespace Hecton8.Core.Diagnostics
             routineIngress = default;
             criticalIngress = default;
             ingressCursor = default;
-            TryResolveVaultBuffer(in _routineIngressHandle, 1, out routineIngress);
-            TryResolveVaultBuffer(in _criticalIngressHandle, 1, out criticalIngress);
-            TryResolveVaultBuffer(in _ingressCursorHandle, 1, out ingressCursor);
+            TryResolveWorkerBuffer(in _routineIngressHandle, 1, out routineIngress);
+            TryResolveWorkerBuffer(in _criticalIngressHandle, 1, out criticalIngress);
+            TryResolveWorkerBuffer(in _ingressCursorHandle, 1, out ingressCursor);
             return routineIngress.IsCreated &&
                    criticalIngress.IsCreated &&
                    ingressCursor.IsCreated &&
@@ -2716,25 +2709,25 @@ namespace Hecton8.Core.Diagnostics
 
         private bool TryResolveCounters(out NativeArray<AnalyticsCountersDTO> counters)
         {
-            return TryResolveVaultBuffer(in _countersHandle, 1, out counters);
+            return TryResolveWorkerBuffer(in _countersHandle, 1, out counters);
         }
 
         private bool TryResolveTuning(out NativeArray<AnalyticsTuningDTO> tuning)
         {
-            return TryResolveVaultBuffer(in _tuningHandle, 1, out tuning);
+            return TryResolveWorkerBuffer(in _tuningHandle, 1, out tuning);
         }
 
         private bool TryResolveTelemetry(out NativeArray<AnalyticsExporterTelemetryEntry> telemetry, out NativeArray<int> cursor)
         {
             telemetry = default;
             cursor = default;
-            return TryResolveVaultBuffer(in _telemetryHandle, DefaultTelemetryCapacity, out telemetry) &&
-                   TryResolveVaultBuffer(in _telemetryCursorHandle, 1, out cursor);
+            return TryResolveWorkerBuffer(in _telemetryHandle, DefaultTelemetryCapacity, out telemetry) &&
+                   TryResolveWorkerBuffer(in _telemetryCursorHandle, 1, out cursor);
         }
 
         private bool TryResolveCsvScratch(out NativeArray<byte> scratch)
         {
-            return TryResolveVaultBuffer(in _csvScratchHandle, DefaultCsvScratchBytes, out scratch);
+            return TryResolveWorkerBuffer(in _csvScratchHandle, DefaultCsvScratchBytes, out scratch);
         }
 
         private uint ResolveVaultTelemetryBytes()
@@ -2764,7 +2757,7 @@ namespace Hecton8.Core.Diagnostics
 
         private long ResolveVaultBytes<T>(in VaultGenerationHandle<T> handle, int requiredLength) where T : struct
         {
-            return TryResolveVaultBuffer(in handle, requiredLength, out NativeArray<T> buffer)
+            return TryResolveWorkerBuffer(in handle, requiredLength, out NativeArray<T> buffer)
                 ? (long)buffer.Length * UnsafeUtility.SizeOf<T>()
                 : 0L;
         }
@@ -2876,7 +2869,7 @@ namespace Hecton8.Core.Diagnostics
         private void OnDrawGizmos()
         {
             if (!_drawHeatmapGizmos ||
-                !TryResolveVaultBuffer(in _heatmapDebugHandle, 1, out NativeArray<AnalyticEventDTO> heatmap))
+                !TryResolveWorkerBuffer(in _heatmapDebugHandle, 1, out NativeArray<AnalyticEventDTO> heatmap))
             {
                 return;
             }

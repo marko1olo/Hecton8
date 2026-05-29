@@ -336,6 +336,7 @@ namespace Hecton8.World.FloraAmbientSway
         private uint _fallbackFrameCounter;
         private uint _lastResolvedFrame;
         private int _runtimeClaimHeld;
+        private bool _supportsConstantBuffers;
 
         private static readonly int GlobalFloraSwayCBufferId = Shader.PropertyToID("_GlobalFloraSway");
 
@@ -395,6 +396,7 @@ namespace Hecton8.World.FloraAmbientSway
                 return;
             }
 
+            CacheGraphicsCapabilitiesCold();
             TryColdBootstrapVault();
 
             _visualSyncSystem = new VisualSyncUploadSystem(this); // COLD ALLOC: VisualSyncUploadSystem[1] - dispatcher phase adapter - owner: FloraAmbientSwayRuntime.
@@ -405,6 +407,7 @@ namespace Hecton8.World.FloraAmbientSway
 
         private void Start()
         {
+            CacheGraphicsCapabilitiesCold();
             if (!_vaultReady)
                 TryColdBootstrapVault();
         }
@@ -623,7 +626,7 @@ namespace Hecton8.World.FloraAmbientSway
             }
 
             FloraSwayParamsDTO dto = parameters[0];
-            if (!SystemInfo.supportsSetConstantBuffer)
+            if (!_supportsConstantBuffers)
             {
                 ReleaseGraphicsBuffer(ref _shaderParamsBufferA);
                 ReleaseGraphicsBuffer(ref _shaderParamsBufferB);
@@ -793,10 +796,15 @@ namespace Hecton8.World.FloraAmbientSway
             if (_loadBiomeProfilesOnEnable)
                 TryLoadBiomeProfilesFromEditorCsv(vault);
 #endif
-            if (SystemInfo.supportsSetConstantBuffer)
+            if (_supportsConstantBuffers)
                 EnsureShaderParamsBuffers();
 
             return true;
+        }
+
+        private void CacheGraphicsCapabilitiesCold()
+        {
+            _supportsConstantBuffers = SystemInfo.supportsSetConstantBuffer;
         }
 
         private static void EnsureBurstKernelsCold()

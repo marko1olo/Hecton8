@@ -149,6 +149,7 @@ namespace Hecton8.Gameplay
         // ══════════════════════════════════════════════════════════
 
         private Transform _transform;
+        private Collider _collider;
         private FragmentState _state = FragmentState.Scannable;
         private float _currentProgress;
         private bool _isScanning;
@@ -241,6 +242,7 @@ namespace Hecton8.Gameplay
         private void Awake()
         {
             _transform = transform;
+            _collider = ComponentReferenceUtility.ResolveOwnedComponent<Collider>(transform);
             RefreshDiscoveryHash();
 
             // COLD ALLOC: MaterialPropertyBlock[1] - scan progress VFX - owner: ScannableFragment
@@ -712,10 +714,8 @@ namespace Hecton8.Gameplay
             }
 
             // Disable collider
-            if (TryGetComponent(out Collider col))
-            {
-                col.enabled = false;
-            }
+            if (_collider != null)
+                _collider.enabled = false;
 
             // Disable this script
             this.enabled = false;

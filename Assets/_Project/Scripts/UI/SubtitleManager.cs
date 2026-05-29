@@ -211,6 +211,7 @@ namespace Hecton8.UI
         private bool _hotSwapListenerRegistered;
         private ILocalizationStressPresentationReadModel _cachedLocalization;
         private IPlayerRuntimeContext _cachedPlayerContext;
+        private ILoreDatabaseReadModel _cachedLoreDatabase;
         private SubtitleSource _currentSource;
         private SubtitleSource _lastEnqueuedSource;
         private float _lastEnqueueTime = -999f;
@@ -398,6 +399,10 @@ namespace Hecton8.UI
             {
                 _cachedPlayerContext = currentService as IPlayerRuntimeContext;
             }
+            else if (serviceSlot == GlobalRegistryServiceSlot.LoreDatabaseRuntime)
+            {
+                _cachedLoreDatabase = currentService as ILoreDatabaseReadModel;
+            }
         }
 
         private void TryRegisterHotSwapListener()
@@ -421,21 +426,7 @@ namespace Hecton8.UI
         {
             _cachedLocalization = Hecton8.Core.GlobalRegistry.LocalizationStressPresentation;
             _cachedPlayerContext = Hecton8.Core.GlobalRegistry.Player;
-        }
-
-        /// <summary>
-        /// Resolves a localization key and displays the subtitle for the requested duration.
-        /// </summary>
-        public void DisplaySubtitle(string key, float duration)
-        {
-            if (string.IsNullOrWhiteSpace(key))
-                return;
-
-            uint keyHash = unchecked((uint)LocHash.Compute(key.AsSpan()));
-            if (DisplaySubtitle(keyHash, duration))
-                return;
-
-            EnqueueBuffered(key.AsSpan(), duration, SubtitleSource.Generic, false);
+            _cachedLoreDatabase = Hecton8.Core.GlobalRegistry.LoreDatabaseReadModel;
         }
 
         /// <summary>
@@ -504,7 +495,9 @@ namespace Hecton8.UI
             if (command.TextHash == 0u)
                 return false;
 
-            EnsureBuilt();
+            if (!_built || _subtitleText == null || _canvasGroup == null)
+                return false;
+
             SubtitleCommandDTO normalized = command;
             if (float.IsNaN(normalized.Duration) || float.IsInfinity(normalized.Duration))
             {
@@ -750,14 +743,6 @@ namespace Hecton8.UI
                 _timer = 0f;
         }
 
-        private void Enqueue(string message, float duration, SubtitleSource source, bool interrupt)
-        {
-            if (string.IsNullOrEmpty(message))
-                return;
-
-            EnqueueBuffered(message.AsSpan(), duration, source, interrupt);
-        }
-
         private void EnqueueSubtitleCommand(in SubtitleCommandDTO command)
         {
             int capacity = Mathf.Clamp(maxQueuedSubtitles, 1, _subtitleCommandQueue.Length);
@@ -893,7 +878,9 @@ namespace Hecton8.UI
 
         private bool EnqueueBuffered(ReadOnlySpan<char> message, float duration, SubtitleSource source, bool interrupt)
         {
-            EnsureBuilt();
+            if (!_built || _subtitleText == null || _canvasGroup == null)
+                return false;
+
             if (!TryCopyNormalizedSubtitleToPool(message, out CharBufferPool.Lease lease, out int normalizedLength))
                 return false;
 
@@ -1231,7 +1218,7 @@ namespace Hecton8.UI
         private bool TryPrepareAudioLogBuffers(uint loreHash, float durationSeconds, out int initialRenderLength)
         {
             initialRenderLength = 0;
-            ILoreDatabaseReadModel database = Hecton8.Core.GlobalRegistry.LoreDatabaseReadModel;
+            ILoreDatabaseReadModel database = _cachedLoreDatabase;
             if (database == null || loreHash == 0u)
                 return false;
 

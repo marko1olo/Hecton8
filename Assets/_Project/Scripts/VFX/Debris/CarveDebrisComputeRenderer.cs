@@ -201,6 +201,7 @@ namespace Hecton8.VFX.Debris
         private bool _pendingVisualSync;
         private bool _pendingDebrisUpload;
         private bool _insideDebrisVisualSync;
+        private bool _coldSupportsComputeShaders;
         private float _pendingVisualDeltaTime;
         private float _pendingVisualQualityPressure01;
         private int _pendingVisualActiveCapacity;
@@ -209,11 +210,13 @@ namespace Hecton8.VFX.Debris
 
         private void Awake()
         {
+            CacheGraphicsCapabilitiesCold();
             EnsureFallbackRenderResources();
         }
 
         private void OnEnable()
         {
+            CacheGraphicsCapabilitiesCold();
             EnsureFallbackRenderResources();
             TryRegisterComputeService();
             TryRegisterHotSwapListener();
@@ -223,6 +226,7 @@ namespace Hecton8.VFX.Debris
 
         private void Start()
         {
+            CacheGraphicsCapabilitiesCold();
             TryRegisterComputeService();
             TryRegisterHotSwapListener();
             TryRegisterLateFrameTick();
@@ -485,10 +489,9 @@ namespace Hecton8.VFX.Debris
                 return true;
 
             _gpuReady = false;
-            if (fluidAdvectionCompute == null || !HardwareTierDetector.AllowHighResourceComputeShaders)
+            if (fluidAdvectionCompute == null || !_coldSupportsComputeShaders)
                 return false;
 
-            RefreshMissingRegistryServicesIfNeeded();
             IDataVault vault = _registryDataVault;
             if (vault == null)
                 return false;
@@ -554,9 +557,9 @@ namespace Hecton8.VFX.Debris
             return _gpuReady;
         }
 
-        private static int ResolveKernel(ComputeShader compute, string kernelName)
+        private int ResolveKernel(ComputeShader compute, string kernelName)
         {
-            if (compute == null || !HardwareTierDetector.AllowHighResourceComputeShaders || !compute.HasKernel(kernelName))
+            if (compute == null || !_coldSupportsComputeShaders || !compute.HasKernel(kernelName))
                 return -1;
 
             int kernel = compute.FindKernel(kernelName);
@@ -568,7 +571,7 @@ namespace Hecton8.VFX.Debris
             groupSizeX = 0;
             if (fluidAdvectionCompute == null ||
                 kernelIndex < 0 ||
-                !HardwareTierDetector.AllowHighResourceComputeShaders ||
+                !_coldSupportsComputeShaders ||
                 !fluidAdvectionCompute.IsSupported(kernelIndex))
                 return false;
 
@@ -579,6 +582,11 @@ namespace Hecton8.VFX.Debris
 
             groupSizeX = (int)x;
             return true;
+        }
+
+        private void CacheGraphicsCapabilitiesCold()
+        {
+            _coldSupportsComputeShaders = SystemInfo.supportsComputeShaders;
         }
 
         private bool IsGpuStateValid()

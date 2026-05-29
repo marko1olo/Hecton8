@@ -657,8 +657,7 @@ namespace Hecton8.Gameplay
         private static float3 ResolveScalableDragDirection(float3 velocity, float speedSq)
         {
             float3 fallbackAxis = DistanceMath.DominantAxisOrDefault(velocity, new float3(0f, 0f, 1f));
-            if (FrameTimeWatchdog.CurrentMathLodMode != MathLodMode.High ||
-                speedSq > DirectionalDragDominantAxisThresholdSq)
+            if (speedSq > DirectionalDragDominantAxisThresholdSq)
             {
                 return fallbackAxis;
             }

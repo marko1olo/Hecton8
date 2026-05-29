@@ -181,8 +181,6 @@ namespace Hecton8.AI
         private float3 _headLookTargetWorldPosition;
         private float3 _strikeTargetWorldPosition;
         private Transform _strikeTarget;
-        private Rigidbody _strikeTargetRigidbody;
-        private Collider _strikeTargetCollider;
 
         [StructLayout(LayoutKind.Explicit, Size = LeviathanIkGlobalsBytes)]
         private struct LeviathanIkShaderGlobalsDTO
@@ -624,24 +622,15 @@ namespace Hecton8.AI
             if (!_strikeActive)
             {
                 _strikeTarget = null;
-                _strikeTargetRigidbody = null;
-                _strikeTargetCollider = null;
                 _wasStrikeActiveLastTick = false;
                 return;
             }
 
-            if (_strikeTarget != target)
-            {
-                _strikeTarget = target;
-                _strikeTargetRigidbody = null;
-                _strikeTargetCollider = null;
-                target.TryGetComponent(out _strikeTargetRigidbody);
-                target.TryGetComponent(out _strikeTargetCollider);
-            }
+            _strikeTarget = target;
 
-            _strikeTargetWorldPosition = _strikeTargetRigidbody != null
-                ? SanitizeFiniteInputFloat3((float3)_strikeTargetRigidbody.position, ResolveOwnerRuntimePosition())
-                : SanitizeFiniteInputFloat3((float3)targetWorldPosition, ResolveOwnerRuntimePosition());
+            _strikeTargetWorldPosition = SanitizeFiniteInputFloat3(
+                (float3)targetWorldPosition,
+                ResolveOwnerRuntimePosition());
 
             if (!_wasStrikeActiveLastTick)
                 _tailWhipSecondsRemaining = math.max(
@@ -876,8 +865,7 @@ namespace Hecton8.AI
                 vault.IsCompactionFenceActive ||
                 requiredLength <= 0 ||
                 !vault.TryGetGenerationHandle(bufferId, out VaultGenerationHandle<T> handle) ||
-                handle.BufferID != (uint)bufferId ||
-                handle.Generation == 0u ||
+                !IsMatchingVaultHandle(in handle, bufferId) ||
                 !vault.TryResolveHandle(in handle, out buffer) ||
                 vault.IsCompactionFenceActive ||
                 !buffer.IsCreated ||
@@ -1464,24 +1452,12 @@ namespace Hecton8.AI
                 return false;
             }
 
-            Bounds bounds;
-            if (_strikeTargetCollider != null)
-            {
-                bounds = _strikeTargetCollider.bounds;
-                if (!IsFiniteBounds(bounds) || bounds.extents.sqrMagnitude <= MinVectorMagnitudeSq)
-                    bounds = BuildFallbackStrikeBounds(_strikeTargetWorldPosition);
-            }
-            else
-            {
-                bounds = BuildFallbackStrikeBounds(_strikeTargetWorldPosition);
-            }
+            Bounds bounds = BuildFallbackStrikeBounds(_strikeTargetWorldPosition);
 
             Vector3 center = bounds.center;
             Vector3 extents = bounds.extents;
             Transform targetTransform = _strikeTarget;
-            uint targetHash = _strikeTargetCollider != null
-                ? Hecton8.Core.RuntimeOriginRoute.FoldEntityIdToSourceId(EntityId.ToULong(_strikeTargetCollider.GetEntityId()))
-                : Hecton8.Core.RuntimeOriginRoute.FoldEntityIdToSourceId(EntityId.ToULong(targetTransform.GetEntityId()));
+            uint targetHash = Hecton8.Core.RuntimeOriginRoute.FoldEntityIdToSourceId(EntityId.ToULong(targetTransform.GetEntityId()));
             if (targetHash == 0u)
                 targetHash = 1u;
 
@@ -2252,7 +2228,7 @@ namespace Hecton8.AI
                 case GlobalRegistryServiceSlot.DataVault:
                     CompleteScheduledSolverForLifecycle();
                     DisposePersistentBuffers();
-                    _dataVault = currentService as IDataVault;
+                    _dataVault = currentService is IDataVault currentVault ? currentVault : null;
                     EnsurePersistentBuffers();
                     HydrateRigDefinitionsOrMockCold();
                     break;

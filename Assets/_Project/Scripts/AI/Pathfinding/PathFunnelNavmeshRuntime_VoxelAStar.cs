@@ -290,34 +290,43 @@ namespace Hecton8.AI.Pathfinding
                 return false;
             }
 
-            bool countLocked = false;
             bool parsed = false;
+            bool profilesReady = false;
+            int written = 0;
+            bool countReady = false;
             bool releasedCount = true;
             bool releasedProfiles = true;
             try
             {
-                if (!IsOwnedVaultHandle(in _voxelPathSpeciesProfileCountHandle, BufferID.ShinobuVoxelPathSpeciesProfileCount) ||
-                    !vault.TryAcquireWriteLock(in _voxelPathSpeciesProfileCountHandle, SystemID.AIPathfinding, out NativeArray<int> profileCount))
-                {
-                    return false;
-                }
-
-                countLocked = true;
-                parsed =
-                    profiles.IsCreated &&
-                    profiles.Length >= ResolveVoxelProfileCapacity() &&
-                    profileCount.IsCreated &&
-                    profileCount.Length >= 1 &&
-                    VoxelPathingProfileCsvParser.TryParse(csvBytes, profiles, profileCount, out flags);
+                profilesReady = profiles.IsCreated && profiles.Length >= ResolveVoxelProfileCapacity();
+                if (profilesReady)
+                    parsed = VoxelPathingProfileCsvParser.TryParse(csvBytes, profiles, out written, out flags);
             }
             finally
             {
-                if (countLocked)
-                    releasedCount = vault.ReleaseWriteLock(in _voxelPathSpeciesProfileCountHandle, SystemID.AIPathfinding);
                 releasedProfiles = vault.ReleaseWriteLock(in _voxelPathSpeciesProfilesHandle, SystemID.AIPathfinding);
             }
 
-            return parsed && releasedCount && releasedProfiles;
+            if (!profilesReady ||
+                !releasedProfiles ||
+                !IsOwnedVaultHandle(in _voxelPathSpeciesProfileCountHandle, BufferID.ShinobuVoxelPathSpeciesProfileCount) ||
+                !vault.TryAcquireWriteLock(in _voxelPathSpeciesProfileCountHandle, SystemID.AIPathfinding, out NativeArray<int> profileCount))
+            {
+                return false;
+            }
+
+            try
+            {
+                countReady = profileCount.IsCreated && profileCount.Length >= 1;
+                if (countReady)
+                    profileCount[0] = written;
+            }
+            finally
+            {
+                releasedCount = vault.ReleaseWriteLock(in _voxelPathSpeciesProfileCountHandle, SystemID.AIPathfinding);
+            }
+
+            return parsed && countReady && releasedCount;
         }
 #endif
 

@@ -111,7 +111,7 @@ namespace Hecton8.UI
         private void RunVisualSync(float deltaTime)
         {
             RefreshQualityPolicy();
-            EnsureResources();
+            ApplyMaterialPropertiesIfNeeded();
             ResolveViewCamera();
             _visibleToPlayer = ResolveVisibleToPlayer();
             if (!_visibleToPlayer || _runtimeMesh == null || _runtimeMaterial == null)

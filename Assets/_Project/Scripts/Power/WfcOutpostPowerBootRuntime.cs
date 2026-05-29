@@ -59,6 +59,12 @@ namespace Hecton8.Power
         private const uint FaultFlag = 1u << 31;
         private const uint AupShiftFlag = 1u << 2;
         private const uint ReactorClockFaultFlag = 1u << 3;
+        private static readonly ulong TranslationMutationGuardMask =
+            MutationGuardBit((BufferID)731640) |
+            MutationGuardBit((BufferID)731641) |
+            MutationGuardBit((BufferID)731642) |
+            MutationGuardBit((BufferID)731643) |
+            MutationGuardBit((BufferID)731645);
 
         private readonly LogisticsNetworkGraph _graph; // COLD ALLOC: LogisticsNetworkGraph[1] - WFC outpost power evaluator - owner: WfcOutpostPowerBootRuntime
         private VaultGenerationHandle<WfcOutpostPowerNode> _nodesHandle;
@@ -71,7 +77,7 @@ namespace Hecton8.Power
         private JobHandle _translationHandle;
         private BufferID _translationGridLeaseBufferId;
         private SystemID _translationGridLeaseSystemId;
-        private byte _translationBufferLockMask;
+        private ulong _translationBufferLockMask;
         private IGasDynamicsSolver _gasDynamics;
         private WfcOutpostGridDescriptor _activeDescriptor;
         private WfcOutpostGridDescriptor _pendingDescriptor;
@@ -212,68 +218,29 @@ namespace Hecton8.Power
             handle = default;
         }
 
-        private bool TryLockTranslationBuffers(out byte lockMask)
+        private bool TryLockTranslationBuffers(out ulong lockMask)
         {
-            lockMask = 0;
+            lockMask = TranslationMutationGuardMask;
             IDataVault vault = _dataVault;
-            if (vault == null || vault.IsCompactionFenceActive)
+            if (vault == null ||
+                lockMask == 0UL ||
+                vault.IsCompactionFenceActive ||
+                !vault.TryAcquireMutationGuard(lockMask))
+            {
+                lockMask = 0UL;
                 return false;
+            }
 
-            bool locked =
-                TryLockRuntimeBuffer(vault, in _nodesHandle, 0, ref lockMask) &&
-                TryLockRuntimeBuffer(vault, in _cellToNodeHandle, 1, ref lockMask) &&
-                TryLockRuntimeBuffer(vault, in _countsHandle, 2, ref lockMask) &&
-                TryLockRuntimeBuffer(vault, in _generatorNodeIndexHandle, 3, ref lockMask) &&
-                TryLockRuntimeBuffer(vault, in _powerEdgesHandle, 4, ref lockMask);
-
-            if (locked)
-                return true;
-
-            UnlockTranslationBuffers(lockMask);
-            lockMask = 0;
-            return false;
-        }
-
-        private static bool TryLockRuntimeBuffer<T>(
-            IDataVault vault,
-            in VaultGenerationHandle<T> handle,
-            int bit,
-            ref byte lockMask) where T : struct
-        {
-            if (handle.BufferID == 0u)
-                return true;
-
-            if (vault == null || vault.IsCompactionFenceActive)
-                return false;
-
-            if (!vault.TryLockBuffer((BufferID)handle.BufferID, LogisticsGridSystemId))
-                return false;
-
-            lockMask = (byte)(lockMask | (1 << bit));
             return true;
         }
 
-        private void UnlockTranslationBuffers(byte lockMask)
+        private void UnlockTranslationBuffers(ulong lockMask)
         {
             IDataVault vault = _dataVault;
-            if (vault == null || lockMask == 0)
+            if (vault == null || lockMask == 0UL)
                 return;
 
-            UnlockRuntimeBuffer(vault, in _powerEdgesHandle, 4, lockMask);
-            UnlockRuntimeBuffer(vault, in _generatorNodeIndexHandle, 3, lockMask);
-            UnlockRuntimeBuffer(vault, in _countsHandle, 2, lockMask);
-            UnlockRuntimeBuffer(vault, in _cellToNodeHandle, 1, lockMask);
-            UnlockRuntimeBuffer(vault, in _nodesHandle, 0, lockMask);
-        }
-
-        private static void UnlockRuntimeBuffer<T>(
-            IDataVault vault,
-            in VaultGenerationHandle<T> handle,
-            int bit,
-            byte lockMask) where T : struct
-        {
-            if ((lockMask & (1 << bit)) != 0 && handle.BufferID != 0u)
-                vault.TryUnlockBuffer((BufferID)handle.BufferID, LogisticsGridSystemId);
+            vault.ReleaseMutationGuard(lockMask);
         }
 
         private void ClearPowerEdges()
@@ -367,7 +334,7 @@ namespace Hecton8.Power
             _graphEvaluationPending = false;
 
             _graph.Dispose();
-            DispatcherJobFence.TryComplete(ref dependency, forceComplete: true);
+            ForceCompleteTranslationInPostSimulationWindow(ref dependency);
             ReleasePendingTranslationLocks();
             ReleaseBuffers();
             JobHandle.ScheduleBatchedJobs();
@@ -375,6 +342,24 @@ namespace Hecton8.Power
             _initialized = false;
             _hasActiveGraph = false;
             _gasSeedPending = false;
+        }
+
+        private static bool ForceCompleteTranslationInPostSimulationWindow(ref JobHandle dependency)
+        {
+            DispatcherJobFence.BeginPostSimulationSwapWindow();
+            try
+            {
+                return DispatcherJobFence.TryComplete(ref dependency, forceComplete: true);
+            }
+            finally
+            {
+                DispatcherJobFence.EndPostSimulationSwapWindow();
+            }
+        }
+
+        private static ulong MutationGuardBit(BufferID bufferId)
+        {
+            return 1UL << (unchecked((int)(uint)(int)bufferId) & 31);
         }
 
         private bool TryScheduleLatestGeneratedSignal()
@@ -406,13 +391,13 @@ namespace Hecton8.Power
             if (IsActiveGraphCurrent(in signal) || IsKnownFatalGraphCurrent(in signal))
                 return false;
 
-            if (_translationBufferLockMask != 0 || _translationGridLeaseBufferId != BufferID.Unknown)
+            if (_translationBufferLockMask != 0UL || _translationGridLeaseBufferId != BufferID.Unknown)
                 return false;
 
             if (!WfcOutpostGridRegistry.TryGetGrid(signal.GridHandle, out WfcOutpostGridLease lease))
                 return false;
 
-            if (!TryLockTranslationBuffers(out byte lockMask))
+            if (!TryLockTranslationBuffers(out ulong lockMask))
             {
                 WfcOutpostGridRegistry.ReleaseGridLease(in lease);
                 return false;
@@ -458,10 +443,10 @@ namespace Hecton8.Power
 
         private void ReleasePendingTranslationLocks()
         {
-            if (_translationBufferLockMask != 0)
+            if (_translationBufferLockMask != 0UL)
             {
                 UnlockTranslationBuffers(_translationBufferLockMask);
-                _translationBufferLockMask = 0;
+                _translationBufferLockMask = 0UL;
             }
 
             if (_translationGridLeaseBufferId != BufferID.Unknown)

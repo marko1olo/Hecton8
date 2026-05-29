@@ -61,7 +61,7 @@ namespace Hecton8.UI
 
         private void Awake()
         {
-            ResolveTargetText();
+            ResolveTargetTextCold();
             CaptureDefaults();
             QueueConfigurationApply();
         }
@@ -100,7 +100,7 @@ namespace Hecton8.UI
                 if (minFontSize > maxFontSize)
                     minFontSize = maxFontSize;
 
-                ResolveTargetText();
+                ResolveTargetTextCold();
                 _capturedDefaults = false;
                 CaptureDefaults();
                 InvalidateConfiguration();
@@ -216,7 +216,6 @@ namespace Hecton8.UI
 
         private void ApplyConfiguration()
         {
-            ResolveTargetText();
             if (targetText == null || _isApplyingConfiguration)
                 return;
 
@@ -255,6 +254,11 @@ namespace Hecton8.UI
         }
 
         private void ResolveTargetText()
+        {
+            ResolveTargetTextCold();
+        }
+
+        private void ResolveTargetTextCold()
         {
             if (targetText == null)
                 TryGetComponent(out targetText);
@@ -300,7 +304,6 @@ namespace Hecton8.UI
 
         private static GameLanguage ResolveCurrentLanguage()
         {
-            CacheLocalizationCold();
             ILocalizationTextReadModel manager = s_cachedLocalization;
             return manager != null ? (GameLanguage)manager.ActiveLanguageId : GameLanguage.English;
         }

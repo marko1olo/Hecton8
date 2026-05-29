@@ -1,0 +1,304 @@
+{
+  "version": "2.0.0",
+  "tasks": [
+    {
+      "label": "HECTON-8: setup identity",
+      "type": "shell",
+      "command": "${config:hecton8.powerShellExecutable}",
+      "args": [
+        "-NoProfile",
+        "-ExecutionPolicy",
+        "Bypass",
+        "-File",
+        "h8mod.ps1",
+        "-Action",
+        "setup",
+        "-Id",
+        "${input:modId}",
+        "-DisplayName",
+        "${input:displayName}",
+        "-Author",
+        "${input:author}",
+        "-Version",
+        "${input:version}"
+      ],
+      "problemMatcher": []
+    },
+    {
+      "label": "HECTON-8: validate starter",
+      "type": "shell",
+      "command": "${config:hecton8.powerShellExecutable}",
+      "args": ["-NoProfile", "-ExecutionPolicy", "Bypass", "-File", "h8mod.ps1", "-Action", "validate"],
+      "problemMatcher": [],
+      "group": "test"
+    },
+    {
+      "label": "HECTON-8: prepare review manifest",
+      "type": "shell",
+      "command": "${config:hecton8.powerShellExecutable}",
+      "args": ["-NoProfile", "-ExecutionPolicy", "Bypass", "-File", "h8mod.ps1", "-Action", "prepare"],
+      "problemMatcher": [],
+      "group": "build"
+    },
+    {
+      "label": "HECTON-8: build submission zip",
+      "type": "shell",
+      "command": "${config:hecton8.powerShellExecutable}",
+      "args": ["-NoProfile", "-ExecutionPolicy", "Bypass", "-File", "h8mod.ps1", "-Action", "submission"],
+      "problemMatcher": [],
+      "group": "build"
+    },
+    {
+      "label": "HECTON-8: show capabilities",
+      "type": "shell",
+      "command": "${config:hecton8.powerShellExecutable}",
+      "args": ["-NoProfile", "-ExecutionPolicy", "Bypass", "-File", "h8mod.ps1", "-Action", "capabilities"],
+      "problemMatcher": []
+    },
+    {
+      "label": "HECTON-8: show opcodes",
+      "type": "shell",
+      "command": "${config:hecton8.powerShellExecutable}",
+      "args": ["-NoProfile", "-ExecutionPolicy", "Bypass", "-File", "h8mod.ps1", "-Action", "opcodes"],
+      "problemMatcher": []
+    },
+    {
+      "label": "HECTON-8: create graph node snippet",
+      "type": "shell",
+      "command": "${config:hecton8.powerShellExecutable}",
+      "args": [
+        "-NoProfile",
+        "-ExecutionPolicy",
+        "Bypass",
+        "-File",
+        "h8mod.ps1",
+        "-Action",
+        "node-snippet",
+        "-NodeId",
+        "${input:nodeId}",
+        "-Opcode",
+        "${input:opcode}",
+        "-NodeParametersJson",
+        "${input:nodeParametersJson}"
+      ],
+      "problemMatcher": []
+    },
+    {
+      "label": "HECTON-8: create disabled graph node snippet",
+      "type": "shell",
+      "command": "${config:hecton8.powerShellExecutable}",
+      "args": [
+        "-NoProfile",
+        "-ExecutionPolicy",
+        "Bypass",
+        "-File",
+        "h8mod.ps1",
+        "-Action",
+        "node-snippet",
+        "-NodeId",
+        "${input:nodeId}",
+        "-Opcode",
+        "${input:opcode}",
+        "-NodeParametersJson",
+        "${input:nodeParametersJson}",
+        "-NodeDisabled"
+      ],
+      "problemMatcher": []
+    },
+    {
+      "label": "HECTON-8: apply graph node snippet",
+      "type": "shell",
+      "command": "${config:hecton8.powerShellExecutable}",
+      "args": ["-NoProfile", "-ExecutionPolicy", "Bypass", "-File", "h8mod.ps1", "-Action", "apply-node-snippet"],
+      "problemMatcher": []
+    },
+    {
+      "label": "HECTON-8: replace graph node snippet",
+      "type": "shell",
+      "command": "${config:hecton8.powerShellExecutable}",
+      "args": ["-NoProfile", "-ExecutionPolicy", "Bypass", "-File", "h8mod.ps1", "-Action", "apply-node-snippet", "-Replace"],
+      "problemMatcher": []
+    },
+    {
+      "label": "HECTON-8: create settings row snippet",
+      "type": "shell",
+      "command": "${config:hecton8.powerShellExecutable}",
+      "args": [
+        "-NoProfile",
+        "-ExecutionPolicy",
+        "Bypass",
+        "-File",
+        "h8mod.ps1",
+        "-Action",
+        "setting-snippet",
+        "-SettingId",
+        "${input:settingId}",
+        "-SettingKind",
+        "${input:settingKind}",
+        "-SettingDefault",
+        "${input:settingDefault}"
+      ],
+      "problemMatcher": []
+    },
+    {
+      "label": "HECTON-8: apply settings row snippet",
+      "type": "shell",
+      "command": "${config:hecton8.powerShellExecutable}",
+      "args": ["-NoProfile", "-ExecutionPolicy", "Bypass", "-File", "h8mod.ps1", "-Action", "apply-setting-snippet"],
+      "problemMatcher": []
+    },
+    {
+      "label": "HECTON-8: replace settings row snippet",
+      "type": "shell",
+      "command": "${config:hecton8.powerShellExecutable}",
+      "args": ["-NoProfile", "-ExecutionPolicy", "Bypass", "-File", "h8mod.ps1", "-Action", "apply-setting-snippet", "-Replace"],
+      "problemMatcher": []
+    },
+    {
+      "label": "HECTON-8: create locale entry snippet",
+      "type": "shell",
+      "command": "${config:hecton8.powerShellExecutable}",
+      "args": [
+        "-NoProfile",
+        "-ExecutionPolicy",
+        "Bypass",
+        "-File",
+        "h8mod.ps1",
+        "-Action",
+        "locale-snippet",
+        "-LocaleKey",
+        "${input:localeKey}",
+        "-LocaleValue",
+        "${input:localeValue}"
+      ],
+      "problemMatcher": []
+    },
+    {
+      "label": "HECTON-8: apply locale entry snippet",
+      "type": "shell",
+      "command": "${config:hecton8.powerShellExecutable}",
+      "args": ["-NoProfile", "-ExecutionPolicy", "Bypass", "-File", "h8mod.ps1", "-Action", "apply-locale-snippet"],
+      "problemMatcher": []
+    },
+    {
+      "label": "HECTON-8: replace locale entry snippet",
+      "type": "shell",
+      "command": "${config:hecton8.powerShellExecutable}",
+      "args": ["-NoProfile", "-ExecutionPolicy", "Bypass", "-File", "h8mod.ps1", "-Action", "apply-locale-snippet", "-Replace"],
+      "problemMatcher": []
+    },
+    {
+      "label": "HECTON-8: create asset entry snippet",
+      "type": "shell",
+      "command": "${config:hecton8.powerShellExecutable}",
+      "args": [
+        "-NoProfile",
+        "-ExecutionPolicy",
+        "Bypass",
+        "-File",
+        "h8mod.ps1",
+        "-Action",
+        "asset-snippet",
+        "-AssetId",
+        "${input:assetId}",
+        "-AssetKind",
+        "${input:assetKind}",
+        "-AssetPath",
+        "${input:assetPath}",
+        "-AssetCrc32",
+        "auto",
+        "-AssetBytes",
+        "-1"
+      ],
+      "problemMatcher": []
+    },
+    {
+      "label": "HECTON-8: apply asset entry snippet",
+      "type": "shell",
+      "command": "${config:hecton8.powerShellExecutable}",
+      "args": ["-NoProfile", "-ExecutionPolicy", "Bypass", "-File", "h8mod.ps1", "-Action", "apply-asset-snippet"],
+      "problemMatcher": []
+    },
+    {
+      "label": "HECTON-8: replace asset entry snippet",
+      "type": "shell",
+      "command": "${config:hecton8.powerShellExecutable}",
+      "args": ["-NoProfile", "-ExecutionPolicy", "Bypass", "-File", "h8mod.ps1", "-Action", "apply-asset-snippet", "-Replace"],
+      "problemMatcher": []
+    },
+    {
+      "label": "HECTON-8: configure manifest contract",
+      "type": "shell",
+      "command": "${config:hecton8.powerShellExecutable}",
+      "args": [
+        "-NoProfile",
+        "-ExecutionPolicy",
+        "Bypass",
+        "-File",
+        "h8mod.ps1",
+        "-Action",
+        "manifest-contract",
+        "-Capability",
+        "${input:capability}",
+        "-CapabilityState",
+        "${input:capabilityState}",
+        "-MaxEnvelopesPerFrame",
+        "${input:maxEnvelopesPerFrame}",
+        "-MaxAssetBytes",
+        "${input:maxAssetBytes}"
+      ],
+      "problemMatcher": []
+    }
+  ],
+  "inputs": [
+    { "id": "modId", "type": "promptString", "description": "Canonical mod id", "default": "com.yourname.mod" },
+    { "id": "displayName", "type": "promptString", "description": "Display name", "default": "Your Mod" },
+    { "id": "author", "type": "promptString", "description": "Author", "default": "YourName" },
+    { "id": "version", "type": "promptString", "description": "Semantic version", "default": "0.1.0" },
+    { "id": "nodeId", "type": "promptString", "description": "Graph node id", "default": "node.spawn_item" },
+    {
+      "id": "opcode",
+      "type": "pickString",
+      "description": "Allowed command opcode",
+      "options": ["SpawnItem", "AlterHealth", "AlterGravity", "AssetReference", "ModMemoryRead", "ModMemoryWrite", "FaunaAcousticStimulus", "FaunaDamageStimulus"],
+      "default": "SpawnItem"
+    },
+    { "id": "nodeParametersJson", "type": "promptString", "description": "Graph Parameters JSON object", "default": "{}" },
+    { "id": "settingId", "type": "promptString", "description": "Setting id", "default": "setting.example_toggle" },
+    {
+      "id": "settingKind",
+      "type": "pickString",
+      "description": "Setting kind",
+      "options": ["bool", "int", "float", "string", "enum"],
+      "default": "bool"
+    },
+    { "id": "settingDefault", "type": "promptString", "description": "Setting default", "default": "false" },
+    { "id": "localeKey", "type": "promptString", "description": "Locale key", "default": "text.example_line" },
+    { "id": "localeValue", "type": "promptString", "description": "Localized text", "default": "Your localized text" },
+    { "id": "assetId", "type": "promptString", "description": "Asset id", "default": "asset.example_blob" },
+    {
+      "id": "assetKind",
+      "type": "pickString",
+      "description": "Asset kind",
+      "options": ["data_blob", "raw_texture", "audio_clip"],
+      "default": "data_blob"
+    },
+    { "id": "assetPath", "type": "promptString", "description": "Path under Content/Assets/", "default": "Content/Assets/example.bytes" },
+    {
+      "id": "capability",
+      "type": "pickString",
+      "description": "Public authoring capability",
+      "options": ["cap.graph.command_draft", "cap.settings.table", "cap.locale.en", "cap.content.asset_manifest", "cap.review.submission_package"],
+      "default": "cap.graph.command_draft"
+    },
+    {
+      "id": "capabilityState",
+      "type": "pickString",
+      "description": "Capability action",
+      "options": ["enable", "disable", "unchanged"],
+      "default": "enable"
+    },
+    { "id": "maxEnvelopesPerFrame", "type": "promptString", "description": "Max envelopes per frame, -1 keeps current", "default": "-1" },
+    { "id": "maxAssetBytes", "type": "promptString", "description": "Max asset bytes, -1 keeps current", "default": "-1" }
+  ]
+}

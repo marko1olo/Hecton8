@@ -93,6 +93,10 @@ namespace Hecton8.Construction
         private Transform _cachedTransform;
         private Transform _cachedSourceTransform;
         private Transform _cachedDestinationTransform;
+        private StorageCrate _cachedSourceIdentityOwner;
+        private StorageCrate _cachedDestinationIdentityOwner;
+        private int _cachedSourceIdentity;
+        private int _cachedDestinationIdentity;
         private bool _registered;
         private bool _registeredHotSwap;
         private bool _despawning;
@@ -113,6 +117,7 @@ namespace Hecton8.Construction
         private byte _payloadIntegrity = MaxPayloadIntegrity;
         private IFluidDecalPresentationSink _fluidDecals;
         private IPersistentDroppedItemRegistry _persistentWorldRegistry;
+        private int _schedulerTopologyKey;
 
         public float PowerRating => _inFlightItem != null ? -activePowerDraw : 0f;
         public int PowerPriority => powerPriority;
@@ -122,6 +127,7 @@ namespace Hecton8.Construction
         internal sbyte EncodedFlowRate => EncodeFlowRate(ResolveCurrentFlowUnitsPerSecond(), maxCapacityUnits);
         internal int AmbientRoomIndex => _cachedRoomIndex;
         internal bool CanEmergencyVent => !IsRuptured() && _cachedRoomIndex >= 0;
+        internal int SchedulerTopologyKey => _schedulerTopologyKey;
         internal bool ParticipatesInSchedulerDag => !IsRuptured() &&
                                                     sourceCrate != null &&
                                                     destinationCrate != null &&
@@ -182,6 +188,7 @@ namespace Hecton8.Construction
             _payloadIntegrity = MaxPayloadIntegrity;
             _debugPayloadIntegrity = MaxPayloadIntegrity;
             _debugEncodedFlowRate = 0;
+            RefreshSchedulerTopologyKey();
             if (_powerNode != null)
             {
                 _powerNode.SetRuptured(false);
@@ -209,6 +216,7 @@ namespace Hecton8.Construction
             _payloadIntegrity = MaxPayloadIntegrity;
             _debugPayloadIntegrity = MaxPayloadIntegrity;
             _debugEncodedFlowRate = 0;
+            RefreshSchedulerTopologyKey();
             if (_powerNode != null)
             {
                 _powerNode.SetRuptured(false);
@@ -536,10 +544,35 @@ namespace Hecton8.Construction
             if (force || _cachedDestinationTransform != destinationTransform)
                 _cachedDestinationTransform = destinationTransform;
 
+            if (force || !ReferenceEquals(_cachedSourceIdentityOwner, sourceCrate))
+            {
+                _cachedSourceIdentityOwner = sourceCrate;
+                _cachedSourceIdentity = sourceCrate != null ? unchecked((int)EntityId.ToULong(sourceCrate.GetEntityId())) : 0;
+            }
+
+            if (force || !ReferenceEquals(_cachedDestinationIdentityOwner, destinationCrate))
+            {
+                _cachedDestinationIdentityOwner = destinationCrate;
+                _cachedDestinationIdentity = destinationCrate != null ? unchecked((int)EntityId.ToULong(destinationCrate.GetEntityId())) : 0;
+            }
+
             _cachedSourcePosition = _cachedSourceTransform != null ? _cachedSourceTransform.position : Vector3.zero;
             _cachedDestinationPosition = _cachedDestinationTransform != null ? _cachedDestinationTransform.position : _cachedSourcePosition;
             Vector3 pathDelta = _cachedSourcePosition - _cachedDestinationPosition;
             _cachedPathDistanceMeters = math.sqrt(math.max(pathDelta.sqrMagnitude, 0f));
+            RefreshSchedulerTopologyKey();
+        }
+
+        private void RefreshSchedulerTopologyKey()
+        {
+            unchecked
+            {
+                int key = 17;
+                key = (key * 31) + _cachedSourceIdentity;
+                key = (key * 31) + _cachedDestinationIdentity;
+                key = (key * 31) + (IsRuptured() ? 1 : 0);
+                _schedulerTopologyKey = key;
+            }
         }
 
         private void RefreshAmbientRoomIndex()
@@ -642,6 +675,7 @@ namespace Hecton8.Construction
                 _powerNode.SetRuptured(true);
                 _powerNode.SetShortCircuited(true);
             }
+            RefreshSchedulerTopologyKey();
 
             Vector3 rupturePosition = _cachedTransform != null ? _cachedTransform.position : Vector3.zero;
             PublishRuptureSignals(rupturePosition);

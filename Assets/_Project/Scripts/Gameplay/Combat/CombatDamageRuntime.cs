@@ -320,6 +320,8 @@ namespace Hecton8.Gameplay
         private static JobHandle _statusJobHandle;
         private static bool _damageJobScheduled;
         private static bool _statusJobScheduled;
+        private static CombatVaultMutationGuardLease _damageJobMutationGuardLease;
+        private static CombatVaultMutationGuardLease _statusJobMutationGuardLease;
         private static bool _damageDispatchPending;
         private static bool _statusDispatchPending;
         private static bool _telemetryDumpedThisSession;
@@ -456,30 +458,22 @@ namespace Hecton8.Gameplay
             float targetHeight = ResolveReceiverHeight(receiver);
 
             if (!TryOpenOrEnsureArmorPenetrationVaultViews(out _, ensure: true) ||
-                !TryAcquireArmorTargetWriteLocks(out ArmorPenetrationVaultViews armorViews, out int armorLockCount))
+                !TryResolveArmorTargetOwnerViews(out ArmorPenetrationVaultViews armorViews))
                 return false;
 
-            bool statusLocked = false;
-            bool targetLocked = false;
-            int targetLockCount = 0;
-            IDataVault statusVault = null;
             NativeArray<CombatStatusEffectState> statusStates = default;
-            try
-            {
-                if (!TryAcquireStatusEffectStatesWriteLock(out statusVault, out statusStates, out statusLocked))
-                    return false;
 
-                if (!TryAcquireCombatTargetWriteLocks(out CombatDamageVaultViews views, out targetLockCount))
-                    return false;
+            if (!TryResolveStatusEffectStatesOwnerView(out statusStates, out bool hasStatusStorage) ||
+                !TryResolveCombatTargetOwnerViews(out CombatDamageVaultViews views))
+                return false;
 
-                targetLocked = true;
                 int slot;
                 if (TryFindTargetSlotInLookup(views.TargetLookupKeys, views.TargetLookupSlots, targetId, out slot))
                 {
                     if (!CanUseExistingTargetSlot(slot, ref views))
                         return false;
 
-                    if (!SeedTargetArmorProfileLocked(ref armorViews, slot, targetId, kind, armorClass, safeMaxHealth, armorValue, targetHeight))
+                    if (!SeedTargetArmorProfileOwnerView(ref armorViews, slot, targetId, kind, armorClass, safeMaxHealth, armorValue, targetHeight))
                         return false;
 
                     CaptureReceiverManagedRefs(slot, receiver);
@@ -502,8 +496,8 @@ namespace Hecton8.Gameplay
                 if (!CanUseRegistrationTargetSlot(slot, ref views))
                     return false;
 
-                if (!ResetStatusEffectSlotLocked(slot, statusLocked, statusStates) ||
-                    !SeedTargetArmorProfileLocked(ref armorViews, slot, targetId, kind, armorClass, safeMaxHealth, armorValue, targetHeight))
+                if (!ResetStatusEffectSlotOwnerView(slot, hasStatusStorage, statusStates) ||
+                    !SeedTargetArmorProfileOwnerView(ref armorViews, slot, targetId, kind, armorClass, safeMaxHealth, armorValue, targetHeight))
                     return false;
 
                 if (!TryAddTargetSlotToLookup(views.TargetLookupKeys, views.TargetLookupSlots, targetId, slot))
@@ -528,14 +522,6 @@ namespace Hecton8.Gameplay
                 views.StatusResultActive[slot] = 0;
                 RegisterBallisticRootPrimitive(targetId, receiver, targetHeight, armorClass);
                 return true;
-            }
-            finally
-            {
-                if (targetLocked)
-                    ReleaseCombatTargetWriteLocks(targetLockCount);
-                ReleaseStatusEffectStatesWriteLock(statusVault, statusLocked);
-                ReleaseArmorTargetWriteLocks(armorLockCount);
-            }
         }
 
         public static bool UnregisterTarget(int targetId, IDamageReceiver receiver)
@@ -546,23 +532,15 @@ namespace Hecton8.Gameplay
             if (!CanMutateTargets())
                 return false;
 
-            if (!TryAcquireArmorTargetWriteLocks(out ArmorPenetrationVaultViews armorViews, out int armorLockCount))
+            if (!TryResolveArmorTargetOwnerViews(out ArmorPenetrationVaultViews armorViews))
                 return false;
 
-            bool statusLocked = false;
-            bool targetLocked = false;
-            int targetLockCount = 0;
-            IDataVault statusVault = null;
             NativeArray<CombatStatusEffectState> statusStates = default;
-            try
-            {
-                if (!TryAcquireStatusEffectStatesWriteLock(out statusVault, out statusStates, out statusLocked))
-                    return false;
 
-                if (!TryAcquireCombatTargetWriteLocks(out CombatDamageVaultViews views, out targetLockCount))
-                    return false;
+            if (!TryResolveStatusEffectStatesOwnerView(out statusStates, out bool hasStatusStorage) ||
+                !TryResolveCombatTargetOwnerViews(out CombatDamageVaultViews views))
+                return false;
 
-                targetLocked = true;
                 int slot;
                 if (!TryFindTargetSlotInLookup(views.TargetLookupKeys, views.TargetLookupSlots, targetId, out slot))
                     return false;
@@ -582,7 +560,7 @@ namespace Hecton8.Gameplay
 
                 if (slot != lastSlot)
                 {
-                    if (!MoveTargetSideStateLocked(lastSlot, slot, statusLocked, statusStates, ref armorViews))
+                    if (!MoveTargetSideStateOwnerView(lastSlot, slot, hasStatusStorage, statusStates, ref armorViews))
                         return false;
 
                     int movedId = views.InstanceIds[lastSlot];
@@ -606,7 +584,7 @@ namespace Hecton8.Gameplay
                     _receiverTransforms[slot] = _receiverTransforms[lastSlot];
                     _targetBodies[slot] = _targetBodies[lastSlot];
                 }
-                else if (!ClearTargetSideStateLocked(lastSlot, statusLocked, statusStates, ref armorViews))
+                else if (!ClearTargetSideStateOwnerView(lastSlot, hasStatusStorage, statusStates, ref armorViews))
                 {
                     return false;
                 }
@@ -620,14 +598,6 @@ namespace Hecton8.Gameplay
 
                 BallisticsRuntime.TombstonePrimitivesForTarget(unchecked((uint)targetId));
                 return true;
-            }
-            finally
-            {
-                if (targetLocked)
-                    ReleaseCombatTargetWriteLocks(targetLockCount);
-                ReleaseStatusEffectStatesWriteLock(statusVault, statusLocked);
-                ReleaseArmorTargetWriteLocks(armorLockCount);
-            }
         }
 
         public static bool IsTargetRegistered(int targetId)
@@ -675,18 +645,11 @@ namespace Hecton8.Gameplay
                 return false;
             }
 
-            if (!TryAcquireArmorTargetWriteLocks(out ArmorPenetrationVaultViews armorViews, out int armorLockCount))
+            if (!TryResolveArmorTargetOwnerViews(out ArmorPenetrationVaultViews armorViews))
                 return false;
 
-            try
-            {
-                if (!RefreshTargetArmorBaseLocked(ref armorViews, slot, armorValue))
-                    return false;
-            }
-            finally
-            {
-                ReleaseArmorTargetWriteLocks(armorLockCount);
-            }
+            if (!RefreshTargetArmorBaseOwnerView(ref armorViews, slot, armorValue))
+                return false;
 
             armorValues[slot] = QuantizeArmorValue(armorValue);
             shieldValues[slot] = math.max(0f, shieldValue);
@@ -779,64 +742,41 @@ namespace Hecton8.Gameplay
             uint packedMeta = PackDamageClassMetaFast(queuedSignal.PackedMeta);
             queuedSignal.PackedMeta = (packedMeta & MetaDetailIndexClearMask) |
                                       ((uint)detailIndex << MetaDetailIndexShift);
-            if (!TryAcquireDamageIngressWriteLocks(
+            if (!TryResolveDamageIngressOwnerViews(
                     out NativeArray<CombatDamageRequest> damageSignals,
                     out NativeArray<CombatDamageSignalDetail> signalDetails,
-                    out NativeArray<double3> signalImpactAups,
-                    out int ingressLockCount))
+                    out NativeArray<double3> signalImpactAups))
             {
                 PublishQueueRejectAnomaly(TelemetryAnomalyQueueStorage, signal.Amount);
                 return false;
             }
 
-            bool queued = false;
-            bool postLockStorageReject = false;
-            try
-            {
-                if ((uint)detailIndex >= (uint)damageSignals.Length ||
-                    (uint)detailIndex >= (uint)signalDetails.Length ||
-                    (uint)detailIndex >= (uint)signalImpactAups.Length)
-                {
-                    postLockStorageReject = true;
-                }
-                else
-                {
-                    signalDetails[detailIndex] = queuedDetail;
-                    signalImpactAups[detailIndex] = math.select(double3.zero, impactAup, new bool3(IsFinite(impactAup)));
-                    damageSignals[detailIndex] = queuedSignal;
-                    _queuedSignalCount++;
-                    queued = true;
-                }
-            }
-            finally
-            {
-                ReleaseDamageIngressWriteLocks(ingressLockCount);
-            }
-
-            if (postLockStorageReject)
+            if ((uint)detailIndex >= (uint)damageSignals.Length ||
+                (uint)detailIndex >= (uint)signalDetails.Length ||
+                (uint)detailIndex >= (uint)signalImpactAups.Length)
             {
                 PublishQueueRejectAnomaly(TelemetryAnomalyQueueStorage, signal.Amount);
                 return false;
             }
 
-            if (!queued)
-                return false;
+            signalDetails[detailIndex] = queuedDetail;
+            signalImpactAups[detailIndex] = math.select(double3.zero, impactAup, new bool3(IsFinite(impactAup)));
+            damageSignals[detailIndex] = queuedSignal;
+            _queuedSignalCount++;
 
             if (ingressAnomalyHash != 0u)
                 PublishCombatTelemetryAnomaly(ingressAnomalyHash, queuedSignal.Amount, TelemetrySeverityWarning, TelemetryFlagIngressSanitized);
             return true;
         }
 
-        private static bool TryAcquireDamageIngressWriteLocks(
+        private static bool TryResolveDamageIngressOwnerViews(
             out NativeArray<CombatDamageRequest> damageSignals,
             out NativeArray<CombatDamageSignalDetail> signalDetails,
-            out NativeArray<double3> signalImpactAups,
-            out int lockedCount)
+            out NativeArray<double3> signalImpactAups)
         {
             damageSignals = default;
             signalDetails = default;
             signalImpactAups = default;
-            lockedCount = 0;
 
             IDataVault damageVault = OpenCombatDataVault(allowColdBootstrap: false);
             IDataVault armorVault = _armorDataVault;
@@ -851,42 +791,12 @@ namespace Hecton8.Gameplay
                 return false;
             }
 
-            bool success = false;
-            try
-            {
-                if (!armorVault.TryAcquireWriteLock(in _signalImpactAupsHandle, ArmorMemoryOwner, out signalImpactAups))
-                    return false;
-                lockedCount = 1;
-
-                if (!damageVault.TryAcquireWriteLock(in _damageSignalsHandle, CombatDamageMemoryOwner, out damageSignals))
-                    return false;
-                lockedCount = 2;
-
-                if (!damageVault.TryAcquireWriteLock(in _signalDetailsHandle, CombatDamageMemoryOwner, out signalDetails))
-                    return false;
-
-                lockedCount = 3;
-                success = true;
-                return true;
-            }
-            finally
-            {
-                if (!success)
-                    ReleaseDamageIngressWriteLocks(lockedCount);
-            }
-        }
-
-        private static void ReleaseDamageIngressWriteLocks(int lockedCount)
-        {
-            IDataVault damageVault = OpenCombatDataVault(allowColdBootstrap: false);
-            if (lockedCount >= 3 && damageVault != null)
-                damageVault.ReleaseWriteLock(in _signalDetailsHandle, CombatDamageMemoryOwner);
-            if (lockedCount >= 2 && damageVault != null)
-                damageVault.ReleaseWriteLock(in _damageSignalsHandle, CombatDamageMemoryOwner);
-
-            IDataVault armorVault = _armorDataVault;
-            if (lockedCount >= 1 && armorVault != null)
-                armorVault.ReleaseWriteLock(in _signalImpactAupsHandle, ArmorMemoryOwner);
+            return armorVault.TryResolveHandle(in _signalImpactAupsHandle, out signalImpactAups) &&
+                   damageVault.TryResolveHandle(in _damageSignalsHandle, out damageSignals) &&
+                   damageVault.TryResolveHandle(in _signalDetailsHandle, out signalDetails) &&
+                   signalImpactAups.IsCreated &&
+                   damageSignals.IsCreated &&
+                   signalDetails.IsCreated;
         }
 
         private static bool CanUseDamageIngressSlot(int detailIndex)
@@ -947,18 +857,12 @@ namespace Hecton8.Gameplay
                 if (!CanUseDamageJobBuffers(ref damageViews, ref statusViews, in armorViews))
                     return;
 
-                if (!TryLockCombatDamageVaultBuffersForJobs(out int damageLockedCount))
+                if (!TryAcquireDamageJobMutationGuardLease(out CombatVaultMutationGuardLease damageJobLease))
                     return;
 
-                bool armorVaultBuffersLocked = false;
-                bool armorVaultLockOwnedByScheduledJob = false;
-                bool damageVaultLockOwnedByScheduledJob = false;
+                bool guardOwnedByScheduledJob = false;
                 try
                 {
-                    if (!TryLockArmorVaultBuffersForJobs())
-                        return;
-                    armorVaultBuffersLocked = true;
-
                     if (!TryOpenOrEnsureCombatDamageVaultViews(out damageViews, ensure: false) ||
                         !TryOpenOrEnsureStatusEffectVaultViews(out statusViews, ensure: false) ||
                         !TryOpenOrEnsureArmorPenetrationVaultViews(out armorViews, ensure: false))
@@ -966,7 +870,7 @@ namespace Hecton8.Gameplay
                         return;
                     }
 
-                    RefreshArmorTargetSnapshotsLocked(ref armorViews);
+                    RefreshArmorTargetSnapshotsOwnerView(ref armorViews);
                     if (!CanUseDamageJobBuffers(ref damageViews, ref statusViews, in armorViews))
                         return;
 
@@ -1015,18 +919,17 @@ namespace Hecton8.Gameplay
                     };
                     _damageJobHandle = job.Schedule();
                     _damageJobScheduled = true;
-                    armorVaultLockOwnedByScheduledJob = true;
-                    damageVaultLockOwnedByScheduledJob = true;
+                    _damageJobMutationGuardLease = damageJobLease;
+                    damageJobLease = default;
+                    guardOwnedByScheduledJob = true;
                     H8Memory.RegisterActiveJob(CombatDamageMemoryOwner, _damageJobHandle);
                     H8Memory.RegisterActiveJob(ArmorMemoryOwner, _damageJobHandle);
                     JobHandle.ScheduleBatchedJobs();
                 }
                 finally
                 {
-                    if (armorVaultBuffersLocked && !armorVaultLockOwnedByScheduledJob)
-                        UnlockArmorVaultBuffersForJobs();
-                    if (!damageVaultLockOwnedByScheduledJob)
-                        UnlockCombatDamageVaultBuffersForJobs(damageLockedCount);
+                    if (!guardOwnedByScheduledJob)
+                        damageJobLease.Release();
                 }
             }
         }
@@ -1337,7 +1240,7 @@ namespace Hecton8.Gameplay
                 if (!completedAny && !_damageDispatchPending && !_statusDispatchPending)
                     return;
 
-                if (!TryLockCombatDamageVaultBuffersForJobs(out int dispatchLockedCount))
+                if (!TryAcquireCombatDispatchMutationGuardLease(out CombatVaultMutationGuardLease dispatchLease))
                     return;
 
                 try
@@ -1356,7 +1259,7 @@ namespace Hecton8.Gameplay
                 }
                 finally
                 {
-                    UnlockCombatDamageVaultBuffersForJobs(dispatchLockedCount);
+                    dispatchLease.Release();
                 }
 
                 TryApplyPendingStatusEffectVaultRebind();
@@ -1420,7 +1323,7 @@ namespace Hecton8.Gameplay
                     return;
             }
 
-            if (!TryInitializeDamageArmorLutLocked())
+            if (!TryInitializeDamageArmorLutOwnerView())
                 return;
 
             EnsureStatusEffectStorage();
@@ -1434,25 +1337,21 @@ namespace Hecton8.Gameplay
             RefreshRuntimePolicy();
         }
 
-        private static bool TryInitializeDamageArmorLutLocked()
+        private static bool TryInitializeDamageArmorLutOwnerView()
         {
             IDataVault vault = OpenCombatDataVault(allowColdBootstrap: false);
             if (vault == null ||
+                vault.IsCompactionFenceActive ||
                 !IsCombatDamageVaultHandleCreated(in _damageArmorLutHandle, CombatDamageArmorLutBufferId) ||
-                !vault.TryAcquireWriteLock(in _damageArmorLutHandle, CombatDamageMemoryOwner, out NativeArray<float> lut))
+                !vault.TryResolveHandle(in _damageArmorLutHandle, out NativeArray<float> lut) ||
+                !lut.IsCreated ||
+                lut.Length < DamageArmorLutLength)
             {
                 return false;
             }
 
-            try
-            {
-                InitializeDamageArmorLut(lut);
-                return true;
-            }
-            finally
-            {
-                vault.ReleaseWriteLock(in _damageArmorLutHandle, CombatDamageMemoryOwner);
-            }
+            InitializeDamageArmorLut(lut);
+            return true;
         }
 
         private static void InitializeDamageArmorLut(NativeArray<float> lut)
@@ -2135,7 +2034,7 @@ namespace Hecton8.Gameplay
 
         private static void ClearCounters()
         {
-            if (!TryLockCombatDamageVaultBuffersForJobs(out int lockedCount))
+            if (!TryAcquireCombatCounterMutationGuardLease(out CombatVaultMutationGuardLease counterLease))
                 return;
 
             try
@@ -2145,7 +2044,7 @@ namespace Hecton8.Gameplay
             }
             finally
             {
-                UnlockCombatDamageVaultBuffersForJobs(lockedCount);
+                counterLease.Release();
             }
         }
 
@@ -2244,12 +2143,6 @@ namespace Hecton8.Gameplay
         {
             if (receiver is ICombatPushbackBodySource bodySource)
                 return bodySource.CombatPushbackBody;
-
-            if (!(receiver is Component component) || component == null)
-                return null;
-
-            if (component.TryGetComponent(out Rigidbody body))
-                return body;
 
             return null;
         }

@@ -21,13 +21,25 @@ namespace CandiceAIforGames.data
             SortUp(item);
             currentItemCount++;
         }
+        public void Clear()
+        {
+            currentItemCount = 0;
+        }
         public T RemoveFirst()
         {
             T firstItem = items[0];
             currentItemCount--;
-            items[0] = items[currentItemCount];
-            items[0].HeapIndex = 0;
-            SortDown(items[0]);
+            if (currentItemCount > 0)
+            {
+                items[0] = items[currentItemCount];
+                items[0].HeapIndex = 0;
+                items[currentItemCount] = default(T);
+                SortDown(items[0]);
+            }
+            else
+            {
+                items[0] = default(T);
+            }
             return firstItem;
         }
         void SortDown(T item)
@@ -73,7 +85,8 @@ namespace CandiceAIforGames.data
         }
         public bool Contains(T item)
         {
-            return Equals(items[item.HeapIndex], item);
+            int heapIndex = item.HeapIndex;
+            return heapIndex >= 0 && heapIndex < currentItemCount && Equals(items[heapIndex], item);
         }
         void SortUp(T item)
         {

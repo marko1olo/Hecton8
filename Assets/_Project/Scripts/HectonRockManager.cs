@@ -614,7 +614,7 @@ namespace Hecton8.World
 
         private static bool CanUseVendorGpuInstancerCompute()
         {
-            return HardwareTierDetector.AllowHighResourceComputeShaders;
+            return SystemInfo.supportsComputeShaders;
         }
 
         private void ApplyVendorGpuiManagerAdmission()

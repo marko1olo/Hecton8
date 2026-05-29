@@ -41,3 +41,76 @@ What was wrong: The prior verbal completion state was insufficient. Fresh late l
 What was done: Repaired the live clusters, rebuilt the affected targets, and created proof artifacts on disk. Final consolidated dotnet C# proof: `Docs/Reports/APEX_COMPILE_MEDIC_TARGETED_CONSOLIDATED_20260528_1.csv`, 9 targets, exit=0, warnings=0, errors=0. Zero-GC scan: `Docs/Reports/APEX_COMPILE_MEDIC_ZERO_GC_SCAN_20260528_3.json`, managed `referenceNew=0`, `string.Format=0`, `.ToString()=0`, LINQ=0, `foreachLoop=0`; Crest `FFTCompute.cs:280` remains a recorded cache-miss managed constructor. Final report: `Docs/Reports/APEX_FINAL_VERIFICATION_COMPILE_MEDIC_20260528.json`; SHA-256 `1F026FC0C50FEE82C2F494A55A8659CB58420FA2F30C37CD7376D511C335029D`.
 Cinematic Cheats used: No new physical simulation was introduced. Ballistics uses continuous `HomeostasisBrain.GlobalQualityWeight` for signal/primitive/ricochet budgets. Tether uses continuous `SmoothRange01`. Crest/MapMagic were not rewritten or graph-edited; their C# targets compile green, but shader/import/runtime water and serialized MapMagic graph behavior still require Unity Editor validation.
 Exact Microseconds saved: Runtime: 0 claimed. Late targeted proof wall time recorded from latest green isolated logs: Core 125,770,000 us, Assembly-CSharp 38,570,000 us, plus matrix tail logs from 20260528_4. CPU guard samples before builds included CPU=49/47/36/40/46/30/19/48/34 with compilerProcessCount=0. No `Docs/AgentLogs/Dump_COMPILE_MEDIC.bin` exists because no crash/NaN dump was emitted; no runtime black-box proof is claimed.
+## 2026-05-28T22:37:42+04:00 - Post-APEX Shinobu BufferID repair
+
+What was wrong:
+- Latest failing Core log `Docs/Reports/APEX_COMPILE_MEDIC_CORE_GETENTITYID_RECHECK_20260528_1.log` reported 0 warnings and 51 errors.
+- Current-source comparison shows `StressDrivenSpawnDirector.cs` and `PowerGrid.cs` errors from that log are stale parallel edit states.
+- Live current-source error: `ShinobuEcosystemBalancer.FlockingAvoidance.cs` still used old `TryOpenVaultView` calls without expected `BufferID`.
+
+What was done:
+- Patched `Assets/_Project/Scripts/AI/Ecosystem/ShinobuEcosystemBalancer.FlockingAvoidance.cs:37-40,144-145`.
+- Added `BufferID.ShinobuFlockingThreats`, `BufferID.ShinobuFlockingThreatCount`, `BufferID.ShinobuFlockingCounters64`, and `BufferID.ShinobuFlockingTelemetryRing` to existing read-view calls.
+- Created `Docs/Reports/APEX_COMPILE_MEDIC_POST_SHINOBU_BUFFERID_AUDIT_20260528.json`.
+- SHA-256: `DEF43BC479ABB4D42DCD2F536E719E9AB258D197934488E372D13FF1BE3B9A67`.
+
+Cinematic Cheats used:
+- None. This is compile/DataVault identity repair only.
+
+Exact microseconds saved:
+- Runtime: 0 claimed.
+- Build launched: no. CPU guard blocked it with samples 57/76/88/60/65/100 percent and compiler process count 0.
+
+Residual fault:
+- Status remains `PENDING_VERIFICATION` until guarded `dotnet build Hecton8.Core.csproj -nologo --no-restore -v:minimal /m:1 /p:UseSharedCompilation=false` can run under CPU <= 50 percent and no compiler process.
+
+## 2026-05-28T22:48:00+04:00 - LogisticsPipeNode obsolete identity cleanup
+
+What was wrong:
+- Static first-party scan found two remaining runtime `GetInstanceID()` calls in `Assets/_Project/Scripts/Construction/LogisticsPipeNode.cs:550,556`.
+
+What was done:
+- Replaced both calls with `EntityId.ToULong(crate.GetEntityId())` folding.
+- Re-ran `rg "GetInstanceID\\(|enableWordWrapping" Assets/_Project/Scripts -g "*.cs"`; result: 0 hits.
+- Updated `Docs/Reports/APEX_COMPILE_MEDIC_POST_SHINOBU_BUFFERID_AUDIT_20260528.json`.
+- SHA-256: `1ABC36D53628DE8311B6FCCCA4C851F03E136643F710E0742BA53B43D7486EA0`.
+
+Cinematic Cheats used:
+- None. This is API compatibility cleanup only.
+
+Exact microseconds saved:
+- Runtime: 0 claimed.
+- Build launched: no. Additional CPU guard samples were 99/71/88/100 percent with compiler process count 0.
+
+Residual fault:
+- Status remains `PENDING_VERIFICATION`; no post-LogisticsPipeNode compile proof exists.
+
+## 2026-05-28T23:56:40+04:00 - Post-resume verification gate update
+
+What was wrong:
+- Post-patch compile verification is still blocked by the local resource throttle. CPU samples were 100%, 100%, and 100%; compiler process count remained 0.
+
+What was done:
+- Re-ran static scans while build was gated.
+- `GetInstanceID(`/`enableWordWrapping` remains 0 hits in `Assets/_Project/Scripts`.
+- Sampled global-system hits classify as editor/authoring/diagnostic/crash or dispatcher fence paths in the scanned output.
+- Refreshed `Docs/Reports/APEX_COMPILE_MEDIC_POST_SHINOBU_BUFFERID_AUDIT_20260528.json`.
+- SHA-256: `F43CDECCA929138BA9FA6C19A01517AADCEA642E92D266EEADCC32CB4B2D52D4`.
+
+Cinematic Cheats used:
+- None. This is verification-only work.
+
+Exact microseconds saved:
+- Runtime: 0 claimed.
+- Build launched: no. CPU remained above the 50% gate.
+
+Residual fault:
+- Status remains `PENDING_VERIFICATION`; no post-Shinobu/Logistics compile proof exists.
+
+## 2026-05-29 APEX Integrator Source Verification
+
+Wrong: `HazardZoneManager.ScheduleExposureJob` previously held multiple DataVault writer fences across job scheduling. The first read-alias repair attempt exposed a deeper `GlobalDataVault.PinReadOnlyAlias<T>` defect: aliases were published as external views, but the public release route was the counted `TryUnlockBuffer` pin path.
+Done: `GlobalDataVault.PinReadOnlyAlias<T>` now uses owner-tagged counted pins (`TryLockBuffer`/`TryUnlockBuffer`) and resolves a generation handle before returning a read-only alias. `HazardZoneManager.ScheduleExposureJob` now releases the `_jobVolumes` writer fence in `finally` before acquiring the result writer fence; job input buffers are read-only pinned aliases released after `LateFrameTick` finalization. `TryAcquireHazardStateWriteViews` now uses `HazardStateMutationGuardMask` and mutable resolves instead of four simultaneous writer fences.
+Cinematic cheat used: no new physical simulation; the change preserves the cheap snapshot-and-evaluate exposure model instead of adding a richer spatial solve.
+Verification: added-line scan reports zero `new` reference-constructor text, `string.Format`, `.ToString()`, LINQ, `foreach`, `GlobalRegistry.Get`, and `GetComponent` hits. Full hot-method lexical scan reports `HOT_LOOKUP_HITS=0`. `git diff --check` reports no whitespace errors, only existing LF-to-CRLF warnings.
+Compile throttle: no `dotnet build` launched; CPU sample was 100 percent and compiler process count was 0. Status remains `PENDING_VERIFICATION`.

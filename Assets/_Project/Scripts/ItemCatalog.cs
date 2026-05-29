@@ -210,6 +210,7 @@ namespace Hecton8.SaveSystem
         private string _lookupAmbiguitySummary;
         private List<ItemData> _runtimeItems;
         private bool _registeredHotSwap;
+        private IQuestSystem _cachedQuestSystem;
 #if UNITY_ADDRESSABLES_EXIST
         private AssetLifecycleGovernor _cachedAssetLifecycleGovernor;
         private AssetLoadDispatcher _cachedAssetLoadDispatcher;
@@ -234,7 +235,8 @@ namespace Hecton8.SaveSystem
         {
             RebuildLookup();
             RebuildWorldPrefabLookup();
-            CacheRuntimeServices();
+            CacheQuestSystemCold();
+            CacheAddressableRuntimeServicesCold();
             TryRegisterHotSwap();
         }
 
@@ -332,7 +334,6 @@ namespace Hecton8.SaveSystem
                 return TryGetDirectWorldPrefabFallback(hashId, out _);
             }
 
-            CacheRuntimeServices();
             AssetLoadDispatcher dispatcher = _cachedAssetLoadDispatcher;
             uint dispatchAssetKey = BuildWorldPrefabDispatchKey(hashId);
             if (dispatcher != null &&
@@ -901,7 +902,6 @@ namespace Hecton8.SaveSystem
             if (_worldPrefabRuntimeLookup == null || _worldPrefabRuntimeLookup.Count <= 0)
                 return;
 
-            CacheRuntimeServices();
             AssetLoadDispatcher dispatcher = _cachedAssetLoadDispatcher;
             if (dispatcher == null)
                 return;
@@ -962,7 +962,6 @@ namespace Hecton8.SaveSystem
             uint assetKey = runtimeRecord.DispatchAssetKey;
             if (runtimeRecord.Handle.IsValid())
             {
-                CacheRuntimeServices();
                 AssetLifecycleGovernor governor = _cachedAssetLifecycleGovernor;
                 if (governor != null && assetKey != 0u)
                 {
@@ -1000,7 +999,6 @@ namespace Hecton8.SaveSystem
                 return;
             }
 
-            CacheRuntimeServices();
             AssetLifecycleGovernor governor = _cachedAssetLifecycleGovernor;
             if (governor != null && runtimeRecord.DispatchAssetKey != 0u)
             {
@@ -1113,7 +1111,6 @@ namespace Hecton8.SaveSystem
             out AsyncOperationHandle<GameObject> handle)
         {
             handle = default;
-            CacheRuntimeServices();
             AssetLifecycleGovernor governor = _cachedAssetLifecycleGovernor;
             if (governor == null)
                 return false;
@@ -1132,7 +1129,6 @@ namespace Hecton8.SaveSystem
 
         private void MarkWorldPrefabLoaded(ref WorldPrefabRuntimeRecord runtimeRecord)
         {
-            CacheRuntimeServices();
             AssetLifecycleGovernor governor = _cachedAssetLifecycleGovernor;
             if (governor == null ||
                 runtimeRecord.DispatchAssetKey == 0u ||
@@ -1155,7 +1151,6 @@ namespace Hecton8.SaveSystem
             if (runtimeRecord.DispatchAssetKey == 0u)
                 return;
 
-            CacheRuntimeServices();
             AssetLoadDispatcher dispatcher = _cachedAssetLoadDispatcher;
             if (dispatcher != null)
             {
@@ -1173,7 +1168,6 @@ namespace Hecton8.SaveSystem
             if (runtimeRecord.DispatchRequestId == 0)
                 return;
 
-            CacheRuntimeServices();
             AssetLoadDispatcher dispatcher = _cachedAssetLoadDispatcher;
             if (dispatcher != null)
                 dispatcher.AcknowledgeDispatchRequest(runtimeRecord.DispatchRequestId, success);
@@ -1193,7 +1187,6 @@ namespace Hecton8.SaveSystem
         private bool TryCaptureCurrentPlayerAup(out AbsoluteUniversePosition playerAup)
         {
             playerAup = default;
-            CacheRuntimeServices();
             IPlayerRuntimeContext playerContext = _cachedPlayerContext;
             if (playerContext == null || !playerContext.TryGetPlayerPoseSnapshot(out PlayerRuntimePoseSnapshot snapshot))
                 return false;
@@ -1220,7 +1213,7 @@ namespace Hecton8.SaveSystem
             _registeredHotSwap = false;
         }
 
-        private void CacheRuntimeServices()
+        private void CacheAddressableRuntimeServicesCold()
         {
             if (!Application.isPlaying)
                 return;
@@ -1235,8 +1228,20 @@ namespace Hecton8.SaveSystem
 #endif
         }
 
+        private void CacheQuestSystemCold()
+        {
+            if (!Application.isPlaying)
+                return;
+
+            _cachedQuestSystem = GlobalRegistry.QuestSystem;
+            ItemTemplateRegistry.ConfigureQuestSystem(_cachedQuestSystem);
+        }
+
         private void ClearCachedRuntimeServices()
         {
+            _cachedQuestSystem = null;
+            ItemTemplateRegistry.ConfigureQuestSystem(null);
+
 #if UNITY_ADDRESSABLES_EXIST
             _cachedAssetLifecycleGovernor = null;
             _cachedAssetLoadDispatcher = null;
@@ -1249,6 +1254,13 @@ namespace Hecton8.SaveSystem
             object previousService,
             object currentService)
         {
+            if (serviceSlot == GlobalRegistryServiceSlot.QuestSystem ||
+                serviceSlot == GlobalRegistryServiceSlot.QuestRuntime)
+            {
+                _cachedQuestSystem = currentService as IQuestSystem;
+                ItemTemplateRegistry.ConfigureQuestSystem(_cachedQuestSystem);
+            }
+
 #if UNITY_ADDRESSABLES_EXIST
             switch (serviceSlot)
             {
@@ -1440,12 +1452,14 @@ namespace Hecton8.SaveSystem
             if (!Application.isPlaying)
             {
                 ItemTemplateRegistry.Clear();
+                ItemTemplateRegistry.ConfigureQuestSystem(null);
                 return;
             }
 
             if (_hashLookup == null || _runtimeDescriptorLookup == null || _hashLookup.Count <= 0)
             {
                 ItemTemplateRegistry.Configure(null);
+                ItemTemplateRegistry.ConfigureQuestSystem(_cachedQuestSystem);
                 return;
             }
 
@@ -1460,6 +1474,7 @@ namespace Hecton8.SaveSystem
             if (templateCount <= 0)
             {
                 ItemTemplateRegistry.Configure(null);
+                ItemTemplateRegistry.ConfigureQuestSystem(_cachedQuestSystem);
                 return;
             }
 
@@ -1468,10 +1483,12 @@ namespace Hecton8.SaveSystem
                 ItemTemplate[] compactTemplates = new ItemTemplate[templateCount]; // COLD ALLOC: ItemTemplate[templateCount] - trimmed compact template snapshot after dedupe - owner: ItemCatalog
                 Array.Copy(templates, compactTemplates, templateCount);
                 ItemTemplateRegistry.Configure(compactTemplates);
+                ItemTemplateRegistry.ConfigureQuestSystem(_cachedQuestSystem);
                 return;
             }
 
             ItemTemplateRegistry.Configure(templates);
+            ItemTemplateRegistry.ConfigureQuestSystem(_cachedQuestSystem);
         }
 
         private int AppendTemplateSnapshotEntries(List<ItemData> sourceItems, ItemTemplate[] destination, int writeIndex)

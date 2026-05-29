@@ -20,7 +20,7 @@ namespace Crest
     /// </summary>
     public abstract class QueryBase
     {
-        protected int _kernelHandle;
+        protected int _kernelHandle = -1;
 
         protected abstract string QueryShaderName { get; }
         protected abstract string QueryKernelName { get; }
@@ -234,9 +234,11 @@ namespace Crest
             _queryResultsLast = new NativeArray<Vector3>(_maxQueryCount, Allocator.Persistent, NativeArrayOptions.ClearMemory);
 
             _shaderProcessQueries = ComputeShaderHelpers.LoadShader(QueryShaderName);
-            if (_shaderProcessQueries == null)
+            if (_shaderProcessQueries == null || !_shaderProcessQueries.HasKernel(QueryKernelName))
             {
                 Debug.LogError($"Crest: Could not load Query compute shader {QueryShaderName}");
+                _shaderProcessQueries = null;
+                _kernelHandle = -1;
                 return;
             }
             _kernelHandle = _shaderProcessQueries.FindKernel(QueryKernelName);
@@ -467,6 +469,12 @@ namespace Crest
         {
             if (_segmentRegistrarRingBuffer.Current._numQueries > 0)
             {
+                if (_shaderProcessQueries == null || _kernelHandle < 0 || _wrapper == null || _computeBufQueries == null || _computeBufResults == null)
+                {
+                    _segmentRegistrarRingBuffer.AcquireNew();
+                    return;
+                }
+
                 ExecuteQueries();
 
                 // Remove oldest requests if we have hit the limit

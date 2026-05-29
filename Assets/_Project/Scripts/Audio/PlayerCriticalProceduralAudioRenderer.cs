@@ -2702,11 +2702,11 @@ namespace Hecton8.Audio
             }
 
             bool locked = false;
+            NativeArray<AudioTransitionState> prologueTransitionRing = default;
             try
             {
                 if (!IsPlayerCriticalVaultHandle(in _prologueTransitionRingHandle, PlayerCriticalPrologueTransitionRingBufferId) ||
-                    !vault.TryAcquireWriteLock(in _prologueTransitionRingHandle, VaultOwner, out NativeArray<AudioTransitionState> prologueTransitionRing) ||
-                    !prologueTransitionRing.IsCreated)
+                    !vault.TryAcquireWriteLock(in _prologueTransitionRingHandle, VaultOwner, out prologueTransitionRing))
                 {
                     RecordAudioSynthesisTelemetry(
                         (uint)_prologueTransitionRingHandle.BufferID,
@@ -2719,6 +2719,18 @@ namespace Hecton8.Audio
                 }
 
                 locked = true;
+                if (!prologueTransitionRing.IsCreated)
+                {
+                    RecordAudioSynthesisTelemetry(
+                        (uint)_prologueTransitionRingHandle.BufferID,
+                        AudioSynthesisFailureTelemetryLock,
+                        AudioSynthesisTelemetryFlagLockContention,
+                        Volatile.Read(ref _lastActiveDspVoiceCount),
+                        _targetGranularMaxVoiceCount,
+                        0f);
+                    return false;
+                }
+
                 AudioTransitionState sanitized = SanitizePrologueAudioTransition(in state, out bool invalid);
                 if (!TryWriteRing(prologueTransitionRing, ref _prologueTransitionWriteIndex, _prologueTransitionQueueCount, PrologueTransitionQueueCapacity, in sanitized))
                     return false;
@@ -11993,8 +12005,7 @@ namespace Hecton8.Audio
             try
             {
                 if (!IsPlayerCriticalVaultHandle(in _granularTelemetryRingHandle, BufferID.PlayerCriticalGranularTelemetryRing) ||
-                    !vault.TryAcquireWriteLock(in _granularTelemetryRingHandle, VaultOwner, out granularTelemetryRing) ||
-                    !granularTelemetryRing.IsCreated)
+                    !vault.TryAcquireWriteLock(in _granularTelemetryRingHandle, VaultOwner, out granularTelemetryRing))
                 {
                     RecordAudioSynthesisTelemetry(
                         (uint)_granularTelemetryRingHandle.BufferID,
@@ -12007,6 +12018,18 @@ namespace Hecton8.Audio
                 }
 
                 locked = true;
+                if (!granularTelemetryRing.IsCreated)
+                {
+                    RecordAudioSynthesisTelemetry(
+                        (uint)_granularTelemetryRingHandle.BufferID,
+                        AudioSynthesisFailureTelemetryLock,
+                        AudioSynthesisTelemetryFlagLockContention,
+                        activeVoiceCount,
+                        voiceLimit,
+                        0f);
+                    return;
+                }
+
                 int cursor = _granularTelemetryCursor;
                 if ((uint)cursor >= (uint)GranularTelemetryCapacity)
                     cursor = 0;
@@ -12082,8 +12105,7 @@ namespace Hecton8.Audio
             try
             {
                 if (!IsPlayerCriticalVaultHandle(in _prologueTransitionTelemetryRingHandle, BufferID.PlayerCriticalPrologueTransitionTelemetryRing) ||
-                    !vault.TryAcquireWriteLock(in _prologueTransitionTelemetryRingHandle, VaultOwner, out prologueTelemetryRing) ||
-                    !prologueTelemetryRing.IsCreated)
+                    !vault.TryAcquireWriteLock(in _prologueTransitionTelemetryRingHandle, VaultOwner, out prologueTelemetryRing))
                 {
                     RecordAudioSynthesisTelemetry(
                         (uint)_prologueTransitionTelemetryRingHandle.BufferID,
@@ -12096,6 +12118,18 @@ namespace Hecton8.Audio
                 }
 
                 locked = true;
+                if (!prologueTelemetryRing.IsCreated)
+                {
+                    RecordAudioSynthesisTelemetry(
+                        (uint)_prologueTransitionTelemetryRingHandle.BufferID,
+                        AudioSynthesisFailureTelemetryLock,
+                        AudioSynthesisTelemetryFlagLockContention,
+                        Volatile.Read(ref _lastActiveDspVoiceCount),
+                        _targetGranularMaxVoiceCount,
+                        0f);
+                    return;
+                }
+
                 int cursor = _prologueTransitionTelemetryCursor;
                 if ((uint)cursor >= (uint)PrologueTransitionTelemetryCapacity)
                     cursor = 0;

@@ -1209,6 +1209,22 @@ namespace Hecton8.Physics
 
     internal static class TetherAupVaultBootstrap
     {
+        private static readonly ulong BootstrapMutationGuardMask =
+            VaultMutationGuardBit(BufferID.Shinobu143TetherBootstrapState) |
+            VaultMutationGuardBit(BufferID.Shinobu143TetherAupNodes) |
+            VaultMutationGuardBit(BufferID.Shinobu143TetherConstraints) |
+            VaultMutationGuardBit(BufferID.Shinobu143TetherEndpoints) |
+            VaultMutationGuardBit(BufferID.Shinobu143TetherSplineVertices) |
+            VaultMutationGuardBit(BufferID.Shinobu143TetherForcePackets) |
+            VaultMutationGuardBit(BufferID.Shinobu143TetherSegmentTensions) |
+            VaultMutationGuardBit(BufferID.Shinobu143TetherSolverStats) |
+            VaultMutationGuardBit(BufferID.Shinobu143TetherPinnedAups) |
+            VaultMutationGuardBit(BufferID.Shinobu143TetherPinnedMask) |
+            VaultMutationGuardBit(BufferID.Shinobu143TetherTelemetryRing) |
+            VaultMutationGuardBit(BufferID.Shinobu143TetherTelemetryHead) |
+            VaultMutationGuardBit(BufferID.Shinobu143CableMaterials) |
+            VaultMutationGuardBit(BufferID.Shinobu143CableMaterialCsvScratch);
+
         private static bool TryOpenExistingBuffer<T>(
             IDataVault vault,
             BufferID bufferId,
@@ -1290,6 +1306,11 @@ namespace Hecton8.Physics
             if (vault == null)
                 return;
 
+            if (!TryAcquireBootstrapMutationGuard(vault))
+                return;
+
+            try
+            {
             if (!OpenOrAcquireBuffer(
                     vault,
                     BufferID.Shinobu143TetherBootstrapState,
@@ -1420,6 +1441,25 @@ namespace Hecton8.Physics
                 GlobalQualityWeight = globalQualityWeight
             };
             job.Execute();
+            }
+            finally
+            {
+                vault.ReleaseMutationGuard(BootstrapMutationGuardMask);
+            }
+        }
+
+        private static bool TryAcquireBootstrapMutationGuard(IDataVault vault)
+        {
+            return vault != null &&
+                   BootstrapMutationGuardMask != 0UL &&
+                   !vault.IsCompactionFenceActive &&
+                   vault.TryAcquireMutationGuard(BootstrapMutationGuardMask);
+        }
+
+        private static ulong VaultMutationGuardBit(BufferID bufferId)
+        {
+            int bitIndex = unchecked((int)((uint)(int)bufferId & 63u));
+            return 1UL << bitIndex;
         }
     }
 }

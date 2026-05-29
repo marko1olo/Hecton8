@@ -73,6 +73,35 @@ namespace Hecton8.Physics
 
     public static unsafe class CablePhysicsSolver132
     {
+        private const int ScheduledLockNodes = 1 << 0;
+        private const int ScheduledLockConstraints = 1 << 1;
+        private const int ScheduledLockEndpoints = 1 << 2;
+        private const int ScheduledLockVertices = 1 << 3;
+        private const int ScheduledLockSegmentTensions = 1 << 4;
+        private const int ScheduledLockPhysicsEvents = 1 << 5;
+        private const int ScheduledLockTelemetryRing = 1 << 6;
+        private const int ScheduledLockTelemetryHead = 1 << 7;
+        private const int ScheduledLockPinnedAups = 1 << 8;
+        private const int ScheduledLockPinnedMask = 1 << 9;
+        private const int ScheduledLockTuning = 1 << 10;
+
+        private static int _scheduledMockBufferLocks;
+
+        private static readonly ulong BootstrapMutationGuardMask =
+            VaultMutationGuardBit(CablePhysics132BufferIds.BootstrapState) |
+            VaultMutationGuardBit(CablePhysics132BufferIds.CableNodes) |
+            VaultMutationGuardBit(CablePhysics132BufferIds.CableConstraints) |
+            VaultMutationGuardBit(CablePhysics132BufferIds.Endpoints) |
+            VaultMutationGuardBit(CablePhysics132BufferIds.SplineVertices) |
+            VaultMutationGuardBit(CablePhysics132BufferIds.SegmentTensions) |
+            VaultMutationGuardBit(CablePhysics132BufferIds.PhysicsEvents) |
+            VaultMutationGuardBit(CablePhysics132BufferIds.TelemetryRing) |
+            VaultMutationGuardBit(CablePhysics132BufferIds.TelemetryHead) |
+            VaultMutationGuardBit(CablePhysics132BufferIds.PinnedAups) |
+            VaultMutationGuardBit(CablePhysics132BufferIds.PinnedMask) |
+            VaultMutationGuardBit(CablePhysics132BufferIds.Tuning) |
+            VaultMutationGuardBit(CablePhysics132BufferIds.CableMaterials);
+
         public static bool ValidateLayout()
         {
             return VerletCableLayout.ValidateTetherAupLayouts() &&
@@ -106,6 +135,11 @@ namespace Hecton8.Physics
             if (vault == null)
                 return;
 
+            if (!TryAcquireCableMutationGuard(vault, BootstrapMutationGuardMask))
+                return;
+
+            try
+            {
             if (!TryOpenOrAcquireVaultView(
                     vault,
                     CablePhysics132BufferIds.BootstrapState,
@@ -220,6 +254,11 @@ namespace Hecton8.Physics
                 GlobalQualityWeight = globalQualityWeight
             }.Schedule(zeroHandle);
             DispatcherJobFence.TryComplete(ref mockHandle, forceComplete: true);
+            }
+            finally
+            {
+                vault.ReleaseMutationGuard(BootstrapMutationGuardMask);
+            }
         }
 
         public static bool TryHasMockBuffers(IDataVault vault)
@@ -291,46 +330,81 @@ namespace Hecton8.Physics
             out JobHandle handle)
         {
             handle = dependency;
-            if (!TryResolveMockBuffers(
-                    vault,
-                    out NativeArray<CableNodeDTO> nodes,
-                    out NativeArray<TetherConstraintDTO> constraints,
-                    out NativeArray<TetherEndpointAupDTO> endpoints,
-                    out NativeArray<TetherSplineVertexDTO> vertices,
-                    out NativeArray<float> segmentTensions,
-                    out NativeArray<PhysicsEventPayload> physicsEvents,
-                    out NativeArray<TetherTelemetryEntry> telemetryRing,
-                    out NativeArray<int> telemetryHead,
-                    out NativeArray<double3> pinnedAups,
-                    out NativeArray<byte> pinnedMask,
-                    out NativeArray<VerletCableTuningDTO> tuning))
-            {
+            if (!TryLockMockScheduleBuffers(vault))
                 return false;
+
+            bool scheduled = false;
+            try
+            {
+                if (!TryResolveMockBuffers(
+                        vault,
+                        out NativeArray<CableNodeDTO> nodes,
+                        out NativeArray<TetherConstraintDTO> constraints,
+                        out NativeArray<TetherEndpointAupDTO> endpoints,
+                        out NativeArray<TetherSplineVertexDTO> vertices,
+                        out NativeArray<float> segmentTensions,
+                        out NativeArray<PhysicsEventPayload> physicsEvents,
+                        out NativeArray<TetherTelemetryEntry> telemetryRing,
+                        out NativeArray<int> telemetryHead,
+                        out NativeArray<double3> pinnedAups,
+                        out NativeArray<byte> pinnedMask,
+                        out NativeArray<VerletCableTuningDTO> tuning))
+                {
+                    return false;
+                }
+
+                handle = ScheduleMock(
+                    nodes,
+                    constraints,
+                    endpoints,
+                    vertices,
+                    segmentTensions,
+                    physicsEvents,
+                    telemetryRing,
+                    telemetryHead,
+                    pinnedAups,
+                    pinnedMask,
+                    tuning,
+                    AcquirePhysicsEventWriter(),
+                    AcquirePhysicsEventWriterBudget(),
+                    frameIndex,
+                    fixedDeltaTime,
+                    gravityAcceleration,
+                    externalAbyssalFlow,
+                    cameraAup,
+                    globalQualityWeight,
+                    cpuMicroseconds,
+                    dependency);
+                scheduled = true;
+                return true;
+            }
+            finally
+            {
+                if (!scheduled)
+                    ReleaseMockScheduleBufferPins(vault);
+            }
+        }
+
+        public static void ReleaseMockScheduleBufferPins(IDataVault vault)
+        {
+            if (vault == null || _scheduledMockBufferLocks == 0)
+            {
+                _scheduledMockBufferLocks = 0;
+                return;
             }
 
-            handle = ScheduleMock(
-                nodes,
-                constraints,
-                endpoints,
-                vertices,
-                segmentTensions,
-                physicsEvents,
-                telemetryRing,
-                telemetryHead,
-                pinnedAups,
-                pinnedMask,
-                tuning,
-                AcquirePhysicsEventWriter(),
-                AcquirePhysicsEventWriterBudget(),
-                frameIndex,
-                fixedDeltaTime,
-                gravityAcceleration,
-                externalAbyssalFlow,
-                cameraAup,
-                globalQualityWeight,
-                cpuMicroseconds,
-                dependency);
-            return true;
+            UnlockMockScheduleBuffer(vault, CablePhysics132BufferIds.CableNodes, ScheduledLockNodes);
+            UnlockMockScheduleBuffer(vault, CablePhysics132BufferIds.CableConstraints, ScheduledLockConstraints);
+            UnlockMockScheduleBuffer(vault, CablePhysics132BufferIds.Endpoints, ScheduledLockEndpoints);
+            UnlockMockScheduleBuffer(vault, CablePhysics132BufferIds.SplineVertices, ScheduledLockVertices);
+            UnlockMockScheduleBuffer(vault, CablePhysics132BufferIds.SegmentTensions, ScheduledLockSegmentTensions);
+            UnlockMockScheduleBuffer(vault, CablePhysics132BufferIds.PhysicsEvents, ScheduledLockPhysicsEvents);
+            UnlockMockScheduleBuffer(vault, CablePhysics132BufferIds.TelemetryRing, ScheduledLockTelemetryRing);
+            UnlockMockScheduleBuffer(vault, CablePhysics132BufferIds.TelemetryHead, ScheduledLockTelemetryHead);
+            UnlockMockScheduleBuffer(vault, CablePhysics132BufferIds.PinnedAups, ScheduledLockPinnedAups);
+            UnlockMockScheduleBuffer(vault, CablePhysics132BufferIds.PinnedMask, ScheduledLockPinnedMask);
+            UnlockMockScheduleBuffer(vault, CablePhysics132BufferIds.Tuning, ScheduledLockTuning);
+            _scheduledMockBufferLocks = 0;
         }
 
         public static JobHandle ScheduleMock(
@@ -648,6 +722,56 @@ namespace Hecton8.Physics
             return vault.TryResolveHandle(in acquired, out buffer) &&
                    buffer.IsCreated &&
                    buffer.Length >= required;
+        }
+
+        private static bool TryAcquireCableMutationGuard(IDataVault vault, ulong mask)
+        {
+            return vault != null &&
+                   mask != 0UL &&
+                   !vault.IsCompactionFenceActive &&
+                   vault.TryAcquireMutationGuard(mask);
+        }
+
+        private static bool TryLockMockScheduleBuffers(IDataVault vault)
+        {
+            if (vault == null || _scheduledMockBufferLocks != 0)
+                return false;
+
+            return TryLockMockScheduleBuffer(vault, CablePhysics132BufferIds.CableNodes, ScheduledLockNodes) &&
+                   TryLockMockScheduleBuffer(vault, CablePhysics132BufferIds.CableConstraints, ScheduledLockConstraints) &&
+                   TryLockMockScheduleBuffer(vault, CablePhysics132BufferIds.Endpoints, ScheduledLockEndpoints) &&
+                   TryLockMockScheduleBuffer(vault, CablePhysics132BufferIds.SplineVertices, ScheduledLockVertices) &&
+                   TryLockMockScheduleBuffer(vault, CablePhysics132BufferIds.SegmentTensions, ScheduledLockSegmentTensions) &&
+                   TryLockMockScheduleBuffer(vault, CablePhysics132BufferIds.PhysicsEvents, ScheduledLockPhysicsEvents) &&
+                   TryLockMockScheduleBuffer(vault, CablePhysics132BufferIds.TelemetryRing, ScheduledLockTelemetryRing) &&
+                   TryLockMockScheduleBuffer(vault, CablePhysics132BufferIds.TelemetryHead, ScheduledLockTelemetryHead) &&
+                   TryLockMockScheduleBuffer(vault, CablePhysics132BufferIds.PinnedAups, ScheduledLockPinnedAups) &&
+                   TryLockMockScheduleBuffer(vault, CablePhysics132BufferIds.PinnedMask, ScheduledLockPinnedMask) &&
+                   TryLockMockScheduleBuffer(vault, CablePhysics132BufferIds.Tuning, ScheduledLockTuning);
+        }
+
+        private static bool TryLockMockScheduleBuffer(IDataVault vault, BufferID bufferId, int bit)
+        {
+            if (vault != null && vault.TryLockBuffer(bufferId, SystemID.Physics))
+            {
+                _scheduledMockBufferLocks |= bit;
+                return true;
+            }
+
+            ReleaseMockScheduleBufferPins(vault);
+            return false;
+        }
+
+        private static void UnlockMockScheduleBuffer(IDataVault vault, BufferID bufferId, int bit)
+        {
+            if ((_scheduledMockBufferLocks & bit) != 0)
+                vault.TryUnlockBuffer(bufferId, SystemID.Physics);
+        }
+
+        private static ulong VaultMutationGuardBit(BufferID bufferId)
+        {
+            int bitIndex = unchecked((int)((uint)(int)bufferId & 63u));
+            return 1UL << bitIndex;
         }
 
         private static bool TryOpenExistingVaultView<T>(

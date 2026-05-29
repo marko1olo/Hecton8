@@ -132,8 +132,7 @@ namespace Hecton8.UI
         /// <inheritdoc />
         private void AdvanceCompassProjection(float dt)
         {
-            ResolveOwners(allowHierarchySearch: false);
-            if (!EnsureUiBuilt(allowCreate: false))
+            if (!_uiBuilt || _root == null || _targetCanvas == null)
             {
                 if (_projectionScheduled)
                     return;

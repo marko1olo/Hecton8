@@ -396,25 +396,37 @@ namespace Hecton8.Tests.Editor
         }
 
         [Test]
-        public void LocRegistryOverrideCsv_ReleasesScratchLockBeforeMutationGuard()
+        public void LocRegistryOverrideCsv_UsesH8ScratchWithoutDataVaultScratchLock()
         {
             string source = File.ReadAllText(Path.Combine(Application.dataPath, "_Project/Scripts/LocRegistry.cs"));
 
-            int methodStart = source.IndexOf("public static unsafe bool TryApplyLocOverridesCsv", StringComparison.Ordinal);
-            Assert.GreaterOrEqual(methodStart, 0);
-            int methodEnd = source.IndexOf("/// <summary>", methodStart + 1, StringComparison.Ordinal);
-            Assert.Greater(methodEnd, methodStart);
-            string methodBody = source.Substring(methodStart, methodEnd - methodStart);
+            string apply = ExtractMethodBody(source, "public static unsafe bool TryApplyLocOverridesCsv(");
+            string ensure = ExtractMethodBody(source, "private static void EnsureOverrideCsvScratch()");
+            string dispose = ExtractMethodBody(source, "private static void DisposeOverrideCsvScratch()");
 
-            int scratchLockIndex = methodBody.IndexOf("scratchLocked = _babelVault.TryLockBuffer", StringComparison.Ordinal);
-            int scratchUnlockIndex = methodBody.IndexOf("_babelVault.TryUnlockBuffer(BabelOverrideCsvScratchBufferId", StringComparison.Ordinal);
-            int mutationGuardIndex = methodBody.IndexOf("mutationGuarded = _babelVault.TryAcquireMutationGuard", StringComparison.Ordinal);
-            int mutationReleaseIndex = methodBody.IndexOf("_babelVault.ReleaseMutationGuard(BabelOverrideMutationGuardMask)", StringComparison.Ordinal);
+            StringAssert.DoesNotContain("TryLockBuffer", apply);
+            StringAssert.DoesNotContain("TryUnlockBuffer", apply);
+            StringAssert.Contains("mutationGuarded = _babelVault.TryAcquireMutationGuard", apply);
+            StringAssert.Contains("_babelVault.ReleaseMutationGuard(BabelOverrideMutationGuardMask)", apply);
+            StringAssert.Contains("H8Memory.Allocate<byte>", ensure);
+            StringAssert.Contains("H8Memory.Release(ref _overrideCsvScratch", dispose);
+        }
 
-            Assert.GreaterOrEqual(scratchLockIndex, 0);
-            Assert.Greater(scratchUnlockIndex, scratchLockIndex);
-            Assert.Greater(mutationGuardIndex, scratchUnlockIndex);
-            Assert.Greater(mutationReleaseIndex, mutationGuardIndex);
+        [Test]
+        public void LocRegistryBabelStage_UsesH8ScratchAcrossAsyncBoundary()
+        {
+            string source = File.ReadAllText(Path.Combine(Application.dataPath, "_Project/Scripts/LocRegistry.cs"));
+            string begin = ExtractMethodBody(source, "public static unsafe bool TryBeginBabelDictionaryStage(");
+            string commit = ExtractMethodBody(source, "public static unsafe bool TryCommitStagedBabelDictionary(");
+            string abort = ExtractMethodBody(source, "private static void AbortBabelDictionaryStage()");
+
+            StringAssert.DoesNotContain("TryLockBuffer", begin);
+            StringAssert.DoesNotContain("TryUnlockBuffer", begin);
+            StringAssert.Contains("H8Memory.Allocate<byte>", begin);
+            StringAssert.Contains("H8Memory.Release(ref _stagedLocaleBytes", begin);
+            StringAssert.DoesNotContain("TryResolveBabelBuffer", commit);
+            StringAssert.Contains("NativeArray<byte> staged = _stagedLocaleBytes;", commit);
+            StringAssert.Contains("H8Memory.Release(ref _stagedLocaleBytes", abort);
         }
 
         [Test]
@@ -430,6 +442,687 @@ namespace Hecton8.Tests.Editor
             StringAssert.Contains("public static bool ConsumeStorageCapacityExceeded()", source);
             StringAssert.Contains("DrainStorageCapacityExceededBarks();", source);
             StringAssert.Contains("private void ShowStorageCapacityExceededBark()", source);
+        }
+
+        [Test]
+        public void RuntimeUiAudioBabelDomain_HasNoForbiddenManagedTextBridgePatterns()
+        {
+            string scriptsRoot = Path.Combine(Application.dataPath, "_Project/Scripts");
+            AssertRuntimeSourceTreeHasNoForbiddenTextBridges(Path.Combine(scriptsRoot, "UI"));
+            AssertRuntimeSourceTreeHasNoForbiddenTextBridges(Path.Combine(scriptsRoot, "Audio"));
+            AssertRuntimeSourceFileHasNoForbiddenTextBridges(Path.Combine(scriptsRoot, "LocRegistry.cs"));
+            AssertRuntimeSourceFileHasNoForbiddenTextBridges(Path.Combine(scriptsRoot, "SpatialAudioManager.cs"));
+        }
+
+        [Test]
+        public void RuntimeUiAudioBabelHotMethods_DoNotResolveColdDependencies()
+        {
+            string scriptsRoot = Path.Combine(Application.dataPath, "_Project/Scripts");
+            AssertRuntimeHotMethodsHaveNoColdLookups(Path.Combine(scriptsRoot, "UI"));
+            AssertRuntimeHotMethodsHaveNoColdLookups(Path.Combine(scriptsRoot, "Audio"));
+            AssertRuntimeHotMethodFileHasNoColdLookups(Path.Combine(scriptsRoot, "LocRegistry.cs"));
+            AssertRuntimeHotMethodFileHasNoColdLookups(Path.Combine(scriptsRoot, "SpatialAudioManager.cs"));
+        }
+
+        [Test]
+        public void SubtitleManager_UsesHashSpanEntrypointsAndColdCachedLoreDatabase()
+        {
+            string source = File.ReadAllText(Path.Combine(Application.dataPath, "_Project/Scripts/UI/SubtitleManager.cs"));
+            string cache = ExtractMethodBody(source, "private void CacheRegistryServicesCold()");
+            string serviceReplaced = ExtractMethodBody(source, "public void OnGlobalRegistryServiceReplaced(");
+            string audioLogPrepare = ExtractMethodBody(source, "private bool TryPrepareAudioLogBuffers(");
+
+            StringAssert.DoesNotContain("DisplaySubtitle(string", source);
+            StringAssert.DoesNotContain("private void Enqueue(string", source);
+            StringAssert.Contains("public bool DisplaySubtitle(ReadOnlySpan<char> text, float duration)", source);
+            StringAssert.Contains("public bool DisplaySubtitle(uint textHash, float duration)", source);
+            StringAssert.Contains("private ILoreDatabaseReadModel _cachedLoreDatabase;", source);
+            StringAssert.Contains("_cachedLoreDatabase = Hecton8.Core.GlobalRegistry.LoreDatabaseReadModel;", cache);
+            StringAssert.Contains("serviceSlot == GlobalRegistryServiceSlot.LoreDatabaseRuntime", serviceReplaced);
+            StringAssert.Contains("_cachedLoreDatabase = currentService as ILoreDatabaseReadModel;", serviceReplaced);
+            StringAssert.Contains("ILoreDatabaseReadModel database = _cachedLoreDatabase;", audioLogPrepare);
+            StringAssert.DoesNotContain("Hecton8.Core.GlobalRegistry.LoreDatabaseReadModel", audioLogPrepare);
+        }
+
+        [Test]
+        public void HudNotification_UsesSpanAndFixedBufferEntrypointsOnly()
+        {
+            string source = File.ReadAllText(Path.Combine(Application.dataPath, "_Project/Scripts/HUDNotification.cs"));
+            string toolHit = File.ReadAllText(Path.Combine(Application.dataPath, "_Project/Scripts/ToolHitUtility.cs"));
+            string moddingApi = File.ReadAllText(Path.Combine(Application.dataPath, "_Project/Scripts/ModdingAPI/HectonAPI.cs"));
+            string acquireQueue = ExtractMethodBody(source, "private bool TryAcquireQueueWrite(");
+
+            StringAssert.DoesNotContain("ShowWarning(string", source);
+            StringAssert.DoesNotContain("ShowCritical(string", source);
+            StringAssert.DoesNotContain("ShowInfo(string", source);
+            StringAssert.DoesNotContain("private void Enqueue(string", source);
+            StringAssert.Contains("public void ShowWarning(ReadOnlySpan<char> message)", source);
+            StringAssert.Contains("public void ShowCritical(ReadOnlySpan<char> message)", source);
+            StringAssert.Contains("public void ShowInfo(ReadOnlySpan<char> message)", source);
+            StringAssert.Contains("public void ShowWarning(in FixedCharBuffer messageBuffer)", source);
+            StringAssert.Contains("public void ShowCritical(in FixedCharBuffer messageBuffer)", source);
+            StringAssert.Contains("public void ShowInfo(in FixedCharBuffer messageBuffer)", source);
+            StringAssert.Contains("s_notification.ShowInfo(message.AsSpan());", toolHit);
+            StringAssert.Contains("s_notification.ShowWarning(message.AsSpan());", toolHit);
+            StringAssert.Contains("notification.ShowInfo(messageSpan);", moddingApi);
+            StringAssert.Contains("notification.ShowWarning(messageSpan);", moddingApi);
+            StringAssert.Contains("notification.ShowCritical(messageSpan);", moddingApi);
+            Assert.AreEqual(1, CountToken(acquireQueue, "TryAcquireWriteLock("));
+            Assert.AreEqual(1, CountToken(acquireQueue, "ReleaseWriteLock("));
+            Assert.AreEqual(1, CountToken(acquireQueue, "finally"));
+            StringAssert.Contains("bool releaseOnExit = true;", acquireQueue);
+            StringAssert.Contains("releaseOnExit = false;", acquireQueue);
+        }
+
+        [Test]
+        public void VehicleSubOsButtonKinematics_HoldsOnlyOneDataVaultWriteLockPerHelper()
+        {
+            string source = File.ReadAllText(Path.Combine(Application.dataPath, "_Project/Scripts/UI/VehicleSubOsCockpitRuntime.cs"));
+
+            StringAssert.DoesNotContain("ButtonKinematicJob", source);
+            StringAssert.DoesNotContain("IJobParallelFor", source);
+            StringAssert.DoesNotContain("_buttonJob", source);
+            StringAssert.DoesNotContain("TryAcquireButtonJobBuffers", source);
+            StringAssert.DoesNotContain("ReleaseButtonJobBufferLocks", source);
+
+            string update = ExtractMethodBody(source, "private void UpdateButtonKinematics(");
+            StringAssert.DoesNotContain("TryAcquireWriteLock", update);
+            StringAssert.DoesNotContain("ReleaseWriteLock", update);
+            StringAssert.DoesNotContain(".Schedule(", update);
+
+            string press = ExtractMethodBody(source, "private void PressCockpitButton(");
+            StringAssert.DoesNotContain("TryAcquireWriteLock", press);
+            StringAssert.DoesNotContain("ReleaseWriteLock", press);
+
+            string byteWriter = ExtractMethodBody(source, "private bool TryWriteButtonByteValue(");
+            string bufferWriter = ExtractMethodBody(source, "private bool TryWriteCockpitVaultBuffer<T>(");
+            string telemetryAcquire = ExtractMethodBody(source, "private bool TryAcquireTelemetryWriteBuffer(");
+            Assert.AreEqual(1, CountToken(byteWriter, "TryAcquireWriteLock("));
+            Assert.AreEqual(1, CountToken(byteWriter, "ReleaseWriteLock("));
+            Assert.AreEqual(1, CountToken(bufferWriter, "TryAcquireWriteLock("));
+            Assert.AreEqual(1, CountToken(bufferWriter, "ReleaseWriteLock("));
+            Assert.AreEqual(1, CountToken(telemetryAcquire, "TryAcquireWriteLock("));
+            Assert.AreEqual(1, CountToken(telemetryAcquire, "ReleaseWriteLock("));
+            StringAssert.Contains("finally", byteWriter);
+            StringAssert.Contains("finally", bufferWriter);
+            StringAssert.Contains("finally", telemetryAcquire);
+        }
+
+        [Test]
+        public void PdaDecryptionSpectrogramNativeInit_FlattensStageAndTelemetryLocks()
+        {
+            string source = File.ReadAllText(Path.Combine(Application.dataPath, "_Project/Scripts/UI/PDADecryptionSpectrogramPanel.cs"));
+            string init = ExtractMethodBody(source, "private void EnsureNativeResources()");
+
+            Assert.AreEqual(1, CountToken(init, "TryAcquireStageTargetsWrite("));
+            Assert.AreEqual(1, CountToken(init, "TryAcquireTelemetryRingWrite("));
+            Assert.AreEqual(2, CountToken(init, "finally"));
+            StringAssert.DoesNotContain("telemetryLocked", init);
+            StringAssert.DoesNotContain("ClearNativeState", source);
+            StringAssert.Contains("private static void ClearStageTargets(", source);
+            StringAssert.Contains("private static void ClearTelemetryRing(", source);
+
+            int stageAcquire = init.IndexOf("TryAcquireStageTargetsWrite(", StringComparison.Ordinal);
+            int stageRelease = init.IndexOf("vault.ReleaseWriteLock(in _stageTargetsHandle", StringComparison.Ordinal);
+            int telemetryAcquire = init.IndexOf("TryAcquireTelemetryRingWrite(", StringComparison.Ordinal);
+            int telemetryRelease = init.IndexOf("vault.ReleaseWriteLock(in _telemetryRingHandle", StringComparison.Ordinal);
+            Assert.GreaterOrEqual(stageAcquire, 0);
+            Assert.Greater(stageRelease, stageAcquire);
+            Assert.Greater(telemetryAcquire, stageRelease);
+            Assert.Greater(telemetryRelease, telemetryAcquire);
+        }
+
+        [Test]
+        public void WristHudFrameBuild_UsesScratchBuffersAndSingleLockPublishers()
+        {
+            string source = File.ReadAllText(Path.Combine(Application.dataPath, "_Project/Scripts/UI/WristHologramHudRuntime.cs"));
+            string build = ExtractMethodBody(source, "private void BuildTextQuadsOwnerPhase(");
+
+            StringAssert.DoesNotContain("TryAcquireHudFrameBuffers", source);
+            StringAssert.DoesNotContain("TryAcquireAcousticWriteBuffers", source);
+            StringAssert.DoesNotContain("WristHudWriteMask", source);
+            StringAssert.DoesNotContain("ReleaseWristHudAcquiredBuffers", source);
+            StringAssert.DoesNotContain("ReleaseWristHudAcquiredBuffers(acquiredMask)", build);
+            StringAssert.DoesNotContain("TryAcquireWristHudVaultBuffer", build);
+            StringAssert.Contains("PublishWristHudScratch(state.ActiveQuadCount);", build);
+            string publish = ExtractMethodBody(source, "private void PublishWristHudScratch(");
+            StringAssert.Contains("if (!FlushWristHudQuadScratch(quadCount))", publish);
+            StringAssert.Contains("safeState.ActiveQuadCount = 0;", publish);
+            StringAssert.Contains("safeState.Flags |= StateFlagGpuUploadFault;", publish);
+            StringAssert.Contains("public Span<WristHudStateDTO> States;", source);
+            StringAssert.Contains("public Span<WristHudQuadTransformDTO> Quads;", source);
+            StringAssert.Contains("public Span<WristHudTelemetryEntry> Telemetry;", source);
+            StringAssert.Contains("public Span<uint> Counters;", source);
+            StringAssert.Contains("public ReadOnlySpan<AcousticEchoTap> AcousticTaps;", source);
+
+            AssertWristHudSingleLockPublisher(source, "private bool FlushWristHudStateScratch(");
+            AssertWristHudSingleLockPublisher(source, "private bool FlushWristHudQuadScratch(");
+            AssertWristHudSingleLockPublisher(source, "private bool FlushWristHudTelemetryScratch(");
+            AssertWristHudSingleLockPublisher(source, "private bool FlushWristHudCounterScratch(");
+            AssertWristHudSingleLockPublisher(source, "private bool FlushAcousticTapScratchToVault(");
+        }
+
+        [Test]
+        public void UiDataVaultAcquireHelpers_ReleaseFailedValidationInsideFinally()
+        {
+            AssertWriteAcquireHelperTransfersLockOnSuccessOnly(
+                File.ReadAllText(Path.Combine(Application.dataPath, "_Project/Scripts/UI/DiegeticGlitchSurgeonRuntime.cs")),
+                "private static bool TryAcquireGlitchVaultWriteBuffer<T>(");
+            AssertWriteAcquireHelperTransfersLockOnSuccessOnly(
+                File.ReadAllText(Path.Combine(Application.dataPath, "_Project/Scripts/UI/PDADecryptionSpectrogramPanel.cs")),
+                "private static bool TryAcquireExistingVaultWriteBuffer<T>(");
+            AssertWriteAcquireHelperTransfersLockOnSuccessOnly(
+                File.ReadAllText(Path.Combine(Application.dataPath, "_Project/Scripts/UI/WristHologramHudRuntime.cs")),
+                "private bool TryAcquireWristHudVaultBuffer<T>(");
+            AssertWriteAcquireHelperTransfersLockOnSuccessOnly(
+                File.ReadAllText(Path.Combine(Application.dataPath, "_Project/Scripts/UI/VR/OpenXRManualOverrideLever.cs")),
+                "private bool TryAcquireBlackBoxWriteBuffer(");
+        }
+
+        [Test]
+        public void DiegeticGlitchColdWriters_UseSingleWriteLocksNotMutableResolveAliases()
+        {
+            string source = File.ReadAllText(Path.Combine(Application.dataPath, "_Project/Scripts/UI/DiegeticGlitchSurgeonRuntime.cs"));
+            string initialize = ExtractMethodBody(source, "private void InitializeVaultDefaults()");
+            string seedText = ExtractMethodBody(source, "private void SeedMockText()");
+            string csvOverride = ExtractMethodBody(source, "private bool TryApplyCsvOverride(");
+            string reloadTable = ExtractMethodBody(source, "public void ReloadGlitchTableForEditor()");
+
+            StringAssert.DoesNotContain("TryResolveGlitchVaultBuffer", initialize);
+            StringAssert.Contains("TrySeedGlitchStateDefaults()", initialize);
+            StringAssert.Contains("TrySeedGlitchTuningDefaults()", initialize);
+            StringAssert.Contains("TrySeedGlitchTableDefaults()", initialize);
+            StringAssert.DoesNotContain("TryResolveGlitchVaultBuffer", seedText);
+            StringAssert.DoesNotContain("TryResolveGlitchVaultBuffer", csvOverride);
+            StringAssert.DoesNotContain("TryResolveGlitchVaultBuffer", reloadTable);
+            StringAssert.DoesNotContain("TryLockBuffer", csvOverride);
+            StringAssert.DoesNotContain("TryLockBuffer", reloadTable);
+            StringAssert.Contains("stackalloc byte[CsvScratchCapacity]", csvOverride);
+
+            AssertGlitchSingleLockWriter(source, "private bool TrySeedGlitchStateDefaults()");
+            AssertGlitchSingleLockWriter(source, "private bool TrySeedGlitchTuningDefaults()");
+            AssertGlitchSingleLockWriter(source, "private bool TrySeedGlitchTableDefaults()");
+            AssertGlitchSingleLockWriter(source, "private bool TryWriteMockTextBuffer(");
+            AssertGlitchSingleLockWriter(source, "private bool TryApplyCsvOverride(");
+            AssertGlitchSingleLockWriter(source, "public void ReloadGlitchTableForEditor()");
+        }
+
+        [Test]
+        public void DiegeticGlitchScheduledJobs_UseScratchAndSingleLockPublishers()
+        {
+            string source = File.ReadAllText(Path.Combine(Application.dataPath, "_Project/Scripts/UI/DiegeticGlitchSurgeonRuntime.cs"));
+            string schedule = ExtractMethodBody(source, "private void ScheduleGlitchFrameJobs(");
+            string drain = ExtractMethodBody(source, "private bool TryDrainActiveJobIfReady()");
+            string resolve = ExtractMethodBody(source, "private bool TryResolveFramePointers(");
+            string publish = ExtractMethodBody(source, "private bool PublishFrameScratchToVault()");
+
+            StringAssert.DoesNotContain("TryLockBuffer", source);
+            StringAssert.DoesNotContain("TryUnlockBuffer", source);
+            StringAssert.DoesNotContain("TryLockScheduledBuffers", source);
+            StringAssert.DoesNotContain("UnlockScheduledBuffers", source);
+            StringAssert.DoesNotContain("private NativeArray<", source);
+            StringAssert.DoesNotContain("H8Memory.Allocate<", source);
+            StringAssert.Contains("TryLoadFrameScratchFromVault()", schedule);
+            StringAssert.Contains("PublishFrameScratchToVault()", drain);
+            StringAssert.Contains("state = _stateScratch;", resolve);
+            StringAssert.Contains("table = _glitchTableScratch;", resolve);
+            StringAssert.DoesNotContain("TryResolveGlitchVaultBuffer", resolve);
+            StringAssert.Contains("H8Memory.AllocateRaw(", source);
+            StringAssert.Contains("H8Memory.FreeRaw(buffer, Allocator.Persistent, SystemID.UI);", source);
+            StringAssert.Contains("PublishGlitchScratchBuffer(in _stateHandle", publish);
+            StringAssert.Contains("PublishGlitchScratchBuffer(in _telemetryCursorHandle", publish);
+            AssertGlitchSingleLockWriter(source, "private bool PublishGlitchScratchBuffer<T>(");
+        }
+
+        [Test]
+        public void PdaProjectionProjector_UsesScratchBuffersAndSingleLockVaultPublisher()
+        {
+            string source = File.ReadAllText(Path.Combine(Application.dataPath, "_Project/Scripts/UI/WristHologramHudRuntime_PdaScreenProjector.cs"));
+
+            StringAssert.DoesNotContain("TryAcquirePdaProjectionFrameBuffers", source);
+            StringAssert.DoesNotContain("TryAcquirePdaProjectionWriteBuffers", source);
+            StringAssert.DoesNotContain("ReleasePdaProjectionAcquiredBuffers", source);
+            StringAssert.DoesNotContain("PdaProjectionWriteMask", source);
+
+            string lateFrame = ExtractMethodBody(source, "private void PdaProjectorLateFrameTick()");
+            StringAssert.DoesNotContain("TryAcquireWriteLock", lateFrame);
+            StringAssert.DoesNotContain("ReleaseWriteLock", lateFrame);
+            StringAssert.DoesNotContain("TryReadOnlyPdaProjectionVaultBuffer", lateFrame);
+            StringAssert.Contains("_pdaProjectionStateScratch.AsSpan()", lateFrame);
+            StringAssert.Contains("PublishPdaProjectionFrameScratch(in stateSnapshot)", lateFrame);
+
+            string nativeInit = ExtractMethodBody(source, "private bool EnsurePdaProjectionNativeBuffers()");
+            StringAssert.DoesNotContain("TryAcquireWriteLock", nativeInit);
+            StringAssert.DoesNotContain("ReleaseWriteLock", nativeInit);
+            StringAssert.Contains("FlushPdaProjectionTuningScratch()", nativeInit);
+            StringAssert.Contains("FlushPdaProjectionProfilesScratch()", nativeInit);
+
+            string publish = ExtractMethodBody(source, "private bool PublishPdaProjectionFrameScratch(");
+            StringAssert.Contains("safeState.PdaFlags |= PdaProjectionFlagGpuUploadFault;", publish);
+            StringAssert.Contains("_ = FlushPdaProjectionStateScratch();", publish);
+
+            string writer = ExtractMethodBody(source, "private bool TryWritePdaProjectionVaultBuffer<T>(");
+            Assert.AreEqual(1, CountToken(writer, "TryAcquireWriteLock("));
+            Assert.AreEqual(1, CountToken(writer, "ReleaseWriteLock("));
+            Assert.AreEqual(1, CountToken(writer, "finally"));
+        }
+
+        [Test]
+        public void BeaconHudDistanceUnitCache_UsesSpanLabelRouteNotManagedStringResolver()
+        {
+            string source = File.ReadAllText(Path.Combine(Application.dataPath, "_Project/Scripts/UI/BeaconHUDElement.cs"));
+            string formatterSource = File.ReadAllText(Path.Combine(Application.dataPath, "_Project/Scripts/LocalizedMeasurementFormatter.cs"));
+            string handler = ExtractMethodBody(source, "private void HandleLanguageChanged(");
+            string registryRebind = ExtractMethodBody(source, "public void OnGlobalRegistryServiceReplaced(");
+            string lateFrame = ExtractMethodBody(source, "public void LateFrameTick()");
+            string applyPending = ExtractMethodBody(source, "private void ApplyPendingLocalizationRefresh()");
+            string cache = ExtractMethodBody(source, "private void RebuildLocalizationCache(");
+
+            StringAssert.Contains("System.ReadOnlySpan<char> unitLabel = LocalizedMeasurementFormatter.ResolveDistanceUnitLabelSpan(_distanceLanguage, manager);", cache);
+            StringAssert.Contains("if (unitLabel.Length == 0)", cache);
+            StringAssert.DoesNotContain("string unitLabel", cache);
+            StringAssert.DoesNotContain("string.IsNullOrEmpty(unitLabel)", cache);
+            StringAssert.DoesNotContain("ResolveDistanceUnitLabel(_distanceLanguage)", cache);
+            StringAssert.Contains("public static ReadOnlySpan<char> ResolveDistanceUnitLabelSpan", formatterSource);
+            StringAssert.Contains("public static ReadOnlySpan<char> ResolveTemperatureUnitLabelSpan", formatterSource);
+            StringAssert.DoesNotContain("public static string ResolveDistanceUnitLabel", formatterSource);
+            StringAssert.DoesNotContain("public static string ResolveTemperatureUnitLabel", formatterSource);
+            StringAssert.DoesNotContain("GlobalRegistry.LocalizationText", formatterSource);
+
+            StringAssert.Contains("QueueLocalizationPresentationRefresh(language);", handler);
+            StringAssert.DoesNotContain("RebuildLocalizationCache", handler);
+            StringAssert.DoesNotContain("InvalidateDisplayCaches", handler);
+            StringAssert.Contains("QueueLocalizationPresentationRefresh(ResolveCachedDistanceLanguage());", registryRebind);
+            StringAssert.DoesNotContain("RebuildLocalizationCache();", registryRebind);
+            StringAssert.DoesNotContain("InvalidateDisplayCaches();", registryRebind);
+            StringAssert.Contains("ApplyPendingLocalizationRefresh();", lateFrame);
+            StringAssert.Contains("RebuildLocalizationCache(_pendingDistanceLanguage);", applyPending);
+            StringAssert.Contains("InvalidateDisplayCaches();", applyPending);
+        }
+
+        [Test]
+        public void InteractionPromptLocalizationPresentation_QueuesLateFrameRefresh()
+        {
+            string source = File.ReadAllText(Path.Combine(Application.dataPath, "_Project/Scripts/UI/InteractionUI.cs"));
+            string languageHandler = ExtractMethodBody(source, "private void HandleLanguageChanged(");
+            string inputHandler = ExtractMethodBody(source, "private void HandleInputDisplayStyleChanged(");
+            string registryRebind = ExtractMethodBody(source, "public void OnGlobalRegistryServiceReplaced(");
+            string lateFrame = ExtractMethodBody(source, "public void LateFrameTick()");
+            string queue = ExtractMethodBody(source, "private void QueuePromptPresentationRefresh(");
+            string applyPending = ExtractMethodBody(source, "private void ApplyPendingPromptPresentationRefresh()");
+
+            StringAssert.Contains("QueuePromptPresentationRefresh(resetPrompt: true);", languageHandler);
+            StringAssert.DoesNotContain("ConfigurePromptText", languageHandler);
+            StringAssert.DoesNotContain("RefreshLocalizedPromptCache", languageHandler);
+            StringAssert.Contains("QueuePromptPresentationRefresh(resetPrompt: true);", inputHandler);
+            StringAssert.DoesNotContain("RefreshLocalizedPromptCache", inputHandler);
+            StringAssert.Contains("QueuePromptPresentationRefresh(resetPrompt: true);", registryRebind);
+            StringAssert.DoesNotContain("RefreshLocalizedPromptCache();", registryRebind);
+            StringAssert.Contains("ApplyPendingPromptPresentationRefresh();", lateFrame);
+            StringAssert.Contains("_promptPresentationDirty = true;", queue);
+            StringAssert.Contains("ClearPromptBuildCache();", queue);
+            StringAssert.Contains("ConfigurePromptText();", applyPending);
+            StringAssert.Contains("RefreshLocalizedPromptCache();", applyPending);
+        }
+
+        [Test]
+        public void InteractionPromptRuntime_UsesPromptSourceSpanRouteNotStringBuilders()
+        {
+            string source = File.ReadAllText(Path.Combine(Application.dataPath, "_Project/Scripts/UI/InteractionUI.cs"));
+            string samplePromptState = ExtractMethodBody(source, "private void SamplePromptState(");
+            string tryApply = ExtractMethodBody(source, "private bool TryApplyPromptSource(");
+            string applySpan = ExtractMethodBody(source, "private void ApplyPromptSpan(");
+            string textProvider = ExtractMethodBody(source, "private bool TryUpdatePromptFromTextProvider(");
+
+            StringAssert.Contains("private enum PromptSource : byte", source);
+            StringAssert.Contains("private PromptSource _currentPromptSource;", source);
+            StringAssert.Contains("private PromptSource _cachedPromptSource;", source);
+            StringAssert.DoesNotContain("private string _currentPromptSource;", source);
+            StringAssert.DoesNotContain("private string _cachedPrompt;", source);
+            StringAssert.DoesNotContain("private string BuildPrompt(", source);
+            StringAssert.DoesNotContain("private string BuildPromptUncached(", source);
+            StringAssert.DoesNotContain("private void UpdatePrompt(string prompt)", source);
+            StringAssert.DoesNotContain("private void ApplyPromptText(string prompt)", source);
+
+            StringAssert.Contains("TryResolvePromptSource(promptCollider, in targetInfo, out PromptSource promptSource)", samplePromptState);
+            StringAssert.Contains("TryApplyPromptSource(promptSource)", samplePromptState);
+            StringAssert.DoesNotContain("string prompt =", samplePromptState);
+            StringAssert.DoesNotContain("BuildPrompt(", samplePromptState);
+            StringAssert.DoesNotContain("UpdatePrompt(", samplePromptState);
+
+            StringAssert.Contains("ReadOnlySpan<char> prompt = ResolvePromptSourceSpan(promptSource, out string eventPrompt);", tryApply);
+            StringAssert.Contains("ApplyPromptSpan(prompt);", tryApply);
+            StringAssert.Contains("OnPromptChanged?.Invoke(eventPrompt);", tryApply);
+            StringAssert.Contains("localization.TryExpandText(prompt, _promptCharBuffer, out int expandedLength)", applySpan);
+            StringAssert.Contains("prompt.Slice(0, copyLength).CopyTo(_promptCharBuffer);", applySpan);
+            StringAssert.Contains("promptText.SetCharArray(_promptCharBuffer, 0, copyLength);", applySpan);
+            StringAssert.Contains("textProvider.TryCopyInteractText(_promptCharBuffer, out int length)", textProvider);
+            StringAssert.Contains("promptText.SetCharArray(_promptCharBuffer, 0, safeLength);", textProvider);
+        }
+
+        [Test]
+        public void SuitHudLocalizationPresentation_QueuesLateFrameRefresh()
+        {
+            string source = File.ReadAllText(Path.Combine(Application.dataPath, "_Project/Scripts/UI/SuitHUDV4CanvasOverlay.cs"));
+            string languageHandler = ExtractMethodBody(source, "private void HandleLanguageChanged(");
+            string registryRebind = ExtractMethodBody(source, "public void OnGlobalRegistryServiceReplaced(");
+            string queue = ExtractMethodBody(source, "private void QueueLocalizedPresentationRefresh(");
+            string process = ExtractMethodBody(source, "private void ProcessPendingRuntimeCanvasRefresh()");
+
+            StringAssert.Contains("QueueLocalizedPresentationRefresh(forceResolve: false, refreshDepthSignal: false);", languageHandler);
+            StringAssert.DoesNotContain("RebuildLocalizationCache", languageHandler);
+            StringAssert.DoesNotContain("InvalidateVisualCaches", languageHandler);
+            StringAssert.Contains("QueueLocalizedPresentationRefresh(forceResolve: false, refreshDepthSignal: false);", registryRebind);
+            StringAssert.DoesNotContain("RebuildLocalizationCache();", registryRebind);
+            StringAssert.Contains("_localizedPresentationDirty = true;", queue);
+            StringAssert.Contains("QueueRuntimeCanvasRefresh(forceResolve, refreshDepthSignal);", queue);
+            StringAssert.Contains("TryRegisterRuntimeTick();", queue);
+            StringAssert.Contains("_localizedPresentationDirty ||", process);
+            StringAssert.Contains("RebuildLocalizationCache();", process);
+            StringAssert.Contains("InvalidateVisualCaches();", process);
+        }
+
+        [Test]
+        public void AcousticEcholocationLocalizationPresentation_QueuesLateFrameRefresh()
+        {
+            string source = File.ReadAllText(Path.Combine(Application.dataPath, "_Project/Scripts/UI/AcousticEcholocationTranslator.cs"));
+            string languageHandler = ExtractMethodBody(source, "private void HandleLanguageChanged(");
+            string registryRebind = ExtractMethodBody(source, "public void OnGlobalRegistryServiceReplaced(");
+            string lateFrame = ExtractMethodBody(source, "public void LateFrameTick()");
+            string queue = ExtractMethodBody(source, "private void QueueLocalizationPresentationRefresh()");
+            string applyPending = ExtractMethodBody(source, "private void ApplyPendingLocalizationRefresh()");
+
+            StringAssert.Contains("QueueLocalizationPresentationRefresh();", languageHandler);
+            StringAssert.DoesNotContain("RefreshLocalizedCache", languageHandler);
+            StringAssert.Contains("QueueLocalizationPresentationRefresh();", registryRebind);
+            StringAssert.DoesNotContain("RefreshLocalizedCache();", registryRebind);
+            StringAssert.Contains("ApplyPendingLocalizationRefresh();", lateFrame);
+            StringAssert.Contains("_localizedPresentationDirty = true;", queue);
+            StringAssert.Contains("RegisterToTickManager();", queue);
+            StringAssert.Contains("RefreshLocalizedCache();", applyPending);
+        }
+
+        [Test]
+        public void FontStreamingVisiblePrefetch_UsesLateFrameSlicesWithoutDataVaultOrJobLocks()
+        {
+            string source = File.ReadAllText(Path.Combine(Application.dataPath, "_Project/Scripts/UI/FontStreamingManager.cs"));
+            string schedulerSource = File.ReadAllText(Path.Combine(Application.dataPath, "_Project/Scripts/UI/LabelSwapScheduler.cs"));
+            string registrySource = File.ReadAllText(Path.Combine(Application.dataPath, "_Project/Scripts/LocRegistry.cs"));
+
+            StringAssert.DoesNotContain("TryAcquireWriteLock", source);
+            StringAssert.DoesNotContain("ReleaseWriteLock", source);
+            StringAssert.DoesNotContain("TryScheduleVisibleTextOffsetPrefetch", source);
+            StringAssert.DoesNotContain("JobHandle", source);
+            StringAssert.DoesNotContain("IDataVault", source);
+            StringAssert.DoesNotContain("VisibleHashPrefetchBufferId", source);
+            string languageChangeBody = ExtractMethodBody(source, "private void HandleLanguageChanged(");
+            StringAssert.DoesNotContain("UpdateStatusLabel", languageChangeBody);
+            StringAssert.DoesNotContain("ApplyVisibleAlpha", languageChangeBody);
+            StringAssert.Contains("LocRegistry.ResolveVisibleTextOffsetPrefetchBudget(registeredCount)", source);
+            StringAssert.Contains("LocRegistry.TryResolveVisibleTextOffsetSlice(keyHash, out prefetchedSlice)", source);
+            StringAssert.Contains("_swapScheduler.Enqueue(entry, prefetchedSlice, hasPrefetchedSlice)", source);
+            StringAssert.Contains("public bool Enqueue(TMP_TextEntry entry, int2 utf8Slice, bool hasPrefetchedSlice)", schedulerSource);
+            StringAssert.Contains("public static int ResolveVisibleTextOffsetPrefetchBudget(int requestedCount)", registrySource);
+            StringAssert.Contains("public static bool TryResolveVisibleTextOffsetSlice(uint keyHash, out int2 slice)", registrySource);
+        }
+
+        [Test]
+        public void LocalizationLanguageChangedPresentation_QueuesLateFrameForPdaChromeAndDataLog()
+        {
+            string dataLogSource = File.ReadAllText(Path.Combine(Application.dataPath, "_Project/Scripts/UI/PDADataLogTab.cs"));
+            string chromeSource = File.ReadAllText(Path.Combine(Application.dataPath, "_Project/Scripts/UI/PDAShellChrome.cs"));
+
+            string dataLogHandler = ExtractMethodBody(dataLogSource, "private void HandleLanguageChanged(");
+            StringAssert.Contains("_localizedPresentationDirty = true", dataLogHandler);
+            StringAssert.DoesNotContain("ResetDetailNarrativeState", dataLogHandler);
+            StringAssert.DoesNotContain("RebuildLocalizationCache", dataLogHandler);
+            StringAssert.DoesNotContain("ApplyLocalizedStaticText", dataLogHandler);
+            StringAssert.DoesNotContain("RefreshList", dataLogHandler);
+            StringAssert.DoesNotContain("RefreshDetail", dataLogHandler);
+            StringAssert.DoesNotContain("RefreshPlayButton", dataLogHandler);
+
+            string dataLogLateFrame = ExtractMethodBody(dataLogSource, "public void LateFrameTick()");
+            StringAssert.Contains("_localizedPresentationDirty", dataLogLateFrame);
+            StringAssert.Contains("ResetDetailNarrativeState(clearPendingDecryption: false)", dataLogLateFrame);
+            StringAssert.Contains("RebuildLocalizationCache();", dataLogLateFrame);
+            StringAssert.Contains("ApplyLocalizedStaticText();", dataLogLateFrame);
+            StringAssert.Contains("RefreshList();", dataLogLateFrame);
+            StringAssert.Contains("RefreshDetail();", dataLogLateFrame);
+            StringAssert.Contains("RefreshPlayButton();", dataLogLateFrame);
+
+            string chromeHandler = ExtractMethodBody(chromeSource, "private void HandleLanguageChanged(");
+            StringAssert.Contains("QueueLocalizedChromeRefresh();", chromeHandler);
+            StringAssert.DoesNotContain("RefreshLocalizedTextCache", chromeHandler);
+            StringAssert.DoesNotContain("RefreshChrome", chromeHandler);
+
+            string chromeQueue = ExtractMethodBody(chromeSource, "private void QueueLocalizedChromeRefresh()");
+            StringAssert.Contains("_localizedChromeDirty = true", chromeQueue);
+            StringAssert.Contains("InvalidateAppliedLabelVersions();", chromeQueue);
+
+            string chromeLateFrame = ExtractMethodBody(chromeSource, "public void LateFrameTick()");
+            StringAssert.Contains("_localizedChromeDirty", chromeLateFrame);
+            StringAssert.Contains("RefreshLocalizedTextCache();", chromeLateFrame);
+            StringAssert.Contains("RefreshChrome();", chromeLateFrame);
+        }
+
+        private static void AssertRuntimeSourceTreeHasNoForbiddenTextBridges(string root)
+        {
+            if (!Directory.Exists(root))
+                return;
+
+            string[] files = Directory.GetFiles(root, "*.cs", SearchOption.AllDirectories);
+            for (int i = 0; i < files.Length; i++)
+            {
+                if (IsEditorSourcePath(files[i]))
+                    continue;
+
+                AssertRuntimeSourceFileHasNoForbiddenTextBridges(files[i]);
+            }
+        }
+
+        private static bool IsEditorSourcePath(string path)
+        {
+            string normalized = path.Replace('\\', '/');
+            return normalized.IndexOf("/Editor/", StringComparison.OrdinalIgnoreCase) >= 0;
+        }
+
+        private static void AssertRuntimeSourceFileHasNoForbiddenTextBridges(string path)
+        {
+            if (!File.Exists(path))
+                return;
+
+            string source = File.ReadAllText(path);
+            AssertForbiddenTextBridgeAbsent(source, path, "string.Format");
+            AssertForbiddenTextBridgeAbsent(source, path, ".ToString(");
+            AssertForbiddenTextBridgeAbsent(source, path, "TMP_Text.text =");
+            AssertForbiddenTextBridgeAbsent(source, path, ".text =");
+            AssertForbiddenTextBridgeAbsent(source, path, "new string(");
+            AssertForbiddenTextBridgeAbsent(source, path, "StringBuilder");
+            AssertForbiddenTextBridgeAbsent(source, path, "Array.Resize");
+            AssertForbiddenTextBridgeAbsent(source, path, "foreach (");
+            AssertForbiddenTextBridgeAbsent(source, path, ".ToCharArray()");
+        }
+
+        private static void AssertForbiddenTextBridgeAbsent(string source, string path, string token)
+        {
+            Assert.Less(source.IndexOf(token, StringComparison.Ordinal), 0, path + " contains forbidden token " + token);
+        }
+
+        private static void AssertRuntimeHotMethodsHaveNoColdLookups(string root)
+        {
+            if (!Directory.Exists(root))
+                return;
+
+            string[] files = Directory.GetFiles(root, "*.cs", SearchOption.AllDirectories);
+            for (int i = 0; i < files.Length; i++)
+            {
+                if (IsEditorSourcePath(files[i]))
+                    continue;
+
+                AssertRuntimeHotMethodFileHasNoColdLookups(files[i]);
+            }
+        }
+
+        private static void AssertRuntimeHotMethodFileHasNoColdLookups(string path)
+        {
+            if (!File.Exists(path))
+                return;
+
+            string source = File.ReadAllText(path);
+            AssertHotMethodsHaveNoColdLookups(source, path, "Tick");
+            AssertHotMethodsHaveNoColdLookups(source, path, "FixedUpdate");
+            AssertHotMethodsHaveNoColdLookups(source, path, "LateFrameTick");
+            AssertHotMethodsHaveNoColdLookups(source, path, "Execute");
+        }
+
+        private static void AssertHotMethodsHaveNoColdLookups(string source, string path, string methodName)
+        {
+            string needle = methodName + "(";
+            int search = 0;
+            while (search < source.Length)
+            {
+                int nameIndex = source.IndexOf(needle, search, StringComparison.Ordinal);
+                if (nameIndex < 0)
+                    return;
+
+                search = nameIndex + needle.Length;
+                if (!LooksLikeMethodDeclaration(source, nameIndex))
+                    continue;
+
+                int bodyStart = source.IndexOf('{', nameIndex);
+                if (bodyStart < 0)
+                    continue;
+
+                int bodyEnd = FindMatchingBrace(source, bodyStart);
+                if (bodyEnd <= bodyStart)
+                    continue;
+
+                string body = source.Substring(bodyStart, bodyEnd - bodyStart + 1);
+                AssertForbiddenTextBridgeAbsent(body, path + "::" + methodName, "GlobalRegistry.Get<");
+                AssertForbiddenTextBridgeAbsent(body, path + "::" + methodName, "FindObjectOfType");
+                AssertForbiddenTextBridgeAbsent(body, path + "::" + methodName, "FindObjectsOfType");
+                AssertForbiddenTextBridgeAbsent(body, path + "::" + methodName, "GameObject.Find");
+                AssertForbiddenTextBridgeAbsent(body, path + "::" + methodName, "Camera.main");
+                AssertNoGetComponentCall(body, path + "::" + methodName);
+                search = bodyEnd + 1;
+            }
+        }
+
+        private static bool LooksLikeMethodDeclaration(string source, int nameIndex)
+        {
+            int previous = nameIndex - 1;
+            if (previous >= 0)
+            {
+                char c = source[previous];
+                if (c == '.' || c == '_' || char.IsLetterOrDigit(c))
+                    return false;
+            }
+
+            int lineStart = source.LastIndexOf('\n', nameIndex);
+            int statementStart = Math.Max(0, lineStart + 1);
+            string prefix = source.Substring(statementStart, nameIndex - statementStart);
+            return prefix.IndexOf("=>", StringComparison.Ordinal) < 0 &&
+                   prefix.IndexOf("=", StringComparison.Ordinal) < 0;
+        }
+
+        private static void AssertNoGetComponentCall(string source, string label)
+        {
+            int search = 0;
+            while (search < source.Length)
+            {
+                int index = source.IndexOf("GetComponent", search, StringComparison.Ordinal);
+                if (index < 0)
+                    return;
+
+                search = index + "GetComponent".Length;
+                if (index >= 3 && source.Substring(index - 3, 3) == "Try")
+                    continue;
+
+                Assert.Fail(label + " contains forbidden GetComponent call");
+            }
+        }
+
+        private static string ExtractMethodBody(string source, string marker)
+        {
+            int start = source.IndexOf(marker, StringComparison.Ordinal);
+            Assert.GreaterOrEqual(start, 0, marker);
+            int bodyStart = source.IndexOf('{', start);
+            Assert.GreaterOrEqual(bodyStart, start, marker);
+            int bodyEnd = FindMatchingBrace(source, bodyStart);
+            Assert.Greater(bodyEnd, bodyStart, marker);
+            return source.Substring(bodyStart, bodyEnd - bodyStart + 1);
+        }
+
+        private static int FindMatchingBrace(string source, int bodyStart)
+        {
+            int depth = 0;
+            for (int i = bodyStart; i < source.Length; i++)
+            {
+                char c = source[i];
+                if (c == '{')
+                    depth++;
+                else if (c == '}')
+                {
+                    depth--;
+                    if (depth == 0)
+                        return i;
+                }
+            }
+
+            return -1;
+        }
+
+        private static int CountToken(string source, string token)
+        {
+            int count = 0;
+            int search = 0;
+            while (search < source.Length)
+            {
+                int index = source.IndexOf(token, search, StringComparison.Ordinal);
+                if (index < 0)
+                    return count;
+
+                count++;
+                search = index + token.Length;
+            }
+
+            return count;
+        }
+
+        private static void AssertWristHudSingleLockPublisher(string source, string marker)
+        {
+            string body = ExtractMethodBody(source, marker);
+            Assert.AreEqual(1, CountToken(body, "TryAcquireWristHudVaultBuffer("), marker);
+            Assert.AreEqual(1, CountToken(body, "ReleaseWriteLock("), marker);
+            Assert.AreEqual(1, CountToken(body, "finally"), marker);
+        }
+
+        private static void AssertWriteAcquireHelperTransfersLockOnSuccessOnly(string source, string marker)
+        {
+            string body = ExtractMethodBody(source, marker);
+            Assert.AreEqual(1, CountToken(body, "TryAcquireWriteLock("), marker);
+            Assert.AreEqual(1, CountToken(body, "ReleaseWriteLock("), marker);
+            Assert.AreEqual(1, CountToken(body, "finally"), marker);
+            StringAssert.Contains("bool releaseOnExit = true;", body);
+            StringAssert.Contains("releaseOnExit = false;", body);
+            StringAssert.Contains("if (releaseOnExit)", body);
+            int finallyIndex = body.IndexOf("finally", StringComparison.Ordinal);
+            int releaseIndex = body.IndexOf("ReleaseWriteLock(", StringComparison.Ordinal);
+            Assert.Greater(releaseIndex, finallyIndex, marker);
+        }
+
+        private static void AssertGlitchSingleLockWriter(string source, string marker)
+        {
+            string body = ExtractMethodBody(source, marker);
+            Assert.AreEqual(1, CountToken(body, "TryAcquireGlitchVaultWriteBuffer("), marker);
+            Assert.AreEqual(1, CountToken(body, "ReleaseGlitchVaultWriteBuffer("), marker);
+            Assert.AreEqual(1, CountToken(body, "finally"), marker);
+            int acquireIndex = body.IndexOf("TryAcquireGlitchVaultWriteBuffer(", StringComparison.Ordinal);
+            int finallyIndex = body.IndexOf("finally", StringComparison.Ordinal);
+            int releaseIndex = body.IndexOf("ReleaseGlitchVaultWriteBuffer(", StringComparison.Ordinal);
+            Assert.GreaterOrEqual(acquireIndex, 0, marker);
+            Assert.Greater(finallyIndex, acquireIndex, marker);
+            Assert.Greater(releaseIndex, finallyIndex, marker);
         }
     }
 }

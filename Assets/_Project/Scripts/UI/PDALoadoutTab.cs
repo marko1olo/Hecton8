@@ -140,6 +140,7 @@ namespace Hecton8.UI
             CachePlayerExpressionReadModel(GlobalRegistry.PlayerExpressionReadModel);
             CacheToolDurabilityService(GlobalRegistry.ToolDurabilityService);
             AutoResolve();
+            WarmPrefabToolCacheCold();
         }
 
         private void OnValidate()
@@ -165,6 +166,7 @@ namespace Hecton8.UI
             CacheToolDurabilityService(GlobalRegistry.ToolDurabilityService);
             AutoResolve();
             EnsureBuilt();
+            WarmPrefabToolCacheCold();
             Subscribe();
             TryRegisterHotSwapListener();
             RegisterToLateFrameManager();
@@ -325,6 +327,7 @@ namespace Hecton8.UI
                     ClearPlayerOwnedReferences(previousService as IPlayerRuntimeContext);
                     CachePlayerRuntimeContext(currentService as IPlayerRuntimeContext);
                     AutoResolve();
+                    WarmPrefabToolCacheCold();
                     _refreshDirty = true;
                     if (IsTabActive)
                         RefreshAll();
@@ -332,6 +335,7 @@ namespace Hecton8.UI
                 case GlobalRegistryServiceSlot.PlayerInventory:
                     CachePlayerInventoryService(currentService);
                     AutoResolve();
+                    WarmPrefabToolCacheCold();
                     _refreshDirty = true;
                     if (IsTabActive)
                         RefreshAll();
@@ -791,7 +795,9 @@ namespace Hecton8.UI
             if (!IsTabActive && !_refreshDirty)
                 return;
 
-            EnsureBuilt();
+            if (!_built)
+                return;
+
             RefreshSlots();
             RefreshPresets();
             RefreshSummary();
@@ -1571,18 +1577,68 @@ namespace Hecton8.UI
                     return _prefabToolCacheStates[i] == 1 ? _prefabToolCacheTools[i] : null;
             }
 
+            return null;
+        }
+
+        private void WarmPrefabToolCacheCold()
+        {
+            ClearPrefabToolCacheCold();
+
+            if (toolManager != null)
+            {
+                int slotCount = math.min(toolManager.SlotCount, PrefabToolCacheCapacity);
+                for (int i = 0; i < slotCount; i++)
+                    CachePrefabToolCold(toolManager.GetAssignedToolPrefab(i));
+            }
+
+            if (loadoutPresets == null)
+                return;
+
+            for (int i = 0; i < loadoutPresets.Length; i++)
+            {
+                ToolLoadoutPreset preset = loadoutPresets[i];
+                if (preset == null || preset.slotPrefabs == null)
+                    continue;
+
+                for (int slot = 0; slot < preset.slotPrefabs.Length; slot++)
+                    CachePrefabToolCold(preset.slotPrefabs[slot]);
+            }
+        }
+
+        private void ClearPrefabToolCacheCold()
+        {
+            for (int i = 0; i < _prefabToolCacheCount; i++)
+            {
+                _prefabToolCacheIds[i] = 0UL;
+                _prefabToolCacheStates[i] = 0;
+                _prefabToolCacheTools[i] = null;
+            }
+
+            _prefabToolCacheCount = 0;
+        }
+
+        private void CachePrefabToolCold(GameObject prefab)
+        {
+            if (prefab == null)
+                return;
+
+            ulong prefabId = EntityId.ToULong(prefab.GetEntityId());
+            for (int i = 0; i < _prefabToolCacheCount; i++)
+            {
+                if (_prefabToolCacheIds[i] == prefabId)
+                    return;
+            }
+
+            if (_prefabToolCacheCount >= PrefabToolCacheCapacity)
+                return;
+
             if (!prefab.TryGetComponent(out IPlayerToolDataReadModel resolvedTool))
                 resolvedTool = null;
 
-            if (_prefabToolCacheCount < PrefabToolCacheCapacity)
-            {
-                int index = _prefabToolCacheCount++;
-                _prefabToolCacheIds[index] = prefabId;
-                _prefabToolCacheStates[index] = resolvedTool != null ? (byte)1 : (byte)2;
-                _prefabToolCacheTools[index] = resolvedTool;
-            }
-
-            return resolvedTool;
+            int index = _prefabToolCacheCount++;
+            _prefabToolCacheIds[index] = prefabId;
+            _prefabToolCacheStates[index] = resolvedTool != null ? (byte)1 : (byte)2;
+            _prefabToolCacheTools[index] = resolvedTool;
         }
 
         private void AppendActiveExpressionName(Span<char> destination, ref int index)

@@ -176,6 +176,7 @@ namespace Hecton8.UI
         private bool _catalogTabRegistered;
         private bool _hotSwapListenerRegistered;
         private bool _dirty;
+        private bool _localizedPresentationDirty;
         private bool _detailVisible = true;
 
         // Playback timer display
@@ -462,7 +463,18 @@ namespace Hecton8.UI
             _pendingVisualDeltaTime = 0f;
             _visualLateFrameDirty = false;
 
-            if (_dirty)
+            if (_localizedPresentationDirty)
+            {
+                _localizedPresentationDirty = false;
+                ResetDetailNarrativeState(clearPendingDecryption: false);
+                RebuildLocalizationCache();
+                ApplyLocalizedStaticText();
+                RefreshList();
+                RefreshDetail();
+                RefreshPlayButton();
+                _dirty = false;
+            }
+            else if (_dirty)
             {
                 RefreshList();
                 _dirty = false;
@@ -711,7 +723,7 @@ namespace Hecton8.UI
             if (serviceSlot == GlobalRegistryServiceSlot.LoreDatabaseRuntime)
             {
                 s_cachedLoreDatabase = currentService as ILoreDatabaseReadModel;
-                _catalogLoreBindingsDirty = true;
+                RebuildLoreBindingCache();
                 _dirty = true;
                 return;
             }
@@ -1418,20 +1430,20 @@ namespace Hecton8.UI
             _catalogLoreSurfaceHashes[baseIndex + LoreSurfaceSummaryHidden] = BuildLoreSurfaceHash(id, SummaryHiddenSurfaceId.AsSpan());
         }
 
-        private void EnsureLoreBindingCache()
+        private bool IsLoreBindingCacheReady()
         {
-            if (_catalogLoreBindingsDirty ||
-                _catalogLoreHashes.Length != CatalogCount ||
-                _catalogLoreRecordIndices.Length != CatalogCount ||
-                _catalogLoreSurfaceHashes.Length != CatalogCount * LoreSurfaceCount)
-            {
-                RebuildLoreBindingCache();
-            }
+            int logCount = CatalogCount;
+            return !_catalogLoreBindingsDirty &&
+                _catalogLoreHashes.Length == logCount &&
+                _catalogLoreRecordIndices.Length == logCount &&
+                _catalogLoreSurfaceHashes.Length == logCount * LoreSurfaceCount;
         }
 
         private uint ResolveCatalogLoreHash(int logIndex)
         {
-            EnsureLoreBindingCache();
+            if (!IsLoreBindingCacheReady())
+                return 0u;
+
             return (uint)logIndex < (uint)_catalogLoreHashes.Length
                 ? _catalogLoreHashes[logIndex]
                 : 0u;
@@ -1442,22 +1454,14 @@ namespace Hecton8.UI
             if (logIndex < 0 || logIndex >= CatalogCount)
                 return false;
 
-            EnsureLoreBindingCache();
+            if (!IsLoreBindingCacheReady())
+                return false;
+
             ILoreDatabaseReadModel database = s_cachedLoreDatabase;
             if (database == null || !database.TryGetPackedUnlockWords(out Unity.Collections.NativeArray<uint>.ReadOnly words))
                 return false;
 
             int recordIndex = _catalogLoreRecordIndices[logIndex];
-            if (recordIndex < 0)
-            {
-                uint loreHash = _catalogLoreHashes[logIndex];
-                if (loreHash != 0u && database.TryGetRecordIndex(loreHash, out int resolvedIndex))
-                {
-                    _catalogLoreRecordIndices[logIndex] = resolvedIndex;
-                    recordIndex = resolvedIndex;
-                }
-            }
-
             if (recordIndex < 0)
                 return false;
 
@@ -1505,13 +1509,9 @@ namespace Hecton8.UI
         private void HandleLanguageChanged(GameLanguage language)
         {
             _lastStressCorruptionBucket = int.MinValue;
-            ResetDetailNarrativeState(clearPendingDecryption: false);
-            RebuildLocalizationCache();
-            ApplyLocalizedStaticText();
+            _localizedPresentationDirty = true;
             _dirty = true;
-            RefreshList();
-            RefreshDetail();
-            RefreshPlayButton();
+            _visualLateFrameDirty = true;
         }
 
         private void RebuildLocalizationCache()
@@ -1533,7 +1533,6 @@ namespace Hecton8.UI
             _localizedLockedLabelLength = CopyLocalizedSpan(LocalizationKeys.AUDIOLOG_LOCKED, LockedLogLabel.AsSpan(), _localizedLockedLabelBuffer);
             _localizedNoPayloadLabelLength = CopyLocalizedSpan(LocalizationKeys.AUDIOLOG_NO_PAYLOAD, NoPayloadLabel.AsSpan(), _localizedNoPayloadLabelBuffer);
             _localizedEmptyStateTextLength = CopyLocalizedSpan(LocalizationKeys.AUDIOLOG_EMPTY_ARCHIVE, "ARCHIVE EMPTY".AsSpan(), _localizedEmptyStateTextBuffer);
-            _catalogLoreBindingsDirty = true;
         }
 
         private void ApplyLocalizedStaticText()
@@ -1553,14 +1552,16 @@ namespace Hecton8.UI
 
         private int ResolveCachedLoreSurfaceHash(AudioLogData log, string surfaceId)
         {
-            EnsureLoreBindingCache();
-            int logIndex = ResolveCatalogIndex(log);
-            int surfaceIndex = ResolveLoreSurfaceIndex(surfaceId);
-            if (logIndex >= 0 && surfaceIndex >= 0)
+            if (IsLoreBindingCacheReady())
             {
-                int keyIndex = logIndex * LoreSurfaceCount + surfaceIndex;
-                if ((uint)keyIndex < (uint)_catalogLoreSurfaceHashes.Length)
-                    return _catalogLoreSurfaceHashes[keyIndex];
+                int logIndex = ResolveCatalogIndex(log);
+                int surfaceIndex = ResolveLoreSurfaceIndex(surfaceId);
+                if (logIndex >= 0 && surfaceIndex >= 0)
+                {
+                    int keyIndex = logIndex * LoreSurfaceCount + surfaceIndex;
+                    if ((uint)keyIndex < (uint)_catalogLoreSurfaceHashes.Length)
+                        return _catalogLoreSurfaceHashes[keyIndex];
+                }
             }
 
             return BuildLoreSurfaceHash(ReadOnlySpan<char>.Empty, string.IsNullOrEmpty(surfaceId) ? ReadOnlySpan<char>.Empty : surfaceId.AsSpan());
@@ -2300,12 +2301,21 @@ namespace Hecton8.UI
             if (component == null)
                 return;
 
-            if (!component.TryGetComponent(out CanvasGroup canvasGroup))
-                canvasGroup = component.gameObject.AddComponent<CanvasGroup>(); // COLD ALLOC: CanvasGroup[1] — PDA data-log element visibility gate — owner: PDADataLogTab
+            if (component is Graphic graphic)
+            {
+                Color color = graphic.color;
+                color.a = visible ? 1f : 0f;
+                graphic.color = color;
+                graphic.raycastTarget = false;
+                return;
+            }
 
-            canvasGroup.alpha = visible ? 1f : 0f;
-            canvasGroup.interactable = false;
-            canvasGroup.blocksRaycasts = false;
+            if (component is CanvasGroup canvasGroup)
+            {
+                canvasGroup.alpha = visible ? 1f : 0f;
+                canvasGroup.interactable = false;
+                canvasGroup.blocksRaycasts = false;
+            }
         }
 
         private void EnsureHologramMaterial()
@@ -2324,7 +2334,6 @@ namespace Hecton8.UI
             if (!_detailVisible || _selectedIndex < 0)
                 return;
 
-            EnsureHologramMaterial();
             if (_runtimeHologramMaterial == null || hologramProxyMeshes == null || hologramProxyMeshes.Length == 0)
                 return;
 

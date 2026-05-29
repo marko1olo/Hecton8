@@ -14,9 +14,6 @@ public class FollowPlayer : MonoBehaviour
     public bool canRotate = true;
 
     void Start() {
-        if (player == null) {
-            player = GameObject.FindWithTag("Player").transform;            
-        }
         mousePosBuffer = CandicePlayerOverrides.bufferMousePositionz;
     }
 

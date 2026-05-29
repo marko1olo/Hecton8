@@ -880,7 +880,9 @@ namespace Hecton8.AI
             switch (serviceSlot)
             {
                 case GlobalRegistryServiceSlot.DataVault:
-                    RebindDataVaultForLifecycle(currentService as IDataVault, previousService as IDataVault);
+                    RebindDataVaultForLifecycle(
+                        currentService is IDataVault currentVault ? currentVault : null,
+                        previousService is IDataVault previousVault ? previousVault : null);
                     EnsurePersistentBuffers();
                     SeedAllTentaclesFromSockets();
                     break;
@@ -953,28 +955,28 @@ namespace Hecton8.AI
 
         private void ReleaseVaultHandles(IDataVault vault)
         {
-            ReleaseVaultHandle(vault, ref _positionsHandle);
-            ReleaseVaultHandle(vault, ref _previousPositionsHandle);
-            ReleaseVaultHandle(vault, ref _radiusHandle);
-            ReleaseVaultHandle(vault, ref _segmentMatricesHandle);
-            ReleaseVaultHandle(vault, ref _stretchFractionsHandle);
-            ReleaseVaultHandle(vault, ref _constraintCorrectionsHandle);
-            ReleaseVaultHandle(vault, ref _constraintCorrectionCountsHandle);
-            ReleaseVaultHandle(vault, ref _rootPositionsHandle);
-            ReleaseVaultHandle(vault, ref _targetPositionsHandle);
-            ReleaseVaultHandle(vault, ref _rootAupsHandle);
-            ReleaseVaultHandle(vault, ref _targetAupsHandle);
-            ReleaseVaultHandle(vault, ref _tentacleStatesHandle);
-            ReleaseVaultHandle(vault, ref _telemetryRingHandle);
+            ReleaseVaultHandle(vault, ref _positionsHandle, BufferID.LeviathanTentaclePositions);
+            ReleaseVaultHandle(vault, ref _previousPositionsHandle, BufferID.LeviathanTentaclePreviousPositions);
+            ReleaseVaultHandle(vault, ref _radiusHandle, BufferID.LeviathanTentacleRadius);
+            ReleaseVaultHandle(vault, ref _segmentMatricesHandle, BufferID.LeviathanTentacleSegmentMatrices);
+            ReleaseVaultHandle(vault, ref _stretchFractionsHandle, BufferID.LeviathanTentacleStretchFractions);
+            ReleaseVaultHandle(vault, ref _constraintCorrectionsHandle, BufferID.LeviathanTentacleConstraintCorrections);
+            ReleaseVaultHandle(vault, ref _constraintCorrectionCountsHandle, BufferID.LeviathanTentacleConstraintCorrectionCounts);
+            ReleaseVaultHandle(vault, ref _rootPositionsHandle, BufferID.LeviathanTentacleRootPositions);
+            ReleaseVaultHandle(vault, ref _targetPositionsHandle, BufferID.LeviathanTentacleTargetPositions);
+            ReleaseVaultHandle(vault, ref _rootAupsHandle, BufferID.LeviathanTentacleRootAups);
+            ReleaseVaultHandle(vault, ref _targetAupsHandle, BufferID.LeviathanTentacleTargetAups);
+            ReleaseVaultHandle(vault, ref _tentacleStatesHandle, BufferID.LeviathanTentacleStates);
+            ReleaseVaultHandle(vault, ref _telemetryRingHandle, BufferID.LeviathanTentacleTelemetryRing);
         }
 
-        private static void ReleaseVaultHandle<T>(IDataVault vault, ref VaultGenerationHandle<T> handle)
+        private static void ReleaseVaultHandle<T>(
+            IDataVault vault,
+            ref VaultGenerationHandle<T> handle,
+            BufferID expectedBufferId)
             where T : struct
         {
-            if (vault != null &&
-                handle.BufferID != 0u &&
-                handle.Generation != 0u &&
-                handle.SystemID == (uint)SystemID.AnimationFauna)
+            if (vault != null && IsAnimationFaunaHandle(in handle, expectedBufferId))
             {
                 vault.ReleaseBuffer(in handle);
             }
@@ -1064,9 +1066,18 @@ namespace Hecton8.AI
         {
             buffer = default;
             return vault != null &&
-                   handle.BufferID == unchecked((uint)(int)expectedBufferId) &&
+                   IsAnimationFaunaHandle(in handle, expectedBufferId) &&
                    vault.TryResolveHandle(in handle, out buffer) &&
                    buffer.IsCreated;
+        }
+
+        private static bool IsAnimationFaunaHandle<T>(
+            in VaultGenerationHandle<T> handle,
+            BufferID expectedBufferId) where T : struct
+        {
+            return handle.BufferID == unchecked((uint)(int)expectedBufferId) &&
+                   handle.Generation != 0u &&
+                   handle.SystemID == (uint)SystemID.AnimationFauna;
         }
 
         private void BuildFallbackRootOffsets()

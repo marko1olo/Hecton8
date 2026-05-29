@@ -25,6 +25,7 @@ namespace Hecton8.Rendering.OceanSinglePass
         private static GraphicsBuffer s_publishedWakeEventBuffer;
         private static int s_publishedWakeEventCount;
         private static float4 s_publishedWakeScrollOffset;
+        private static readonly bool s_supportsSetConstantBufferCold = SystemInfo.supportsSetConstantBuffer;
         private static int s_publishedWakeResolution = OceanSinglePassConstants.WakeMinResolution;
         private static float s_publishedWakeResolutionScale = OceanSinglePassConstants.WakeMinResolution * (1f / OceanSinglePassConstants.WakeMaxResolution);
         private static Texture s_publishedWakeTexture;
@@ -256,7 +257,7 @@ namespace Hecton8.Rendering.OceanSinglePass
 
         private static bool PublishMockConstantBuffer()
         {
-            if (!SystemInfo.supportsSetConstantBuffer)
+            if (!s_supportsSetConstantBufferCold)
                 return false;
 
             if (s_mockConstantBuffer == null || !s_mockConstantBuffer.IsValid())
@@ -626,7 +627,7 @@ namespace Hecton8.Rendering.OceanSinglePass
 
         private void EnsureGpuBuffersCold()
         {
-            if (SystemInfo.supportsSetConstantBuffer)
+            if (s_supportsSetConstantBufferCold)
             {
                 if (_constantBufferA == null || !_constantBufferA.IsValid())
                 {
@@ -668,7 +669,7 @@ namespace Hecton8.Rendering.OceanSinglePass
 
         private void UploadVisualOverridesToGpu(void* visualPtr)
         {
-            if (!SystemInfo.supportsSetConstantBuffer ||
+            if (!s_supportsSetConstantBufferCold ||
                 _constantBufferA == null ||
                 !_constantBufferA.IsValid() ||
                 _constantBufferB == null ||

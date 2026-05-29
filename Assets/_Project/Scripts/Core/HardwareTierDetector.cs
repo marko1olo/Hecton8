@@ -85,8 +85,6 @@ namespace Hecton8.Core
         private static void InitializeBeforeSceneLoad()
         {
             EnsureInitialized();
-            if (_isLegacyDirect3D11 || _isSteamDeckLike || _isSharedMemoryArchitecture)
-                GlobalRegistry.RegisterScalabilityTierOverride(ScalabilityTierProfiles.LowMx350);
         }
 
         /// <summary>

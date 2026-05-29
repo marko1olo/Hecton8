@@ -26,6 +26,7 @@ using System.Collections.Generic;
 using System.Globalization;
 using UnityEditor;
 using UnityEngine;
+using Hecton8.Core;
 using Hecton8.World;
 
 namespace Hecton8.Editor
@@ -132,7 +133,7 @@ namespace Hecton8.Editor
                 return;
             }
 
-            if (LODSystemManager.Instance == null)
+            if (GlobalRegistry.LODSystem == null)
             {
                 EditorGUILayout.HelpBox("LODSystemManager not found in scene.", MessageType.Warning);
                 return;
@@ -209,10 +210,11 @@ namespace Hecton8.Editor
             if (!Application.isPlaying) return;
 
             // LOD System
-            if (LODSystemManager.Instance != null)
+            LODSystemManager lodSystemManager = GlobalRegistry.LODSystem;
+            if (lodSystemManager != null)
             {
-                _registeredLODGroupCount = LODSystemManager.Instance.RegisteredLODGroupCount;
-                _lodSystemCPUTime = LODSystemManager.Instance.LODSystemCPUTime;
+                _registeredLODGroupCount = lodSystemManager.RegisteredLODGroupCount;
+                _lodSystemCPUTime = lodSystemManager.LODSystemCPUTime;
 
                 // Update CPU time history
                 _cpuTimeHistory.Add(_lodSystemCPUTime);
@@ -223,22 +225,25 @@ namespace Hecton8.Editor
             }
 
             // Culling System
-            if (CullingManager.Instance != null)
+            CullingManager cullingManager = GlobalRegistry.Culling;
+            if (cullingManager != null)
             {
-                _frustumCulledCount = CullingManager.Instance.FrustumCulledCount;
-                _distanceCulledCount = CullingManager.Instance.DistanceCulledCount;
+                _frustumCulledCount = cullingManager.FrustumCulledCount;
+                _distanceCulledCount = cullingManager.DistanceCulledCount;
             }
 
             // Impostor System
-            if (ImpostorSystem.Instance != null)
+            ImpostorSystem impostorSystem = GlobalRegistry.Impostors;
+            if (impostorSystem != null)
             {
-                _activeImpostorCount = ImpostorSystem.Instance.ActiveImpostorCount;
+                _activeImpostorCount = impostorSystem.ActiveImpostorCount;
             }
 
             // Dynamic Resolution
-            if (DynamicResolutionScaler.Instance != null)
+            DynamicResolutionScaler dynamicResolutionScaler = GlobalRegistry.DynamicResolution;
+            if (dynamicResolutionScaler != null)
             {
-                _currentRenderScale = DynamicResolutionScaler.Instance.CurrentRenderScale;
+                _currentRenderScale = dynamicResolutionScaler.CurrentRenderScale;
             }
         }
 

@@ -10,11 +10,16 @@ namespace Hecton8.Inventory.Corrosion
     public struct ItemSalinityCorrosionJob : IJob
     {
         [ReadOnly] public NativeArray<uint>.ReadOnly ItemHashes;
-        [ReadOnly] public NativeArray<ushort> StackCounts;
-        public NativeArray<float> ItemDurability;
-        public NativeArray<byte> DurabilityBytes;
-        public NativeArray<ushort> QualityMilli;
-        public NativeArray<ushort> ItemStateFlags;
+        [ReadOnly] public NativeArray<ushort>.ReadOnly StackCounts;
+        [ReadOnly] public NativeArray<float>.ReadOnly ItemDurability;
+        [ReadOnly] public NativeArray<byte>.ReadOnly DurabilityBytes;
+        [ReadOnly] public NativeArray<ushort>.ReadOnly QualityMilli;
+        [ReadOnly] public NativeArray<ushort>.ReadOnly ItemStateFlags;
+        public NativeArray<int> ChangedSlots;
+        public NativeArray<float> NextItemDurability;
+        public NativeArray<byte> NextDurabilityBytes;
+        public NativeArray<ushort> NextQualityMilli;
+        public NativeArray<ushort> NextItemStateFlags;
         public NativeArray<int> Result;
         public NativeArray<uint> BrokenItemHashes;
         public ulong CurrentInventoryMask;
@@ -32,6 +37,10 @@ namespace Hecton8.Inventory.Corrosion
             int count = math.min(
                 math.min(math.min(ItemHashes.Length, StackCounts.Length), math.min(ItemDurability.Length, DurabilityBytes.Length)),
                 math.min(QualityMilli.Length, ItemStateFlags.Length));
+            int changeCapacity = math.min(
+                math.min(ChangedSlots.Length, NextItemDurability.Length),
+                math.min(math.min(NextDurabilityBytes.Length, NextQualityMilli.Length), NextItemStateFlags.Length));
+            count = math.min(count, changeCapacity);
             if (count <= 0)
                 return;
 
@@ -92,10 +101,11 @@ namespace Hecton8.Inventory.Corrosion
                     nextQualityMilli != QualityMilli[slot] ||
                     flags != ItemStateFlags[slot])
                 {
-                    ItemDurability[slot] = nextDurability;
-                    DurabilityBytes[slot] = nextDurabilityByte;
-                    QualityMilli[slot] = nextQualityMilli;
-                    ItemStateFlags[slot] = flags;
+                    ChangedSlots[changedCount] = slot;
+                    NextItemDurability[changedCount] = nextDurability;
+                    NextDurabilityBytes[changedCount] = nextDurabilityByte;
+                    NextQualityMilli[changedCount] = nextQualityMilli;
+                    NextItemStateFlags[changedCount] = flags;
                     changedCount++;
                 }
 

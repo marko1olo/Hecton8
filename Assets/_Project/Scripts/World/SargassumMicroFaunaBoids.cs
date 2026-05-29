@@ -1741,6 +1741,7 @@ namespace Hecton8.World
         private bool _computeKernelBindingsValid;
         private bool _computeStaticBuffersBound;
         private bool _computeDispatchDisabled;
+        private bool _coldSupportsComputeShaders;
         private Texture _boundComputeDensityTexture;
         private Texture _boundComputeCutMaskTexture;
         private Texture _boundAbyssalFlowTexture;
@@ -1757,9 +1758,6 @@ namespace Hecton8.World
         private float _cachedVatSwayAmplitudeScale = 1f;
         private float _feedingFrenzyWindowStartTime = -1f;
         private int _feedingFrenzyKillCount;
-        private JobHandle _predatorConsumptionHandle;
-        private bool _predatorConsumptionJobPending;
-        private bool _predatorConsumptionJobLocksHeld;
         private bool _foodChainTelemetryDumped;
         private bool _boidSensoryBlackBoxDumped;
         private float _pendingPredatorConsumptionTimeSeconds;
@@ -1868,9 +1866,6 @@ namespace Hecton8.World
         private JobHandle _foveatedSimulationHandle;
         private bool _foveatedSimulationScheduled;
         private bool _sleepVelocityWritePending;
-        private JobHandle _leviathanNodeBuildHandle;
-        private bool _leviathanNodeBuildScheduled;
-        private bool _leviathanNodeBuildLocksHeld;
         private SimulationLodTier _lastSimulationLodTier = SimulationLodTier.Full;
         private float _lastSimulationHibernation01;
         private int _viewPoseCacheFrame = -1;
@@ -1911,6 +1906,7 @@ namespace Hecton8.World
 
         private void Awake()
         {
+            CacheGraphicsCapabilitiesCold();
             _computeDispatchDisabled = false;
             EnsureBoidRuntimeMaterialReady();
             SanitizeSettings();
@@ -1928,6 +1924,7 @@ namespace Hecton8.World
 
         private void OnEnable()
         {
+            CacheGraphicsCapabilitiesCold();
             _computeDispatchDisabled = false;
             InvalidateViewPoseCache();
             ResetDependencyProbeCache();
@@ -2041,6 +2038,11 @@ namespace Hecton8.World
             ClearStatisticalPopulationPoint();
             CompletePendingReadbackAndReleaseBuffers();
             ReleaseBoidRuntimeMaterial();
+        }
+
+        private void CacheGraphicsCapabilitiesCold()
+        {
+            _coldSupportsComputeShaders = SystemInfo.supportsComputeShaders;
         }
 
         private void OnDestroy()
@@ -4147,47 +4149,158 @@ namespace Hecton8.World
             if (safePathCount < 2)
                 return;
 
-            if (_leviathanNodeBuildScheduled)
+            if (!TryAcquireSargassumWriteLock(
+                    in _leviathanNodeBackHandle,
+                    BufferID.SargassumLeviathanNodeBack,
+                    leviathanNodeCapacity,
+                    out NativeArray<LeviathanNodeData> leviathanNodeBack))
+            {
                 return;
+            }
 
-            if (!TryLockLeviathanNodeBuildJobBuffers())
-                return;
-
-            bool scheduled = false;
+            int builtCount = 0;
             try
             {
-                var leviathanNodeBack = ResolveSargassumVaultArray(in _leviathanNodeBackHandle, BufferID.SargassumLeviathanNodeBack, leviathanNodeCapacity);
-                var leviathanNodeCount = ResolveSargassumVaultArray(in _leviathanNodeCountHandle, BufferID.SargassumLeviathanNodeCount, 1);
-                var leviathanPathScratch = ResolveSargassumVaultArray(in _leviathanPathScratchHandle, BufferID.SargassumLeviathanPathScratch, leviathanNodeCapacity);
-                if (!leviathanNodeBack.IsCreated ||
-                    leviathanNodeBack.Length <= 0 ||
-                    !leviathanNodeCount.IsCreated ||
-                    !leviathanPathScratch.IsCreated ||
-                    leviathanPathScratch.Length < safePathCount)
-                {
-                    return;
-                }
-
-                for (int i = 0; i < safePathCount; i++)
-                    leviathanPathScratch[i] = path[i];
-
-                var job = new BuildLeviathanNodeJob
-                {
-                    SourcePath = leviathanPathScratch,
-                    SourceCount = safePathCount,
-                    OutputNodes = leviathanNodeBack,
-                    OutputCount = leviathanNodeCount,
-                    BodyRadius = math.max(0.5f, leviathanBodyRadius)
-                };
-
-                _leviathanNodeBuildHandle = job.Schedule();
-                _leviathanNodeBuildScheduled = true;
-                scheduled = true;
+                builtCount = BuildLeviathanNodesInline(
+                    path,
+                    safePathCount,
+                    leviathanNodeBack,
+                    math.max(0.5f, leviathanBodyRadius));
             }
             finally
             {
-                if (!scheduled)
-                    UnlockLeviathanNodeBuildJobBuffers();
+                ReleaseSargassumWriteLock(in _leviathanNodeBackHandle);
+            }
+
+            if (!WriteLeviathanNodeCount(builtCount))
+                return;
+
+            (_leviathanNodeFrontHandle, _leviathanNodeBackHandle) = (_leviathanNodeBackHandle, _leviathanNodeFrontHandle);
+            _leviathanPathNodeCount = builtCount;
+            _debugLeviathanNodeCount = builtCount;
+            UploadActiveLeviathanSnapshot();
+        }
+
+        private static int BuildLeviathanNodesInline(
+            NativeArray<Vector3>.ReadOnly sourcePath,
+            int sourceCount,
+            NativeArray<LeviathanNodeData> outputNodes,
+            float bodyRadius)
+        {
+            int safePathCount = math.min(sourceCount, sourcePath.Length);
+            if (!outputNodes.IsCreated || outputNodes.Length <= 0 || safePathCount < 2)
+                return 0;
+
+            float totalLength = 0f;
+            for (int i = 1; i < safePathCount; i++)
+                totalLength += ApproxLeviathanSegmentLength(ToFloat3(sourcePath[i - 1]), ToFloat3(sourcePath[i]));
+
+            if (totalLength <= 0.001f)
+                return 0;
+
+            int targetCount = math.min(outputNodes.Length, safePathCount);
+            float distanceStep = totalLength / math.max(1, targetCount - 1);
+            int pathCursor = 1;
+            float traversed = 0f;
+            float3 previousPoint = ToFloat3(sourcePath[0]);
+
+            for (int nodeIndex = 0; nodeIndex < targetCount; nodeIndex++)
+            {
+                float targetDistance = distanceStep * nodeIndex;
+                int pathIterationCount = 0;
+                int maxPathIterations = math.min(safePathCount, MaxLeviathanNodePathIterations);
+                int whileWatchdog = 0;
+                while (pathCursor < safePathCount && pathIterationCount < maxPathIterations)
+                {
+                    if (whileWatchdog++ > WhileLoopWatchdogLimit)
+                        break;
+
+                    pathIterationCount++;
+                    float3 previousPathPoint = ToFloat3(sourcePath[pathCursor - 1]);
+                    float3 currentPathPoint = ToFloat3(sourcePath[pathCursor]);
+                    float segmentLength = ApproxLeviathanSegmentLength(previousPathPoint, currentPathPoint);
+                    if (traversed + segmentLength >= targetDistance || pathCursor >= safePathCount - 1)
+                    {
+                        float segmentT = segmentLength > 0.0001f
+                            ? math.saturate((targetDistance - traversed) / segmentLength)
+                            : 0f;
+                        previousPoint = math.lerp(previousPathPoint, currentPathPoint, segmentT);
+                        break;
+                    }
+
+                    traversed += segmentLength;
+                    pathCursor++;
+                }
+
+                if (pathCursor >= safePathCount)
+                    previousPoint = ToFloat3(sourcePath[safePathCount - 1]);
+
+                outputNodes[nodeIndex] = new LeviathanNodeData
+                {
+                    Position = previousPoint,
+                    Distance01 = 0f,
+                    Tangent = new float3(0f, 0f, 1f),
+                    Radius = bodyRadius
+                };
+            }
+
+            float cumulativeDistance = 0f;
+            for (int nodeIndex = 0; nodeIndex < targetCount; nodeIndex++)
+            {
+                float3 nodePosition = outputNodes[nodeIndex].Position;
+                if (nodeIndex > 0)
+                    cumulativeDistance += ApproxLeviathanSegmentLength(outputNodes[nodeIndex - 1].Position, nodePosition);
+
+                float3 tangent = nodeIndex < targetCount - 1
+                    ? CheapNormalizeL1(outputNodes[nodeIndex + 1].Position - nodePosition, new float3(0f, 0f, 1f))
+                    : CheapNormalizeL1(nodePosition - outputNodes[math.max(0, nodeIndex - 1)].Position, new float3(0f, 0f, 1f));
+                float distance01 = totalLength > 0.0001f ? math.saturate(cumulativeDistance / totalLength) : 0f;
+                float resolvedBodyRadius = math.lerp(bodyRadius, math.max(0.5f, bodyRadius * 0.18f), distance01);
+                outputNodes[nodeIndex] = new LeviathanNodeData
+                {
+                    Position = nodePosition,
+                    Distance01 = distance01,
+                    Tangent = tangent,
+                    Radius = resolvedBodyRadius
+                };
+            }
+
+            return targetCount;
+        }
+
+        private static float ApproxLeviathanSegmentLength(float3 a, float3 b)
+        {
+            float3 delta = math.abs(b - a);
+            float maxAxis = math.cmax(delta);
+            float minAxis = math.cmin(delta);
+            float midAxis = delta.x + delta.y + delta.z - maxAxis - minAxis;
+            return maxAxis + midAxis * 0.5f + minAxis * 0.25f;
+        }
+
+        private static float3 ToFloat3(Vector3 value)
+        {
+            return new float3(value.x, value.y, value.z);
+        }
+
+        private bool WriteLeviathanNodeCount(int nodeCount)
+        {
+            if (!TryAcquireSargassumWriteLock(
+                    in _leviathanNodeCountHandle,
+                    BufferID.SargassumLeviathanNodeCount,
+                    1,
+                    out NativeArray<int> leviathanNodeCount))
+            {
+                return false;
+            }
+
+            try
+            {
+                leviathanNodeCount[0] = math.clamp(nodeCount, 0, leviathanNodeCapacity);
+                return true;
+            }
+            finally
+            {
+                ReleaseSargassumWriteLock(in _leviathanNodeCountHandle);
             }
         }
 
@@ -6126,32 +6239,6 @@ namespace Hecton8.World
                 : IsFiniteVector3(_fieldCenter)
                     ? _fieldCenter
                     : Vector3.zero;
-            if (_predatorConsumptionJobPending)
-            {
-                if (DispatcherJobSwap.TryFinalizeCompleted(ref _predatorConsumptionHandle))
-                {
-                    _predatorConsumptionJobPending = false;
-                    int finalizedDrainCount = 0;
-                    try
-                    {
-                        finalizedDrainCount = DrainPredatorKillSignals(_pendingPredatorConsumptionTimeSeconds);
-                    }
-                    finally
-                    {
-                        UnlockPredatorConsumptionJobBuffers();
-                    }
-
-                    RecordFoodChainTelemetry(
-                        FoodChainTelemetryFlagKillJobCompleted | (finalizedDrainCount > 0 ? FoodChainTelemetryFlagKillDrained : 0u),
-                        safeTelemetryCenterWS,
-                        predatorId,
-                        0u);
-                }
-                else
-                {
-                    return 0;
-                }
-            }
 
             if (!IsFiniteVector3(predatorPositionWS) ||
                 !IsFiniteVector3(biteCenterWS) ||
@@ -6162,173 +6249,183 @@ namespace Hecton8.World
                 return 0;
             }
 
-            if (!TryLockPredatorConsumptionJobBuffers())
+            int emittedCount = EmitPredatorKillSignals(
+                predatorPositionWS,
+                biteCenterWS,
+                biteRangeMeters,
+                predatorId);
+            if (emittedCount <= 0)
                 return 0;
 
-            bool scheduled = false;
-            try
-            {
-                var boidState = ResolveBoidState();
-                var killSignals = ResolveSargassumVaultArray(in _killSignalHandle, BufferID.SargassumKillSignals, PredatorKillSignalDrainLimit);
-                var killSignalCount = ResolveSargassumVaultArray(in _killSignalCountHandle, BufferID.SargassumKillSignalCount, 1);
-                if (!boidState.IsCreated ||
-                    !killSignals.IsCreated ||
-                    !killSignalCount.IsCreated ||
-                    _activeBoidCount <= 0)
-                {
-                    return 0;
-                }
-
-                float safeBiteRange = ClampFinite(biteRangeMeters, 0.05f, MassiveThreatMaxRadiusMeters);
-                killSignalCount[0] = 0;
-
-                var killJob = new PredatorBoidConsumptionJob
-                {
-                    Boids = boidState,
-                    KillSignals = killSignals,
-                    KillSignalCount = killSignalCount,
-                    PredatorPositionWS = new float3(predatorPositionWS.x, predatorPositionWS.y, predatorPositionWS.z),
-                    BiteCenterWS = new float3(biteCenterWS.x, biteCenterWS.y, biteCenterWS.z),
-                    BiteRangeSq = safeBiteRange * safeBiteRange,
-                    FearRadiusMeters = PredatorKillDefaultFearRadiusMeters,
-                    FearAmount = PredatorKillFearAmount,
-                    PredatorId = predatorId,
-                    ActiveBoidCount = _activeBoidCount,
-                    MaxKills = PredatorKillSignalDrainLimit
-                };
-
-                _predatorConsumptionHandle = killJob.Schedule();
-                _predatorConsumptionJobPending = true;
-                _pendingPredatorConsumptionTimeSeconds = currentTimeSeconds;
-                scheduled = true;
-                JobHandle.ScheduleBatchedJobs();
-                RecordFoodChainTelemetry(
-                    FoodChainTelemetryFlagKillJobScheduled,
-                    biteCenterWS,
-                    predatorId,
-                    0u);
-                return 0;
-            }
-            finally
-            {
-                if (!scheduled)
-                    UnlockPredatorConsumptionJobBuffers();
-            }
-        }
-
-        private int CompletePendingPredatorConsumption(bool forceComplete)
-        {
-            if (!_predatorConsumptionJobPending)
-                return 0;
-
-            if (!DispatcherJobSwap.TryComplete(ref _predatorConsumptionHandle, forceComplete))
-                return 0;
-
-            _predatorConsumptionJobPending = false;
-            int drainedCount = 0;
-            try
-            {
-                drainedCount = DrainPredatorKillSignals(_pendingPredatorConsumptionTimeSeconds);
-            }
-            finally
-            {
-                UnlockPredatorConsumptionJobBuffers();
-            }
-
+            int drainedCount = DrainPredatorKillSignals(currentTimeSeconds);
             RecordFoodChainTelemetry(
                 FoodChainTelemetryFlagKillJobCompleted | (drainedCount > 0 ? FoodChainTelemetryFlagKillDrained : 0u),
-                _fieldCenter,
-                unchecked((uint)math.max(0, drainedCount)),
+                safeTelemetryCenterWS,
+                predatorId,
                 0u);
             return drainedCount;
         }
 
-        private bool TryLockPredatorConsumptionJobBuffers()
+        private int CompletePendingPredatorConsumption(bool forceComplete)
         {
-            IDataVault vault = _dataVault;
-            if (vault == null || _predatorConsumptionJobLocksHeld)
-                return false;
-
-            int lockedCount = 0;
-            if (!TryLockSargassumBuffer(vault, BufferID.SargassumBoidState, ref lockedCount)) { UnlockPredatorConsumptionJobBuffers(vault, lockedCount); return false; }
-            if (!TryLockSargassumBuffer(vault, BufferID.SargassumKillSignals, ref lockedCount)) { UnlockPredatorConsumptionJobBuffers(vault, lockedCount); return false; }
-            if (!TryLockSargassumBuffer(vault, BufferID.SargassumKillSignalCount, ref lockedCount)) { UnlockPredatorConsumptionJobBuffers(vault, lockedCount); return false; }
-
-            _predatorConsumptionJobLocksHeld = true;
-            return true;
+            return 0;
         }
 
-        private void UnlockPredatorConsumptionJobBuffers()
+        private int EmitPredatorKillSignals(
+            Vector3 predatorPositionWS,
+            Vector3 biteCenterWS,
+            float biteRangeMeters,
+            uint predatorId)
         {
-            if (!_predatorConsumptionJobLocksHeld)
-                return;
+            if (!TryReadOnlySargassumVaultArray(
+                    in _boidStateHandle,
+                    BufferID.SargassumBoidState,
+                    boidCount,
+                    out NativeArray<BoidData>.ReadOnly boidState))
+            {
+                WritePredatorKillSignalCount(0);
+                return 0;
+            }
 
-            IDataVault vault = _dataVault;
-            if (vault != null)
-                UnlockPredatorConsumptionJobBuffers(vault, 3);
-            _predatorConsumptionJobLocksHeld = false;
+            if (!WritePredatorKillSignalCount(0) ||
+                !TryAcquireSargassumWriteLock(
+                    in _killSignalHandle,
+                    BufferID.SargassumKillSignals,
+                    PredatorKillSignalDrainLimit,
+                    out NativeArray<BoidKillSignal> killSignals))
+            {
+                return 0;
+            }
+
+            int emitted = 0;
+            try
+            {
+                int safeCount = math.clamp(_activeBoidCount, 0, boidState.Length);
+                float safeBiteRange = ClampFinite(biteRangeMeters, 0.05f, MassiveThreatMaxRadiusMeters);
+                float biteRangeSq = safeBiteRange * safeBiteRange;
+                float3 biteCenter = ToFloat3(biteCenterWS);
+                float3 predatorPosition = ToFloat3(predatorPositionWS);
+                for (int i = 0; i < safeCount && emitted < PredatorKillSignalDrainLimit; i++)
+                {
+                    BoidData boid = boidState[i];
+                    if ((boid.StateFlags & ConsumedBoidStateFlag) != 0u)
+                        continue;
+
+                    float3 boidPosition = ToFloat3(boid.Position);
+                    if (math.lengthsq(boidPosition - biteCenter) > biteRangeSq)
+                        continue;
+
+                    killSignals[emitted] = new BoidKillSignal
+                    {
+                        KillPositionWS = boidPosition,
+                        PredatorPositionWS = predatorPosition,
+                        BoidId = i,
+                        PredatorId = predatorId,
+                        FearRadiusMeters = PredatorKillDefaultFearRadiusMeters,
+                        FearAmount = PredatorKillFearAmount
+                    };
+                    emitted++;
+                }
+            }
+            finally
+            {
+                ReleaseSargassumWriteLock(in _killSignalHandle);
+            }
+
+            return WritePredatorKillSignalCount(emitted) ? emitted : 0;
         }
 
-        private static void UnlockPredatorConsumptionJobBuffers(IDataVault vault, int lockedCount)
+        private bool WritePredatorKillSignalCount(int emitted)
         {
-            if (lockedCount >= 3) vault.TryUnlockBuffer(BufferID.SargassumKillSignalCount, SystemID.WorldSargassum);
-            if (lockedCount >= 2) vault.TryUnlockBuffer(BufferID.SargassumKillSignals, SystemID.WorldSargassum);
-            if (lockedCount >= 1) vault.TryUnlockBuffer(BufferID.SargassumBoidState, SystemID.WorldSargassum);
-        }
-
-        private static bool TryLockSargassumBuffer(IDataVault vault, BufferID bufferID, ref int lockedCount)
-        {
-            if (vault == null ||
-                bufferID == BufferID.Unknown ||
-                !vault.TryLockBuffer(bufferID, SystemID.WorldSargassum))
+            if (!TryAcquireSargassumWriteLock(
+                    in _killSignalCountHandle,
+                    BufferID.SargassumKillSignalCount,
+                    1,
+                    out NativeArray<int> killSignalCount))
             {
                 return false;
             }
 
-            lockedCount++;
-            return true;
+            try
+            {
+                killSignalCount[0] = math.clamp(emitted, 0, PredatorKillSignalDrainLimit);
+                return true;
+            }
+            finally
+            {
+                ReleaseSargassumWriteLock(in _killSignalCountHandle);
+            }
         }
 
         private int DrainPredatorKillSignals(float currentTimeSeconds)
         {
-            var boidState = ResolveBoidState();
             var killSignals = ResolveSargassumVaultArray(in _killSignalHandle, BufferID.SargassumKillSignals, PredatorKillSignalDrainLimit);
             var killSignalCount = ResolveSargassumVaultArray(in _killSignalCountHandle, BufferID.SargassumKillSignalCount, 1);
-            if (!boidState.IsCreated || !killSignals.IsCreated || !killSignalCount.IsCreated || killSignalCount.Length <= 0)
+            if (!killSignals.IsCreated || !killSignalCount.IsCreated || killSignalCount.Length <= 0)
                 return 0;
 
             int drainedCount = 0;
+            uint drainedMask = 0u;
             Vector3 frenzyCentroid = Vector3.zero;
             int signalCount = math.clamp(killSignalCount[0], 0, math.min(killSignals.Length, PredatorKillSignalDrainLimit));
+            if (signalCount > 0 &&
+                TryAcquireSargassumWriteLock(
+                    in _boidStateHandle,
+                    BufferID.SargassumBoidState,
+                    boidCount,
+                    out NativeArray<BoidData> boidState))
+            {
+                try
+                {
+                    for (int signalIndex = 0; signalIndex < signalCount; signalIndex++)
+                    {
+                        BoidKillSignal killSignal = killSignals[signalIndex];
+                        int boidId = killSignal.BoidId;
+                        if (boidId < 0 ||
+                            boidId >= _activeBoidCount ||
+                            boidId >= boidState.Length)
+                        {
+                            continue;
+                        }
+
+                        BoidData boid = boidState[boidId];
+                        if ((boid.StateFlags & ConsumedBoidStateFlag) != 0u)
+                            continue;
+
+                        Vector3 killPositionWS = ToVector3(killSignal.KillPositionWS);
+                        if (!float.IsFinite(killPositionWS.x) ||
+                            !float.IsFinite(killPositionWS.y) ||
+                            !float.IsFinite(killPositionWS.z))
+                        {
+                            continue;
+                        }
+
+                        boid.Panic = 0f;
+                        boid.Velocity = Vector3.zero;
+                        boid.StateFlags = (boid.StateFlags & BoidVisualMutationMask) | ConsumedBoidStateFlag;
+                        boidState[boidId] = boid;
+                        UploadSingleBoidToLiveBuffers(boidState, boidId);
+
+                        drainedMask |= 1u << signalIndex;
+                        frenzyCentroid += killPositionWS;
+                        drainedCount++;
+                        _debugConsumedBoidCount++;
+                    }
+                }
+                finally
+                {
+                    ReleaseSargassumWriteLock(in _boidStateHandle);
+                }
+            }
+
             for (int signalIndex = 0; signalIndex < signalCount; signalIndex++)
             {
+                if ((drainedMask & (1u << signalIndex)) == 0u)
+                    continue;
+
                 BoidKillSignal killSignal = killSignals[signalIndex];
                 int boidId = killSignal.BoidId;
-                if (boidId < 0 ||
-                    boidId >= _activeBoidCount ||
-                    boidId >= boidState.Length)
-                {
-                    continue;
-                }
-
-                BoidData boid = boidState[boidId];
-                if ((boid.StateFlags & ConsumedBoidStateFlag) != 0u)
-                    continue;
-
-                Vector3 killPositionWS = new Vector3(killSignal.KillPositionWS.x, killSignal.KillPositionWS.y, killSignal.KillPositionWS.z);
-                if (!float.IsFinite(killPositionWS.x) ||
-                    !float.IsFinite(killPositionWS.y) ||
-                    !float.IsFinite(killPositionWS.z))
-                {
-                    continue;
-                }
-
-                boid.Panic = 0f;
-                boid.Velocity = Vector3.zero;
-                boid.StateFlags = (boid.StateFlags & BoidVisualMutationMask) | ConsumedBoidStateFlag;
-                boidState[boidId] = boid;
-                UploadSingleBoidToLiveBuffers(boidState, boidId);
-
+                Vector3 killPositionWS = ToVector3(killSignal.KillPositionWS);
                 PublishPredatorKillDebris(in killSignal, killPositionWS, boidId);
                 RecordFoodChainTelemetry(
                     FoodChainTelemetryFlagKillDrained,
@@ -6341,16 +6438,12 @@ namespace Hecton8.World
                     math.max(3f, killSignal.FearRadiusMeters),
                     PredatorKillFearDurationSeconds,
                     math.saturate(killSignal.FearAmount * 0.01f));
-
-                frenzyCentroid += killPositionWS;
-                drainedCount++;
-                _debugConsumedBoidCount++;
             }
 
             if (drainedCount > 0)
                 TryPublishFeedingFrenzyAcousticPing(frenzyCentroid * math.rcp((float)drainedCount), currentTimeSeconds, drainedCount);
 
-            killSignalCount[0] = 0;
+            WritePredatorKillSignalCount(0);
             return drainedCount;
         }
 
@@ -6642,7 +6735,7 @@ namespace Hecton8.World
                     Flags = flags,
                     ActiveBoidCount = _activeBoidCount,
                     ConsumedBoidCount = _debugConsumedBoidCount,
-                    PendingKillJob = _predatorConsumptionJobPending ? 1 : 0,
+                    PendingKillJob = 0,
                     LodTier = (int)_lastSimulationLodTier,
                     FieldCenterWS = new float3(safeFieldCenter.x, safeFieldCenter.y, safeFieldCenter.z),
                     EventPositionWS = new float3(safeEventPosition.x, safeEventPosition.y, safeEventPosition.z),
@@ -8397,21 +8490,13 @@ namespace Hecton8.World
 
         private JobHandle CancelPendingLeviathanNodeBuildForDispose()
         {
-            if (!_leviathanNodeBuildScheduled)
-                return default;
-
-            JobHandle disposeDependency = _leviathanNodeBuildHandle;
-            _leviathanNodeBuildHandle = default;
-            _leviathanNodeBuildScheduled = false;
             ClearLeviathanSnapshot();
-            return disposeDependency;
+            return default;
         }
 
         private void ClearVaultHandles(JobHandle disposeDependency)
         {
             DispatcherJobSwap.TryComplete(ref disposeDependency, forceComplete: true);
-            UnlockPredatorConsumptionJobBuffers();
-            UnlockLeviathanNodeBuildJobBuffers();
             _grazingAnchorsHandle = default;
             _massiveThreatsHandle = default;
             _formationBeaconsHandle = default;
@@ -8749,65 +8834,6 @@ namespace Hecton8.World
 
         private void CompletePendingLeviathanNodeBuild(bool forceComplete)
         {
-            if (!_leviathanNodeBuildScheduled)
-                return;
-
-            if (!DispatcherJobSwap.TryComplete(ref _leviathanNodeBuildHandle, forceComplete))
-                return;
-
-            _leviathanNodeBuildScheduled = false;
-
-            int safeCount = 0;
-            try
-            {
-                var leviathanNodeCount = ResolveSargassumVaultArray(in _leviathanNodeCountHandle, BufferID.SargassumLeviathanNodeCount, 1);
-                var leviathanNodeBack = ResolveSargassumVaultArray(in _leviathanNodeBackHandle, BufferID.SargassumLeviathanNodeBack, leviathanNodeCapacity);
-                safeCount = (leviathanNodeCount.IsCreated && leviathanNodeCount.Length > 0)
-                    ? math.clamp(leviathanNodeCount[0], 0, leviathanNodeBack.IsCreated ? leviathanNodeBack.Length : 0)
-                    : 0;
-            }
-            finally
-            {
-                UnlockLeviathanNodeBuildJobBuffers();
-            }
-
-            (_leviathanNodeFrontHandle, _leviathanNodeBackHandle) = (_leviathanNodeBackHandle, _leviathanNodeFrontHandle);
-            _leviathanPathNodeCount = safeCount;
-            _debugLeviathanNodeCount = safeCount;
-            UploadActiveLeviathanSnapshot();
-        }
-
-        private bool TryLockLeviathanNodeBuildJobBuffers()
-        {
-            IDataVault vault = _dataVault;
-            if (vault == null || _leviathanNodeBuildLocksHeld)
-                return false;
-
-            int lockedCount = 0;
-            if (!TryLockSargassumBuffer(vault, BufferID.SargassumLeviathanPathScratch, ref lockedCount)) { UnlockLeviathanNodeBuildJobBuffers(vault, lockedCount); return false; }
-            if (!TryLockSargassumBuffer(vault, BufferID.SargassumLeviathanNodeBack, ref lockedCount)) { UnlockLeviathanNodeBuildJobBuffers(vault, lockedCount); return false; }
-            if (!TryLockSargassumBuffer(vault, BufferID.SargassumLeviathanNodeCount, ref lockedCount)) { UnlockLeviathanNodeBuildJobBuffers(vault, lockedCount); return false; }
-
-            _leviathanNodeBuildLocksHeld = true;
-            return true;
-        }
-
-        private void UnlockLeviathanNodeBuildJobBuffers()
-        {
-            if (!_leviathanNodeBuildLocksHeld)
-                return;
-
-            IDataVault vault = _dataVault;
-            if (vault != null)
-                UnlockLeviathanNodeBuildJobBuffers(vault, 3);
-            _leviathanNodeBuildLocksHeld = false;
-        }
-
-        private static void UnlockLeviathanNodeBuildJobBuffers(IDataVault vault, int lockedCount)
-        {
-            if (lockedCount >= 3) vault.TryUnlockBuffer(BufferID.SargassumLeviathanNodeCount, SystemID.WorldSargassum);
-            if (lockedCount >= 2) vault.TryUnlockBuffer(BufferID.SargassumLeviathanNodeBack, SystemID.WorldSargassum);
-            if (lockedCount >= 1) vault.TryUnlockBuffer(BufferID.SargassumLeviathanPathScratch, SystemID.WorldSargassum);
         }
 
         private void UploadActiveLeviathanSnapshot()
@@ -9201,7 +9227,7 @@ namespace Hecton8.World
             if (_computeDispatchDisabled)
                 return false;
 
-            if (boidCompute == null || !HardwareTierDetector.AllowHighResourceComputeShaders)
+            if (boidCompute == null || !_coldSupportsComputeShaders)
             {
                 if (boidCompute != null)
                     DisableComputeDispatch(ComputeDisableReasonUnsupportedCompute);
@@ -9523,7 +9549,16 @@ namespace Hecton8.World
             _reportedWakeCenterWS += runtimeOffset;
 
             QueueOriginShiftGpuDispatch(runtimeOffset);
+            ApplyRuntimeOffsetToGrazingAnchors(runtimeOffset);
+            ApplyRuntimeOffsetToMassiveThreats(runtimeOffset);
+            ApplyRuntimeOffsetToFormationBeacons(runtimeOffset);
+            ApplyRuntimeOffsetToFormationObstacles(runtimeOffset);
+            ApplyRuntimeOffsetToLeviathanFrontNodes(runtimeOffset);
+            ApplyRuntimeOffsetToLeviathanBackNodes(runtimeOffset);
+        }
 
+        private void ApplyRuntimeOffsetToGrazingAnchors(Vector3 runtimeOffset)
+        {
             if (TryAcquireSargassumWriteLock(
                     in _grazingAnchorsHandle,
                     BufferID.SargassumGrazingAnchors,
@@ -9543,7 +9578,10 @@ namespace Hecton8.World
                     ReleaseSargassumWriteLock(in _grazingAnchorsHandle);
                 }
             }
+        }
 
+        private void ApplyRuntimeOffsetToMassiveThreats(Vector3 runtimeOffset)
+        {
             if (TryAcquireSargassumWriteLock(
                     in _massiveThreatsHandle,
                     BufferID.SargassumMassiveThreats,
@@ -9563,7 +9601,10 @@ namespace Hecton8.World
                     ReleaseSargassumWriteLock(in _massiveThreatsHandle);
                 }
             }
+        }
 
+        private void ApplyRuntimeOffsetToFormationBeacons(Vector3 runtimeOffset)
+        {
             if (TryAcquireSargassumWriteLock(
                     in _formationBeaconsHandle,
                     BufferID.SargassumFormationBeacons,
@@ -9583,7 +9624,10 @@ namespace Hecton8.World
                     ReleaseSargassumWriteLock(in _formationBeaconsHandle);
                 }
             }
+        }
 
+        private void ApplyRuntimeOffsetToFormationObstacles(Vector3 runtimeOffset)
+        {
             if (TryAcquireSargassumWriteLock(
                     in _formationObstaclesHandle,
                     BufferID.SargassumFormationObstacles,
@@ -9603,7 +9647,10 @@ namespace Hecton8.World
                     ReleaseSargassumWriteLock(in _formationObstaclesHandle);
                 }
             }
+        }
 
+        private void ApplyRuntimeOffsetToLeviathanFrontNodes(Vector3 runtimeOffset)
+        {
             if (TryAcquireSargassumWriteLock(
                     in _leviathanNodeFrontHandle,
                     BufferID.SargassumLeviathanNodeFront,
@@ -9627,7 +9674,10 @@ namespace Hecton8.World
                     ReleaseSargassumWriteLock(in _leviathanNodeFrontHandle);
                 }
             }
+        }
 
+        private void ApplyRuntimeOffsetToLeviathanBackNodes(Vector3 runtimeOffset)
+        {
             if (TryAcquireSargassumWriteLock(
                     in _leviathanNodeBackHandle,
                     BufferID.SargassumLeviathanNodeBack,

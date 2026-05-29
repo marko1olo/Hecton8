@@ -92,6 +92,11 @@ namespace Hecton8.Quest
         [SerializeField] public bool autoActivateOnStart;
         [SerializeField] public bool oneTimeOnly = true;
 
+        [NonSerialized] private int _invalidPrerequisiteCount;
+        [NonSerialized] private int _duplicatePrerequisiteCount;
+        [NonSerialized] private int _firstInvalidPrerequisiteIndex = -1;
+        [NonSerialized] private int _firstDuplicatePrerequisiteIndex = -1;
+
         /// <summary>
         /// Localized display title for the active language.
         /// </summary>
@@ -101,6 +106,59 @@ namespace Hecton8.Quest
         /// Localized description for the active language.
         /// </summary>
         public string DescriptionOrFallback => localizedDescription.ResolveOrFallback(description);
+
+        /// <summary>
+        /// Finite, non-negative trigger threshold used by runtime quest graph compilation.
+        /// </summary>
+        public float RuntimeTriggerValue => SanitizeFiniteNonNegative(triggerValue, 0f);
+
+        /// <summary>
+        /// Finite, non-negative completion threshold used by runtime quest graph compilation.
+        /// </summary>
+        public float RuntimeCompletionValue => SanitizeFiniteNonNegative(completionValue, 0f);
+
+        /// <summary>
+        /// Finite marker fallback position used when no marker target resolves.
+        /// </summary>
+        public Vector3 RuntimeMarkerWorldPosition => new Vector3(
+            SanitizeFinite(markerWorldPosition.x, 0f),
+            SanitizeFinite(markerWorldPosition.y, 0f),
+            SanitizeFinite(markerWorldPosition.z, 0f));
+
+        /// <summary>
+        /// Finite, non-negative marker lift used by runtime marker presentation.
+        /// </summary>
+        public float RuntimeMarkerHeightOffset => SanitizeFiniteNonNegative(markerHeightOffset, 6f);
+
+        /// <summary>
+        /// Authored prerequisite slot count, including invalid rows preserved for designer repair.
+        /// </summary>
+        public int PrerequisiteSlotCount => prerequisiteQuestIds != null ? prerequisiteQuestIds.Length : 0;
+
+        /// <summary>
+        /// Number of blank prerequisite slots detected during cold validation.
+        /// </summary>
+        public int InvalidPrerequisiteCount => _invalidPrerequisiteCount;
+
+        /// <summary>
+        /// Number of duplicate prerequisite slots detected during cold validation.
+        /// </summary>
+        public int DuplicatePrerequisiteCount => _duplicatePrerequisiteCount;
+
+        /// <summary>
+        /// First blank prerequisite slot index, or -1 when none is present.
+        /// </summary>
+        public int FirstInvalidPrerequisiteIndex => _firstInvalidPrerequisiteIndex;
+
+        /// <summary>
+        /// First duplicate prerequisite slot index, or -1 when none is present.
+        /// </summary>
+        public int FirstDuplicatePrerequisiteIndex => _firstDuplicatePrerequisiteIndex;
+
+        /// <summary>
+        /// True when prerequisite authoring contains blank or duplicate rows.
+        /// </summary>
+        public bool HasPrerequisiteValidationErrors => _invalidPrerequisiteCount > 0 || _duplicatePrerequisiteCount > 0;
 
         public bool TryWriteDisplayTitleOrFallback(ILocalizationTextReadModel manager, char[] destination, out int length)
         {
@@ -125,11 +183,91 @@ namespace Hecton8.Quest
             return string.IsNullOrWhiteSpace(value) ? fallback : value;
         }
 
+        private void OnEnable()
+        {
+            RebuildValidationCache();
+        }
+
+        private void RebuildValidationCache()
+        {
+            _invalidPrerequisiteCount = 0;
+            _duplicatePrerequisiteCount = 0;
+            _firstInvalidPrerequisiteIndex = -1;
+            _firstDuplicatePrerequisiteIndex = -1;
+
+            if (prerequisiteQuestIds == null)
+                return;
+
+            for (int i = 0; i < prerequisiteQuestIds.Length; i++)
+            {
+                string prerequisiteQuestId = prerequisiteQuestIds[i];
+                if (string.IsNullOrWhiteSpace(prerequisiteQuestId))
+                {
+                    _invalidPrerequisiteCount++;
+                    if (_firstInvalidPrerequisiteIndex < 0)
+                        _firstInvalidPrerequisiteIndex = i;
+
+                    continue;
+                }
+
+                for (int previousIndex = 0; previousIndex < i; previousIndex++)
+                {
+                    string previousQuestId = prerequisiteQuestIds[previousIndex];
+                    if (string.IsNullOrWhiteSpace(previousQuestId))
+                        continue;
+
+                    if (!string.Equals(previousQuestId, prerequisiteQuestId, StringComparison.Ordinal))
+                        continue;
+
+                    _duplicatePrerequisiteCount++;
+                    if (_firstDuplicatePrerequisiteIndex < 0)
+                        _firstDuplicatePrerequisiteIndex = i;
+
+                    break;
+                }
+            }
+        }
+
+        private static float SanitizeFiniteNonNegative(float value, float fallback)
+        {
+            value = SanitizeFinite(value, fallback);
+            return value < 0f ? 0f : value;
+        }
+
+        private static float SanitizeFinite(float value, float fallback)
+        {
+            return float.IsNaN(value) || float.IsInfinity(value) ? fallback : value;
+        }
+
 #if UNITY_EDITOR
         private void OnValidate()
         {
             if (string.IsNullOrEmpty(questId))
-                questId = name.ToLower().Replace(" ", "_");
+                questId = name.ToLowerInvariant().Replace(" ", "_");
+
+            questId = NormalizeToken(questId);
+            triggerId = NormalizeToken(triggerId);
+            completionId = NormalizeToken(completionId);
+            criticalItemId = NormalizeToken(criticalItemId);
+            respawnEventId = NormalizeToken(respawnEventId);
+            markerTargetId = NormalizeToken(markerTargetId);
+            triggerValue = RuntimeTriggerValue;
+            completionValue = RuntimeCompletionValue;
+            markerWorldPosition = RuntimeMarkerWorldPosition;
+            markerHeightOffset = RuntimeMarkerHeightOffset;
+
+            if (prerequisiteQuestIds == null)
+                prerequisiteQuestIds = Array.Empty<string>();
+
+            for (int i = 0; i < prerequisiteQuestIds.Length; i++)
+                prerequisiteQuestIds[i] = NormalizeToken(prerequisiteQuestIds[i]);
+
+            RebuildValidationCache();
+        }
+
+        private static string NormalizeToken(string value)
+        {
+            return string.IsNullOrWhiteSpace(value) ? string.Empty : value.Trim();
         }
 #endif
     }

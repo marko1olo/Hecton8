@@ -67,8 +67,8 @@ namespace Hecton8.Gameplay
     [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Deterministic, FloatPrecision = FloatPrecision.Standard)]
     internal struct EvaluateHazardExposureJob : IJob
     {
-        [ReadOnly, NoAlias] public NativeArray<HazardVolumeData> Volumes;
-        [ReadOnly, NoAlias] public NativeArray<float> CurveLutSamples;
+        [ReadOnly, NoAlias] public NativeArray<HazardVolumeData>.ReadOnly Volumes;
+        [ReadOnly, NoAlias] public NativeArray<float>.ReadOnly CurveLutSamples;
         public int CurveLutSampleCount;
         public int VolumeCount;
         public byte HasPlayerBounds;
@@ -172,7 +172,7 @@ namespace Hecton8.Gameplay
             double3 aabbCenter,
             float3 aabbHalfExtents,
             in HazardVolumeData volume,
-            NativeArray<float> curveLutSamples,
+            NativeArray<float>.ReadOnly curveLutSamples,
             int curveLutSampleCount)
         {
             double3 halfExtents = new double3(aabbHalfExtents.x, aabbHalfExtents.y, aabbHalfExtents.z);
@@ -201,7 +201,7 @@ namespace Hecton8.Gameplay
         }
 
         private static float SampleIntensityCurveByDistanceSq(
-            NativeArray<float> curveLutSamples,
+            NativeArray<float>.ReadOnly curveLutSamples,
             int curveLutSampleCount,
             int curveLutOffset,
             float normalizedDistanceSq)
@@ -264,6 +264,15 @@ namespace Hecton8.Gameplay
         private const float MaxProtectedResistance = 1000f;
         private const float ConservativeAabbSphereFactor = 1.7320508f;
         private const uint ToxicityHazardChemicalHash = 0x544F5848u; // TOXH
+        private const ulong HazardStateMutationGuardMask =
+            (1UL << ((int)BufferID.HazardZoneVolumes & 31)) |
+            (1UL << ((int)BufferID.HazardZoneVolumeIds & 31)) |
+            (1UL << ((int)BufferID.HazardZoneSpatialHandles & 31)) |
+            (1UL << ((int)BufferID.HazardZoneCurveLutSamples & 31));
+        private const ulong ExposureJobMutationGuardMask =
+            (1UL << ((int)BufferID.HazardZoneJobVolumes & 31)) |
+            (1UL << ((int)BufferID.HazardZoneCurveLutSamples & 31)) |
+            (1UL << ((int)BufferID.HazardExposureJobResult & 31));
         private static readonly Vector3 DefaultPlayerBoundsSize = new Vector3(0.9f, 1.9f, 0.9f);
         private static readonly Vector3 DefaultTransportBoundsSize = new Vector3(2.2f, 1.6f, 3.8f);
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
@@ -296,8 +305,7 @@ namespace Hecton8.Gameplay
         private HectonSpatialHash _spatialHash;
         private HazardVaultArray<int> _spatialQueryHandles;
         private bool _jobRunning;
-        private bool _jobBuffersLocked;
-        private bool _jobResultLocked;
+        private bool _exposureJobGuardHeld;
         private bool _registered;
         private bool _serviceRegistered;
         private bool _hotSwapRegistered;
@@ -310,6 +318,7 @@ namespace Hecton8.Gameplay
 
         private Transform _playerTransform;
         private IDataVault _pendingDataVault;
+        private IDataVault _exposureJobGuardVault;
         private HectonSurvivalSystem _playerSurvival;
         private HectonPlayerHealth _playerHealth;
         private TraumaDispatcher _playerTraumaDispatcher;
@@ -361,27 +370,14 @@ namespace Hecton8.Gameplay
                        buffer.Length >= _requiredLength;
             }
 
-            public bool TryAcquireWriteLock(SystemID owner, out NativeArray<T> buffer)
+            public bool TryResolveMutable(out NativeArray<T> buffer)
             {
                 buffer = default;
-                if (_vault == null || !IsVaultHandleCreated(in _handle))
-                    return false;
-
-                if (!_vault.TryAcquireWriteLock(in _handle, owner, out buffer))
-                    return false;
-
-                if (buffer.IsCreated && buffer.Length >= _requiredLength)
-                    return true;
-
-                _vault.ReleaseWriteLock(in _handle, owner);
-                buffer = default;
-                return false;
-            }
-
-            public void ReleaseWriteLock(SystemID owner)
-            {
-                if (_vault != null && IsVaultHandleCreated(in _handle))
-                    _vault.ReleaseWriteLock(in _handle, owner);
+                return _vault != null &&
+                       IsVaultHandleCreated(in _handle) &&
+                       _vault.TryResolveHandle(in _handle, out buffer) &&
+                       buffer.IsCreated &&
+                       buffer.Length >= _requiredLength;
             }
 
             public void ReleaseBuffer()
@@ -888,7 +884,7 @@ namespace Hecton8.Gameplay
         {
             if (_jobRunning)
             {
-                DispatcherJobFence.TryComplete(ref _jobHandle, forceComplete: true);
+                ForceCompleteExposureJobInPostSimulationWindow();
                 _jobRunning = false;
             }
 
@@ -936,9 +932,6 @@ namespace Hecton8.Gameplay
             if (_playerTransform == null)
                 return;
 
-            if (_playerCollider == null)
-                _playerCollider = ResolvePrimaryCollider(_playerTransform);
-
             IPlayerTransportLifecycleOwner resolvedOwner = null;
             if (_playerTransportCoordinator != null)
                 _playerTransportCoordinator.TryResolveTransportLifecycleOwner(out resolvedOwner);
@@ -948,9 +941,7 @@ namespace Hecton8.Gameplay
 
             _activeTransportOwner = resolvedOwner;
             _activeTransportBehaviour = resolvedOwner as MonoBehaviour;
-            _activeTransportCollider = _activeTransportBehaviour != null
-                ? ResolvePrimaryCollider(_activeTransportBehaviour.transform)
-                : null;
+            _activeTransportCollider = ResolveTransportColliderCold(_activeTransportBehaviour);
         }
 
         private void RefreshPlayerContextSnapshot()
@@ -978,9 +969,7 @@ namespace Hecton8.Gameplay
 
             _activeTransportOwner = resolvedOwner;
             _activeTransportBehaviour = resolvedOwner as MonoBehaviour;
-            _activeTransportCollider = _activeTransportBehaviour != null
-                ? ResolvePrimaryCollider(_activeTransportBehaviour.transform)
-                : null;
+            _activeTransportCollider = ResolveTransportColliderCold(_activeTransportBehaviour);
         }
 
         private void ApplyPlayerContextReferences(
@@ -1015,6 +1004,13 @@ namespace Hecton8.Gameplay
 
             if (transportCoordinator != null)
                 _playerTransportCoordinator = transportCoordinator;
+        }
+
+        private static Collider ResolveTransportColliderCold(MonoBehaviour transportBehaviour)
+        {
+            return transportBehaviour != null
+                ? ComponentReferenceUtility.ResolveOwnedComponent<Collider>(transportBehaviour.transform)
+                : null;
         }
 
         private void ConsumeCompletedJob()
@@ -1117,18 +1113,6 @@ namespace Hecton8.Gameplay
         private int ResolvePlayerCombatTargetId()
         {
             HectonPlayerHealth playerHealth = _playerHealth;
-            if (playerHealth == null && _playerTransform != null && _playerTransform.TryGetComponent(out HectonPlayerHealth transformHealth))
-            {
-                playerHealth = transformHealth;
-                _playerHealth = transformHealth;
-            }
-
-            if (playerHealth == null && _playerSurvival != null && _playerSurvival.TryGetComponent(out HectonPlayerHealth survivalHealth))
-            {
-                playerHealth = survivalHealth;
-                _playerHealth = survivalHealth;
-            }
-
             return playerHealth != null
                 ? CombatDamageRuntime.ResolveTargetId(playerHealth.gameObject)
                 : 0;
@@ -1209,51 +1193,31 @@ namespace Hecton8.Gameplay
                 return;
             }
 
-            if (!_jobVolumes.TryAcquireWriteLock(SystemID.GameplayHazards, out NativeArray<HazardVolumeData> lockedJobVolumes))
+            if (!TryPrepareHazardExposureResultBuffer(out _, allowAllocation: false) ||
+                !TryAcquireExposureJobGuard())
             {
                 ClearExposureState();
                 return;
             }
 
-            if (!_volumeCurveLutSamples.TryAcquireWriteLock(SystemID.GameplayHazards, out NativeArray<float> lockedCurveLutSamples))
-            {
-                _jobVolumes.ReleaseWriteLock(SystemID.GameplayHazards);
-                ClearExposureState();
-                return;
-            }
-
-            if (!_candidateVolumeFlags.TryAcquireWriteLock(SystemID.GameplayHazards, out NativeArray<byte> lockedCandidateVolumeFlags))
-            {
-                _volumeCurveLutSamples.ReleaseWriteLock(SystemID.GameplayHazards);
-                _jobVolumes.ReleaseWriteLock(SystemID.GameplayHazards);
-                ClearExposureState();
-                return;
-            }
-
-            NativeArray<int> lockedSpatialQueryHandles = default;
-            bool spatialQueryHandlesLocked = _spatialHash != null &&
-                                             _spatialQueryHandles.IsCreated &&
-                                             _spatialQueryHandles.TryAcquireWriteLock(
-                                                 SystemID.GameplayHazards,
-                                                 out lockedSpatialQueryHandles);
-
-            if (!_volumes.TryReadOnly(out NativeArray<HazardVolumeData>.ReadOnly readVolumes) ||
-                !_volumeIds.TryReadOnly(out NativeArray<int>.ReadOnly readVolumeIds))
-            {
-                if (spatialQueryHandlesLocked)
-                    _spatialQueryHandles.ReleaseWriteLock(SystemID.GameplayHazards);
-
-                _candidateVolumeFlags.ReleaseWriteLock(SystemID.GameplayHazards);
-                _volumeCurveLutSamples.ReleaseWriteLock(SystemID.GameplayHazards);
-                _jobVolumes.ReleaseWriteLock(SystemID.GameplayHazards);
-                ClearExposureState();
-                return;
-            }
-
+            bool keepJobGuard = false;
             int candidateCount;
             try
             {
-                candidateCount = CollectCandidateVolumes(
+                if (!_jobVolumes.TryResolveMutable(out NativeArray<HazardVolumeData> lockedJobVolumes))
+                {
+                    ClearExposureState();
+                    return;
+                }
+
+                if (!_volumes.TryReadOnly(out NativeArray<HazardVolumeData>.ReadOnly readVolumes) ||
+                    !_volumeIds.TryReadOnly(out NativeArray<int>.ReadOnly readVolumeIds))
+                {
+                    ClearExposureState();
+                    return;
+                }
+
+                candidateCount = CopyAllActiveVolumes(
                     hasPlayerBounds,
                     in playerCenterAup,
                     playerHalfExtents,
@@ -1261,90 +1225,53 @@ namespace Hecton8.Gameplay
                     in vehicleCenterAup,
                     vehicleHalfExtents,
                     lockedJobVolumes,
-                    lockedCandidateVolumeFlags,
-                    lockedSpatialQueryHandles,
                     readVolumes,
                     readVolumeIds);
-            }
-            catch
-            {
-                if (spatialQueryHandlesLocked)
-                    _spatialQueryHandles.ReleaseWriteLock(SystemID.GameplayHazards);
 
-                _candidateVolumeFlags.ReleaseWriteLock(SystemID.GameplayHazards);
-                _volumeCurveLutSamples.ReleaseWriteLock(SystemID.GameplayHazards);
-                _jobVolumes.ReleaseWriteLock(SystemID.GameplayHazards);
-                throw;
-            }
+                if (candidateCount <= 0)
+                {
+                    ClearExposureState();
+                    return;
+                }
 
-            if (spatialQueryHandlesLocked)
-                _spatialQueryHandles.ReleaseWriteLock(SystemID.GameplayHazards);
+                if (!_jobVolumes.TryReadOnly(out NativeArray<HazardVolumeData>.ReadOnly readJobVolumes) ||
+                    !readJobVolumes.IsCreated ||
+                    readJobVolumes.Length < candidateCount ||
+                    !_volumeCurveLutSamples.TryReadOnly(out NativeArray<float>.ReadOnly readCurveLutSamples) ||
+                    !readCurveLutSamples.IsCreated ||
+                    readCurveLutSamples.Length < HazardZoneProfile.IntensityLutSampleCount ||
+                    !TryPrepareHazardExposureResultBuffer(out NativeArray<HazardExposureJobResult> jobResult, allowAllocation: false) ||
+                    !jobResult.IsCreated ||
+                    jobResult.Length < 1)
+                {
+                    ClearExposureState();
+                    return;
+                }
 
-            _candidateVolumeFlags.ReleaseWriteLock(SystemID.GameplayHazards);
-            if (candidateCount <= 0)
-            {
-                _volumeCurveLutSamples.ReleaseWriteLock(SystemID.GameplayHazards);
-                _jobVolumes.ReleaseWriteLock(SystemID.GameplayHazards);
-                ClearExposureState();
-                return;
-            }
+                jobResult[0] = default;
+                EvaluateHazardExposureJob job = new EvaluateHazardExposureJob
+                {
+                    Volumes = readJobVolumes,
+                    CurveLutSamples = readCurveLutSamples,
+                    CurveLutSampleCount = HazardZoneProfile.IntensityLutSampleCount,
+                    VolumeCount = candidateCount,
+                    HasPlayerBounds = hasPlayerBounds ? (byte)1 : (byte)0,
+                    HasVehicleBounds = hasVehicleBounds ? (byte)1 : (byte)0,
+                    PlayerCenter = playerCenterAup.ToAbsoluteDouble3(),
+                    PlayerHalfExtents = playerHalfExtents,
+                    VehicleCenter = vehicleCenterAup.ToAbsoluteDouble3(),
+                    VehicleHalfExtents = vehicleHalfExtents,
+                    Result = new NativeSlice<HazardExposureJobResult>(jobResult)
+                };
 
-            if (!TryPrepareHazardExposureResultBuffer(out NativeArray<HazardExposureJobResult> jobResult, allowAllocation: false))
-            {
-                _volumeCurveLutSamples.ReleaseWriteLock(SystemID.GameplayHazards);
-                _jobVolumes.ReleaseWriteLock(SystemID.GameplayHazards);
-                ClearExposureState();
-                return;
-            }
-
-            IDataVault vault = _dataVault;
-            if (vault == null ||
-                !vault.TryAcquireWriteLock(in _jobResultHandle, SystemID.GameplayHazards, out jobResult))
-            {
-                _volumeCurveLutSamples.ReleaseWriteLock(SystemID.GameplayHazards);
-                _jobVolumes.ReleaseWriteLock(SystemID.GameplayHazards);
-                ClearExposureState();
-                return;
-            }
-
-            if (!jobResult.IsCreated || jobResult.Length < 1)
-            {
-                vault.ReleaseWriteLock(in _jobResultHandle, SystemID.GameplayHazards);
-                _volumeCurveLutSamples.ReleaseWriteLock(SystemID.GameplayHazards);
-                _jobVolumes.ReleaseWriteLock(SystemID.GameplayHazards);
-                ClearExposureState();
-                return;
-            }
-
-            jobResult[0] = default;
-            EvaluateHazardExposureJob job = new EvaluateHazardExposureJob
-            {
-                Volumes = lockedJobVolumes,
-                CurveLutSamples = lockedCurveLutSamples,
-                CurveLutSampleCount = HazardZoneProfile.IntensityLutSampleCount,
-                VolumeCount = candidateCount,
-                HasPlayerBounds = hasPlayerBounds ? (byte)1 : (byte)0,
-                HasVehicleBounds = hasVehicleBounds ? (byte)1 : (byte)0,
-                PlayerCenter = playerCenterAup.ToAbsoluteDouble3(),
-                PlayerHalfExtents = playerHalfExtents,
-                VehicleCenter = vehicleCenterAup.ToAbsoluteDouble3(),
-                VehicleHalfExtents = vehicleHalfExtents,
-                Result = new NativeSlice<HazardExposureJobResult>(jobResult)
-            };
-
-            try
-            {
                 _jobHandle = job.Schedule();
                 _jobRunning = true;
-                _jobBuffersLocked = true;
-                _jobResultLocked = true;
+                keepJobGuard = true;
             }
-            catch
+            finally
             {
-                vault.ReleaseWriteLock(in _jobResultHandle, SystemID.GameplayHazards);
-                _volumeCurveLutSamples.ReleaseWriteLock(SystemID.GameplayHazards);
-                _jobVolumes.ReleaseWriteLock(SystemID.GameplayHazards);
-                throw;
+                if (!keepJobGuard)
+                    ReleaseExposureJobLocks();
             }
         }
 
@@ -1366,7 +1293,7 @@ namespace Hecton8.Gameplay
                 return true;
             }
 
-            if (_jobResultLocked)
+            if (_exposureJobGuardHeld)
                 return false;
 
             ClearHazardExposureResultDescriptor();
@@ -1413,33 +1340,30 @@ namespace Hecton8.Gameplay
             volumeSpatialHandles = default;
             volumeCurveLutSamples = default;
 
-            if (!_volumes.TryAcquireWriteLock(SystemID.GameplayHazards, out volumes))
+            IDataVault vault = _dataVault;
+            if (vault == null || !vault.TryAcquireMutationGuard(HazardStateMutationGuardMask))
                 return false;
 
-            if (!_volumeIds.TryAcquireWriteLock(SystemID.GameplayHazards, out volumeIds))
+            if (!_volumes.TryResolveMutable(out volumes) ||
+                !_volumeIds.TryResolveMutable(out volumeIds) ||
+                !_volumeSpatialHandles.TryResolveMutable(out volumeSpatialHandles) ||
+                !_volumeCurveLutSamples.TryResolveMutable(out volumeCurveLutSamples))
             {
-                _volumes.ReleaseWriteLock(SystemID.GameplayHazards);
-                return false;
-            }
-
-            if (!_volumeSpatialHandles.TryAcquireWriteLock(SystemID.GameplayHazards, out volumeSpatialHandles))
-            {
-                _volumeIds.ReleaseWriteLock(SystemID.GameplayHazards);
-                _volumes.ReleaseWriteLock(SystemID.GameplayHazards);
-                return false;
-            }
-
-            if (!_volumeCurveLutSamples.TryAcquireWriteLock(SystemID.GameplayHazards, out volumeCurveLutSamples))
-            {
-                _volumeSpatialHandles.ReleaseWriteLock(SystemID.GameplayHazards);
-                _volumeIds.ReleaseWriteLock(SystemID.GameplayHazards);
-                _volumes.ReleaseWriteLock(SystemID.GameplayHazards);
+                vault.ReleaseMutationGuard(HazardStateMutationGuardMask);
+                volumes = default;
+                volumeIds = default;
+                volumeSpatialHandles = default;
+                volumeCurveLutSamples = default;
                 return false;
             }
 
             if (ResolveActiveVolumeCapacity(volumes, volumeIds, volumeSpatialHandles, volumeCurveLutSamples) <= 0)
             {
-                ReleaseHazardStateWriteViews();
+                vault.ReleaseMutationGuard(HazardStateMutationGuardMask);
+                volumes = default;
+                volumeIds = default;
+                volumeSpatialHandles = default;
+                volumeCurveLutSamples = default;
                 return false;
             }
 
@@ -1448,10 +1372,9 @@ namespace Hecton8.Gameplay
 
         private void ReleaseHazardStateWriteViews()
         {
-            _volumeCurveLutSamples.ReleaseWriteLock(SystemID.GameplayHazards);
-            _volumeSpatialHandles.ReleaseWriteLock(SystemID.GameplayHazards);
-            _volumeIds.ReleaseWriteLock(SystemID.GameplayHazards);
-            _volumes.ReleaseWriteLock(SystemID.GameplayHazards);
+            IDataVault vault = _dataVault;
+            if (vault != null)
+                vault.ReleaseMutationGuard(HazardStateMutationGuardMask);
         }
 
         private static int ResolveActiveVolumeCapacity(
@@ -1528,21 +1451,14 @@ namespace Hecton8.Gameplay
 
         private void ReleaseExposureJobLocks()
         {
-            if (_jobBuffersLocked)
-            {
-                _jobVolumes.ReleaseWriteLock(SystemID.GameplayHazards);
-                _volumeCurveLutSamples.ReleaseWriteLock(SystemID.GameplayHazards);
-                _jobBuffersLocked = false;
-            }
+            if (!_exposureJobGuardHeld)
+                return;
 
-            if (_jobResultLocked)
-            {
-                IDataVault vault = _dataVault;
-                if (vault != null && IsVaultHandleCreated(in _jobResultHandle))
-                    vault.ReleaseWriteLock(in _jobResultHandle, SystemID.GameplayHazards);
-
-                _jobResultLocked = false;
-            }
+            IDataVault vault = _exposureJobGuardVault ?? _dataVault;
+            _exposureJobGuardVault = null;
+            _exposureJobGuardHeld = false;
+            if (vault != null)
+                vault.ReleaseMutationGuard(ExposureJobMutationGuardMask);
         }
 
         private void CachePlayerRuntimeContextCold()
@@ -1555,6 +1471,7 @@ namespace Hecton8.Gameplay
             IDataVault vault = _dataVault;
             if (!_ownsJobResultHandle ||
                 _jobRunning ||
+                _exposureJobGuardHeld ||
                 vault == null ||
                 !IsVaultHandleCreated(in _jobResultHandle) ||
                 !vault.TryGetGenerationHandle(
@@ -1579,8 +1496,35 @@ namespace Hecton8.Gameplay
 
         private void ClearHazardExposureResultDescriptorIfUnlocked()
         {
-            if (!_jobResultLocked)
+            if (!_exposureJobGuardHeld)
                 ClearHazardExposureResultDescriptor();
+        }
+
+        private bool TryAcquireExposureJobGuard()
+        {
+            if (_exposureJobGuardHeld)
+                return true;
+
+            IDataVault vault = _dataVault;
+            if (vault == null || !vault.TryAcquireMutationGuard(ExposureJobMutationGuardMask))
+                return false;
+
+            _exposureJobGuardVault = vault;
+            _exposureJobGuardHeld = true;
+            return true;
+        }
+
+        private void ForceCompleteExposureJobInPostSimulationWindow()
+        {
+            DispatcherJobFence.BeginPostSimulationSwapWindow();
+            try
+            {
+                DispatcherJobFence.TryComplete(ref _jobHandle, forceComplete: true);
+            }
+            finally
+            {
+                DispatcherJobFence.EndPostSimulationSwapWindow();
+            }
         }
 
         private static bool IsVaultHandleCreated<T>(in VaultGenerationHandle<T> handle) where T : struct
@@ -1689,15 +1633,6 @@ namespace Hecton8.Gameplay
 
             playerAup = movementState.PredictedAup;
             return IsFiniteAup(in playerAup);
-        }
-
-        private static Collider ResolvePrimaryCollider(Transform root)
-        {
-            if (root == null)
-                return null;
-
-            root.TryGetComponent(out Collider directCollider);
-            return directCollider;
         }
 
         private int CollectCandidateVolumes(

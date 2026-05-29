@@ -1028,8 +1028,12 @@ namespace Hecton8.Scavenging
         private static bool _staticReset;
 
         private const SystemID OwnerSystem = SystemID.GameplayLoot;
+        private const uint SimulationSystemHash = ScavengingLootOracleConstants.LootOracleSourceHash;
+        private const uint PostSimulationSystemHash = ScavengingLootOracleConstants.LootOracleSourceHash ^ 0x504F5354u; // POST
 
         private IDataVault _vault;
+        private IWorldSeedProvider _worldSeedProvider;
+        private ulong _sessionId;
         private VaultGenerationHandle<LootTableEntryDTO> _lootEntriesHandle;
         private VaultGenerationHandle<ScavengingHarvestRequestDTO> _requestsHandle;
         private VaultGenerationHandle<ScavengingResolvedYieldDTO> _resolvedYieldsHandle;
@@ -1052,7 +1056,11 @@ namespace Hecton8.Scavenging
         private uint _activeLootTableHash;
         private uint _activeLootTableVersion;
         private bool _registeredLateFrame;
+        private bool _registeredSimulationDispatcher;
+        private bool _registeredPostSimulationDispatcher;
         private bool _registeredHotSwap;
+        private SimulationPhaseSystem _simulationPhase;
+        private PostSimulationPhaseSystem _postSimulationPhase;
 
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
         private static void ResetStaticState()
@@ -1078,15 +1086,14 @@ namespace Hecton8.Scavenging
             bool inventoryCapacityAvailable,
             bool emitDepletionDelta = true)
         {
-            ScavengingLootOracleRuntime host = EnsureHost();
-            if (host == null || !host.EnsureVault())
+            ScavengingLootOracleRuntime host = TryGetPreparedHostForHot();
+            if (host == null)
                 return false;
 
             ScavengingLootOracleVaultViews views = host.ResolveViews();
             if (!views.HasAllBuffers() || host._queuedCount >= views.Requests.Length)
                 return false;
 
-            host.TryPrimeMonolithLootTable();
             bool full = !inventoryCapacityAvailable;
             int slot = host._queuedCount++;
             float quality = ScavengingLootOracleMath.SanitizeQualityWeight(HomeostasisBrain.GlobalQualityWeight);
@@ -1110,7 +1117,7 @@ namespace Hecton8.Scavenging
 
             ScavengingHarvestRequestDTO request = default;
             request.NodeAup = nodeAup;
-            request.SessionID = ResolveSessionId();
+            request.SessionID = host.ResolveCachedSessionId();
             request.ResourceNodeHash = 0UL;
             request.OreHash = oreHash != 0u ? oreHash : forcedItemHash;
             request.ToolHashID = toolMask != 0u ? toolMask : ScavengingLootOracleConstants.ToolMaskAny;
@@ -1160,12 +1167,12 @@ namespace Hecton8.Scavenging
         public static bool GenerateEmergencyMockLootTables()
         {
             ScavengingLootOracleRuntime host = EnsureHost();
-            if (host == null || !host.EnsureVault())
+            if (host == null || !host.PrepareVaultCold())
                 return false;
 
             JobHandle handle = host.EnsureEmergencyLootTableJob(default);
             // COLD SYNC JOB: manual/editor fallback generation must finish before the caller inspects the table.
-            DispatcherJobFence.TryComplete(ref handle, forceComplete: true);
+            ForceCompleteColdJobInPostSimulationWindow(ref handle);
             return true;
         }
 
@@ -1174,7 +1181,7 @@ namespace Hecton8.Scavenging
         {
             entryCount = 0;
             ScavengingLootOracleRuntime host = EnsureHost();
-            if (host == null || !host.EnsureVault())
+            if (host == null || !host.PrepareVaultCold())
                 return false;
 
             if (!TryResolveScavengingVaultBuffer(host._vault, ref host._lootEntriesHandle, ScavengingLootOracleConstants.LootEntriesBufferId, ScavengingLootOracleConstants.DefaultLootEntryCapacity, out NativeArray<LootTableEntryDTO> entries))
@@ -1193,7 +1200,7 @@ namespace Hecton8.Scavenging
             entryCount = 0;
             modifierCount = 0;
             ScavengingLootOracleRuntime host = EnsureHost();
-            if (host == null || !host.EnsureVault())
+            if (host == null || !host.PrepareVaultCold())
                 return false;
 
             ScavengingLootOracleVaultViews views = host.ResolveViews();
@@ -1293,7 +1300,7 @@ namespace Hecton8.Scavenging
         public static bool TryDumpTelemetryRing()
         {
             ScavengingLootOracleRuntime host = EnsureHost();
-            if (host == null || !host.EnsureVault())
+            if (host == null || !host.IsVaultReadyForHot())
                 return false;
 
             if (!TryReadScavengingVaultBuffer(host._vault, in host._telemetryRingHandle, ScavengingLootOracleConstants.TelemetryRingBufferId, ScavengingLootOracleConstants.TelemetryRingCapacity, out NativeArray<ScavengingTelemetryEntry> ring))
@@ -1338,7 +1345,7 @@ namespace Hecton8.Scavenging
         {
             auditCounts = default;
             ScavengingLootOracleRuntime host = EnsureHost();
-            if (host == null || !host.EnsureVault())
+            if (host == null || !host.PrepareVaultCold())
                 return false;
 
             ScavengingLootOracleVaultViews views = host.ResolveViews();
@@ -1359,11 +1366,11 @@ namespace Hecton8.Scavenging
                              ScavengingLootOracleConstants.ToolMaskDrill |
                              ScavengingLootOracleConstants.ToolMaskExtractor,
                 BiomeHash = host._activeBiomeHash,
-                SessionID = ResolveSessionId()
+                SessionID = host.ResolveCachedSessionId()
             };
             JobHandle handle = auditJob.Schedule(dependency);
             // COLD SYNC JOB: editor self-audit returns the Vault audit buffer to the inspector button.
-            DispatcherJobFence.TryComplete(ref handle, forceComplete: true);
+            ForceCompleteColdJobInPostSimulationWindow(ref handle);
             auditCounts = views.DistributionAudit.AsReadOnly();
             return true;
         }
@@ -1376,11 +1383,11 @@ namespace Hecton8.Scavenging
 
             uint itemHash = H8Hashes.Items.TitaniumScrapHash;
             ScavengingLootOracleRuntime host = Application.isPlaying ? EnsureHost() : null;
-            if (host != null && host.EnsureVault())
+            if (host != null && host.PrepareVaultCold())
             {
                 JobHandle dependency = host.EnsureLootTableJob(default);
                 // COLD SYNC JOB: editor gizmo needs the preview table before reading Vault rows.
-                DispatcherJobFence.TryComplete(ref dependency, forceComplete: true);
+                ForceCompleteColdJobInPostSimulationWindow(ref dependency);
                 if (TryReadScavengingVaultBuffer(host._vault, in host._lootEntriesHandle, ScavengingLootOracleConstants.LootEntriesBufferId, ScavengingLootOracleConstants.DefaultLootEntryCapacity, out NativeArray<LootTableEntryDTO> entries))
                 {
                     int count = host._activeLootEntryCount > 0 ? math.min(host._activeLootEntryCount, entries.Length) : 0;
@@ -1411,13 +1418,16 @@ namespace Hecton8.Scavenging
         {
             ConfigureSignalLanes();
             CacheVaultCold();
+            PrepareVaultCold();
             TryRegisterHotSwapListener();
+            TryRegisterDispatcherPhases();
             TryRegisterLateFrame();
         }
 
         private void OnDisable()
         {
-            TryCompletePendingPublish(forceComplete: true);
+            ForceCompletePendingPublishForLifecycle();
+            TryUnregisterDispatcherPhases();
             TryUnregisterLateFrame();
             TryUnregisterHotSwapListener();
             ReleaseVaultBinding();
@@ -1431,7 +1441,7 @@ namespace Hecton8.Scavenging
             switch (serviceSlot)
             {
                 case GlobalRegistryServiceSlot.DataVault:
-                    TryCompletePendingPublish(forceComplete: true);
+                    ForceCompletePendingPublishForLifecycle();
                     IDataVault previousVault = previousService as IDataVault;
                     if (previousVault == null)
                         previousVault = _vault;
@@ -1439,8 +1449,15 @@ namespace Hecton8.Scavenging
                     ReleaseScavengingVaultHandles(previousVault);
                     _vault = currentService as IDataVault;
                     InvalidateVaultHandles();
+                    PrepareVaultCold();
+                    break;
+                case GlobalRegistryServiceSlot.WorldSeedProvider:
+                    _worldSeedProvider = currentService as IWorldSeedProvider;
+                    _sessionId = BuildSessionId(_worldSeedProvider);
                     break;
                 case GlobalRegistryServiceSlot.Dispatcher:
+                    TryUnregisterDispatcherPhases();
+                    TryRegisterDispatcherPhases();
                     TryUnregisterLateFrame();
                     TryRegisterLateFrame();
                     break;
@@ -1449,26 +1466,39 @@ namespace Hecton8.Scavenging
 
         public void LateFrameTick()
         {
+            TryCompletePendingPublish(forceComplete: false);
+        }
+
+        private JobHandle ScheduleSimulation(
+            in DispatcherTimingDTO timing,
+            in DispatcherJobContext context,
+            JobHandle dependsOn)
+        {
             DrainBiomeSignals();
             if (!TryCompletePendingPublish(forceComplete: false))
-                return;
+                return dependsOn;
 
             if (_queuedCount <= 0)
-                return;
+                return dependsOn;
 
-            if (!EnsureVault())
+            if (!IsVaultReadyForHot())
             {
                 _queuedCount = 0;
-                return;
+                return dependsOn;
+            }
+
+            if (!_lootTableHydrated)
+            {
+                _queuedCount = 0;
+                return dependsOn;
             }
 
             int count = _queuedCount;
             _queuedCount = 0;
             ScavengingLootOracleVaultViews views = ResolveViews();
             if (!views.HasAllBuffers())
-                return;
+                return dependsOn;
 
-            JobHandle dependency = EnsureLootTableJob(default);
             LootResolutionJob resolveJob = default;
             resolveJob.Requests = views.Requests;
             resolveJob.LootEntries = views.LootEntries;
@@ -1479,7 +1509,7 @@ namespace Hecton8.Scavenging
             resolveJob.BiomeModifierCount = _activeBiomeModifierCount;
             resolveJob.Frame = AdvanceSimulationFrame();
             resolveJob.TelemetryCursor = _telemetryCursor;
-            JobHandle resolveHandle = resolveJob.Schedule(dependency);
+            JobHandle resolveHandle = resolveJob.Schedule(dependsOn);
 
             PublishLootYieldsJob publishJob = default;
             publishJob.ResolvedYields = views.ResolvedYields;
@@ -1498,6 +1528,12 @@ namespace Hecton8.Scavenging
             _pendingPublishCount = count;
             _publishPending = true;
             H8Memory.RegisterActiveJob(SystemID.GameplayLoot, _pendingPublishHandle);
+            return publishHandle;
+        }
+
+        private void PostSimulationTick(in DispatcherTimingDTO timing)
+        {
+            TryCompletePendingPublish(forceComplete: false);
         }
 
         private bool TryCompletePendingPublish(bool forceComplete)
@@ -1531,6 +1567,14 @@ namespace Hecton8.Scavenging
             return _host;
         }
 
+        private static ScavengingLootOracleRuntime TryGetPreparedHostForHot()
+        {
+            ScavengingLootOracleRuntime host = _host;
+            return host != null && host.IsVaultReadyForHot()
+                ? host
+                : null;
+        }
+
         private uint PeekNextSimulationFrame()
         {
             uint next = _simulationFrameCounter + 1u;
@@ -1561,7 +1605,25 @@ namespace Hecton8.Scavenging
             _staticReset = true;
         }
 
-        private bool EnsureVault()
+        private bool PrepareVaultCold()
+        {
+            CacheSessionIdCold();
+            if (!EnsureVaultCold())
+                return false;
+
+            PrepareLootTableCold();
+            return _lootTableHydrated;
+        }
+
+        private bool IsVaultReadyForHot()
+        {
+            return _vaultReady &&
+                   _vault != null &&
+                   !_vault.IsCompactionFenceActive &&
+                   _lootTableHydrated;
+        }
+
+        private bool EnsureVaultCold()
         {
             if (_vaultReady && _vault != null)
                 return true;
@@ -1624,6 +1686,26 @@ namespace Hecton8.Scavenging
         {
             if (!_lootTableHydrated)
                 TryImportLootCdfFromDataMonolith();
+        }
+
+        private void PrepareLootTableCold()
+        {
+            if (_lootTableHydrated)
+                return;
+
+            TryPrimeMonolithLootTable();
+            if (_lootTableHydrated)
+                return;
+
+#if UNITY_EDITOR
+            JobHandle handle = EnsureEmergencyLootTableJob(default);
+            ForceCompleteColdJobInPostSimulationWindow(ref handle);
+#else
+            _lootTableHydrated = true;
+            _activeLootEntryCount = 0;
+            _activeLootTableHash = 0u;
+            _activeLootTableVersion = 0u;
+#endif
         }
 
         private JobHandle EnsureLootTableJob(JobHandle dependency)
@@ -1704,6 +1786,29 @@ namespace Hecton8.Scavenging
             _registeredLateFrame = GlobalRegistry.TryRegisterLateFrameTickable(this, PriorityLayer.Core);
         }
 
+        private void TryRegisterDispatcherPhases()
+        {
+            if (_simulationPhase == null)
+                _simulationPhase = new SimulationPhaseSystem(this);
+            if (_postSimulationPhase == null)
+                _postSimulationPhase = new PostSimulationPhaseSystem(this);
+
+            if (!_registeredSimulationDispatcher)
+                _registeredSimulationDispatcher = GlobalRegistry.TryRegisterDispatcherSystem(_simulationPhase);
+
+            if (!_registeredSimulationDispatcher || _registeredPostSimulationDispatcher)
+                return;
+
+            if (GlobalRegistry.TryRegisterDispatcherSystem(_postSimulationPhase))
+            {
+                _registeredPostSimulationDispatcher = true;
+                return;
+            }
+
+            GlobalRegistry.UnregisterDispatcherSystem(_simulationPhase);
+            _registeredSimulationDispatcher = false;
+        }
+
         private void TryUnregisterLateFrame()
         {
             if (!_registeredLateFrame)
@@ -1713,21 +1818,68 @@ namespace Hecton8.Scavenging
             _registeredLateFrame = false;
         }
 
+        private void TryUnregisterDispatcherPhases()
+        {
+            if (_registeredPostSimulationDispatcher)
+            {
+                GlobalRegistry.UnregisterDispatcherSystem(_postSimulationPhase);
+                _registeredPostSimulationDispatcher = false;
+            }
+
+            if (_registeredSimulationDispatcher)
+            {
+                GlobalRegistry.UnregisterDispatcherSystem(_simulationPhase);
+                _registeredSimulationDispatcher = false;
+            }
+        }
+
+        private bool ForceCompletePendingPublishForLifecycle()
+        {
+            DispatcherJobFence.BeginPostSimulationSwapWindow();
+            try
+            {
+                return TryCompletePendingPublish(forceComplete: true);
+            }
+            finally
+            {
+                DispatcherJobFence.EndPostSimulationSwapWindow();
+            }
+        }
+
+        private static void ForceCompleteColdJobInPostSimulationWindow(ref JobHandle handle)
+        {
+            DispatcherJobFence.BeginPostSimulationSwapWindow();
+            try
+            {
+                DispatcherJobFence.TryComplete(ref handle, forceComplete: true);
+            }
+            finally
+            {
+                DispatcherJobFence.EndPostSimulationSwapWindow();
+            }
+        }
+
         private void CacheVaultCold()
         {
             IDataVault vault = GlobalRegistry.DataVault;
             if (ReferenceEquals(_vault, vault))
                 return;
 
-            TryCompletePendingPublish(forceComplete: true);
+            ForceCompletePendingPublishForLifecycle();
             ReleaseScavengingVaultHandles(_vault);
             _vault = vault;
             InvalidateVaultHandles();
         }
 
+        private void CacheSessionIdCold()
+        {
+            _worldSeedProvider = GlobalRegistry.WorldSeedProvider;
+            _sessionId = BuildSessionId(_worldSeedProvider);
+        }
+
         private void ReleaseVaultBinding()
         {
-            TryCompletePendingPublish(forceComplete: true);
+            ForceCompletePendingPublishForLifecycle();
             ReleaseScavengingVaultHandles(_vault);
             _vault = null;
             InvalidateVaultHandles();
@@ -1868,9 +2020,101 @@ namespace Hecton8.Scavenging
             _registeredHotSwap = false;
         }
 
-        private static ulong ResolveSessionId()
+        private sealed class SimulationPhaseSystem : IDispatcherSystem, IDispatcherFenceDomainProvider
         {
-            IWorldSeedProvider provider = GlobalRegistry.WorldSeedProvider;
+            private readonly ScavengingLootOracleRuntime _owner;
+
+            public SimulationPhaseSystem(ScavengingLootOracleRuntime owner)
+            {
+                _owner = owner;
+            }
+
+            public uint GetSystemIdHash() => SimulationSystemHash;
+
+            public DispatcherPhase GetDispatcherPhase() => DispatcherPhase.Simulation;
+
+            public byte GetBucketId() => byte.MaxValue;
+
+            public int GetDependencyCount() => 0;
+
+            public uint GetDependencyHash(int dependencyIndex) => 0u;
+
+            public DispatcherFenceDomain GetFenceDomain() => DispatcherFenceDomain.Simulation;
+
+            public void PreSimulationTick(in DispatcherTimingDTO timing)
+            {
+            }
+
+            public JobHandle ScheduleSimulation(
+                in DispatcherTimingDTO timing,
+                in DispatcherJobContext context,
+                JobHandle dependsOn)
+            {
+                return _owner != null
+                    ? _owner.ScheduleSimulation(in timing, in context, dependsOn)
+                    : dependsOn;
+            }
+
+            public void PostSimulationTick(in DispatcherTimingDTO timing)
+            {
+            }
+
+            public void VisualSyncTick(in DispatcherTimingDTO timing)
+            {
+            }
+        }
+
+        private sealed class PostSimulationPhaseSystem : IDispatcherSystem
+        {
+            private readonly ScavengingLootOracleRuntime _owner;
+
+            public PostSimulationPhaseSystem(ScavengingLootOracleRuntime owner)
+            {
+                _owner = owner;
+            }
+
+            public uint GetSystemIdHash() => PostSimulationSystemHash;
+
+            public DispatcherPhase GetDispatcherPhase() => DispatcherPhase.PostSimulation;
+
+            public byte GetBucketId() => byte.MaxValue;
+
+            public int GetDependencyCount() => 0;
+
+            public uint GetDependencyHash(int dependencyIndex) => 0u;
+
+            public void PreSimulationTick(in DispatcherTimingDTO timing)
+            {
+            }
+
+            public JobHandle ScheduleSimulation(
+                in DispatcherTimingDTO timing,
+                in DispatcherJobContext context,
+                JobHandle dependsOn)
+            {
+                return dependsOn;
+            }
+
+            public void PostSimulationTick(in DispatcherTimingDTO timing)
+            {
+                _owner?.PostSimulationTick(in timing);
+            }
+
+            public void VisualSyncTick(in DispatcherTimingDTO timing)
+            {
+            }
+        }
+
+        private ulong ResolveCachedSessionId()
+        {
+            if (_sessionId == 0UL)
+                _sessionId = BuildSessionId(_worldSeedProvider);
+
+            return _sessionId;
+        }
+
+        private static ulong BuildSessionId(IWorldSeedProvider provider)
+        {
             uint worldSeed = provider != null && provider.IsInitialized
                 ? unchecked((uint)provider.RuntimeWorldSeed)
                 : ScavengingLootOracleConstants.DefaultSessionSalt;

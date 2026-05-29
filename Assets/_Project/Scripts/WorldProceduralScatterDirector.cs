@@ -11398,10 +11398,11 @@ namespace Hecton8.World
 
         private void ApplyVendorGpuiManagerAdmission()
         {
-            if (floraGpuiManager == null || HardwareTierDetector.AllowHighResourceComputeShaders)
+            if (floraGpuiManager == null)
                 return;
 
-            floraGpuiManager.enabled = false;
+            if (!SystemInfo.supportsComputeShaders)
+                floraGpuiManager.enabled = false;
         }
 
         public void OnGlobalRegistryServiceReplaced(

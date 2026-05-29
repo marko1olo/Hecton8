@@ -38,8 +38,8 @@ namespace Hecton8.AI
             {
                 float feedbackDamage = appliedDamage > 0f ? appliedDamage : packet.Magnitude;
                 ApplyFaunaInteraction(FaunaInteractionKind.Cut, hitPoint, feedbackDamage);
-                if (TryGetComponent(out CreatureDamageManager damageManager))
-                    damageManager.RegisterWoundWS(hitPoint, feedbackDamage);
+                if (_creatureDamageManager != null)
+                    _creatureDamageManager.RegisterWoundWS(hitPoint, feedbackDamage);
             }
         }
 

@@ -18,15 +18,15 @@ namespace CandiceAIforGames.AI
 
         public bool ShakeSupport;
         public GameObject MainCamera;
-        public GameObject KillCameraParent;        
+        public GameObject KillCameraParent;
+        public FollowPlayer KillCameraFollow;
         public Transform target;
         public ScriptableObject ShakeData;
 
         //CameraShake Action
         public void CameraShake()
         {
-            string dependencyName = SupportedMiddleware.FirstGearGames.ToString() + "." + SupportedMiddleware.SmoothCameraShaker.ToString();
-            if (CheckForDependency(dependencyName))
+            if (CheckForDependency("FirstGearGames.SmoothCameraShaker"))
             {
                 //FirstGearGames.SmoothCameraShaker.CameraShakerHandler.Shake(ShakeData as FirstGearGames.SmoothCameraShaker.ShakeData);
             }
@@ -50,9 +50,16 @@ namespace CandiceAIforGames.AI
             {
                 //enable freefly camera parent
                 KillCameraParent.SetActive(true);
-                if (target != null) { 
-                    KillCameraParent.GetComponent<FollowPlayer>().player = target;
-                    KillCameraParent.transform.GetChild(0).LookAt(target);
+                if (target != null) {
+                    if (KillCameraFollow != null)
+                    {
+                        KillCameraFollow.player = target;
+                    }
+
+                    if (KillCameraParent.transform.childCount > 0)
+                    {
+                        KillCameraParent.transform.GetChild(0).LookAt(target);
+                    }
                 }
                 
             }

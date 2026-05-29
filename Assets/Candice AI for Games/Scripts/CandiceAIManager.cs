@@ -1,28 +1,32 @@
 ﻿using CandiceAIforGames.AI.Pathfinding;
 using System;
-using System.Collections;
 using System.Collections.Generic;
-using System.Threading;
 using UnityEngine;
 namespace CandiceAIforGames.AI
 {
     public class CandiceAIManager : MonoBehaviour
     {
+        private const int MaxQueuedPathResults = 128;
+        private const int MaxQueuedRegistrations = 128;
+        private const int MaxRegisteredAgents = 128;
+
         [SerializeField]
         private bool drawGridGizmos = true;
         [SerializeField]
         private bool drawAllAgentPaths = true;
         //public static CandiceAIManager getInstance;
         private static CandiceAIManager instance;
-        private Queue<PathResult> results = new Queue<PathResult>();//Data strucure containing a collection of all paths requested by all AI Agents/Controllers
+        // COLD ALLOC: Queue<PathResult>(128) - bounded async path result handoff - owner: CandiceAIManager
+        private Queue<PathResult> results = new Queue<PathResult>(MaxQueuedPathResults);//Data strucure containing a collection of all paths requested by all AI Agents/Controllers
         private CandicePathFinding pathFinding;//Pathfinding module that does the actual calculations to find a path.
         public CandiceGrid grid;//The grid that contains all the nodes
 
 
-        Queue<RegistrationRequest> registrationQueue = new Queue<RegistrationRequest>();
+        // COLD ALLOC: Queue<RegistrationRequest>(128) - bounded controller registration handoff - owner: CandiceAIManager
+        Queue<RegistrationRequest> registrationQueue = new Queue<RegistrationRequest>(MaxQueuedRegistrations);
 
-        public Dictionary<int, GameObject> agents = new Dictionary<int, GameObject>();
-        private List<CandiceBehaviorTreeS> behaviorTrees = new List<CandiceBehaviorTreeS>();
+        // COLD ALLOC: Dictionary<int,GameObject>(128) - bounded registered agent table - owner: CandiceAIManager
+        public Dictionary<int, GameObject> agents = new Dictionary<int, GameObject>(MaxRegisteredAgents);
         public int agentCount = 0;
 
         public static string[] arrNodeTypes = { "Selector", "Sequence", "Inverter", "Action" };
@@ -63,40 +67,41 @@ namespace CandiceAIforGames.AI
         void Start()
         {
             //Process all agent pathfinding requests
-            if (results.Count > 0)
+            lock (results)
             {
                 int itemsInQueue = results.Count;
-                lock (results)
+                for (int i = 0; i < itemsInQueue; i++)
                 {
-                    for (int i = 0; i < itemsInQueue; i++)
+                    PathResult result = results.Dequeue();
+                    if (result.callbackWithLength != null)
                     {
-                        PathResult result = results.Dequeue();
+                        result.callbackWithLength(result.path, result.pathLength, result.success);
+                    }
+                    else if (result.callback != null)
+                    {
                         result.callback(result.path, result.success);
                     }
                 }
             }
             //Process all agent registration requests
-            if (registrationQueue.Count > 0)
+            lock (registrationQueue)
             {
                 int itemsInQueue = registrationQueue.Count;
-                lock (registrationQueue)
+                for (int i = 0; i < itemsInQueue; i++)
                 {
-                    for (int i = 0; i < itemsInQueue; i++)
+                    RegistrationRequest rr = registrationQueue.Dequeue();
+                    bool isRegistered = false;
+                    int assignedAgentId = agentCount;
+                    if (agentCount < MaxRegisteredAgents && rr.agent != null)
                     {
-                        RegistrationRequest rr = registrationQueue.Dequeue();
-                        bool isRegistered;
-                        try
-                        {
-                            agentCount++;
-                            agents.Add(agentCount, rr.agent);
-                            isRegistered = true;
-                        }
-                        catch (Exception e)
-                        {
-                            Debug.LogError(e.Message);
-                            isRegistered = false;
-                        }
-                        rr.callback(isRegistered, agentCount);
+                        agentCount++;
+                        assignedAgentId = agentCount;
+                        agents.Add(assignedAgentId, rr.agent);
+                        isRegistered = true;
+                    }
+                    if (rr.callback != null)
+                    {
+                        rr.callback(isRegistered, assignedAgentId);
                     }
                 }
             }
@@ -106,39 +111,40 @@ namespace CandiceAIforGames.AI
         void Update()
         {
             //Process all agent registration requests
-            if (registrationQueue.Count > 0)
+            lock (registrationQueue)
             {
                 int itemsInQueue = registrationQueue.Count;
-                lock (registrationQueue)
+                for (int i = 0; i < itemsInQueue; i++)
                 {
-                    for (int i = 0; i < itemsInQueue; i++)
+                    RegistrationRequest rr = registrationQueue.Dequeue();
+                    bool isRegistered = false;
+                    int assignedAgentId = agentCount;
+                    if (agentCount < MaxRegisteredAgents && rr.agent != null)
                     {
-                        RegistrationRequest rr = registrationQueue.Dequeue();
-                        bool isRegistered;
-                        try
-                        {
-                            agentCount++;
-                            agents.Add(agentCount, rr.agent);
-                            isRegistered = true;
-                        }
-                        catch (Exception e)
-                        {
-                            Debug.LogError(e.Message);
-                            isRegistered = false;
-                        }
-                        rr.callback(isRegistered, agentCount);
+                        agentCount++;
+                        assignedAgentId = agentCount;
+                        agents.Add(assignedAgentId, rr.agent);
+                        isRegistered = true;
+                    }
+                    if (rr.callback != null)
+                    {
+                        rr.callback(isRegistered, assignedAgentId);
                     }
                 }
             }
             //Process all agent pathfinding requests
-            if (results.Count > 0)
+            lock (results)
             {
                 int itemsInQueue = results.Count;
-                lock (results)
+                for (int i = 0; i < itemsInQueue; i++)
                 {
-                    for (int i = 0; i < itemsInQueue; i++)
+                    PathResult result = results.Dequeue();
+                    if (result.callbackWithLength != null)
                     {
-                        PathResult result = results.Dequeue();
+                        result.callbackWithLength(result.path, result.pathLength, result.success);
+                    }
+                    else if (result.callback != null)
+                    {
                         result.callback(result.path, result.success);
                     }
                 }
@@ -151,11 +157,6 @@ namespace CandiceAIforGames.AI
         }
         public static CandiceAIManager getInstance()
         {
-            if (instance == null)
-            {
-                instance = new CandiceAIManager();
-
-            }
             return instance;
         }
         private void Initialise()
@@ -178,24 +179,41 @@ namespace CandiceAIforGames.AI
         }
         public bool IsPointWalkable(Vector3 point)
         {
-            return grid.isWalkable(point);
+            return grid != null && grid.isWalkable(point);
         }
 
         public void RegisterAgent(GameObject agent, Action<bool, int> callback)
         {
-            getInstance().registrationQueue.Enqueue(new RegistrationRequest(agent, callback));
+            if (registrationQueue.Count >= MaxQueuedRegistrations)
+            {
+                if (callback != null)
+                {
+                    callback(false, agentCount);
+                }
+                return;
+            }
+
+            registrationQueue.Enqueue(new RegistrationRequest(agent, callback));
         }
 
         #region A* Pathfinding
         //This method is called by the AI agents in order to receive a path to their goal, using the Pathfinding module.
         public void RequestASTARPath(PathRequest request)
         {
-            ThreadStart threadStart = delegate
+            if (pathFinding == null)
             {
-                Debug.Log("Getting Path");
-                getInstance().pathFinding.FindASTARPath(request, getInstance().FinishedProcessingPath);
-            };
-            threadStart.Invoke();
+                if (request.callback != null)
+                {
+                    request.callback(null, false);
+                }
+                else if (request.callbackWithLength != null)
+                {
+                    request.callbackWithLength(null, 0, false);
+                }
+                return;
+            }
+
+            pathFinding.FindASTARPath(request, null);
         }
         /*public static void RequestBFSPath(Tile tile, Action<Stack<Tile>> callback)
         {
@@ -209,6 +227,11 @@ namespace CandiceAIforGames.AI
         {
             lock (results)
             {
+                if (results.Count >= MaxQueuedPathResults)
+                {
+                    return;
+                }
+
                 //Add the result to the queue.
                 results.Enqueue(result);
             }
@@ -226,14 +249,27 @@ namespace CandiceAIforGames.AI
     public struct PathResult
     {
         public Vector3[] path;
+        public int pathLength;
         public bool success;
         public Action<Vector3[], bool> callback;
+        public Action<Vector3[], int, bool> callbackWithLength;
 
         public PathResult(Vector3[] path, bool success, Action<Vector3[], bool> callback)
         {
             this.path = path;
+            this.pathLength = path == null ? 0 : path.Length;
             this.success = success;
             this.callback = callback;
+            this.callbackWithLength = null;
+        }
+
+        public PathResult(Vector3[] path, int pathLength, bool success, Action<Vector3[], bool> callback, Action<Vector3[], int, bool> callbackWithLength)
+        {
+            this.path = path;
+            this.pathLength = pathLength;
+            this.success = success;
+            this.callback = callback;
+            this.callbackWithLength = callbackWithLength;
         }
     }
     public struct PathRequest
@@ -241,12 +277,22 @@ namespace CandiceAIforGames.AI
         public Vector3 pathStart;
         public Vector3 pathEnd;
         public Action<Vector3[], bool> callback;
+        public Action<Vector3[], int, bool> callbackWithLength;
 
         public PathRequest(Vector3 _start, Vector3 _end, Action<Vector3[], bool> _callback)
         {
             pathStart = _start;
             pathEnd = _end;
             callback = _callback;
+            callbackWithLength = null;
+        }
+
+        public PathRequest(Vector3 _start, Vector3 _end, Action<Vector3[], int, bool> _callback)
+        {
+            pathStart = _start;
+            pathEnd = _end;
+            callback = null;
+            callbackWithLength = _callback;
         }
     }
 

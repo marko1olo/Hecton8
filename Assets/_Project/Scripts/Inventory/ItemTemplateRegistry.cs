@@ -174,6 +174,7 @@ namespace Hecton8.Inventory
     public static class ItemTemplateRegistry
     {
         private static ItemTemplate[] s_templates = Array.Empty<ItemTemplate>();
+        private static IQuestSystem s_questSystem;
         private static uint s_revision;
 
         public static bool IsInitialized => s_templates.Length > 0;
@@ -189,7 +190,9 @@ namespace Hecton8.Inventory
 
         public static void Configure(ItemTemplate[] templates)
         {
+            IQuestSystem questSystem = s_questSystem;
             Clear();
+            s_questSystem = questSystem;
 
             if (templates == null || templates.Length == 0)
             {
@@ -200,6 +203,11 @@ namespace Hecton8.Inventory
             // COLD ALLOC: ItemTemplate[templates.Length] — runtime template snapshot copied from authored registry asset — owner: ItemTemplateRegistry
             s_templates = new ItemTemplate[templates.Length];
             Array.Copy(templates, s_templates, templates.Length);
+        }
+
+        public static void ConfigureQuestSystem(IQuestSystem questSystem)
+        {
+            s_questSystem = questSystem;
         }
 
         public static bool TryGetIndex(uint hashID, out int index)
@@ -260,13 +268,14 @@ namespace Hecton8.Inventory
             if (requiredFlag == 0u)
                 return true;
 
-            IQuestSystem questSystem = GlobalRegistry.QuestSystem;
+            IQuestSystem questSystem = s_questSystem;
             return questSystem != null && questSystem.GetFlag(requiredFlag);
         }
 
         public static void Clear()
         {
             s_templates = Array.Empty<ItemTemplate>();
+            s_questSystem = null;
             unchecked
             {
                 s_revision++;

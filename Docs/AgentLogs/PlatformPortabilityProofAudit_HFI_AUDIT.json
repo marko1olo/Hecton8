@@ -105,7 +105,7 @@
         "call": "int persistentStart = persistentSource.IndexOf(\"buf.DispatchCompute(_shader, krnl_ShaderSim\", System.StringComparison.Ordinal); Assert.GreaterOrEqual(persistent",
         "executionSurface": "Editor",
         "fileHasThreadGroupQuery": false,
-        "line": 425,
+        "line": 547,
         "owner": "FirstParty",
         "path": "Assets/_Project/Tests/Editor/ComputeDispatchSizingEditTests.cs",
         "payloadSizedDispatch": false
@@ -114,7 +114,7 @@
         "call": "Assert.That(method, Does.Contain(\"buf.DispatchCompute(waveCombineShader, kernel, groupsX, groupsY, 1);\"));",
         "executionSurface": "Editor",
         "fileHasThreadGroupQuery": false,
-        "line": 486,
+        "line": 665,
         "owner": "FirstParty",
         "path": "Assets/_Project/Tests/Editor/ComputeDispatchSizingEditTests.cs",
         "payloadSizedDispatch": false
@@ -123,7 +123,7 @@
         "call": "Assert.That(initMethod, Does.Contain(\"buf.DispatchCompute(_shaderSpectrum, _kernelSpectrumInit, groups, groups, CASCADE_COUNT);\"));",
         "executionSurface": "Editor",
         "fileHasThreadGroupQuery": false,
-        "line": 520,
+        "line": 699,
         "owner": "FirstParty",
         "path": "Assets/_Project/Tests/Editor/ComputeDispatchSizingEditTests.cs",
         "payloadSizedDispatch": false
@@ -132,7 +132,7 @@
         "call": "Assert.That(updateMethod, Does.Contain(\"buf.DispatchCompute(_shaderSpectrum, _kernelSpectrumUpdate, groups, groups, CASCADE_COUNT);\"));",
         "executionSurface": "Editor",
         "fileHasThreadGroupQuery": false,
-        "line": 524,
+        "line": 703,
         "owner": "FirstParty",
         "path": "Assets/_Project/Tests/Editor/ComputeDispatchSizingEditTests.cs",
         "payloadSizedDispatch": false
@@ -141,7 +141,7 @@
         "call": "_shaderProcessQueries.Dispatch(_kernelHandle, numGroups, 1, 1);",
         "executionSurface": "Runtime",
         "fileHasThreadGroupQuery": false,
-        "line": 496,
+        "line": 504,
         "owner": "Vendor",
         "path": "Assets/Crest/Crest/Scripts/Collision/QueryBase.cs",
         "payloadSizedDispatch": false
@@ -159,7 +159,7 @@
         "call": "buf.DispatchCompute(_combineShader, selectedShaderKernel, groupsX, groupsY, 1);",
         "executionSurface": "Runtime",
         "fileHasThreadGroupQuery": false,
-        "line": 426,
+        "line": 451,
         "owner": "Vendor",
         "path": "Assets/Crest/Crest/Scripts/LodData/LodDataMgrAnimWaves.cs",
         "payloadSizedDispatch": false
@@ -168,7 +168,7 @@
         "call": "buf.DispatchCompute(_shader, krnl_ShaderSim, groupsX, groupsY, lodDispatchCount);",
         "executionSurface": "Runtime",
         "fileHasThreadGroupQuery": false,
-        "line": 192,
+        "line": 202,
         "owner": "Vendor",
         "path": "Assets/Crest/Crest/Scripts/LodData/LodDataMgrPersistent.cs",
         "payloadSizedDispatch": false
@@ -186,7 +186,7 @@
         "call": "buf.DispatchCompute(_shaderSpectrum, _kernelSpectrumInit, groups, groups, CASCADE_COUNT);",
         "executionSurface": "Runtime",
         "fileHasThreadGroupQuery": false,
-        "line": 449,
+        "line": 453,
         "owner": "Vendor",
         "path": "Assets/Crest/Crest/Scripts/Shapes/FFT/FFTCompute.cs",
         "payloadSizedDispatch": false
@@ -195,7 +195,7 @@
         "call": "buf.DispatchCompute(_shaderSpectrum, _kernelSpectrumUpdate, groups, groups, CASCADE_COUNT);",
         "executionSurface": "Runtime",
         "fileHasThreadGroupQuery": false,
-        "line": 473,
+        "line": 477,
         "owner": "Vendor",
         "path": "Assets/Crest/Crest/Scripts/Shapes/FFT/FFTCompute.cs",
         "payloadSizedDispatch": false
@@ -204,7 +204,7 @@
         "call": "buf.DispatchCompute(_shaderFFT, kernelOffset, 1, _resolution, CASCADE_COUNT);",
         "executionSurface": "Runtime",
         "fileHasThreadGroupQuery": false,
-        "line": 495,
+        "line": 499,
         "owner": "Vendor",
         "path": "Assets/Crest/Crest/Scripts/Shapes/FFT/FFTCompute.cs",
         "payloadSizedDispatch": false
@@ -213,7 +213,7 @@
         "call": "buf.DispatchCompute(_shaderFFT, kernelOffset + 1, _resolution, 1, CASCADE_COUNT);",
         "executionSurface": "Runtime",
         "fileHasThreadGroupQuery": false,
-        "line": 502,
+        "line": 506,
         "owner": "Vendor",
         "path": "Assets/Crest/Crest/Scripts/Shapes/FFT/FFTCompute.cs",
         "payloadSizedDispatch": false
@@ -222,7 +222,7 @@
         "call": "buf.DispatchCompute(_shaderGerstner, _krnlGerstner, groupsX, groupsY, cascadeCount);",
         "executionSurface": "Runtime",
         "fileHasThreadGroupQuery": false,
-        "line": 381,
+        "line": 397,
         "owner": "Vendor",
         "path": "Assets/Crest/Crest/Scripts/Shapes/ShapeGerstner.cs",
         "payloadSizedDispatch": false
@@ -249,7 +249,7 @@
         "call": "_argsBufferComputeShader.Dispatch(_argsBufferDoubleInstanceCountComputeKernelID, GPUInstancerConstants.GetComputeThreadGroupCount(safeArgsEntryCount), 1, 1);",
         "executionSurface": "Runtime",
         "fileHasThreadGroupQuery": false,
-        "line": 641,
+        "line": 695,
         "owner": "Vendor",
         "path": "Assets/GPUInstancer/Scripts/Core/Contract/GPUInstancerManager.cs",
         "payloadSizedDispatch": false
@@ -258,7 +258,7 @@
         "call": "cameraComputeShader.Dispatch(instanceVisibilityComputeKernelId, GPUInstancerConstants.GetComputeThreadGroupCount(safeInstanceCount), 1, 1);",
         "executionSurface": "Runtime",
         "fileHasThreadGroupQuery": false,
-        "line": 753,
+        "line": 766,
         "owner": "Vendor",
         "path": "Assets/GPUInstancer/Scripts/Core/Static/GPUInstancerUtility.cs",
         "payloadSizedDispatch": false
@@ -267,7 +267,7 @@
         "call": "visibilityComputeShader.Dispatch(instanceVisibilityComputeKernelId, GPUInstancerConstants.GetComputeThreadGroupCount(safeInstanceCount), 1, 1);",
         "executionSurface": "Runtime",
         "fileHasThreadGroupQuery": false,
-        "line": 797,
+        "line": 810,
         "owner": "Vendor",
         "path": "Assets/GPUInstancer/Scripts/Core/Static/GPUInstancerUtility.cs",
         "payloadSizedDispatch": false
@@ -276,7 +276,7 @@
         "call": "bufferToTextureComputeShader.Dispatch(bufferToTextureComputeKernelID, GPUInstancerConstants.GetComputeThreadGroupCount(normalDispatchCount), 1, 1);",
         "executionSurface": "Runtime",
         "fileHasThreadGroupQuery": false,
-        "line": 922,
+        "line": 935,
         "owner": "Vendor",
         "path": "Assets/GPUInstancer/Scripts/Core/Static/GPUInstancerUtility.cs",
         "payloadSizedDispatch": false
@@ -285,7 +285,7 @@
         "call": "bufferToTextureComputeShader.Dispatch(bufferToTextureComputeKernelID, GPUInstancerConstants.GetComputeThreadGroupCount(shadowDispatchCount), 1, 1);",
         "executionSurface": "Runtime",
         "fileHasThreadGroupQuery": false,
-        "line": 942,
+        "line": 955,
         "owner": "Vendor",
         "path": "Assets/GPUInstancer/Scripts/Core/Static/GPUInstancerUtility.cs",
         "payloadSizedDispatch": false
@@ -294,7 +294,7 @@
         "call": "bufferToTextureComputeShader.Dispatch(bufferToTextureCrossFadeKernelID, GPUInstancerConstants.GetComputeThreadGroupCount(lodDispatchCount), 1, 1);",
         "executionSurface": "Runtime",
         "fileHasThreadGroupQuery": false,
-        "line": 959,
+        "line": 972,
         "owner": "Vendor",
         "path": "Assets/GPUInstancer/Scripts/Core/Static/GPUInstancerUtility.cs",
         "payloadSizedDispatch": false
@@ -303,22 +303,13 @@
         "call": "dilationCompute.Dispatch(dilationKernel, GPUInstancerConstants.GetComputeThreadGroupCount2D(billboardTexture.width, safeFrameCount), GPUInstancerConstants.GetCo",
         "executionSurface": "Runtime",
         "fileHasThreadGroupQuery": false,
-        "line": 2324,
+        "line": 2365,
         "owner": "Vendor",
         "path": "Assets/GPUInstancer/Scripts/Core/Static/GPUInstancerUtility.cs",
         "payloadSizedDispatch": false
       },
       {
         "call": "GPUInstancerConstants.computeBufferSetDataPartial.Dispatch(GPUInstancerConstants.computeBufferSetDataSingleKernelId, 1, 1, 1);",
-        "executionSurface": "Runtime",
-        "fileHasThreadGroupQuery": false,
-        "line": 3561,
-        "owner": "Vendor",
-        "path": "Assets/GPUInstancer/Scripts/Core/Static/GPUInstancerUtility.cs",
-        "payloadSizedDispatch": false
-      },
-      {
-        "call": "GPUInstancerConstants.computeBufferSetDataPartial.Dispatch(GPUInstancerConstants.computeBufferSetDataPartialKernelId, GPUInstancerConstants.GetComputeThreadGrou",
         "executionSurface": "Runtime",
         "fileHasThreadGroupQuery": false,
         "line": 3607,
@@ -330,7 +321,7 @@
         "call": "GPUInstancerConstants.computeBufferSetDataPartial.Dispatch(GPUInstancerConstants.computeBufferSetDataPartialKernelId, GPUInstancerConstants.GetComputeThreadGrou",
         "executionSurface": "Runtime",
         "fileHasThreadGroupQuery": false,
-        "line": 3633,
+        "line": 3653,
         "owner": "Vendor",
         "path": "Assets/GPUInstancer/Scripts/Core/Static/GPUInstancerUtility.cs",
         "payloadSizedDispatch": false
@@ -339,7 +330,7 @@
         "call": "GPUInstancerConstants.computeBufferSetDataPartial.Dispatch(GPUInstancerConstants.computeBufferSetDataPartialKernelId, GPUInstancerConstants.GetComputeThreadGrou",
         "executionSurface": "Runtime",
         "fileHasThreadGroupQuery": false,
-        "line": 3663,
+        "line": 3679,
         "owner": "Vendor",
         "path": "Assets/GPUInstancer/Scripts/Core/Static/GPUInstancerUtility.cs",
         "payloadSizedDispatch": false
@@ -348,7 +339,16 @@
         "call": "GPUInstancerConstants.computeBufferSetDataPartial.Dispatch(GPUInstancerConstants.computeBufferSetDataPartialKernelId, GPUInstancerConstants.GetComputeThreadGrou",
         "executionSurface": "Runtime",
         "fileHasThreadGroupQuery": false,
-        "line": 3672,
+        "line": 3709,
+        "owner": "Vendor",
+        "path": "Assets/GPUInstancer/Scripts/Core/Static/GPUInstancerUtility.cs",
+        "payloadSizedDispatch": false
+      },
+      {
+        "call": "GPUInstancerConstants.computeBufferSetDataPartial.Dispatch(GPUInstancerConstants.computeBufferSetDataPartialKernelId, GPUInstancerConstants.GetComputeThreadGrou",
+        "executionSurface": "Runtime",
+        "fileHasThreadGroupQuery": false,
+        "line": 3718,
         "owner": "Vendor",
         "path": "Assets/GPUInstancer/Scripts/Core/Static/GPUInstancerUtility.cs",
         "payloadSizedDispatch": false
@@ -357,7 +357,7 @@
         "call": "GPUInstancerConstants.computeRuntimeModification.Dispatch(GPUInstancerConstants.computeBufferTransformOffsetId, GPUInstancerConstants.GetComputeThreadGroupCount",
         "executionSurface": "Runtime",
         "fileHasThreadGroupQuery": false,
-        "line": 3720,
+        "line": 3766,
         "owner": "Vendor",
         "path": "Assets/GPUInstancer/Scripts/Core/Static/GPUInstancerUtility.cs",
         "payloadSizedDispatch": false
@@ -366,7 +366,7 @@
         "call": "GPUInstancerConstants.computeRuntimeModification.Dispatch(GPUInstancerConstants.computeBufferMatrixOffsetId, GPUInstancerConstants.GetComputeThreadGroupCount(sa",
         "executionSurface": "Runtime",
         "fileHasThreadGroupQuery": false,
-        "line": 3762,
+        "line": 3808,
         "owner": "Vendor",
         "path": "Assets/GPUInstancer/Scripts/Core/Static/GPUInstancerUtility.cs",
         "payloadSizedDispatch": false
@@ -375,7 +375,7 @@
         "call": "GPUInstancerConstants.computeRuntimeModification.Dispatch(GPUInstancerConstants.computeRemoveInsideBoundsId, GPUInstancerConstants.GetComputeThreadGroupCount(in",
         "executionSurface": "Runtime",
         "fileHasThreadGroupQuery": false,
-        "line": 3783,
+        "line": 3829,
         "owner": "Vendor",
         "path": "Assets/GPUInstancer/Scripts/Core/Static/GPUInstancerUtility.cs",
         "payloadSizedDispatch": false
@@ -384,7 +384,7 @@
         "call": "GPUInstancerConstants.computeRuntimeModification.Dispatch(GPUInstancerConstants.computeRemoveInsideBoxId, GPUInstancerConstants.GetComputeThreadGroupCount(insta",
         "executionSurface": "Runtime",
         "fileHasThreadGroupQuery": false,
-        "line": 3809,
+        "line": 3855,
         "owner": "Vendor",
         "path": "Assets/GPUInstancer/Scripts/Core/Static/GPUInstancerUtility.cs",
         "payloadSizedDispatch": false
@@ -393,7 +393,7 @@
         "call": "GPUInstancerConstants.computeRuntimeModification.Dispatch(GPUInstancerConstants.computeRemoveInsideSphereId, GPUInstancerConstants.GetComputeThreadGroupCount(in",
         "executionSurface": "Runtime",
         "fileHasThreadGroupQuery": false,
-        "line": 3829,
+        "line": 3875,
         "owner": "Vendor",
         "path": "Assets/GPUInstancer/Scripts/Core/Static/GPUInstancerUtility.cs",
         "payloadSizedDispatch": false
@@ -402,7 +402,7 @@
         "call": "GPUInstancerConstants.computeRuntimeModification.Dispatch(GPUInstancerConstants.computeRemoveInsideCapsuleId, GPUInstancerConstants.GetComputeThreadGroupCount(i",
         "executionSurface": "Runtime",
         "fileHasThreadGroupQuery": false,
-        "line": 3870,
+        "line": 3916,
         "owner": "Vendor",
         "path": "Assets/GPUInstancer/Scripts/Core/Static/GPUInstancerUtility.cs",
         "payloadSizedDispatch": false
@@ -411,16 +411,16 @@
         "call": "GPUInstancerConstants.computeTextureUtils.Dispatch(GPUInstancerConstants.computeTextureUtilsCopyTextureId, GPUInstancerConstants.GetComputeThreadGroupCount2D(so",
         "executionSurface": "Runtime",
         "fileHasThreadGroupQuery": false,
-        "line": 4032,
+        "line": 4078,
         "owner": "Vendor",
         "path": "Assets/GPUInstancer/Scripts/Core/Static/GPUInstancerUtility.cs",
         "payloadSizedDispatch": false
       },
       {
-        "call": "GPUInstancerConstants.computeTextureUtils.Dispatch(2, GPUInstancerConstants.GetComputeThreadGroupCount2D(sourceW), GPUInstancerConstants.GetComputeThreadGroupCo",
+        "call": "GPUInstancerConstants.computeTextureUtils.Dispatch(GPUInstancerConstants.computeTextureUtilsCopyTextureArrayId, GPUInstancerConstants.GetComputeThreadGroupCount",
         "executionSurface": "Runtime",
         "fileHasThreadGroupQuery": false,
-        "line": 4063,
+        "line": 4109,
         "owner": "Vendor",
         "path": "Assets/GPUInstancer/Scripts/Core/Static/GPUInstancerUtility.cs",
         "payloadSizedDispatch": false
@@ -523,7 +523,7 @@
     "firstPartyRuntimePayloadSizedDispatchCallsWithoutThreadGroupQueryCount": 4,
     "numthreadsDeclarations": 156,
     "referenceFileMaxBytes": 2000000,
-    "referenceFilesScanned": 9602,
+    "referenceFilesScanned": 9604,
     "riskyThreadGroupCount": 4,
     "riskyThreadGroupCountByExecutionSurface": {
       "Editor": 2,
@@ -658,7 +658,7 @@
         "call": "_shaderProcessQueries.Dispatch(_kernelHandle, numGroups, 1, 1);",
         "executionSurface": "Runtime",
         "fileHasThreadGroupQuery": false,
-        "line": 496,
+        "line": 504,
         "owner": "Vendor",
         "path": "Assets/Crest/Crest/Scripts/Collision/QueryBase.cs",
         "payloadSizedDispatch": false
@@ -676,7 +676,7 @@
         "call": "buf.DispatchCompute(_combineShader, selectedShaderKernel, groupsX, groupsY, 1);",
         "executionSurface": "Runtime",
         "fileHasThreadGroupQuery": false,
-        "line": 426,
+        "line": 451,
         "owner": "Vendor",
         "path": "Assets/Crest/Crest/Scripts/LodData/LodDataMgrAnimWaves.cs",
         "payloadSizedDispatch": false
@@ -685,7 +685,7 @@
         "call": "buf.DispatchCompute(_shader, krnl_ShaderSim, groupsX, groupsY, lodDispatchCount);",
         "executionSurface": "Runtime",
         "fileHasThreadGroupQuery": false,
-        "line": 192,
+        "line": 202,
         "owner": "Vendor",
         "path": "Assets/Crest/Crest/Scripts/LodData/LodDataMgrPersistent.cs",
         "payloadSizedDispatch": false
@@ -703,7 +703,7 @@
         "call": "buf.DispatchCompute(_shaderSpectrum, _kernelSpectrumInit, groups, groups, CASCADE_COUNT);",
         "executionSurface": "Runtime",
         "fileHasThreadGroupQuery": false,
-        "line": 449,
+        "line": 453,
         "owner": "Vendor",
         "path": "Assets/Crest/Crest/Scripts/Shapes/FFT/FFTCompute.cs",
         "payloadSizedDispatch": false
@@ -712,7 +712,7 @@
         "call": "buf.DispatchCompute(_shaderSpectrum, _kernelSpectrumUpdate, groups, groups, CASCADE_COUNT);",
         "executionSurface": "Runtime",
         "fileHasThreadGroupQuery": false,
-        "line": 473,
+        "line": 477,
         "owner": "Vendor",
         "path": "Assets/Crest/Crest/Scripts/Shapes/FFT/FFTCompute.cs",
         "payloadSizedDispatch": false
@@ -721,7 +721,7 @@
         "call": "buf.DispatchCompute(_shaderFFT, kernelOffset, 1, _resolution, CASCADE_COUNT);",
         "executionSurface": "Runtime",
         "fileHasThreadGroupQuery": false,
-        "line": 495,
+        "line": 499,
         "owner": "Vendor",
         "path": "Assets/Crest/Crest/Scripts/Shapes/FFT/FFTCompute.cs",
         "payloadSizedDispatch": false
@@ -730,7 +730,7 @@
         "call": "buf.DispatchCompute(_shaderFFT, kernelOffset + 1, _resolution, 1, CASCADE_COUNT);",
         "executionSurface": "Runtime",
         "fileHasThreadGroupQuery": false,
-        "line": 502,
+        "line": 506,
         "owner": "Vendor",
         "path": "Assets/Crest/Crest/Scripts/Shapes/FFT/FFTCompute.cs",
         "payloadSizedDispatch": false
@@ -739,7 +739,7 @@
         "call": "buf.DispatchCompute(_shaderGerstner, _krnlGerstner, groupsX, groupsY, cascadeCount);",
         "executionSurface": "Runtime",
         "fileHasThreadGroupQuery": false,
-        "line": 381,
+        "line": 397,
         "owner": "Vendor",
         "path": "Assets/Crest/Crest/Scripts/Shapes/ShapeGerstner.cs",
         "payloadSizedDispatch": false
@@ -748,7 +748,7 @@
         "call": "_argsBufferComputeShader.Dispatch(_argsBufferDoubleInstanceCountComputeKernelID, GPUInstancerConstants.GetComputeThreadGroupCount(safeArgsEntryCount), 1, 1);",
         "executionSurface": "Runtime",
         "fileHasThreadGroupQuery": false,
-        "line": 641,
+        "line": 695,
         "owner": "Vendor",
         "path": "Assets/GPUInstancer/Scripts/Core/Contract/GPUInstancerManager.cs",
         "payloadSizedDispatch": false
@@ -757,7 +757,7 @@
         "call": "cameraComputeShader.Dispatch(instanceVisibilityComputeKernelId, GPUInstancerConstants.GetComputeThreadGroupCount(safeInstanceCount), 1, 1);",
         "executionSurface": "Runtime",
         "fileHasThreadGroupQuery": false,
-        "line": 753,
+        "line": 766,
         "owner": "Vendor",
         "path": "Assets/GPUInstancer/Scripts/Core/Static/GPUInstancerUtility.cs",
         "payloadSizedDispatch": false
@@ -766,7 +766,7 @@
         "call": "visibilityComputeShader.Dispatch(instanceVisibilityComputeKernelId, GPUInstancerConstants.GetComputeThreadGroupCount(safeInstanceCount), 1, 1);",
         "executionSurface": "Runtime",
         "fileHasThreadGroupQuery": false,
-        "line": 797,
+        "line": 810,
         "owner": "Vendor",
         "path": "Assets/GPUInstancer/Scripts/Core/Static/GPUInstancerUtility.cs",
         "payloadSizedDispatch": false
@@ -775,7 +775,7 @@
         "call": "bufferToTextureComputeShader.Dispatch(bufferToTextureComputeKernelID, GPUInstancerConstants.GetComputeThreadGroupCount(normalDispatchCount), 1, 1);",
         "executionSurface": "Runtime",
         "fileHasThreadGroupQuery": false,
-        "line": 922,
+        "line": 935,
         "owner": "Vendor",
         "path": "Assets/GPUInstancer/Scripts/Core/Static/GPUInstancerUtility.cs",
         "payloadSizedDispatch": false
@@ -784,7 +784,7 @@
         "call": "bufferToTextureComputeShader.Dispatch(bufferToTextureComputeKernelID, GPUInstancerConstants.GetComputeThreadGroupCount(shadowDispatchCount), 1, 1);",
         "executionSurface": "Runtime",
         "fileHasThreadGroupQuery": false,
-        "line": 942,
+        "line": 955,
         "owner": "Vendor",
         "path": "Assets/GPUInstancer/Scripts/Core/Static/GPUInstancerUtility.cs",
         "payloadSizedDispatch": false
@@ -793,7 +793,7 @@
         "call": "bufferToTextureComputeShader.Dispatch(bufferToTextureCrossFadeKernelID, GPUInstancerConstants.GetComputeThreadGroupCount(lodDispatchCount), 1, 1);",
         "executionSurface": "Runtime",
         "fileHasThreadGroupQuery": false,
-        "line": 959,
+        "line": 972,
         "owner": "Vendor",
         "path": "Assets/GPUInstancer/Scripts/Core/Static/GPUInstancerUtility.cs",
         "payloadSizedDispatch": false
@@ -802,22 +802,13 @@
         "call": "dilationCompute.Dispatch(dilationKernel, GPUInstancerConstants.GetComputeThreadGroupCount2D(billboardTexture.width, safeFrameCount), GPUInstancerConstants.GetCo",
         "executionSurface": "Runtime",
         "fileHasThreadGroupQuery": false,
-        "line": 2324,
+        "line": 2365,
         "owner": "Vendor",
         "path": "Assets/GPUInstancer/Scripts/Core/Static/GPUInstancerUtility.cs",
         "payloadSizedDispatch": false
       },
       {
         "call": "GPUInstancerConstants.computeBufferSetDataPartial.Dispatch(GPUInstancerConstants.computeBufferSetDataSingleKernelId, 1, 1, 1);",
-        "executionSurface": "Runtime",
-        "fileHasThreadGroupQuery": false,
-        "line": 3561,
-        "owner": "Vendor",
-        "path": "Assets/GPUInstancer/Scripts/Core/Static/GPUInstancerUtility.cs",
-        "payloadSizedDispatch": false
-      },
-      {
-        "call": "GPUInstancerConstants.computeBufferSetDataPartial.Dispatch(GPUInstancerConstants.computeBufferSetDataPartialKernelId, GPUInstancerConstants.GetComputeThreadGrou",
         "executionSurface": "Runtime",
         "fileHasThreadGroupQuery": false,
         "line": 3607,
@@ -829,7 +820,7 @@
         "call": "GPUInstancerConstants.computeBufferSetDataPartial.Dispatch(GPUInstancerConstants.computeBufferSetDataPartialKernelId, GPUInstancerConstants.GetComputeThreadGrou",
         "executionSurface": "Runtime",
         "fileHasThreadGroupQuery": false,
-        "line": 3633,
+        "line": 3653,
         "owner": "Vendor",
         "path": "Assets/GPUInstancer/Scripts/Core/Static/GPUInstancerUtility.cs",
         "payloadSizedDispatch": false
@@ -838,7 +829,7 @@
         "call": "GPUInstancerConstants.computeBufferSetDataPartial.Dispatch(GPUInstancerConstants.computeBufferSetDataPartialKernelId, GPUInstancerConstants.GetComputeThreadGrou",
         "executionSurface": "Runtime",
         "fileHasThreadGroupQuery": false,
-        "line": 3663,
+        "line": 3679,
         "owner": "Vendor",
         "path": "Assets/GPUInstancer/Scripts/Core/Static/GPUInstancerUtility.cs",
         "payloadSizedDispatch": false
@@ -847,7 +838,16 @@
         "call": "GPUInstancerConstants.computeBufferSetDataPartial.Dispatch(GPUInstancerConstants.computeBufferSetDataPartialKernelId, GPUInstancerConstants.GetComputeThreadGrou",
         "executionSurface": "Runtime",
         "fileHasThreadGroupQuery": false,
-        "line": 3672,
+        "line": 3709,
+        "owner": "Vendor",
+        "path": "Assets/GPUInstancer/Scripts/Core/Static/GPUInstancerUtility.cs",
+        "payloadSizedDispatch": false
+      },
+      {
+        "call": "GPUInstancerConstants.computeBufferSetDataPartial.Dispatch(GPUInstancerConstants.computeBufferSetDataPartialKernelId, GPUInstancerConstants.GetComputeThreadGrou",
+        "executionSurface": "Runtime",
+        "fileHasThreadGroupQuery": false,
+        "line": 3718,
         "owner": "Vendor",
         "path": "Assets/GPUInstancer/Scripts/Core/Static/GPUInstancerUtility.cs",
         "payloadSizedDispatch": false
@@ -856,7 +856,7 @@
         "call": "GPUInstancerConstants.computeRuntimeModification.Dispatch(GPUInstancerConstants.computeBufferTransformOffsetId, GPUInstancerConstants.GetComputeThreadGroupCount",
         "executionSurface": "Runtime",
         "fileHasThreadGroupQuery": false,
-        "line": 3720,
+        "line": 3766,
         "owner": "Vendor",
         "path": "Assets/GPUInstancer/Scripts/Core/Static/GPUInstancerUtility.cs",
         "payloadSizedDispatch": false
@@ -865,7 +865,7 @@
         "call": "GPUInstancerConstants.computeRuntimeModification.Dispatch(GPUInstancerConstants.computeBufferMatrixOffsetId, GPUInstancerConstants.GetComputeThreadGroupCount(sa",
         "executionSurface": "Runtime",
         "fileHasThreadGroupQuery": false,
-        "line": 3762,
+        "line": 3808,
         "owner": "Vendor",
         "path": "Assets/GPUInstancer/Scripts/Core/Static/GPUInstancerUtility.cs",
         "payloadSizedDispatch": false
@@ -874,7 +874,7 @@
         "call": "GPUInstancerConstants.computeRuntimeModification.Dispatch(GPUInstancerConstants.computeRemoveInsideBoundsId, GPUInstancerConstants.GetComputeThreadGroupCount(in",
         "executionSurface": "Runtime",
         "fileHasThreadGroupQuery": false,
-        "line": 3783,
+        "line": 3829,
         "owner": "Vendor",
         "path": "Assets/GPUInstancer/Scripts/Core/Static/GPUInstancerUtility.cs",
         "payloadSizedDispatch": false
@@ -883,7 +883,7 @@
         "call": "GPUInstancerConstants.computeRuntimeModification.Dispatch(GPUInstancerConstants.computeRemoveInsideBoxId, GPUInstancerConstants.GetComputeThreadGroupCount(insta",
         "executionSurface": "Runtime",
         "fileHasThreadGroupQuery": false,
-        "line": 3809,
+        "line": 3855,
         "owner": "Vendor",
         "path": "Assets/GPUInstancer/Scripts/Core/Static/GPUInstancerUtility.cs",
         "payloadSizedDispatch": false
@@ -892,7 +892,7 @@
         "call": "GPUInstancerConstants.computeRuntimeModification.Dispatch(GPUInstancerConstants.computeRemoveInsideSphereId, GPUInstancerConstants.GetComputeThreadGroupCount(in",
         "executionSurface": "Runtime",
         "fileHasThreadGroupQuery": false,
-        "line": 3829,
+        "line": 3875,
         "owner": "Vendor",
         "path": "Assets/GPUInstancer/Scripts/Core/Static/GPUInstancerUtility.cs",
         "payloadSizedDispatch": false
@@ -901,7 +901,7 @@
         "call": "GPUInstancerConstants.computeRuntimeModification.Dispatch(GPUInstancerConstants.computeRemoveInsideCapsuleId, GPUInstancerConstants.GetComputeThreadGroupCount(i",
         "executionSurface": "Runtime",
         "fileHasThreadGroupQuery": false,
-        "line": 3870,
+        "line": 3916,
         "owner": "Vendor",
         "path": "Assets/GPUInstancer/Scripts/Core/Static/GPUInstancerUtility.cs",
         "payloadSizedDispatch": false
@@ -910,25 +910,25 @@
         "call": "GPUInstancerConstants.computeTextureUtils.Dispatch(GPUInstancerConstants.computeTextureUtilsCopyTextureId, GPUInstancerConstants.GetComputeThreadGroupCount2D(so",
         "executionSurface": "Runtime",
         "fileHasThreadGroupQuery": false,
-        "line": 4032,
+        "line": 4078,
         "owner": "Vendor",
         "path": "Assets/GPUInstancer/Scripts/Core/Static/GPUInstancerUtility.cs",
         "payloadSizedDispatch": false
       },
       {
-        "call": "GPUInstancerConstants.computeTextureUtils.Dispatch(2, GPUInstancerConstants.GetComputeThreadGroupCount2D(sourceW), GPUInstancerConstants.GetComputeThreadGroupCo",
+        "call": "GPUInstancerConstants.computeTextureUtils.Dispatch(GPUInstancerConstants.computeTextureUtilsCopyTextureArrayId, GPUInstancerConstants.GetComputeThreadGroupCount",
         "executionSurface": "Runtime",
         "fileHasThreadGroupQuery": false,
-        "line": 4063,
+        "line": 4109,
         "owner": "Vendor",
         "path": "Assets/GPUInstancer/Scripts/Core/Static/GPUInstancerUtility.cs",
         "payloadSizedDispatch": false
       },
       {
-        "call": "GPUInstancerConstants.computeTextureUtils.Dispatch(1, GPUInstancerConstants.GetComputeThreadGroupCount2D(destinationW), GPUInstancerConstants.GetComputeThreadGr",
+        "call": "GPUInstancerConstants.computeTextureUtils.Dispatch(GPUInstancerConstants.computeTextureUtilsReduceTextureId, GPUInstancerConstants.GetComputeThreadGroupCount2D(",
         "executionSurface": "Runtime",
         "fileHasThreadGroupQuery": false,
-        "line": 4092,
+        "line": 4138,
         "owner": "Vendor",
         "path": "Assets/GPUInstancer/Scripts/Core/Static/GPUInstancerUtility.cs",
         "payloadSizedDispatch": false

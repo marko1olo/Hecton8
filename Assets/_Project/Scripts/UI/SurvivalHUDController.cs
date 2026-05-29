@@ -143,9 +143,6 @@ namespace Hecton8.UI
 
         private void RunVisualSync(float deltaTime)
         {
-            if (_survivalSystem == null)
-                ResolveSurvivalSystem(false);
-
             if (_survivalSystem == null || !_survivalSystem.IsAlive)
             {
                 SetAllBarsEmpty();

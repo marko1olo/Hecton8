@@ -14,7 +14,7 @@ namespace Hecton8.Graphics.Culling
 {
     [DisallowMultipleComponent]
     [DefaultExecutionOrder(-84)]
-    public sealed unsafe class AbyssalShadowCullingRuntime : MonoBehaviour, IDisposable, IGlobalRegistryHotSwapListener
+    public sealed unsafe class AbyssalShadowCullingRuntime : MonoBehaviour, IDisposable, ISlowTickable, IGlobalRegistryHotSwapListener
     {
         private const uint SystemHash = 0x53313434u; // S134
         private const uint TelemetryFlagExternalProducer = 1u << 22;
@@ -30,6 +30,16 @@ namespace Hecton8.Graphics.Culling
         private const string DefaultCsvPath = "Docs/Tasks/shadow_culling_profiles.csv";
         private const SystemID OwnerSystemId = SystemID.GraphicsScalability;
         private const uint TelemetryFlagVaultLockFailed = 1u << 21;
+
+        private static readonly ulong JobMutationGuardMask =
+            MutationGuardBit(AbyssalShadowBufferIds.Instances) |
+            MutationGuardBit(AbyssalShadowBufferIds.States) |
+            MutationGuardBit(AbyssalShadowBufferIds.IlluminationScalars) |
+            MutationGuardBit(AbyssalShadowBufferIds.FrustumPlanes) |
+            MutationGuardBit(AbyssalShadowBufferIds.ProfileRules) |
+            MutationGuardBit(AbyssalShadowBufferIds.Counters) |
+            MutationGuardBit(AbyssalShadowBufferIds.HzbDepthTiles) |
+            MutationGuardBit(AbyssalShadowBufferIds.IndirectArgs);
 
         private static readonly int ShadowCullStatesShaderId = Shader.PropertyToID("_H8AbyssalShadowCullStates");
         private static readonly int ShadowCullIndirectArgsShaderId = Shader.PropertyToID("_H8AbyssalShadowIndirectArgs");
@@ -83,8 +93,10 @@ namespace Hecton8.Graphics.Culling
         private uint _lastTelemetryExtraFlags;
         private bool _registeredSimulationPhase;
         private bool _registeredVisualSyncPhase;
+        private bool _registeredSlowTick;
         private bool _registeredHotSwapListener;
         private bool _initialized;
+        private bool _resourceRefreshRequested;
         private bool _jobPending;
         private bool _mockSeeded;
         private bool _hzbSeeded;
@@ -99,6 +111,11 @@ namespace Hecton8.Graphics.Culling
         private ShadowCullCountersDTO _lastCounters;
 
         public static bool IsActive => s_active != null;
+
+        private static ulong MutationGuardBit(BufferID bufferId)
+        {
+            return 1UL << (unchecked((int)(uint)(int)bufferId) & 31);
+        }
 
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
         private static void ResetStaticState()
@@ -130,7 +147,9 @@ namespace Hecton8.Graphics.Culling
             RebindDataVaultForLifecycle(GlobalRegistry.DataVault, null);
             if (_dataVault != null)
                 EnsureInitialized(_dataVault);
+            _resourceRefreshRequested = _dataVault == null || !_initialized;
             TryRegisterHotSwapListener();
+            TryRegisterSlowTick();
 
             if (_simulationPhaseSystem == null)
                 _simulationPhaseSystem = new SimulationPhaseSystem(this);
@@ -161,6 +180,7 @@ namespace Hecton8.Graphics.Culling
             uint frame = vault != null ? ResolveDeterministicFrame(vault, 0u, false) : (_scheduledFrame == 0u ? 1u : _scheduledFrame);
             CompletePendingJobForBarrier(frame);
             TryUnregisterHotSwapListener();
+            TryUnregisterSlowTick();
             if (_registeredVisualSyncPhase)
             {
                 GlobalRegistry.UnregisterDispatcherSystem(_visualSyncPhaseSystem);
@@ -185,9 +205,14 @@ namespace Hecton8.Graphics.Culling
             in DispatcherJobContext context,
             JobHandle dependsOn)
         {
-            IDataVault vault = ResolveVault();
-            if (vault == null || !EnsureInitialized(vault) || _jobPending)
+            IDataVault vault = _dataVault;
+            if (vault == null || !_initialized || _jobPending)
+            {
+                if (vault == null || !_initialized)
+                    _resourceRefreshRequested = true;
+
                 return dependsOn;
+            }
 
             uint frame = ResolveDeterministicFrame(vault, context.Frame, true);
             return ScheduleCullingPass(vault, frame, dependsOn);
@@ -195,13 +220,38 @@ namespace Hecton8.Graphics.Culling
 
         private void CommitVisualSyncPhase(in DispatcherTimingDTO timing)
         {
-            IDataVault vault = ResolveVault();
-            if (vault == null || !EnsureInitialized(vault))
+            IDataVault vault = _dataVault;
+            if (vault == null || !_initialized)
+            {
+                _resourceRefreshRequested = true;
                 return;
+            }
 
             uint frame = ResolveTelemetryFrame(vault);
             if (!TryFinalizePendingJobNoWait(frame))
                 RecordTelemetry(vault, frame, TelemetryFlagJobBusy, 0u, 0f);
+        }
+
+        public void SlowTick()
+        {
+            IDataVault vault = _dataVault;
+            if (vault == null)
+            {
+                RebindDataVaultForLifecycle(GlobalRegistry.DataVault, null);
+                vault = _dataVault;
+            }
+
+            if (vault == null)
+            {
+                _resourceRefreshRequested = true;
+                return;
+            }
+
+            if (!_resourceRefreshRequested && _initialized)
+                return;
+
+            _initialized = EnsureInitialized(vault);
+            _resourceRefreshRequested = !_initialized;
         }
 
         public void SetCameraAUP(double3 cameraAUP)
@@ -711,6 +761,24 @@ namespace Hecton8.Graphics.Culling
             _registeredProducerFlags = 0u;
             _lastTelemetryExtraFlags = 0u;
             _lastCounters = default;
+            _resourceRefreshRequested = nextVault != null && isActiveAndEnabled;
+        }
+
+        private void TryRegisterSlowTick()
+        {
+            if (_registeredSlowTick || !Application.isPlaying || GlobalRegistry.Dispatcher == null)
+                return;
+
+            _registeredSlowTick = GlobalRegistry.TryRegisterSlowTickable(this, PriorityLayer.Core);
+        }
+
+        private void TryUnregisterSlowTick()
+        {
+            if (!_registeredSlowTick)
+                return;
+
+            GlobalRegistry.UnregisterSlowTickable(this, PriorityLayer.Core);
+            _registeredSlowTick = false;
         }
 
         private void TryRegisterHotSwapListener()
@@ -781,6 +849,18 @@ namespace Hecton8.Graphics.Culling
 
         private JobHandle ScheduleCullingPass(IDataVault vault, uint frame, JobHandle dependsOn)
         {
+            if (_jobPending)
+                return dependsOn;
+
+            if (!TryLockJobBuffers(vault, out int lockedCount))
+            {
+                RecordTelemetry(vault, frame, TelemetryFlagVaultLockFailed, 0u, 0f);
+                return dependsOn;
+            }
+
+            bool keepJobGuard = false;
+            try
+            {
             int instanceCapacity = math.max(1, _instanceCapacity);
             if (!TryOpenVaultBuffer(vault, ref _instanceHandle, AbyssalShadowBufferIds.Instances, instanceCapacity, out NativeArray<ShadowCullInstanceDTO> instances) ||
                 !TryOpenVaultBuffer(vault, ref _stateHandle, AbyssalShadowBufferIds.States, instanceCapacity, out NativeArray<ShadowCullStateDTO> states) ||
@@ -790,9 +870,10 @@ namespace Hecton8.Graphics.Culling
                 !TryOpenVaultBuffer(vault, ref _runtimeHandle, AbyssalShadowBufferIds.RuntimeState, 1, out NativeArray<AbyssalShadowRuntimeStateDTO> runtimeArray) ||
                 !TryOpenVaultBuffer(vault, ref _profileRuleHandle, AbyssalShadowBufferIds.ProfileRules, AbyssalShadowCullingConstants.ProfileRuleCapacity, out NativeArray<ShadowCullProfileRuleDTO> profileRules) ||
                 !TryOpenVaultBuffer(vault, ref _hzbTileHandle, AbyssalShadowBufferIds.HzbDepthTiles, AbyssalShadowCullingConstants.HzbTileCapacity, out NativeArray<ShadowCullHzbTileDTO> hzbTiles) ||
-                !TryOpenVaultBuffer(vault, ref _indirectArgsHandle, AbyssalShadowBufferIds.IndirectArgs, 1, out NativeArray<ShadowCullIndirectArgsDTO> indirectArgs) ||
-                _jobPending)
+                !TryOpenVaultBuffer(vault, ref _indirectArgsHandle, AbyssalShadowBufferIds.IndirectArgs, 1, out NativeArray<ShadowCullIndirectArgsDTO> indirectArgs))
             {
+                _initialized = false;
+                _resourceRefreshRequested = true;
                 return dependsOn;
             }
 
@@ -825,13 +906,6 @@ namespace Hecton8.Graphics.Culling
                 quality);
             runtimeArray[0] = runtime;
             _lastMaxShadowDistanceMeters = runtime.MaxShadowDistanceMeters;
-
-            if (!TryLockJobBuffers(vault, out int lockedCount))
-            {
-                UnlockJobBuffers(vault, lockedCount);
-                RecordTelemetry(vault, frame, TelemetryFlagVaultLockFailed, 0u, 0f);
-                return dependsOn;
-            }
 
             uint producerFlags = _registeredProducerFlags;
             JobHandle producerDependency = _registeredProducerDependency;
@@ -922,7 +996,14 @@ namespace Hecton8.Graphics.Culling
             _scheduledInstanceCount = count;
             _lastTelemetryExtraFlags |= producerFlags;
             _jobPending = true;
+            keepJobGuard = true;
             return handle;
+            }
+            finally
+            {
+                if (!keepJobGuard)
+                    UnlockJobBuffers(vault, lockedCount);
+            }
         }
 
         private bool TryFinalizePendingJobNoWait(uint frame)
@@ -946,24 +1027,40 @@ namespace Hecton8.Graphics.Culling
             if (!_jobPending)
                 return true;
 
-            if (!DispatcherJobFence.TryComplete(ref _cullingHandle, forceComplete: true))
+            if (!ForceCompleteCullingJobInPostSimulationWindow())
                 return false;
 
             return CommitCompletedJob(frame);
         }
 
+        private bool ForceCompleteCullingJobInPostSimulationWindow()
+        {
+            DispatcherJobFence.BeginPostSimulationSwapWindow();
+            try
+            {
+                return DispatcherJobFence.TryComplete(ref _cullingHandle, forceComplete: true);
+            }
+            finally
+            {
+                DispatcherJobFence.EndPostSimulationSwapWindow();
+            }
+        }
+
         private bool CommitCompletedJob(uint frame)
         {
             _jobPending = false;
-            IDataVault vault = ResolveVault();
+            IDataVault vault = _dataVault;
             if (vault != null)
                 UnlockJobBuffers(vault);
 
             long elapsedTicks = Stopwatch.GetTimestamp() - _scheduleTimestamp;
             double tickMs = Stopwatch.Frequency > 0 ? elapsedTicks * 1000.0 / Stopwatch.Frequency : 0.0;
             _lastBurstWallTimeMs = (float)math.max(0.0, tickMs);
-            if (vault == null || !EnsureVaultBuffers(vault))
+            if (vault == null || !_initialized)
+            {
+                _resourceRefreshRequested = true;
                 return true;
+            }
 
             uint uploaded = UploadCompletedState(vault, _scheduledInstanceCount);
             RecordTelemetry(vault, _scheduledFrame == 0u ? frame : _scheduledFrame, TelemetryFlagGpuUploaded, uploaded, _lastBurstWallTimeMs);
@@ -1070,40 +1167,22 @@ namespace Hecton8.Graphics.Culling
         private bool TryLockJobBuffers(IDataVault vault, out int lockedCount)
         {
             lockedCount = 0;
-            if (!vault.TryLockBuffer(AbyssalShadowBufferIds.Instances, OwnerSystemId)) return false;
+            if (!vault.TryAcquireMutationGuard(JobMutationGuardMask))
+                return false;
+
             lockedCount = 1;
-            if (!vault.TryLockBuffer(AbyssalShadowBufferIds.States, OwnerSystemId)) return false;
-            lockedCount = 2;
-            if (!vault.TryLockBuffer(AbyssalShadowBufferIds.IlluminationScalars, OwnerSystemId)) return false;
-            lockedCount = 3;
-            if (!vault.TryLockBuffer(AbyssalShadowBufferIds.FrustumPlanes, OwnerSystemId)) return false;
-            lockedCount = 4;
-            if (!vault.TryLockBuffer(AbyssalShadowBufferIds.ProfileRules, OwnerSystemId)) return false;
-            lockedCount = 5;
-            if (!vault.TryLockBuffer(AbyssalShadowBufferIds.Counters, OwnerSystemId)) return false;
-            lockedCount = 6;
-            if (!vault.TryLockBuffer(AbyssalShadowBufferIds.HzbDepthTiles, OwnerSystemId)) return false;
-            lockedCount = 7;
-            if (!vault.TryLockBuffer(AbyssalShadowBufferIds.IndirectArgs, OwnerSystemId)) return false;
-            lockedCount = 8;
             return true;
         }
 
         private void UnlockJobBuffers(IDataVault vault)
         {
-            UnlockJobBuffers(vault, 8);
+            UnlockJobBuffers(vault, 1);
         }
 
         private void UnlockJobBuffers(IDataVault vault, int lockedCount)
         {
-            if (lockedCount >= 8) vault.TryUnlockBuffer(AbyssalShadowBufferIds.IndirectArgs, OwnerSystemId);
-            if (lockedCount >= 7) vault.TryUnlockBuffer(AbyssalShadowBufferIds.HzbDepthTiles, OwnerSystemId);
-            if (lockedCount >= 6) vault.TryUnlockBuffer(AbyssalShadowBufferIds.Counters, OwnerSystemId);
-            if (lockedCount >= 5) vault.TryUnlockBuffer(AbyssalShadowBufferIds.ProfileRules, OwnerSystemId);
-            if (lockedCount >= 4) vault.TryUnlockBuffer(AbyssalShadowBufferIds.FrustumPlanes, OwnerSystemId);
-            if (lockedCount >= 3) vault.TryUnlockBuffer(AbyssalShadowBufferIds.IlluminationScalars, OwnerSystemId);
-            if (lockedCount >= 2) vault.TryUnlockBuffer(AbyssalShadowBufferIds.States, OwnerSystemId);
-            if (lockedCount >= 1) vault.TryUnlockBuffer(AbyssalShadowBufferIds.Instances, OwnerSystemId);
+            if (lockedCount > 0)
+                vault.ReleaseMutationGuard(JobMutationGuardMask);
         }
 
         private float ResolveGlobalQualityWeight(in AbyssalShadowRuntimeStateDTO runtime)

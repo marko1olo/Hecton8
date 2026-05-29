@@ -443,7 +443,7 @@ namespace Hecton8.Gameplay
 
         private void RefreshNativeState()
         {
-            if (!TryAcquireNativeStateWriteBuffers(
+            if (!TryResolveNativeStateWriteBuffers(
                     out NativeArray<float> hullIntegritySummary,
                     out NativeArray<SubmarinePhysicsBindingState> physicsBindings,
                     out NativeArray<SubmarineGridState> gridStates))
@@ -451,55 +451,48 @@ namespace Hecton8.Gameplay
                 return;
             }
 
-            try
+            Rigidbody body = hullRigidbody;
+            if (body != null)
             {
-                Rigidbody body = hullRigidbody;
-                if (body != null)
+                physicsBindings[0] = new SubmarinePhysicsBindingState
                 {
-                    physicsBindings[0] = new SubmarinePhysicsBindingState
-                    {
-                        LinearVelocity = body.linearVelocity,
-                        AngularVelocity = body.angularVelocity,
-                        CenterOfMass = body.worldCenterOfMass
-                    };
-                }
-                else
-                {
-                    physicsBindings[0] = default;
-                }
-
-                gridStates[0] = new SubmarineGridState
-                {
-                    StatusFlags =
-                        (structuralGrid != null && structuralGrid.IsReady ? SubmarineGridStateBits.StructuralGrid : 0u) |
-                        (fluidDynamics != null && fluidDynamics.isActiveAndEnabled ? SubmarineGridStateBits.FluidDynamics : 0u) |
-                        (atmosphereSystem != null && atmosphereSystem.isActiveAndEnabled ? SubmarineGridStateBits.AtmosphereSystem : 0u) |
-                        (IsTransportPlatformActive ? SubmarineGridStateBits.TransportPlatformActive : 0u)
+                    LinearVelocity = body.linearVelocity,
+                    AngularVelocity = body.angularVelocity,
+                    CenterOfMass = body.worldCenterOfMass
                 };
-
-                float totalBreachArea = 0f;
-                float maxCompartmentBreachArea = 0f;
-                int compartmentCount = 0;
-                if (structuralGrid != null && structuralGrid.IsReady && fluidDynamics != null)
-                {
-                    compartmentCount = fluidDynamics.CompartmentCount;
-                    for (int i = 0; i < compartmentCount; i++)
-                    {
-                        float breachArea = math.max(0f, structuralGrid.GetCompartmentBreachAreaSquareMeters(i));
-                        totalBreachArea += breachArea;
-                        maxCompartmentBreachArea = math.max(maxCompartmentBreachArea, breachArea);
-                    }
-                }
-
-                hullIntegritySummary[HullSummaryTotalBreachArea] = totalBreachArea;
-                hullIntegritySummary[HullSummaryMaxCompartmentBreachArea] = maxCompartmentBreachArea;
-                hullIntegritySummary[HullSummaryCompartmentCount] = compartmentCount;
-                hullIntegritySummary[HullSummaryReadyFlag] = structuralGrid != null && structuralGrid.IsReady ? 1f : 0f;
             }
-            finally
+            else
             {
-                ReleaseNativeStateWriteBuffers();
+                physicsBindings[0] = default;
             }
+
+            gridStates[0] = new SubmarineGridState
+            {
+                StatusFlags =
+                    (structuralGrid != null && structuralGrid.IsReady ? SubmarineGridStateBits.StructuralGrid : 0u) |
+                    (fluidDynamics != null && fluidDynamics.isActiveAndEnabled ? SubmarineGridStateBits.FluidDynamics : 0u) |
+                    (atmosphereSystem != null && atmosphereSystem.isActiveAndEnabled ? SubmarineGridStateBits.AtmosphereSystem : 0u) |
+                    (IsTransportPlatformActive ? SubmarineGridStateBits.TransportPlatformActive : 0u)
+            };
+
+            float totalBreachArea = 0f;
+            float maxCompartmentBreachArea = 0f;
+            int compartmentCount = 0;
+            if (structuralGrid != null && structuralGrid.IsReady && fluidDynamics != null)
+            {
+                compartmentCount = fluidDynamics.CompartmentCount;
+                for (int i = 0; i < compartmentCount; i++)
+                {
+                    float breachArea = math.max(0f, structuralGrid.GetCompartmentBreachAreaSquareMeters(i));
+                    totalBreachArea += breachArea;
+                    maxCompartmentBreachArea = math.max(maxCompartmentBreachArea, breachArea);
+                }
+            }
+
+            hullIntegritySummary[HullSummaryTotalBreachArea] = totalBreachArea;
+            hullIntegritySummary[HullSummaryMaxCompartmentBreachArea] = maxCompartmentBreachArea;
+            hullIntegritySummary[HullSummaryCompartmentCount] = compartmentCount;
+            hullIntegritySummary[HullSummaryReadyFlag] = structuralGrid != null && structuralGrid.IsReady ? 1f : 0f;
         }
 
         private void TryRegister()
@@ -631,7 +624,7 @@ namespace Hecton8.Gameplay
                    buffer.Length >= requiredLength;
         }
 
-        private bool TryAcquireNativeStateWriteBuffers(
+        private bool TryResolveNativeStateWriteBuffers(
             out NativeArray<float> hullIntegritySummary,
             out NativeArray<SubmarinePhysicsBindingState> physicsBindings,
             out NativeArray<SubmarineGridState> gridStates)
@@ -646,72 +639,18 @@ namespace Hecton8.Gameplay
             if (vault == null)
                 return false;
 
-            bool hullLocked = false;
-            bool physicsLocked = false;
-            bool gridLocked = false;
-            bool success = false;
-            try
-            {
-                if (!IsExactVaultHandle(in _hullIntegritySummaryHandle, HullIntegritySummaryBufferId) ||
-                    !vault.TryAcquireWriteLock(in _hullIntegritySummaryHandle, VaultOwnerSystemId, out hullIntegritySummary))
-                {
-                    return false;
-                }
-                hullLocked = true;
-
-                if (!IsExactVaultHandle(in _physicsBindingsHandle, PhysicsBindingBufferId) ||
-                    !vault.TryAcquireWriteLock(in _physicsBindingsHandle, VaultOwnerSystemId, out physicsBindings))
-                {
-                    return false;
-                }
-                physicsLocked = true;
-
-                if (!IsExactVaultHandle(in _gridStatesHandle, GridStateBufferId) ||
-                    !vault.TryAcquireWriteLock(in _gridStatesHandle, VaultOwnerSystemId, out gridStates))
-                {
-                    return false;
-                }
-                gridLocked = true;
-
-                if (!hullIntegritySummary.IsCreated || hullIntegritySummary.Length < HullSummarySlotCount ||
-                    !physicsBindings.IsCreated || physicsBindings.Length < 1 ||
-                    !gridStates.IsCreated || gridStates.Length < 1)
-                {
-                    return false;
-                }
-
-                success = true;
-                return true;
-            }
-            finally
-            {
-                if (!success)
-                {
-                    if (gridLocked)
-                        vault.ReleaseWriteLock(in _gridStatesHandle, VaultOwnerSystemId);
-                    if (physicsLocked)
-                        vault.ReleaseWriteLock(in _physicsBindingsHandle, VaultOwnerSystemId);
-                    if (hullLocked)
-                        vault.ReleaseWriteLock(in _hullIntegritySummaryHandle, VaultOwnerSystemId);
-                    hullIntegritySummary = default;
-                    physicsBindings = default;
-                    gridStates = default;
-                }
-            }
-        }
-
-        private void ReleaseNativeStateWriteBuffers()
-        {
-            IDataVault vault = _dataVault;
-            if (vault == null)
-                return;
-
-            if (IsExactVaultHandle(in _gridStatesHandle, GridStateBufferId))
-                vault.ReleaseWriteLock(in _gridStatesHandle, VaultOwnerSystemId);
-            if (IsExactVaultHandle(in _physicsBindingsHandle, PhysicsBindingBufferId))
-                vault.ReleaseWriteLock(in _physicsBindingsHandle, VaultOwnerSystemId);
-            if (IsExactVaultHandle(in _hullIntegritySummaryHandle, HullIntegritySummaryBufferId))
-                vault.ReleaseWriteLock(in _hullIntegritySummaryHandle, VaultOwnerSystemId);
+            return IsExactVaultHandle(in _hullIntegritySummaryHandle, HullIntegritySummaryBufferId) &&
+                   IsExactVaultHandle(in _physicsBindingsHandle, PhysicsBindingBufferId) &&
+                   IsExactVaultHandle(in _gridStatesHandle, GridStateBufferId) &&
+                   vault.TryResolveHandle(in _hullIntegritySummaryHandle, out hullIntegritySummary) &&
+                   vault.TryResolveHandle(in _physicsBindingsHandle, out physicsBindings) &&
+                   vault.TryResolveHandle(in _gridStatesHandle, out gridStates) &&
+                   hullIntegritySummary.IsCreated &&
+                   hullIntegritySummary.Length >= HullSummarySlotCount &&
+                   physicsBindings.IsCreated &&
+                   physicsBindings.Length >= 1 &&
+                   gridStates.IsCreated &&
+                   gridStates.Length >= 1;
         }
 
         private static void ReleaseSubmarineVaultHandle<T>(IDataVault vault, ref VaultGenerationHandle<T> handle) where T : struct

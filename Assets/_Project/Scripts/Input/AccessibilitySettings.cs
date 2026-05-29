@@ -31,6 +31,7 @@ namespace Hecton8.Input
         private bool _uploaded;
         private bool _duplicateInstance;
         private bool _serviceShutdownComplete;
+        private bool _supportsConstantBuffers;
 
         internal static AccessibilitySettings ActiveRuntimeInstance { get; private set; }
 
@@ -45,6 +46,7 @@ namespace Hecton8.Input
             if (!TryClaimRuntimeInstance())
                 return;
 
+            CacheGraphicsCapabilitiesCold();
             TryColdBootstrapBuffers();
             RebuildConfig();
         }
@@ -55,6 +57,7 @@ namespace Hecton8.Input
                 return;
 
             _serviceShutdownComplete = false;
+            CacheGraphicsCapabilitiesCold();
             TryColdBootstrapBuffers();
             RebuildConfig();
             _registered = GlobalRegistry.TryRegisterDispatcherSystem(this);
@@ -136,7 +139,7 @@ namespace Hecton8.Input
                 _currentConfig.GlobalQualityWeight);
             Shader.SetGlobalVector(AccessibilityParamsId, fallback);
 
-            if (!SystemInfo.supportsSetConstantBuffer || !HasValidBuffers())
+            if (!_supportsConstantBuffers || !HasValidBuffers())
             {
                 _lastUploadedConfig = _currentConfig;
                 _uploaded = true;
@@ -189,7 +192,7 @@ namespace Hecton8.Input
 
         private void TryColdBootstrapBuffers()
         {
-            if (!SystemInfo.supportsSetConstantBuffer)
+            if (!_supportsConstantBuffers)
             {
                 ReleaseBuffer(ref _configBufferA);
                 ReleaseBuffer(ref _configBufferB);
@@ -211,6 +214,11 @@ namespace Hecton8.Input
             _writeBufferIndex = 0;
             _uploaded = false;
             _dirty = true;
+        }
+
+        private void CacheGraphicsCapabilitiesCold()
+        {
+            _supportsConstantBuffers = SystemInfo.supportsSetConstantBuffer;
         }
 
         private bool TryClaimRuntimeInstance()
@@ -249,7 +257,7 @@ namespace Hecton8.Input
             AccessibilityConfigDTO disabled = default;
             Shader.SetGlobalVector(AccessibilityParamsId, Vector4.zero);
 
-            if (SystemInfo.supportsSetConstantBuffer && HasValidBuffers())
+            if (_supportsConstantBuffers && HasValidBuffers())
             {
                 GraphicsBuffer writeBuffer = _activeConfigBuffer != null && _activeConfigBuffer.IsValid()
                     ? _activeConfigBuffer

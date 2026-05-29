@@ -31,6 +31,7 @@ namespace Hecton8.Core
         private HectonUnderwaterVisuals _underwaterVisuals;
         private VisorHUDController _visorController;
         private HUDNotification _hudNotification;
+        private IPlayerRuntimeContext _playerRuntimeContext;
         private readonly List<VisorHUDController> _visorResolveBuffer = new List<VisorHUDController>(2); // COLD ALLOC: List<VisorHUDController>[2] - focused sensory hierarchy resolution buffer - owner: PlayerSensoryManager
 
         /// <inheritdoc />
@@ -120,7 +121,7 @@ namespace Hecton8.Core
                 TryRegisterHotSwapListener();
                 TryRegisterUpdatable();
                 TryRegisterService();
-                SyncSensoryContext();
+                SyncSensoryContextCold();
                 return;
             }
 
@@ -132,13 +133,13 @@ namespace Hecton8.Core
             TryRegisterHotSwapListener();
             TryRegisterUpdatable();
             TryRegisterService();
-            SyncSensoryContext();
+            SyncSensoryContextCold();
         }
 
         /// <inheritdoc />
         public void Tick(float deltaTime)
         {
-            SyncSensoryContext();
+            RefreshSensoryContextHot();
         }
 
         private void Awake()
@@ -153,7 +154,7 @@ namespace Hecton8.Core
                 TryRegisterHotSwapListener();
                 TryRegisterUpdatable();
                 TryRegisterService();
-                SyncSensoryContext();
+                SyncSensoryContextCold();
             }
         }
 
@@ -194,7 +195,10 @@ namespace Hecton8.Core
             }
 
             if (serviceSlot == GlobalRegistryServiceSlot.Player)
-                SyncSensoryContext();
+            {
+                _playerRuntimeContext = currentService as IPlayerRuntimeContext;
+                SyncSensoryContextCold();
+            }
         }
 
         private void ShutdownServiceState()
@@ -213,6 +217,7 @@ namespace Hecton8.Core
             _underwaterVisuals = null;
             _visorController = null;
             _hudNotification = null;
+            _playerRuntimeContext = null;
             _visorResolveBuffer.Clear();
 
             GlobalRegistry.ClearPlayerSensoryRuntime(this);
@@ -236,7 +241,43 @@ namespace Hecton8.Core
                 s_activeRuntime = this;
         }
 
-        private void SyncSensoryContext()
+        private void RefreshSensoryContextHot()
+        {
+            if (TryApplyPlayerRuntimeContext(_playerRuntimeContext))
+                return;
+
+            GameObject currentPlayerObject = BootstrapState.CurrentPlayerObject;
+            if (!ReferenceEquals(_playerObject, currentPlayerObject))
+            {
+                _playerObject = currentPlayerObject;
+                _playerTransform = currentPlayerObject != null ? currentPlayerObject.transform : null;
+                _playerMovement = null;
+                _playerCamera = null;
+                _flashlight = null;
+                _thrusterAudio = null;
+                _visorController = null;
+            }
+
+            if (_playerCamera != null && !_playerCamera.isActiveAndEnabled)
+                _playerCamera = null;
+
+            if (_flashlight != null && !_flashlight.isActiveAndEnabled)
+                _flashlight = null;
+
+            if (_thrusterAudio != null && !_thrusterAudio.isActiveAndEnabled)
+                _thrusterAudio = null;
+
+            if (_visorController != null && !_visorController.isActiveAndEnabled)
+                _visorController = null;
+
+            if (_underwaterVisuals != null && !_underwaterVisuals.isActiveAndEnabled)
+                _underwaterVisuals = null;
+
+            if (_hudNotification != null && !_hudNotification.isActiveAndEnabled)
+                _hudNotification = null;
+        }
+
+        private void SyncSensoryContextCold()
         {
             if (_syncInProgress)
                 return;
@@ -244,6 +285,12 @@ namespace Hecton8.Core
             _syncInProgress = true;
             try
             {
+                if (_playerRuntimeContext == null)
+                    _playerRuntimeContext = GlobalRegistry.RegisteredPlayer;
+
+                if (TryApplyPlayerRuntimeContext(_playerRuntimeContext))
+                    return;
+
                 GameObject currentPlayerObject = BootstrapState.CurrentPlayerObject;
                 if (!ReferenceEquals(_playerObject, currentPlayerObject))
                 {
@@ -305,6 +352,27 @@ namespace Hecton8.Core
             {
                 _syncInProgress = false;
             }
+        }
+
+        private bool TryApplyPlayerRuntimeContext(IPlayerRuntimeContext playerRuntimeContext)
+        {
+            if (playerRuntimeContext == null)
+                return false;
+
+            GameObject playerObject = playerRuntimeContext.PlayerObject;
+            if (playerObject == null)
+                return false;
+
+            _playerObject = playerObject;
+            _playerTransform = playerRuntimeContext.PlayerTransform;
+            _playerMovement = playerRuntimeContext.PlayerMovement;
+            _playerCamera = playerRuntimeContext.PlayerCamera;
+            _flashlight = playerRuntimeContext.Flashlight;
+            _thrusterAudio = playerRuntimeContext.ThrusterAudio;
+            _visorController = playerRuntimeContext.VisorController;
+            _underwaterVisuals = playerRuntimeContext.UnderwaterVisuals;
+            _hudNotification = playerRuntimeContext.HudNotification;
+            return true;
         }
 
         private void TryRegisterUpdatable()

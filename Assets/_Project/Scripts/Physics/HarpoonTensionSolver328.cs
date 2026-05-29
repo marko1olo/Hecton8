@@ -180,8 +180,21 @@ namespace Hecton8.Physics
 
     public unsafe static class HarpoonTensionSolver328
     {
+        private const int ScheduledLockTetherStates = 1 << 0;
+        private const int ScheduledLockStressStates = 1 << 1;
+        private const int ScheduledLockTetherNodes = 1 << 2;
+        private const int ScheduledLockPreviousNodes = 1 << 3;
+        private const int ScheduledLockConstraints = 1 << 4;
+        private const int ScheduledLockForcePackets = 1 << 5;
+        private const int ScheduledLockPhysicsEvents = 1 << 6;
+        private const int ScheduledLockSplineVertices = 1 << 7;
+        private const int ScheduledLockTelemetryRing = 1 << 8;
+        private const int ScheduledLockTelemetryHead = 1 << 9;
+        private const int ScheduledLockTuning = 1 << 10;
+        private const int ScheduledLockFaultFlags = 1 << 11;
 
         private static int s_x001DirectSignalPushDropCount_HarpoonTensionSolver328;
+        private static int _scheduledMockBufferLocks;
 
 #if UNITY_EDITOR
         public static bool ValidateLayout()
@@ -457,62 +470,98 @@ namespace Hecton8.Physics
             out HarpoonTensionSchedule328 schedule)
         {
             schedule = default;
-            if (!TryResolveMockBuffers(
-                    vault,
-                    out NativeArray<TetherStateDTO> states,
-                    out NativeArray<TetherStressStateDTO> stressStates,
-                    out NativeArray<float3> nodes,
-                    out NativeArray<float3> previousNodes,
-                    out NativeArray<TetherConstraintDTO> constraints,
-                    out NativeArray<TetherForcePacketDTO> forcePackets,
-                    out NativeArray<HarpoonTensionPhysicsEventMirrorDTO> physicsEvents,
-                    out NativeArray<TetherSplineVertexDTO> splineVertices,
-                    out NativeArray<TetherTelemetryEntry> telemetryRing,
-                    out NativeArray<int> telemetryHead,
-                    out NativeArray<HarpoonTensionTuningDTO> tuning,
-                    out NativeArray<uint> faultFlags))
-            {
+            if (!TryLockMockScheduleBuffers(vault))
                 return false;
+
+            bool scheduled = false;
+            try
+            {
+                if (!TryResolveMockBuffers(
+                        vault,
+                        out NativeArray<TetherStateDTO> states,
+                        out NativeArray<TetherStressStateDTO> stressStates,
+                        out NativeArray<float3> nodes,
+                        out NativeArray<float3> previousNodes,
+                        out NativeArray<TetherConstraintDTO> constraints,
+                        out NativeArray<TetherForcePacketDTO> forcePackets,
+                        out NativeArray<HarpoonTensionPhysicsEventMirrorDTO> physicsEvents,
+                        out NativeArray<TetherSplineVertexDTO> splineVertices,
+                        out NativeArray<TetherTelemetryEntry> telemetryRing,
+                        out NativeArray<int> telemetryHead,
+                        out NativeArray<HarpoonTensionTuningDTO> tuning,
+                        out NativeArray<uint> faultFlags))
+                {
+                    return false;
+                }
+
+                HarpoonTensionTuningDTO tune = tuning.IsCreated && tuning.Length > 0 ? SanitizeTuning(tuning[0]) : DefaultTuning();
+                float q = math.saturate(math.isfinite(globalQualityWeight) ? globalQualityWeight : 1f);
+                if (math.isfinite(tune.GlobalQualityWeightOverride) && tune.GlobalQualityWeightOverride >= 0f)
+                    q = math.saturate(tune.GlobalQualityWeightOverride);
+
+                // Mock Vault lanes are seeded at a fixed stride. Quality scales the
+                // relaxation/visual path here; live owners may pass compact strides
+                // directly through Schedule without aliasing tether node ranges.
+                int nodesPerTether = HarpoonTensionSolver328Constants.MockNodesPerTether;
+                int activeNodeCount = math.min(nodes.Length, states.Length * nodesPerTether);
+                int activeConstraintCount = math.min(constraints.Length, states.Length * math.max(0, nodesPerTether - 1));
+                int iterations = ResolveIterationCount(q, tune.MaxConstraintIterations);
+
+                schedule = Schedule(
+                    states,
+                    stressStates,
+                    nodes,
+                    previousNodes,
+                    constraints,
+                    forcePackets,
+                    physicsEvents,
+                    splineVertices,
+                    telemetryRing,
+                    telemetryHead,
+                    faultFlags,
+                    states.Length,
+                    nodesPerTether,
+                    activeNodeCount,
+                    activeConstraintCount,
+                    tune,
+                    cameraAup,
+                    frameIndex,
+                    simulationTickDelta,
+                    cpuMicroseconds,
+                    q,
+                    dependency);
+                schedule.IterationCount = iterations;
+                scheduled = true;
+                return true;
+            }
+            finally
+            {
+                if (!scheduled)
+                    ReleaseMockScheduleBufferPins(vault);
+            }
+        }
+
+        public static void ReleaseMockScheduleBufferPins(IDataVault vault)
+        {
+            if (vault == null || _scheduledMockBufferLocks == 0)
+            {
+                _scheduledMockBufferLocks = 0;
+                return;
             }
 
-            HarpoonTensionTuningDTO tune = tuning.IsCreated && tuning.Length > 0 ? SanitizeTuning(tuning[0]) : DefaultTuning();
-            float q = math.saturate(math.isfinite(globalQualityWeight) ? globalQualityWeight : 1f);
-            if (math.isfinite(tune.GlobalQualityWeightOverride) && tune.GlobalQualityWeightOverride >= 0f)
-                q = math.saturate(tune.GlobalQualityWeightOverride);
-
-            // Mock Vault lanes are seeded at a fixed stride. Quality scales the
-            // relaxation/visual path here; live owners may pass compact strides
-            // directly through Schedule without aliasing tether node ranges.
-            int nodesPerTether = HarpoonTensionSolver328Constants.MockNodesPerTether;
-            int activeNodeCount = math.min(nodes.Length, states.Length * nodesPerTether);
-            int activeConstraintCount = math.min(constraints.Length, states.Length * math.max(0, nodesPerTether - 1));
-            int iterations = ResolveIterationCount(q, tune.MaxConstraintIterations);
-
-            schedule = Schedule(
-                states,
-                stressStates,
-                nodes,
-                previousNodes,
-                constraints,
-                forcePackets,
-                physicsEvents,
-                splineVertices,
-                telemetryRing,
-                telemetryHead,
-                faultFlags,
-                states.Length,
-                nodesPerTether,
-                activeNodeCount,
-                activeConstraintCount,
-                tune,
-                cameraAup,
-                frameIndex,
-                simulationTickDelta,
-                cpuMicroseconds,
-                q,
-                dependency);
-            schedule.IterationCount = iterations;
-            return true;
+            UnlockMockScheduleBuffer(vault, HarpoonTensionSolver328BufferIds.TetherStates, ScheduledLockTetherStates);
+            UnlockMockScheduleBuffer(vault, HarpoonTensionSolver328BufferIds.StressStates, ScheduledLockStressStates);
+            UnlockMockScheduleBuffer(vault, HarpoonTensionSolver328BufferIds.TetherNodes, ScheduledLockTetherNodes);
+            UnlockMockScheduleBuffer(vault, HarpoonTensionSolver328BufferIds.TetherPreviousNodes, ScheduledLockPreviousNodes);
+            UnlockMockScheduleBuffer(vault, HarpoonTensionSolver328BufferIds.TetherConstraints, ScheduledLockConstraints);
+            UnlockMockScheduleBuffer(vault, HarpoonTensionSolver328BufferIds.ForcePackets, ScheduledLockForcePackets);
+            UnlockMockScheduleBuffer(vault, HarpoonTensionSolver328BufferIds.PhysicsEvents, ScheduledLockPhysicsEvents);
+            UnlockMockScheduleBuffer(vault, HarpoonTensionSolver328BufferIds.SplineVertices, ScheduledLockSplineVertices);
+            UnlockMockScheduleBuffer(vault, HarpoonTensionSolver328BufferIds.TelemetryRing, ScheduledLockTelemetryRing);
+            UnlockMockScheduleBuffer(vault, HarpoonTensionSolver328BufferIds.TelemetryHead, ScheduledLockTelemetryHead);
+            UnlockMockScheduleBuffer(vault, HarpoonTensionSolver328BufferIds.Tuning, ScheduledLockTuning);
+            UnlockMockScheduleBuffer(vault, HarpoonTensionSolver328BufferIds.FaultFlags, ScheduledLockFaultFlags);
+            _scheduledMockBufferLocks = 0;
         }
 
         public static bool TryHasMockBuffers(IDataVault vault)
@@ -1062,6 +1111,43 @@ namespace Hecton8.Physics
                    TryOpenExistingVaultView(vault, HarpoonTensionSolver328BufferIds.TelemetryHead, out telemetryHead) &&
                    TryOpenExistingVaultView(vault, HarpoonTensionSolver328BufferIds.Tuning, out tuning) &&
                    TryOpenExistingVaultView(vault, HarpoonTensionSolver328BufferIds.FaultFlags, out faultFlags);
+        }
+
+        private static bool TryLockMockScheduleBuffers(IDataVault vault)
+        {
+            if (vault == null || _scheduledMockBufferLocks != 0)
+                return false;
+
+            return TryLockMockScheduleBuffer(vault, HarpoonTensionSolver328BufferIds.TetherStates, ScheduledLockTetherStates) &&
+                   TryLockMockScheduleBuffer(vault, HarpoonTensionSolver328BufferIds.StressStates, ScheduledLockStressStates) &&
+                   TryLockMockScheduleBuffer(vault, HarpoonTensionSolver328BufferIds.TetherNodes, ScheduledLockTetherNodes) &&
+                   TryLockMockScheduleBuffer(vault, HarpoonTensionSolver328BufferIds.TetherPreviousNodes, ScheduledLockPreviousNodes) &&
+                   TryLockMockScheduleBuffer(vault, HarpoonTensionSolver328BufferIds.TetherConstraints, ScheduledLockConstraints) &&
+                   TryLockMockScheduleBuffer(vault, HarpoonTensionSolver328BufferIds.ForcePackets, ScheduledLockForcePackets) &&
+                   TryLockMockScheduleBuffer(vault, HarpoonTensionSolver328BufferIds.PhysicsEvents, ScheduledLockPhysicsEvents) &&
+                   TryLockMockScheduleBuffer(vault, HarpoonTensionSolver328BufferIds.SplineVertices, ScheduledLockSplineVertices) &&
+                   TryLockMockScheduleBuffer(vault, HarpoonTensionSolver328BufferIds.TelemetryRing, ScheduledLockTelemetryRing) &&
+                   TryLockMockScheduleBuffer(vault, HarpoonTensionSolver328BufferIds.TelemetryHead, ScheduledLockTelemetryHead) &&
+                   TryLockMockScheduleBuffer(vault, HarpoonTensionSolver328BufferIds.Tuning, ScheduledLockTuning) &&
+                   TryLockMockScheduleBuffer(vault, HarpoonTensionSolver328BufferIds.FaultFlags, ScheduledLockFaultFlags);
+        }
+
+        private static bool TryLockMockScheduleBuffer(IDataVault vault, BufferID bufferId, int bit)
+        {
+            if (vault != null && vault.TryLockBuffer(bufferId, SystemID.Physics))
+            {
+                _scheduledMockBufferLocks |= bit;
+                return true;
+            }
+
+            ReleaseMockScheduleBufferPins(vault);
+            return false;
+        }
+
+        private static void UnlockMockScheduleBuffer(IDataVault vault, BufferID bufferId, int bit)
+        {
+            if ((_scheduledMockBufferLocks & bit) != 0)
+                vault.TryUnlockBuffer(bufferId, SystemID.Physics);
         }
 
         private static bool TryOpenOrAcquireVaultView<T>(

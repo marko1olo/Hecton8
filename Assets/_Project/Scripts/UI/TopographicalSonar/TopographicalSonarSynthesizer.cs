@@ -537,16 +537,19 @@ namespace Hecton8.UI
 
         private IDataVault _dataVault;
         private VaultGenerationHandle<SonarPointDTO> _pointsHandle;
-        private VaultGenerationHandle<byte> _hitMaskHandle;
         private VaultGenerationHandle<int> _countersHandle;
-        private VaultGenerationHandle<byte> _mockSdfHandle;
-        private VaultGenerationHandle<byte> _mockMaterialIdsHandle;
         private VaultGenerationHandle<TopographicalSonarTelemetryEntry> _telemetryRingHandle;
         private VaultGenerationHandle<int> _telemetryCursorHandle;
         private VaultGenerationHandle<uint> _materialColorLutHandle;
         private VaultGenerationHandle<byte> _csvScratchHandle;
         private VaultGenerationHandle<SonarProceduralArgsDTO> _indirectArgsHandle;
         private VaultGenerationHandle<TopographicalSonarShaderGlobalsDTO> _shaderGlobalsHandle;
+        private NativeArray<SonarPointDTO> _jobPoints;
+        private NativeArray<byte> _jobHitMask;
+        private NativeArray<int> _jobCounters;
+        private NativeArray<byte> _jobMockSdf;
+        private NativeArray<byte> _jobMockMaterialIds;
+        private NativeArray<uint> _jobMaterialColorLut;
         private GraphicsBuffer _pointBufferA;
         private GraphicsBuffer _pointBufferB;
         private GraphicsBuffer _argsBuffer;
@@ -558,8 +561,6 @@ namespace Hecton8.UI
         private JobHandle _fadeHandle;
         private int _scanJobScheduled;
         private int _fadeJobScheduled;
-        private int _scanVaultBuffersLocked;
-        private int _fadeVaultBuffersLocked;
         private int _pointBufferReadSlot;
         private int _shaderGlobalsWriteIndex;
         private int _registeredLateFrame;
@@ -584,6 +585,7 @@ namespace Hecton8.UI
         private double3 _lastCameraAup;
         private float3 _lastSdfOrigin;
         private float _lastSdfRange;
+        private bool _supportsSetConstantBufferCold;
 
         public static TopographicalSonarSynthesizer ActiveRuntime;
 
@@ -623,6 +625,8 @@ namespace Hecton8.UI
                 return;
 
             ActiveRuntime = this;
+            CacheGraphicsCapabilitiesCold();
+            CacheDataVaultCold();
             AllocatePersistentState();
             EnsureGraphicsResources();
             InitializeMaterialColorLut();
@@ -662,6 +666,7 @@ namespace Hecton8.UI
             TryUnregisterLateFrameTickable();
 
             CompleteScheduledJobs();
+            ReleaseJobBuffers();
 
             ReleaseGraphicsBuffer(ref _pointBufferA);
             ReleaseGraphicsBuffer(ref _pointBufferB);
@@ -732,14 +737,7 @@ namespace Hecton8.UI
                     return;
 
                 _scanJobScheduled = 0;
-                try
-                {
-                    CommitCompletedScan();
-                }
-                finally
-                {
-                    UnlockScanVaultBuffers();
-                }
+                CommitCompletedScan();
             }
 
             if (_fadeJobScheduled != 0)
@@ -748,14 +746,7 @@ namespace Hecton8.UI
                     return;
 
                 _fadeJobScheduled = 0;
-                try
-                {
-                    CommitCompletedFade();
-                }
-                finally
-                {
-                    UnlockFadeVaultBuffers();
-                }
+                CommitCompletedFade();
             }
 
             if (_pendingPing != 0)
@@ -784,7 +775,7 @@ namespace Hecton8.UI
                 return;
 
             Material material = ResolveRenderMaterial();
-            if (material == null || !SystemInfo.supportsSetConstantBuffer)
+            if (material == null || !_supportsSetConstantBufferCold)
                 return;
 
             UploadShaderGlobals();
@@ -882,12 +873,14 @@ namespace Hecton8.UI
         private void AllocatePersistentState()
         {
             if (IsTopographicalHandle(in _pointsHandle, TopographicalSonarBufferIds.Points) &&
+                JobBuffersReady() &&
                 _pointBufferA != null &&
                 _pointBufferB != null &&
                 _argsBuffer != null)
                 return;
 
-            IDataVault vault = CacheDataVaultCold();
+            EnsureJobBuffers();
+            IDataVault vault = _dataVault;
             if (vault == null)
                 return;
 
@@ -896,24 +889,9 @@ namespace Hecton8.UI
                 TopographicalSonarConstants.MaxRays,
                 SystemID.UI,
                 NativeArrayOptions.UninitializedMemory);
-            _hitMaskHandle = vault.EnsureGenerationHandle<byte>(
-                TopographicalSonarBufferIds.HitMask,
-                TopographicalSonarConstants.MaxRays,
-                SystemID.UI,
-                NativeArrayOptions.UninitializedMemory);
             _countersHandle = vault.EnsureGenerationHandle<int>(
                 TopographicalSonarBufferIds.Counters,
                 TopographicalSonarConstants.CounterCount,
-                SystemID.UI,
-                NativeArrayOptions.UninitializedMemory);
-            _mockSdfHandle = vault.EnsureGenerationHandle<byte>(
-                TopographicalSonarBufferIds.MockSdf,
-                TopographicalSonarConstants.MockVoxelCount,
-                SystemID.UI,
-                NativeArrayOptions.UninitializedMemory);
-            _mockMaterialIdsHandle = vault.EnsureGenerationHandle<byte>(
-                TopographicalSonarBufferIds.MockMaterialIds,
-                TopographicalSonarConstants.MockVoxelCount,
                 SystemID.UI,
                 NativeArrayOptions.UninitializedMemory);
             _telemetryRingHandle = vault.EnsureGenerationHandle<TopographicalSonarTelemetryEntry>(
@@ -951,6 +929,19 @@ namespace Hecton8.UI
         private void InitializeMaterialColorLut()
         {
             if (!TryResolveVaultBuffer(_dataVault, ref _materialColorLutHandle, TopographicalSonarBufferIds.MaterialColorLut, TopographicalSonarConstants.ColorLutEntries, out NativeArray<uint> lut))
+            {
+                if (_jobMaterialColorLut.IsCreated)
+                    WriteDefaultMaterialColorLut(_jobMaterialColorLut);
+                return;
+            }
+
+            WriteDefaultMaterialColorLut(lut);
+            CopyMaterialColorLutToJob(lut);
+        }
+
+        private static void WriteDefaultMaterialColorLut(NativeArray<uint> lut)
+        {
+            if (!lut.IsCreated || lut.Length < TopographicalSonarConstants.ColorLutEntries)
                 return;
 
             for (int i = 0; i < lut.Length; i++)
@@ -970,7 +961,7 @@ namespace Hecton8.UI
                 _pointBufferB = GraphicsBufferUploadUtility.CreateStructuredLockBuffer<SonarPointDTO>(TopographicalSonarConstants.MaxRays);
             if (_argsBuffer == null)
                 _argsBuffer = new GraphicsBuffer(GraphicsBuffer.Target.IndirectArguments, GraphicsBuffer.UsageFlags.LockBufferForWrite, 1, UnsafeUtility.SizeOf<SonarProceduralArgsDTO>());
-            if (SystemInfo.supportsSetConstantBuffer)
+            if (_supportsSetConstantBufferCold)
             {
                 if (_shaderGlobalsBufferA == null)
                     _shaderGlobalsBufferA = new GraphicsBuffer(GraphicsBuffer.Target.Constant, GraphicsBuffer.UsageFlags.LockBufferForWrite, 1, UnsafeUtility.SizeOf<TopographicalSonarShaderGlobalsDTO>());
@@ -986,143 +977,133 @@ namespace Hecton8.UI
 
         private void ScheduleSonarScan(float quality, float scheduleTimeSeconds)
         {
-            AllocatePersistentState();
-            EnsureGraphicsResources();
-            if (_scanJobScheduled != 0 || !TryLockScanVaultBuffers())
+            if (_scanJobScheduled != 0 || !HotScanResourcesReady())
             {
                 return;
             }
 
-            bool scheduled = false;
-            try
+            if (!TryResolveNativeState(
+                    out NativeArray<SonarPointDTO> points,
+                    out NativeArray<byte> hitMask,
+                    out NativeArray<int> counters,
+                    out NativeArray<byte> mockSdf,
+                    out NativeArray<byte> mockMaterialIds,
+                    out NativeArray<uint> colorLut))
             {
-                if (!TryResolveNativeState(
-                        out NativeArray<SonarPointDTO> points,
-                        out NativeArray<byte> hitMask,
-                        out NativeArray<int> counters,
-                        out NativeArray<byte> mockSdf,
-                        out NativeArray<byte> mockMaterialIds,
-                        out NativeArray<uint> colorLut))
-                {
-                    return;
-                }
+                return;
+            }
 
-                Transform originTransform = pingOrigin != null ? pingOrigin : transform;
-                Transform cameraTransform = renderCamera != null ? renderCamera.transform : originTransform;
-                Vector3 pingRuntimeVector = originTransform.position;
-                Vector3 cameraRuntimeVector = cameraTransform.position;
-                float3 pingRuntime = new float3(pingRuntimeVector.x, pingRuntimeVector.y, pingRuntimeVector.z);
-                float3 cameraRuntime = new float3(cameraRuntimeVector.x, cameraRuntimeVector.y, cameraRuntimeVector.z);
-                if (!TryResolveRuntimeAup(pingRuntimeVector, out _lastPingAup) ||
-                    !TryResolveRuntimeAup(cameraRuntimeVector, out _lastCameraAup))
-                {
-                    _lastTelemetryFlags |= TopographicalSonarConstants.FaultFlag;
-                    return;
-                }
-                quality = math.saturate(math.isfinite(quality) ? quality : 0f);
+            Transform originTransform = pingOrigin != null ? pingOrigin : transform;
+            Transform cameraTransform = renderCamera != null ? renderCamera.transform : originTransform;
+            Vector3 pingRuntimeVector = originTransform.position;
+            Vector3 cameraRuntimeVector = cameraTransform.position;
+            float3 pingRuntime = new float3(pingRuntimeVector.x, pingRuntimeVector.y, pingRuntimeVector.z);
+            float3 cameraRuntime = new float3(cameraRuntimeVector.x, cameraRuntimeVector.y, cameraRuntimeVector.z);
+            if (!TryResolveRuntimeAup(pingRuntimeVector, out _lastPingAup) ||
+                !TryResolveRuntimeAup(cameraRuntimeVector, out _lastCameraAup))
+            {
+                _lastTelemetryFlags |= TopographicalSonarConstants.FaultFlag;
+                return;
+            }
+            quality = math.saturate(math.isfinite(quality) ? quality : 0f);
 
-                NativeArray<byte>.ReadOnly encodedSdf;
-                NativeArray<byte>.ReadOnly materialIds;
-                int3 gridDimensions;
-                float3 volumeOrigin;
-                float3 cellSize;
-                float sdfRange;
-                uint sdfVersion;
-                uint flags = TopographicalSonarConstants.PingEventFlag;
-                JobHandle dependency = default;
-                bool usingPublishedSdf = TryResolvePublishedSdfSnapshot(
-                    pingRuntime,
-                    mockSdf,
-                    mockMaterialIds,
-                    out encodedSdf,
-                    out materialIds,
-                    out gridDimensions,
-                    out volumeOrigin,
-                    out cellSize,
-                    out sdfRange,
-                    out sdfVersion);
-                if (usingPublishedSdf)
+            NativeArray<byte>.ReadOnly encodedSdf;
+            NativeArray<byte>.ReadOnly materialIds;
+            int3 gridDimensions;
+            float3 volumeOrigin;
+            float3 cellSize;
+            float sdfRange;
+            uint sdfVersion;
+            uint flags = TopographicalSonarConstants.PingEventFlag;
+            JobHandle dependency = default;
+            bool usingPublishedSdf = TryResolvePublishedSdfSnapshot(
+                pingRuntime,
+                mockSdf,
+                mockMaterialIds,
+                out encodedSdf,
+                out materialIds,
+                out gridDimensions,
+                out volumeOrigin,
+                out cellSize,
+                out sdfRange,
+                out sdfVersion);
+            if (usingPublishedSdf)
+            {
+                flags |= TopographicalSonarConstants.UsedPublishedSdfFlag;
+            }
+            else
+            {
+                ResolveMockSdfDescriptor(pingRuntime, out gridDimensions, out volumeOrigin, out cellSize, out sdfRange);
+                _mockSdfVersion++;
+                GenerateMockSdfJob mockJob = new GenerateMockSdfJob
                 {
-                    flags |= TopographicalSonarConstants.UsedPublishedSdfFlag;
-                }
-                else
-                {
-                    ResolveMockSdfDescriptor(pingRuntime, out gridDimensions, out volumeOrigin, out cellSize, out sdfRange);
-                    _mockSdfVersion++;
-                    GenerateMockSdfJob mockJob = new GenerateMockSdfJob
-                    {
-                        EncodedSdf = mockSdf,
-                        MaterialIds = mockMaterialIds,
-                        GridDimensions = gridDimensions,
-                        VolumeOrigin = volumeOrigin,
-                        CellSize = cellSize,
-                        MockCenter = pingRuntime,
-                        SdfRange = sdfRange,
-                        QualityWeight = quality,
-                        Seed = _mockSdfVersion * 2654435761u
-                    };
-                    dependency = mockJob.Schedule(TopographicalSonarConstants.MockVoxelCount, 128);
-                    encodedSdf = mockSdf.AsReadOnly();
-                    materialIds = mockMaterialIds.AsReadOnly();
-                    sdfVersion = _mockSdfVersion;
-                    flags |= TopographicalSonarConstants.UsedMockSdfFlag;
-                }
-
-                int rayCount = ResolveRayCount(quality);
-                float resolvedStep = ResolveStepMeters(quality);
-                int fullStepBudget = math.min(1024, (int)math.ceil(math.max(1f, maxDistanceMeters) * math.rcp(math.max(TopographicalSonarConstants.MinimumStepMeters, resolvedStep))) + 2);
-                float workCurve = ResolveWorkCurve(quality);
-                int maxSteps = math.clamp((int)math.lerp(1f, fullStepBudget, workCurve), 1, 1024);
-
-                SonarRaymarchJob raymarchJob = new SonarRaymarchJob
-                {
-                    EncodedSdf = encodedSdf,
-                    MaterialIds = materialIds,
-                    MaterialColorLut = colorLut,
-                    Points = points,
-                    HitMask = hitMask,
+                    EncodedSdf = mockSdf,
+                    MaterialIds = mockMaterialIds,
                     GridDimensions = gridDimensions,
                     VolumeOrigin = volumeOrigin,
                     CellSize = cellSize,
+                    MockCenter = pingRuntime,
                     SdfRange = sdfRange,
-                    RayCount = rayCount,
-                    MaxSteps = maxSteps,
-                    PingRuntime = pingRuntime,
-                    MaxDistanceMeters = math.max(1f, maxDistanceMeters),
-                    StepMeters = resolvedStep,
                     QualityWeight = quality,
-                    Intensity01 = math.max(0.05f, _pendingIntensity01),
-                    SequenceSeed = (uint)(_sequence + 1)
+                    Seed = _mockSdfVersion * 2654435761u
                 };
+                dependency = mockJob.Schedule(TopographicalSonarConstants.MockVoxelCount, 128);
+                encodedSdf = mockSdf.AsReadOnly();
+                materialIds = mockMaterialIds.AsReadOnly();
+                sdfVersion = _mockSdfVersion;
+                flags |= TopographicalSonarConstants.UsedMockSdfFlag;
+            }
 
-                _scanStartTimestamp = System.Diagnostics.Stopwatch.GetTimestamp();
-                JobHandle rayHandle = raymarchJob.Schedule(rayCount, 128, dependency);
-                SonarCompactHitsJob compactJob = new SonarCompactHitsJob
-                {
-                    Points = points,
-                    HitMask = hitMask,
-                    Counters = counters,
-                    RayCount = rayCount
-                };
-                _scanHandle = compactJob.Schedule(rayHandle);
-                _scanJobScheduled = 1;
-                scheduled = true;
-                _sequence++;
-                _lastPingTimeSeconds = scheduleTimeSeconds;
-                _lastScheduledPingTimeSeconds = scheduleTimeSeconds;
-                _lastTelemetryFlags = flags;
-                _lastSdfOrigin = volumeOrigin;
-                _lastSdfRange = sdfRange;
-                _lastSdfVersion = sdfVersion;
-                _drawBounds = new Bounds(
-                    new Vector3(cameraRuntime.x, cameraRuntime.y, cameraRuntime.z),
-                    Vector3.one * math.max(16f, maxDistanceMeters * 2.25f));
-            }
-            finally
+            int rayCount = ResolveRayCount(quality);
+            float resolvedStep = ResolveStepMeters(quality);
+            int fullStepBudget = math.min(1024, (int)math.ceil(math.max(1f, maxDistanceMeters) * math.rcp(math.max(TopographicalSonarConstants.MinimumStepMeters, resolvedStep))) + 2);
+            float workCurve = ResolveWorkCurve(quality);
+            int maxSteps = math.clamp((int)math.lerp(1f, fullStepBudget, workCurve), 1, 1024);
+
+            SonarRaymarchJob raymarchJob = new SonarRaymarchJob
             {
-                if (!scheduled)
-                    UnlockScanVaultBuffers();
-            }
+                EncodedSdf = encodedSdf,
+                MaterialIds = materialIds,
+                MaterialColorLut = colorLut,
+                Points = points,
+                HitMask = hitMask,
+                GridDimensions = gridDimensions,
+                VolumeOrigin = volumeOrigin,
+                CellSize = cellSize,
+                SdfRange = sdfRange,
+                RayCount = rayCount,
+                MaxSteps = maxSteps,
+                PingRuntime = pingRuntime,
+                MaxDistanceMeters = math.max(1f, maxDistanceMeters),
+                StepMeters = resolvedStep,
+                QualityWeight = quality,
+                Intensity01 = math.max(0.05f, _pendingIntensity01),
+                SequenceSeed = (uint)(_sequence + 1)
+            };
+
+            _scanStartTimestamp = System.Diagnostics.Stopwatch.GetTimestamp();
+            JobHandle rayHandle = raymarchJob.Schedule(rayCount, 128, dependency);
+            SonarCompactHitsJob compactJob = new SonarCompactHitsJob
+            {
+                Points = points,
+                HitMask = hitMask,
+                Counters = counters,
+                RayCount = rayCount
+            };
+            _scanHandle = compactJob.Schedule(rayHandle);
+            _scanJobScheduled = 1;
+            H8Memory.RegisterActiveJob(SystemID.UI, _scanHandle);
+            JobHandle.ScheduleBatchedJobs();
+            _sequence++;
+            _lastPingTimeSeconds = scheduleTimeSeconds;
+            _lastScheduledPingTimeSeconds = scheduleTimeSeconds;
+            _lastTelemetryFlags = flags;
+            _lastSdfOrigin = volumeOrigin;
+            _lastSdfRange = sdfRange;
+            _lastSdfVersion = sdfVersion;
+            _drawBounds = new Bounds(
+                new Vector3(cameraRuntime.x, cameraRuntime.y, cameraRuntime.z),
+                Vector3.one * math.max(16f, maxDistanceMeters * 2.25f));
         }
 
         private void CommitCompletedScan()
@@ -1163,6 +1144,7 @@ namespace Hecton8.UI
                 UpdateIndirectArgsBuffer(0u);
             }
 
+            MirrorCompletedScanToVault(points, counters);
             bool invalid = !IsFinite(_lastPingAup) ||
                            !IsFinite(_lastCameraAup) ||
                            !math.all(math.isfinite(_lastSdfOrigin)) ||
@@ -1181,44 +1163,34 @@ namespace Hecton8.UI
             if (_fadeJobScheduled != 0 || _scanJobScheduled != 0 || _activePointCount <= 0)
                 return;
 
-            if (!TryLockFadeVaultBuffers())
+            if (!_jobPoints.IsCreated || _activePointCount > _jobPoints.Length)
                 return;
 
-            bool scheduled = false;
-            try
+            DecaySonarPointsJob fadeJob = new DecaySonarPointsJob
             {
-                if (!TryResolveVaultBuffer(_dataVault, ref _pointsHandle, TopographicalSonarBufferIds.Points, TopographicalSonarConstants.MaxRays, out NativeArray<SonarPointDTO> points))
-                    return;
-
-                DecaySonarPointsJob fadeJob = new DecaySonarPointsJob
-                {
-                    Points = points,
-                    ActivePointCount = _activePointCount,
-                    DeltaTime = math.max(0f, deltaTime),
-                    FadePerSecond = echoFadeSeconds > 0.001f ? math.rcp(echoFadeSeconds) : 1f
-                };
-                _fadeHandle = fadeJob.Schedule(_activePointCount, 128);
-                _fadeJobScheduled = 1;
-                scheduled = true;
-            }
-            finally
-            {
-                if (!scheduled)
-                    UnlockFadeVaultBuffers();
-            }
+                Points = _jobPoints,
+                ActivePointCount = _activePointCount,
+                DeltaTime = math.max(0f, deltaTime),
+                FadePerSecond = echoFadeSeconds > 0.001f ? math.rcp(echoFadeSeconds) : 1f
+            };
+            _fadeHandle = fadeJob.Schedule(_activePointCount, 128);
+            _fadeJobScheduled = 1;
+            H8Memory.RegisterActiveJob(SystemID.UI, _fadeHandle);
+            JobHandle.ScheduleBatchedJobs();
         }
 
         private void CommitCompletedFade()
         {
-            if (!TryResolveVaultBuffer(_dataVault, ref _pointsHandle, TopographicalSonarBufferIds.Points, TopographicalSonarConstants.MaxRays, out NativeArray<SonarPointDTO> points))
+            if (!_jobPoints.IsCreated)
                 return;
 
             GraphicsBuffer writePointBuffer = ResolveWritePointBuffer();
             if (writePointBuffer == null || _activePointCount <= 0)
                 return;
 
-            GraphicsBufferUploadUtility.UploadNativeArray(writePointBuffer, points, _activePointCount);
+            GraphicsBufferUploadUtility.UploadNativeArray(writePointBuffer, _jobPoints, _activePointCount);
             FlipPointBuffers();
+            MirrorCompletedPointsToVault(_jobPoints, _activePointCount);
         }
 
         private void WriteTelemetry(uint flags)
@@ -1267,138 +1239,141 @@ namespace Hecton8.UI
             out NativeArray<byte> mockMaterialIds,
             out NativeArray<uint> colorLut)
         {
-            IDataVault vault = _dataVault;
-            bool resolvedPoints = TryResolveVaultBuffer(vault, ref _pointsHandle, TopographicalSonarBufferIds.Points, TopographicalSonarConstants.MaxRays, out points);
-            bool resolvedHitMask = TryResolveVaultBuffer(vault, ref _hitMaskHandle, TopographicalSonarBufferIds.HitMask, TopographicalSonarConstants.MaxRays, out hitMask);
-            bool resolvedCounters = TryResolveVaultBuffer(vault, ref _countersHandle, TopographicalSonarBufferIds.Counters, TopographicalSonarConstants.CounterCount, out counters);
-            bool resolvedMockSdf = TryResolveVaultBuffer(vault, ref _mockSdfHandle, TopographicalSonarBufferIds.MockSdf, TopographicalSonarConstants.MockVoxelCount, out mockSdf);
-            bool resolvedMockMaterials = TryResolveVaultBuffer(vault, ref _mockMaterialIdsHandle, TopographicalSonarBufferIds.MockMaterialIds, TopographicalSonarConstants.MockVoxelCount, out mockMaterialIds);
-            bool resolvedColorLut = TryResolveVaultBuffer(vault, ref _materialColorLutHandle, TopographicalSonarBufferIds.MaterialColorLut, TopographicalSonarConstants.ColorLutEntries, out colorLut);
-            return resolvedPoints && resolvedHitMask && resolvedCounters && resolvedMockSdf && resolvedMockMaterials && resolvedColorLut;
+            points = _jobPoints;
+            hitMask = _jobHitMask;
+            counters = _jobCounters;
+            mockSdf = _jobMockSdf;
+            mockMaterialIds = _jobMockMaterialIds;
+            colorLut = _jobMaterialColorLut;
+            return JobBuffersReady();
         }
 
-        private bool TryLockScanVaultBuffers()
+        private bool EnsureJobBuffers()
         {
-            IDataVault vault = _dataVault;
-            if (vault == null || _scanVaultBuffersLocked != 0 || vault.IsCompactionFenceActive)
-                return false;
+            if (!_jobPoints.IsCreated)
+                _jobPoints = H8Memory.Allocate<SonarPointDTO>(
+                    TopographicalSonarConstants.MaxRays,
+                    SystemID.UI,
+                    Allocator.Persistent,
+                    NativeArrayOptions.UninitializedMemory);
+            if (!_jobHitMask.IsCreated)
+                _jobHitMask = H8Memory.Allocate<byte>(
+                    TopographicalSonarConstants.MaxRays,
+                    SystemID.UI,
+                    Allocator.Persistent,
+                    NativeArrayOptions.UninitializedMemory);
+            if (!_jobCounters.IsCreated)
+                _jobCounters = H8Memory.Allocate<int>(
+                    TopographicalSonarConstants.CounterCount,
+                    SystemID.UI,
+                    Allocator.Persistent,
+                    NativeArrayOptions.ClearMemory);
+            if (!_jobMockSdf.IsCreated)
+                _jobMockSdf = H8Memory.Allocate<byte>(
+                    TopographicalSonarConstants.MockVoxelCount,
+                    SystemID.UI,
+                    Allocator.Persistent,
+                    NativeArrayOptions.UninitializedMemory);
+            if (!_jobMockMaterialIds.IsCreated)
+                _jobMockMaterialIds = H8Memory.Allocate<byte>(
+                    TopographicalSonarConstants.MockVoxelCount,
+                    SystemID.UI,
+                    Allocator.Persistent,
+                    NativeArrayOptions.UninitializedMemory);
+            if (!_jobMaterialColorLut.IsCreated)
+                _jobMaterialColorLut = H8Memory.Allocate<uint>(
+                    TopographicalSonarConstants.ColorLutEntries,
+                    SystemID.UI,
+                    Allocator.Persistent,
+                    NativeArrayOptions.ClearMemory);
 
-            int lockedCount = 0;
-            if (!TryLockVaultBuffer(vault, TopographicalSonarBufferIds.Points))
-                return false;
-            lockedCount = 1;
-            if (!TryLockVaultBuffer(vault, TopographicalSonarBufferIds.HitMask))
-            {
-                UnlockScanVaultBuffers(vault, lockedCount);
-                return false;
-            }
-            lockedCount = 2;
-            if (!TryLockVaultBuffer(vault, TopographicalSonarBufferIds.Counters))
-            {
-                UnlockScanVaultBuffers(vault, lockedCount);
-                return false;
-            }
-            lockedCount = 3;
-            if (!TryLockVaultBuffer(vault, TopographicalSonarBufferIds.MockSdf))
-            {
-                UnlockScanVaultBuffers(vault, lockedCount);
-                return false;
-            }
-            lockedCount = 4;
-            if (!TryLockVaultBuffer(vault, TopographicalSonarBufferIds.MockMaterialIds))
-            {
-                UnlockScanVaultBuffers(vault, lockedCount);
-                return false;
-            }
-            lockedCount = 5;
-            if (!TryLockVaultBuffer(vault, TopographicalSonarBufferIds.MaterialColorLut))
-            {
-                UnlockScanVaultBuffers(vault, lockedCount);
-                return false;
-            }
-
-            if (vault.IsCompactionFenceActive)
-            {
-                UnlockScanVaultBuffers(vault, 6);
-                return false;
-            }
-
-            _scanVaultBuffersLocked = 1;
-            return true;
+            return JobBuffersReady();
         }
 
-        private void UnlockScanVaultBuffers()
+        private bool JobBuffersReady()
         {
-            if (_scanVaultBuffersLocked == 0)
+            return _jobPoints.IsCreated &&
+                   _jobPoints.Length >= TopographicalSonarConstants.MaxRays &&
+                   _jobHitMask.IsCreated &&
+                   _jobHitMask.Length >= TopographicalSonarConstants.MaxRays &&
+                   _jobCounters.IsCreated &&
+                   _jobCounters.Length >= TopographicalSonarConstants.CounterCount &&
+                   _jobMockSdf.IsCreated &&
+                   _jobMockSdf.Length >= TopographicalSonarConstants.MockVoxelCount &&
+                   _jobMockMaterialIds.IsCreated &&
+                   _jobMockMaterialIds.Length >= TopographicalSonarConstants.MockVoxelCount &&
+                   _jobMaterialColorLut.IsCreated &&
+                   _jobMaterialColorLut.Length >= TopographicalSonarConstants.ColorLutEntries;
+        }
+
+        private bool HotScanResourcesReady()
+        {
+            return _dataVault != null &&
+                   _supportsSetConstantBufferCold &&
+                   JobBuffersReady() &&
+                   _pointBufferA != null &&
+                   _pointBufferB != null &&
+                   _argsBuffer != null &&
+                   _shaderGlobalsBufferA != null &&
+                   _shaderGlobalsBufferB != null;
+        }
+
+        private void ReleaseJobBuffers()
+        {
+            ReleaseJobBuffer(ref _jobPoints);
+            ReleaseJobBuffer(ref _jobHitMask);
+            ReleaseJobBuffer(ref _jobCounters);
+            ReleaseJobBuffer(ref _jobMockSdf);
+            ReleaseJobBuffer(ref _jobMockMaterialIds);
+            ReleaseJobBuffer(ref _jobMaterialColorLut);
+        }
+
+        private static void ReleaseJobBuffer<T>(ref NativeArray<T> buffer) where T : struct
+        {
+            H8Memory.Release(ref buffer, SystemID.UI);
+        }
+
+        private void MirrorCompletedScanToVault(NativeArray<SonarPointDTO> points, NativeArray<int> counters)
+        {
+            MirrorCompletedPointsToVault(points, _activePointCount);
+            if (!counters.IsCreated ||
+                !TryResolveVaultBuffer(_dataVault, ref _countersHandle, TopographicalSonarBufferIds.Counters, TopographicalSonarConstants.CounterCount, out NativeArray<int> vaultCounters))
+            {
+                return;
+            }
+
+            int count = math.min(counters.Length, vaultCounters.Length);
+            for (int i = 0; i < count; i++)
+                vaultCounters[i] = counters[i];
+        }
+
+        private void MirrorCompletedPointsToVault(NativeArray<SonarPointDTO> points, int count)
+        {
+            if (!points.IsCreated ||
+                count <= 0 ||
+                !TryResolveVaultBuffer(_dataVault, ref _pointsHandle, TopographicalSonarBufferIds.Points, TopographicalSonarConstants.MaxRays, out NativeArray<SonarPointDTO> vaultPoints))
+            {
+                return;
+            }
+
+            int clampedCount = math.min(math.min(count, points.Length), vaultPoints.Length);
+            for (int i = 0; i < clampedCount; i++)
+                vaultPoints[i] = points[i];
+        }
+
+        private void CopyMaterialColorLutToJob(NativeArray<uint> source)
+        {
+            if (!source.IsCreated || !_jobMaterialColorLut.IsCreated)
                 return;
 
-            UnlockScanVaultBuffers(_dataVault, 6);
-            _scanVaultBuffersLocked = 0;
+            int count = math.min(source.Length, _jobMaterialColorLut.Length);
+            for (int i = 0; i < count; i++)
+                _jobMaterialColorLut[i] = source[i];
         }
 
-        private static void UnlockScanVaultBuffers(IDataVault vault, int lockedCount)
+        private void CacheGraphicsCapabilitiesCold()
         {
-            if (vault == null || lockedCount <= 0)
-                return;
-
-            if (lockedCount >= 6)
-                vault.TryUnlockBuffer(TopographicalSonarBufferIds.MaterialColorLut, SystemID.UI);
-            if (lockedCount >= 5)
-                vault.TryUnlockBuffer(TopographicalSonarBufferIds.MockMaterialIds, SystemID.UI);
-            if (lockedCount >= 4)
-                vault.TryUnlockBuffer(TopographicalSonarBufferIds.MockSdf, SystemID.UI);
-            if (lockedCount >= 3)
-                vault.TryUnlockBuffer(TopographicalSonarBufferIds.Counters, SystemID.UI);
-            if (lockedCount >= 2)
-                vault.TryUnlockBuffer(TopographicalSonarBufferIds.HitMask, SystemID.UI);
-            if (lockedCount >= 1)
-                vault.TryUnlockBuffer(TopographicalSonarBufferIds.Points, SystemID.UI);
-        }
-
-        private bool TryLockFadeVaultBuffers()
-        {
-            IDataVault vault = _dataVault;
-            if (vault == null || _fadeVaultBuffersLocked != 0 || vault.IsCompactionFenceActive)
-                return false;
-
-            if (!TryLockVaultBuffer(vault, TopographicalSonarBufferIds.Points))
-                return false;
-
-            if (vault.IsCompactionFenceActive)
-            {
-                vault.TryUnlockBuffer(TopographicalSonarBufferIds.Points, SystemID.UI);
-                return false;
-            }
-
-            _fadeVaultBuffersLocked = 1;
-            return true;
-        }
-
-        private void UnlockFadeVaultBuffers()
-        {
-            if (_fadeVaultBuffersLocked == 0)
-                return;
-
-            IDataVault vault = _dataVault;
-            if (vault != null)
-                vault.TryUnlockBuffer(TopographicalSonarBufferIds.Points, SystemID.UI);
-
-            _fadeVaultBuffersLocked = 0;
-        }
-
-        private static bool TryLockVaultBuffer(IDataVault vault, BufferID bufferId)
-        {
-            if (vault == null || vault.IsCompactionFenceActive)
-                return false;
-
-            if (!vault.TryLockBuffer(bufferId, SystemID.UI))
-                return false;
-
-            if (!vault.IsCompactionFenceActive)
-                return true;
-
-            vault.TryUnlockBuffer(bufferId, SystemID.UI);
-            return false;
+            _supportsSetConstantBufferCold = SystemInfo.supportsSetConstantBuffer;
         }
 
         private IDataVault CacheDataVaultCold()
@@ -1459,24 +1434,19 @@ namespace Hecton8.UI
                 DispatcherJobFence.TryComplete(ref _scanHandle, forceComplete: true))
             {
                 _scanJobScheduled = 0;
-                UnlockScanVaultBuffers();
             }
 
             if (_fadeJobScheduled != 0 &&
                 DispatcherJobFence.TryComplete(ref _fadeHandle, forceComplete: true))
             {
                 _fadeJobScheduled = 0;
-                UnlockFadeVaultBuffers();
             }
         }
 
         private void ReleaseVaultBuffers(IDataVault vault)
         {
             ReleaseVaultBuffer(vault, ref _pointsHandle, TopographicalSonarBufferIds.Points);
-            ReleaseVaultBuffer(vault, ref _hitMaskHandle, TopographicalSonarBufferIds.HitMask);
             ReleaseVaultBuffer(vault, ref _countersHandle, TopographicalSonarBufferIds.Counters);
-            ReleaseVaultBuffer(vault, ref _mockSdfHandle, TopographicalSonarBufferIds.MockSdf);
-            ReleaseVaultBuffer(vault, ref _mockMaterialIdsHandle, TopographicalSonarBufferIds.MockMaterialIds);
             ReleaseVaultBuffer(vault, ref _telemetryRingHandle, TopographicalSonarBufferIds.TelemetryRing);
             ReleaseVaultBuffer(vault, ref _telemetryCursorHandle, TopographicalSonarBufferIds.TelemetryCursor);
             ReleaseVaultBuffer(vault, ref _materialColorLutHandle, TopographicalSonarBufferIds.MaterialColorLut);
@@ -2105,6 +2075,8 @@ namespace Hecton8.UI
             }
 
             appliedRows = ParseMaterialColorCsv(scratch, byteCount, lut);
+            if (appliedRows > 0)
+                CopyMaterialColorLutToJob(lut);
             if (appliedRows > 0)
                 _lastTelemetryFlags |= TopographicalSonarConstants.CsvColorFlag;
             return appliedRows > 0;

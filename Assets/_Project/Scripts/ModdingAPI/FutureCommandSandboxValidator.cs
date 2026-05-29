@@ -503,14 +503,12 @@ namespace Hecton8.Modding
 
         internal static int GetPendingEnvelopeCount()
         {
-            NativeArray<ModSandboxRingState> state = ResolveRingState();
-            return state.IsCreated && state.Length > 0 ? state[0].PendingCount : 0;
+            return TryReadRingStateSnapshot(out ModSandboxRingState state) ? state.PendingCount : 0;
         }
 
         internal static int GetDevNullEnvelopeCount()
         {
-            NativeArray<ModSandboxRingState> state = ResolveRingState();
-            return state.IsCreated && state.Length > 0 ? state[0].DevNullCount : 0;
+            return TryReadRingStateSnapshot(out ModSandboxRingState state) ? state.DevNullCount : 0;
         }
 
         internal static bool GetIsInitialized()
@@ -573,15 +571,13 @@ namespace Hecton8.Modding
         {
             Initialize();
             AcquireVaultBuffers();
-            NativeArray<FutureCommandEnvelope> pendingRing = OpenVaultLane(ref _pendingRingHandle);
-            NativeArray<ModSandboxRingState> ringState = OpenVaultLane(ref _ringStateHandle);
-            if (!pendingRing.IsCreated || !ringState.IsCreated || ringState.Length == 0 || pendingRing.Length == 0)
+            if (!TryReadRingStateSnapshot(out ModSandboxRingState state))
                 return false;
 
-            ModSandboxRingState state = ringState[0];
-            EnqueuePendingEnvelope(pendingRing, ref state, in envelope);
-            ringState[0] = state;
-            return true;
+            if (!TryEnqueueSinglePendingEnvelope(in envelope, ref state))
+                return false;
+
+            return TryWriteRingStateSnapshot(in state);
         }
 
         internal static int RequestRawEnvelopeStream(NativeArray<byte> bytes, int byteLength)
@@ -596,28 +592,38 @@ namespace Hecton8.Modding
                 return 0;
 
             AcquireVaultBuffers();
-            NativeArray<FutureCommandEnvelope> pendingRing = OpenVaultLane(ref _pendingRingHandle);
-            NativeArray<ModSandboxRingState> ringState = OpenVaultLane(ref _ringStateHandle);
-            if (!pendingRing.IsCreated || !ringState.IsCreated || ringState.Length == 0 || pendingRing.Length == 0)
+            if (!TryReadRingStateSnapshot(out ModSandboxRingState state))
                 return 0;
 
             int safeBytes = math.min(byteLength, bytes.Length);
             int count = safeBytes / FutureCommandSandboxConstants.EnvelopeSizeBytes;
             int accepted = 0;
             byte* ptr = (byte*)NativeArrayUnsafeUtility.GetUnsafeReadOnlyPtr(bytes);
-            ModSandboxRingState state = ringState[0];
-            for (int i = 0; i < count; i++)
+            IDataVault lockedVault = null;
+            if (!TryAcquireVaultLaneWrite(ref _pendingRingHandle, out NativeArray<FutureCommandEnvelope> pendingRing, out lockedVault) ||
+                pendingRing.Length == 0)
             {
-                FutureCommandEnvelope envelope = ((FutureCommandEnvelope*)ptr)[i];
-                if (sourceBigEndian)
-                    envelope = SwapEnvelopeEndian(in envelope);
-
-                EnqueuePendingEnvelope(pendingRing, ref state, in envelope);
-                accepted++;
+                return 0;
             }
 
-            ringState[0] = state;
-            return accepted;
+            try
+            {
+                for (int i = 0; i < count; i++)
+                {
+                    FutureCommandEnvelope envelope = ((FutureCommandEnvelope*)ptr)[i];
+                    if (sourceBigEndian)
+                        envelope = SwapEnvelopeEndian(in envelope);
+
+                    EnqueuePendingEnvelope(pendingRing, ref state, in envelope);
+                    accepted++;
+                }
+            }
+            finally
+            {
+                lockedVault.ReleaseWriteLock(in _pendingRingHandle.Handle, SystemID.ModSandbox);
+            }
+
+            return accepted > 0 && TryWriteRingStateSnapshot(in state) ? accepted : 0;
         }
 
         internal static int RequestFromExternalQueue(NativeQueue<FutureCommandEnvelope> sourceQueue, int maxEnvelopeCount)
@@ -627,22 +633,32 @@ namespace Hecton8.Modding
                 return 0;
 
             AcquireVaultBuffers();
-            NativeArray<FutureCommandEnvelope> pendingRing = OpenVaultLane(ref _pendingRingHandle);
-            NativeArray<ModSandboxRingState> ringState = OpenVaultLane(ref _ringStateHandle);
-            if (!pendingRing.IsCreated || !ringState.IsCreated || ringState.Length == 0 || pendingRing.Length == 0)
+            if (!TryReadRingStateSnapshot(out ModSandboxRingState state))
                 return 0;
 
-            ModSandboxRingState state = ringState[0];
             int accepted = 0;
-            int limit = math.min(maxEnvelopeCount, pendingRing.Length);
-            while (accepted < limit && sourceQueue.TryDequeue(out FutureCommandEnvelope envelope))
+            IDataVault lockedVault = null;
+            if (!TryAcquireVaultLaneWrite(ref _pendingRingHandle, out NativeArray<FutureCommandEnvelope> pendingRing, out lockedVault) ||
+                pendingRing.Length == 0)
             {
-                EnqueuePendingEnvelope(pendingRing, ref state, in envelope);
-                accepted++;
+                return 0;
             }
 
-            ringState[0] = state;
-            return accepted;
+            try
+            {
+                int limit = math.min(maxEnvelopeCount, pendingRing.Length);
+                while (accepted < limit && sourceQueue.TryDequeue(out FutureCommandEnvelope envelope))
+                {
+                    EnqueuePendingEnvelope(pendingRing, ref state, in envelope);
+                    accepted++;
+                }
+            }
+            finally
+            {
+                lockedVault.ReleaseWriteLock(in _pendingRingHandle.Handle, SystemID.ModSandbox);
+            }
+
+            return accepted > 0 && TryWriteRingStateSnapshot(in state) ? accepted : 0;
         }
 
         internal static void DrainPreSimulation()
@@ -723,14 +739,12 @@ namespace Hecton8.Modding
             if (_scheduledValidationActive)
                 return;
 
-            NativeArray<ModSandboxRingState> ringState = ResolveRingState();
-            if (!ringState.IsCreated || ringState.Length == 0)
+            if (!TryReadRingStateSnapshot(out ModSandboxRingState state))
                 return;
 
-            ModSandboxRingState state = ringState[0];
             state.DevNullHead = state.DevNullTail;
             state.DevNullCount = 0;
-            ringState[0] = state;
+            TryWriteRingStateSnapshot(in state);
         }
 
         internal static bool RegisterApprovedAsset(uint assetHash, uint crc32)
@@ -741,28 +755,39 @@ namespace Hecton8.Modding
         internal static bool RegisterApprovedAsset(uint assetHash, uint crc32, uint byteLength)
         {
             Initialize();
-            NativeArray<ApprovedAssetRecord> approvedAssets = OpenVaultLane(ref _approvedAssetManifestHandle);
-            NativeArray<ModSandboxRingState> ringState = ResolveRingState();
-            if (assetHash == 0u || crc32 == 0u || !approvedAssets.IsCreated || !ringState.IsCreated || ringState.Length == 0)
+            if (assetHash == 0u || crc32 == 0u || !TryReadRingStateSnapshot(out ModSandboxRingState state))
                 return false;
 
-            int slot = FindApprovedAssetSlot(approvedAssets, assetHash, out bool found);
-            if (slot < 0)
+            bool found = false;
+            int assetCapacity = 0;
+            IDataVault lockedVault = null;
+            if (!TryAcquireVaultLaneWrite(ref _approvedAssetManifestHandle, out NativeArray<ApprovedAssetRecord> approvedAssets, out lockedVault))
                 return false;
 
-            approvedAssets[slot] = new ApprovedAssetRecord
+            try
             {
-                AssetHash = assetHash,
-                Crc32 = crc32,
-                ByteLength = byteLength,
-                Flags = 1u
-            };
+                assetCapacity = approvedAssets.Length;
+                int slot = FindApprovedAssetSlot(approvedAssets, assetHash, out found);
+                if (slot < 0)
+                    return false;
+
+                approvedAssets[slot] = new ApprovedAssetRecord
+                {
+                    AssetHash = assetHash,
+                    Crc32 = crc32,
+                    ByteLength = byteLength,
+                    Flags = 1u
+                };
+            }
+            finally
+            {
+                lockedVault.ReleaseWriteLock(in _approvedAssetManifestHandle.Handle, SystemID.ModSandbox);
+            }
 
             if (!found)
             {
-                ModSandboxRingState state = ringState[0];
-                state.ApprovedAssetCount = math.min(approvedAssets.Length, state.ApprovedAssetCount + 1);
-                ringState[0] = state;
+                state.ApprovedAssetCount = math.min(assetCapacity, state.ApprovedAssetCount + 1);
+                return TryWriteRingStateSnapshot(in state);
             }
 
             return true;
@@ -800,51 +825,63 @@ namespace Hecton8.Modding
         internal static bool SetOpcodeEnabled(uint opcodeHash, bool enabled)
         {
             Initialize();
-            NativeArray<FutureCommandOpcodeRecord> opcodeRecords = OpenVaultLane(ref _opcodeRecordsHandle);
-            NativeArray<ModSandboxRingState> ringState = ResolveRingState();
-            if (opcodeHash == 0u || !opcodeRecords.IsCreated || !ringState.IsCreated || ringState.Length == 0)
+            if (opcodeHash == 0u || !TryReadRingStateSnapshot(out ModSandboxRingState state))
                 return false;
 
-            ModSandboxRingState state = ringState[0];
-            for (int i = 0; i < opcodeRecords.Length; i++)
-            {
-                FutureCommandOpcodeRecord record = opcodeRecords[i];
-                if (record.OpcodeHash != opcodeHash)
-                    continue;
+            bool recordFound = false;
+            bool inserted = false;
+            IDataVault lockedVault = null;
+            if (!TryAcquireVaultLaneWrite(ref _opcodeRecordsHandle, out NativeArray<FutureCommandOpcodeRecord> opcodeRecords, out lockedVault))
+                return false;
 
-                record.Flags = enabled ? 1u : 0u;
-                opcodeRecords[i] = record;
-                return true;
+            try
+            {
+                for (int i = 0; i < opcodeRecords.Length; i++)
+                {
+                    FutureCommandOpcodeRecord record = opcodeRecords[i];
+                    if (record.OpcodeHash != opcodeHash)
+                        continue;
+
+                    record.Flags = enabled ? 1u : 0u;
+                    opcodeRecords[i] = record;
+                    recordFound = true;
+                    return true;
+                }
+
+                if (!enabled)
+                    return true;
+
+                int slot = state.OpcodeCount;
+                if ((uint)slot >= (uint)opcodeRecords.Length)
+                    return false;
+
+                opcodeRecords[slot] = new FutureCommandOpcodeRecord
+                {
+                    OpcodeHash = opcodeHash,
+                    Flags = 1u,
+                    ManifestCrc32 = 0u,
+                    Reserved = 0u
+                };
+                state.OpcodeCount = slot + 1;
+                inserted = true;
+            }
+            finally
+            {
+                lockedVault.ReleaseWriteLock(in _opcodeRecordsHandle.Handle, SystemID.ModSandbox);
             }
 
-            if (!enabled)
-                return true;
-
-            int slot = state.OpcodeCount;
-            if ((uint)slot >= (uint)opcodeRecords.Length)
-                return false;
-
-            opcodeRecords[slot] = new FutureCommandOpcodeRecord
-            {
-                OpcodeHash = opcodeHash,
-                Flags = 1u,
-                ManifestCrc32 = 0u,
-                Reserved = 0u
-            };
-            state.OpcodeCount = slot + 1;
-            ringState[0] = state;
-            return true;
+            return recordFound || (inserted && TryWriteRingStateSnapshot(in state));
         }
 
         internal static bool IsOpcodeEnabled(uint opcodeHash)
         {
             Initialize();
-            NativeArray<FutureCommandOpcodeRecord> opcodeRecords = OpenVaultLane(ref _opcodeRecordsHandle);
-            NativeArray<ModSandboxRingState> ringState = ResolveRingState();
-            if (opcodeHash == 0u || !opcodeRecords.IsCreated || !ringState.IsCreated || ringState.Length == 0)
+            if (opcodeHash == 0u ||
+                !TryOpenVaultLaneRead(ref _opcodeRecordsHandle, out NativeArray<FutureCommandOpcodeRecord>.ReadOnly opcodeRecords) ||
+                !TryReadRingStateSnapshot(out ModSandboxRingState state))
                 return false;
 
-            int count = math.min(ringState[0].OpcodeCount, opcodeRecords.Length);
+            int count = math.min(state.OpcodeCount, opcodeRecords.Length);
             for (int i = 0; i < count; i++)
             {
                 FutureCommandOpcodeRecord record = opcodeRecords[i];
@@ -858,7 +895,7 @@ namespace Hecton8.Modding
         internal static FutureCommandSandboxTuning GetTuningSnapshot()
         {
             Initialize();
-            NativeArray<FutureCommandSandboxTuning> tuningBuffer = OpenVaultLane(ref _tuningHandle);
+            TryOpenVaultLaneRead(ref _tuningHandle, out NativeArray<FutureCommandSandboxTuning>.ReadOnly tuningBuffer);
             return ResolveTuning(tuningBuffer);
         }
 
@@ -866,37 +903,32 @@ namespace Hecton8.Modding
         {
             Initialize();
             AcquireVaultBuffers();
-            NativeArray<FutureCommandSandboxTuning> tuningBuffer = OpenVaultLane(ref _tuningHandle);
-            if (!tuningBuffer.IsCreated || tuningBuffer.Length == 0)
-                return;
-
             FutureCommandSandboxTuning safe = tuning;
             safe.MaxCommandsPerFrame = math.clamp(safe.MaxCommandsPerFrame, FutureCommandSandboxConstants.LowTierMinCommandsPerSignature, 10000);
             safe.MaxModMemoryMb = math.clamp(safe.MaxModMemoryMb, 1, 256);
             safe.MaxAssetBytes = (uint)math.clamp((int)safe.MaxAssetBytes, 1024, 256 * 1024 * 1024);
             safe.CpuThermalPressure01 = math.saturate(math.isfinite(safe.CpuThermalPressure01) ? safe.CpuThermalPressure01 : 0f);
-            tuningBuffer[0] = safe;
+            TryWriteVaultLaneElement(ref _tuningHandle, 0, in safe);
         }
 
         internal static bool ReportCpuThermalPressure(float pressure01)
         {
             Initialize();
             AcquireVaultBuffers();
-            NativeArray<FutureCommandSandboxTuning> tuningBuffer = OpenVaultLane(ref _tuningHandle);
-            if (!tuningBuffer.IsCreated || tuningBuffer.Length == 0)
+            if (!TryOpenVaultLaneRead(ref _tuningHandle, out NativeArray<FutureCommandSandboxTuning>.ReadOnly tuningBuffer) ||
+                tuningBuffer.Length == 0)
                 return false;
 
             FutureCommandSandboxTuning tuning = tuningBuffer[0];
             tuning.CpuThermalPressure01 = math.saturate(math.isfinite(pressure01) ? pressure01 : 1f);
-            tuningBuffer[0] = tuning;
-            return true;
+            return TryWriteVaultLaneElement(ref _tuningHandle, 0, in tuning);
         }
 
         internal static int CopyTelemetrySnapshot(NativeArray<ModSandboxTelemetryEntry> destination)
         {
             Initialize();
             AcquireVaultBuffers();
-            NativeArray<ModSandboxTelemetryEntry> telemetryRing = OpenVaultLane(ref _telemetryRingHandle);
+            TryOpenVaultLaneRead(ref _telemetryRingHandle, out NativeArray<ModSandboxTelemetryEntry>.ReadOnly telemetryRing);
             if (!destination.IsCreated || !telemetryRing.IsCreated)
                 return 0;
 
@@ -910,7 +942,7 @@ namespace Hecton8.Modding
         {
             Initialize();
             AcquireVaultBuffers();
-            NativeArray<ModSandboxTelemetryEntry> telemetryRing = OpenVaultLane(ref _telemetryRingHandle);
+            TryOpenVaultLaneRead(ref _telemetryRingHandle, out NativeArray<ModSandboxTelemetryEntry>.ReadOnly telemetryRing);
             if (!telemetryRing.IsCreated || (uint)index >= (uint)telemetryRing.Length)
             {
                 entry = default;
@@ -1937,6 +1969,36 @@ namespace Hecton8.Modding
             return tuning;
         }
 
+        private static FutureCommandSandboxTuning ResolveTuning(NativeArray<FutureCommandSandboxTuning>.ReadOnly tuningBuffer)
+        {
+            FutureCommandSandboxTuning tuning = default;
+            tuning.MaxCommandsPerFrame = FutureCommandSandboxConstants.DefaultMaxCommandsPerSignature;
+            tuning.MaxModMemoryMb = FutureCommandSandboxConstants.DefaultMaxModMemoryMb;
+            tuning.GlobalQualityWeightOverride = -1f;
+            tuning.EnabledOpcodeMaskLo = EnabledAllEmergencyOpcodes;
+            tuning.MaxAssetBytes = FutureCommandSandboxConstants.DefaultMaxAssetBytes;
+            tuning.Flags = 0u;
+            tuning.CpuThermalPressure01 = 0f;
+            tuning.Reserved = 0u;
+
+            if (tuningBuffer.IsCreated && tuningBuffer.Length > 0)
+            {
+                FutureCommandSandboxTuning stored = tuningBuffer[0];
+                if (stored.MaxCommandsPerFrame > 0)
+                    tuning.MaxCommandsPerFrame = stored.MaxCommandsPerFrame;
+                if (stored.MaxModMemoryMb > 0)
+                    tuning.MaxModMemoryMb = stored.MaxModMemoryMb;
+                if (stored.MaxAssetBytes > 0u)
+                    tuning.MaxAssetBytes = stored.MaxAssetBytes;
+                tuning.GlobalQualityWeightOverride = stored.GlobalQualityWeightOverride;
+                tuning.EnabledOpcodeMaskLo = stored.EnabledOpcodeMaskLo == 0u ? EnabledAllEmergencyOpcodes : stored.EnabledOpcodeMaskLo;
+                tuning.Flags = stored.Flags;
+                tuning.CpuThermalPressure01 = math.saturate(math.isfinite(stored.CpuThermalPressure01) ? stored.CpuThermalPressure01 : 0f);
+            }
+
+            return tuning;
+        }
+
         private static float ResolveGlobalQualityWeight()
         {
             NativeArray<FutureCommandSandboxTuning> tuningBuffer = OpenVaultLane(ref _tuningHandle);
@@ -2287,16 +2349,24 @@ namespace Hecton8.Modding
             uint peakCommandsForSignature,
             uint maxCommandsPerSignature)
         {
-            NativeArray<ModSandboxTelemetryEntry> telemetryRing = OpenVaultLane(ref _telemetryRingHandle);
-            NativeArray<int> telemetryCursor = OpenVaultLane(ref _telemetryCursorHandle);
-            if (!telemetryRing.IsCreated || !telemetryCursor.IsCreated || telemetryRing.Length == 0 || telemetryCursor.Length == 0)
+            if (!TryOpenVaultLaneRead(ref _telemetryCursorHandle, out NativeArray<int>.ReadOnly telemetryCursor) ||
+                telemetryCursor.Length == 0)
                 return;
 
             int cursor = telemetryCursor[0];
+            int nextCursor = cursor;
+            ModSandboxTelemetryEntry entry;
+            IDataVault lockedVault = null;
+            if (!TryAcquireVaultLaneWrite(ref _telemetryRingHandle, out NativeArray<ModSandboxTelemetryEntry> telemetryRing, out lockedVault) ||
+                telemetryRing.Length == 0)
+            {
+                return;
+            }
+
             if ((uint)cursor >= (uint)telemetryRing.Length)
                 cursor = 0;
 
-            telemetryRing[cursor] = new ModSandboxTelemetryEntry
+            entry = new ModSandboxTelemetryEntry
             {
                 Frame = frame,
                 Incoming = incoming,
@@ -2315,16 +2385,25 @@ namespace Hecton8.Modding
                 Reserved = 0u
             };
 
-            cursor++;
-            if (cursor >= telemetryRing.Length)
-                cursor = 0;
-            telemetryCursor[0] = cursor;
+            try
+            {
+                telemetryRing[cursor] = entry;
+                nextCursor = cursor + 1;
+                if (nextCursor >= telemetryRing.Length)
+                    nextCursor = 0;
+            }
+            finally
+            {
+                lockedVault.ReleaseWriteLock(in _telemetryRingHandle.Handle, SystemID.ModSandbox);
+            }
+
+            TryWriteVaultLaneElement(ref _telemetryCursorHandle, 0, nextCursor);
         }
 
         internal static bool TryGetKernelTelemetryEntry(int index, out KernelExecutionTelemetryEntry entry)
         {
             entry = default;
-            NativeArray<KernelExecutionTelemetryEntry> telemetryRing = OpenVaultLane(ref _kernelTelemetryRingHandle);
+            TryOpenVaultLaneRead(ref _kernelTelemetryRingHandle, out NativeArray<KernelExecutionTelemetryEntry>.ReadOnly telemetryRing);
             if (!telemetryRing.IsCreated || telemetryRing.Length == 0 || (uint)index >= (uint)telemetryRing.Length)
                 return false;
 
@@ -2340,19 +2419,27 @@ namespace Hecton8.Modding
             float quality,
             uint pendingDepth)
         {
-            NativeArray<KernelExecutionTelemetryEntry> telemetryRing = OpenVaultLane(ref _kernelTelemetryRingHandle);
-            NativeArray<int> telemetryCursor = OpenVaultLane(ref _kernelTelemetryCursorHandle);
-            if (!telemetryRing.IsCreated || !telemetryCursor.IsCreated || telemetryRing.Length == 0 || telemetryCursor.Length == 0)
+            if (!TryOpenVaultLaneRead(ref _kernelTelemetryCursorHandle, out NativeArray<int>.ReadOnly telemetryCursor) ||
+                telemetryCursor.Length == 0)
                 return;
 
             int cursor = telemetryCursor[0];
+            int nextCursor = cursor;
+            KernelExecutionTelemetryEntry entry;
+            IDataVault lockedVault = null;
+            if (!TryAcquireVaultLaneWrite(ref _kernelTelemetryRingHandle, out NativeArray<KernelExecutionTelemetryEntry> telemetryRing, out lockedVault) ||
+                telemetryRing.Length == 0)
+            {
+                return;
+            }
+
             if ((uint)cursor >= (uint)telemetryRing.Length)
                 cursor = 0;
 
             uint rollbackSuppressed = (stats.RejectionMask & (uint)FutureCommandRejectReason.RollbackSuppressed) != 0u
                 ? stats.KernelSuppressed
                 : 0u;
-            telemetryRing[cursor] = new KernelExecutionTelemetryEntry
+            entry = new KernelExecutionTelemetryEntry
             {
                 ExecutionTicks = elapsedTicks,
                 Frame = frame,
@@ -2371,10 +2458,19 @@ namespace Hecton8.Modding
                 _pad0 = 0u
             };
 
-            cursor++;
-            if (cursor >= telemetryRing.Length)
-                cursor = 0;
-            telemetryCursor[0] = cursor;
+            try
+            {
+                telemetryRing[cursor] = entry;
+                nextCursor = cursor + 1;
+                if (nextCursor >= telemetryRing.Length)
+                    nextCursor = 0;
+            }
+            finally
+            {
+                lockedVault.ReleaseWriteLock(in _kernelTelemetryRingHandle.Handle, SystemID.ModSandbox);
+            }
+
+            TryWriteVaultLaneElement(ref _kernelTelemetryCursorHandle, 0, nextCursor);
 
             long thresholdTicks = (Stopwatch.Frequency * KernelSpikeTicksNumerator) / KernelSpikeTicksDenominator;
             long safeThresholdTicks = thresholdTicks > 1L ? thresholdTicks : 1L;
@@ -2385,7 +2481,7 @@ namespace Hecton8.Modding
         private static void DumpKernelTelemetry(uint faultHash)
         {
             int frame = SystemDispatcher.CurrentFrameIndex;
-            NativeArray<KernelExecutionTelemetryEntry> telemetryRing = OpenVaultLane(ref _kernelTelemetryRingHandle);
+            TryOpenVaultLaneRead(ref _kernelTelemetryRingHandle, out NativeArray<KernelExecutionTelemetryEntry>.ReadOnly telemetryRing);
             try
             {
                 Directory.CreateDirectory("Docs/AgentLogs");
@@ -2415,16 +2511,14 @@ namespace Hecton8.Modding
         internal static void DumpBlackbox(uint faultHash)
         {
             int frame = SystemDispatcher.CurrentFrameIndex;
-            NativeArray<ModSandboxRingState> ringState = ResolveRingState();
-            ModSandboxRingState state = ringState.IsCreated && ringState.Length > 0 ? ringState[0] : default;
+            TryReadRingStateSnapshot(out ModSandboxRingState state);
             if (state.LastDumpFrame == frame)
                 return;
 
             state.LastDumpFrame = frame;
-            if (ringState.IsCreated && ringState.Length > 0)
-                ringState[0] = state;
+            TryWriteRingStateSnapshot(in state);
 
-            NativeArray<ModSandboxTelemetryEntry> telemetryRing = OpenVaultLane(ref _telemetryRingHandle);
+            TryOpenVaultLaneRead(ref _telemetryRingHandle, out NativeArray<ModSandboxTelemetryEntry>.ReadOnly telemetryRing);
             try
             {
                 Directory.CreateDirectory("Docs/AgentLogs");
@@ -2546,6 +2640,115 @@ namespace Hecton8.Modding
             }
 
             return buffer;
+        }
+
+        private static bool TryOpenVaultLaneRead<T>(
+            ref VaultLane<T> lane,
+            out NativeArray<T>.ReadOnly buffer) where T : struct
+        {
+            buffer = default;
+            IDataVault vault = _dataVault;
+            if (vault == null ||
+                !IsLaneCreated(in lane) ||
+                !vault.TryReadOnlyHandle(in lane.Handle, out buffer) ||
+                !buffer.IsCreated ||
+                buffer.Length < lane.Length)
+            {
+                buffer = default;
+                return false;
+            }
+
+            return true;
+        }
+
+        private static bool TryAcquireVaultLaneWrite<T>(
+            ref VaultLane<T> lane,
+            out NativeArray<T> buffer,
+            out IDataVault lockedVault) where T : struct
+        {
+            buffer = default;
+            lockedVault = null;
+            IDataVault vault = _dataVault;
+            if (vault == null ||
+                !IsLaneCreated(in lane) ||
+                !vault.TryAcquireWriteLock(in lane.Handle, SystemID.ModSandbox, out buffer))
+            {
+                buffer = default;
+                return false;
+            }
+
+            if (!buffer.IsCreated || buffer.Length < lane.Length)
+            {
+                vault.ReleaseWriteLock(in lane.Handle, SystemID.ModSandbox);
+                buffer = default;
+                return false;
+            }
+
+            lockedVault = vault;
+            return true;
+        }
+
+        private static bool TryReadRingStateSnapshot(out ModSandboxRingState state)
+        {
+            state = default;
+            if (!TryOpenVaultLaneRead(ref _ringStateHandle, out NativeArray<ModSandboxRingState>.ReadOnly ringState) ||
+                ringState.Length == 0)
+            {
+                return false;
+            }
+
+            state = ringState[0];
+            return true;
+        }
+
+        private static bool TryWriteRingStateSnapshot(in ModSandboxRingState state)
+        {
+            return TryWriteVaultLaneElement(ref _ringStateHandle, 0, in state);
+        }
+
+        private static bool TryWriteVaultLaneElement<T>(
+            ref VaultLane<T> lane,
+            int index,
+            in T value) where T : struct
+        {
+            IDataVault lockedVault = null;
+            if (!TryAcquireVaultLaneWrite(ref lane, out NativeArray<T> buffer, out lockedVault))
+                return false;
+
+            try
+            {
+                if ((uint)index >= (uint)buffer.Length)
+                    return false;
+
+                buffer[index] = value;
+                return true;
+            }
+            finally
+            {
+                lockedVault.ReleaseWriteLock(in lane.Handle, SystemID.ModSandbox);
+            }
+        }
+
+        private static bool TryEnqueueSinglePendingEnvelope(
+            in FutureCommandEnvelope envelope,
+            ref ModSandboxRingState state)
+        {
+            IDataVault lockedVault = null;
+            if (!TryAcquireVaultLaneWrite(ref _pendingRingHandle, out NativeArray<FutureCommandEnvelope> pendingRing, out lockedVault) ||
+                pendingRing.Length == 0)
+            {
+                return false;
+            }
+
+            try
+            {
+                EnqueuePendingEnvelope(pendingRing, ref state, in envelope);
+                return true;
+            }
+            finally
+            {
+                lockedVault.ReleaseWriteLock(in _pendingRingHandle.Handle, SystemID.ModSandbox);
+            }
         }
 
         private static bool TryReadVaultBuffer<T>(
@@ -2888,12 +3091,11 @@ namespace Hecton8.Modding
 
         private static void FinalizeValidationTelemetry(in ModSandboxScheduledValidationState validationState)
         {
-            NativeArray<FutureCommandValidationStats> statsBuffer = OpenVaultLane(ref _statsHandle);
-            NativeArray<ModSandboxRingState> ringState = ResolveRingState();
-            if (!statsBuffer.IsCreated || statsBuffer.Length == 0 || !ringState.IsCreated || ringState.Length == 0)
+            if (!TryOpenVaultLaneRead(ref _statsHandle, out NativeArray<FutureCommandValidationStats>.ReadOnly statsBuffer) ||
+                statsBuffer.Length == 0 ||
+                !TryReadRingStateSnapshot(out ModSandboxRingState state))
                 return;
 
-            ModSandboxRingState state = ringState[0];
             FutureCommandValidationStats stats = statsBuffer[0];
             long elapsedTicks = Stopwatch.GetTimestamp() - validationState.StartTicks;
             if (elapsedTicks < 0L)

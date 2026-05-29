@@ -94,6 +94,12 @@ namespace Hecton8.Core
         private const double ShaderTimeModuloSeconds = 3600.0;
         private static readonly double s_stopwatchTicksToMicroseconds = 1000000.0 / Stopwatch.Frequency;
         private const float DispatchBudgetMicroseconds = 100f;
+        private const ulong ShaderGlobalStateMutationGuardMask =
+            1UL << ((int)BufferID.ShaderGlobalState & 31);
+        private const ulong ThermalSourceReadGuardMask =
+            (1UL << ((int)BufferID.SubmarineFluidExteriorThermalCenters & 31)) |
+            (1UL << ((int)BufferID.SubmarineFluidExteriorThermalTemperatures & 31)) |
+            (1UL << ((int)BufferID.SubmarineFluidExteriorThermalLifetimes & 31));
         private const uint DumpMagic = 0x43424652u; // CBFR
         private const uint TelemetryFlagVaultUnavailable = 1u << 2;
         private const string DumpFileName = "Dump_13KRA.bin";
@@ -347,7 +353,11 @@ namespace Hecton8.Core
             float lowTierWeight01 = ResolveLowTierWeight01(globalQualityWeight01, lowTierFloor01);
             RefreshQualityTelemetry(globalQualityWeight01, lowTierWeight01);
 
-            if (!vault.TryLockBuffer(BufferID.ShaderGlobalState, SystemID.GraphicsScalability))
+            float shaderTime = (float)_shaderTime;
+            Span<float4> thermalPackedSlots = stackalloc float4[ThermalAnomalyCapacity];
+            int thermalCount = BuildThermalPackedSnapshot(vault, thermalPackedSlots, shaderTime);
+
+            if (!vault.TryAcquireMutationGuard(ShaderGlobalStateMutationGuardMask))
                 return;
 
             ShaderGlobalsDTO dto;
@@ -357,7 +367,6 @@ namespace Hecton8.Core
             Vector4 resolution;
             Vector4 hazard;
             Vector4 biomePalette;
-            int thermalCount;
             Vector4 thermalParams;
             Vector4 biolumMasterPhase;
             Vector4 aupShiftOffset;
@@ -378,14 +387,13 @@ namespace Hecton8.Core
                 if (!TryResolveShaderGlobalSlotsLocked(vault, out NativeArray<float4> slots))
                     return;
 
-                RunMockGlobalDataKernel(slots, lowTierWeight01, (float)_shaderTime, ResolveSectorPhase());
+                RunMockGlobalDataKernel(slots, lowTierWeight01, shaderTime, ResolveSectorPhase());
 
                 ref ShaderGlobalsDTO dtoRef = ref ResolveShaderGlobalsRef(slots);
                 aupOffset = ResolveAupOffset();
                 resolution = ResolveResolutionState();
-                hazard = ResolveHazardPulse((float)_shaderTime);
-                thermalCount = UpdateThermalPackedSlots(vault, slots, (float)_shaderTime);
-                thermalParams = UploadThermalBuffer(slots, thermalCount);
+                hazard = ResolveHazardPulse(shaderTime);
+                CopyThermalPackedSlots(slots, thermalPackedSlots);
 
                 slots[AupOffsetSlot] = ToFloat4(aupOffset);
                 slots[ResolutionSlot] = ToFloat4(resolution);
@@ -418,9 +426,10 @@ namespace Hecton8.Core
             }
             finally
             {
-                vault.TryUnlockBuffer(BufferID.ShaderGlobalState, SystemID.GraphicsScalability);
+                vault.ReleaseMutationGuard(ShaderGlobalStateMutationGuardMask);
             }
 
+            thermalParams = UploadThermalBuffer(thermalPackedSlots, thermalCount);
             Vector4 wakeParams = UploadDynamicWakeBuffers(lowTierWeight01);
             ExecuteGlobalDispatch(
                 in dto,
@@ -477,7 +486,7 @@ namespace Hecton8.Core
             if (!EnsureShaderGlobalSlots(out IDataVault vault, allowAllocation: true))
                 return false;
 
-            if (!vault.TryLockBuffer(BufferID.ShaderGlobalState, SystemID.GraphicsScalability))
+            if (!vault.TryAcquireMutationGuard(ShaderGlobalStateMutationGuardMask))
                 return false;
 
             try
@@ -507,7 +516,7 @@ namespace Hecton8.Core
             }
             finally
             {
-                vault.TryUnlockBuffer(BufferID.ShaderGlobalState, SystemID.GraphicsScalability);
+                vault.ReleaseMutationGuard(ShaderGlobalStateMutationGuardMask);
             }
         }
 
@@ -729,7 +738,7 @@ namespace Hecton8.Core
         {
             if (_binaryProbeCompleted ||
                 vault == null ||
-                !vault.TryLockBuffer(BufferID.ShaderGlobalState, SystemID.GraphicsScalability))
+                !vault.TryAcquireMutationGuard(ShaderGlobalStateMutationGuardMask))
             {
                 return;
             }
@@ -744,7 +753,7 @@ namespace Hecton8.Core
             }
             finally
             {
-                vault.TryUnlockBuffer(BufferID.ShaderGlobalState, SystemID.GraphicsScalability);
+                vault.ReleaseMutationGuard(ShaderGlobalStateMutationGuardMask);
             }
         }
 
@@ -833,10 +842,10 @@ namespace Hecton8.Core
             return _lastWakeParams;
         }
 
-        private int UpdateThermalPackedSlots(IDataVault vault, NativeArray<float4> slots, float shaderTime)
+        private int BuildThermalPackedSnapshot(IDataVault vault, Span<float4> packedSlots, float shaderTime)
         {
             if (vault == null ||
-                !slots.IsCreated ||
+                packedSlots.Length < ThermalAnomalyCapacity ||
                 !vault.TryGetGenerationHandle<float3>(BufferID.SubmarineFluidExteriorThermalCenters, out VaultGenerationHandle<float3> centersHandle) ||
                 !IsThermalSourceHandleOwned(in centersHandle, BufferID.SubmarineFluidExteriorThermalCenters) ||
                 !vault.TryGetGenerationHandle<float>(BufferID.SubmarineFluidExteriorThermalTemperatures, out VaultGenerationHandle<float> temperaturesHandle) ||
@@ -844,34 +853,22 @@ namespace Hecton8.Core
                 !vault.TryGetGenerationHandle<float>(BufferID.SubmarineFluidExteriorThermalLifetimes, out VaultGenerationHandle<float> lifetimesHandle) ||
                 !IsThermalSourceHandleOwned(in lifetimesHandle, BufferID.SubmarineFluidExteriorThermalLifetimes))
             {
-                return WriteMockThermalPackedSlot(slots, shaderTime);
+                return WriteMockThermalPackedSlot(packedSlots, shaderTime);
             }
 
-            bool centersLocked = false;
-            bool temperaturesLocked = false;
-            bool lifetimesLocked = false;
+            if (!vault.TryAcquireMutationGuard(ThermalSourceReadGuardMask))
+                return WriteMockThermalPackedSlot(packedSlots, shaderTime);
+
             try
             {
-                centersLocked = vault.TryLockBuffer(BufferID.SubmarineFluidExteriorThermalCenters, SystemID.GraphicsScalability);
-                if (!centersLocked)
-                    return WriteMockThermalPackedSlot(slots, shaderTime);
-
-                temperaturesLocked = vault.TryLockBuffer(BufferID.SubmarineFluidExteriorThermalTemperatures, SystemID.GraphicsScalability);
-                if (!temperaturesLocked)
-                    return WriteMockThermalPackedSlot(slots, shaderTime);
-
-                lifetimesLocked = vault.TryLockBuffer(BufferID.SubmarineFluidExteriorThermalLifetimes, SystemID.GraphicsScalability);
-                if (!lifetimesLocked)
-                    return WriteMockThermalPackedSlot(slots, shaderTime);
-
-                if (!vault.TryResolveHandle(in centersHandle, out NativeArray<float3> centers) ||
-                    !vault.TryResolveHandle(in temperaturesHandle, out NativeArray<float> temperatures) ||
-                    !vault.TryResolveHandle(in lifetimesHandle, out NativeArray<float> lifetimes) ||
+                if (!vault.TryReadOnlyHandle(in centersHandle, out NativeArray<float3>.ReadOnly centers) ||
+                    !vault.TryReadOnlyHandle(in temperaturesHandle, out NativeArray<float>.ReadOnly temperatures) ||
+                    !vault.TryReadOnlyHandle(in lifetimesHandle, out NativeArray<float>.ReadOnly lifetimes) ||
                     !centers.IsCreated ||
                     !temperatures.IsCreated ||
                     !lifetimes.IsCreated)
                 {
-                    return WriteMockThermalPackedSlot(slots, shaderTime);
+                    return WriteMockThermalPackedSlot(packedSlots, shaderTime);
                 }
 
                 int count = math.min(ThermalAnomalyCapacity, math.min(centers.Length, math.min(temperatures.Length, lifetimes.Length)));
@@ -882,24 +879,19 @@ namespace Hecton8.Core
                     float temperature = math.max(0f, temperatures[i]);
                     float intensity = lifetime > 0f ? math.saturate((temperature - 18f) * 0.02f) : 0f;
                     float3 center = math.all(math.isfinite(centers[i])) ? centers[i] : float3.zero;
-                    slots[ThermalPackedSlotStart + i] = new float4(center, intensity);
+                    packedSlots[i] = new float4(center, intensity);
                     if (intensity > 0.001f)
                         active++;
                 }
 
                 for (int i = count; i < ThermalAnomalyCapacity; i++)
-                    slots[ThermalPackedSlotStart + i] = default;
+                    packedSlots[i] = default;
 
                 return active;
             }
             finally
             {
-                if (lifetimesLocked)
-                    vault.TryUnlockBuffer(BufferID.SubmarineFluidExteriorThermalLifetimes, SystemID.GraphicsScalability);
-                if (temperaturesLocked)
-                    vault.TryUnlockBuffer(BufferID.SubmarineFluidExteriorThermalTemperatures, SystemID.GraphicsScalability);
-                if (centersLocked)
-                    vault.TryUnlockBuffer(BufferID.SubmarineFluidExteriorThermalCenters, SystemID.GraphicsScalability);
+                vault.ReleaseMutationGuard(ThermalSourceReadGuardMask);
             }
         }
 
@@ -912,46 +904,55 @@ namespace Hecton8.Core
                    handle.SystemID == (uint)SystemID.VehiclesPhysics;
         }
 
-        private static int WriteMockThermalPackedSlot(NativeArray<float4> slots, float shaderTime)
+        private static int WriteMockThermalPackedSlot(Span<float4> packedSlots, float shaderTime)
         {
-            if (!slots.IsCreated || slots.Length <= ThermalPackedSlotStart)
+            if (packedSlots.Length < ThermalAnomalyCapacity)
                 return 0;
 
-            slots[ThermalPackedSlotStart] = new float4(
+            packedSlots[0] = new float4(
                 MathLodApproximation.ApproxSinBhaskara(shaderTime * 0.31f) * 12f,
                 -6f,
                 MathLodApproximation.ApproxCosBhaskara(shaderTime * 0.27f) * 12f,
                 0.22f);
             for (int i = 1; i < ThermalAnomalyCapacity; i++)
-                slots[ThermalPackedSlotStart + i] = default;
+                packedSlots[i] = default;
             return 1;
         }
 
-        private Vector4 UploadThermalBuffer(NativeArray<float4> slots, int thermalCount)
+        private static void CopyThermalPackedSlots(NativeArray<float4> slots, ReadOnlySpan<float4> packedSlots)
         {
-            if (!EnsureGpuBuffers() || !slots.IsCreated)
+            if (!slots.IsCreated || packedSlots.Length < ThermalAnomalyCapacity)
+                return;
+
+            for (int i = 0; i < ThermalAnomalyCapacity; i++)
+                slots[ThermalPackedSlotStart + i] = packedSlots[i];
+        }
+
+        private Vector4 UploadThermalBuffer(ReadOnlySpan<float4> packedSlots, int thermalCount)
+        {
+            if (!EnsureGpuBuffers() || packedSlots.Length < ThermalAnomalyCapacity)
             {
                 _lastThermalParams = Vector4.zero;
                 return _lastThermalParams;
             }
 
             int uploadCount = math.min(ThermalAnomalyCapacity, math.max(1, thermalCount));
-            UploadFloat4Range(_thermalAnomalyBuffer, slots, ThermalPackedSlotStart, uploadCount);
+            UploadFloat4Range(_thermalAnomalyBuffer, packedSlots, uploadCount);
             _lastThermalParams = new Vector4(uploadCount, thermalCount, thermalCount > 0 ? 1f : 0f, 0f);
             return _lastThermalParams;
         }
 
-        private static void UploadFloat4Range(GraphicsBuffer destination, NativeArray<float4> source, int sourceStart, int count)
+        private static void UploadFloat4Range(GraphicsBuffer destination, ReadOnlySpan<float4> source, int count)
         {
-            if (destination == null || !destination.IsValid() || !source.IsCreated || count <= 0)
+            if (destination == null || !destination.IsValid() || source.Length <= 0 || count <= 0)
                 return;
 
             NativeArray<float4> target = destination.LockBufferForWrite<float4>(0, count);
             try
             {
-                void* src = (byte*)NativeArrayUnsafeUtility.GetUnsafeReadOnlyPtr(source) + (sourceStart * UnsafeUtility.SizeOf<float4>());
-                void* dst = NativeArrayUnsafeUtility.GetUnsafePtr(target);
-                UnsafeUtility.MemCpy(dst, src, count * UnsafeUtility.SizeOf<float4>());
+                int safeCount = math.min(count, math.min(source.Length, target.Length));
+                for (int i = 0; i < safeCount; i++)
+                    target[i] = source[i];
             }
             finally
             {
@@ -1180,7 +1181,7 @@ namespace Hecton8.Core
             if (!ReferenceEquals(vault, currentVault))
                 vault = currentVault;
 
-            if (vault == null || !vault.TryLockBuffer(BufferID.ShaderGlobalState, SystemID.GraphicsScalability))
+            if (vault == null || !vault.TryAcquireMutationGuard(ShaderGlobalStateMutationGuardMask))
                 return;
 
             try
@@ -1201,7 +1202,7 @@ namespace Hecton8.Core
             }
             finally
             {
-                vault.TryUnlockBuffer(BufferID.ShaderGlobalState, SystemID.GraphicsScalability);
+                vault.ReleaseMutationGuard(ShaderGlobalStateMutationGuardMask);
             }
         }
 
@@ -1225,7 +1226,7 @@ namespace Hecton8.Core
                 return;
             }
 
-            if (!vault.TryLockBuffer(BufferID.ShaderGlobalState, SystemID.GraphicsScalability))
+            if (!vault.TryAcquireMutationGuard(ShaderGlobalStateMutationGuardMask))
             {
                 TryWriteTelemetryDump(directory, DumpFileName, telemetrySnapshot, telemetryCursor, reasonFlags | TelemetryFlagVaultUnavailable);
                 return;
@@ -1250,7 +1251,7 @@ namespace Hecton8.Core
             }
             finally
             {
-                vault.TryUnlockBuffer(BufferID.ShaderGlobalState, SystemID.GraphicsScalability);
+                vault.ReleaseMutationGuard(ShaderGlobalStateMutationGuardMask);
             }
 
             if (!copiedTelemetry)

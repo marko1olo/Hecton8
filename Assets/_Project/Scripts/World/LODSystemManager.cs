@@ -32,7 +32,6 @@ using System.Collections.Generic;
 using System.Globalization;
 using UnityEngine;
 using Unity.Mathematics;
-using Hecton8.Bootstrap;
 using Hecton8.Core;
 using Hecton8.SaveSystem;
 
@@ -150,6 +149,10 @@ namespace Hecton8.World
         private AbsoluteUniversePosition _viewerAupCache;
         private float _cameraResolveRetryTimer;
         private float _defaultLODBias = 1f;
+        private float _runtimeQualityWeight01 = 0.62f;
+        private float _lastAppliedLodBias = -1f;
+        private float _lastAppliedMathLodWeight = -1f;
+        private float _emergencyLodBias = -1f;
         private float _lodRuntimeClockSeconds;
         private float _nextNullCleanupTime;
         private int _nullCleanupCursor;
@@ -158,6 +161,7 @@ namespace Hecton8.World
         private int _scheduledLODGroupBatchCount;
         private int _nextLODPerformanceWarningFrame;
         private int _lastFrameTransitionCount;
+        private bool _qualityVisualSyncDirty;
         private bool _registeredHotSwapListener;
 
         private float _lodSystemCPUTime;
@@ -180,6 +184,8 @@ namespace Hecton8.World
         /// Current quality preset.
         /// </summary>
         public LODQualityPreset QualityPreset => _qualityPreset;
+
+        public float QualityWeight01 => _runtimeQualityWeight01;
 
         /// <summary>
         /// Count of LOD mode transitions applied during the last Tick batch.
@@ -211,6 +217,8 @@ namespace Hecton8.World
             CacheRegistryServicesCold();
             EnsureDistanceScratchAllocated();
             _defaultLODBias = QualitySettings.lodBias;
+            _lastAppliedLodBias = _defaultLODBias;
+            _runtimeQualityWeight01 = ResolveActiveQualityWeight01();
             _lodRuntimeClockSeconds = 0f;
             _nextNullCleanupTime = 0f;
             TryResolveMainCamera();
@@ -477,6 +485,7 @@ namespace Hecton8.World
 
         public void LateFrameTick()
         {
+            FlushQualityVisualSync();
             ApplyLODTransitions();
         }
 
@@ -601,44 +610,49 @@ namespace Hecton8.World
             }
         }
 
-        /// <summary>
-        /// Get current LOD bias multiplier based on quality preset.
-        /// </summary>
-        /// <returns>LOD bias multiplier (1.5/1.0/0.7)</returns>
         public float GetLODBias()
         {
-            switch (_qualityPreset)
-            {
-                case LODQualityPreset.Low:    return 1.5f;
-                case LODQualityPreset.Medium: return 1.0f;
-                case LODQualityPreset.High:   return 0.7f;
-                default:                      return 1.0f;
-            }
+            return ResolveLODBiasFromQualityWeight(QualityWeight01);
         }
 
         public static float ResolvePresetQualityWeight01(LODQualityPreset preset)
         {
-            switch (preset)
-            {
-                case LODQualityPreset.Low:
-                    return 0.25f;
-                case LODQualityPreset.Medium:
-                    return 0.62f;
-                case LODQualityPreset.High:
-                    return 1f;
-                default:
-                    return 0.62f;
-            }
+            int rawPreset = (int)preset;
+            float ordinalWeight01 = math.saturate(rawPreset * 0.5f);
+            float curvedWeight01 = (0.02f * ordinalWeight01 * ordinalWeight01) + (0.73f * ordinalWeight01) + 0.25f;
+            return math.select(0.62f, math.saturate(curvedWeight01), (uint)rawPreset <= 2u);
+        }
+
+        public static float ResolveLODBiasFromQualityWeight(float qualityWeight01)
+        {
+            float q = Smooth01(qualityWeight01);
+            return math.lerp(1.5f, 0.7f, q);
+        }
+
+        private float ResolveActiveQualityWeight01()
+        {
+            float quality = HomeostasisBrain.GlobalQualityWeight;
+            float preset = ResolvePresetQualityWeight01(_qualityPreset);
+            return math.saturate(math.select(preset, math.min(preset, quality), math.isfinite(quality)));
+        }
+
+        private static float Smooth01(float value)
+        {
+            float t = math.saturate(value);
+            return t * t * (3f - 2f * t);
         }
 
         public float ApplyEmergencyLODBiasStrike()
         {
-            float current = QualitySettings.lodBias;
+            float current = _lastAppliedLodBias > 0f ? _lastAppliedLodBias : QualitySettings.lodBias;
             float next = math.max(0.35f, current - 0.1f);
             if (next < current)
-                QualitySettings.lodBias = next;
+            {
+                _emergencyLodBias = next;
+                _qualityVisualSyncDirty = true;
+            }
 
-            return QualitySettings.lodBias;
+            return _emergencyLodBias > 0f ? _emergencyLodBias : current;
         }
 
         /// <summary>
@@ -811,13 +825,6 @@ namespace Hecton8.World
                 _mainCamera = playerContext != null ? playerContext.PlayerCamera : null;
             }
 
-            if (_mainCamera == null &&
-                GameBootstrapper.TryGetCurrentPlayerTransform(out Transform playerTransform) &&
-                playerTransform != null)
-            {
-                playerTransform.TryGetComponent(out _mainCamera);
-            }
-
             if (_mainCamera == null)
             {
                 return false;
@@ -864,8 +871,9 @@ namespace Hecton8.World
         private void ApplyQualityPreset(LODQualityPreset preset)
         {
             _qualityPreset = preset;
-            QualitySettings.lodBias = GetLODBias();
-            DistanceMath.PushShaderMathLod(ResolvePresetQualityWeight01(preset));
+            _runtimeQualityWeight01 = ResolveActiveQualityWeight01();
+            _emergencyLodBias = -1f;
+            _qualityVisualSyncDirty = true;
 
             _dynamicResolutionScaler?.SetQualityPreset(preset);
         }
@@ -873,6 +881,40 @@ namespace Hecton8.World
         private void RestoreDefaultLODBias()
         {
             QualitySettings.lodBias = _defaultLODBias;
+            _lastAppliedLodBias = _defaultLODBias;
+            _lastAppliedMathLodWeight = -1f;
+            _emergencyLodBias = -1f;
+            _qualityVisualSyncDirty = false;
+        }
+
+        private void FlushQualityVisualSync()
+        {
+            float qualityWeight01 = ResolveActiveQualityWeight01();
+            float targetBias = ResolveLODBiasFromQualityWeight(qualityWeight01);
+            if (_emergencyLodBias > 0f)
+                targetBias = math.min(targetBias, _emergencyLodBias);
+
+            if (!_qualityVisualSyncDirty &&
+                math.abs(_runtimeQualityWeight01 - qualityWeight01) <= 0.0001f &&
+                math.abs(_lastAppliedLodBias - targetBias) <= 0.0001f)
+            {
+                return;
+            }
+
+            _runtimeQualityWeight01 = qualityWeight01;
+            _qualityVisualSyncDirty = false;
+
+            if (_lastAppliedLodBias <= 0f || math.abs(_lastAppliedLodBias - targetBias) > 0.0001f)
+            {
+                QualitySettings.lodBias = targetBias;
+                _lastAppliedLodBias = targetBias;
+            }
+
+            if (_lastAppliedMathLodWeight < 0f || math.abs(_lastAppliedMathLodWeight - qualityWeight01) > 0.0001f)
+            {
+                DistanceMath.PushShaderMathLod(qualityWeight01);
+                _lastAppliedMathLodWeight = qualityWeight01;
+            }
         }
 
         private void TryRegisterImpostorCandidate(LODGroup lodGroup)

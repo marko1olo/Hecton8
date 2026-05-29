@@ -984,7 +984,7 @@ namespace Hecton8.World
                 _playerContext = GlobalRegistry.Player;
 
             if (_sargassumDrag == null)
-                _sargassumDrag = SargassumGlobalDragManager.Instance;
+                _sargassumDrag = GlobalRegistry.SargassumDrag;
 
             if (_ambientCurrentReadModel == null)
                 _ambientCurrentReadModel = GlobalRegistry.AmbientCurrent;

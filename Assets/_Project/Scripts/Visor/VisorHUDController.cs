@@ -218,6 +218,7 @@ namespace NASAPunk.Visor
         private float _cachedScalableRefractionScale;
         private float _cachedScalableChromaticScale;
         private float _cachedQualityPressureDitherScale;
+        private float _memoryQualityPressureFloor01 = 0.15f;
         private float _appliedHypoxiaLevel;
         private float _appliedHullStressFlicker;
         private float _appliedHazardRadiationLevel;
@@ -514,6 +515,7 @@ namespace NASAPunk.Visor
 
         private void Awake()
         {
+            CacheGraphicsCapabilitiesCold();
             EnsurePropertyBlock();
             PrewarmBiosTerminalFont();
         }
@@ -530,6 +532,7 @@ namespace NASAPunk.Visor
 #endif
 
             RegisterActiveController();
+            CacheGraphicsCapabilitiesCold();
             CacheRegistryServicesCold();
             TryRegisterHotSwapListener();
             EnsurePropertyBlock();
@@ -792,7 +795,7 @@ namespace NASAPunk.Visor
 
         private void AdvanceVisorHudPresentation(float deltaTime)
         {
-            AutoResolveReferences(force: false);
+            RefreshRuntimeReferenceCache();
             ConsumeSurvivalVitalsSignals();
             DrainBrownoutSignals();
             SyncProjectionPose();
@@ -1033,9 +1036,20 @@ namespace NASAPunk.Visor
 
         private void RefreshRuntimeState(bool forceResolve)
         {
-            AutoResolveReferences(forceResolve);
+            if (forceResolve)
+                AutoResolveReferences(forceResolve);
+            else
+                RefreshRuntimeReferenceCache();
             SyncProjectionPose();
             ApplyMaterialProperties();
+        }
+
+        private void RefreshRuntimeReferenceCache()
+        {
+            if (_cachedPlayerContext != null)
+                ApplyCachedPlayerContext();
+            if (_submarineRuntimeContext != null)
+                ApplyCachedSubmarineContext();
         }
 
         private void ApplyMaterialProperties()
@@ -1180,15 +1194,20 @@ namespace NASAPunk.Visor
             qualityPressureDitherScale = SmoothStep01(pressure);
         }
 
-        private static float ResolveVisorQualityPressure01()
+        private float ResolveVisorQualityPressure01()
         {
             float quality = HomeostasisBrain.GlobalQualityWeight;
             quality = math.isfinite(quality) ? math.saturate(quality) : 1f;
             float pressure = 1f - SmoothStep01(quality);
-            return math.saturate(math.max(pressure, ResolveMemoryQualityPressureFloor01()));
+            return math.saturate(math.max(pressure, _memoryQualityPressureFloor01));
         }
 
-        private static float ResolveMemoryQualityPressureFloor01()
+        private void CacheGraphicsCapabilitiesCold()
+        {
+            _memoryQualityPressureFloor01 = ResolveMemoryQualityPressureFloor01Cold();
+        }
+
+        private static float ResolveMemoryQualityPressureFloor01Cold()
         {
             int graphicsMemoryMb = SystemInfo.graphicsMemorySize;
             if (graphicsMemoryMb <= 0)

@@ -20,12 +20,21 @@ namespace Hecton8.Physiology
     public sealed unsafe class ShinobuSuitIntegrityRuntime : MonoBehaviour, ISlowTickable, ILateFrameTickable, IGlobalRegistryHotSwapListener
     {
         private const SystemID OwnerSystem = SystemID.GameplayPlayer;
-        private const int LockBufferCount = 6;
         private const string CsvRelativePath = "suit_pressure_profiles.csv";
         private const string DumpRelativePath = "Docs/AgentLogs/Dump_SHINOBU_323.bin";
         private const ulong DumpMagic = 0x5333323350524553UL; // S323PRES
         private const uint DumpVersion = 1u;
         private const float SlowTickNominalSeconds = 0.1f;
+        private static readonly ulong JobMutationGuardMask =
+            MutationGuardBit(ShinobuSuitIntegrityConstants.StateBuffer) |
+            MutationGuardBit(ShinobuSuitIntegrityConstants.ProfileBuffer) |
+            MutationGuardBit(ShinobuSuitIntegrityConstants.TuningBuffer) |
+            MutationGuardBit(ShinobuSuitIntegrityConstants.TelemetryBuffer) |
+            MutationGuardBit(ShinobuSuitIntegrityConstants.VisualBuffer) |
+            MutationGuardBit(ShinobuSuitIntegrityConstants.MockAupBuffer);
+        private static readonly ulong DumpMutationGuardMask =
+            MutationGuardBit(ShinobuSuitIntegrityConstants.TelemetryBuffer) |
+            MutationGuardBit(ShinobuSuitIntegrityConstants.DumpScratchBuffer);
         private static readonly uint _HeaderSuitNameHash = HashLowerAsciiString("suit_name");
         private static readonly uint _HeaderNameHash = HashLowerAsciiString("name");
 
@@ -73,10 +82,11 @@ namespace Hecton8.Physiology
         private bool _registeredLateFrame;
         private bool _registeredHotSwap;
         private bool _jobScheduled;
-        private bool _jobLocksHeld;
+        private bool _jobGuardHeld;
         private bool _defaultsInitialized;
         private bool _autopsyDumped;
         private bool _playerAupValid;
+        private IDataVault _jobGuardVault;
 
         private void Awake()
         {
@@ -188,75 +198,81 @@ namespace Hecton8.Physiology
             if (!TryLockJobBuffers(vault))
                 return;
 
-            if (!TryResolveBuffers(
-                    vault,
-                    out NativeArray<SuitIntegrityDTO> integrity,
-                    out NativeArray<SuitPressureProfileDTO> profiles,
-                    out NativeArray<SuitIntegrityTuningDTO> tuningArray,
-                    out NativeArray<SuitIntegrityTelemetryEntry> telemetry,
-                    out NativeArray<SuitIntegrityVisualDTO> visuals,
-                    out NativeArray<SuitHydrostaticMockAupDTO> mockAups))
+            bool keepJobGuard = false;
+            try
             {
-                UnlockJobBuffers();
-                return;
+                if (!TryResolveBuffers(
+                        vault,
+                        out NativeArray<SuitIntegrityDTO> integrity,
+                        out NativeArray<SuitPressureProfileDTO> profiles,
+                        out NativeArray<SuitIntegrityTuningDTO> tuningArray,
+                        out NativeArray<SuitIntegrityTelemetryEntry> telemetry,
+                        out NativeArray<SuitIntegrityVisualDTO> visuals,
+                        out NativeArray<SuitHydrostaticMockAupDTO> mockAups))
+                {
+                    return;
+                }
+
+                int count = math.min(entityCapacity, integrity.Length);
+                count = math.min(count, visuals.Length);
+                if (count <= 0)
+                    return;
+
+                tuningArray[0] = tuning;
+                double3 playerDouble = hasPlayerAup ? _lastPlayerAupDouble : new double3(0d, seaLevelAupY, 0d);
+                AbsoluteUniversePosition playerAup = hasPlayerAup ? _lastPlayerAup : AbsoluteUniversePosition.FromAbsolutePosition(playerDouble);
+                double3 seaLevelAup = new double3(playerDouble.x, seaLevelAupY, playerDouble.z);
+                long scheduleTimestamp = Stopwatch.GetTimestamp();
+
+                JobHandle handle = new EvaluateHydrostaticPressureJob
+                {
+                    Integrity = integrity,
+                    MockAups = mockAups,
+                    PlayerAup = playerAup,
+                    PlayerAupOverride = playerDouble,
+                    SeaLevelAup = seaLevelAup,
+                    Tuning = tuning,
+                    Frame = frame,
+                    Count = count,
+                    UseMockAup = useMock ? (byte)1 : (byte)0,
+                    UsePlayerAupOverride = !hasPlayerAup && !useMock ? (byte)1 : (byte)0
+                }.Schedule(count, ShinobuSuitIntegrityConstants.FrameJobBatchSize);
+
+                handle = new CalculateStructuralYieldJob
+                {
+                    Integrity = integrity,
+                    Visuals = visuals,
+                    Telemetry = telemetry,
+                    Profiles = profiles,
+                    DamageWriter = SignalBus<CombatDamageSignal>.ParallelWriter,
+                    DamageWriterBudget = SignalBus<CombatDamageSignal>.ParallelWriterBudget,
+                    AcousticWriter = SignalBus<MovementAcousticSignal>.ParallelWriter,
+                    AcousticWriterBudget = SignalBus<MovementAcousticSignal>.ParallelWriterBudget,
+                    PlayerAup = playerAup,
+                    PlayerImpactAup = playerDouble,
+                    Tuning = tuning,
+                    PlayerTargetHash = playerTargetHash,
+                    Frame = frame,
+                    Count = count,
+                    ProfileCount = math.min(ShinobuSuitIntegrityConstants.ProfileCapacity, profiles.Length),
+                    TelemetryCursor = _telemetryCursor,
+                    DeltaSeconds = dt,
+                    TickIntervalSeconds = _lastTickInterval
+                }.Schedule(count, ShinobuSuitIntegrityConstants.FrameJobBatchSize, handle);
+
+                _activeJobHandle = handle;
+                _scheduledCount = count;
+                _jobScheduleTimestamp = scheduleTimestamp;
+                _simulationAccumulator = 0f;
+                _jobScheduled = true;
+                H8Memory.RegisterActiveJob(OwnerSystem, _activeJobHandle);
+                keepJobGuard = true;
             }
-
-            int count = math.min(entityCapacity, integrity.Length);
-            count = math.min(count, visuals.Length);
-            if (count <= 0)
+            finally
             {
-                UnlockJobBuffers();
-                return;
+                if (!keepJobGuard)
+                    UnlockJobBuffers();
             }
-
-            tuningArray[0] = tuning;
-            double3 playerDouble = hasPlayerAup ? _lastPlayerAupDouble : new double3(0d, seaLevelAupY, 0d);
-            AbsoluteUniversePosition playerAup = hasPlayerAup ? _lastPlayerAup : AbsoluteUniversePosition.FromAbsolutePosition(playerDouble);
-            double3 seaLevelAup = new double3(playerDouble.x, seaLevelAupY, playerDouble.z);
-            long scheduleTimestamp = Stopwatch.GetTimestamp();
-
-            JobHandle handle = new EvaluateHydrostaticPressureJob
-            {
-                Integrity = integrity,
-                MockAups = mockAups,
-                PlayerAup = playerAup,
-                PlayerAupOverride = playerDouble,
-                SeaLevelAup = seaLevelAup,
-                Tuning = tuning,
-                Frame = frame,
-                Count = count,
-                UseMockAup = useMock ? (byte)1 : (byte)0,
-                UsePlayerAupOverride = !hasPlayerAup && !useMock ? (byte)1 : (byte)0
-            }.Schedule(count, ShinobuSuitIntegrityConstants.FrameJobBatchSize);
-
-            handle = new CalculateStructuralYieldJob
-            {
-                Integrity = integrity,
-                Visuals = visuals,
-                Telemetry = telemetry,
-                Profiles = profiles,
-                DamageWriter = SignalBus<CombatDamageSignal>.ParallelWriter,
-                DamageWriterBudget = SignalBus<CombatDamageSignal>.ParallelWriterBudget,
-                AcousticWriter = SignalBus<MovementAcousticSignal>.ParallelWriter,
-                AcousticWriterBudget = SignalBus<MovementAcousticSignal>.ParallelWriterBudget,
-                PlayerAup = playerAup,
-                PlayerImpactAup = playerDouble,
-                Tuning = tuning,
-                PlayerTargetHash = playerTargetHash,
-                Frame = frame,
-                Count = count,
-                ProfileCount = math.min(ShinobuSuitIntegrityConstants.ProfileCapacity, profiles.Length),
-                TelemetryCursor = _telemetryCursor,
-                DeltaSeconds = dt,
-                TickIntervalSeconds = _lastTickInterval
-            }.Schedule(count, ShinobuSuitIntegrityConstants.FrameJobBatchSize, handle);
-
-            _activeJobHandle = handle;
-            _scheduledCount = count;
-            _jobScheduleTimestamp = scheduleTimestamp;
-            _simulationAccumulator = 0f;
-            _jobScheduled = true;
-            H8Memory.RegisterActiveJob(OwnerSystem, _activeJobHandle);
         }
 
         public void LateFrameTick()
@@ -672,7 +688,7 @@ namespace Hecton8.Physiology
             if (!_jobScheduled)
                 return;
 
-            if (!DispatcherJobFence.TryComplete(ref _activeJobHandle, forceComplete: true))
+            if (!ForceCompleteFrameJobInPostSimulationWindow())
                 return;
 
             FinishFrameJobCompletion();
@@ -681,20 +697,46 @@ namespace Hecton8.Physiology
         private void FinishFrameJobCompletion()
         {
             float elapsedMicroseconds = ResolveElapsedMicroseconds(_jobScheduleTimestamp, Stopwatch.GetTimestamp());
-            IDataVault vault = _dataVault;
-            if (vault != null)
+            int completedTelemetryCursor = _telemetryCursor;
+            bool publishVisualSync = false;
+            Vector4 visualSyncPayload = default;
+
+            try
             {
-                PatchLatestTelemetryExecutionTime(elapsedMicroseconds);
-                PublishVisualSyncScalars();
-                TryDumpAutopsyIfFaulted();
+                IDataVault vault = _dataVault;
+                if (vault != null)
+                {
+                    PatchLatestTelemetryExecutionTime(elapsedMicroseconds);
+                    publishVisualSync = TryCaptureVisualSyncScalars(out visualSyncPayload);
+                }
+            }
+            finally
+            {
+                UnlockJobBuffers();
+                _scheduledCount = 0;
+                _jobScheduled = false;
             }
 
-            UnlockJobBuffers();
+            if (publishVisualSync)
+                PublishVisualSyncScalars(visualSyncPayload);
+
+            TryDumpAutopsyIfFaulted(completedTelemetryCursor);
             _telemetryCursor++;
             if (_telemetryCursor >= ShinobuSuitIntegrityConstants.TelemetryFrameCount)
                 _telemetryCursor %= ShinobuSuitIntegrityConstants.TelemetryFrameCount;
-            _scheduledCount = 0;
-            _jobScheduled = false;
+        }
+
+        private bool ForceCompleteFrameJobInPostSimulationWindow()
+        {
+            DispatcherJobFence.BeginPostSimulationSwapWindow();
+            try
+            {
+                return DispatcherJobFence.TryComplete(ref _activeJobHandle, forceComplete: true);
+            }
+            finally
+            {
+                DispatcherJobFence.EndPostSimulationSwapWindow();
+            }
         }
 
         private static float ResolveElapsedMicroseconds(long startTimestamp, long endTimestamp)
@@ -723,38 +765,55 @@ namespace Hecton8.Physiology
             telemetry[telemetryIndex] = entry;
         }
 
-        private void PublishVisualSyncScalars()
+        private bool TryCaptureVisualSyncScalars(out Vector4 vector)
         {
+            vector = default;
             NativeArray<SuitIntegrityVisualDTO> visuals = OpenVaultArray(ref _visualHandle, ShinobuSuitIntegrityConstants.VisualBuffer, entityCapacity);
             if (!visuals.IsCreated || visuals.Length <= 0)
-                return;
+                return false;
 
             SuitIntegrityVisualDTO visual = visuals[0];
-            Vector4 vector = new Vector4(
+            vector = new Vector4(
                 math.saturate(visual.Buckling01),
                 math.max(0f, visual.OverpressureScalar),
                 math.saturate(1f - visual.CurrentIntegrity01),
                 math.saturate(visual.GlobalQualityWeight));
+            return true;
+        }
+
+        private static void PublishVisualSyncScalars(Vector4 vector)
+        {
             HectonShaderGlobalDataVaultBridge.PublishSuitCrushDearLie(vector);
         }
 
-        private void TryDumpAutopsyIfFaulted()
+        private void TryDumpAutopsyIfFaulted(int telemetryCursor)
         {
             if (_autopsyDumped)
                 return;
 
-            NativeArray<SuitIntegrityTelemetryEntry> telemetry = OpenVaultArray(ref _telemetryHandle, ShinobuSuitIntegrityConstants.TelemetryBuffer, ShinobuSuitIntegrityConstants.TelemetryFrameCount);
-            if (!telemetry.IsCreated || telemetry.Length <= 0)
+            IDataVault vault = _dataVault;
+            if (vault == null || !vault.TryAcquireMutationGuard(DumpMutationGuardMask))
                 return;
 
-            int latestIndex = _telemetryCursor % telemetry.Length;
-            SuitIntegrityTelemetryEntry entry = telemetry[latestIndex];
-            bool faulted = (entry.Flags & (SuitIntegrityFlags.NonFinitePressure | SuitIntegrityFlags.OverBudget | SuitIntegrityFlags.Imploded)) != 0u;
-            if (!faulted)
-                return;
+            try
+            {
+                NativeArray<SuitIntegrityTelemetryEntry> telemetry = OpenVaultArray(ref _telemetryHandle, ShinobuSuitIntegrityConstants.TelemetryBuffer, ShinobuSuitIntegrityConstants.TelemetryFrameCount);
+                if (!telemetry.IsCreated || telemetry.Length <= 0)
+                    return;
 
-            _autopsyDumped = true;
-            DumpAutopsyReport(telemetry);
+                int latestIndex = telemetryCursor % telemetry.Length;
+                SuitIntegrityTelemetryEntry entry = telemetry[latestIndex];
+                bool faulted = (entry.Flags & (SuitIntegrityFlags.NonFinitePressure | SuitIntegrityFlags.OverBudget | SuitIntegrityFlags.Imploded)) != 0u;
+                if (!faulted)
+                    return;
+
+                _autopsyDumped = true;
+                DumpAutopsyReport(telemetry);
+            }
+            finally
+            {
+                vault.ReleaseMutationGuard(DumpMutationGuardMask);
+            }
         }
 
         private void DumpAutopsyReport(NativeArray<SuitIntegrityTelemetryEntry> telemetry)
@@ -1151,48 +1210,31 @@ namespace Hecton8.Physiology
                    handle.Generation != 0u;
         }
 
+        private static ulong MutationGuardBit(BufferID bufferId)
+        {
+            return 1UL << ((int)bufferId & 31);
+        }
+
         private bool TryLockJobBuffers(IDataVault vault)
         {
-            if (vault == null || _jobLocksHeld)
+            if (_jobGuardHeld || vault == null || !vault.TryAcquireMutationGuard(JobMutationGuardMask))
                 return false;
 
-            int locked = 0;
-            if (!vault.TryLockBuffer(ShinobuSuitIntegrityConstants.StateBuffer, OwnerSystem)) return false;
-            locked++;
-            if (!vault.TryLockBuffer(ShinobuSuitIntegrityConstants.ProfileBuffer, OwnerSystem)) { UnlockLockedJobBuffers(vault, locked); return false; }
-            locked++;
-            if (!vault.TryLockBuffer(ShinobuSuitIntegrityConstants.TuningBuffer, OwnerSystem)) { UnlockLockedJobBuffers(vault, locked); return false; }
-            locked++;
-            if (!vault.TryLockBuffer(ShinobuSuitIntegrityConstants.TelemetryBuffer, OwnerSystem)) { UnlockLockedJobBuffers(vault, locked); return false; }
-            locked++;
-            if (!vault.TryLockBuffer(ShinobuSuitIntegrityConstants.VisualBuffer, OwnerSystem)) { UnlockLockedJobBuffers(vault, locked); return false; }
-            locked++;
-            if (!vault.TryLockBuffer(ShinobuSuitIntegrityConstants.MockAupBuffer, OwnerSystem)) { UnlockLockedJobBuffers(vault, locked); return false; }
-            locked++;
-
-            _jobLocksHeld = true;
+            _jobGuardVault = vault;
+            _jobGuardHeld = true;
             return true;
         }
 
         private void UnlockJobBuffers()
         {
-            if (!_jobLocksHeld)
+            if (!_jobGuardHeld)
                 return;
 
-            IDataVault vault = _dataVault;
+            IDataVault vault = _jobGuardVault ?? _dataVault;
+            _jobGuardVault = null;
+            _jobGuardHeld = false;
             if (vault != null)
-                UnlockLockedJobBuffers(vault, LockBufferCount);
-            _jobLocksHeld = false;
-        }
-
-        private static void UnlockLockedJobBuffers(IDataVault vault, int lockedCount)
-        {
-            if (lockedCount >= 6) vault.TryUnlockBuffer(ShinobuSuitIntegrityConstants.MockAupBuffer, OwnerSystem);
-            if (lockedCount >= 5) vault.TryUnlockBuffer(ShinobuSuitIntegrityConstants.VisualBuffer, OwnerSystem);
-            if (lockedCount >= 4) vault.TryUnlockBuffer(ShinobuSuitIntegrityConstants.TelemetryBuffer, OwnerSystem);
-            if (lockedCount >= 3) vault.TryUnlockBuffer(ShinobuSuitIntegrityConstants.TuningBuffer, OwnerSystem);
-            if (lockedCount >= 2) vault.TryUnlockBuffer(ShinobuSuitIntegrityConstants.ProfileBuffer, OwnerSystem);
-            if (lockedCount >= 1) vault.TryUnlockBuffer(ShinobuSuitIntegrityConstants.StateBuffer, OwnerSystem);
+                vault.ReleaseMutationGuard(JobMutationGuardMask);
         }
 
         private void TryRegisterTicks()
@@ -1251,7 +1293,8 @@ namespace Hecton8.Physiology
             _playerKinematicStateHandle = default;
             _metabolismStateHandle = default;
             _jobScheduled = false;
-            _jobLocksHeld = false;
+            _jobGuardHeld = false;
+            _jobGuardVault = null;
             _scheduledCount = 0;
         }
 

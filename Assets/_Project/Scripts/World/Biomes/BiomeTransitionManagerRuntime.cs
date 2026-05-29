@@ -89,6 +89,7 @@ namespace Hecton8.World.Biomes
         private bool _registeredHotSwapListener;
         private bool _vaultReady;
         private bool _seededBiomeData;
+        private bool _coldSupportsSetConstantBuffer;
         private uint _lastOriginShiftSequence;
         private uint _simulationFrameCounter;
         private uint _lastScheduledFrame;
@@ -108,6 +109,7 @@ namespace Hecton8.World.Biomes
             if (!TryClaimActiveRuntime())
                 return;
 
+            CacheGraphicsCapabilitiesCold();
             ResolveColdDependencies();
             EnsureVaultBuffers();
         }
@@ -117,6 +119,7 @@ namespace Hecton8.World.Biomes
             if (!TryClaimActiveRuntime())
                 return;
 
+            CacheGraphicsCapabilitiesCold();
             TryRegisterHotSwapListener();
             ResolveColdDependencies();
             EnsureVaultBuffers();
@@ -1061,7 +1064,7 @@ namespace Hecton8.World.Biomes
 
         private unsafe void TryUploadShaderPayloadCBuffer(NativeArray<float4> payload)
         {
-            if (!SystemInfo.supportsSetConstantBuffer)
+            if (!_coldSupportsSetConstantBuffer)
             {
                 ReleaseShaderPayloadBuffers();
                 return;
@@ -1133,6 +1136,11 @@ namespace Hecton8.World.Biomes
             _shaderPayloadBufferA = null;
             _shaderPayloadBufferB = null;
             _activeShaderPayloadBuffer = null;
+        }
+
+        private void CacheGraphicsCapabilitiesCold()
+        {
+            _coldSupportsSetConstantBuffer = SystemInfo.supportsSetConstantBuffer;
         }
 
         private static float4 SanitizePayload(float4 value, float4 fallback)

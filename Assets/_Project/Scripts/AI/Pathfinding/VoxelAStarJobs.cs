@@ -1425,10 +1425,28 @@ namespace Hecton8.AI.Pathfinding
             out uint flags)
         {
             flags = 0u;
-            if (!profiles.IsCreated || profiles.Length <= 0 || !profileCount.IsCreated || profileCount.Length <= 0)
+            if (!profileCount.IsCreated || profileCount.Length <= 0)
                 return false;
 
-            int written = 0;
+            bool parsed = TryParse(bytes, profiles, out int written, out flags);
+            profileCount[0] = written;
+            return parsed;
+        }
+
+        /// <summary>
+        /// Parses profile rows without requiring the caller to hold the profile-count writer lock.
+        /// </summary>
+        public static bool TryParse(
+            ReadOnlySpan<byte> bytes,
+            NativeArray<VoxelPathingProfileDTO> profiles,
+            out int written,
+            out uint flags)
+        {
+            flags = 0u;
+            written = 0;
+            if (!profiles.IsCreated || profiles.Length <= 0)
+                return false;
+
             int cursor = 0;
             bool sawData = false;
             while (cursor < bytes.Length)
@@ -1464,7 +1482,6 @@ namespace Hecton8.AI.Pathfinding
                 }
             }
 
-            profileCount[0] = written;
             return written > 0 && (flags & VoxelPathFlags.CsvProfileOverflow) == 0;
         }
 

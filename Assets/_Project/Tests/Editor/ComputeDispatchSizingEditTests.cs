@@ -163,6 +163,69 @@ namespace Hecton8.Tests.Editor
         }
 
         [Test]
+        public void GpuInstancerManagerComputeSetup_ResetsLodCapacityAndFailsClosedBeforeFindKernel()
+        {
+            string source = System.IO.File.ReadAllText("Assets/GPUInstancer/Scripts/Core/Contract/GPUInstancerManager.cs");
+            int matrixAppendIndex = source.IndexOf("case GPUIMatrixHandlingType.MatrixAppend:", System.StringComparison.Ordinal);
+            int copyToTextureIndex = source.IndexOf("case GPUIMatrixHandlingType.CopyToTexture:", System.StringComparison.Ordinal);
+            int defaultIndex = source.IndexOf("default:", copyToTextureIndex, System.StringComparison.Ordinal);
+            int matrixHandlingLocalIndex = source.IndexOf("GPUIMatrixHandlingType matrixHandlingType = GPUInstancerUtility.matrixHandlingType;", System.StringComparison.Ordinal);
+            int computeSupportIndex = source.IndexOf("if (SystemInfo.supportsComputeShaders)", System.StringComparison.Ordinal);
+            int visibilityNullGuardIndex = source.IndexOf("if (_visibilityComputeShader == null)", System.StringComparison.Ordinal);
+            int visibilityFindKernelIndex = source.IndexOf("_visibilityComputeShader.FindKernel", System.StringComparison.Ordinal);
+            int cameraNullGuardIndex = source.IndexOf("if (_cameraComputeShader == null || _cameraComputeShaderVR == null)", System.StringComparison.Ordinal);
+            int cameraFindKernelIndex = source.IndexOf("_cameraComputeShader.FindKernel", System.StringComparison.Ordinal);
+            int argsNullGuardIndex = source.IndexOf("if (_argsBufferComputeShader == null)", System.StringComparison.Ordinal);
+            int argsFindKernelIndex = source.IndexOf("_argsBufferComputeShader.FindKernel", System.StringComparison.Ordinal);
+
+            Assert.GreaterOrEqual(matrixAppendIndex, 0);
+            Assert.Greater(copyToTextureIndex, matrixAppendIndex);
+            Assert.Greater(defaultIndex, copyToTextureIndex);
+            Assert.Greater(computeSupportIndex, matrixHandlingLocalIndex);
+            Assert.That(source, Does.Contain("protected static GPUIMatrixHandlingType _computeShaderMatrixHandlingType = (GPUIMatrixHandlingType)(-1);"));
+            Assert.That(source, Does.Contain("GPUInstancerConstants.DETAIL_STORE_INSTANCE_DATA = matrixHandlingType == GPUIMatrixHandlingType.MatrixAppend;"));
+            Assert.That(source, Does.Contain("GPUInstancerConstants.COMPUTE_MAX_LOD_BUFFER = matrixHandlingType == GPUIMatrixHandlingType.MatrixAppend ? 2 : 3;"));
+            Assert.That(source, Does.Contain("_computeShaderMatrixHandlingType != matrixHandlingType"));
+            Assert.That(source, Does.Contain("_computeShaderMatrixHandlingType = matrixHandlingType;"));
+            Assert.That(source, Does.Contain("switch (matrixHandlingType)"));
+            Assert.That(source, Does.Contain("if (_bufferToTextureComputeShader == null)"));
+            Assert.That(source, Does.Contain("!_bufferToTextureComputeShader.HasKernel(GPUInstancerConstants.BUFFER_TO_TEXTURE_KERNEL)"));
+            Assert.That(source, Does.Contain("!_bufferToTextureComputeShader.HasKernel(GPUInstancerConstants.BUFFER_TO_TEXTURE_CROSSFADE_KERNEL)"));
+            Assert.That(source, Does.Contain("static bool HasAllKernels(ComputeShader shader, string[] kernelNames)"));
+            Assert.That(source, Does.Contain("!HasAllKernels(_visibilityComputeShader, GPUInstancerConstants.VISIBILITY_COMPUTE_KERNELS)"));
+            Assert.That(source, Does.Contain("!HasAllKernels(_cameraComputeShaderVR, GPUInstancerConstants.CAMERA_COMPUTE_KERNELS)"));
+            Assert.That(source, Does.Contain("!_argsBufferComputeShader.HasKernel(GPUInstancerConstants.ARGS_BUFFER_DOUBLE_INSTANCE_COUNT_KERNEL)"));
+            Assert.Greater(visibilityFindKernelIndex, visibilityNullGuardIndex);
+            Assert.Greater(cameraFindKernelIndex, cameraNullGuardIndex);
+            Assert.Greater(argsFindKernelIndex, argsNullGuardIndex);
+        }
+
+        [Test]
+        public void GpuInstancerStaticComputeSetups_RequireKernelProofBeforeFindKernel()
+        {
+            string constants = System.IO.File.ReadAllText("Assets/GPUInstancer/Scripts/Core/DataModel/GPUInstancerConstants.cs");
+            string utility = System.IO.File.ReadAllText("Assets/GPUInstancer/Scripts/Core/Static/GPUInstancerUtility.cs");
+
+            Assert.That(constants, Does.Contain("computeBufferSetDataPartial.HasKernel(COMPUTE_SET_DATA_PARTIAL_KERNEL)"));
+            Assert.That(constants, Does.Contain("computeBufferSetDataPartial.HasKernel(COMPUTE_SET_DATA_SINGLE_KERNEL)"));
+            Assert.That(constants, Does.Contain("computeTextureUtils.HasKernel(COMPUTE_COPY_TEXTURE_KERNEL)"));
+            Assert.That(constants, Does.Contain("computeTextureUtils.HasKernel(COMPUTE_REDUCE_TEXTURE_KERNEL)"));
+            Assert.That(constants, Does.Contain("computeTextureUtils.HasKernel(COMPUTE_COPY_TEXTURE_ARRAY_KERNEL)"));
+            Assert.That(constants, Does.Contain("computeRuntimeModification.HasKernel(COMPUTE_TRANSFORM_OFFSET_KERNEL)"));
+            Assert.That(constants, Does.Contain("computeRuntimeModification.HasKernel(COMPUTE_MATRIX_OFFSET_KERNEL)"));
+            Assert.That(constants, Does.Contain("computeTextureUtilsReduceTextureId = computeTextureUtils.FindKernel(COMPUTE_REDUCE_TEXTURE_KERNEL);"));
+            Assert.That(constants, Does.Contain("computeTextureUtilsCopyTextureArrayId = computeTextureUtils.FindKernel(COMPUTE_COPY_TEXTURE_ARRAY_KERNEL);"));
+            Assert.That(utility, Does.Contain("GPUInstancerConstants.computeBufferSetDataSingleKernelId >= 0"));
+            Assert.That(utility, Does.Contain("GPUInstancerConstants.computeBufferSetDataPartialKernelId >= 0"));
+            Assert.That(utility, Does.Contain("GPUInstancerConstants.computeTextureUtilsCopyTextureArrayId"));
+            Assert.That(utility, Does.Contain("GPUInstancerConstants.computeTextureUtilsReduceTextureId"));
+            Assert.That(utility, Does.Not.Contain("SetTexture(2,"));
+            Assert.That(utility, Does.Not.Contain("Dispatch(2,"));
+            Assert.That(utility, Does.Not.Contain("SetTexture(1,"));
+            Assert.That(utility, Does.Not.Contain("Dispatch(1,"));
+        }
+
+        [Test]
         public void RenderedAmountGpuReadback_IsDebugBuildOnly()
         {
             string source = System.IO.File.ReadAllText("Assets/GPUInstancer/Scripts/Core/Static/GPUInstancerUtility.cs");
@@ -170,6 +233,60 @@ namespace Hecton8.Tests.Editor
             Assert.That(source, Does.Contain("#if UNITY_EDITOR || DEVELOPMENT_BUILD"));
             Assert.That(source, Does.Contain("runtimeData.argsBuffer.GetData(runtimeData.args)"));
             Assert.That(source, Does.Contain("#endif"));
+        }
+
+        [Test]
+        public void BillboardDilation_FailsClosedAndReleasesTemporaryRenderTexture()
+        {
+            string source = System.IO.File.ReadAllText("Assets/GPUInstancer/Scripts/Core/Static/GPUInstancerUtility.cs");
+            int methodStart = source.IndexOf("public static Texture2D DilateBillboardTexture", System.StringComparison.Ordinal);
+            Assert.GreaterOrEqual(methodStart, 0);
+            int methodEnd = source.IndexOf("public static void AddBillboardToRuntimeData", methodStart, System.StringComparison.Ordinal);
+            Assert.Greater(methodEnd, methodStart);
+            string method = source.Substring(methodStart, methodEnd - methodStart);
+
+            Assert.That(method, Does.Contain("billboardTexture == null || billboardTexture.width <= 0 || billboardTexture.height <= 0"));
+            Assert.That(method, Does.Contain("dilationCompute == null || !dilationCompute.HasKernel(GPUInstancerConstants.COMPUTE_BILLBOARD_DILATION_KERNEL)"));
+            Assert.That(method, Does.Contain("RenderTexture previousActive = RenderTexture.active;"));
+            Assert.That(method, Does.Contain("try"));
+            Assert.That(method, Does.Contain("finally"));
+            Assert.That(method, Does.Contain("RenderTexture.active = previousActive;"));
+            Assert.That(method, Does.Contain("RenderTexture.ReleaseTemporary(resultTexture);"));
+            Assert.That(method, Does.Not.Contain("resultTexture.Release();"));
+        }
+
+        [Test]
+        public void BillboardAtlasGeneration_RestoresRenderStateAndReleasesTemporaryOnFailure()
+        {
+            string source = System.IO.File.ReadAllText("Assets/GPUInstancer/Scripts/Core/Static/GPUInstancerUtility.cs");
+            int methodStart = source.IndexOf("public static void GeneratePrototypeBillboard", System.StringComparison.Ordinal);
+            Assert.GreaterOrEqual(methodStart, 0);
+            int methodEnd = source.IndexOf("public static Texture2D DilateBillboardTexture", methodStart, System.StringComparison.Ordinal);
+            Assert.Greater(methodEnd, methodStart);
+            string method = source.Substring(methodStart, methodEnd - methodStart);
+
+            Assert.That(method, Does.Contain("prototype == null || prototype.prefabObject == null"));
+            Assert.That(method, Does.Contain("prototype.billboard.atlasResolution <= 0 || prototype.billboard.frameCount <= 0 || prototype.billboard.atlasResolution < prototype.billboard.frameCount"));
+            Assert.That(method, Does.Contain("RenderTexture currentRt = RenderTexture.active;"));
+            Assert.That(method, Does.Contain("RenderTexture frameTarget = null;"));
+            Assert.That(method, Does.Contain("RenderPipelineAsset renderPipelineAsset = null;"));
+            Assert.That(method, Does.Contain("RenderPipelineAsset qualityPipelineAsset = null;"));
+            Assert.That(method, Does.Contain("bool renderPipelineOverridden = false;"));
+            Assert.That(method, Does.Contain("frameTarget = RenderTexture.GetTemporary"));
+            Assert.That(method, Does.Contain("renderPipelineOverridden = true;"));
+            Assert.That(method, Does.Contain("renderPipelineOverridden = false;"));
+            Assert.That(method, Does.Contain("finally"));
+            Assert.That(method, Does.Contain("RenderTexture.active = currentRt;"));
+            Assert.That(method, Does.Contain("RenderTexture.ReleaseTemporary(frameTarget);"));
+            Assert.That(method, Does.Contain("if (renderPipelineOverridden)"));
+            Assert.That(method, Does.Contain("GraphicsSettings.defaultRenderPipeline = renderPipelineAsset;"));
+            Assert.That(method, Does.Contain("QualitySettings.renderPipeline = qualityPipelineAsset;"));
+            Assert.That(method, Does.Contain("QualitySettings.globalTextureMipmapLimit = cachedMasterTextureLimit;"));
+            Assert.That(method, Does.Contain("QualitySettings.masterTextureLimit = cachedMasterTextureLimit;"));
+            Assert.That(method, Does.Contain("if (sample)"));
+            Assert.That(method, Does.Contain("if (billboardCameraPivot)"));
+            Assert.That(method, Does.Not.Contain("throw e;"));
+            Assert.That(method, Does.Not.Contain("DestroyImmediate(billboardCameraPivot); // this will also release the frameTarget RT"));
         }
 
         [Test]
@@ -189,6 +306,7 @@ namespace Hecton8.Tests.Editor
             Assert.That(source, Does.Contain("DETAIL_MAP_CAPACITY, detailMapBuffer.count"));
             Assert.That(source, Does.Contain("HEIGHT_MAP_CAPACITY, heightMapBuffer.count"));
             Assert.That(source, Does.Contain("HAS_HEALTHY_DRY_NOISE_TEXTURE, healthyDryNoiseTexture != null ? 1 : 0"));
+            Assert.That(source, Does.Contain("!grassInstantiationComputeShader.HasKernel(GPUInstancerConstants.GRASS_INSTANTIATION_KERNEL)"));
         }
 
         [Test]
@@ -367,7 +485,9 @@ namespace Hecton8.Tests.Editor
             Assert.That(method, Does.Contain("int sourceH = GetTextureMipDimension(source.height, sourceMip);"));
             Assert.That(method, Does.Contain("int destinationW = GetTextureMipDimension(destination.width, destinationMip);"));
             Assert.That(method, Does.Contain("int destinationH = GetTextureMipDimension(destination.height, destinationMip);"));
-            Assert.That(source, Does.Contain("source == null || destination == null || GPUInstancerConstants.computeTextureUtils == null"));
+            Assert.That(source, Does.Contain("source == null || destination == null || GPUInstancerConstants.computeTextureUtils == null || GPUInstancerConstants.computeTextureUtilsCopyTextureId < 0"));
+            Assert.That(source, Does.Contain("GPUInstancerConstants.computeTextureUtilsCopyTextureArrayId < 0"));
+            Assert.That(source, Does.Contain("GPUInstancerConstants.computeTextureUtilsReduceTextureId < 0"));
             Assert.That(source, Does.Contain("textureArrayIndex < 0"));
             Assert.That(method, Does.Not.Contain("sourceW >>= 1;"));
             Assert.That(method, Does.Not.Contain("destinationW >>= 1;"));
@@ -397,6 +517,8 @@ namespace Hecton8.Tests.Editor
             Assert.That(method, Does.Contain("int groupsY = (height + LodDataMgr.THREAD_GROUP_SIZE_Y - 1) / LodDataMgr.THREAD_GROUP_SIZE_Y;"));
             Assert.That(method, Does.Not.Contain("OceanRenderer.Instance.LodDataResolution / LodDataMgr.THREAD_GROUP_SIZE_X"));
             Assert.That(method, Does.Not.Contain("OceanRenderer.Instance.LodDataResolution / LodDataMgr.THREAD_GROUP_SIZE_Y"));
+            Assert.That(source, Does.Contain("s_clearToBlackShader != null && s_clearToBlackShader.HasKernel(CLEAR_TO_BLACK_SHADER_NAME)"));
+            Assert.That(source, Does.Contain("krnl_ClearToBlack = -1;"));
         }
 
         [Test]
@@ -468,6 +590,63 @@ namespace Hecton8.Tests.Editor
         }
 
         [Test]
+        public void CrestComputeKernelResolution_FailsClosedBeforeFindKernelAndDispatch()
+        {
+            string gerstnerSource = System.IO.File.ReadAllText("Assets/Crest/Crest/Scripts/Shapes/ShapeGerstner.cs");
+            string animSource = System.IO.File.ReadAllText("Assets/Crest/Crest/Scripts/LodData/LodDataMgrAnimWaves.cs");
+            string persistentSource = System.IO.File.ReadAllText("Assets/Crest/Crest/Scripts/LodData/LodDataMgrPersistent.cs");
+            string dynWavesSource = System.IO.File.ReadAllText("Assets/Crest/Crest/Scripts/LodData/LodDataMgrDynWaves.cs");
+            string foamSource = System.IO.File.ReadAllText("Assets/Crest/Crest/Scripts/LodData/LodDataMgrFoam.cs");
+            string underwaterMaskSource = System.IO.File.ReadAllText("Assets/Crest/Crest/Scripts/Underwater/UnderwaterRenderer.Mask.cs");
+            string queryBaseSource = System.IO.File.ReadAllText("Assets/Crest/Crest/Scripts/Collision/QueryBase.cs");
+
+            int persistentHasKernelIndex = persistentSource.IndexOf("!_shader.HasKernel(ShaderSim)", System.StringComparison.Ordinal);
+            int persistentFindKernelIndex = persistentSource.IndexOf("_krnlShaderSim = _shader.FindKernel(ShaderSim);", System.StringComparison.Ordinal);
+            Assert.GreaterOrEqual(persistentHasKernelIndex, 0);
+            Assert.Greater(persistentFindKernelIndex, persistentHasKernelIndex);
+            Assert.That(persistentSource, Does.Contain("protected int _krnlShaderSim = -1;"));
+            Assert.That(persistentSource, Does.Contain("_renderSimProperties = null;"));
+            Assert.That(persistentSource, Does.Contain("if (_shader == null || _krnlShaderSim < 0)"));
+            Assert.That(dynWavesSource, Does.Contain("protected override int krnl_ShaderSim => _krnlShaderSim;"));
+            Assert.That(foamSource, Does.Contain("protected override int krnl_ShaderSim => _krnlShaderSim;"));
+            Assert.That(dynWavesSource, Does.Not.Contain("_shader.FindKernel(ShaderSim)"));
+            Assert.That(foamSource, Does.Not.Contain("_shader.FindKernel(ShaderSim)"));
+
+            int gerstnerHasKernelIndex = gerstnerSource.IndexOf("!_shaderGerstner.HasKernel(\"Gerstner\")", System.StringComparison.Ordinal);
+            int gerstnerFindKernelIndex = gerstnerSource.IndexOf("_krnlGerstner = _shaderGerstner.FindKernel(\"Gerstner\");", System.StringComparison.Ordinal);
+            Assert.GreaterOrEqual(gerstnerHasKernelIndex, 0);
+            Assert.Greater(gerstnerFindKernelIndex, gerstnerHasKernelIndex);
+            Assert.That(gerstnerSource, Does.Contain("if (_shaderGerstner == null || _krnlGerstner < 0)"));
+            Assert.That(gerstnerSource, Does.Contain("if (_shaderGerstner == null || _krnlGerstner < 0 || _waveBuffers == null)"));
+
+            Assert.That(animSource, Does.Contain("static bool TryFindCombineKernel(ComputeShader shader, string kernelName, out int kernel)"));
+            Assert.That(animSource, Does.Contain("shader == null || !shader.HasKernel(kernelName)"));
+            Assert.That(animSource, Does.Contain("kernel = shader.FindKernel(kernelName);"));
+            Assert.That(animSource, Does.Contain("else if (_combineShader == null || _combineProperties == null)"));
+            Assert.That(animSource, Does.Contain("_waveBuffers?.Release();"));
+            Assert.That(animSource, Does.Contain("_combineBuffer?.Release();"));
+            Assert.That(animSource, Does.Contain("if (_combineMaterial == null)"));
+
+            int maskHasKernelIndex = underwaterMaskSource.IndexOf("!_fixMaskComputeShader.HasKernel(k_ComputeShaderKernelFillMaskArtefacts)", System.StringComparison.Ordinal);
+            int maskFindKernelIndex = underwaterMaskSource.IndexOf("_fixMaskKernel = _fixMaskComputeShader.FindKernel(k_ComputeShaderKernelFillMaskArtefacts);", System.StringComparison.Ordinal);
+            Assert.GreaterOrEqual(maskHasKernelIndex, 0);
+            Assert.Greater(maskFindKernelIndex, maskHasKernelIndex);
+            Assert.That(underwaterMaskSource, Does.Contain("_fixMaskThreadGroupSizeX == 0 || _fixMaskThreadGroupSizeY == 0"));
+            Assert.That(underwaterMaskSource, Does.Contain("int groupsX = (int)(((long)descriptor.width + _fixMaskThreadGroupSizeX - 1L) / _fixMaskThreadGroupSizeX);"));
+            Assert.That(underwaterMaskSource, Does.Contain("int groupsY = (int)(((long)descriptor.height + _fixMaskThreadGroupSizeY - 1L) / _fixMaskThreadGroupSizeY);"));
+            Assert.That(underwaterMaskSource, Does.Not.Contain("Mathf.CeilToInt((float)descriptor.width / _fixMaskThreadGroupSizeX)"));
+            Assert.That(underwaterMaskSource, Does.Not.Contain("Mathf.CeilToInt((float)descriptor.height / _fixMaskThreadGroupSizeY)"));
+
+            int queryHasKernelIndex = queryBaseSource.IndexOf("!_shaderProcessQueries.HasKernel(QueryKernelName)", System.StringComparison.Ordinal);
+            int queryFindKernelIndex = queryBaseSource.IndexOf("_kernelHandle = _shaderProcessQueries.FindKernel(QueryKernelName);", System.StringComparison.Ordinal);
+            Assert.GreaterOrEqual(queryHasKernelIndex, 0);
+            Assert.Greater(queryFindKernelIndex, queryHasKernelIndex);
+            Assert.That(queryBaseSource, Does.Contain("protected int _kernelHandle = -1;"));
+            Assert.That(queryBaseSource, Does.Contain("_shaderProcessQueries = null;"));
+            Assert.That(queryBaseSource, Does.Contain("if (_shaderProcessQueries == null || _kernelHandle < 0 || _wrapper == null || _computeBufQueries == null || _computeBufResults == null)"));
+        }
+
+        [Test]
         public void CrestFftBaker_UsesCeilDispatchAndShaderTailGuard()
         {
             string source = System.IO.File.ReadAllText("Assets/Crest/Crest/Scripts/Shapes/FFT/FFTBaker.cs");
@@ -480,7 +659,7 @@ namespace Hecton8.Tests.Editor
 
             Assert.That(method, Does.Contain("var frameCount = (int)(resolutionTime * loopPeriod);"));
             Assert.That(method, Does.Contain("fftWaves == null || fftWaves._resolution <= 0 || lodCount <= 0 || frameCount <= 0"));
-            Assert.That(method, Does.Contain("if (waveCombineShader == null)"));
+            Assert.That(method, Does.Contain("waveCombineShader == null || !waveCombineShader.HasKernel(\"FFTBakeMultiRes\")"));
             Assert.That(method, Does.Contain("var groupsX = (bakedWaves.width + 7) / 8;"));
             Assert.That(method, Does.Contain("var groupsY = (bakedWaves.height + 7) / 8;"));
             Assert.That(method, Does.Contain("buf.DispatchCompute(waveCombineShader, kernel, groupsX, groupsY, 1);"));
@@ -529,7 +708,9 @@ namespace Hecton8.Tests.Editor
             Assert.That(source, Does.Contain("static bool IsSupportedResolution(int resolution)"));
             Assert.That(source, Does.Contain("return Mathf.Clamp(powerOfTwoResolution, MIN_SUPPORTED_RESOLUTION, MAX_SUPPORTED_RESOLUTION);"));
             Assert.That(source, Does.Contain("resolution = ClampSupportedResolution(resolution);"));
-            Assert.That(source, Does.Contain("if (_shaderSpectrum == null || _shaderFFT == null)"));
+            Assert.That(source, Does.Contain("_shaderSpectrum == null || _shaderFFT == null ||"));
+            Assert.That(source, Does.Contain("!_shaderSpectrum.HasKernel(\"SpectrumInitalize\")"));
+            Assert.That(source, Does.Contain("!_shaderSpectrum.HasKernel(\"SpectrumUpdate\")"));
             Assert.That(source, Does.Contain("if (!_isInitialised)"));
             Assert.That(source, Does.Contain("if (!IsSupportedResolution(_resolution))"));
             Assert.That(shapeFftSource, Does.Contain("protected override int MaximumResolution => FFTCompute.MAX_SUPPORTED_RESOLUTION;"));

@@ -47,6 +47,8 @@ namespace Hecton8.Core.Contracts.Signals
         private static int _globalQualityMilli = StressScale;
         private static int _systemStressMilli;
         private static int _simulationHalted;
+        private static int _systemKillSwitchMask;
+        private static int _systemKillSwitchDropCount;
         private static IDataVault _dataVault;
 
         /// <summary>Current active typed lane count.</summary>
@@ -71,8 +73,56 @@ namespace Hecton8.Core.Contracts.Signals
         /// <summary>True after a fatal signal requests an immediate dispatcher halt.</summary>
         public static bool IsSimulationHalted => Volatile.Read(ref _simulationHalted) != 0;
 
+        /// <summary>Emergency bits raised by the signal corridor without hot registry mutation.</summary>
+        public static uint RuntimeKillSwitchMask => unchecked((uint)Volatile.Read(ref _systemKillSwitchMask));
+
+        /// <summary>Compatibility alias for diagnostics that still name the overflow-only source.</summary>
+        public static uint SignalOverflowKillSwitchMask => RuntimeKillSwitchMask;
+
         internal static int SystemStressMilli => Volatile.Read(ref _systemStressMilli);
         internal static int GlobalQualityMilli => Volatile.Read(ref _globalQualityMilli);
+
+        public static void ClearSystemKillSwitchBits()
+        {
+            Volatile.Write(ref _systemKillSwitchMask, 0);
+        }
+
+        internal static void SetSignalOverflowKillSwitchBits(uint mask, uint sourceHash)
+        {
+            SetSystemKillSwitchBits(mask, true, sourceHash);
+        }
+
+        public static void SetSystemKillSwitchBits(uint mask, bool enabled, uint sourceHash)
+        {
+            int bitMask = unchecked((int)mask);
+            if (bitMask == 0)
+                return;
+
+            int observed;
+            int next;
+            do
+            {
+                observed = Volatile.Read(ref _systemKillSwitchMask);
+                next = enabled ? observed | bitMask : observed & ~bitMask;
+                if (next == observed)
+                    return;
+            }
+            while (Interlocked.CompareExchange(ref _systemKillSwitchMask, next, observed) != observed);
+
+            uint changedMask = unchecked((uint)(observed ^ next));
+
+            SystemKillSwitchBitsSignal signal = default;
+            signal.Frame = global::Hecton8.Core.SystemDispatcher.CurrentFrameId;
+            signal.SourceHash = sourceHash;
+            signal.PreviousMask = unchecked((uint)observed);
+            signal.CurrentMask = unchecked((uint)next);
+            signal.ChangedMask = changedMask;
+            signal.EnabledMask = enabled ? changedMask : 0u;
+            signal.Flags = SystemKillSwitchBitsSignal.FlagRuntimeOwner;
+            if (enabled)
+                signal.Flags |= SystemKillSwitchBitsSignal.FlagEnabled;
+            SignalBus<SystemKillSwitchBitsSignal>.TryPushTracked(in signal, ref _systemKillSwitchDropCount);
+        }
 
         /// <summary>Binds the Vault used by per-lane snapshot buffers from cold registry ownership routes.</summary>
         public static void BindDataVaultCold(IDataVault vault)
@@ -193,6 +243,7 @@ namespace Hecton8.Core.Contracts.Signals
                 Volatile.Write(ref _globalQualityMilli, StressScale);
                 Volatile.Write(ref _systemStressMilli, 0);
                 Volatile.Write(ref _simulationHalted, 0);
+                Volatile.Write(ref _systemKillSwitchMask, 0);
                 _dataVault = null;
             }
             finally
@@ -872,7 +923,7 @@ namespace Hecton8.Core.Contracts.Signals
                     LaneOverflowFaultHash,
                     NonCriticalVfxKillSwitchMask,
                     queued);
-                global::Hecton8.Core.GlobalRegistry.SetSystemKillSwitchBits(NonCriticalVfxKillSwitchMask, true);
+                SignalBusRegistry.SetSignalOverflowKillSwitchBits(NonCriticalVfxKillSwitchMask, LaneOverflowFaultHash);
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
                 Hecton8.Core.H8Debug.LogWarning("[LANE_OVERFLOW_FAULT]");
 #endif

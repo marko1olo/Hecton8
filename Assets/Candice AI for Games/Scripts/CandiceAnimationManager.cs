@@ -79,12 +79,6 @@ namespace CandiceAIforGames.AI
         public float thisComboDamagePerHit = 0f;
 
         void Start() {
-            Camera mainCamera = Camera.main;
-            if (mainCamera != null)
-            {
-                Transform mainCameraTransform = mainCamera.transform;
-                mainCam = mainCameraTransform.parent != null ? mainCameraTransform.parent.gameObject : mainCameraTransform.gameObject;
-            }
             thisRigidbody = GetComponent<Rigidbody>();
             _aiController = GetComponent<CandiceAIController>();
             _playerController = GetComponent<CandiceAIPlayerController>();
@@ -174,22 +168,6 @@ namespace CandiceAIforGames.AI
                 candiceCamera = new CandiceCamera();
             }
             //Set main camera      
-            if (mainCam == null) {
-                Camera currentCamera = Camera.main;
-                if (currentCamera != null)
-                {
-                    Transform camTransform = currentCamera.transform;
-                    if(camTransform.parent != null)
-                    {
-                        mainCam = camTransform.parent.gameObject;
-                    }
-                    else
-                    {
-                        mainCam = camTransform.gameObject;
-                    }
-                }
-                
-            }
             candiceCamera.MainCamera = mainCam;
 
             //Set shake data for CandiceAI Tag objects
@@ -213,15 +191,11 @@ namespace CandiceAIforGames.AI
                 if (KillCam != null)
                 {
                     KillCam.SetActive(false);
-                    candiceCamera.KillCameraParent = KillCam;                    
-                }
-                else {
-                    KillCam = GameObject.Find("KillCamera");
-                    if (KillCam != null)
-                    {
-                        KillCam.SetActive(false);
-                    }
                     candiceCamera.KillCameraParent = KillCam;
+                    if (KillCam.TryGetComponent(out FollowPlayer followPlayer))
+                    {
+                        candiceCamera.KillCameraFollow = followPlayer;
+                    }
                 }
             }
 
@@ -230,17 +204,10 @@ namespace CandiceAIforGames.AI
             if (candiceInventoryManager == null)
             {                
                 candiceInventoryManager = gameObject.AddComponent(typeof(CandiceInventoryManager)) as CandiceInventoryManager;
-                if (candiceInventoryManager != null && inventoryDrop != null)
-                {
-                    candiceInventoryManager.drop = inventoryDrop;
-                }
             }
-            else {
-                candiceInventoryManager = gameObject.AddComponent(typeof(CandiceInventoryManager)) as CandiceInventoryManager;
-                if (candiceInventoryManager != null && inventoryDrop != null)
-                {
-                    candiceInventoryManager.drop = inventoryDrop;
-                }
+            if (candiceInventoryManager != null && inventoryDrop != null)
+            {
+                candiceInventoryManager.PrepareDropPool(inventoryDrop);
             }
 
             //CANDICE UI

@@ -1,5 +1,6 @@
 using System;
 using System.IO;
+using Hecton8.Core;
 using Hecton8.Core.Memory;
 using Unity.Collections;
 using Unity.Mathematics;
@@ -44,7 +45,11 @@ namespace Hecton8.Quest
             out QuestDagLoadStats stats)
         {
             stats = default;
-            if (!QuestDagVault.TryResolveBuffers(vault, ref handles, out QuestDagBuffers buffers))
+            if (vault == null ||
+                handles.NodeCapacity <= 0 ||
+                handles.TriggerCapacity <= 0 ||
+                handles.StateChunkCount <= 0 ||
+                handles.ItemLinkCapacity <= 0)
             {
                 stats.Flags = (uint)QuestDagLoadFlags.BinaryUnreadable;
                 return false;
@@ -86,14 +91,20 @@ namespace Hecton8.Quest
                     totalBytes > stream.Length ||
                     nodeCount == 0u ||
                     nodeCount > maxNodes ||
-                    nodeCount > buffers.Nodes.Length ||
-                    triggerCount > buffers.TriggerVolumes.Length)
+                    nodeCount > handles.NodeCapacity ||
+                    triggerCount > handles.TriggerCapacity ||
+                    nodeCount > handles.ItemLinkCapacity)
                 {
                     stats.Flags = (uint)QuestDagLoadFlags.BinaryUnreadable;
                     return false;
                 }
 
-                ClearDagBuffers(buffers);
+                if (!ClearDagBuffers(vault, ref handles))
+                {
+                    stats.Flags = (uint)QuestDagLoadFlags.BinaryUnreadable;
+                    return false;
+                }
+
                 stream.Position = nodeOffset;
                 for (int i = 0; i < nodeCount; i++)
                 {
@@ -108,35 +119,39 @@ namespace Hecton8.Quest
                     reader.ReadUInt16();
 
                     int stateChunk = slot >> 5;
-                    if ((uint)stateChunk >= (uint)buffers.GlobalStateMasks.Length)
+                    if ((uint)stateChunk >= (uint)handles.StateChunkCount)
                     {
                         stats.Flags = (uint)QuestDagLoadFlags.BinaryUnreadable;
                         return false;
                     }
 
                     ulong completionMask = stateMask & 0xAAAAAAAAAAAAAAAAUL;
-                    buffers.Nodes[i] = new QuestNodeDTO
+                    QuestNodeDTO node = default;
+                    node.NodeHash = nodeHash;
+                    node.RequiredStateHash = loreHash;
+                    node.PrerequisiteMask = prerequisiteMask;
+                    node.CompletionMask = completionMask;
+                    node._pad0 = slot;
+                    node._pad1 = ((uint)topoIndex << 16) | prerequisiteCount;
+
+                    QuestNodeRuntimeDTO runtime = default;
+                    runtime.TargetTimestamp = 0UL;
+                    runtime.ReputationDelta = 0f;
+                    runtime.ReputationThreshold = 0f;
+                    runtime.StateChunk = stateChunk;
+                    runtime.TriggerIndex = triggerSpan > 0 ? i : -1;
+                    runtime.RequiredItemStart = i;
+                    runtime.RequiredItemCount = 0;
+                    runtime.FactionId = ushort.MaxValue;
+                    runtime.Flags = triggerSpan > 0 ? (ushort)QuestDagNodeFlags.RequiresTrigger : (ushort)QuestDagNodeFlags.None;
+                    runtime._pad0 = 0u;
+
+                    if (!QuestDagVault.TryWriteQuestDagValue(vault, in handles.Nodes, BufferID.QuestDagNodes, handles.NodeCapacity, i, node) ||
+                        !QuestDagVault.TryWriteQuestDagValue(vault, in handles.NodeRuntime, BufferID.QuestDagNodeRuntime, handles.NodeCapacity, i, runtime))
                     {
-                        NodeHash = nodeHash,
-                        RequiredStateHash = loreHash,
-                        PrerequisiteMask = prerequisiteMask,
-                        CompletionMask = completionMask,
-                        _pad0 = slot,
-                        _pad1 = ((uint)topoIndex << 16) | prerequisiteCount
-                    };
-                    buffers.NodeRuntime[i] = new QuestNodeRuntimeDTO
-                    {
-                        TargetTimestamp = 0UL,
-                        ReputationDelta = 0f,
-                        ReputationThreshold = 0f,
-                        StateChunk = stateChunk,
-                        TriggerIndex = triggerSpan > 0 ? i : -1,
-                        RequiredItemStart = i,
-                        RequiredItemCount = 0,
-                        FactionId = ushort.MaxValue,
-                        Flags = triggerSpan > 0 ? (ushort)QuestDagNodeFlags.RequiresTrigger : (ushort)QuestDagNodeFlags.None,
-                        _pad0 = 0u
-                    };
+                        stats.Flags = (uint)QuestDagLoadFlags.BinaryUnreadable;
+                        return false;
+                    }
                 }
 
                 stream.Position = triggerOffset;
@@ -145,11 +160,22 @@ namespace Hecton8.Quest
                     uint triggerHash = reader.ReadUInt32();
                     uint triggerTypeHash = reader.ReadUInt32();
                     ulong doneMask = reader.ReadUInt64();
-                    int nodeIndex = FindNodeIndexByDoneMask(buffers.Nodes, (int)nodeCount, doneMask);
+                    if (!TryFindNodeIndexByDoneMask(vault, ref handles, (int)nodeCount, doneMask, out int nodeIndex))
+                    {
+                        stats.Flags = (uint)QuestDagLoadFlags.BinaryUnreadable;
+                        return false;
+                    }
+
                     if (nodeIndex < 0)
                         continue;
 
-                    QuestNodeRuntimeDTO runtime = buffers.NodeRuntime[nodeIndex];
+                    if (!QuestDagVault.TryReadQuestDagValue(vault, in handles.NodeRuntime, BufferID.QuestDagNodeRuntime, handles.NodeCapacity, nodeIndex, out QuestNodeRuntimeDTO runtime) ||
+                        !QuestDagVault.TryReadQuestDagValue(vault, in handles.Nodes, BufferID.QuestDagNodes, handles.NodeCapacity, nodeIndex, out QuestNodeDTO node))
+                    {
+                        stats.Flags = (uint)QuestDagLoadFlags.BinaryUnreadable;
+                        return false;
+                    }
+
                     runtime.TriggerIndex = i;
                     runtime.Flags |= (ushort)QuestDagNodeFlags.RequiresTrigger;
                     if (triggerTypeHash == 0x1D88D039u)
@@ -157,28 +183,43 @@ namespace Hecton8.Quest
                         runtime.RequiredItemStart = nodeIndex;
                         runtime.RequiredItemCount = 1;
                         runtime.Flags |= (ushort)QuestDagNodeFlags.RequiresInventory;
-                        buffers.RequiredItemHashes[nodeIndex] = triggerHash;
-                        buffers.RequiredItemQuantities[nodeIndex] = 1;
+                        if (!QuestDagVault.TryWriteQuestDagValue(vault, in handles.RequiredItemHashes, BufferID.QuestDagRequiredItemHashes, handles.ItemLinkCapacity, nodeIndex, triggerHash) ||
+                            !QuestDagVault.TryWriteQuestDagValue(vault, in handles.RequiredItemQuantities, BufferID.QuestDagRequiredItemQuantities, handles.ItemLinkCapacity, nodeIndex, 1))
+                        {
+                            stats.Flags = (uint)QuestDagLoadFlags.BinaryUnreadable;
+                            return false;
+                        }
                     }
 
-                    buffers.NodeRuntime[nodeIndex] = runtime;
-                    buffers.TriggerNodeIndices[i] = nodeIndex;
-                    buffers.TriggerVolumes[i] = new TriggerVolumeDTO
+                    TriggerVolumeDTO volume = default;
+                    volume.AUP = new double3(i * 12.5d, 0d, 0d);
+                    volume.Radius = 8f;
+                    volume.RequiredNodeHash = node.NodeHash;
+                    volume._pad0 = triggerHash;
+                    volume._pad1 = triggerTypeHash;
+
+                    if (!QuestDagVault.TryWriteQuestDagValue(vault, in handles.NodeRuntime, BufferID.QuestDagNodeRuntime, handles.NodeCapacity, nodeIndex, runtime) ||
+                        !QuestDagVault.TryWriteQuestDagValue(vault, in handles.TriggerNodeIndices, BufferID.QuestDagTriggerNodeIndices, handles.TriggerCapacity, i, nodeIndex) ||
+                        !QuestDagVault.TryWriteQuestDagValue(vault, in handles.TriggerVolumes, BufferID.QuestDagTriggerVolumes, handles.TriggerCapacity, i, volume))
                     {
-                        AUP = new double3(i * 12.5d, 0d, 0d),
-                        Radius = 8f,
-                        RequiredNodeHash = buffers.Nodes[nodeIndex].NodeHash,
-                        _pad0 = triggerHash,
-                        _pad1 = triggerTypeHash
-                    };
+                        stats.Flags = (uint)QuestDagLoadFlags.BinaryUnreadable;
+                        return false;
+                    }
                 }
 
-                int noTriggerCount = PopulateNoTriggerNodeIndices(
-                    buffers.NodeRuntime,
-                    buffers.NoTriggerNodeIndices,
-                    (int)nodeCount);
-                WriteCounters(buffers, (int)nodeCount, (int)triggerCount, noTriggerCount);
-                buffers.Counters[(int)QuestDagRuntimeConstants.CounterSlot.LastLoadSourceHash] = unchecked((int)QuestDagRuntimeConstants.OshinoBinarySourceHash);
+                if (!TryPopulateNoTriggerNodeIndices(vault, ref handles, (int)nodeCount, out int noTriggerCount))
+                {
+                    stats.Flags = (uint)QuestDagLoadFlags.BinaryUnreadable;
+                    return false;
+                }
+
+                WriteCounters(
+                    vault,
+                    ref handles,
+                    (int)nodeCount,
+                    (int)triggerCount,
+                    noTriggerCount,
+                    unchecked((int)QuestDagRuntimeConstants.OshinoBinarySourceHash));
 
                 stats = new QuestDagLoadStats
                 {
@@ -220,15 +261,21 @@ namespace Hecton8.Quest
             out QuestDagLoadStats stats)
         {
             stats = default;
-            if (!QuestDagVault.TryResolveBuffers(vault, ref handles, out QuestDagBuffers buffers))
+            if (vault == null ||
+                handles.NodeCapacity <= 0 ||
+                handles.TriggerCapacity <= 0 ||
+                handles.StateChunkCount <= 0 ||
+                handles.ItemLinkCapacity <= 0)
                 return;
 
-            ClearDagBuffers(buffers);
-            int stateNodeCapacity = buffers.GlobalStateMasks.IsCreated ? buffers.GlobalStateMasks.Length << 6 : 0;
+            if (!ClearDagBuffers(vault, ref handles))
+                return;
+
+            int stateNodeCapacity = handles.StateChunkCount << 6;
             int nodeCount = math.clamp(
                 requestedNodeCount,
                 1,
-                math.min(stateNodeCapacity, math.min(buffers.Nodes.Length, buffers.TriggerVolumes.Length)));
+                math.min(stateNodeCapacity, math.min(handles.NodeCapacity, math.min(handles.TriggerCapacity, handles.ItemLinkCapacity))));
             int noTriggerCount = 0;
             for (int i = 0; i < nodeCount; i++)
             {
@@ -239,51 +286,62 @@ namespace Hecton8.Quest
                 uint nodeHash = unchecked(0x51000000u + (uint)i);
                 bool requiresTrigger = (i & 3) != 3;
 
-                buffers.Nodes[i] = new QuestNodeDTO
-                {
-                    NodeHash = nodeHash,
-                    RequiredStateHash = unchecked(0x71000000u + (uint)i),
-                    PrerequisiteMask = prerequisiteMask,
-                    CompletionMask = doneMask,
-                    _pad0 = 0u,
-                    _pad1 = 0u
-                };
-                buffers.NodeRuntime[i] = new QuestNodeRuntimeDTO
-                {
-                    TargetTimestamp = (i & 7) == 7 ? (ulong)(120 + i) : 0UL,
-                    ReputationDelta = (i & 15) == 0 ? 0.25f : 0f,
-                    ReputationThreshold = (i & 15) == 8 ? 1f : 0f,
-                    StateChunk = chunk,
-                    TriggerIndex = requiresTrigger ? i : -1,
-                    RequiredItemStart = i,
-                    RequiredItemCount = (i & 5) == 1 ? 1 : 0,
-                    FactionId = (i & 15) == 0 || (i & 15) == 8 ? (ushort)0 : ushort.MaxValue,
-                    Flags = BuildMockFlags(requiresTrigger, i),
-                    _pad0 = 0u
-                };
+                QuestNodeDTO node = default;
+                node.NodeHash = nodeHash;
+                node.RequiredStateHash = unchecked(0x71000000u + (uint)i);
+                node.PrerequisiteMask = prerequisiteMask;
+                node.CompletionMask = doneMask;
+                node._pad0 = 0u;
+                node._pad1 = 0u;
+
+                QuestNodeRuntimeDTO runtime = default;
+                runtime.TargetTimestamp = (i & 7) == 7 ? (ulong)(120 + i) : 0UL;
+                runtime.ReputationDelta = (i & 15) == 0 ? 0.25f : 0f;
+                runtime.ReputationThreshold = (i & 15) == 8 ? 1f : 0f;
+                runtime.StateChunk = chunk;
+                runtime.TriggerIndex = requiresTrigger ? i : -1;
+                runtime.RequiredItemStart = i;
+                runtime.RequiredItemCount = (i & 5) == 1 ? 1 : 0;
+                runtime.FactionId = (i & 15) == 0 || (i & 15) == 8 ? (ushort)0 : ushort.MaxValue;
+                runtime.Flags = BuildMockFlags(requiresTrigger, i);
+                runtime._pad0 = 0u;
 
                 if (!requiresTrigger)
                 {
-                    if ((uint)noTriggerCount < (uint)buffers.NoTriggerNodeIndices.Length)
-                        buffers.NoTriggerNodeIndices[noTriggerCount] = i;
+                    if ((uint)noTriggerCount < (uint)handles.NodeCapacity &&
+                        !QuestDagVault.TryWriteQuestDagValue(vault, in handles.NoTriggerNodeIndices, BufferID.QuestDagNoTriggerNodeIndices, handles.NodeCapacity, noTriggerCount, i))
+                    {
+                        return;
+                    }
+
                     noTriggerCount++;
                 }
 
-                buffers.RequiredItemHashes[i] = unchecked(0x49000000u + (uint)(i & 31));
-                buffers.RequiredItemQuantities[i] = (i & 5) == 1 ? 1 + (i & 3) : 0;
-                buffers.TriggerNodeIndices[i] = i;
-                buffers.TriggerVolumes[i] = new TriggerVolumeDTO
+                TriggerVolumeDTO volume = default;
+                volume.AUP = new double3((i % 100) * 25d, 0d, (i / 100) * 25d);
+                volume.Radius = 10f;
+                volume.RequiredNodeHash = nodeHash;
+                volume._pad0 = unchecked(0x54000000u + (uint)i);
+                volume._pad1 = 0u;
+
+                if (!QuestDagVault.TryWriteQuestDagValue(vault, in handles.Nodes, BufferID.QuestDagNodes, handles.NodeCapacity, i, node) ||
+                    !QuestDagVault.TryWriteQuestDagValue(vault, in handles.NodeRuntime, BufferID.QuestDagNodeRuntime, handles.NodeCapacity, i, runtime) ||
+                    !QuestDagVault.TryWriteQuestDagValue(vault, in handles.RequiredItemHashes, BufferID.QuestDagRequiredItemHashes, handles.ItemLinkCapacity, i, unchecked(0x49000000u + (uint)(i & 31))) ||
+                    !QuestDagVault.TryWriteQuestDagValue(vault, in handles.RequiredItemQuantities, BufferID.QuestDagRequiredItemQuantities, handles.ItemLinkCapacity, i, (i & 5) == 1 ? 1 + (i & 3) : 0) ||
+                    !QuestDagVault.TryWriteQuestDagValue(vault, in handles.TriggerNodeIndices, BufferID.QuestDagTriggerNodeIndices, handles.TriggerCapacity, i, i) ||
+                    !QuestDagVault.TryWriteQuestDagValue(vault, in handles.TriggerVolumes, BufferID.QuestDagTriggerVolumes, handles.TriggerCapacity, i, volume))
                 {
-                    AUP = new double3((i % 100) * 25d, 0d, (i / 100) * 25d),
-                    Radius = 10f,
-                    RequiredNodeHash = nodeHash,
-                    _pad0 = unchecked(0x54000000u + (uint)i),
-                    _pad1 = 0u
-                };
+                    return;
+                }
             }
 
-            WriteCounters(buffers, nodeCount, nodeCount, noTriggerCount);
-            buffers.Counters[(int)QuestDagRuntimeConstants.CounterSlot.LastLoadSourceHash] = unchecked((int)QuestDagRuntimeConstants.EmergencyMockSourceHash);
+            WriteCounters(
+                vault,
+                ref handles,
+                nodeCount,
+                nodeCount,
+                noTriggerCount,
+                unchecked((int)QuestDagRuntimeConstants.EmergencyMockSourceHash));
 
             stats = new QuestDagLoadStats
             {
@@ -314,67 +372,138 @@ namespace Hecton8.Quest
             return flags;
         }
 
-        private static void ClearDagBuffers(QuestDagBuffers buffers)
+        private static bool ClearDagBuffers(IDataVault vault, ref QuestDagBufferHandles handles)
         {
-            Clear(buffers.GlobalStateMasks);
-            Clear(buffers.OldStateMasks);
-            Clear(buffers.Nodes);
-            Clear(buffers.NodeRuntime);
-            Clear(buffers.TriggerVolumes);
-            Clear(buffers.RequiredItemHashes);
-            Clear(buffers.RequiredItemQuantities);
-            Clear(buffers.PlayerItemHashes);
-            Clear(buffers.PlayerItemQuantities);
-            Clear(buffers.FactionStandings);
-            Clear(buffers.TriggerNodeIndices);
-            Clear(buffers.NoTriggerNodeIndices);
+            return Clear(vault, in handles.GlobalStateMasks, BufferID.QuestDagGlobalStateMasks, handles.StateChunkCount) &&
+                   Clear(vault, in handles.OldStateMasks, BufferID.QuestDagOldStateMasks, handles.StateChunkCount) &&
+                   Clear(vault, in handles.Nodes, BufferID.QuestDagNodes, handles.NodeCapacity) &&
+                   Clear(vault, in handles.NodeRuntime, BufferID.QuestDagNodeRuntime, handles.NodeCapacity) &&
+                   Clear(vault, in handles.TriggerVolumes, BufferID.QuestDagTriggerVolumes, handles.TriggerCapacity) &&
+                   Clear(vault, in handles.RequiredItemHashes, BufferID.QuestDagRequiredItemHashes, handles.ItemLinkCapacity) &&
+                   Clear(vault, in handles.RequiredItemQuantities, BufferID.QuestDagRequiredItemQuantities, handles.ItemLinkCapacity) &&
+                   Clear(vault, in handles.PlayerItemHashes, BufferID.QuestDagPlayerItemHashes, handles.PlayerItemCapacity) &&
+                   Clear(vault, in handles.PlayerItemQuantities, BufferID.QuestDagPlayerItemQuantities, handles.PlayerItemCapacity) &&
+                   Clear(vault, in handles.FactionStandings, BufferID.QuestDagFactionStandings, handles.FactionCapacity) &&
+                   Clear(vault, in handles.TriggerNodeIndices, BufferID.QuestDagTriggerNodeIndices, handles.TriggerCapacity) &&
+                   Clear(vault, in handles.NoTriggerNodeIndices, BufferID.QuestDagNoTriggerNodeIndices, handles.NodeCapacity);
         }
 
-        private static void Clear<T>(NativeArray<T> values)
+        private static bool Clear<T>(
+            IDataVault vault,
+            in VaultGenerationHandle<T> handle,
+            BufferID bufferId,
+            int requiredLength)
             where T : struct
         {
-            if (!values.IsCreated)
-                return;
+            if (!QuestDagVault.TryAcquireQuestDagWriteBuffer(vault, in handle, bufferId, requiredLength, out NativeArray<T> values))
+                return false;
 
-            for (int i = 0; i < values.Length; i++)
-                values[i] = default;
+            try
+            {
+                for (int i = 0; i < values.Length; i++)
+                    values[i] = default;
+
+                return true;
+            }
+            finally
+            {
+                vault.ReleaseWriteLock(in handle, SystemID.QuestDag);
+            }
         }
 
-        private static void WriteCounters(QuestDagBuffers buffers, int nodeCount, int triggerCount, int noTriggerCount)
+        private static void WriteCounters(
+            IDataVault vault,
+            ref QuestDagBufferHandles handles,
+            int nodeCount,
+            int triggerCount,
+            int noTriggerCount,
+            int sourceHash)
         {
-            if (!buffers.Counters.IsCreated || buffers.Counters.Length < QuestDagRuntimeConstants.CounterCount)
+            if (!QuestDagVault.TryAcquireQuestDagWriteBuffer(
+                    vault,
+                    in handles.Counters,
+                    BufferID.QuestDagCounters,
+                    QuestDagRuntimeConstants.CounterCount,
+                    out NativeArray<int> counters))
+            {
                 return;
+            }
 
-            buffers.Counters[(int)QuestDagRuntimeConstants.CounterSlot.NodeCount] = nodeCount;
-            buffers.Counters[(int)QuestDagRuntimeConstants.CounterSlot.TriggerCount] = triggerCount;
-            buffers.Counters[(int)QuestDagRuntimeConstants.CounterSlot.NoTriggerNodeCount] = noTriggerCount;
-            buffers.Counters[(int)QuestDagRuntimeConstants.CounterSlot.StateChunkCount] = math.max(
-                1,
-                buffers.Counters[(int)QuestDagRuntimeConstants.CounterSlot.StateChunkCount]);
-            int spatialVersionIndex = (int)QuestDagRuntimeConstants.CounterSlot.SpatialHashVersion;
-            buffers.Counters[spatialVersionIndex] = buffers.Counters[spatialVersionIndex] + 1;
+            try
+            {
+                counters[(int)QuestDagRuntimeConstants.CounterSlot.NodeCount] = nodeCount;
+                counters[(int)QuestDagRuntimeConstants.CounterSlot.TriggerCount] = triggerCount;
+                counters[(int)QuestDagRuntimeConstants.CounterSlot.NoTriggerNodeCount] = noTriggerCount;
+                counters[(int)QuestDagRuntimeConstants.CounterSlot.StateChunkCount] = math.max(
+                    1,
+                    counters[(int)QuestDagRuntimeConstants.CounterSlot.StateChunkCount]);
+                counters[(int)QuestDagRuntimeConstants.CounterSlot.LastLoadSourceHash] = sourceHash;
+                int spatialVersionIndex = (int)QuestDagRuntimeConstants.CounterSlot.SpatialHashVersion;
+                counters[spatialVersionIndex] = counters[spatialVersionIndex] + 1;
+            }
+            finally
+            {
+                vault.ReleaseWriteLock(in handles.Counters, SystemID.QuestDag);
+            }
         }
 
-        private static int PopulateNoTriggerNodeIndices(
-            NativeArray<QuestNodeRuntimeDTO> runtime,
-            NativeArray<int> noTriggerNodeIndices,
-            int nodeCount)
+        private static bool TryPopulateNoTriggerNodeIndices(
+            IDataVault vault,
+            ref QuestDagBufferHandles handles,
+            int nodeCount,
+            out int count)
         {
-            int count = 0;
+            count = 0;
+            if (!QuestDagVault.TryReadQuestDagBuffer(
+                    vault,
+                    in handles.NodeRuntime,
+                    BufferID.QuestDagNodeRuntime,
+                    handles.NodeCapacity,
+                    out NativeArray<QuestNodeRuntimeDTO>.ReadOnly runtime))
+            {
+                return false;
+            }
+
             for (int i = 0; i < nodeCount; i++)
             {
                 if ((runtime[i].Flags & (ushort)QuestDagNodeFlags.RequiresTrigger) == 0)
                 {
-                    if ((uint)count < (uint)noTriggerNodeIndices.Length)
-                        noTriggerNodeIndices[count] = i;
+                    if ((uint)count < (uint)handles.NodeCapacity &&
+                        !QuestDagVault.TryWriteQuestDagValue(vault, in handles.NoTriggerNodeIndices, BufferID.QuestDagNoTriggerNodeIndices, handles.NodeCapacity, count, i))
+                    {
+                        return false;
+                    }
+
                     count++;
                 }
             }
 
-            return count;
+            return true;
         }
 
-        private static int FindNodeIndexByDoneMask(NativeArray<QuestNodeDTO> nodes, int nodeCount, ulong doneMask)
+        private static bool TryFindNodeIndexByDoneMask(
+            IDataVault vault,
+            ref QuestDagBufferHandles handles,
+            int nodeCount,
+            ulong doneMask,
+            out int nodeIndex)
+        {
+            nodeIndex = -1;
+            if (!QuestDagVault.TryReadQuestDagBuffer(
+                    vault,
+                    in handles.Nodes,
+                    BufferID.QuestDagNodes,
+                    handles.NodeCapacity,
+                    out NativeArray<QuestNodeDTO>.ReadOnly nodes))
+            {
+                return false;
+            }
+
+            nodeIndex = FindNodeIndexByDoneMask(nodes, nodeCount, doneMask);
+            return true;
+        }
+
+        private static int FindNodeIndexByDoneMask(NativeArray<QuestNodeDTO>.ReadOnly nodes, int nodeCount, ulong doneMask)
         {
             ulong completionMask = doneMask != 0UL ? doneMask : 0UL;
             for (int i = 0; i < nodeCount; i++)
@@ -416,8 +545,7 @@ namespace Hecton8.Quest
             out int appliedRows)
         {
             appliedRows = 0;
-            if (!QuestDagVault.TryResolveBuffers(vault, ref handles, out QuestDagBuffers buffers) ||
-                !buffers.CsvMonitor.IsCreated ||
+            if (!TryReadCsvMonitorWriteTicks(vault, ref handles, out long previousWriteTicks) ||
                 string.IsNullOrWhiteSpace(path) ||
                 !File.Exists(path))
             {
@@ -425,7 +553,7 @@ namespace Hecton8.Quest
             }
 
             long writeTicks = File.GetLastWriteTimeUtc(path).Ticks;
-            if (buffers.CsvMonitor[0] == writeTicks)
+            if (previousWriteTicks == writeTicks)
                 return false;
 
             if (!TryReadCsvIntoScratch(path, out int charCount))
@@ -433,10 +561,7 @@ namespace Hecton8.Quest
 
             bool applied = TryApplyOverrides(vault, ref handles, new ReadOnlySpan<char>(s_csvScratch, 0, charCount), out appliedRows);
             if (applied)
-            {
-                buffers.CsvMonitor[0] = writeTicks;
-                buffers.CsvMonitor[1] = appliedRows;
-            }
+                PatchCsvMonitor(vault, ref handles, writeTicks, appliedRows);
 
             return applied;
         }
@@ -481,14 +606,17 @@ namespace Hecton8.Quest
         {
             appliedRows = 0;
             if (csv.Length <= 0 ||
-                !QuestDagVault.TryResolveBuffers(vault, ref handles, out QuestDagBuffers buffers))
+                !QuestDagVault.TryReadQuestDagCounter(
+                    vault,
+                    ref handles,
+                    QuestDagRuntimeConstants.CounterSlot.NodeCount,
+                    out int nodeCount))
             {
                 return false;
             }
 
             int offset = 0;
-            int nodeCount = ReadCounter(buffers.Counters, QuestDagRuntimeConstants.CounterSlot.NodeCount);
-            nodeCount = math.min(nodeCount, math.min(buffers.Nodes.Length, buffers.NodeRuntime.Length));
+            nodeCount = math.min(nodeCount, handles.NodeCapacity);
             while (offset < csv.Length)
             {
                 ReadOnlySpan<char> line = NextLine(csv, ref offset).Trim();
@@ -503,20 +631,41 @@ namespace Hecton8.Quest
                     continue;
                 }
 
-                int nodeIndex = FindNodeIndex(buffers.Nodes, nodeCount, nodeHash);
+                if (!QuestDagVault.TryFindQuestDagNodeIndex(vault, ref handles, nodeCount, nodeHash, out int nodeIndex))
+                    return false;
+
                 if (nodeIndex < 0)
                     continue;
 
-                QuestNodeRuntimeDTO runtime = buffers.NodeRuntime[nodeIndex];
+                if (!QuestDagVault.TryReadQuestDagValue(
+                        vault,
+                        in handles.NodeRuntime,
+                        BufferID.QuestDagNodeRuntime,
+                        handles.NodeCapacity,
+                        nodeIndex,
+                        out QuestNodeRuntimeDTO runtime))
+                {
+                    return false;
+                }
+
                 if (TryReadField(ref line, out ReadOnlySpan<char> itemField) &&
                     TryParseUInt32(itemField, out uint itemHash) &&
                     itemHash != 0u)
                 {
                     int slot = runtime.RequiredItemStart >= 0 ? runtime.RequiredItemStart : nodeIndex;
-                    if ((uint)slot < (uint)buffers.RequiredItemHashes.Length &&
-                        (uint)slot < (uint)buffers.RequiredItemQuantities.Length)
+                    if ((uint)slot < (uint)handles.ItemLinkCapacity)
                     {
-                        buffers.RequiredItemHashes[slot] = itemHash;
+                        if (!QuestDagVault.TryWriteQuestDagValue(
+                                vault,
+                                in handles.RequiredItemHashes,
+                                BufferID.QuestDagRequiredItemHashes,
+                                handles.ItemLinkCapacity,
+                                slot,
+                                itemHash))
+                        {
+                            return false;
+                        }
+
                         runtime.RequiredItemStart = slot;
                         runtime.RequiredItemCount = 1;
                         runtime.Flags |= (ushort)QuestDagNodeFlags.RequiresInventory;
@@ -528,8 +677,17 @@ namespace Hecton8.Quest
                     runtime.RequiredItemCount > 0)
                 {
                     int slot = runtime.RequiredItemStart;
-                    if ((uint)slot < (uint)buffers.RequiredItemQuantities.Length)
-                        buffers.RequiredItemQuantities[slot] = math.max(1, quantity);
+                    if ((uint)slot < (uint)handles.ItemLinkCapacity &&
+                        !QuestDagVault.TryWriteQuestDagValue(
+                            vault,
+                            in handles.RequiredItemQuantities,
+                            BufferID.QuestDagRequiredItemQuantities,
+                            handles.ItemLinkCapacity,
+                            slot,
+                            math.max(1, quantity)))
+                    {
+                        return false;
+                    }
                 }
 
                 if (TryReadField(ref line, out ReadOnlySpan<char> timestampField) &&
@@ -559,12 +717,94 @@ namespace Hecton8.Quest
                     runtime.Flags |= (ushort)QuestDagNodeFlags.RequiresFactionThreshold;
                 }
 
-                buffers.NodeRuntime[nodeIndex] = runtime;
+                if (!QuestDagVault.TryWriteQuestDagValue(
+                        vault,
+                        in handles.NodeRuntime,
+                        BufferID.QuestDagNodeRuntime,
+                        handles.NodeCapacity,
+                        nodeIndex,
+                        runtime))
+                {
+                    return false;
+                }
+
                 appliedRows++;
             }
 
-            buffers.Counters[(int)QuestDagRuntimeConstants.CounterSlot.LastCsvRowsApplied] = appliedRows;
+            PatchLastCsvRowsApplied(vault, ref handles, appliedRows);
             return appliedRows > 0;
+        }
+
+        private static bool TryReadCsvMonitorWriteTicks(
+            IDataVault vault,
+            ref QuestDagBufferHandles handles,
+            out long writeTicks)
+        {
+            writeTicks = 0L;
+            if (!QuestDagVault.TryReadQuestDagBuffer(
+                    vault,
+                    in handles.CsvMonitor,
+                    BufferID.QuestDagCsvMonitor,
+                    2,
+                    out NativeArray<long>.ReadOnly csvMonitor))
+            {
+                return false;
+            }
+
+            writeTicks = csvMonitor[0];
+            return true;
+        }
+
+        private static void PatchCsvMonitor(
+            IDataVault vault,
+            ref QuestDagBufferHandles handles,
+            long writeTicks,
+            int appliedRows)
+        {
+            if (!QuestDagVault.TryAcquireQuestDagWriteBuffer(
+                    vault,
+                    in handles.CsvMonitor,
+                    BufferID.QuestDagCsvMonitor,
+                    2,
+                    out NativeArray<long> csvMonitor))
+            {
+                return;
+            }
+
+            try
+            {
+                csvMonitor[0] = writeTicks;
+                csvMonitor[1] = appliedRows;
+            }
+            finally
+            {
+                vault.ReleaseWriteLock(in handles.CsvMonitor, SystemID.QuestDag);
+            }
+        }
+
+        private static void PatchLastCsvRowsApplied(
+            IDataVault vault,
+            ref QuestDagBufferHandles handles,
+            int appliedRows)
+        {
+            if (!QuestDagVault.TryAcquireQuestDagWriteBuffer(
+                    vault,
+                    in handles.Counters,
+                    BufferID.QuestDagCounters,
+                    QuestDagRuntimeConstants.CounterCount,
+                    out NativeArray<int> counters))
+            {
+                return;
+            }
+
+            try
+            {
+                counters[(int)QuestDagRuntimeConstants.CounterSlot.LastCsvRowsApplied] = appliedRows;
+            }
+            finally
+            {
+                vault.ReleaseWriteLock(in handles.Counters, SystemID.QuestDag);
+            }
         }
 
         private static ReadOnlySpan<char> NextLine(ReadOnlySpan<char> csv, ref int offset)
@@ -724,22 +964,6 @@ namespace Hecton8.Quest
             return -1;
         }
 
-        private static int FindNodeIndex(NativeArray<QuestNodeDTO> nodes, int nodeCount, uint nodeHash)
-        {
-            for (int i = 0; i < nodeCount; i++)
-            {
-                if (nodes[i].NodeHash == nodeHash)
-                    return i;
-            }
-
-            return -1;
-        }
-
-        private static int ReadCounter(NativeArray<int> counters, QuestDagRuntimeConstants.CounterSlot slot)
-        {
-            int index = (int)slot;
-            return counters.IsCreated && (uint)index < (uint)counters.Length ? counters[index] : 0;
-        }
     }
     #endif
 }

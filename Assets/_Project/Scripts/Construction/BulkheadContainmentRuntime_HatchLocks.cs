@@ -20,6 +20,9 @@ namespace Hecton8.Construction
     {
         private static readonly int GlobalHatchLockStatesId = Shader.PropertyToID("_GlobalHatchLockStates");
         private static readonly int GlobalHatchLockParamsId = Shader.PropertyToID("_GlobalHatchLockParams");
+        private const ulong HatchTelemetryDumpMutationGuardMask =
+            (1UL << ((int)BufferID.Shinobu343HatchTelemetryRing & 31)) |
+            (1UL << ((int)BufferID.Shinobu343HatchTelemetryCursor & 31));
 
         [SerializeField, Range(0.05f, 3f)] private float safePressureDifferentialATM = HatchLockConstants.DefaultSafePressureDifferentialATM;
         [SerializeField, Range(0.01f, 0.95f)] private float structuralJamThreshold01 = HatchLockConstants.DefaultStructuralJamThreshold01;
@@ -752,18 +755,13 @@ namespace Hecton8.Construction
             if (vault == null ||
                 _hatchTelemetryHandle.Generation == 0u ||
                 _hatchTelemetryCursorHandle.Generation == 0u ||
-                !vault.TryLockBuffer(BufferID.Shinobu343HatchTelemetryRing, OwnerSystemId))
+                !vault.TryAcquireMutationGuard(HatchTelemetryDumpMutationGuardMask))
             {
                 return;
             }
 
-            bool cursorPinned = false;
             try
             {
-                if (!vault.TryLockBuffer(BufferID.Shinobu343HatchTelemetryCursor, OwnerSystemId))
-                    return;
-                cursorPinned = true;
-
                 if (!IsBulkheadVaultHandle(in _hatchTelemetryHandle, BufferID.Shinobu343HatchTelemetryRing) ||
                     !IsBulkheadVaultHandle(in _hatchTelemetryCursorHandle, BufferID.Shinobu343HatchTelemetryCursor) ||
                     !vault.TryResolveHandle(in _hatchTelemetryHandle, out NativeArray<HatchTelemetryEntry> telemetry) ||
@@ -792,9 +790,7 @@ namespace Hecton8.Construction
             }
             finally
             {
-                if (cursorPinned)
-                    vault.TryUnlockBuffer(BufferID.Shinobu343HatchTelemetryCursor, OwnerSystemId);
-                vault.TryUnlockBuffer(BufferID.Shinobu343HatchTelemetryRing, OwnerSystemId);
+                vault.ReleaseMutationGuard(HatchTelemetryDumpMutationGuardMask);
             }
         }
 

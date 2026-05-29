@@ -403,6 +403,23 @@ namespace Hecton8.Gameplay
         private const uint ScannerToolHash = H8Hashes.Items.HydroacousticScannerHash;
         private const uint ScannerAnomalyHash = 0x53434E41u; // SCNA
         private const uint ScannerDumpReasonHash = 0x53444D50u; // SDMP
+        private static readonly ulong ScannerQueryMutationGuardMask =
+            ScannerMutationGuardBit(BufferID.ShinobuScannerEntities) |
+            ScannerMutationGuardBit(BufferID.ShinobuScannerMetadata) |
+            ScannerMutationGuardBit(BufferID.ShinobuScannerOcclusionZones) |
+            ScannerMutationGuardBit(BufferID.ShinobuScannerSpatialBucketHeads) |
+            ScannerMutationGuardBit(BufferID.ShinobuScannerSpatialNext) |
+            ScannerMutationGuardBit(BufferID.ShinobuScannerScanResults) |
+            ScannerMutationGuardBit(BufferID.ShinobuScannerResultCount) |
+            ScannerMutationGuardBit(BufferID.ShinobuScannerQueryStats);
+        private static readonly ulong ScannerCompletionMutationGuardMask =
+            ScannerQueryMutationGuardMask |
+            ScannerMutationGuardBit(BufferID.ShinobuScannerActiveState) |
+            ScannerMutationGuardBit(BufferID.ShinobuScannerVfxTarget) |
+            ScannerMutationGuardBit(BufferID.ShinobuScannerTelemetryRing) |
+            ScannerMutationGuardBit(BufferID.ShinobuScannerScanProgress) |
+            ScannerMutationGuardBit(BufferID.ShinobuScannerLoreIndex) |
+            ScannerMutationGuardBit(BufferID.ShinobuScannerEncyclopediaState);
 
         [SerializeField] private bool scanActive = true;
         [SerializeField] private bool seedMockData = true;
@@ -439,8 +456,7 @@ namespace Hecton8.Gameplay
         private int _telemetryCursor;
         private uint _completionCount;
         private bool _queryScheduled;
-        private bool _queryBuffersLocked;
-        private bool _completionBuffersLocked;
+        private IDataVault _queryMutationGuardVault;
         private bool _vaultViewsCached;
         private bool _registeredFast;
         private bool _registeredSlow;
@@ -449,6 +465,7 @@ namespace Hecton8.Gameplay
         private bool _disableCleanupPending;
         private bool _lateTickDormant;
         private bool _dataVaultRebindPending;
+        private bool _runtimeStateColdInitRequired;
         private IDataVault _pendingDataVault;
 
         private static ScannerVfxDTO s_lastVfxTarget;
@@ -535,10 +552,9 @@ namespace Hecton8.Gameplay
             return frame > int.MaxValue ? int.MaxValue : (int)frame;
         }
 
-        public static bool TryReadVaultSettings(out ScannerSettingsDTO settings)
+        public static bool TryReadVaultSettings(IDataVault vault, out ScannerSettingsDTO settings)
         {
             settings = ScannerDataMiningTuning.Settings;
-            IDataVault vault = GlobalRegistry.DataVault;
             if (vault == null ||
                 !vault.TryGetGenerationHandle(BufferID.ShinobuScannerSettings, out VaultGenerationHandle<ScannerSettingsDTO> handle) ||
                 !vault.TryResolveHandle(in handle, out NativeArray<ScannerSettingsDTO> buffer) ||
@@ -552,9 +568,8 @@ namespace Hecton8.Gameplay
             return settings.CellSizeMeters > 0f && math.isfinite(settings.CellSizeMeters);
         }
 
-        public static bool TryWriteVaultSettings(in ScannerSettingsDTO settings)
+        public static bool TryWriteVaultSettings(IDataVault vault, in ScannerSettingsDTO settings)
         {
-            IDataVault vault = GlobalRegistry.DataVault;
             if (vault == null)
                 return false;
 
@@ -563,15 +578,26 @@ namespace Hecton8.Gameplay
                 1,
                 OwnerSystemId,
                 NativeArrayOptions.ClearMemory);
-            if (!vault.TryResolveHandle(in handle, out NativeArray<ScannerSettingsDTO> buffer) ||
-                !buffer.IsCreated ||
-                buffer.Length == 0)
+            if (handle.BufferID == 0u ||
+                !vault.TryAcquireWriteLock(in handle, OwnerSystemId, out NativeArray<ScannerSettingsDTO> buffer))
             {
                 return false;
             }
 
-            buffer[0] = settings;
-            return true;
+            try
+            {
+                if (!buffer.IsCreated || buffer.Length == 0)
+                    return false;
+
+                Thread.MemoryBarrier();
+                buffer[0] = settings;
+                Thread.MemoryBarrier();
+                return true;
+            }
+            finally
+            {
+                vault.ReleaseWriteLock(in handle, OwnerSystemId);
+            }
         }
 
         public void SetScanActive(bool active)
@@ -596,7 +622,8 @@ namespace Hecton8.Gameplay
             if (!EnsureVaultState())
                 return false;
 
-            CachePlayerRuntimeContextCold();
+            _runtimeStateColdInitRequired = false;
+
             if (seedMockData)
                 SeedMockGridFromPose();
 
@@ -624,7 +651,6 @@ namespace Hecton8.Gameplay
             _registeredFast = false;
             _registeredSlow = false;
             TryUnregisterHotSwapListener();
-            UnlockCompletionBuffers();
 
             if (_queryScheduled && !TryFinalizeScheduledQuery())
             {
@@ -691,6 +717,9 @@ namespace Hecton8.Gameplay
 
         public void FastTick(float deltaTime)
         {
+            if (_runtimeStateColdInitRequired)
+                return;
+
             if (!TryReadVaultViews(out ScannerVaultViews views))
                 return;
 
@@ -706,32 +735,50 @@ namespace Hecton8.Gameplay
             if (frame - _lastQueryFrame < cadence)
                 return;
 
-            _lastQueryFrame = frame;
-            _lastInput = BuildInputSignal(deltaTime, frame, in settings);
-            views.ResultCount[0] = 0;
-            if (views.ScanResults.Length > 0)
-                views.ScanResults[0] = default;
-            if (!TryLockQueryBuffers(_dataVault))
+            IDataVault vault = _dataVault;
+            if (!TryAcquireQueryMutationGuard(vault))
                 return;
 
-            _queryHandle = new ScannerSpatialQueryJob
+            bool scheduled = false;
+            try
             {
-                Entities = views.Entities,
-                Metadata = views.Metadata,
-                OcclusionZones = views.OcclusionZones,
-                BucketHeads = views.BucketHeads,
-                BucketNext = views.BucketNext,
-                Results = views.ScanResults,
-                ResultCount = views.ResultCount,
-                QueryStats = views.QueryStats,
-                Input = _lastInput,
-                Settings = settings,
-                EntityCount = math.min(views.Entities.Length, math.max(0, _entityCount)),
-                MetadataCount = views.Metadata.Length,
-                OcclusionZoneCount = views.OcclusionZones.Length
-            }.Schedule();
-            H8Memory.RegisterActiveJob(OwnerSystemId, _queryHandle);
-            _queryScheduled = true;
+                if (!TryReadVaultViews(out views))
+                    return;
+
+                settings = ResolveCurrentSettings(views.Settings);
+                settings.MaxDistanceMeters = math.max(0.1f, maxDistanceMeters > 0f ? maxDistanceMeters : settings.MaxDistanceMeters);
+                settings.BeamRadiusMeters = math.max(0.05f, beamRadiusMeters > 0f ? beamRadiusMeters : settings.BeamRadiusMeters);
+                _lastQueryFrame = frame;
+                _lastInput = BuildInputSignal(deltaTime, frame, in settings);
+                views.ResultCount[0] = 0;
+                if (views.ScanResults.Length > 0)
+                    views.ScanResults[0] = default;
+
+                _queryHandle = new ScannerSpatialQueryJob
+                {
+                    Entities = views.Entities,
+                    Metadata = views.Metadata,
+                    OcclusionZones = views.OcclusionZones,
+                    BucketHeads = views.BucketHeads,
+                    BucketNext = views.BucketNext,
+                    Results = views.ScanResults,
+                    ResultCount = views.ResultCount,
+                    QueryStats = views.QueryStats,
+                    Input = _lastInput,
+                    Settings = settings,
+                    EntityCount = math.min(views.Entities.Length, math.max(0, _entityCount)),
+                    MetadataCount = views.Metadata.Length,
+                    OcclusionZoneCount = views.OcclusionZones.Length
+                }.Schedule();
+                H8Memory.RegisterActiveJob(OwnerSystemId, _queryHandle);
+                _queryScheduled = true;
+                scheduled = true;
+            }
+            finally
+            {
+                if (!scheduled)
+                    ReleaseQueryMutationGuard();
+            }
         }
 
         public void LateFrameTick()
@@ -760,10 +807,18 @@ namespace Hecton8.Gameplay
 
         public void SlowTick()
         {
-            if (_cachedPlayerContext == null || !_cachedPlayerContext.IsInitialized)
-                CachePlayerRuntimeContextCold();
+            if (_runtimeStateColdInitRequired)
+                return;
+
+            IPlayerRuntimeContext playerContext = _cachedPlayerContext;
+            if (playerContext == null || !playerContext.IsInitialized)
+            {
+                _cachedPlayerMovement = null;
+            }
             else if (_cachedPlayerMovement == null)
-                _cachedPlayerMovement = _cachedPlayerContext.PlayerMovement;
+            {
+                _cachedPlayerMovement = playerContext.PlayerMovement;
+            }
 
             _cachedGlobalQualityWeight = ResolveGlobalQualityWeight();
             ReadOnlySpan<SystemHealthIndexSignal> healthSignals = SignalBus<SystemHealthIndexSignal>.GetFrameSnapshot();
@@ -779,15 +834,20 @@ namespace Hecton8.Gameplay
             if (!DispatcherJobFence.TryFinalizeCompleted(ref _queryHandle))
                 return false;
 
-            _queryScheduled = false;
-            UnlockQueryBuffers();
+            try
+            {
+                _queryScheduled = false;
+            }
+            finally
+            {
+                ReleaseQueryMutationGuard();
+            }
             return true;
         }
 
         private void FinalizeDisableCleanupHot()
         {
-            UnlockQueryBuffers();
-            UnlockCompletionBuffers();
+            ReleaseQueryMutationGuard();
 
             _disableCleanupPending = false;
             _lateTickDormant = _registeredLate;
@@ -820,12 +880,6 @@ namespace Hecton8.Gameplay
                 ToolLevel = toolLevel,
                 Flags = scanActive && hasPose ? 1u : 0u
             };
-        }
-
-        private void CachePlayerRuntimeContextCold()
-        {
-            _cachedPlayerContext = GlobalRegistry.Player;
-            _cachedPlayerMovement = _cachedPlayerContext != null ? _cachedPlayerContext.PlayerMovement : null;
         }
 
         private bool TryResolveScannerPose(out double3 originAup, out float3 forward)
@@ -894,48 +948,68 @@ namespace Hecton8.Gameplay
 
         private void ProcessCompletedQuery(float deltaTime)
         {
-            if (!TryReadVaultViews(out ScannerVaultViews views))
+            IDataVault vault = _dataVault;
+            if (!TryAcquireScannerMutationGuard(vault, ScannerCompletionMutationGuardMask))
                 return;
 
-            ScannerSettingsDTO settings = ResolveCurrentSettings(views.Settings);
-            ScannerQueryStatsDTO stats = views.QueryStats.Length > 0 ? views.QueryStats[0] : default;
-            int resultCount = views.ResultCount.Length > 0 ? views.ResultCount[0] : 0;
+            bool shouldDumpAnomaly = false;
+            uint anomalyScalar = 0u;
 
-            unsafe
+            try
             {
-                ref ActiveScanStateDTO state = ref GetActiveStateRef(views.ActiveState);
-                if (resultCount > 0 && views.ScanResults.Length > 0)
-                {
-                    ScanResultDTO result = views.ScanResults[0];
-                    float scanDuration = ResolveScanDuration(stats.BestEntityIndex, views.Entities, views.Metadata, in settings);
+                if (!TryReadVaultViews(out ScannerVaultViews views))
+                    return;
 
-                    ScannerScanProgression.Solve(ref state, ref result, stats.BestEntityIndex, scanDuration, deltaTime, _lastInput.Frame, _cachedGlobalQualityWeight, in settings);
-                    state.LastOriginAUP = _lastInput.RayOriginAUP;
-                    state.BeamScore = stats.BestScore;
-                    if ((stats.Flags & QueryFlagOccluded) != 0u)
-                        state.Flags |= StateFlagOccluded;
-                    CopyEntityStateToActive(ref state, stats.BestEntityIndex, views.Entities);
-                    views.ScanResults[0] = result;
-                    WriteVfxTarget(in result, in state, in stats, views.VfxTarget);
-                    RouteProgressSignals(in result, in state, in settings);
-                    WriteTelemetry(in result, in state, in stats, views.Telemetry);
-                    RouteCompletionIfNeeded(in result, ref state, in settings, views);
-                }
-                else
+                ScannerSettingsDTO settings = ResolveCurrentSettings(views.Settings);
+                ScannerQueryStatsDTO stats = views.QueryStats.Length > 0 ? views.QueryStats[0] : default;
+                int resultCount = views.ResultCount.Length > 0 ? views.ResultCount[0] : 0;
+
+                unsafe
                 {
-                    ScannerScanProgression.Decay(ref state, deltaTime, in settings);
-                    WriteEmptyVfxTarget(in state, in stats, views.VfxTarget);
-                    ScanResultDTO emptyResult = default;
-                    WriteTelemetry(in emptyResult, in state, in stats, views.Telemetry);
+                    ref ActiveScanStateDTO state = ref GetActiveStateRef(views.ActiveState);
+                    if (resultCount > 0 && views.ScanResults.Length > 0)
+                    {
+                        ScanResultDTO result = views.ScanResults[0];
+                        float scanDuration = ResolveScanDuration(stats.BestEntityIndex, views.Entities, views.Metadata, in settings);
+
+                        ScannerScanProgression.Solve(ref state, ref result, stats.BestEntityIndex, scanDuration, deltaTime, _lastInput.Frame, _cachedGlobalQualityWeight, in settings);
+                        state.LastOriginAUP = _lastInput.RayOriginAUP;
+                        state.BeamScore = stats.BestScore;
+                        if ((stats.Flags & QueryFlagOccluded) != 0u)
+                            state.Flags |= StateFlagOccluded;
+                        CopyEntityStateToActive(ref state, stats.BestEntityIndex, views.Entities);
+                        views.ScanResults[0] = result;
+                        WriteVfxTarget(in result, in state, in stats, views.VfxTarget);
+                        RouteProgressSignals(in result, in state, in settings);
+                        WriteTelemetry(in result, in state, in stats, views.Telemetry);
+                        RouteCompletionIfNeeded(in result, ref state, in settings, views);
+                    }
+                    else
+                    {
+                        ScannerScanProgression.Decay(ref state, deltaTime, in settings);
+                        WriteEmptyVfxTarget(in state, in stats, views.VfxTarget);
+                        ScanResultDTO emptyResult = default;
+                        WriteTelemetry(in emptyResult, in state, in stats, views.Telemetry);
+                    }
+                }
+
+                if ((stats.Flags & QueryFlagNaNInput) != 0u ||
+                    stats.EstimatedMicroseconds > math.max(1u, (uint)settings.QueryBudgetMicroseconds))
+                {
+                    shouldDumpAnomaly = true;
+                    anomalyScalar = stats.EstimatedMicroseconds;
                 }
             }
-
-            if ((stats.Flags & QueryFlagNaNInput) != 0u ||
-                stats.EstimatedMicroseconds > math.max(1u, (uint)settings.QueryBudgetMicroseconds))
+            finally
             {
-                DumpTelemetryRing(views.Telemetry);
-                PublishDumpAnomaly(stats.EstimatedMicroseconds);
+                ReleaseScannerMutationGuard(vault, ScannerCompletionMutationGuardMask);
             }
+
+            if (!shouldDumpAnomaly)
+                return;
+
+            DumpTelemetryRing();
+            PublishDumpAnomaly(anomalyScalar);
         }
 
         private float ResolveScanDuration(
@@ -1070,8 +1144,7 @@ namespace Hecton8.Gameplay
             in ActiveScanStateDTO state,
             ScannerVaultViews views)
         {
-            if (_completionBuffersLocked ||
-                !views.ScanProgress.IsCreated ||
+            if (!views.ScanProgress.IsCreated ||
                 views.ScanProgress.Length == 0 ||
                 !views.LoreIndex.IsCreated ||
                 !views.EncyclopediaState.IsCreated ||
@@ -1080,10 +1153,6 @@ namespace Hecton8.Gameplay
             {
                 return false;
             }
-
-            IDataVault vault = _dataVault;
-            if (!TryLockCompletionBuffers(vault))
-                return false;
 
             uint frame = ResolveSimulationFrame();
             views.ScanProgress[0] = new ScanProgressDTO
@@ -1115,7 +1184,6 @@ namespace Hecton8.Gameplay
                 Frame = frame,
                 CompletionCount = _completionCount + 1u
             }.Execute();
-            UnlockCompletionBuffers();
             return true;
         }
 
@@ -1366,6 +1434,7 @@ namespace Hecton8.Gameplay
 
         private void ReleaseHandlesOnly()
         {
+            ReleaseQueryMutationGuard();
             _entitiesHandle = default;
             _metadataHandle = default;
             _occlusionZonesHandle = default;
@@ -1388,7 +1457,6 @@ namespace Hecton8.Gameplay
             _entityCount = 0;
             _telemetryCursor = 0;
             _completionCount = 0u;
-            _completionBuffersLocked = false;
         }
 
         public void OnGlobalRegistryServiceReplaced(
@@ -1396,13 +1464,29 @@ namespace Hecton8.Gameplay
             object previousService,
             object currentService)
         {
-            if (serviceSlot == GlobalRegistryServiceSlot.DataVault)
-                RebindDataVault(currentService as IDataVault);
+            switch (serviceSlot)
+            {
+                case GlobalRegistryServiceSlot.DataVault:
+                    RebindDataVault(currentService as IDataVault);
+                    break;
+                case GlobalRegistryServiceSlot.Player:
+                    CachePlayerRuntimeContext(currentService as IPlayerRuntimeContext);
+                    break;
+            }
         }
 
         private void CacheRegistryServicesCold()
         {
             _dataVault = GlobalRegistry.DataVault;
+            CachePlayerRuntimeContext(GlobalRegistry.Player);
+        }
+
+        private void CachePlayerRuntimeContext(IPlayerRuntimeContext playerContext)
+        {
+            _cachedPlayerContext = playerContext;
+            _cachedPlayerMovement = playerContext != null && playerContext.IsInitialized
+                ? playerContext.PlayerMovement
+                : null;
         }
 
         private void RebindDataVault(IDataVault nextVault)
@@ -1410,7 +1494,7 @@ namespace Hecton8.Gameplay
             if (ReferenceEquals(_dataVault, nextVault))
                 return;
 
-            if (_queryScheduled || _queryBuffersLocked || _completionBuffersLocked)
+            if (_queryScheduled || _queryMutationGuardVault != null)
             {
                 _pendingDataVault = nextVault;
                 _dataVaultRebindPending = true;
@@ -1422,22 +1506,30 @@ namespace Hecton8.Gameplay
 
         private void TryApplyPendingDataVaultRebind()
         {
-            if (!_dataVaultRebindPending || _queryScheduled || _queryBuffersLocked || _completionBuffersLocked)
+            if (!_dataVaultRebindPending || _queryScheduled || _queryMutationGuardVault != null)
                 return;
 
             IDataVault nextVault = _pendingDataVault;
             _pendingDataVault = null;
             _dataVaultRebindPending = false;
-            ApplyDataVaultRebind(nextVault);
+            ApplyPendingDataVaultRebindAfterVisualFence(nextVault);
         }
 
         private void ApplyDataVaultRebind(IDataVault nextVault)
         {
             ReleaseHandlesOnly();
             _dataVault = nextVault;
+            _runtimeStateColdInitRequired = false;
 
             if (nextVault != null && isActiveAndEnabled && !_disableCleanupPending)
                 TryInitializeRuntimeState();
+        }
+
+        private void ApplyPendingDataVaultRebindAfterVisualFence(IDataVault nextVault)
+        {
+            ReleaseHandlesOnly();
+            _dataVault = nextVault;
+            _runtimeStateColdInitRequired = nextVault != null && isActiveAndEnabled && !_disableCleanupPending;
         }
 
         private void TryRegisterHotSwapListener()
@@ -1457,140 +1549,41 @@ namespace Hecton8.Gameplay
             _hotSwapListenerRegistered = false;
         }
 
-        private bool TryLockQueryBuffers(IDataVault vault)
+        private bool TryAcquireQueryMutationGuard(IDataVault vault)
         {
-            if (vault == null || _queryBuffersLocked)
+            if (_queryMutationGuardVault != null)
                 return false;
 
-            if (!vault.TryLockBuffer(BufferID.ShinobuScannerEntities, OwnerSystemId))
+            if (!TryAcquireScannerMutationGuard(vault, ScannerQueryMutationGuardMask))
                 return false;
-            if (!vault.TryLockBuffer(BufferID.ShinobuScannerMetadata, OwnerSystemId))
-            {
-                vault.TryUnlockBuffer(BufferID.ShinobuScannerEntities, OwnerSystemId);
-                return false;
-            }
-            if (!vault.TryLockBuffer(BufferID.ShinobuScannerOcclusionZones, OwnerSystemId))
-            {
-                vault.TryUnlockBuffer(BufferID.ShinobuScannerMetadata, OwnerSystemId);
-                vault.TryUnlockBuffer(BufferID.ShinobuScannerEntities, OwnerSystemId);
-                return false;
-            }
-            if (!vault.TryLockBuffer(BufferID.ShinobuScannerSpatialBucketHeads, OwnerSystemId))
-            {
-                vault.TryUnlockBuffer(BufferID.ShinobuScannerOcclusionZones, OwnerSystemId);
-                vault.TryUnlockBuffer(BufferID.ShinobuScannerMetadata, OwnerSystemId);
-                vault.TryUnlockBuffer(BufferID.ShinobuScannerEntities, OwnerSystemId);
-                return false;
-            }
-            if (!vault.TryLockBuffer(BufferID.ShinobuScannerSpatialNext, OwnerSystemId))
-            {
-                vault.TryUnlockBuffer(BufferID.ShinobuScannerSpatialBucketHeads, OwnerSystemId);
-                vault.TryUnlockBuffer(BufferID.ShinobuScannerOcclusionZones, OwnerSystemId);
-                vault.TryUnlockBuffer(BufferID.ShinobuScannerMetadata, OwnerSystemId);
-                vault.TryUnlockBuffer(BufferID.ShinobuScannerEntities, OwnerSystemId);
-                return false;
-            }
-            if (!vault.TryLockBuffer(BufferID.ShinobuScannerScanResults, OwnerSystemId))
-            {
-                vault.TryUnlockBuffer(BufferID.ShinobuScannerSpatialNext, OwnerSystemId);
-                vault.TryUnlockBuffer(BufferID.ShinobuScannerSpatialBucketHeads, OwnerSystemId);
-                vault.TryUnlockBuffer(BufferID.ShinobuScannerOcclusionZones, OwnerSystemId);
-                vault.TryUnlockBuffer(BufferID.ShinobuScannerMetadata, OwnerSystemId);
-                vault.TryUnlockBuffer(BufferID.ShinobuScannerEntities, OwnerSystemId);
-                return false;
-            }
-            if (!vault.TryLockBuffer(BufferID.ShinobuScannerResultCount, OwnerSystemId))
-            {
-                vault.TryUnlockBuffer(BufferID.ShinobuScannerScanResults, OwnerSystemId);
-                vault.TryUnlockBuffer(BufferID.ShinobuScannerSpatialNext, OwnerSystemId);
-                vault.TryUnlockBuffer(BufferID.ShinobuScannerSpatialBucketHeads, OwnerSystemId);
-                vault.TryUnlockBuffer(BufferID.ShinobuScannerOcclusionZones, OwnerSystemId);
-                vault.TryUnlockBuffer(BufferID.ShinobuScannerMetadata, OwnerSystemId);
-                vault.TryUnlockBuffer(BufferID.ShinobuScannerEntities, OwnerSystemId);
-                return false;
-            }
-            if (!vault.TryLockBuffer(BufferID.ShinobuScannerQueryStats, OwnerSystemId))
-            {
-                vault.TryUnlockBuffer(BufferID.ShinobuScannerResultCount, OwnerSystemId);
-                vault.TryUnlockBuffer(BufferID.ShinobuScannerScanResults, OwnerSystemId);
-                vault.TryUnlockBuffer(BufferID.ShinobuScannerSpatialNext, OwnerSystemId);
-                vault.TryUnlockBuffer(BufferID.ShinobuScannerSpatialBucketHeads, OwnerSystemId);
-                vault.TryUnlockBuffer(BufferID.ShinobuScannerOcclusionZones, OwnerSystemId);
-                vault.TryUnlockBuffer(BufferID.ShinobuScannerMetadata, OwnerSystemId);
-                vault.TryUnlockBuffer(BufferID.ShinobuScannerEntities, OwnerSystemId);
-                return false;
-            }
 
-            _queryBuffersLocked = true;
+            _queryMutationGuardVault = vault;
             return true;
         }
 
-        private void UnlockQueryBuffers()
+        private void ReleaseQueryMutationGuard()
         {
-            if (!_queryBuffersLocked)
+            IDataVault vault = _queryMutationGuardVault;
+            if (vault == null)
                 return;
 
-            IDataVault vault = _dataVault;
-            if (vault != null)
-            {
-                vault.TryUnlockBuffer(BufferID.ShinobuScannerQueryStats, OwnerSystemId);
-                vault.TryUnlockBuffer(BufferID.ShinobuScannerResultCount, OwnerSystemId);
-                vault.TryUnlockBuffer(BufferID.ShinobuScannerScanResults, OwnerSystemId);
-                vault.TryUnlockBuffer(BufferID.ShinobuScannerSpatialNext, OwnerSystemId);
-                vault.TryUnlockBuffer(BufferID.ShinobuScannerSpatialBucketHeads, OwnerSystemId);
-                vault.TryUnlockBuffer(BufferID.ShinobuScannerOcclusionZones, OwnerSystemId);
-                vault.TryUnlockBuffer(BufferID.ShinobuScannerMetadata, OwnerSystemId);
-                vault.TryUnlockBuffer(BufferID.ShinobuScannerEntities, OwnerSystemId);
-            }
-
-            _queryBuffersLocked = false;
+            _queryMutationGuardVault = null;
+            ReleaseScannerMutationGuard(vault, ScannerQueryMutationGuardMask);
         }
 
-        private bool TryLockCompletionBuffers(IDataVault vault)
+        private static bool TryAcquireScannerMutationGuard(IDataVault vault, ulong mask)
         {
-            if (vault == null || _completionBuffersLocked)
-                return false;
-
-            if (!vault.TryLockBuffer(BufferID.ShinobuScannerScanProgress, OwnerSystemId))
-                return false;
-            if (!vault.TryLockBuffer(BufferID.ShinobuScannerLoreIndex, OwnerSystemId))
-            {
-                vault.TryUnlockBuffer(BufferID.ShinobuScannerScanProgress, OwnerSystemId);
-                return false;
-            }
-            if (!vault.TryLockBuffer(BufferID.ShinobuScannerEncyclopediaState, OwnerSystemId))
-            {
-                vault.TryUnlockBuffer(BufferID.ShinobuScannerLoreIndex, OwnerSystemId);
-                vault.TryUnlockBuffer(BufferID.ShinobuScannerScanProgress, OwnerSystemId);
-                return false;
-            }
-            if (!vault.TryLockBuffer(BufferID.ShinobuScannerTelemetryRing, OwnerSystemId))
-            {
-                vault.TryUnlockBuffer(BufferID.ShinobuScannerEncyclopediaState, OwnerSystemId);
-                vault.TryUnlockBuffer(BufferID.ShinobuScannerLoreIndex, OwnerSystemId);
-                vault.TryUnlockBuffer(BufferID.ShinobuScannerScanProgress, OwnerSystemId);
-                return false;
-            }
-
-            _completionBuffersLocked = true;
-            return true;
+            return vault != null && !vault.IsCompactionFenceActive && vault.TryAcquireMutationGuard(mask);
         }
 
-        private void UnlockCompletionBuffers()
+        private static void ReleaseScannerMutationGuard(IDataVault vault, ulong mask)
         {
-            if (!_completionBuffersLocked)
-                return;
+            vault?.ReleaseMutationGuard(mask);
+        }
 
-            IDataVault vault = _dataVault;
-            if (vault != null)
-            {
-                vault.TryUnlockBuffer(BufferID.ShinobuScannerTelemetryRing, OwnerSystemId);
-                vault.TryUnlockBuffer(BufferID.ShinobuScannerEncyclopediaState, OwnerSystemId);
-                vault.TryUnlockBuffer(BufferID.ShinobuScannerLoreIndex, OwnerSystemId);
-                vault.TryUnlockBuffer(BufferID.ShinobuScannerScanProgress, OwnerSystemId);
-            }
-
-            _completionBuffersLocked = false;
+        private static ulong ScannerMutationGuardBit(BufferID bufferId)
+        {
+            return 1UL << ((int)bufferId & 31);
         }
 
         private ScannerSettingsDTO ResolveCurrentSettings(NativeArray<ScannerSettingsDTO> settingsBuffer)

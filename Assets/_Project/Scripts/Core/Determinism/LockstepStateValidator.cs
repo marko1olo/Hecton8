@@ -935,7 +935,15 @@ namespace Hecton8.Core.Determinism
 
             // [BLOCKING_SYNC_POINT] 300-frame POST_SIMULATION hash fence.
             // The replay block must contain frame-N truth before any owner can mutate the sampled DataVault arrays.
-            Hecton8.Core.DispatcherJobFence.TryComplete(ref masterHandle, forceComplete: true);
+            Hecton8.Core.DispatcherJobFence.BeginPostSimulationSwapWindow();
+            try
+            {
+                Hecton8.Core.DispatcherJobFence.TryComplete(ref masterHandle, forceComplete: true);
+            }
+            finally
+            {
+                Hecton8.Core.DispatcherJobFence.EndPostSimulationSwapWindow();
+            }
 
             uint flags = masterFlags[0];
             if ((flags & ArrayFlagMissing) != 0u)

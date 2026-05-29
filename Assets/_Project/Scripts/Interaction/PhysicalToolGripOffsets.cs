@@ -1,5 +1,6 @@
 namespace Hecton8.Interaction
 {
+    using Hecton8.Core;
     using Unity.Mathematics;
     using UnityEngine;
 
@@ -8,11 +9,12 @@ namespace Hecton8.Interaction
     /// </summary>
     [DisallowMultipleComponent]
     [AddComponentMenu("Hecton8/Interaction/Physical Tool Grip Offsets")]
-    public sealed class PhysicalToolGripOffsets : MonoBehaviour
+    public sealed class PhysicalToolGripOffsets : MonoBehaviour, IPoolable
     {
         private const int LeftIndex = 0;
         private const int RightIndex = 1;
         private const float MaximumGripOffsetMeters = 3f;
+        private static PhysicalToolGripOffsets s_lastSpawnedOffsets;
 
         [SerializeField] private Matrix4x4 leftHandGripOffset = Matrix4x4.identity;
         [SerializeField] private Matrix4x4 rightHandGripOffset = Matrix4x4.identity;
@@ -23,6 +25,12 @@ namespace Hecton8.Interaction
         private bool _offsetsCached;
 
         public bool ApplyOffsetsOnEquip => applyOffsetsOnEquip;
+
+        internal static bool TryResolveLastSpawned(GameObject instance, out PhysicalToolGripOffsets offsets)
+        {
+            offsets = s_lastSpawnedOffsets;
+            return offsets != null && ReferenceEquals(offsets.gameObject, instance);
+        }
 
         public bool TryApplyGripOffset(Transform toolTransform, PhysicalHandSide handSide)
         {
@@ -53,6 +61,23 @@ namespace Hecton8.Interaction
 
         private void OnDestroy()
         {
+            if (ReferenceEquals(s_lastSpawnedOffsets, this))
+                s_lastSpawnedOffsets = null;
+
+            _offsetsCached = false;
+        }
+
+        public void OnSpawn()
+        {
+            s_lastSpawnedOffsets = this;
+            CacheAuthoredOffsets();
+        }
+
+        public void OnDespawn()
+        {
+            if (ReferenceEquals(s_lastSpawnedOffsets, this))
+                s_lastSpawnedOffsets = null;
+
             _offsetsCached = false;
         }
 

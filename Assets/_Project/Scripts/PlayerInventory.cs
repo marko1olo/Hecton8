@@ -615,6 +615,13 @@ namespace Hecton8.Inventory
         private InventoryVaultLane<int> _salinityCorrosionJobResult;
         private InventoryVaultLane<uint> _salinityBrokenItemHashes;
         private InventoryVaultLane<SalinityCorrosionTelemetryEntry> _salinityCorrosionBlackBox;
+        private NativeArray<int> _salinityCorrosionJobResultScratch;
+        private NativeArray<uint> _salinityBrokenItemHashesScratch;
+        private NativeArray<int> _salinityChangedSlotsScratch;
+        private NativeArray<float> _salinityNextDurabilityScratch;
+        private NativeArray<byte> _salinityNextDurabilityBytesScratch;
+        private NativeArray<ushort> _salinityNextQualityMilliScratch;
+        private NativeArray<ushort> _salinityNextStateFlagsScratch;
         private InventoryVaultLane<int> _defragItemHashes;
         private InventoryVaultLane<ushort> _defragItemCounts;
         private InventoryVaultLane<byte> _defragCategories;
@@ -1052,6 +1059,67 @@ namespace Hecton8.Inventory
             _defragResult.Release();
         }
 
+        private bool AllocateSalinityCorrosionScratchCold(int cellCount)
+        {
+            if (cellCount <= 0)
+                return false;
+
+            ReleaseSalinityCorrosionScratchCold();
+
+            _salinityCorrosionJobResultScratch = new NativeArray<int>(
+                InventoryCorrosionConstants.ResultRequiredLength,
+                Allocator.Persistent,
+                NativeArrayOptions.ClearMemory);
+            _salinityBrokenItemHashesScratch = new NativeArray<uint>(
+                cellCount,
+                Allocator.Persistent,
+                NativeArrayOptions.ClearMemory);
+            _salinityChangedSlotsScratch = new NativeArray<int>(
+                cellCount,
+                Allocator.Persistent,
+                NativeArrayOptions.ClearMemory);
+            _salinityNextDurabilityScratch = new NativeArray<float>(
+                cellCount,
+                Allocator.Persistent,
+                NativeArrayOptions.ClearMemory);
+            _salinityNextDurabilityBytesScratch = new NativeArray<byte>(
+                cellCount,
+                Allocator.Persistent,
+                NativeArrayOptions.ClearMemory);
+            _salinityNextQualityMilliScratch = new NativeArray<ushort>(
+                cellCount,
+                Allocator.Persistent,
+                NativeArrayOptions.ClearMemory);
+            _salinityNextStateFlagsScratch = new NativeArray<ushort>(
+                cellCount,
+                Allocator.Persistent,
+                NativeArrayOptions.ClearMemory);
+
+            bool ready =
+                _salinityCorrosionJobResultScratch.IsCreated &&
+                _salinityBrokenItemHashesScratch.IsCreated &&
+                _salinityChangedSlotsScratch.IsCreated &&
+                _salinityNextDurabilityScratch.IsCreated &&
+                _salinityNextDurabilityBytesScratch.IsCreated &&
+                _salinityNextQualityMilliScratch.IsCreated &&
+                _salinityNextStateFlagsScratch.IsCreated;
+            if (!ready)
+                ReleaseSalinityCorrosionScratchCold();
+
+            return ready;
+        }
+
+        private void ReleaseSalinityCorrosionScratchCold()
+        {
+            DisposeNativeArray(ref _salinityCorrosionJobResultScratch);
+            DisposeNativeArray(ref _salinityBrokenItemHashesScratch);
+            DisposeNativeArray(ref _salinityChangedSlotsScratch);
+            DisposeNativeArray(ref _salinityNextDurabilityScratch);
+            DisposeNativeArray(ref _salinityNextDurabilityBytesScratch);
+            DisposeNativeArray(ref _salinityNextQualityMilliScratch);
+            DisposeNativeArray(ref _salinityNextStateFlagsScratch);
+        }
+
 #if UNITY_EDITOR
         private static bool ValidateInventoryMemorySovereigntyLayouts1317()
         {
@@ -1169,6 +1237,13 @@ namespace Hecton8.Inventory
                 return;
             }
 
+            if (!AllocateSalinityCorrosionScratchCold(cellCount))
+            {
+                ReleasePlayerInventoryVaultBuffers();
+                enabled = false;
+                return;
+            }
+
             ClearPlayerInventoryVaultBuffersCold();
             RegisterNativeMemorySentinel();
             _sortBuffer = new ItemPlacement[columns * rows];
@@ -1212,6 +1287,7 @@ namespace Hecton8.Inventory
             }
 
             ReleasePlayerInventoryVaultBuffers();
+            ReleaseSalinityCorrosionScratchCold();
             DisposeSoaQueryEngine();
 
         }
@@ -1352,7 +1428,14 @@ namespace Hecton8.Inventory
 
         private void RegisterNativeMemorySentinel()
         {
-            // PlayerInventory stores generation descriptors only. GlobalDataVault owns native allocation telemetry.
+            NativeMemorySentinel.RegisterNativeArray(_salinityCorrosionJobResultScratch, NativeMemoryOwner, nameof(_salinityCorrosionJobResultScratch), NativeMemoryLifetime);
+            NativeMemorySentinel.RegisterNativeArray(_salinityBrokenItemHashesScratch, NativeMemoryOwner, nameof(_salinityBrokenItemHashesScratch), NativeMemoryLifetime);
+            NativeMemorySentinel.RegisterNativeArray(_salinityChangedSlotsScratch, NativeMemoryOwner, nameof(_salinityChangedSlotsScratch), NativeMemoryLifetime);
+            NativeMemorySentinel.RegisterNativeArray(_salinityNextDurabilityScratch, NativeMemoryOwner, nameof(_salinityNextDurabilityScratch), NativeMemoryLifetime);
+            NativeMemorySentinel.RegisterNativeArray(_salinityNextDurabilityBytesScratch, NativeMemoryOwner, nameof(_salinityNextDurabilityBytesScratch), NativeMemoryLifetime);
+            NativeMemorySentinel.RegisterNativeArray(_salinityNextQualityMilliScratch, NativeMemoryOwner, nameof(_salinityNextQualityMilliScratch), NativeMemoryLifetime);
+            NativeMemorySentinel.RegisterNativeArray(_salinityNextStateFlagsScratch, NativeMemoryOwner, nameof(_salinityNextStateFlagsScratch), NativeMemoryLifetime);
+            // GlobalDataVault owns generation descriptor allocation telemetry.
         }
 
         private static void DisposeNativeArray<T>(ref NativeArray<T> array) where T : struct
@@ -5020,13 +5103,18 @@ namespace Hecton8.Inventory
             ItemSalinityCorrosionJob salinityJob = new ItemSalinityCorrosionJob
             {
                 ItemHashes = _itemHashes.AsReadOnly(),
-                StackCounts = _stackCounts,
-                ItemDurability = _itemDurability,
-                DurabilityBytes = _durabilities,
-                QualityMilli = _qualityMilli,
-                ItemStateFlags = _itemStateFlags,
-                Result = _salinityCorrosionJobResult,
-                BrokenItemHashes = _salinityBrokenItemHashes,
+                StackCounts = _stackCounts.AsReadOnly(),
+                ItemDurability = _itemDurability.AsReadOnly(),
+                DurabilityBytes = _durabilities.AsReadOnly(),
+                QualityMilli = _qualityMilli.AsReadOnly(),
+                ItemStateFlags = _itemStateFlags.AsReadOnly(),
+                ChangedSlots = _salinityChangedSlotsScratch,
+                NextItemDurability = _salinityNextDurabilityScratch,
+                NextDurabilityBytes = _salinityNextDurabilityBytesScratch,
+                NextQualityMilli = _salinityNextQualityMilliScratch,
+                NextItemStateFlags = _salinityNextStateFlagsScratch,
+                Result = _salinityCorrosionJobResultScratch,
+                BrokenItemHashes = _salinityBrokenItemHashesScratch,
                 CurrentInventoryMask = CurrentInventoryMask,
                 SalinityFactor = _currentSalinityFactor,
                 DegradationRate = SalinityCorrosionDegradationRatePerFrostTick,
@@ -5037,19 +5125,20 @@ namespace Hecton8.Inventory
             };
             salinityJob.Execute();
 
-            int averageMilli = _salinityCorrosionJobResult[InventoryCorrosionConstants.ResultAverageDurabilityMilli];
+            int averageMilli = _salinityCorrosionJobResultScratch[InventoryCorrosionConstants.ResultAverageDurabilityMilli];
             _averageEquipmentDurability01 = math.saturate(averageMilli * 0.001f);
-            int changedCount = _salinityCorrosionJobResult[InventoryCorrosionConstants.ResultChangedCount];
-            int brokenCount = _salinityCorrosionJobResult[InventoryCorrosionConstants.ResultBrokenCount];
+            int changedCount = _salinityCorrosionJobResultScratch[InventoryCorrosionConstants.ResultChangedCount];
+            int brokenCount = _salinityCorrosionJobResultScratch[InventoryCorrosionConstants.ResultBrokenCount];
+            bool committedChanges = changedCount <= 0 || TryCommitSalinityCorrosionScratch(changedCount);
 
             UpdateEquipmentRustShaderScalar();
             UpdateEquipmentFailingNotification();
-            WriteSalinityCorrosionBlackBoxFrame(changedCount > 0 ? 2 : 0);
+            WriteSalinityCorrosionBlackBoxFrame(changedCount > 0 ? (committedChanges ? 2 : 0x12) : 0);
 
-            if (brokenCount > 0)
+            if (brokenCount > 0 && committedChanges)
                 PublishBrokenEquipmentSignals(brokenCount);
 
-            if (changedCount > 0)
+            if (changedCount > 0 && committedChanges)
             {
                 PublishItemDurabilityChanged(0u, _averageEquipmentDurability01, ItemDurabilityChangedSignal.ReasonCorrosion, ushort.MaxValue);
                 NotifyInventoryChanged(massDirty: false);
@@ -5064,17 +5153,92 @@ namespace Hecton8.Inventory
                    _durabilities.IsCreated &&
                    _qualityMilli.IsCreated &&
                    _itemStateFlags.IsCreated &&
-                   _salinityCorrosionJobResult.IsCreated &&
-                   _salinityCorrosionJobResult.Length >= InventoryCorrosionConstants.ResultRequiredLength &&
-                   _salinityBrokenItemHashes.IsCreated;
+                   _salinityCorrosionJobResultScratch.IsCreated &&
+                   _salinityCorrosionJobResultScratch.Length >= InventoryCorrosionConstants.ResultRequiredLength &&
+                   _salinityBrokenItemHashesScratch.IsCreated &&
+                   _salinityChangedSlotsScratch.IsCreated &&
+                   _salinityNextDurabilityScratch.IsCreated &&
+                   _salinityNextDurabilityBytesScratch.IsCreated &&
+                   _salinityNextQualityMilliScratch.IsCreated &&
+                   _salinityNextStateFlagsScratch.IsCreated;
+        }
+
+        private bool TryCommitSalinityCorrosionScratch(int changedCount)
+        {
+            int count = ResolveSalinityScratchChangeCount(changedCount);
+            if (count <= 0)
+                return false;
+
+            return TryCommitSalinityScratchLane(ref _itemDurability, _salinityNextDurabilityScratch, count) &&
+                   TryCommitSalinityScratchLane(ref _durabilities, _salinityNextDurabilityBytesScratch, count) &&
+                   TryCommitSalinityScratchLane(ref _qualityMilli, _salinityNextQualityMilliScratch, count) &&
+                   TryCommitSalinityScratchLane(ref _itemStateFlags, _salinityNextStateFlagsScratch, count);
+        }
+
+        private int ResolveSalinityScratchChangeCount(int changedCount)
+        {
+            if (changedCount <= 0 ||
+                !_salinityChangedSlotsScratch.IsCreated ||
+                !_salinityNextDurabilityScratch.IsCreated ||
+                !_salinityNextDurabilityBytesScratch.IsCreated ||
+                !_salinityNextQualityMilliScratch.IsCreated ||
+                !_salinityNextStateFlagsScratch.IsCreated)
+            {
+                return 0;
+            }
+
+            int capacity = _salinityChangedSlotsScratch.Length;
+            capacity = math.min(capacity, _salinityNextDurabilityScratch.Length);
+            capacity = math.min(capacity, _salinityNextDurabilityBytesScratch.Length);
+            capacity = math.min(capacity, _salinityNextQualityMilliScratch.Length);
+            capacity = math.min(capacity, _salinityNextStateFlagsScratch.Length);
+            return math.min(changedCount, capacity);
+        }
+
+        private bool TryCommitSalinityScratchLane<T>(
+            ref InventoryVaultLane<T> lane,
+            NativeArray<T> nextValues,
+            int changedCount) where T : struct
+        {
+            if (!nextValues.IsCreated ||
+                changedCount <= 0 ||
+                !_salinityChangedSlotsScratch.IsCreated)
+            {
+                return false;
+            }
+
+            if (!lane.TryAcquireWriteLock(out NativeArray<T> values))
+            {
+                WriteInventoryVaultFaultFrame(in lane, 0x10);
+                return false;
+            }
+
+            try
+            {
+                int count = math.min(changedCount, math.min(_salinityChangedSlotsScratch.Length, nextValues.Length));
+                for (int i = 0; i < count; i++)
+                {
+                    int slot = _salinityChangedSlotsScratch[i];
+                    if ((uint)slot < (uint)values.Length)
+                        values[slot] = nextValues[i];
+                }
+
+                return true;
+            }
+            finally
+            {
+                lane.ReleaseWriteLock();
+            }
         }
 
         private void PublishBrokenEquipmentSignals(int brokenCount)
         {
-            int count = math.min(brokenCount, _salinityBrokenItemHashes.Length);
+            int count = _salinityBrokenItemHashesScratch.IsCreated
+                ? math.min(brokenCount, _salinityBrokenItemHashesScratch.Length)
+                : 0;
             for (int i = 0; i < count; i++)
             {
-                uint itemHash = _salinityBrokenItemHashes[i];
+                uint itemHash = _salinityBrokenItemHashesScratch[i];
                 if (itemHash == 0u)
                     continue;
 
@@ -5323,7 +5487,6 @@ namespace Hecton8.Inventory
             _currentVolumeLiters = TotalVolumeM3 * VolumeM3ToLiters;
             TotalRadiationSv = math.max(0f, math.isfinite(totals.z) ? totals.z : 0f);
             TotalWeight = _currentWeightKg;
-            GlobalRegistry.PublishPlayerInventoryMassKg(_currentWeightKg);
             if (survival != null)
                 survival.SetWeight(_currentWeightKg);
 

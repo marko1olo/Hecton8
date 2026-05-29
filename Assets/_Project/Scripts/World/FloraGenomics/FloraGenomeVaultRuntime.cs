@@ -92,9 +92,6 @@ namespace Hecton8.World
         public const int DefaultRawBytesCapacity = 5 * 1024 * 1024;
         public const int DefaultCsvScratchCapacity = 256 * 1024;
         public const uint OverloadWarningHash = 0x464F5632u; // FOV2
-        private const float MiddleHardwareQualityThreshold01 = 0.25f;
-        private const float HighHardwareQualityThreshold01 = 0.55f;
-        private const float UltraHardwareQualityThreshold01 = 0.85f;
 
         private IDataVault _vault;
         private VaultGenerationHandle<byte> _rawBytesHandle;
@@ -305,18 +302,18 @@ namespace Hecton8.World
             resolvedSeed.SpeciesHash = genome.SpeciesHash;
             if (resolvedSeed.PlantHash == 0u)
                 resolvedSeed.PlantHash = FloraGenomeLSystemUtility.HashPlant(resolvedSeed.AupCell, genome.SpeciesHash, resolvedSeed.WorldSeed, resolvedSeed.ChunkSlot);
-            resolvedSeed.HardwareTier = (byte)ResolveHardwareTier();
+            float qualityWeight01 = ResolveGenomeQualityWeight01();
+            resolvedSeed.QualityWeightQ8 = EncodeQualityWeightQ8(qualityWeight01);
             resolvedSeed.RequestedIterations = genome.MaxIterations;
             seeds[0] = resolvedSeed;
 
-            byte hardwareTier = resolvedSeed.HardwareTier;
             int safeMatrixOffset = math.max(0, matrixOffset);
             int safeHazardOffset = math.max(0, hazardOffset);
             JobHandle expandHandle = new IterativeLSystemExpanderJob
             {
                 Genomes = genomes,
                 GenomeIndex = genomeIndex,
-                HardwareTier = hardwareTier,
+                QualityWeight01 = qualityWeight01,
                 ExpandedSymbols = workspace.ExpandedSymbols,
                 ScratchSymbols = workspace.ScratchSymbols,
                 Stats = statsVault
@@ -330,7 +327,7 @@ namespace Hecton8.World
                 GenomeIndex = genomeIndex,
                 PlantIndex = 0,
                 FrameIndex = frameIndex,
-                HardwareTier = hardwareTier,
+                QualityWeight01 = qualityWeight01,
                 TurtleStack = workspace.TurtleStack,
                 BranchMatrices = workspace.BranchMatrices,
                 MatrixWriteOffset = safeMatrixOffset,
@@ -438,23 +435,20 @@ namespace Hecton8.World
             return bufferLength - offset;
         }
 
-        private static FloraGenomeHardwareTier ResolveHardwareTier()
-        {
-            float qualityWeight01 = ResolveGenomeQualityWeight01();
-            if (qualityWeight01 < MiddleHardwareQualityThreshold01)
-                return FloraGenomeHardwareTier.Low;
-            if (qualityWeight01 < HighHardwareQualityThreshold01)
-                return FloraGenomeHardwareTier.Middle;
-            if (qualityWeight01 < UltraHardwareQualityThreshold01)
-                return FloraGenomeHardwareTier.High;
-
-            return FloraGenomeHardwareTier.Ultra;
-        }
-
         private static float ResolveGenomeQualityWeight01()
         {
             float qualityWeight = HomeostasisBrain.GlobalQualityWeight;
             return math.isfinite(qualityWeight) ? math.saturate(qualityWeight) : 1f;
+        }
+
+        private static byte EncodeQualityWeightQ8(float qualityWeight01)
+        {
+            return (byte)math.clamp((int)math.round(ResolveFiniteQualityWeight01(qualityWeight01) * 255f), 0, 255);
+        }
+
+        private static float ResolveFiniteQualityWeight01(float qualityWeight01)
+        {
+            return math.saturate(math.select(1f, qualityWeight01, math.isfinite(qualityWeight01)));
         }
 
         private static void PublishBiomassSignal(

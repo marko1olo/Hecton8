@@ -145,6 +145,14 @@ namespace Crest
             }
 
             _fixMaskComputeShader = ComputeShaderHelpers.LoadShader(k_ComputeShaderFillMaskArtefacts);
+            if (_fixMaskComputeShader == null || !_fixMaskComputeShader.HasKernel(k_ComputeShaderKernelFillMaskArtefacts))
+            {
+                _fixMaskComputeShader = null;
+                _fixMaskKernel = -1;
+                _fixMaskThreadGroupSizeX = 0;
+                _fixMaskThreadGroupSizeY = 0;
+                return;
+            }
             _fixMaskKernel = _fixMaskComputeShader.FindKernel(k_ComputeShaderKernelFillMaskArtefacts);
             _fixMaskComputeShader.GetKernelThreadGroupSizes
             (
@@ -343,6 +351,15 @@ namespace Crest
             {
                 return;
             }
+            if (_fixMaskComputeShader == null || _fixMaskKernel < 0 ||
+                descriptor.width <= 0 || descriptor.height <= 0 || descriptor.volumeDepth <= 0 ||
+                _fixMaskThreadGroupSizeX == 0 || _fixMaskThreadGroupSizeY == 0)
+            {
+                return;
+            }
+
+            int groupsX = (int)(((long)descriptor.width + _fixMaskThreadGroupSizeX - 1L) / _fixMaskThreadGroupSizeX);
+            int groupsY = (int)(((long)descriptor.height + _fixMaskThreadGroupSizeY - 1L) / _fixMaskThreadGroupSizeY);
 
             buffer.SetComputeTextureParam(_fixMaskComputeShader, _fixMaskKernel, ShaderIDs.s_CrestOceanMaskTexture, target);
             buffer.SetComputeIntParam(_fixMaskComputeShader, ShaderIDs.s_CrestOceanMaskWidth, descriptor.width);
@@ -355,8 +372,8 @@ namespace Crest
                 _fixMaskComputeShader,
                 _fixMaskKernel,
                 // Viewport sizes are not perfect so round up to cover.
-                Mathf.CeilToInt((float)descriptor.width / _fixMaskThreadGroupSizeX),
-                Mathf.CeilToInt((float)descriptor.height / _fixMaskThreadGroupSizeY),
+                groupsX,
+                groupsY,
                 descriptor.volumeDepth
             );
         }

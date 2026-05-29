@@ -2107,16 +2107,17 @@ namespace Hecton8.World
                 flags |= 4u;
 
             IDataVault vault = _abyssalPathTelemetryVault;
-            if (vault == null ||
-                !vault.TryAcquireWriteLock(in _abyssalPathTelemetryHandle, AbyssalPathTelemetryOwner, out NativeArray<AbyssalPathTelemetryEntry> telemetry) ||
-                !telemetry.IsCreated ||
-                telemetry.Length < AbyssalPathTelemetryFrameCount)
-            {
+            if (vault == null)
                 return;
-            }
+
+            if (!vault.TryAcquireWriteLock(in _abyssalPathTelemetryHandle, AbyssalPathTelemetryOwner, out NativeArray<AbyssalPathTelemetryEntry> telemetry))
+                return;
 
             try
             {
+                if (!telemetry.IsCreated || telemetry.Length < AbyssalPathTelemetryFrameCount)
+                    return;
+
                 telemetry[_abyssalPathTelemetryCursor] = new AbyssalPathTelemetryEntry
                 {
                     Frame = unchecked((int)Hecton8.Core.SystemDispatcher.CurrentFrameId),

@@ -246,6 +246,7 @@ namespace Hecton8.Core
         private static Quaternion _lockedRightEyeRotation = Quaternion.identity;
         private static Vector3 _cachedHeadRuntimePosition;
         private static XRRuntimeAup48 _cachedHeadAup;
+        private static IPlayerRuntimeContext _coldPlayerContextFallback;
         private static int _cachedHeadAupFrame = -1;
         private static bool _hasCachedHeadAup;
 
@@ -351,6 +352,11 @@ namespace Hecton8.Core
 
             if (TryResolveHeadRuntimePosition(out Vector3 runtimePosition, out XRRuntimeAup48 headAup))
                 CacheHeadAup(runtimePosition, in headAup);
+        }
+
+        internal static void BindPlayerContextFallbackCold(IPlayerRuntimeContext playerContext)
+        {
+            _coldPlayerContextFallback = playerContext;
         }
 
         internal static bool TryResolveCachedHeadAup48(Vector3 runtimePosition, out XRRuntimeAup48 headAup)
@@ -752,7 +758,7 @@ namespace Hecton8.Core
                 return true;
             }
 
-            IPlayerRuntimeContext playerContext = GlobalRegistry.Player;
+            IPlayerRuntimeContext playerContext = _coldPlayerContextFallback;
             if (playerContext != null)
             {
                 if (playerContext.PlayerCamera != null)

@@ -645,9 +645,9 @@ namespace Hecton8.Construction
         private const int HeadlessDroneCapacity = 512;
         private const int DroneJobBatchSize = 64;
         private const int PhantomDroneCount = 500;
-        private const int LowTierPhantomDroneCount = 0;
-        private const int MidTierPhantomDroneCount = 192;
-        private const int HighTierPhantomDroneCount = 384;
+        private const int SurvivalPhantomDroneCount = 0;
+        private const int StandardPhantomDroneCount = 192;
+        private const int HighFidelityPhantomDroneCount = 384;
         private const uint PortableMaxComputeThreadsPerGroup = 256u;
         private const int HeadlessTaskCapacity = 64;
         private const int HeadlessPendingLaunchCapacity = HeadlessDroneCapacity;
@@ -737,9 +737,9 @@ namespace Hecton8.Construction
 #endif
         private const BufferID DroneFleetAStarPersistentStatesBufferId = (BufferID)72045;
         private const float DroneCullRadiusMeters = 1.25f;
-        private const float LowTierDroneRenderDistanceMeters = 50f;
-        private const float MidTierDroneRenderDistanceMeters = 100f;
-        private const float HighTierDroneRenderDistanceMeters = 150f;
+        private const float SurvivalDroneRenderDistanceMeters = 50f;
+        private const float StandardDroneRenderDistanceMeters = 100f;
+        private const float HighFidelityDroneRenderDistanceMeters = 150f;
         private const float PhantomDroneOrbitRadiusMeters = 20f;
         private const float PhantomDroneVerticalAmplitudeMeters = 4.5f;
         private const float PhantomDroneScaleMeters = 0.18f;
@@ -2543,40 +2543,68 @@ namespace Hecton8.Construction
                 out proceduralArgs);
         }
 
-        private static bool TryAcquireDroneRenderUploadBuffers(
-            out NativeArray<DroneRenderInstance> renderInstances,
-            out NativeArray<DroneCullingStateGpu> cullingStates,
-            out IDataVault vault)
+        private static bool TryPrepareAndUploadDroneRenderInstances(
+            NativeArray<float4x4> droneRenderMatrices,
+            NativeArray<HeadlessDroneState>.ReadOnly droneStates)
         {
-            renderInstances = default;
-            cullingStates = default;
-            vault = s_CachedDataVault;
+            if (s_DroneRenderInstanceBuffer == null)
+                return true;
+
+            IDataVault vault = s_CachedDataVault;
             if (vault == null)
                 return false;
 
-            bool renderInstancesLocked = TryAcquireDroneVaultWriteBuffer(
+            if (!TryAcquireDroneVaultWriteBuffer(
                 vault,
                 in s_DroneRenderInstancesHandle,
                 BufferID.ShinobuDroneFleetRenderInstances,
                 HeadlessDroneCapacity,
-                out renderInstances);
-            if (!renderInstancesLocked)
+                out NativeArray<DroneRenderInstance> renderInstances))
+            {
+                return false;
+            }
+
+            try
+            {
+                PrepareDroneRenderInstances(renderInstances, droneRenderMatrices, droneStates);
+                GraphicsBufferUploadUtility.UploadNativeArray(s_DroneRenderInstanceBuffer, renderInstances, HeadlessDroneCapacity);
+                return true;
+            }
+            finally
+            {
+                vault.ReleaseWriteLock(in s_DroneRenderInstancesHandle, SystemID.Construction);
+            }
+        }
+
+        private static bool TryPrepareAndUploadDroneCullingStates(NativeArray<HeadlessDroneState>.ReadOnly droneStates)
+        {
+            if (s_DroneStateGpuBuffer == null)
+                return true;
+
+            IDataVault vault = s_CachedDataVault;
+            if (vault == null)
                 return false;
 
-            bool cullingStatesLocked = TryAcquireDroneVaultWriteBuffer(
+            if (!TryAcquireDroneVaultWriteBuffer(
                 vault,
                 in s_DroneCullingStatesHandle,
                 BufferID.DroneFleetCullingStates,
                 HeadlessDroneCapacity,
-                out cullingStates);
-            if (!cullingStatesLocked)
+                out NativeArray<DroneCullingStateGpu> cullingStates))
             {
-                vault.ReleaseWriteLock(in s_DroneRenderInstancesHandle, SystemID.Construction);
-                renderInstances = default;
                 return false;
             }
 
-            return true;
+            try
+            {
+                PrepareDroneCullingStates(cullingStates, droneStates);
+                GraphicsBufferUploadUtility.UploadNativeArray(s_DroneStateGpuBuffer, cullingStates, HeadlessDroneCapacity);
+                return true;
+            }
+            finally
+            {
+                vault.ReleaseWriteLock(in s_DroneCullingStatesHandle, SystemID.Construction);
+            }
         }
 
         private static bool TryResolveDroneProceduralArgsForUpload(
@@ -3548,24 +3576,24 @@ namespace Hecton8.Construction
                 tuning.CargoCapacity = fallback.CargoCapacity;
             if (tuning.MiningHoldSeconds <= 0f)
                 tuning.MiningHoldSeconds = fallback.MiningHoldSeconds;
-            if (tuning.LowTierSteeringHz <= 0f)
-                tuning.LowTierSteeringHz = fallback.LowTierSteeringHz;
-            if (tuning.MidTierSteeringHz <= 0f)
-                tuning.MidTierSteeringHz = fallback.MidTierSteeringHz;
-            if (tuning.HighTierSteeringHz <= 0f)
-                tuning.HighTierSteeringHz = fallback.HighTierSteeringHz;
-            if (tuning.UltraTierSteeringHz <= 0f)
-                tuning.UltraTierSteeringHz = fallback.UltraTierSteeringHz;
+            if (tuning.SurvivalSteeringHz <= 0f)
+                tuning.SurvivalSteeringHz = fallback.SurvivalSteeringHz;
+            if (tuning.StandardSteeringHz <= 0f)
+                tuning.StandardSteeringHz = fallback.StandardSteeringHz;
+            if (tuning.HighFidelitySteeringHz <= 0f)
+                tuning.HighFidelitySteeringHz = fallback.HighFidelitySteeringHz;
+            if (tuning.OverkillSteeringHz <= 0f)
+                tuning.OverkillSteeringHz = fallback.OverkillSteeringHz;
             if (tuning.AStarCellSize <= 0f)
                 tuning.AStarCellSize = fallback.AStarCellSize;
-            if (tuning.LowTierSolveBudget <= 0f)
-                tuning.LowTierSolveBudget = fallback.LowTierSolveBudget;
-            if (tuning.MidTierSolveBudget <= 0f)
-                tuning.MidTierSolveBudget = fallback.MidTierSolveBudget;
-            if (tuning.HighTierSolveBudget <= 0f)
-                tuning.HighTierSolveBudget = fallback.HighTierSolveBudget;
-            if (tuning.UltraTierSolveBudget <= 0f)
-                tuning.UltraTierSolveBudget = fallback.UltraTierSolveBudget;
+            if (tuning.SurvivalSolveBudget <= 0f)
+                tuning.SurvivalSolveBudget = fallback.SurvivalSolveBudget;
+            if (tuning.StandardSolveBudget <= 0f)
+                tuning.StandardSolveBudget = fallback.StandardSolveBudget;
+            if (tuning.HighFidelitySolveBudget <= 0f)
+                tuning.HighFidelitySolveBudget = fallback.HighFidelitySolveBudget;
+            if (tuning.OverkillSolveBudget <= 0f)
+                tuning.OverkillSolveBudget = fallback.OverkillSolveBudget;
 
             tuning.MaxDroneSpeed = Mathf.Clamp(tuning.MaxDroneSpeed, 0.5f, 24f);
             tuning.BatteryDrainRate = Mathf.Clamp(tuning.BatteryDrainRate, 0.01f, 25f);
@@ -3573,15 +3601,15 @@ namespace Hecton8.Construction
             tuning.RepairSpeed = Mathf.Clamp(tuning.RepairSpeed, 0.05f, 8f);
             tuning.CargoCapacity = Mathf.Clamp(tuning.CargoCapacity, 1f, 64f);
             tuning.MiningHoldSeconds = Mathf.Clamp(tuning.MiningHoldSeconds, 0.01f, 5f);
-            tuning.LowTierSteeringHz = Mathf.Clamp(tuning.LowTierSteeringHz, 5f, 60f);
-            tuning.MidTierSteeringHz = Mathf.Clamp(tuning.MidTierSteeringHz, 10f, 60f);
-            tuning.HighTierSteeringHz = Mathf.Clamp(tuning.HighTierSteeringHz, 15f, 120f);
-            tuning.UltraTierSteeringHz = Mathf.Clamp(tuning.UltraTierSteeringHz, 15f, 120f);
+            tuning.SurvivalSteeringHz = Mathf.Clamp(tuning.SurvivalSteeringHz, 5f, 60f);
+            tuning.StandardSteeringHz = Mathf.Clamp(tuning.StandardSteeringHz, 10f, 60f);
+            tuning.HighFidelitySteeringHz = Mathf.Clamp(tuning.HighFidelitySteeringHz, 15f, 120f);
+            tuning.OverkillSteeringHz = Mathf.Clamp(tuning.OverkillSteeringHz, 15f, 120f);
             tuning.AStarCellSize = Mathf.Clamp(tuning.AStarCellSize, 1f, 12f);
-            tuning.LowTierSolveBudget = Mathf.Clamp(tuning.LowTierSolveBudget, 1f, HeadlessDroneCapacity);
-            tuning.MidTierSolveBudget = Mathf.Clamp(tuning.MidTierSolveBudget, 1f, HeadlessDroneCapacity);
-            tuning.HighTierSolveBudget = Mathf.Clamp(tuning.HighTierSolveBudget, 1f, HeadlessDroneCapacity);
-            tuning.UltraTierSolveBudget = Mathf.Clamp(tuning.UltraTierSolveBudget, 1f, HeadlessDroneCapacity);
+            tuning.SurvivalSolveBudget = Mathf.Clamp(tuning.SurvivalSolveBudget, 1f, HeadlessDroneCapacity);
+            tuning.StandardSolveBudget = Mathf.Clamp(tuning.StandardSolveBudget, 1f, HeadlessDroneCapacity);
+            tuning.HighFidelitySolveBudget = Mathf.Clamp(tuning.HighFidelitySolveBudget, 1f, HeadlessDroneCapacity);
+            tuning.OverkillSolveBudget = Mathf.Clamp(tuning.OverkillSolveBudget, 1f, HeadlessDroneCapacity);
             tuning.Reserved0 = Mathf.Clamp(tuning.Reserved0, 0f, 4f);
             return tuning;
         }
@@ -3826,8 +3854,8 @@ namespace Hecton8.Construction
         private static int ResolveDroneSteeringTickModulo(in DroneFleetTuningConstants tuning)
         {
             float quality = ResolveDroneSimulationQualityWeight();
-            float lowHz = Mathf.Max(1f, tuning.LowTierSteeringHz);
-            float highHz = Mathf.Max(lowHz, tuning.UltraTierSteeringHz);
+            float lowHz = Mathf.Max(1f, tuning.SurvivalSteeringHz);
+            float highHz = Mathf.Max(lowHz, tuning.OverkillSteeringHz);
             float targetHz = math.lerp(lowHz, highHz, quality);
             return Mathf.Clamp(Mathf.RoundToInt(60f / Mathf.Max(1f, targetHz)), 1, 12);
         }
@@ -3837,8 +3865,8 @@ namespace Hecton8.Construction
             float quality = ResolveDroneSimulationQualityWeight();
             float smoothedQuality = quality * quality * (3f - (2f * quality));
             float budget = math.lerp(
-                Mathf.Max(1f, tuning.LowTierSolveBudget),
-                Mathf.Max(1f, tuning.UltraTierSolveBudget),
+                Mathf.Max(1f, tuning.SurvivalSolveBudget),
+                Mathf.Max(1f, tuning.OverkillSolveBudget),
                 smoothedQuality);
             return Mathf.Clamp(Mathf.RoundToInt(budget), 1, HeadlessDroneCapacity);
         }
@@ -3847,8 +3875,8 @@ namespace Hecton8.Construction
         {
             float quality = ResolveDroneSimulationQualityWeight();
             float smoothedQuality = quality * quality * (3f - (2f * quality));
-            float lowBudget = math.max(48f, tuning.LowTierSolveBudget * 24f);
-            float highBudget = math.max(lowBudget, tuning.UltraTierSolveBudget * 48f);
+            float lowBudget = math.max(48f, tuning.SurvivalSolveBudget * 24f);
+            float highBudget = math.max(lowBudget, tuning.OverkillSolveBudget * 48f);
             float budget = math.lerp(lowBudget, highBudget, smoothedQuality);
             return Mathf.Clamp(Mathf.RoundToInt(budget), 16, DroneAStarNodeCapacity);
         }
@@ -6462,12 +6490,12 @@ namespace Hecton8.Construction
         private static int ResolvePhantomDroneDrawCount()
         {
             float quality = ResolveGlobalQualityWeight();
-            return Mathf.Clamp(Mathf.RoundToInt(math.lerp(LowTierPhantomDroneCount, PhantomDroneCount, quality)), 0, PhantomDroneCount);
+            return Mathf.Clamp(Mathf.RoundToInt(math.lerp(SurvivalPhantomDroneCount, PhantomDroneCount, quality)), 0, PhantomDroneCount);
         }
 
         private static int ResolveKernelThreadGroupSizeX(ComputeShader compute, int kernel)
         {
-            if (compute == null || kernel < 0 || !HardwareTierDetector.AllowHighResourceComputeShaders || !compute.IsSupported(kernel))
+            if (compute == null || kernel < 0 || !compute.IsSupported(kernel))
                 return 0;
 
             compute.GetKernelThreadGroupSizes(kernel, out uint sizeX, out uint sizeY, out uint sizeZ);
@@ -6545,7 +6573,7 @@ namespace Hecton8.Construction
                 s_DroneCullingCompute = UnityEditor.AssetDatabase.LoadAssetAtPath<ComputeShader>(DroneCullingComputeAssetPath);
 #endif
 
-            if (s_DroneCullingCompute == null || !HardwareTierDetector.AllowHighResourceComputeShaders)
+            if (s_DroneCullingCompute == null)
                 return;
 
             if (s_DroneCullingCompute.HasKernel("CS_ClearArgs"))
@@ -6585,7 +6613,7 @@ namespace Hecton8.Construction
                 s_PhantomDronesCompute = UnityEditor.AssetDatabase.LoadAssetAtPath<ComputeShader>(PhantomDronesComputeAssetPath);
 #endif
 
-            if (s_PhantomDronesCompute == null || !HardwareTierDetector.AllowHighResourceComputeShaders)
+            if (s_PhantomDronesCompute == null)
                 return;
 
             if (s_PhantomDronesCompute.HasKernel("CS_UpdatePhantomDrones"))
@@ -6628,87 +6656,69 @@ namespace Hecton8.Construction
                 !TryOpenDroneRenderMatrices(out NativeArray<float4x4> droneRenderMatrices) ||
                 !TryReadDroneStates(out NativeArray<HeadlessDroneState>.ReadOnly droneStates) ||
                 !TryResolveDroneProceduralArgsForUpload(
-                    out NativeArray<DroneProceduralIndirectArgsDTO> proceduralArgs) ||
-                !TryAcquireDroneRenderUploadBuffers(
-                    out NativeArray<DroneRenderInstance> renderInstances,
-                    out NativeArray<DroneCullingStateGpu> cullingStates,
-                    out IDataVault renderUploadVault))
+                    out NativeArray<DroneProceduralIndirectArgsDTO> proceduralArgs))
             {
                 return;
             }
 
-            try
+            GraphicsBufferUploadUtility.UploadNativeArray(matrixBuffer, droneRenderMatrices, HeadlessDroneCapacity);
+            if (!TryPrepareAndUploadDroneRenderInstances(droneRenderMatrices, droneStates) ||
+                !TryPrepareAndUploadDroneCullingStates(droneStates))
             {
-                GraphicsBufferUploadUtility.UploadNativeArray(matrixBuffer, droneRenderMatrices, HeadlessDroneCapacity);
-                PrepareDroneRenderInstances(renderInstances, cullingStates, droneRenderMatrices, droneStates);
-                if (s_DroneStateGpuBuffer != null && cullingStates.IsCreated)
-                    GraphicsBufferUploadUtility.UploadNativeArray(s_DroneStateGpuBuffer, cullingStates, HeadlessDroneCapacity);
-                if (s_DroneRenderInstanceBuffer != null && renderInstances.IsCreated)
-                    GraphicsBufferUploadUtility.UploadNativeArray(s_DroneRenderInstanceBuffer, renderInstances, HeadlessDroneCapacity);
+                return;
+            }
 
-                if (proceduralArgs.IsCreated && proceduralArgs.Length > 0)
+            if (proceduralArgs.IsCreated && proceduralArgs.Length > 0)
+            {
+                DroneProceduralIndirectArgsDTO args = proceduralArgs[0];
+                if (args.VertexCountPerInstance == 0u ||
+                    args.InstanceCount == 0u)
                 {
-                    DroneProceduralIndirectArgsDTO args = proceduralArgs[0];
-                    if (args.VertexCountPerInstance == 0u ||
-                        args.InstanceCount == 0u)
-                    {
-                        return;
-                    }
-                }
-                else
-                    return;
-
-                GraphicsBufferUploadUtility.UploadNativeArrayAndCopyWholeBuffer(
-                    s_DroneProceduralArgsUploadBuffer,
-                    s_DroneProceduralArgsBuffer,
-                    proceduralArgs,
-                    1);
-                if (TryRenderGpuCulledFleet(matrixBuffer))
-                {
-                    s_DroneMatrixUploadBufferIndex ^= 1;
                     return;
                 }
+            }
+            else
+                return;
 
-                s_DroneProceduralMaterial.SetBuffer(s_DroneMatricesPropertyId, matrixBuffer);
-                s_DroneProceduralMaterial.SetBuffer(s_InstanceMatricesPropertyId, matrixBuffer);
-                s_DroneProceduralMaterial.SetBuffer(s_PhantomColorsPropertyId, s_DroneDefaultColorBuffer);
-                if (s_DroneRenderInstanceBuffer != null)
-                    s_DroneProceduralMaterial.SetBuffer(s_DroneRenderInstancesPropertyId, s_DroneRenderInstanceBuffer);
-
-                Vector3 origin = ResolveDroneRenderReferencePosition();
-                s_DroneProceduralMaterial.SetVector(s_DroneProceduralCameraOriginPropertyId, new Vector4(origin.x, origin.y, origin.z, 0f));
-                s_DroneProceduralMaterial.SetInt(s_UsePhantomColorsPropertyId, 0);
-
-                UnityEngine.Graphics.DrawProceduralIndirect(
-                    s_DroneProceduralMaterial,
-                    s_DroneDrawBounds,
-                    MeshTopology.Triangles,
-                    s_DroneProceduralArgsBuffer,
-                    0,
-                    null,
-                    null,
-                    ShadowCastingMode.Off,
-                    false,
-                    s_DroneRenderLayer);
+            GraphicsBufferUploadUtility.UploadNativeArrayAndCopyWholeBuffer(
+                s_DroneProceduralArgsUploadBuffer,
+                s_DroneProceduralArgsBuffer,
+                proceduralArgs,
+                1);
+            if (TryRenderGpuCulledFleet(matrixBuffer))
+            {
                 s_DroneMatrixUploadBufferIndex ^= 1;
+                return;
             }
-            finally
-            {
-                if (renderUploadVault != null)
-                {
-                    renderUploadVault.ReleaseWriteLock(in s_DroneCullingStatesHandle, SystemID.Construction);
-                    renderUploadVault.ReleaseWriteLock(in s_DroneRenderInstancesHandle, SystemID.Construction);
-                }
-            }
+
+            s_DroneProceduralMaterial.SetBuffer(s_DroneMatricesPropertyId, matrixBuffer);
+            s_DroneProceduralMaterial.SetBuffer(s_InstanceMatricesPropertyId, matrixBuffer);
+            s_DroneProceduralMaterial.SetBuffer(s_PhantomColorsPropertyId, s_DroneDefaultColorBuffer);
+            if (s_DroneRenderInstanceBuffer != null)
+                s_DroneProceduralMaterial.SetBuffer(s_DroneRenderInstancesPropertyId, s_DroneRenderInstanceBuffer);
+
+            Vector3 origin = ResolveDroneRenderReferencePosition();
+            s_DroneProceduralMaterial.SetVector(s_DroneProceduralCameraOriginPropertyId, new Vector4(origin.x, origin.y, origin.z, 0f));
+            s_DroneProceduralMaterial.SetInt(s_UsePhantomColorsPropertyId, 0);
+
+            UnityEngine.Graphics.DrawProceduralIndirect(
+                s_DroneProceduralMaterial,
+                s_DroneDrawBounds,
+                MeshTopology.Triangles,
+                s_DroneProceduralArgsBuffer,
+                0,
+                null,
+                null,
+                ShadowCastingMode.Off,
+                false,
+                s_DroneRenderLayer);
+            s_DroneMatrixUploadBufferIndex ^= 1;
         }
 
         private static void RenderPhantomSwarm(float deltaTime)
         {
             int phantomDrawCount = ResolvePhantomDroneDrawCount();
             if (phantomDrawCount <= 0)
-                return;
-
-            if (!HardwareTierDetector.AllowHighResourceComputeShaders)
                 return;
 
             if (!TryResolvePhantomAnchor(out Vector3 anchor) || !EnsurePhantomRenderResources())
@@ -6787,7 +6797,6 @@ namespace Hecton8.Construction
 
         private static void PrepareDroneRenderInstances(
             NativeArray<DroneRenderInstance> renderInstances,
-            NativeArray<DroneCullingStateGpu> cullingStates,
             NativeArray<float4x4> droneRenderMatrices,
             NativeArray<HeadlessDroneState>.ReadOnly droneStates)
         {
@@ -6806,15 +6815,24 @@ namespace Hecton8.Construction
                     TransactionProgress = transactionProgress,
                     Padding = float3.zero
                 };
+            }
+        }
 
-                if (cullingStates.IsCreated)
+        private static void PrepareDroneCullingStates(
+            NativeArray<DroneCullingStateGpu> cullingStates,
+            NativeArray<HeadlessDroneState>.ReadOnly droneStates)
+        {
+            if (!cullingStates.IsCreated || droneStates.Length <= 0)
+                return;
+
+            for (int i = 0; i < HeadlessDroneCapacity; i++)
+            {
+                HeadlessDroneState drone = droneStates[i];
+                cullingStates[i] = new DroneCullingStateGpu
                 {
-                    cullingStates[i] = new DroneCullingStateGpu
-                    {
-                        Position = drone.Position,
-                        PackedStateFactionCorridor = PackStateFactionCorridor(in drone)
-                    };
-                }
+                    Position = drone.Position,
+                    PackedStateFactionCorridor = PackStateFactionCorridor(in drone)
+                };
             }
         }
 
@@ -6906,7 +6924,7 @@ namespace Hecton8.Construction
         private static float ResolveDroneRenderDistanceMeters()
         {
             float quality = ResolveGlobalQualityWeight();
-            return math.lerp(LowTierDroneRenderDistanceMeters, HighTierDroneRenderDistanceMeters, quality);
+            return math.lerp(SurvivalDroneRenderDistanceMeters, HighFidelityDroneRenderDistanceMeters, quality);
         }
 
         private static void UpdateDrawBounds()
@@ -7605,15 +7623,23 @@ namespace Hecton8.Construction
                 AsciiEqualsIgnoreCase(bytes, start, end, nameof(DroneFleetTuningConstants.CargoCapacity)) ||
                 AsciiEqualsIgnoreCase(bytes, start, end, "Cargo") ||
                 AsciiEqualsIgnoreCase(bytes, start, end, nameof(DroneFleetTuningConstants.MiningHoldSeconds)) ||
-                AsciiEqualsIgnoreCase(bytes, start, end, nameof(DroneFleetTuningConstants.LowTierSteeringHz)) ||
-                AsciiEqualsIgnoreCase(bytes, start, end, nameof(DroneFleetTuningConstants.MidTierSteeringHz)) ||
-                AsciiEqualsIgnoreCase(bytes, start, end, nameof(DroneFleetTuningConstants.HighTierSteeringHz)) ||
-                AsciiEqualsIgnoreCase(bytes, start, end, nameof(DroneFleetTuningConstants.UltraTierSteeringHz)) ||
+                AsciiEqualsIgnoreCase(bytes, start, end, nameof(DroneFleetTuningConstants.SurvivalSteeringHz)) ||
+                AsciiEqualsIgnoreCase(bytes, start, end, "LowTierSteeringHz") ||
+                AsciiEqualsIgnoreCase(bytes, start, end, nameof(DroneFleetTuningConstants.StandardSteeringHz)) ||
+                AsciiEqualsIgnoreCase(bytes, start, end, "MidTierSteeringHz") ||
+                AsciiEqualsIgnoreCase(bytes, start, end, nameof(DroneFleetTuningConstants.HighFidelitySteeringHz)) ||
+                AsciiEqualsIgnoreCase(bytes, start, end, "HighTierSteeringHz") ||
+                AsciiEqualsIgnoreCase(bytes, start, end, nameof(DroneFleetTuningConstants.OverkillSteeringHz)) ||
+                AsciiEqualsIgnoreCase(bytes, start, end, "UltraTierSteeringHz") ||
                 AsciiEqualsIgnoreCase(bytes, start, end, nameof(DroneFleetTuningConstants.AStarCellSize)) ||
-                AsciiEqualsIgnoreCase(bytes, start, end, nameof(DroneFleetTuningConstants.LowTierSolveBudget)) ||
-                AsciiEqualsIgnoreCase(bytes, start, end, nameof(DroneFleetTuningConstants.MidTierSolveBudget)) ||
-                AsciiEqualsIgnoreCase(bytes, start, end, nameof(DroneFleetTuningConstants.HighTierSolveBudget)) ||
-                AsciiEqualsIgnoreCase(bytes, start, end, nameof(DroneFleetTuningConstants.UltraTierSolveBudget)) ||
+                AsciiEqualsIgnoreCase(bytes, start, end, nameof(DroneFleetTuningConstants.SurvivalSolveBudget)) ||
+                AsciiEqualsIgnoreCase(bytes, start, end, "LowTierSolveBudget") ||
+                AsciiEqualsIgnoreCase(bytes, start, end, nameof(DroneFleetTuningConstants.StandardSolveBudget)) ||
+                AsciiEqualsIgnoreCase(bytes, start, end, "MidTierSolveBudget") ||
+                AsciiEqualsIgnoreCase(bytes, start, end, nameof(DroneFleetTuningConstants.HighFidelitySolveBudget)) ||
+                AsciiEqualsIgnoreCase(bytes, start, end, "HighTierSolveBudget") ||
+                AsciiEqualsIgnoreCase(bytes, start, end, nameof(DroneFleetTuningConstants.OverkillSolveBudget)) ||
+                AsciiEqualsIgnoreCase(bytes, start, end, "UltraTierSolveBudget") ||
                 AsciiEqualsIgnoreCase(bytes, start, end, "MaxNodesExpandedPerFrame") ||
                 AsciiEqualsIgnoreCase(bytes, start, end, nameof(DroneFleetTuningConstants.Reserved0)) ||
                 AsciiEqualsIgnoreCase(bytes, start, end, "HeuristicWeight");
@@ -7663,27 +7689,31 @@ namespace Hecton8.Construction
                 return true;
             }
 
-            if (AsciiEqualsIgnoreCase(bytes, keyStart, keyEnd, nameof(DroneFleetTuningConstants.LowTierSteeringHz)))
+            if (AsciiEqualsIgnoreCase(bytes, keyStart, keyEnd, nameof(DroneFleetTuningConstants.SurvivalSteeringHz)) ||
+                AsciiEqualsIgnoreCase(bytes, keyStart, keyEnd, "LowTierSteeringHz"))
             {
-                tuning.LowTierSteeringHz = value;
+                tuning.SurvivalSteeringHz = value;
                 return true;
             }
 
-            if (AsciiEqualsIgnoreCase(bytes, keyStart, keyEnd, nameof(DroneFleetTuningConstants.MidTierSteeringHz)))
+            if (AsciiEqualsIgnoreCase(bytes, keyStart, keyEnd, nameof(DroneFleetTuningConstants.StandardSteeringHz)) ||
+                AsciiEqualsIgnoreCase(bytes, keyStart, keyEnd, "MidTierSteeringHz"))
             {
-                tuning.MidTierSteeringHz = value;
+                tuning.StandardSteeringHz = value;
                 return true;
             }
 
-            if (AsciiEqualsIgnoreCase(bytes, keyStart, keyEnd, nameof(DroneFleetTuningConstants.HighTierSteeringHz)))
+            if (AsciiEqualsIgnoreCase(bytes, keyStart, keyEnd, nameof(DroneFleetTuningConstants.HighFidelitySteeringHz)) ||
+                AsciiEqualsIgnoreCase(bytes, keyStart, keyEnd, "HighTierSteeringHz"))
             {
-                tuning.HighTierSteeringHz = value;
+                tuning.HighFidelitySteeringHz = value;
                 return true;
             }
 
-            if (AsciiEqualsIgnoreCase(bytes, keyStart, keyEnd, nameof(DroneFleetTuningConstants.UltraTierSteeringHz)))
+            if (AsciiEqualsIgnoreCase(bytes, keyStart, keyEnd, nameof(DroneFleetTuningConstants.OverkillSteeringHz)) ||
+                AsciiEqualsIgnoreCase(bytes, keyStart, keyEnd, "UltraTierSteeringHz"))
             {
-                tuning.UltraTierSteeringHz = value;
+                tuning.OverkillSteeringHz = value;
                 return true;
             }
 
@@ -7693,33 +7723,37 @@ namespace Hecton8.Construction
                 return true;
             }
 
-            if (AsciiEqualsIgnoreCase(bytes, keyStart, keyEnd, nameof(DroneFleetTuningConstants.LowTierSolveBudget)))
+            if (AsciiEqualsIgnoreCase(bytes, keyStart, keyEnd, nameof(DroneFleetTuningConstants.SurvivalSolveBudget)) ||
+                AsciiEqualsIgnoreCase(bytes, keyStart, keyEnd, "LowTierSolveBudget"))
             {
-                tuning.LowTierSolveBudget = value;
+                tuning.SurvivalSolveBudget = value;
                 return true;
             }
 
-            if (AsciiEqualsIgnoreCase(bytes, keyStart, keyEnd, nameof(DroneFleetTuningConstants.MidTierSolveBudget)))
+            if (AsciiEqualsIgnoreCase(bytes, keyStart, keyEnd, nameof(DroneFleetTuningConstants.StandardSolveBudget)) ||
+                AsciiEqualsIgnoreCase(bytes, keyStart, keyEnd, "MidTierSolveBudget"))
             {
-                tuning.MidTierSolveBudget = value;
+                tuning.StandardSolveBudget = value;
                 return true;
             }
 
-            if (AsciiEqualsIgnoreCase(bytes, keyStart, keyEnd, nameof(DroneFleetTuningConstants.HighTierSolveBudget)))
+            if (AsciiEqualsIgnoreCase(bytes, keyStart, keyEnd, nameof(DroneFleetTuningConstants.HighFidelitySolveBudget)) ||
+                AsciiEqualsIgnoreCase(bytes, keyStart, keyEnd, "HighTierSolveBudget"))
             {
-                tuning.HighTierSolveBudget = value;
+                tuning.HighFidelitySolveBudget = value;
                 return true;
             }
 
-            if (AsciiEqualsIgnoreCase(bytes, keyStart, keyEnd, nameof(DroneFleetTuningConstants.UltraTierSolveBudget)))
+            if (AsciiEqualsIgnoreCase(bytes, keyStart, keyEnd, nameof(DroneFleetTuningConstants.OverkillSolveBudget)) ||
+                AsciiEqualsIgnoreCase(bytes, keyStart, keyEnd, "UltraTierSolveBudget"))
             {
-                tuning.UltraTierSolveBudget = value;
+                tuning.OverkillSolveBudget = value;
                 return true;
             }
 
             if (AsciiEqualsIgnoreCase(bytes, keyStart, keyEnd, "MaxNodesExpandedPerFrame"))
             {
-                tuning.UltraTierSolveBudget = math.max(1f, value * (1f / 48f));
+                tuning.OverkillSolveBudget = math.max(1f, value * (1f / 48f));
                 return true;
             }
 

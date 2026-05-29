@@ -179,6 +179,16 @@ namespace Hecton8.Caves
         private static readonly int _recentCutHeatPositionRadiusId = Shader.PropertyToID("_HectonRecentCutHeatPositionRadius");
         private static readonly int _recentCutHeatStrengthTimeId = Shader.PropertyToID("_HectonRecentCutHeatStrengthTime");
         private static readonly int _recentCutHeatCountId = Shader.PropertyToID("_HectonRecentCutHeatCount");
+        private static readonly ulong CompactionScratchMutationGuardMask =
+            VoxelDeltaMutationGuardBit(BufferID.SaveVoxelDeltaCompactionSourceSdfScratch) |
+            VoxelDeltaMutationGuardBit(BufferID.SaveVoxelDeltaCompactionDirtyMaskScratch) |
+            VoxelDeltaMutationGuardBit(BufferID.SaveVoxelDeltaCompactionDeltaSdfScratch) |
+            VoxelDeltaMutationGuardBit(BufferID.SaveVoxelDeltaCompactionMaterialScratch) |
+            VoxelDeltaMutationGuardBit(BufferID.SaveVoxelDeltaCompactionFlagsScratch) |
+            VoxelDeltaMutationGuardBit(BufferID.SaveVoxelDeltaCompactionOutputSdfScratch) |
+            VoxelDeltaMutationGuardBit(BufferID.SaveVoxelDeltaCompactionOutputMaterialsScratch) |
+            VoxelDeltaMutationGuardBit(BufferID.SaveVoxelDeltaCompactionOutputFlagsScratch) |
+            VoxelDeltaMutationGuardBit(BufferID.SaveVoxelDeltaCompactionUniformFlagScratch);
         // COLD ALLOC: Vector4[16] - shader heat ring position-radius upload - owner: VoxelDeltaProcessor
         private static readonly Vector4[] s_recentCutHeatPositionRadius = new Vector4[RecentCutHeatMax];
         // COLD ALLOC: Vector4[16] - shader heat ring strength-time upload - owner: VoxelDeltaProcessor
@@ -270,7 +280,8 @@ namespace Hecton8.Caves
         private VaultGenerationHandle<byte> _compactionUniformFlagScratchHandle;
         private bool _compactionScratchCreated;
         private bool _compactionScratchLeased;
-        private int _compactionScratchLockCount;
+        private bool _compactionScratchGuardHeld;
+        private IDataVault _compactionScratchGuardVault;
         private VaultGenerationHandle<byte> _nativeSnapshotScratchHandle;
         private int _nativeSnapshotScratchCapacityBytes;
         private int _nativeSnapshotScratchLeaseCount;
@@ -447,6 +458,7 @@ namespace Hecton8.Caves
                 _scheduledCarveWritesLocked ||
                 _scheduledCompactionRunning ||
                 _compactionScratchLeased ||
+                _compactionScratchGuardHeld ||
                 _nativeSnapshotScratchLeaseCount > 0)
             {
                 DeferDataVaultRebind(previousVault, nextVault, _chunkStates.Count + _pendingCompactionCount);
@@ -527,6 +539,7 @@ namespace Hecton8.Caves
                 _scheduledCarveWritesLocked ||
                 _scheduledCompactionRunning ||
                 _compactionScratchLeased ||
+                _compactionScratchGuardHeld ||
                 _nativeSnapshotScratchLeaseCount > 0)
             {
                 return false;
@@ -1298,7 +1311,9 @@ namespace Hecton8.Caves
 
         private static bool IsExactVaultHandle<T>(in VaultGenerationHandle<T> handle, BufferID expectedBufferId) where T : struct
         {
-            return handle.BufferID == unchecked((uint)(int)expectedBufferId) && handle.Generation != 0u;
+            return handle.BufferID == unchecked((uint)(int)expectedBufferId) &&
+                   handle.SystemID == (uint)SystemID.TerrainSeams &&
+                   handle.Generation != 0u;
         }
 
         private bool TryAcquireQueuedCarveEventBuffer(out IDataVault vault, out NativeArray<VoxelCarveEvent> queue)
@@ -5515,7 +5530,7 @@ namespace Hecton8.Caves
             EnsureCompactionScratchBuffers();
             if (_compactionScratchLeased ||
                 sourceSdfLength <= 0 ||
-                !TryLockCompactionScratchBuffers())
+                !TryPinCompactionScratchBuffers())
             {
                 sourceSdf = default;
                 dirtyMaskCopy = default;
@@ -5581,122 +5596,47 @@ namespace Hecton8.Caves
             return true;
         }
 
-        private bool TryLockCompactionScratchBuffers()
+        private bool TryPinCompactionScratchBuffers()
         {
             IDataVault vault = ResolveDataVault();
-            if (vault == null || vault.IsCompactionFenceActive || _compactionScratchLockCount != 0)
+            if (vault == null || vault.IsCompactionFenceActive || _compactionScratchGuardHeld)
                 return false;
 
-            int lockedCount = 0;
-            if (!TryLockCompactionScratchBuffer(vault, BufferID.SaveVoxelDeltaCompactionSourceSdfScratch))
+            if (!vault.TryAcquireMutationGuard(CompactionScratchMutationGuardMask))
                 return false;
-            lockedCount = 1;
-            if (!TryLockCompactionScratchBuffer(vault, BufferID.SaveVoxelDeltaCompactionDirtyMaskScratch))
+
+            _compactionScratchGuardVault = vault;
+            _compactionScratchGuardHeld = true;
+
+            if (vault.IsCompactionFenceActive ||
+                !TryResolveCompactionScratchBuffers(
+                    vault,
+                    out _,
+                    out _,
+                    out _,
+                    out _,
+                    out _,
+                    out _,
+                    out _,
+                    out _,
+                    out _))
             {
-                UnlockCompactionScratchBuffers(vault, lockedCount);
-                return false;
-            }
-            lockedCount = 2;
-            if (!TryLockCompactionScratchBuffer(vault, BufferID.SaveVoxelDeltaCompactionDeltaSdfScratch))
-            {
-                UnlockCompactionScratchBuffers(vault, lockedCount);
-                return false;
-            }
-            lockedCount = 3;
-            if (!TryLockCompactionScratchBuffer(vault, BufferID.SaveVoxelDeltaCompactionMaterialScratch))
-            {
-                UnlockCompactionScratchBuffers(vault, lockedCount);
-                return false;
-            }
-            lockedCount = 4;
-            if (!TryLockCompactionScratchBuffer(vault, BufferID.SaveVoxelDeltaCompactionFlagsScratch))
-            {
-                UnlockCompactionScratchBuffers(vault, lockedCount);
-                return false;
-            }
-            lockedCount = 5;
-            if (!TryLockCompactionScratchBuffer(vault, BufferID.SaveVoxelDeltaCompactionOutputSdfScratch))
-            {
-                UnlockCompactionScratchBuffers(vault, lockedCount);
-                return false;
-            }
-            lockedCount = 6;
-            if (!TryLockCompactionScratchBuffer(vault, BufferID.SaveVoxelDeltaCompactionOutputMaterialsScratch))
-            {
-                UnlockCompactionScratchBuffers(vault, lockedCount);
-                return false;
-            }
-            lockedCount = 7;
-            if (!TryLockCompactionScratchBuffer(vault, BufferID.SaveVoxelDeltaCompactionOutputFlagsScratch))
-            {
-                UnlockCompactionScratchBuffers(vault, lockedCount);
-                return false;
-            }
-            lockedCount = 8;
-            if (!TryLockCompactionScratchBuffer(vault, BufferID.SaveVoxelDeltaCompactionUniformFlagScratch))
-            {
-                UnlockCompactionScratchBuffers(vault, lockedCount);
+                UnlockCompactionScratchBuffers();
                 return false;
             }
 
-            if (vault.IsCompactionFenceActive)
-            {
-                UnlockCompactionScratchBuffers(vault, 9);
-                return false;
-            }
-
-            _compactionScratchLockCount = 9;
             return true;
         }
 
         private void UnlockCompactionScratchBuffers()
         {
-            int lockedCount = _compactionScratchLockCount;
-            if (lockedCount <= 0)
+            if (!_compactionScratchGuardHeld)
                 return;
 
-            _compactionScratchLockCount = 0;
-            UnlockCompactionScratchBuffers(ResolveDataVault(), lockedCount);
-        }
-
-        private static bool TryLockCompactionScratchBuffer(IDataVault vault, BufferID bufferId)
-        {
-            if (vault == null || vault.IsCompactionFenceActive)
-                return false;
-
-            if (!vault.TryLockBuffer(bufferId, SystemID.TerrainSeams))
-                return false;
-
-            if (!vault.IsCompactionFenceActive)
-                return true;
-
-            vault.TryUnlockBuffer(bufferId, SystemID.TerrainSeams);
-            return false;
-        }
-
-        private static void UnlockCompactionScratchBuffers(IDataVault vault, int lockedCount)
-        {
-            if (vault == null || lockedCount <= 0)
-                return;
-
-            if (lockedCount >= 9)
-                vault.TryUnlockBuffer(BufferID.SaveVoxelDeltaCompactionUniformFlagScratch, SystemID.TerrainSeams);
-            if (lockedCount >= 8)
-                vault.TryUnlockBuffer(BufferID.SaveVoxelDeltaCompactionOutputFlagsScratch, SystemID.TerrainSeams);
-            if (lockedCount >= 7)
-                vault.TryUnlockBuffer(BufferID.SaveVoxelDeltaCompactionOutputMaterialsScratch, SystemID.TerrainSeams);
-            if (lockedCount >= 6)
-                vault.TryUnlockBuffer(BufferID.SaveVoxelDeltaCompactionOutputSdfScratch, SystemID.TerrainSeams);
-            if (lockedCount >= 5)
-                vault.TryUnlockBuffer(BufferID.SaveVoxelDeltaCompactionFlagsScratch, SystemID.TerrainSeams);
-            if (lockedCount >= 4)
-                vault.TryUnlockBuffer(BufferID.SaveVoxelDeltaCompactionMaterialScratch, SystemID.TerrainSeams);
-            if (lockedCount >= 3)
-                vault.TryUnlockBuffer(BufferID.SaveVoxelDeltaCompactionDeltaSdfScratch, SystemID.TerrainSeams);
-            if (lockedCount >= 2)
-                vault.TryUnlockBuffer(BufferID.SaveVoxelDeltaCompactionDirtyMaskScratch, SystemID.TerrainSeams);
-            if (lockedCount >= 1)
-                vault.TryUnlockBuffer(BufferID.SaveVoxelDeltaCompactionSourceSdfScratch, SystemID.TerrainSeams);
+            IDataVault vault = _compactionScratchGuardVault;
+            _compactionScratchGuardHeld = false;
+            _compactionScratchGuardVault = null;
+            vault?.ReleaseMutationGuard(CompactionScratchMutationGuardMask);
         }
 
         private bool TryResolveCompactionScratchBuffers(
@@ -5721,6 +5661,41 @@ namespace Hecton8.Caves
             rleUniformFlag = default;
 
             IDataVault vault = ResolveDataVault();
+            return TryResolveCompactionScratchBuffers(
+                vault,
+                out sourceSdf,
+                out dirtyMaskCopy,
+                out deltaSdfCopy,
+                out materialCopy,
+                out flagsCopy,
+                out outputSdf,
+                out outputMaterials,
+                out outputFlags,
+                out rleUniformFlag);
+        }
+
+        private bool TryResolveCompactionScratchBuffers(
+            IDataVault vault,
+            out NativeArray<byte> sourceSdf,
+            out NativeArray<uint> dirtyMaskCopy,
+            out NativeArray<ushort> deltaSdfCopy,
+            out NativeArray<byte> materialCopy,
+            out NativeArray<byte> flagsCopy,
+            out NativeArray<ushort> outputSdf,
+            out NativeArray<byte> outputMaterials,
+            out NativeArray<byte> outputFlags,
+            out NativeArray<byte> rleUniformFlag)
+        {
+            sourceSdf = default;
+            dirtyMaskCopy = default;
+            deltaSdfCopy = default;
+            materialCopy = default;
+            flagsCopy = default;
+            outputSdf = default;
+            outputMaterials = default;
+            outputFlags = default;
+            rleUniformFlag = default;
+
             return TryResolveVaultBuffer(vault, in _compactionSourceSdfScratchHandle, BufferID.SaveVoxelDeltaCompactionSourceSdfScratch, CompactionSourceSdfCapacity, out sourceSdf) &&
                    TryResolveVaultBuffer(vault, in _compactionDirtyMaskScratchHandle, BufferID.SaveVoxelDeltaCompactionDirtyMaskScratch, ChunkDirtyMaskWordCount, out dirtyMaskCopy) &&
                    TryResolveVaultBuffer(vault, in _compactionDeltaSdfScratchHandle, BufferID.SaveVoxelDeltaCompactionDeltaSdfScratch, ChunkCellCount, out deltaSdfCopy) &&
@@ -5747,11 +5722,8 @@ namespace Hecton8.Caves
 
         private void DisposeCompactionScratchBuffers(IDataVault vault)
         {
-            if (_compactionScratchLockCount > 0)
-            {
-                UnlockCompactionScratchBuffers(vault, _compactionScratchLockCount);
-                _compactionScratchLockCount = 0;
-            }
+            if (_compactionScratchGuardHeld)
+                UnlockCompactionScratchBuffers();
 
             ReleaseVaultHandle(vault, ref _compactionSourceSdfScratchHandle, BufferID.SaveVoxelDeltaCompactionSourceSdfScratch);
             ReleaseVaultHandle(vault, ref _compactionDirtyMaskScratchHandle, BufferID.SaveVoxelDeltaCompactionDirtyMaskScratch);
@@ -5764,6 +5736,11 @@ namespace Hecton8.Caves
             ReleaseVaultHandle(vault, ref _compactionUniformFlagScratchHandle, BufferID.SaveVoxelDeltaCompactionUniformFlagScratch);
             _compactionScratchCreated = false;
             _compactionScratchLeased = false;
+        }
+
+        private static ulong VoxelDeltaMutationGuardBit(BufferID bufferId)
+        {
+            return 1UL << ((int)bufferId & 31);
         }
 
         private void EnsureNativeSnapshotScratchBuffer()

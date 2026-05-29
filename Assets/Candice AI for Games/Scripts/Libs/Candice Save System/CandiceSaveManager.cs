@@ -66,14 +66,22 @@ namespace CandiceAIforGames.Data
         }
         public List<CandiceWeapon> GetWeapons()
         {
-            string query = "SELECT * FROM Weapons";
+            string query = "SELECT * FROM weapon";
             CandiceSaveSystem.Instance.SetQuery(query);
-            List<CandiceWeapon> weapons = new List<CandiceWeapon>();
+            List<CandiceWeapon> weapons = new List<CandiceWeapon>(4);
             List<object> obj = CandiceSaveSystem.Instance.SelectAll();
             foreach (object o in obj)
             {
-                weapons.Add(o as CandiceWeapon);
-                Debug.Log("Name: " + (o as CandiceWeapon).WeaponName);
+                CandiceWeapon weapon = o as CandiceWeapon;
+                if (weapon == null)
+                {
+                    continue;
+                }
+
+                weapons.Add(weapon);
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+                Debug.Log("Name: " + weapon.WeaponName);
+#endif
             }
             return weapons;
         }
@@ -83,13 +91,13 @@ namespace CandiceAIforGames.Data
             {
                 CandiceSaveSystem.Instance.CreateDatabase("TestDB");
             }
-            Dictionary<object, object> parameters = new Dictionary<object, object>();
+            Dictionary<object, object> parameters = new Dictionary<object, object>(4);
             parameters.Add("@WPN_ID", weapon.WeaponID);
             parameters.Add("@WPN_NAME", weapon.WeaponName);
             parameters.Add("@WPN_TYPE", weapon.WeaponType);
             parameters.Add("@WPN_DAMAGE", weapon.WeaponDamage);
-            string query = "INSERT INTO Weapons ([WPN_ID], [WEAPON_NAME], [WEAPON_TYPE], [WEAPON_DAMAGE])" +
-                " VALUES (@WPN_ID, @WEAPON_NAME, @WEAPON_TYPE, @WEAPON_DAMAGE)";
+            string query = "INSERT INTO weapon ([WPN_ID], [WPN_NAME], [WPN_TYPE], [WPN_DAMAGE])" +
+                " VALUES (@WPN_ID, @WPN_NAME, @WPN_TYPE, @WPN_DAMAGE)";
             CandiceSaveSystem.Instance.SetQuery(query);
             CandiceSaveSystem.Instance.Insert(parameters);
         }

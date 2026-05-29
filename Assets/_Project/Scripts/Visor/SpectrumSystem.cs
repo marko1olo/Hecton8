@@ -2110,6 +2110,8 @@ namespace Hecton8.Visor
 
             _playerTransform = _playerRuntimeContext.PlayerTransform;
             _playerMovement = _playerRuntimeContext.PlayerMovement;
+            if (survivalSystem == null)
+                survivalSystem = _playerRuntimeContext.SurvivalSystem;
         }
 
         private void ClearCachedRegistryServices()
@@ -3187,13 +3189,7 @@ namespace Hecton8.Visor
                 return true;
             }
 
-            if (!GameBootstrapper.TryGetCurrentPlayerTransform(out Transform playerTransform) ||
-                playerTransform == null)
-            {
-                return false;
-            }
-
-            return playerTransform.TryGetComponent(out survivalSystem);
+            return false;
         }
 
         private bool ResolvePlayerTransform()
@@ -3361,9 +3357,6 @@ namespace Hecton8.Visor
                 _playerMovement = playerRuntimeContext.PlayerMovement;
                 return _playerMovement;
             }
-
-            if (ResolvePlayerTransform())
-                _playerTransform.TryGetComponent(out _playerMovement);
 
             return _playerMovement;
         }

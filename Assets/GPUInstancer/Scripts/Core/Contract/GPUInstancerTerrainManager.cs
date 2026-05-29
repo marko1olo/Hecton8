@@ -267,7 +267,7 @@ namespace GPUInstancer
 #endif
 
             GPUInstancerTerrainSettings terrainSettings = ScriptableObject.CreateInstance<GPUInstancerTerrainSettings>();
-            terrainSettings.name = (string.IsNullOrEmpty(terrain.terrainData.name) ? terrain.gameObject.name : terrain.terrainData.name) + "_" + terrain.terrainData.GetInstanceID();
+            terrainSettings.name = (string.IsNullOrEmpty(terrain.terrainData.name) ? terrain.gameObject.name : terrain.terrainData.name) + "_" + GPUInstancerUtility.GetUnityObjectId(terrain.terrainData);
             terrainSettings.terrainDataGUID = GPUInstancerUtility.GetAssetGUID(terrain.terrainData);
             terrainSettings.maxDetailDistance = terrain.detailObjectDistance;
             terrainSettings.maxTreeDistance = terrain.treeDistance;

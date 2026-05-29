@@ -1,8 +1,6 @@
 ﻿using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
-using System.Diagnostics;
-using System.Linq;
 using System;
 using CandiceAIforGames.data;
 
@@ -11,10 +9,29 @@ namespace CandiceAIforGames.AI.Pathfinding
     public class CandicePathFinding
     {
         CandiceGrid grid;
+        private readonly CandiceHeap<Node> openSet;
+        private readonly HashSet<Node> closedSet;
+        // COLD ALLOC: GameObject[0] - empty Candice tile fallback for legacy BFS setup - owner: CandicePathFinding
+        private static readonly GameObject[] EmptyTiles = new GameObject[0];
+        // COLD ALLOC: Node[8] - fixed 8-neighbour A* scratch buffer - owner: CandicePathFinding
+        private readonly Node[] neighbourScratch = new Node[8];
+        private readonly List<Node> pathScratch;
+        private readonly List<Vector3> waypointScratch;
+        private readonly Vector3[] waypointBuffer;
+
         public CandicePathFinding(CandiceGrid _grid)
         {
             grid = _grid;
-            ComputeAdjacencyList(1, null);
+            // COLD ALLOC: CandiceHeap<Node>[grid.MaxSize] - reusable A* open-set storage - owner: CandicePathFinding
+            openSet = new CandiceHeap<Node>(grid.MaxSize);
+            // COLD ALLOC: HashSet<Node>[grid.MaxSize] - reusable A* closed-set storage - owner: CandicePathFinding
+            closedSet = new HashSet<Node>(grid.MaxSize);
+            // COLD ALLOC: List<Node>[grid.MaxSize] - reusable A* backtrack scratch - owner: CandicePathFinding
+            pathScratch = new List<Node>(grid.MaxSize);
+            // COLD ALLOC: List<Vector3>[grid.MaxSize] - reusable A* waypoint scratch - owner: CandicePathFinding
+            waypointScratch = new List<Vector3>(grid.MaxSize);
+            // COLD ALLOC: Vector3[grid.MaxSize] - reusable A* waypoint output buffer - owner: CandicePathFinding
+            waypointBuffer = new Vector3[grid.MaxSize];
         }
         /// <summary>
         /// Computes the adjacency list for each CandiceTile in the scene, based on the specified jump height and target tile.
@@ -34,15 +51,20 @@ namespace CandiceAIforGames.AI.Pathfinding
             }
             catch
             {
-                // If no game objects are found, use an empty array instead
-                tiles = new GameObject[0];
+                // If no game objects are found, use an empty array instead.
+                tiles = EmptyTiles;
             }
 
             // Compute the adjacency list for each CandiceTile in the scene
-            foreach (GameObject tile in tiles)
+            for (int i = 0; i < tiles.Length; i++)
             {
+                GameObject tile = tiles[i];
                 // Get the CandiceTile component of the current game object
                 CandiceTile t = tile.GetComponent<CandiceTile>();
+                if (t == null)
+                {
+                    continue;
+                }
 
                 // Compute the adjacency list for the current CandiceTile component
                 t.FindNeighbors(jumpHeight, target);
@@ -143,12 +165,9 @@ namespace CandiceAIforGames.AI.Pathfinding
         /// </remarks>
         public void FindASTARPath(PathRequest request, Action<PathResult> callback)
         {
-            //Starts a timer
-            Stopwatch sw = new Stopwatch();
-            sw.Start();
-
             //Initializes variables
-            Vector3[] waypoints = new Vector3[0];
+            Vector3[] waypoints = waypointBuffer;
+            int waypointCount = 0;
             bool pathSuccess = false;
             //Finds the start and end node from the given world points
             Node startNode = grid.NodeFromWorldPoint(request.pathStart);
@@ -158,8 +177,8 @@ namespace CandiceAIforGames.AI.Pathfinding
             if (startNode.walkable && targetNode.walkable)
             {
                 //Initializes open and closed sets
-                CandiceHeap<Node> openSet = new CandiceHeap<Node>(grid.MaxSize);
-                HashSet<Node> closedSet = new HashSet<Node>();
+                openSet.Clear();
+                closedSet.Clear();
                 openSet.Add(startNode);
 
                 //Starts A* pathfinding algorithm
@@ -172,14 +191,15 @@ namespace CandiceAIforGames.AI.Pathfinding
                     //If the path has been found
                     if (currentNode == targetNode)
                     {
-                        //Stops the timer, sets path success flag to true, and breaks the loop
-                        sw.Stop();
+                        //Sets path success flag to true and breaks the loop
                         pathSuccess = true;
                         break;
                     }
                     //Checks the neighbours of the current node
-                    foreach (Node neighbour in grid.GetNeighbours(currentNode))
+                    int neighbourCount = grid.GetNeighboursNonAlloc(currentNode, neighbourScratch);
+                    for (int i = 0; i < neighbourCount; i++)
                     {
+                        Node neighbour = neighbourScratch[i];
                         //Ignores non-walkable nodes or nodes already in the closed set
                         if (!neighbour.walkable || closedSet.Contains(neighbour))
                         {
@@ -211,11 +231,30 @@ namespace CandiceAIforGames.AI.Pathfinding
             //Retraces the path and sets path success flag to true if path has been found
             if (pathSuccess)
             {
-                waypoints = RetracePath(startNode, targetNode);
-                pathSuccess = waypoints.Length > 0;
+                waypointCount = RetracePath(startNode, targetNode);
+                pathSuccess = waypointCount > 0;
             }
-            //Calls the callback function with the path result
-            callback(new PathResult(waypoints, pathSuccess, request.callback));
+            // The default manager path dispatches immediately so the agent can copy from the shared waypoint buffer before the next request.
+            if (callback == null)
+            {
+                if (request.callbackWithLength != null)
+                {
+                    request.callbackWithLength(waypoints, waypointCount, pathSuccess);
+                }
+                else if (request.callback != null)
+                {
+                    request.callback(waypoints, pathSuccess);
+                }
+                return;
+            }
+
+            PathResult result;
+            result.path = waypoints;
+            result.pathLength = waypointCount;
+            result.success = pathSuccess;
+            result.callback = request.callback;
+            result.callbackWithLength = request.callbackWithLength;
+            callback(result);
         }
 
         /// <summary>
@@ -224,10 +263,10 @@ namespace CandiceAIforGames.AI.Pathfinding
         /// <param name="startNode">The starting node of the path</param>
         /// <param name="endNode">The ending node of the path</param>
         /// <returns>An array of Vector3 waypoints from the start to end of the path</returns>
-        Vector3[] RetracePath(Node startNode, Node endNode)
+        int RetracePath(Node startNode, Node endNode)
         {
             // Initialize an empty list to store the nodes in the path
-            List<Node> path = new List<Node>();
+            pathScratch.Clear();
 
             // Set the current node to the end node
             Node currentNode = endNode;
@@ -236,30 +275,30 @@ namespace CandiceAIforGames.AI.Pathfinding
             while (currentNode != startNode)
             {
                 // Add the current node to the path list
-                path.Add(currentNode);
+                pathScratch.Add(currentNode);
 
                 // Set the current node to its parent node
                 currentNode = currentNode.parent;
             }
 
             // Convert and simplify the path to an array of Vector3 waypoints
-            Vector3[] waypoints = ConvertAndSimplifyPath(path);
+            int waypointCount = ConvertAndSimplifyPath(pathScratch);
 
             // Reverse the order of the waypoints to create a path from the start to end
-            Array.Reverse(waypoints);
+            Array.Reverse(waypointBuffer, 0, waypointCount);
 
             // Return the array of waypoints
-            return waypoints;
+            return waypointCount;
         }
-        Vector3[] ConvertPath(List<Node> path)
+        int ConvertPath(List<Node> path)
         {
-            List<Vector3> waypoints = new List<Vector3>();
+            waypointScratch.Clear();
 
             for (int i = 1; i < path.Count; i++)
             {
-                waypoints.Add(path[i].worldPosition);
+                waypointScratch.Add(path[i].worldPosition);
             }
-            return waypoints.ToArray();
+            return CopyWaypointScratchToBuffer();
         }
 
 
@@ -269,10 +308,10 @@ namespace CandiceAIforGames.AI.Pathfinding
         /// </summary>
         /// <param name="path">A list of nodes representing a path.</param>
         /// <returns>An array of Vector3 representing a simplified version of the path.</returns>
-        Vector3[] ConvertAndSimplifyPath(List<Node> path)
+        int ConvertAndSimplifyPath(List<Node> path)
         {
             // Create an empty list to hold the waypoints
-            List<Vector3> waypoints = new List<Vector3>();
+            waypointScratch.Clear();
 
             // Keep track of the previous direction to determine when to add a new waypoint
             Vector2 directionOld = Vector2.zero;
@@ -286,15 +325,26 @@ namespace CandiceAIforGames.AI.Pathfinding
                 // If the direction has changed since the last node, add the current node's position as a new waypoint
                 if (directionNew != directionOld)
                 {
-                    waypoints.Add(path[i].worldPosition);
+                    waypointScratch.Add(path[i].worldPosition);
                 }
 
                 // Update the previous direction
                 directionOld = directionNew;
             }
 
-            // Convert the list of waypoints to an array and return it
-            return waypoints.ToArray();
+            // Copy the simplified waypoint list to the reusable output buffer.
+            return CopyWaypointScratchToBuffer();
+        }
+
+        private int CopyWaypointScratchToBuffer()
+        {
+            int count = Mathf.Min(waypointScratch.Count, waypointBuffer.Length);
+            for (int i = 0; i < count; i++)
+            {
+                waypointBuffer[i] = waypointScratch[i];
+            }
+
+            return count;
         }
         /// <summary>
         /// Calculates the heuristic cost between two nodes using Manhattan distance.

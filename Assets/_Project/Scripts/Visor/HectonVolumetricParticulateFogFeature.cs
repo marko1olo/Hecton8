@@ -2472,8 +2472,8 @@ namespace Hecton8.Visor
             bool sampleSetupCost = currentFrame >= _nextPerformanceWarningFrame;
             long setupStartTimestamp = sampleSetupCost ? Stopwatch.GetTimestamp() : 0L;
             float qualityWeight = ResolveFiniteSaturated(HomeostasisBrain.GlobalQualityWeight);
-            bool allowVolumetricCompute = HardwareTierDetector.AllowHighResourceComputeShaders &&
-                                          settings.computeShader != null;
+            bool allowVolumetricCompute = settings.computeShader != null &&
+                                          SystemInfo.supportsComputeShaders;
             if (!_pass.HasNativeState || !_pass.HasGpuState)
             {
                 return;

@@ -68,6 +68,7 @@ namespace Hecton8.UI
             _focusActive = active;
             if (active)
             {
+                ResolveReferences();
                 _nextResolveFrame = 0;
                 _lastResolveFrame = -1;
             }
@@ -84,8 +85,6 @@ namespace Hecton8.UI
                 return;
 
             int frame = Hecton8.Core.SystemDispatcher.CurrentFrameIndex;
-            if ((_cameraTransform == null || _depthOfField == null) && frame >= _nextResolveFrame)
-                ResolveReferences();
             if (_cameraTransform == null || _depthOfField == null)
                 return;
 

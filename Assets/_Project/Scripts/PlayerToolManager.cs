@@ -152,6 +152,10 @@ namespace Hecton8.Gameplay
         private uint _toolLoadoutSignalSequence;
         private uint _inventorySignalHash;
         private uint _lastInventorySignalRevision;
+        // COLD ALLOC: PlayerTool[toolPrefabs.Length] - cached assigned prefab tool components - owner: PlayerToolManager
+        private PlayerTool[] _assignedToolPrefabComponents = Array.Empty<PlayerTool>();
+        // COLD ALLOC: PlayerTool[knownToolPrefabs.Length] - cached known prefab tool components - owner: PlayerToolManager
+        private PlayerTool[] _knownToolPrefabComponents = Array.Empty<PlayerTool>();
         private PlayerRuntimeContext _runtimeContext;
         private IPlayerRuntimeContext _playerRuntimeService;
         private PlayerInventory _boundInventorySignalSource;
@@ -213,6 +217,7 @@ namespace Hecton8.Gameplay
         private void Awake()
         {
             ResolveRuntimeContextDependencies();
+            RefreshToolPrefabComponentCachesCold();
             if (handAnchor != null)
             {
                 _anchorRestPosition    = handAnchor.localPosition;
@@ -238,6 +243,7 @@ namespace Hecton8.Gameplay
         private void OnEnable()
         {
             ResolveRuntimeContextDependencies();
+            RefreshToolPrefabComponentCachesCold();
             CacheRegistryServicesCold(forceRefresh: true);
             ToolHitUtility.CachePlayerToolManagerCold(this);
             ToolHitUtility.CachePhysicsServiceCold(_physicsService);
@@ -806,6 +812,7 @@ namespace Hecton8.Gameplay
                 return true;
 
             toolPrefabs[slotIndex] = prefab;
+            CacheAssignedToolPrefabComponentCold(slotIndex);
             EnsurePoolWarmup(prefab, toolPoolWarmupCount);
             PublishToolLoadoutChanged(ToolLoadoutChangedSignal.ReasonAssignmentsChanged);
 
@@ -833,6 +840,106 @@ namespace Hecton8.Gameplay
             return _isInsideModuleInterior && carrierBody != null;
         }
 
+        private void RefreshToolPrefabComponentCachesCold()
+        {
+            RefreshToolPrefabComponentCacheCold(toolPrefabs, ref _assignedToolPrefabComponents);
+            RefreshToolPrefabComponentCacheCold(knownToolPrefabs, ref _knownToolPrefabComponents);
+        }
+
+        private static void RefreshToolPrefabComponentCacheCold(GameObject[] prefabs, ref PlayerTool[] components)
+        {
+            if (prefabs == null || prefabs.Length == 0)
+            {
+                components = Array.Empty<PlayerTool>();
+                return;
+            }
+
+            if (components == null || components.Length != prefabs.Length)
+                Array.Resize(ref components, prefabs.Length);
+
+            for (int i = 0; i < prefabs.Length; i++)
+                CacheToolPrefabComponentCold(prefabs[i], out components[i]);
+        }
+
+        private void CacheAssignedToolPrefabComponentCold(int slotIndex)
+        {
+            if (toolPrefabs == null || slotIndex < 0 || slotIndex >= toolPrefabs.Length)
+                return;
+
+            if (_assignedToolPrefabComponents == null || _assignedToolPrefabComponents.Length != toolPrefabs.Length)
+            {
+                RefreshToolPrefabComponentCacheCold(toolPrefabs, ref _assignedToolPrefabComponents);
+                return;
+            }
+
+            GameObject prefab = toolPrefabs[slotIndex];
+            if (TryFindCachedToolForPrefab(prefab, knownToolPrefabs, _knownToolPrefabComponents, out PlayerTool cachedTool))
+            {
+                _assignedToolPrefabComponents[slotIndex] = cachedTool;
+                return;
+            }
+
+            CacheToolPrefabComponentCold(prefab, out _assignedToolPrefabComponents[slotIndex]);
+        }
+
+        private static void CacheToolPrefabComponentCold(GameObject prefab, out PlayerTool tool)
+        {
+            tool = null;
+            if (prefab != null)
+                prefab.TryGetComponent(out tool);
+        }
+
+        private PlayerTool GetAssignedToolPrefabComponent(int slotIndex)
+        {
+            return _assignedToolPrefabComponents != null &&
+                   (uint)slotIndex < (uint)_assignedToolPrefabComponents.Length
+                ? _assignedToolPrefabComponents[slotIndex]
+                : null;
+        }
+
+        private PlayerTool GetKnownToolPrefabComponent(int prefabIndex)
+        {
+            return _knownToolPrefabComponents != null &&
+                   (uint)prefabIndex < (uint)_knownToolPrefabComponents.Length
+                ? _knownToolPrefabComponents[prefabIndex]
+                : null;
+        }
+
+        private bool TryGetCachedToolForPrefab(GameObject prefab, out PlayerTool tool)
+        {
+            tool = null;
+            if (prefab == null)
+                return false;
+
+            if (TryFindCachedToolForPrefab(prefab, toolPrefabs, _assignedToolPrefabComponents, out tool))
+                return true;
+
+            return TryFindCachedToolForPrefab(prefab, knownToolPrefabs, _knownToolPrefabComponents, out tool);
+        }
+
+        private static bool TryFindCachedToolForPrefab(
+            GameObject prefab,
+            GameObject[] prefabs,
+            PlayerTool[] components,
+            out PlayerTool tool)
+        {
+            tool = null;
+            if (prefab == null || prefabs == null || components == null)
+                return false;
+
+            int count = Mathf.Min(prefabs.Length, components.Length);
+            for (int i = 0; i < count; i++)
+            {
+                if (!ReferenceEquals(prefabs[i], prefab))
+                    continue;
+
+                tool = components[i];
+                return tool != null;
+            }
+
+            return false;
+        }
+
         public GameObject GetKnownToolPrefabForItem(ItemData item)
         {
             if (item == null || knownToolPrefabs == null)
@@ -844,7 +951,8 @@ namespace Hecton8.Gameplay
                 if (prefab == null)
                     continue;
 
-                if (!prefab.TryGetComponent(out PlayerTool tool))
+                PlayerTool tool = GetKnownToolPrefabComponent(i);
+                if (tool == null)
                     continue;
 
                 if (ReferenceEquals(tool.ToolData, item))
@@ -865,7 +973,7 @@ namespace Hecton8.Gameplay
                 if (prefab == null)
                     continue;
 
-                if (prefab.GetComponent<TTool>() != null)
+                if (GetKnownToolPrefabComponent(i) is TTool)
                     return prefab;
             }
 
@@ -940,7 +1048,7 @@ namespace Hecton8.Gameplay
                 if (prefab == null)
                     continue;
 
-                if (prefab.GetComponent<TTool>() != null)
+                if (GetAssignedToolPrefabComponent(i) is TTool)
                     return i;
             }
 
@@ -1287,15 +1395,6 @@ namespace Hecton8.Gameplay
                 return;
 
             _currentInteriorCarrierBody = submarine.HullRigidbody;
-            if (_currentInteriorCarrierBody != null)
-                return;
-
-            if (submarine.FluidDynamics != null &&
-                submarine.FluidDynamics.TryGetComponent(out Rigidbody carrierBody) &&
-                carrierBody != null)
-            {
-                _currentInteriorCarrierBody = carrierBody;
-            }
         }
 
         private void ClearInteriorCarrierCache()
@@ -1645,12 +1744,15 @@ namespace Hecton8.Gameplay
 
             // Privyazyvaem k anchor
             _currentInstance.transform.SetParent(handAnchor, false);
-            _currentInstance.TryGetComponent(out PhysicalToolGripOffsets gripOffsets);
+            PhysicalToolGripOffsets.TryResolveLastSpawned(_currentInstance, out PhysicalToolGripOffsets gripOffsets);
             QueueToolPoseFlush(_currentInstance.transform, gripOffsets);
 
-            // Poluchaem komponent PlayerTool
-            if (_currentInstance.TryGetComponent(out PlayerTool tool))
+            if (PlayerTool.TryResolveLastSpawnedTool(_currentInstance, out PlayerTool tool))
             {
+                PlayerToolSwimContract.TryResolveLastSpawned(_currentInstance, out PlayerToolSwimContract swimContract);
+                PlayerTransportFeelContract.TryResolveLastSpawned(_currentInstance, out PlayerTransportFeelContract transportFeelContract);
+                tool.BindSpawnedPresentationContractsCold(swimContract, transportFeelContract);
+
                 _currentTool = tool;
                 _currentActiveToolHash = ResolveActiveToolHash(tool);
                 _currentActiveToolMetadataHash = ResolveActiveToolMetadataHash(tool);
@@ -1990,8 +2092,7 @@ namespace Hecton8.Gameplay
                 return false;
             }
 
-            // Poluchaem ItemData s prefaba
-            if (!toolPrefab.TryGetComponent(out PlayerTool prefabTool))
+            if (!TryGetCachedToolForPrefab(toolPrefab, out PlayerTool prefabTool))
                 return false;
 
             ItemData targetData = prefabTool.ToolData;
@@ -2128,7 +2229,7 @@ namespace Hecton8.Gameplay
             if (candidatePrefab == null || brokenToolData == null)
                 return false;
 
-            if (!candidatePrefab.TryGetComponent(out PlayerTool candidateTool))
+            if (!TryGetCachedToolForPrefab(candidatePrefab, out PlayerTool candidateTool))
                 return false;
 
             return ReferenceEquals(candidateTool.ToolData, brokenToolData);
@@ -2136,7 +2237,7 @@ namespace Hecton8.Gameplay
 
         private bool IsPrefabBroken(GameObject prefab)
         {
-            if (prefab == null || !prefab.TryGetComponent(out PlayerTool tool) || tool.Metadata == null)
+            if (prefab == null || !TryGetCachedToolForPrefab(prefab, out PlayerTool tool) || tool.Metadata == null)
                 return false;
 
             IToolDurabilityService durabilitySystem = _toolDurability;
@@ -2328,7 +2429,8 @@ namespace Hecton8.Gameplay
             if (prefab == null)
                 return null;
 
-            if (prefab.TryGetComponent(out PlayerTool tool) && tool.ToolData != null && !string.IsNullOrWhiteSpace(tool.ToolData.itemName))
+            PlayerTool tool = GetAssignedToolPrefabComponent(slotIndex);
+            if (tool != null && tool.ToolData != null && !string.IsNullOrWhiteSpace(tool.ToolData.itemName))
                 return tool.ToolData.itemName;
 
             return prefab.name;
@@ -2343,7 +2445,8 @@ namespace Hecton8.Gameplay
             if (prefab == null)
                 return ReadOnlySpan<char>.Empty;
 
-            if (prefab.TryGetComponent(out PlayerTool tool) &&
+            PlayerTool tool = GetAssignedToolPrefabComponent(slotIndex);
+            if (tool != null &&
                 tool.ToolData != null &&
                 !string.IsNullOrWhiteSpace(tool.ToolData.itemName))
                 return tool.ToolData.itemName.AsSpan();
@@ -2407,6 +2510,8 @@ namespace Hecton8.Gameplay
 
                 knownToolPrefabs[i] = AssetDatabase.LoadAssetAtPath<GameObject>(prefabPaths[i]);
             }
+
+            RefreshToolPrefabComponentCachesCold();
         }
 #endif
     }

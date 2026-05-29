@@ -54,6 +54,17 @@ namespace Hecton8.Gameplay
         private const byte StatusFsmInactive = 0;
         private const byte StatusFsmActive = 1;
         private const byte StatusFsmExpiring = 2;
+        private static readonly ulong StatusEffectRequestJobMutationGuardMask =
+            CombatVaultMutationGuardBit(BufferID.Shinobu319StatusEffectRequests) |
+            CombatVaultMutationGuardBit(BufferID.Shinobu319StatusEffectStates) |
+            CombatVaultMutationGuardBit(BufferID.Shinobu319StatusEffectTuning) |
+            CombatVaultMutationGuardBit(BufferID.Shinobu319StatusEffectTelemetryRing) |
+            CombatVaultMutationGuardBit(BufferID.Shinobu319StatusEffectTelemetryCursor) |
+            CombatVaultMutationGuardBit(BufferID.Shinobu319StatusEffectCounters);
+        private static readonly ulong StatusEffectJobMutationGuardMask =
+            StatusEffectRequestJobMutationGuardMask |
+            CombatVaultMutationGuardBit(BufferID.Shinobu319StatusEffectVfxRequests) |
+            CombatVaultMutationGuardBit(BufferID.Shinobu319StatusEffectDamageSignals);
 
         private static VaultGenerationHandle<CombatStatusEffectRequest> _statusEffectRequestsHandle;
         private static VaultGenerationHandle<CombatStatusEffectState> _statusEffectStatesHandle;
@@ -71,8 +82,6 @@ namespace Hecton8.Gameplay
         private static float _statusLastEvaluationDeltaSeconds;
         private static uint _statusEffectFrameIndex;
         private static long _statusScheduleTicks;
-        private static int _statusLockedVaultBufferCount;
-        private static bool _statusLockedArmorVaultBuffers;
         private static bool _statusScheduledSimulationWork;
         private static bool _statusEffectTelemetryDumpedThisSession;
         private static bool _statusEffectVaultRebindPending;
@@ -242,24 +251,17 @@ namespace Hecton8.Gameplay
             if ((uint)writeIndex >= (uint)StatusEffectRequestBudget ||
                 (uint)writeIndex >= (uint)statusViews.Requests.Length ||
                 _statusEffectVault == null ||
-                !_statusEffectVault.TryAcquireWriteLock(in _statusEffectRequestsHandle, SystemID.GameplayCombat, out NativeArray<CombatStatusEffectRequest> requests))
+                _statusEffectVault.IsCompactionFenceActive ||
+                !_statusEffectVault.TryResolveHandle(in _statusEffectRequestsHandle, out NativeArray<CombatStatusEffectRequest> requests) ||
+                !requests.IsCreated ||
+                (uint)writeIndex >= (uint)requests.Length)
             {
                 return false;
             }
 
-            try
-            {
-                if (!requests.IsCreated || (uint)writeIndex >= (uint)requests.Length)
-                    return false;
-
-                requests[writeIndex] = request;
-                _queuedStatusEffectRequestCount = writeIndex + 1;
-                return true;
-            }
-            finally
-            {
-                _statusEffectVault.ReleaseWriteLock(in _statusEffectRequestsHandle, SystemID.GameplayCombat);
-            }
+            requests[writeIndex] = request;
+            _queuedStatusEffectRequestCount = writeIndex + 1;
+            return true;
         }
 
         public static int QueueMockStatusPlague(int firstTargetId, int count, uint seed)
@@ -303,12 +305,10 @@ namespace Hecton8.Gameplay
             if (writeCount <= 0)
                 return false;
 
-            if (!TryLockStatusEffectVaultBuffersForJobs(includeSimulationBuffers: false))
-                return false;
-
-            if (!TryLockCombatDamageVaultBuffersForJobs(out int damageLockedCount))
+            if (!TryAcquireStatusEffectJobMutationGuardLease(
+                    includeSimulationBuffers: false,
+                    out CombatVaultMutationGuardLease mockStatusLease))
             {
-                UnlockStatusEffectVaultBuffersForJobs();
                 return false;
             }
 
@@ -346,8 +346,7 @@ namespace Hecton8.Gameplay
             }
             finally
             {
-                UnlockCombatDamageVaultBuffersForJobs(damageLockedCount);
-                UnlockStatusEffectVaultBuffersForJobs();
+                mockStatusLease.Release();
             }
         }
 
@@ -402,7 +401,7 @@ namespace Hecton8.Gameplay
 
         internal static bool WriteStatusEffectTuning(in CombatStatusEffectTuning tuning)
         {
-            return EnsureStatusEffectStorage() && TryWriteStatusEffectTuningLocked(in tuning);
+            return EnsureStatusEffectStorage() && TryWriteStatusEffectTuningOwnerView(in tuning);
         }
 
         internal static bool TryGetLastStatusEffectTelemetry(out CombatStatusEffectTelemetryEntry entry)
@@ -575,8 +574,7 @@ namespace Hecton8.Gameplay
             _statusLastEvaluationDeltaSeconds = 0f;
             _statusEffectFrameIndex = 0u;
             _statusScheduleTicks = 0L;
-            _statusLockedVaultBufferCount = 0;
-            _statusLockedArmorVaultBuffers = false;
+            _statusJobMutationGuardLease.Release();
             _statusScheduledSimulationWork = false;
             _statusEffectTelemetryDumpedThisSession = false;
             _statusEffectVault = currentVault;
@@ -610,14 +608,19 @@ namespace Hecton8.Gameplay
                     return true;
                 }
 
-                return TryWriteStatusEffectTuningLocked(CreateDefaultStatusEffectTuning(ResolveStatusEffectQualityWeight01()));
+                return TryWriteStatusEffectTuningOwnerView(CreateDefaultStatusEffectTuning(ResolveStatusEffectQualityWeight01()));
             }
 
             if (!TryOpenOrEnsureStatusEffectVaultViews(out CombatStatusEffectVaultViews views, ensure: true))
                 return false;
 
-            if (!TryLockStatusEffectVaultBuffersForJobs(includeSimulationBuffers: false))
+            CombatVaultMutationGuardLease initLease = default;
+            if (!initLease.Add(_statusEffectVault, StatusEffectRequestJobMutationGuardMask) ||
+                !initLease.TryAcquire())
+            {
+                initLease.Release();
                 return false;
+            }
 
             try
             {
@@ -634,30 +637,23 @@ namespace Hecton8.Gameplay
             }
             finally
             {
-                UnlockStatusEffectVaultBuffersForJobs();
+                initLease.Release();
             }
         }
 
-        private static bool TryWriteStatusEffectTuningLocked(in CombatStatusEffectTuning tuning)
+        private static bool TryWriteStatusEffectTuningOwnerView(in CombatStatusEffectTuning tuning)
         {
             if (_statusEffectVault == null ||
-                !_statusEffectVault.TryAcquireWriteLock(in _statusEffectTuningHandle, SystemID.GameplayCombat, out NativeArray<CombatStatusEffectTuning> tuningArray))
+                _statusEffectVault.IsCompactionFenceActive ||
+                !_statusEffectVault.TryResolveHandle(in _statusEffectTuningHandle, out NativeArray<CombatStatusEffectTuning> tuningArray) ||
+                !tuningArray.IsCreated ||
+                tuningArray.Length == 0)
             {
                 return false;
             }
 
-            try
-            {
-                if (!tuningArray.IsCreated || tuningArray.Length == 0)
-                    return false;
-
-                tuningArray[0] = SanitizeStatusEffectTuning(tuning);
-                return true;
-            }
-            finally
-            {
-                _statusEffectVault.ReleaseWriteLock(in _statusEffectTuningHandle, SystemID.GameplayCombat);
-            }
+            tuningArray[0] = SanitizeStatusEffectTuning(tuning);
+            return true;
         }
 
         private static bool TryOpenOrEnsureStatusEffectVaultViews(out CombatStatusEffectVaultViews views, bool ensure)
@@ -833,8 +829,7 @@ namespace Hecton8.Gameplay
             _statusLastEvaluationDeltaSeconds = 0f;
             _statusEffectFrameIndex = 0u;
             _statusScheduleTicks = 0L;
-            _statusLockedVaultBufferCount = 0;
-            _statusLockedArmorVaultBuffers = false;
+            _statusJobMutationGuardLease.Release();
             _statusScheduledSimulationWork = false;
             _statusEffectTelemetryDumpedThisSession = false;
         }
@@ -909,11 +904,9 @@ namespace Hecton8.Gameplay
 
             float evaluationDelta = hasSimulationWork ? _statusEvaluationAccumulatorSeconds : 0f;
             ArmorPenetrationVaultViews armorViews = default;
-            bool lockedArmorVaultBuffers = false;
-            bool lockedStatusVaultBuffers = false;
-            bool lockedDamageVaultBuffers = false;
-            bool locksOwnedByScheduledJob = false;
-            int damageLockedCount = 0;
+            bool guardOwnedByScheduledJob = false;
+            CombatVaultMutationGuardLease statusJobLease = default;
+
             try
             {
                 if (hasSimulationWork)
@@ -923,22 +916,10 @@ namespace Hecton8.Gameplay
                     {
                         return false;
                     }
-
-                    if (!TryLockArmorVaultBuffersForJobs())
-                        return false;
-
-                    lockedArmorVaultBuffers = true;
                 }
 
-                if (!TryLockStatusEffectVaultBuffersForJobs(hasSimulationWork))
+                if (!TryAcquireStatusEffectJobMutationGuardLease(hasSimulationWork, out statusJobLease))
                     return false;
-
-                lockedStatusVaultBuffers = true;
-
-                if (!TryLockCombatDamageVaultBuffersForJobs(out damageLockedCount))
-                    return false;
-
-                lockedDamageVaultBuffers = true;
 
                 if (!TryOpenOrEnsureStatusEffectVaultViews(out statusViews, ensure: false) ||
                     !TryOpenOrEnsureCombatDamageVaultViews(out damageViews, ensure: false) ||
@@ -948,12 +929,11 @@ namespace Hecton8.Gameplay
                 }
 
                 if (hasSimulationWork)
-                    RefreshArmorTargetSnapshotsLocked(ref armorViews);
+                    RefreshArmorTargetSnapshotsOwnerView(ref armorViews);
                 if (!CanUseStatusEffectJobBuffers(hasSimulationWork, ref statusViews, ref damageViews, in armorViews))
                     return false;
 
                 statusViews.Tuning[0] = SanitizeStatusEffectTuning(tuning);
-                _statusLockedArmorVaultBuffers = lockedArmorVaultBuffers;
                 _statusScheduledSimulationWork = hasSimulationWork;
                 ClearStatusEffectCountersImmediate(ref statusViews);
                 _statusLastEvaluationDeltaSeconds = evaluationDelta;
@@ -981,10 +961,12 @@ namespace Hecton8.Gameplay
                     _statusScheduleTicks = Stopwatch.GetTimestamp();
                     _statusJobHandle = applyHandle;
                     _statusJobScheduled = true;
+                    _statusJobMutationGuardLease = statusJobLease;
+                    statusJobLease = default;
                     H8Memory.RegisterActiveJob(CombatDamageMemoryOwner, _statusJobHandle);
                     H8Memory.RegisterActiveJob(SystemID.GameplayCombat, _statusJobHandle);
                     JobHandle.ScheduleBatchedJobs();
-                    locksOwnedByScheduledJob = true;
+                    guardOwnedByScheduledJob = true;
                     return true;
                 }
 
@@ -1014,23 +996,19 @@ namespace Hecton8.Gameplay
                 _statusScheduleTicks = Stopwatch.GetTimestamp();
                 _statusJobHandle = evaluateJob.Schedule(_targetCount, ResolveStatusEffectBatchSize(statusQualityWeight01), applyHandle);
                 _statusJobScheduled = true;
+                _statusJobMutationGuardLease = statusJobLease;
+                statusJobLease = default;
                 H8Memory.RegisterActiveJob(CombatDamageMemoryOwner, _statusJobHandle);
                 H8Memory.RegisterActiveJob(SystemID.GameplayCombat, _statusJobHandle);
                 JobHandle.ScheduleBatchedJobs();
-                locksOwnedByScheduledJob = true;
+                guardOwnedByScheduledJob = true;
                 return true;
             }
             finally
             {
-                if (!locksOwnedByScheduledJob)
+                if (!guardOwnedByScheduledJob)
                 {
-                    if (lockedDamageVaultBuffers)
-                        UnlockCombatDamageVaultBuffersForJobs(damageLockedCount);
-                    if (lockedStatusVaultBuffers)
-                        UnlockStatusEffectVaultBuffersForJobs();
-                    if (lockedArmorVaultBuffers)
-                        UnlockArmorVaultBuffersForJobs();
-                    _statusLockedArmorVaultBuffers = false;
+                    statusJobLease.Release();
                     _statusScheduledSimulationWork = false;
                 }
             }
@@ -1039,39 +1017,37 @@ namespace Hecton8.Gameplay
         private static void CompleteStatusEffectFrame()
         {
             _queuedStatusEffectRequestCount = 0;
-            if (!TryOpenOrEnsureStatusEffectVaultViews(out CombatStatusEffectVaultViews statusViews, ensure: false) ||
-                !statusViews.Counters.IsCreated)
+            try
             {
-                UnlockCombatDamageVaultBuffersForJobs(CombatDamageVaultJobLockCount);
-                UnlockStatusEffectVaultBuffersForJobs();
-                UnlockStatusEffectBorrowedArmorBuffers();
+                if (!TryOpenOrEnsureStatusEffectVaultViews(out CombatStatusEffectVaultViews statusViews, ensure: false) ||
+                    !statusViews.Counters.IsCreated)
+                {
+                    return;
+                }
+
+                uint elapsedMicroseconds = ResolveStatusElapsedMicroseconds();
+                WriteStatusCounter(StatusEffectCounterSolveMicroseconds, unchecked((int)elapsedMicroseconds), ref statusViews);
+                PublishStatusEffectDamageSignals(ReadStatusCounter(StatusEffectCounterDamageSignals, ref statusViews), ref statusViews);
+                PublishStatusEffectVfxRequests(ReadStatusCounter(StatusEffectCounterVfxSignals, ref statusViews), ref statusViews);
+                if (_statusScheduledSimulationWork)
+                    WriteStatusResultTelemetryRows(ref statusViews);
+                WriteStatusCompletionTelemetry(elapsedMicroseconds, ref statusViews);
+                uint anomalyHash = unchecked((uint)ReadStatusCounter(StatusEffectCounterAnomaly, ref statusViews));
+                if (elapsedMicroseconds > 200u)
+                {
+                    anomalyHash = anomalyHash != 0u ? anomalyHash : 0x53190200u;
+                    WriteStatusCounter(StatusEffectCounterAnomaly, unchecked((int)anomalyHash), ref statusViews);
+                }
+
+                if (anomalyHash != 0u)
+                    TryDumpStatusEffectTelemetry(anomalyHash, ref statusViews);
+            }
+            finally
+            {
+                _statusJobMutationGuardLease.Release();
                 _statusScheduledSimulationWork = false;
                 TryApplyPendingArmorVaultRebind();
-                return;
             }
-
-            uint elapsedMicroseconds = ResolveStatusElapsedMicroseconds();
-            WriteStatusCounter(StatusEffectCounterSolveMicroseconds, unchecked((int)elapsedMicroseconds), ref statusViews);
-            PublishStatusEffectDamageSignals(ReadStatusCounter(StatusEffectCounterDamageSignals, ref statusViews), ref statusViews);
-            PublishStatusEffectVfxRequests(ReadStatusCounter(StatusEffectCounterVfxSignals, ref statusViews), ref statusViews);
-            if (_statusScheduledSimulationWork)
-                WriteStatusResultTelemetryRows(ref statusViews);
-            WriteStatusCompletionTelemetry(elapsedMicroseconds, ref statusViews);
-            uint anomalyHash = unchecked((uint)ReadStatusCounter(StatusEffectCounterAnomaly, ref statusViews));
-            if (elapsedMicroseconds > 200u)
-            {
-                anomalyHash = anomalyHash != 0u ? anomalyHash : 0x53190200u;
-                WriteStatusCounter(StatusEffectCounterAnomaly, unchecked((int)anomalyHash), ref statusViews);
-            }
-
-            if (anomalyHash != 0u)
-                TryDumpStatusEffectTelemetry(anomalyHash, ref statusViews);
-
-            UnlockCombatDamageVaultBuffersForJobs(CombatDamageVaultJobLockCount);
-            UnlockStatusEffectVaultBuffersForJobs();
-            UnlockStatusEffectBorrowedArmorBuffers();
-            _statusScheduledSimulationWork = false;
-            TryApplyPendingArmorVaultRebind();
         }
 
         private static void PublishStatusEffectDamageSignals(int requestedCount, ref CombatStatusEffectVaultViews statusViews)
@@ -1136,56 +1112,6 @@ namespace Hecton8.Gameplay
             }
         }
 
-        private static void UnlockStatusEffectBorrowedArmorBuffers()
-        {
-            if (!_statusLockedArmorVaultBuffers)
-                return;
-
-            UnlockArmorVaultBuffersForJobs();
-            _statusLockedArmorVaultBuffers = false;
-        }
-
-        private static bool TryLockStatusEffectVaultBuffersForJobs(bool includeSimulationBuffers)
-        {
-            if (_statusEffectVault == null)
-                return false;
-
-            int locked = 0;
-            bool success = false;
-            try
-            {
-                if (!_statusEffectVault.TryLockBuffer(BufferID.Shinobu319StatusEffectRequests, SystemID.GameplayCombat)) return false;
-                locked++;
-                if (!_statusEffectVault.TryLockBuffer(BufferID.Shinobu319StatusEffectStates, SystemID.GameplayCombat)) return false;
-                locked++;
-                if (!_statusEffectVault.TryLockBuffer(BufferID.Shinobu319StatusEffectTuning, SystemID.GameplayCombat)) return false;
-                locked++;
-                if (!_statusEffectVault.TryLockBuffer(BufferID.Shinobu319StatusEffectTelemetryRing, SystemID.GameplayCombat)) return false;
-                locked++;
-                if (!_statusEffectVault.TryLockBuffer(BufferID.Shinobu319StatusEffectTelemetryCursor, SystemID.GameplayCombat)) return false;
-                locked++;
-                if (!_statusEffectVault.TryLockBuffer(BufferID.Shinobu319StatusEffectCounters, SystemID.GameplayCombat)) return false;
-                locked++;
-
-                if (includeSimulationBuffers)
-                {
-                    if (!_statusEffectVault.TryLockBuffer(BufferID.Shinobu319StatusEffectVfxRequests, SystemID.GameplayCombat)) return false;
-                    locked++;
-                    if (!_statusEffectVault.TryLockBuffer(BufferID.Shinobu319StatusEffectDamageSignals, SystemID.GameplayCombat)) return false;
-                    locked++;
-                }
-
-                _statusLockedVaultBufferCount = locked;
-                success = true;
-                return true;
-            }
-            finally
-            {
-                if (!success)
-                    UnlockStatusEffectVaultBuffersForJobs(locked);
-            }
-        }
-
         private static bool CanUseStatusEffectJobBuffers(
             bool includeSimulationBuffers,
             ref CombatStatusEffectVaultViews statusViews,
@@ -1244,128 +1170,58 @@ namespace Hecton8.Gameplay
                    (uint)targetCount <= (uint)statusViews.DamageSignals.Length;
         }
 
-        private static void UnlockStatusEffectVaultBuffersForJobs()
-        {
-            int lockedCount = _statusLockedVaultBufferCount;
-            _statusLockedVaultBufferCount = 0;
-            UnlockStatusEffectVaultBuffersForJobs(lockedCount);
-        }
-
-        private static void UnlockStatusEffectVaultBuffersForJobs(int lockedCount)
-        {
-            _statusLockedVaultBufferCount = 0;
-            if (_statusEffectVault == null)
-                return;
-
-            if (lockedCount >= 8) _statusEffectVault.TryUnlockBuffer(BufferID.Shinobu319StatusEffectDamageSignals, SystemID.GameplayCombat);
-            if (lockedCount >= 7) _statusEffectVault.TryUnlockBuffer(BufferID.Shinobu319StatusEffectVfxRequests, SystemID.GameplayCombat);
-            if (lockedCount >= 6) _statusEffectVault.TryUnlockBuffer(BufferID.Shinobu319StatusEffectCounters, SystemID.GameplayCombat);
-            if (lockedCount >= 5) _statusEffectVault.TryUnlockBuffer(BufferID.Shinobu319StatusEffectTelemetryCursor, SystemID.GameplayCombat);
-            if (lockedCount >= 4) _statusEffectVault.TryUnlockBuffer(BufferID.Shinobu319StatusEffectTelemetryRing, SystemID.GameplayCombat);
-            if (lockedCount >= 3) _statusEffectVault.TryUnlockBuffer(BufferID.Shinobu319StatusEffectTuning, SystemID.GameplayCombat);
-            if (lockedCount >= 2) _statusEffectVault.TryUnlockBuffer(BufferID.Shinobu319StatusEffectStates, SystemID.GameplayCombat);
-            if (lockedCount >= 1) _statusEffectVault.TryUnlockBuffer(BufferID.Shinobu319StatusEffectRequests, SystemID.GameplayCombat);
-        }
-
         private static bool MoveTargetSideState(int sourceSlot, int destinationSlot)
         {
-            bool armorLocked = false;
-            bool statusLocked = false;
-            int armorLockCount = 0;
-            IDataVault statusVault = null;
             NativeArray<CombatStatusEffectState> states = default;
 
-            if (!TryAcquireArmorTargetWriteLocks(out ArmorPenetrationVaultViews armorViews, out armorLockCount))
+            if (!TryResolveArmorTargetOwnerViews(out ArmorPenetrationVaultViews armorViews) ||
+                !TryResolveStatusEffectStatesOwnerView(out states, out bool hasStatusStorage))
                 return false;
 
-            armorLocked = true;
-            try
-            {
-                if (!TryAcquireStatusEffectStatesWriteLock(out statusVault, out states, out statusLocked))
-                    return false;
-
-                return MoveTargetSideStateLocked(sourceSlot, destinationSlot, statusLocked, states, ref armorViews);
-            }
-            finally
-            {
-                if (statusLocked)
-                    ReleaseStatusEffectStatesWriteLock(statusVault, statusLocked);
-                if (armorLocked)
-                    ReleaseArmorTargetWriteLocks(armorLockCount);
-            }
+            return MoveTargetSideStateOwnerView(sourceSlot, destinationSlot, hasStatusStorage, states, ref armorViews);
         }
 
         private static bool ClearTargetSideState(int slot)
         {
-            bool armorLocked = false;
-            bool statusLocked = false;
-            int armorLockCount = 0;
-            IDataVault statusVault = null;
             NativeArray<CombatStatusEffectState> states = default;
 
-            if (!TryAcquireArmorTargetWriteLocks(out ArmorPenetrationVaultViews armorViews, out armorLockCount))
+            if (!TryResolveArmorTargetOwnerViews(out ArmorPenetrationVaultViews armorViews) ||
+                !TryResolveStatusEffectStatesOwnerView(out states, out bool hasStatusStorage))
                 return false;
 
-            armorLocked = true;
-            try
-            {
-                if (!TryAcquireStatusEffectStatesWriteLock(out statusVault, out states, out statusLocked))
-                    return false;
-
-                return ClearTargetSideStateLocked(slot, statusLocked, states, ref armorViews);
-            }
-            finally
-            {
-                if (statusLocked)
-                    ReleaseStatusEffectStatesWriteLock(statusVault, statusLocked);
-                if (armorLocked)
-                    ReleaseArmorTargetWriteLocks(armorLockCount);
-            }
+            return ClearTargetSideStateOwnerView(slot, hasStatusStorage, states, ref armorViews);
         }
 
         private static bool ResetStatusEffectSlot(int slot)
         {
-            if (!TryAcquireStatusEffectStatesWriteLock(
-                    out IDataVault statusVault,
+            if (!TryResolveStatusEffectStatesOwnerView(
                     out NativeArray<CombatStatusEffectState> states,
-                    out bool statusLocked))
+                    out bool hasStatusStorage))
                 return false;
 
-            try
-            {
-                return ResetStatusEffectSlotLocked(slot, statusLocked, states);
-            }
-            finally
-            {
-                ReleaseStatusEffectStatesWriteLock(statusVault, statusLocked);
-            }
+            return ResetStatusEffectSlotOwnerView(slot, hasStatusStorage, states);
         }
 
-        private static bool TryAcquireStatusEffectStatesWriteLock(
-            out IDataVault statusVault,
+        private static bool TryResolveStatusEffectStatesOwnerView(
             out NativeArray<CombatStatusEffectState> states,
-            out bool statusLocked)
+            out bool hasStatusStorage)
         {
-            statusVault = _statusEffectVault;
             states = default;
-            statusLocked = false;
-            if (statusVault == null || _statusEffectStatesHandle.BufferID == 0u)
+            hasStatusStorage = false;
+            if (_statusEffectVault == null || _statusEffectStatesHandle.BufferID == 0u)
                 return true;
 
-            if (!statusVault.TryAcquireWriteLock(in _statusEffectStatesHandle, SystemID.GameplayCombat, out states))
+            if (_statusEffectVault.IsCompactionFenceActive ||
+                !_statusEffectVault.TryResolveHandle(in _statusEffectStatesHandle, out states))
+            {
                 return false;
+            }
 
-            statusLocked = true;
+            hasStatusStorage = states.IsCreated;
             return true;
         }
 
-        private static void ReleaseStatusEffectStatesWriteLock(IDataVault statusVault, bool statusLocked)
-        {
-            if (statusLocked && statusVault != null)
-                statusVault.ReleaseWriteLock(in _statusEffectStatesHandle, SystemID.GameplayCombat);
-        }
-
-        private static bool ResetStatusEffectSlotLocked(int slot, bool hasStatusStorage, NativeArray<CombatStatusEffectState> states)
+        private static bool ResetStatusEffectSlotOwnerView(int slot, bool hasStatusStorage, NativeArray<CombatStatusEffectState> states)
         {
             if (!hasStatusStorage)
                 return true;
@@ -1377,7 +1233,7 @@ namespace Hecton8.Gameplay
             return true;
         }
 
-        private static bool MoveTargetSideStateLocked(
+        private static bool MoveTargetSideStateOwnerView(
             int sourceSlot,
             int destinationSlot,
             bool hasStatusStorage,
@@ -1415,7 +1271,7 @@ namespace Hecton8.Gameplay
             return true;
         }
 
-        private static bool ClearTargetSideStateLocked(
+        private static bool ClearTargetSideStateOwnerView(
             int slot,
             bool hasStatusStorage,
             NativeArray<CombatStatusEffectState> states,
@@ -1797,24 +1653,17 @@ namespace Hecton8.Gameplay
         private static void WriteStatusCounter(int index, int value)
         {
             if (_statusEffectVault == null ||
-                !_statusEffectVault.TryAcquireWriteLock(in _statusEffectCountersHandle, SystemID.GameplayCombat, out NativeArray<CombatStatusEffectCounterLane> counters))
+                _statusEffectVault.IsCompactionFenceActive ||
+                !_statusEffectVault.TryResolveHandle(in _statusEffectCountersHandle, out NativeArray<CombatStatusEffectCounterLane> counters) ||
+                !counters.IsCreated ||
+                (uint)index >= (uint)counters.Length)
             {
                 return;
             }
 
-            try
-            {
-                if (!counters.IsCreated || (uint)index >= (uint)counters.Length)
-                    return;
-
-                CombatStatusEffectCounterLane lane = counters[index];
-                lane.Value = value;
-                counters[index] = lane;
-            }
-            finally
-            {
-                _statusEffectVault.ReleaseWriteLock(in _statusEffectCountersHandle, SystemID.GameplayCombat);
-            }
+            CombatStatusEffectCounterLane lane = counters[index];
+            lane.Value = value;
+            counters[index] = lane;
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]

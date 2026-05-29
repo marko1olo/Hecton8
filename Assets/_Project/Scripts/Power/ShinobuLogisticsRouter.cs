@@ -174,6 +174,32 @@ namespace Hecton8.Power
         private const int FixedDeltaPassCount = 2;
         private const float DefaultDeltaSmoothing = 0.82f;
         private const uint SourceHash = 0x5348494Eu; // SHIN
+        private static readonly ulong RouterMutationGuardMask =
+            RouterBufferGuardBit(BufferID.ShinobuLogisticsNodes) |
+            RouterBufferGuardBit(BufferID.ShinobuLogisticsEdges) |
+            RouterBufferGuardBit(BufferID.ShinobuLogisticsStateFlags) |
+            RouterBufferGuardBit(BufferID.ShinobuLogisticsOxygenFront) |
+            RouterBufferGuardBit(BufferID.ShinobuLogisticsOxygenBack) |
+            RouterBufferGuardBit(BufferID.ShinobuLogisticsInternalPressure) |
+            RouterBufferGuardBit(BufferID.ShinobuLogisticsExternalPressure) |
+            RouterBufferGuardBit(BufferID.ShinobuLogisticsYieldThreshold) |
+            RouterBufferGuardBit(BufferID.ShinobuLogisticsReinforcement) |
+            RouterBufferGuardBit(BufferID.ShinobuLogisticsNodeAup) |
+            RouterBufferGuardBit(BufferID.ShinobuLogisticsLocalPositions) |
+            RouterBufferGuardBit(BufferID.ShinobuLogisticsPriorityTier) |
+            RouterBufferGuardBit(BufferID.ShinobuLogisticsVisited) |
+            RouterBufferGuardBit(BufferID.ShinobuLogisticsCellToNode) |
+            RouterBufferGuardBit(BufferID.ShinobuLogisticsCounters) |
+            RouterBufferGuardBit(BufferID.ShinobuLogisticsTuning) |
+            RouterBufferGuardBit(BufferID.ShinobuLogisticsBlackBox) |
+            RouterBufferGuardBit(BufferID.ShinobuLogisticsComponentIds) |
+            RouterBufferGuardBit(BufferID.ShinobuLogisticsPressureFront) |
+            RouterBufferGuardBit(BufferID.ShinobuLogisticsPressureBack) |
+            RouterBufferGuardBit(BufferID.ShinobuLogisticsEdgeRemainderMilli) |
+            RouterBufferGuardBit(BufferID.ShinobuLogisticsCsrEdgeCapacities) |
+            RouterBufferGuardBit(BufferID.ShinobuLogisticsCsrEdgeFlow01) |
+            RouterBufferGuardBit(BufferID.ShinobuLogisticsComponentSpecs) |
+            RouterBufferGuardBit(BufferID.ShinobuLogisticsCsvScratch);
 
         private static ShinobuLogisticsRouter _active;
         private static LogisticsTuningDTO _offlineTuning = EmergencyTuning();
@@ -245,6 +271,7 @@ namespace Hecton8.Power
         private bool _solvePending;
         private bool _csrRebuildPending;
         private bool _localShiftPending;
+        private bool _routerJobMutationGuardHeld;
         private bool _initialized;
         private bool _hasGraph;
         private bool _hasFatalLayoutFault;
@@ -332,7 +359,7 @@ namespace Hecton8.Power
             ConfigurePublicSignalLanes();
             SignalBus<FluidIncursionSignal>.EnsureInitialized();
 
-            if (!TryLockRouterMutationBuffers(out int lockedCount))
+            if (!TryAcquireRouterMutationGuard())
             {
                 _hasFatalLayoutFault = true;
                 return;
@@ -377,7 +404,7 @@ namespace Hecton8.Power
             }
             finally
             {
-                UnlockRouterMutationBuffers(lockedCount);
+                ReleaseRouterMutationGuard();
             }
 
             _initialized = true;
@@ -398,9 +425,10 @@ namespace Hecton8.Power
             if (_solvePending)
                 return;
 
-            if (!TryLockRouterMutationBuffers(out int lockedCount))
+            if (!TryAcquireRouterMutationGuard())
                 return;
 
+            bool transferRouterGuardToJobs = false;
             try
             {
                 TryConsumeGeneratedSignals();
@@ -506,10 +534,15 @@ namespace Hecton8.Power
                     BlackBox = _blackBox
                 }.Schedule(solveHandle);
                 _solvePending = true;
+                TryScheduleLocalShiftJob();
+                transferRouterGuardToJobs = _solvePending || _csrRebuildPending || _localShiftPending;
+                if (transferRouterGuardToJobs)
+                    _routerJobMutationGuardHeld = true;
             }
             finally
             {
-                UnlockRouterMutationBuffers(lockedCount);
+                if (!transferRouterGuardToJobs)
+                    ReleaseRouterMutationGuard();
             }
         }
 
@@ -518,8 +551,14 @@ namespace Hecton8.Power
             if (!_initialized)
                 return;
 
-            if (!TryLockRouterMutationBuffers(out int lockedCount))
-                return;
+            bool releaseRouterGuardAfterTick = false;
+            if (!_routerJobMutationGuardHeld)
+            {
+                if (!TryAcquireRouterMutationGuard())
+                    return;
+
+                releaseRouterGuardAfterTick = true;
+            }
 
             try
             {
@@ -538,20 +577,6 @@ namespace Hecton8.Power
                     PublishFlowVisuals();
                 }
 
-                if (_hasGraph && !_localShiftPending)
-                {
-                    if (!RefreshVaultAliases())
-                        return;
-
-                    _localShiftHandle = new LocalShiftResolverJob
-                    {
-                        NodeAup = _nodeAup,
-                        LocalPositions = _localPositions,
-                        CameraAup = _cameraAup
-                    }.Schedule(_nodeCount, 64);
-                    _localShiftPending = true;
-                }
-
                 if (_localShiftPending && _localShiftHandle.IsCompleted)
                 {
                     DispatcherJobFence.TryFinalizeCompleted(ref _localShiftHandle);
@@ -560,7 +585,10 @@ namespace Hecton8.Power
             }
             finally
             {
-                UnlockRouterMutationBuffers(lockedCount);
+                if (releaseRouterGuardAfterTick)
+                    ReleaseRouterMutationGuard();
+
+                ReleaseRouterJobMutationGuardIfIdle();
             }
         }
 
@@ -576,7 +604,7 @@ namespace Hecton8.Power
             if (!_initialized || _hasFatalLayoutFault)
                 return;
 
-            if (!TryLockRouterMutationBuffers(out int lockedCount))
+            if (!TryAcquireRouterMutationGuard())
                 return;
 
             try
@@ -585,7 +613,7 @@ namespace Hecton8.Power
             }
             finally
             {
-                UnlockRouterMutationBuffers(lockedCount);
+                ReleaseRouterMutationGuard();
             }
         }
 
@@ -871,84 +899,56 @@ namespace Hecton8.Power
                 : default;
         }
 
-        private bool TryLockRouterMutationBuffers(out int lockedCount)
+        private bool TryScheduleLocalShiftJob()
         {
-            lockedCount = 0;
-            IDataVault vault = _dataVault;
-            if (vault == null || vault.IsCompactionFenceActive)
+            if (!_hasGraph || _localShiftPending || _nodeCount <= 0)
+                return false;
+            if (!_nodeAup.IsCreated || !_localPositions.IsCreated)
                 return false;
 
-            if (!TryLockRouterBuffer(vault, BufferID.ShinobuLogisticsNodes, ref lockedCount)) { UnlockRouterMutationBuffers(lockedCount); return false; }
-            if (!TryLockRouterBuffer(vault, BufferID.ShinobuLogisticsEdges, ref lockedCount)) { UnlockRouterMutationBuffers(lockedCount); return false; }
-            if (!TryLockRouterBuffer(vault, BufferID.ShinobuLogisticsStateFlags, ref lockedCount)) { UnlockRouterMutationBuffers(lockedCount); return false; }
-            if (!TryLockRouterBuffer(vault, BufferID.ShinobuLogisticsOxygenFront, ref lockedCount)) { UnlockRouterMutationBuffers(lockedCount); return false; }
-            if (!TryLockRouterBuffer(vault, BufferID.ShinobuLogisticsOxygenBack, ref lockedCount)) { UnlockRouterMutationBuffers(lockedCount); return false; }
-            if (!TryLockRouterBuffer(vault, BufferID.ShinobuLogisticsInternalPressure, ref lockedCount)) { UnlockRouterMutationBuffers(lockedCount); return false; }
-            if (!TryLockRouterBuffer(vault, BufferID.ShinobuLogisticsExternalPressure, ref lockedCount)) { UnlockRouterMutationBuffers(lockedCount); return false; }
-            if (!TryLockRouterBuffer(vault, BufferID.ShinobuLogisticsYieldThreshold, ref lockedCount)) { UnlockRouterMutationBuffers(lockedCount); return false; }
-            if (!TryLockRouterBuffer(vault, BufferID.ShinobuLogisticsReinforcement, ref lockedCount)) { UnlockRouterMutationBuffers(lockedCount); return false; }
-            if (!TryLockRouterBuffer(vault, BufferID.ShinobuLogisticsNodeAup, ref lockedCount)) { UnlockRouterMutationBuffers(lockedCount); return false; }
-            if (!TryLockRouterBuffer(vault, BufferID.ShinobuLogisticsLocalPositions, ref lockedCount)) { UnlockRouterMutationBuffers(lockedCount); return false; }
-            if (!TryLockRouterBuffer(vault, BufferID.ShinobuLogisticsPriorityTier, ref lockedCount)) { UnlockRouterMutationBuffers(lockedCount); return false; }
-            if (!TryLockRouterBuffer(vault, BufferID.ShinobuLogisticsVisited, ref lockedCount)) { UnlockRouterMutationBuffers(lockedCount); return false; }
-            if (!TryLockRouterBuffer(vault, BufferID.ShinobuLogisticsCellToNode, ref lockedCount)) { UnlockRouterMutationBuffers(lockedCount); return false; }
-            if (!TryLockRouterBuffer(vault, BufferID.ShinobuLogisticsCounters, ref lockedCount)) { UnlockRouterMutationBuffers(lockedCount); return false; }
-            if (!TryLockRouterBuffer(vault, BufferID.ShinobuLogisticsTuning, ref lockedCount)) { UnlockRouterMutationBuffers(lockedCount); return false; }
-            if (!TryLockRouterBuffer(vault, BufferID.ShinobuLogisticsBlackBox, ref lockedCount)) { UnlockRouterMutationBuffers(lockedCount); return false; }
-            if (!TryLockRouterBuffer(vault, BufferID.ShinobuLogisticsComponentIds, ref lockedCount)) { UnlockRouterMutationBuffers(lockedCount); return false; }
-            if (!TryLockRouterBuffer(vault, BufferID.ShinobuLogisticsPressureFront, ref lockedCount)) { UnlockRouterMutationBuffers(lockedCount); return false; }
-            if (!TryLockRouterBuffer(vault, BufferID.ShinobuLogisticsPressureBack, ref lockedCount)) { UnlockRouterMutationBuffers(lockedCount); return false; }
-            if (!TryLockRouterBuffer(vault, BufferID.ShinobuLogisticsEdgeRemainderMilli, ref lockedCount)) { UnlockRouterMutationBuffers(lockedCount); return false; }
-            if (!TryLockRouterBuffer(vault, BufferID.ShinobuLogisticsCsrEdgeCapacities, ref lockedCount)) { UnlockRouterMutationBuffers(lockedCount); return false; }
-            if (!TryLockRouterBuffer(vault, BufferID.ShinobuLogisticsCsrEdgeFlow01, ref lockedCount)) { UnlockRouterMutationBuffers(lockedCount); return false; }
-            if (!TryLockRouterBuffer(vault, BufferID.ShinobuLogisticsComponentSpecs, ref lockedCount)) { UnlockRouterMutationBuffers(lockedCount); return false; }
-            if (!TryLockRouterBuffer(vault, BufferID.ShinobuLogisticsCsvScratch, ref lockedCount)) { UnlockRouterMutationBuffers(lockedCount); return false; }
+            _localShiftHandle = new LocalShiftResolverJob
+            {
+                NodeAup = _nodeAup,
+                LocalPositions = _localPositions,
+                CameraAup = _cameraAup
+            }.Schedule(_nodeCount, 64);
+            _localShiftPending = true;
             return true;
         }
 
-        private static bool TryLockRouterBuffer(IDataVault vault, BufferID bufferId, ref int lockedCount)
-        {
-            if (vault == null || vault.IsCompactionFenceActive)
-                return false;
-
-            if (!vault.TryLockBuffer(bufferId, SystemID.Power))
-                return false;
-
-            lockedCount++;
-            return true;
-        }
-
-        private void UnlockRouterMutationBuffers(int lockedCount)
+        private bool TryAcquireRouterMutationGuard()
         {
             IDataVault vault = _dataVault;
-            if (vault == null || lockedCount <= 0)
+            return vault != null &&
+                   !vault.IsCompactionFenceActive &&
+                   vault.TryAcquireMutationGuard(RouterMutationGuardMask);
+        }
+
+        private void ReleaseRouterMutationGuard()
+        {
+            IDataVault vault = _dataVault;
+            if (vault != null)
+                vault.ReleaseMutationGuard(RouterMutationGuardMask);
+        }
+
+        private void ReleaseRouterJobMutationGuardIfIdle()
+        {
+            if (!_routerJobMutationGuardHeld ||
+                _solvePending ||
+                _csrRebuildPending ||
+                _localShiftPending)
+            {
                 return;
+            }
 
-            if (lockedCount >= 25) vault.TryUnlockBuffer(BufferID.ShinobuLogisticsCsvScratch, SystemID.Power);
-            if (lockedCount >= 24) vault.TryUnlockBuffer(BufferID.ShinobuLogisticsComponentSpecs, SystemID.Power);
-            if (lockedCount >= 23) vault.TryUnlockBuffer(BufferID.ShinobuLogisticsCsrEdgeFlow01, SystemID.Power);
-            if (lockedCount >= 22) vault.TryUnlockBuffer(BufferID.ShinobuLogisticsCsrEdgeCapacities, SystemID.Power);
-            if (lockedCount >= 21) vault.TryUnlockBuffer(BufferID.ShinobuLogisticsEdgeRemainderMilli, SystemID.Power);
-            if (lockedCount >= 20) vault.TryUnlockBuffer(BufferID.ShinobuLogisticsPressureBack, SystemID.Power);
-            if (lockedCount >= 19) vault.TryUnlockBuffer(BufferID.ShinobuLogisticsPressureFront, SystemID.Power);
-            if (lockedCount >= 18) vault.TryUnlockBuffer(BufferID.ShinobuLogisticsComponentIds, SystemID.Power);
-            if (lockedCount >= 17) vault.TryUnlockBuffer(BufferID.ShinobuLogisticsBlackBox, SystemID.Power);
-            if (lockedCount >= 16) vault.TryUnlockBuffer(BufferID.ShinobuLogisticsTuning, SystemID.Power);
-            if (lockedCount >= 15) vault.TryUnlockBuffer(BufferID.ShinobuLogisticsCounters, SystemID.Power);
-            if (lockedCount >= 14) vault.TryUnlockBuffer(BufferID.ShinobuLogisticsCellToNode, SystemID.Power);
-            if (lockedCount >= 13) vault.TryUnlockBuffer(BufferID.ShinobuLogisticsVisited, SystemID.Power);
-            if (lockedCount >= 12) vault.TryUnlockBuffer(BufferID.ShinobuLogisticsPriorityTier, SystemID.Power);
-            if (lockedCount >= 11) vault.TryUnlockBuffer(BufferID.ShinobuLogisticsLocalPositions, SystemID.Power);
-            if (lockedCount >= 10) vault.TryUnlockBuffer(BufferID.ShinobuLogisticsNodeAup, SystemID.Power);
-            if (lockedCount >= 9) vault.TryUnlockBuffer(BufferID.ShinobuLogisticsReinforcement, SystemID.Power);
-            if (lockedCount >= 8) vault.TryUnlockBuffer(BufferID.ShinobuLogisticsYieldThreshold, SystemID.Power);
-            if (lockedCount >= 7) vault.TryUnlockBuffer(BufferID.ShinobuLogisticsExternalPressure, SystemID.Power);
-            if (lockedCount >= 6) vault.TryUnlockBuffer(BufferID.ShinobuLogisticsInternalPressure, SystemID.Power);
-            if (lockedCount >= 5) vault.TryUnlockBuffer(BufferID.ShinobuLogisticsOxygenBack, SystemID.Power);
-            if (lockedCount >= 4) vault.TryUnlockBuffer(BufferID.ShinobuLogisticsOxygenFront, SystemID.Power);
-            if (lockedCount >= 3) vault.TryUnlockBuffer(BufferID.ShinobuLogisticsStateFlags, SystemID.Power);
-            if (lockedCount >= 2) vault.TryUnlockBuffer(BufferID.ShinobuLogisticsEdges, SystemID.Power);
-            if (lockedCount >= 1) vault.TryUnlockBuffer(BufferID.ShinobuLogisticsNodes, SystemID.Power);
+            _routerJobMutationGuardHeld = false;
+            ReleaseRouterMutationGuard();
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private static ulong RouterBufferGuardBit(BufferID bufferId)
+        {
+            return 1UL << (unchecked((int)(uint)(int)bufferId) & 31);
         }
 
         private static void WriteNative<T>(NativeArray<T> buffer, int index, T value)
@@ -1095,23 +1095,7 @@ namespace Hecton8.Power
 
         public void Dispose()
         {
-            if (_solvePending)
-            {
-                DispatcherJobFence.TryComplete(ref _solveHandle, forceComplete: true);
-                _solvePending = false;
-            }
-
-            if (_csrRebuildPending)
-            {
-                DispatcherJobFence.TryComplete(ref _csrRebuildHandle, forceComplete: true);
-                _csrRebuildPending = false;
-            }
-
-            if (_localShiftPending)
-            {
-                DispatcherJobFence.TryComplete(ref _localShiftHandle, forceComplete: true);
-                _localShiftPending = false;
-            }
+            ForceCompletePendingRouterJobsInPostSimulationWindow();
 
             if (ReferenceEquals(_active, this))
                 _active = null;
@@ -1123,6 +1107,36 @@ namespace Hecton8.Power
             _hasGraph = false;
             _nodeCount = 0;
             _edgeCount = 0;
+        }
+
+        private void ForceCompletePendingRouterJobsInPostSimulationWindow()
+        {
+            DispatcherJobFence.BeginPostSimulationSwapWindow();
+            try
+            {
+                if (_solvePending)
+                {
+                    DispatcherJobFence.TryComplete(ref _solveHandle, forceComplete: true);
+                    _solvePending = false;
+                }
+
+                if (_csrRebuildPending)
+                {
+                    DispatcherJobFence.TryComplete(ref _csrRebuildHandle, forceComplete: true);
+                    _csrRebuildPending = false;
+                }
+
+                if (_localShiftPending)
+                {
+                    DispatcherJobFence.TryComplete(ref _localShiftHandle, forceComplete: true);
+                    _localShiftPending = false;
+                }
+            }
+            finally
+            {
+                DispatcherJobFence.EndPostSimulationSwapWindow();
+                ReleaseRouterJobMutationGuardIfIdle();
+            }
         }
 
         private void ClearVaultAliases()

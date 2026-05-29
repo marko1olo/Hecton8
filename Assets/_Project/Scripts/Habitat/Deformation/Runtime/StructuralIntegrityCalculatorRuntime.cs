@@ -34,7 +34,31 @@ namespace Hecton8.Habitat.Deformation
         private const int SolverLockTelemetryCursor = 1 << 6;
         private const int SolverLockTuning = 1 << 7;
         private const int SolverLockSdf = 1 << 8;
-        private const ulong StructuralMutationGuardMask = 1UL << 45;
+        private const int SolverLockMaterials = 1 << 18;
+        private const int SolverLockCsvScratch = 1 << 19;
+        private static readonly ulong StructuralMutationGuardMask =
+            StructuralMutationGuardBit(BufferID.StructuralIntegrityStates) |
+            StructuralMutationGuardBit(BufferID.StructuralIntegrityNodeAups) |
+            StructuralMutationGuardBit(BufferID.StructuralIntegrityCsrOffsets) |
+            StructuralMutationGuardBit(BufferID.StructuralIntegrityCsrDestinations) |
+            StructuralMutationGuardBit(BufferID.StructuralIntegrityEdgeFlags) |
+            StructuralMutationGuardBit(BufferID.StructuralIntegrityTelemetryRing) |
+            StructuralMutationGuardBit(BufferID.StructuralIntegrityTelemetryCursor) |
+            StructuralMutationGuardBit(BufferID.StructuralIntegrityTuning) |
+            StructuralMutationGuardBit(BufferID.StructuralIntegrityMaterialStrengths) |
+            StructuralMutationGuardBit(BufferID.StructuralIntegrityCsvScratch) |
+            StructuralMutationGuardBit(BufferID.BaseStructuralWarningRawWarnings) |
+            StructuralMutationGuardBit(BufferID.BaseStructuralWarningGroups) |
+            StructuralMutationGuardBit(BufferID.BaseStructuralWarningTimers) |
+            StructuralMutationGuardBit(BufferID.BaseStructuralWarningCounters) |
+            StructuralMutationGuardBit(BufferID.BaseStructuralWarningTelemetryRing) |
+            StructuralMutationGuardBit(BufferID.BaseStructuralWarningTelemetryCursor) |
+            StructuralMutationGuardBit(BufferID.BaseStructuralWarningTuning) |
+            StructuralMutationGuardBit(BufferID.BaseStructuralWarningProfiles) |
+            StructuralMutationGuardBit(BufferID.BaseStructuralWarningCsvScratch);
+        private static readonly ulong StructuralSolverSdfMutationGuardMask =
+            StructuralMutationGuardMask |
+            StructuralMutationGuardBit(BufferID.VoxelSdfTexture3D);
 
         private static StructuralIntegrityCalculatorRuntime s_activeRuntime;
 
@@ -86,6 +110,8 @@ namespace Hecton8.Habitat.Deformation
         private int _registeredHotSwap;
         private int _jobScheduled;
         private int _solverLockMask;
+        private ulong _solverMutationGuardMask;
+        private IDataVault _solverGuardVault;
         private int _activeNodeCount;
         private int _activeEdgeCount;
         private uint _frame;
@@ -135,55 +161,38 @@ namespace Hecton8.Habitat.Deformation
             if (_initialized == 0 || _jobScheduled != 0)
                 return;
 
-            int readMask = 0;
-            if (!TryLockSolverBuffer(BufferID.StructuralIntegrityStates, SolverLockStates, ref readMask) ||
-                !TryLockSolverBuffer(BufferID.StructuralIntegrityNodeAups, SolverLockNodeAups, ref readMask) ||
-                !TryLockSolverBuffer(BufferID.StructuralIntegrityTuning, SolverLockTuning, ref readMask) ||
-                !TryLockBaseStructuralWarningBuffers(ref readMask))
-            {
-                UnlockSolverBuffers(readMask);
+            NativeArray<IntegrityStateDTO> states = ResolveVaultBuffer(in _statesHandle);
+            NativeArray<double3> aups = ResolveVaultBuffer(in _nodeAupsHandle);
+            NativeArray<StructuralTuningDTO> tuningArray = ResolveVaultBuffer(in _tuningHandle);
+            if (!states.IsCreated || !aups.IsCreated || !tuningArray.IsCreated || tuningArray.Length == 0)
                 return;
-            }
 
-            try
+            StructuralTuningDTO tuning = tuningArray[0];
+            int count = math.min(_activeNodeCount, math.min(states.Length, aups.Length));
+            count = math.min(count, 512);
+            for (int i = 0; i < count; i++)
             {
-                NativeArray<IntegrityStateDTO> states = ResolveVaultBuffer(in _statesHandle);
-                NativeArray<double3> aups = ResolveVaultBuffer(in _nodeAupsHandle);
-                NativeArray<StructuralTuningDTO> tuningArray = ResolveVaultBuffer(in _tuningHandle);
-                if (!states.IsCreated || !aups.IsCreated || !tuningArray.IsCreated || tuningArray.Length == 0)
-                    return;
+                IntegrityStateDTO state = states[i];
+                if (state.NodeHash == 0u)
+                    continue;
 
-                StructuralTuningDTO tuning = tuningArray[0];
-                int count = math.min(_activeNodeCount, math.min(states.Length, aups.Length));
-                count = math.min(count, 512);
-                for (int i = 0; i < count; i++)
+                float stress = math.saturate(math.isfinite(state.CurrentStress) ? state.CurrentStress : 1f);
+                Color color = Color.Lerp(Color.green, Color.yellow, math.saturate(stress / 0.8f));
+                if (stress >= 0.95f)
                 {
-                    IntegrityStateDTO state = states[i];
-                    if (state.NodeHash == 0u)
-                        continue;
-
-                    float stress = math.saturate(math.isfinite(state.CurrentStress) ? state.CurrentStress : 1f);
-                    Color color = Color.Lerp(Color.green, Color.yellow, math.saturate(stress / 0.8f));
-                    if (stress >= 0.95f)
-                    {
-                        float pulse = Mathf.PingPong((float)SystemDispatcher.CurrentUnscaledTimeSeconds * 4f, 1f);
-                        color = Color.Lerp(Color.red, Color.white, pulse * 0.35f);
-                    }
-
-                    if (!TryBuildEditorRelativePosition(aups[i], tuning.SeaLevelAup, out Vector3 position))
-                        continue;
-
-                    float size = math.lerp(0.18f, 0.85f, stress);
-                    Gizmos.color = color;
-                    Gizmos.DrawWireCube(position, Vector3.one * size);
+                    float pulse = Mathf.PingPong((float)SystemDispatcher.CurrentUnscaledTimeSeconds * 4f, 1f);
+                    color = Color.Lerp(Color.red, Color.white, pulse * 0.35f);
                 }
 
-                DrawBaseStructuralWarningGizmos(tuning.SeaLevelAup);
+                if (!TryBuildEditorRelativePosition(aups[i], tuning.SeaLevelAup, out Vector3 position))
+                    continue;
+
+                float size = math.lerp(0.18f, 0.85f, stress);
+                Gizmos.color = color;
+                Gizmos.DrawWireCube(position, Vector3.one * size);
             }
-            finally
-            {
-                UnlockSolverBuffers(readMask);
-            }
+
+            DrawBaseStructuralWarningGizmos(tuning.SeaLevelAup);
         }
 #endif
 
@@ -245,29 +254,14 @@ namespace Hecton8.Habitat.Deformation
             if (_initialized == 0 || _jobScheduled != 0 || (uint)index >= (uint)_activeNodeCount)
                 return false;
 
-            int readMask = 0;
-            if (!TryLockSolverBuffer(BufferID.StructuralIntegrityStates, SolverLockStates, ref readMask) ||
-                !TryLockSolverBuffer(BufferID.StructuralIntegrityNodeAups, SolverLockNodeAups, ref readMask))
-            {
-                UnlockSolverBuffers(readMask);
+            NativeArray<IntegrityStateDTO> states = ResolveVaultBuffer(in _statesHandle);
+            NativeArray<double3> aups = ResolveVaultBuffer(in _nodeAupsHandle);
+            if (!states.IsCreated || !aups.IsCreated || index >= states.Length || index >= aups.Length)
                 return false;
-            }
 
-            try
-            {
-                NativeArray<IntegrityStateDTO> states = ResolveVaultBuffer(in _statesHandle);
-                NativeArray<double3> aups = ResolveVaultBuffer(in _nodeAupsHandle);
-                if (!states.IsCreated || !aups.IsCreated || index >= states.Length || index >= aups.Length)
-                    return false;
-
-                state = states[index];
-                aup = aups[index];
-                return state.NodeHash != 0u;
-            }
-            finally
-            {
-                UnlockSolverBuffers(readMask);
-            }
+            state = states[index];
+            aup = aups[index];
+            return state.NodeHash != 0u;
         }
 
         public bool TryGetTuning(out StructuralTuningDTO tuning)
@@ -276,23 +270,12 @@ namespace Hecton8.Habitat.Deformation
             if (_initialized == 0 || _jobScheduled != 0)
                 return false;
 
-            int readMask = 0;
-            if (!TryLockSolverBuffer(BufferID.StructuralIntegrityTuning, SolverLockTuning, ref readMask))
+            NativeArray<StructuralTuningDTO> tuningArray = ResolveVaultBuffer(in _tuningHandle);
+            if (!tuningArray.IsCreated || tuningArray.Length == 0)
                 return false;
 
-            try
-            {
-                NativeArray<StructuralTuningDTO> tuningArray = ResolveVaultBuffer(in _tuningHandle);
-                if (!tuningArray.IsCreated || tuningArray.Length == 0)
-                    return false;
-
-                tuning = tuningArray[0];
-                return true;
-            }
-            finally
-            {
-                UnlockSolverBuffers(readMask);
-            }
+            tuning = tuningArray[0];
+            return true;
         }
 
         public bool TryGetTelemetrySample(int framesBack, out StructuralTelemetryEntry entry)
@@ -301,40 +284,25 @@ namespace Hecton8.Habitat.Deformation
             if (_initialized == 0 || _jobScheduled != 0)
                 return false;
 
-            int readMask = 0;
-            if (!TryLockSolverBuffer(BufferID.StructuralIntegrityTelemetryRing, SolverLockTelemetry, ref readMask) ||
-                !TryLockSolverBuffer(BufferID.StructuralIntegrityTelemetryCursor, SolverLockTelemetryCursor, ref readMask))
-            {
-                UnlockSolverBuffers(readMask);
+            NativeArray<StructuralTelemetryEntry> telemetry = ResolveVaultBuffer(in _telemetryHandle);
+            NativeArray<int> cursor = ResolveVaultBuffer(in _telemetryCursorHandle);
+            if (!telemetry.IsCreated || !cursor.IsCreated || telemetry.Length == 0 || cursor.Length == 0)
                 return false;
-            }
 
-            try
-            {
-                NativeArray<StructuralTelemetryEntry> telemetry = ResolveVaultBuffer(in _telemetryHandle);
-                NativeArray<int> cursor = ResolveVaultBuffer(in _telemetryCursorHandle);
-                if (!telemetry.IsCreated || !cursor.IsCreated || telemetry.Length == 0 || cursor.Length == 0)
-                    return false;
+            int capacity = math.min(telemetry.Length, StructuralIntegrityConstants.TelemetryFrameCapacity);
+            int clampedBack = math.clamp(framesBack, 0, capacity - 1);
+            int cursorValue = cursor[0];
+            if (cursorValue < 0)
+                cursorValue = 0;
+            cursorValue %= capacity;
 
-                int capacity = math.min(telemetry.Length, StructuralIntegrityConstants.TelemetryFrameCapacity);
-                int clampedBack = math.clamp(framesBack, 0, capacity - 1);
-                int cursorValue = cursor[0];
-                if (cursorValue < 0)
-                    cursorValue = 0;
-                cursorValue %= capacity;
+            int slot = cursorValue - 1 - clampedBack;
+            while (slot < 0)
+                slot += capacity;
+            slot %= capacity;
 
-                int slot = cursorValue - 1 - clampedBack;
-                while (slot < 0)
-                    slot += capacity;
-                slot %= capacity;
-
-                entry = telemetry[slot];
-                return entry.Sequence != 0u || entry.Frame != 0u || entry.ActiveNodeCount != 0;
-            }
-            finally
-            {
-                UnlockSolverBuffers(readMask);
-            }
+            entry = telemetry[slot];
+            return entry.Sequence != 0u || entry.Frame != 0u || entry.ActiveNodeCount != 0;
         }
 
         public void SetTuning(in StructuralTuningDTO tuning)
@@ -345,14 +313,6 @@ namespace Hecton8.Habitat.Deformation
             if (!TryAcquireStructuralMutationGuard())
                 return;
 
-            bool tuningLocked = false;
-            if (!_dataVault.TryLockBuffer(BufferID.StructuralIntegrityTuning, SystemID.HullIntegrity))
-            {
-                ReleaseStructuralMutationGuard();
-                return;
-            }
-
-            tuningLocked = true;
             try
             {
                 NativeArray<StructuralTuningDTO> tuningArray = ResolveVaultBuffer(in _tuningHandle);
@@ -375,8 +335,6 @@ namespace Hecton8.Habitat.Deformation
             }
             finally
             {
-                if (tuningLocked)
-                    _dataVault.TryUnlockBuffer(BufferID.StructuralIntegrityTuning, SystemID.HullIntegrity);
                 ReleaseStructuralMutationGuard();
             }
         }
@@ -593,14 +551,16 @@ namespace Hecton8.Habitat.Deformation
         private bool TryResolveVaultBuffer<T>(in VaultGenerationHandle<T> handle, out NativeArray<T> buffer)
             where T : struct
         {
+            buffer = default;
             IDataVault vault = _dataVault;
-            if (vault == null || handle.BufferID == 0u)
-            {
-                buffer = default;
+            if (vault == null || !IsHullIntegrityVaultHandle(in handle))
                 return false;
-            }
 
-            return vault.TryResolveHandle(in handle, out buffer) && buffer.IsCreated;
+            if (vault.TryResolveHandle(in handle, out buffer) && buffer.IsCreated)
+                return true;
+
+            buffer = default;
+            return false;
         }
 
         private bool TryReadBorrowedVaultBuffer<T>(BufferID bufferId, out NativeArray<T> buffer)
@@ -611,6 +571,7 @@ namespace Hecton8.Habitat.Deformation
             return vault != null &&
                    vault.TryGetGenerationHandle<T>(bufferId, out VaultGenerationHandle<T> handle) &&
                    handle.BufferID == unchecked((uint)(int)bufferId) &&
+                   handle.Generation != 0u &&
                    vault.TryReadHandle(in handle, out buffer) &&
                    buffer.IsCreated;
         }
@@ -658,14 +619,8 @@ namespace Hecton8.Habitat.Deformation
 
         private bool ClearBootBuffers()
         {
-            if (!TryAcquireStructuralMutationGuard())
+            if (!TryPinSolverBuffers(false))
                 return false;
-
-            if (!TryLockSolverBuffers(false))
-            {
-                ReleaseStructuralMutationGuard();
-                return false;
-            }
 
             bool cleared = false;
             try
@@ -695,7 +650,6 @@ namespace Hecton8.Habitat.Deformation
             finally
             {
                 UnlockSolverBuffers();
-                ReleaseStructuralMutationGuard();
             }
 
             return cleared;
@@ -706,14 +660,6 @@ namespace Hecton8.Habitat.Deformation
             if (!TryAcquireStructuralMutationGuard())
                 return false;
 
-            bool tuningLocked = false;
-            if (!_dataVault.TryLockBuffer(BufferID.StructuralIntegrityTuning, SystemID.HullIntegrity))
-            {
-                ReleaseStructuralMutationGuard();
-                return false;
-            }
-
-            tuningLocked = true;
             bool written = false;
             try
             {
@@ -726,8 +672,6 @@ namespace Hecton8.Habitat.Deformation
             }
             finally
             {
-                if (tuningLocked)
-                    _dataVault.TryUnlockBuffer(BufferID.StructuralIntegrityTuning, SystemID.HullIntegrity);
                 ReleaseStructuralMutationGuard();
             }
 
@@ -759,24 +703,9 @@ namespace Hecton8.Habitat.Deformation
 
         private bool GenerateEmergencyMockStressData()
         {
-            if (!TryAcquireStructuralMutationGuard())
+            if (!TryPinSolverBuffers(false))
                 return false;
 
-            if (!TryLockSolverBuffers(false))
-            {
-                ReleaseStructuralMutationGuard();
-                return false;
-            }
-
-            bool materialsLocked = false;
-            if (!_dataVault.TryLockBuffer(BufferID.StructuralIntegrityMaterialStrengths, SystemID.HullIntegrity))
-            {
-                UnlockSolverBuffers();
-                ReleaseStructuralMutationGuard();
-                return false;
-            }
-
-            materialsLocked = true;
             bool generated = false;
             try
             {
@@ -820,10 +749,7 @@ namespace Hecton8.Habitat.Deformation
             }
             finally
             {
-                if (materialsLocked)
-                    _dataVault.TryUnlockBuffer(BufferID.StructuralIntegrityMaterialStrengths, SystemID.HullIntegrity);
                 UnlockSolverBuffers();
-                ReleaseStructuralMutationGuard();
             }
 
             return generated;
@@ -833,7 +759,7 @@ namespace Hecton8.Habitat.Deformation
         {
             NativeArray<byte> sdf = default;
             bool includeSdfLock = TryReadBorrowedVaultBuffer(BufferID.VoxelSdfTexture3D, out sdf);
-            if (!TryLockSolverBuffers(includeSdfLock))
+            if (!TryPinSolverBuffers(includeSdfLock))
                 return;
 
             NativeArray<IntegrityStateDTO> states = ResolveVaultBuffer(in _statesHandle);
@@ -968,31 +894,52 @@ namespace Hecton8.Habitat.Deformation
             return true;
         }
 
-        private bool TryLockSolverBuffers(bool includeSdf)
+        private bool TryPinSolverBuffers(bool includeSdf)
         {
-            if (_solverLockMask != 0 || _dataVault == null)
+            if (_solverLockMask != 0 || _solverMutationGuardMask != 0UL || _dataVault == null)
                 return false;
 
+            IDataVault vault = _dataVault;
+            ulong guardMask = includeSdf ? StructuralSolverSdfMutationGuardMask : StructuralMutationGuardMask;
+            if (!vault.TryAcquireMutationGuard(guardMask))
+                return false;
+
+            _solverGuardVault = vault;
+            _solverMutationGuardMask = guardMask;
             int mask = 0;
-            if (!TryLockSolverBuffer(BufferID.StructuralIntegrityStates, SolverLockStates, ref mask)) { UnlockSolverBuffers(mask); return false; }
-            if (!TryLockSolverBuffer(BufferID.StructuralIntegrityNodeAups, SolverLockNodeAups, ref mask)) { UnlockSolverBuffers(mask); return false; }
-            if (!TryLockSolverBuffer(BufferID.StructuralIntegrityCsrOffsets, SolverLockOffsets, ref mask)) { UnlockSolverBuffers(mask); return false; }
-            if (!TryLockSolverBuffer(BufferID.StructuralIntegrityCsrDestinations, SolverLockDestinations, ref mask)) { UnlockSolverBuffers(mask); return false; }
-            if (!TryLockSolverBuffer(BufferID.StructuralIntegrityEdgeFlags, SolverLockEdgeFlags, ref mask)) { UnlockSolverBuffers(mask); return false; }
-            if (!TryLockSolverBuffer(BufferID.StructuralIntegrityTelemetryRing, SolverLockTelemetry, ref mask)) { UnlockSolverBuffers(mask); return false; }
-            if (!TryLockSolverBuffer(BufferID.StructuralIntegrityTelemetryCursor, SolverLockTelemetryCursor, ref mask)) { UnlockSolverBuffers(mask); return false; }
-            if (!TryLockSolverBuffer(BufferID.StructuralIntegrityTuning, SolverLockTuning, ref mask)) { UnlockSolverBuffers(mask); return false; }
-            if (includeSdf && !TryLockSolverBuffer(BufferID.VoxelSdfTexture3D, SolverLockSdf, ref mask)) { UnlockSolverBuffers(mask); return false; }
-            if (!TryLockBaseStructuralWarningBuffers(ref mask)) { UnlockSolverBuffers(mask); return false; }
+            if (!TryMarkSolverBuffer(in _statesHandle, BufferID.StructuralIntegrityStates, SolverLockStates, StructuralIntegrityConstants.MaxNodeCapacity, ref mask)) { UnlockSolverBuffers(mask); return false; }
+            if (!TryMarkSolverBuffer(in _nodeAupsHandle, BufferID.StructuralIntegrityNodeAups, SolverLockNodeAups, StructuralIntegrityConstants.MaxNodeCapacity, ref mask)) { UnlockSolverBuffers(mask); return false; }
+            if (!TryMarkSolverBuffer(in _csrOffsetsHandle, BufferID.StructuralIntegrityCsrOffsets, SolverLockOffsets, StructuralIntegrityConstants.MaxNodeCapacity + 1, ref mask)) { UnlockSolverBuffers(mask); return false; }
+            if (!TryMarkSolverBuffer(in _csrDestinationsHandle, BufferID.StructuralIntegrityCsrDestinations, SolverLockDestinations, StructuralIntegrityConstants.MaxEdgeCapacity, ref mask)) { UnlockSolverBuffers(mask); return false; }
+            if (!TryMarkSolverBuffer(in _edgeFlagsHandle, BufferID.StructuralIntegrityEdgeFlags, SolverLockEdgeFlags, StructuralIntegrityConstants.MaxEdgeCapacity, ref mask)) { UnlockSolverBuffers(mask); return false; }
+            if (!TryMarkSolverBuffer(in _telemetryHandle, BufferID.StructuralIntegrityTelemetryRing, SolverLockTelemetry, StructuralIntegrityConstants.TelemetryFrameCapacity, ref mask)) { UnlockSolverBuffers(mask); return false; }
+            if (!TryMarkSolverBuffer(in _telemetryCursorHandle, BufferID.StructuralIntegrityTelemetryCursor, SolverLockTelemetryCursor, 1, ref mask)) { UnlockSolverBuffers(mask); return false; }
+            if (!TryMarkSolverBuffer(in _tuningHandle, BufferID.StructuralIntegrityTuning, SolverLockTuning, 1, ref mask)) { UnlockSolverBuffers(mask); return false; }
+            if (!TryMarkSolverBuffer(in _materialsHandle, BufferID.StructuralIntegrityMaterialStrengths, SolverLockMaterials, StructuralIntegrityConstants.MaterialStrengthCapacity, ref mask)) { UnlockSolverBuffers(mask); return false; }
+            if (!TryMarkSolverBuffer(in _csvScratchHandle, BufferID.StructuralIntegrityCsvScratch, SolverLockCsvScratch, StructuralIntegrityConstants.CsvScratchBytes, ref mask)) { UnlockSolverBuffers(mask); return false; }
+            if (includeSdf)
+                mask |= SolverLockSdf;
+            if (!TryMarkBaseStructuralWarningBuffers(ref mask)) { UnlockSolverBuffers(mask); return false; }
 
             _solverLockMask = mask;
             return true;
         }
 
-        private bool TryLockSolverBuffer(BufferID id, int bit, ref int mask)
+        private bool TryMarkSolverBuffer<T>(
+            in VaultGenerationHandle<T> handle,
+            BufferID bufferId,
+            int bit,
+            int requiredLength,
+            ref int mask)
+            where T : struct
         {
-            if (!_dataVault.TryLockBuffer(id, SystemID.HullIntegrity))
+            if (requiredLength <= 0 ||
+                !IsHullIntegrityVaultHandle(in handle, bufferId) ||
+                !TryResolveVaultBuffer(in handle, out NativeArray<T> buffer) ||
+                buffer.Length < requiredLength)
+            {
                 return false;
+            }
 
             mask |= bit;
             return true;
@@ -1018,19 +965,15 @@ namespace Hecton8.Habitat.Deformation
 
         private void UnlockSolverBuffers(int mask)
         {
-            if (_dataVault == null || mask == 0)
+            ulong guardMask = _solverMutationGuardMask;
+            if (mask == 0 && guardMask == 0UL)
                 return;
 
-            if ((mask & SolverLockSdf) != 0) _dataVault.TryUnlockBuffer(BufferID.VoxelSdfTexture3D, SystemID.HullIntegrity);
-            UnlockBaseStructuralWarningBuffers(mask);
-            if ((mask & SolverLockTuning) != 0) _dataVault.TryUnlockBuffer(BufferID.StructuralIntegrityTuning, SystemID.HullIntegrity);
-            if ((mask & SolverLockTelemetryCursor) != 0) _dataVault.TryUnlockBuffer(BufferID.StructuralIntegrityTelemetryCursor, SystemID.HullIntegrity);
-            if ((mask & SolverLockTelemetry) != 0) _dataVault.TryUnlockBuffer(BufferID.StructuralIntegrityTelemetryRing, SystemID.HullIntegrity);
-            if ((mask & SolverLockEdgeFlags) != 0) _dataVault.TryUnlockBuffer(BufferID.StructuralIntegrityEdgeFlags, SystemID.HullIntegrity);
-            if ((mask & SolverLockDestinations) != 0) _dataVault.TryUnlockBuffer(BufferID.StructuralIntegrityCsrDestinations, SystemID.HullIntegrity);
-            if ((mask & SolverLockOffsets) != 0) _dataVault.TryUnlockBuffer(BufferID.StructuralIntegrityCsrOffsets, SystemID.HullIntegrity);
-            if ((mask & SolverLockNodeAups) != 0) _dataVault.TryUnlockBuffer(BufferID.StructuralIntegrityNodeAups, SystemID.HullIntegrity);
-            if ((mask & SolverLockStates) != 0) _dataVault.TryUnlockBuffer(BufferID.StructuralIntegrityStates, SystemID.HullIntegrity);
+            IDataVault guardVault = _solverGuardVault;
+            _solverMutationGuardMask = 0UL;
+            _solverGuardVault = null;
+            if (guardMask != 0UL)
+                guardVault?.ReleaseMutationGuard(guardMask);
         }
 
         private void AfterSolverComplete()
@@ -1246,14 +1189,6 @@ namespace Hecton8.Habitat.Deformation
             if (!TryAcquireStructuralMutationGuard())
                 return false;
 
-            bool materialsLocked = false;
-            if (!_dataVault.TryLockBuffer(BufferID.StructuralIntegrityMaterialStrengths, SystemID.HullIntegrity))
-            {
-                ReleaseStructuralMutationGuard();
-                return false;
-            }
-
-            materialsLocked = true;
             bool written = false;
             try
             {
@@ -1266,8 +1201,6 @@ namespace Hecton8.Habitat.Deformation
             }
             finally
             {
-                if (materialsLocked)
-                    _dataVault.TryUnlockBuffer(BufferID.StructuralIntegrityMaterialStrengths, SystemID.HullIntegrity);
                 ReleaseStructuralMutationGuard();
             }
 
@@ -1303,20 +1236,9 @@ namespace Hecton8.Habitat.Deformation
             if (!TryAcquireStructuralMutationGuard())
                 return false;
 
-            if (!_dataVault.TryLockBuffer(BufferID.StructuralIntegrityCsvScratch, SystemID.HullIntegrity))
-            {
-                ReleaseStructuralMutationGuard();
-                return false;
-            }
-
-            bool materialsLocked = false;
             bool loaded = false;
             try
             {
-                if (!_dataVault.TryLockBuffer(BufferID.StructuralIntegrityMaterialStrengths, SystemID.HullIntegrity))
-                    return false;
-
-                materialsLocked = true;
                 NativeArray<byte> scratch = ResolveVaultBuffer(in _csvScratchHandle);
                 NativeArray<StructuralMaterialStrengthEntry> materials = ResolveVaultBuffer(in _materialsHandle);
                 if (!scratch.IsCreated || !materials.IsCreated)
@@ -1372,9 +1294,6 @@ namespace Hecton8.Habitat.Deformation
             }
             finally
             {
-                if (materialsLocked)
-                    _dataVault.TryUnlockBuffer(BufferID.StructuralIntegrityMaterialStrengths, SystemID.HullIntegrity);
-                _dataVault.TryUnlockBuffer(BufferID.StructuralIntegrityCsvScratch, SystemID.HullIntegrity);
                 ReleaseStructuralMutationGuard();
             }
 
@@ -1444,22 +1363,9 @@ namespace Hecton8.Habitat.Deformation
             if (!TryAcquireStructuralMutationGuard())
                 return false;
 
-            bool statesLocked = false;
-            if (!_dataVault.TryLockBuffer(BufferID.StructuralIntegrityStates, SystemID.HullIntegrity))
-            {
-                ReleaseStructuralMutationGuard();
-                return false;
-            }
-
-            statesLocked = true;
-            bool materialsLocked = false;
             bool applied = false;
             try
             {
-                if (!_dataVault.TryLockBuffer(BufferID.StructuralIntegrityMaterialStrengths, SystemID.HullIntegrity))
-                    return false;
-
-                materialsLocked = true;
                 NativeArray<IntegrityStateDTO> states = ResolveVaultBuffer(in _statesHandle);
                 NativeArray<StructuralMaterialStrengthEntry> materials = ResolveVaultBuffer(in _materialsHandle);
                 if (!states.IsCreated || !materials.IsCreated)
@@ -1481,10 +1387,6 @@ namespace Hecton8.Habitat.Deformation
             }
             finally
             {
-                if (materialsLocked)
-                    _dataVault.TryUnlockBuffer(BufferID.StructuralIntegrityMaterialStrengths, SystemID.HullIntegrity);
-                if (statesLocked)
-                    _dataVault.TryUnlockBuffer(BufferID.StructuralIntegrityStates, SystemID.HullIntegrity);
                 ReleaseStructuralMutationGuard();
             }
 
@@ -1625,23 +1527,39 @@ namespace Hecton8.Habitat.Deformation
         private float ResolveSimulationQualityWeight()
         {
             float fallback = math.saturate(math.isfinite(simulationQualityWeight) ? simulationQualityWeight : 1f);
-            if (_dataVault == null || !_dataVault.TryLockBuffer(BufferID.StructuralIntegrityTuning, SystemID.HullIntegrity))
+            if (_dataVault == null)
                 return fallback;
 
-            try
-            {
-                NativeArray<StructuralTuningDTO> tuning = ResolveVaultBuffer(in _tuningHandle);
-                if (!tuning.IsCreated || tuning.Length == 0)
-                    return fallback;
+            NativeArray<StructuralTuningDTO> tuning = ResolveVaultBuffer(in _tuningHandle);
+            if (!tuning.IsCreated || tuning.Length == 0)
+                return fallback;
 
-                float quality = tuning[0].GlobalQualityWeight;
-                simulationQualityWeight = math.saturate(math.isfinite(quality) ? quality : fallback);
-                return simulationQualityWeight;
-            }
-            finally
-            {
-                _dataVault.TryUnlockBuffer(BufferID.StructuralIntegrityTuning, SystemID.HullIntegrity);
-            }
+            float quality = tuning[0].GlobalQualityWeight;
+            simulationQualityWeight = math.saturate(math.isfinite(quality) ? quality : fallback);
+            return simulationQualityWeight;
+        }
+
+        private static ulong StructuralMutationGuardBit(BufferID bufferId)
+        {
+            return 1UL << ((int)bufferId & 31);
+        }
+
+        private static bool IsHullIntegrityVaultHandle<T>(in VaultGenerationHandle<T> handle)
+            where T : struct
+        {
+            return handle.BufferID != 0u &&
+                   handle.SystemID == (uint)SystemID.HullIntegrity &&
+                   handle.Generation != 0u;
+        }
+
+        private static bool IsHullIntegrityVaultHandle<T>(
+            in VaultGenerationHandle<T> handle,
+            BufferID bufferId)
+            where T : struct
+        {
+            return handle.BufferID == unchecked((uint)(int)bufferId) &&
+                   handle.SystemID == (uint)SystemID.HullIntegrity &&
+                   handle.Generation != 0u;
         }
 
         private static int ResolveFramesBetweenUpdates(float quality)

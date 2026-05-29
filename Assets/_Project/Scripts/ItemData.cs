@@ -294,16 +294,64 @@ namespace Hecton8.Items
         public float UseDuration => useDuration;
         public uint UseAudioEventId => useAudioEventId;
 
-        public int DeconstructYieldCount => deconstructYields != null ? deconstructYields.Length : 0;
+        public int DeconstructYieldCount => CountValidDeconstructYields(int.MaxValue);
+        public int DeconstructYieldSlotCount => deconstructYields != null ? deconstructYields.Length : 0;
 
         public bool TryGetDeconstructYield(int index, out DeconstructYieldEntry entry)
         {
             entry = default;
-            if (deconstructYields == null || (uint)index >= (uint)deconstructYields.Length)
+            if (deconstructYields == null || index < 0)
                 return false;
 
-            entry = deconstructYields[index];
-            return entry.Item != null && entry.maxYield > 0;
+            int validIndex = 0;
+            for (int i = 0; i < deconstructYields.Length; i++)
+            {
+                if (!IsValidDeconstructYield(in deconstructYields[i]))
+                    continue;
+
+                if (validIndex == index)
+                {
+                    entry = deconstructYields[i];
+                    return true;
+                }
+
+                validIndex++;
+            }
+
+            return false;
+        }
+
+        public bool TryGetDeconstructYieldBySlot(int slotIndex, out DeconstructYieldEntry entry)
+        {
+            entry = default;
+            if (deconstructYields == null || (uint)slotIndex >= (uint)deconstructYields.Length)
+                return false;
+
+            entry = deconstructYields[slotIndex];
+            return IsValidDeconstructYield(in entry);
+        }
+
+        private int CountValidDeconstructYields(int maxCount)
+        {
+            if (deconstructYields == null || maxCount <= 0)
+                return 0;
+
+            int count = 0;
+            int scanCount = Mathf.Min(deconstructYields.Length, maxCount);
+            for (int i = 0; i < scanCount; i++)
+            {
+                if (IsValidDeconstructYield(in deconstructYields[i]))
+                    count++;
+            }
+
+            return count;
+        }
+
+        private static bool IsValidDeconstructYield(in DeconstructYieldEntry entry)
+        {
+            return entry.Item != null &&
+                   entry.maxYield > 0 &&
+                   !string.IsNullOrWhiteSpace(entry.Item.PersistentId);
         }
 
         /// <summary>
@@ -461,8 +509,7 @@ namespace Hecton8.Items
 
         private void EnsureLocalizedCache()
         {
-            ILocalizationTextReadModel manager = Hecton8.Core.GlobalRegistry.LocalizationText;
-            EnsureLocalizedCache(manager);
+            EnsureLocalizedCache(null);
         }
 
         private void EnsureLocalizedCache(ILocalizationTextReadModel manager)

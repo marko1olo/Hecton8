@@ -93,3 +93,52 @@ Status: PENDING UNITY EDITOR RUNTIME VALIDATION - CONSOLIDATED TARGETED DOTNET P
 - [x] Re-prove Data Sovereignty lock handling | DOD: `ModularEquipmentEngine.cs` write acquisitions at 1384/1536/1539 release in `finally` paths at 1355-1359, 1395-1398, and 1565-1570; rejected any lock route without deterministic release | estimate: 35000 us
 - [x] Generate final APEX report artifact and hash | DOD: `Docs/Reports/APEX_FINAL_VERIFICATION_COMPILE_MEDIC_20260528.json` SHA-256 `1F026FC0C50FEE82C2F494A55A8659CB58420FA2F30C37CD7376D511C335029D`; rejected chat-only proof | estimate: 22000 us
 - [x] Record remaining faults honestly | DOD: Unity Editor import/Console/PlayMode/profiler/player build not executed; strict Core audit still exposes 904 warnings when normal `NoWarn` is disabled; no `Docs/AgentLogs/Dump_COMPILE_MEDIC.bin` exists because no crash/NaN dump was produced | estimate: 14000 us
+
+## Loop 10
+
+- [x] Re-read status/rationale, AGENTS, domain roster, CURRENT_BATCH header, Unity skill, and 6 relevant `.agents-skills` mandates | DOD: anti-amnesia plus task-relevant mandate selection before code; rejected relying on compacted chat memory | estimate: 45000 us
+- [x] Classify latest failing Core log against current source | DOD: `StressDrivenSpawnDirector` and `PowerGrid` reported errors are stale in current source; live defect was Shinobu `TryOpenVaultView` signature drift | estimate: 55000 us
+- [x] Patch live Shinobu DataVault read-view contract | DOD: added exact `BufferID.ShinobuFlockingThreats`, `ShinobuFlockingThreatCount`, `ShinobuFlockingCounters64`, and `ShinobuFlockingTelemetryRing` at `ShinobuEcosystemBalancer.FlockingAvoidance.cs:37-40,144-145`; rejected new vault ownership or buffer migrations | estimate: 25000 us
+- [x] Static post-patch smoke scan | DOD: no remaining old `GetInstanceID(` or `enableWordWrapping`; changed Shinobu lines contain no reference `new`, `string.Format`, `.ToString()`, LINQ, or `foreach`; full-file managed `FileStream`/`BinaryWriter` is fault-dump-only cold path | estimate: 25000 us
+- [ ] Guarded Core compile after Shinobu patch | DOD: BLOCKED BY CONTENTION; CPU samples 57/76/88/60/65/100 percent with compiler process count 0, so no `dotnet build` launched under the >50% CPU rule | estimate: 0 us
+- [x] Generate post-patch proof artifact | DOD: `Docs/Reports/APEX_COMPILE_MEDIC_POST_SHINOBU_BUFFERID_AUDIT_20260528.json` SHA-256 `DEF43BC479ABB4D42DCD2F536E719E9AB258D197934488E372D13FF1BE3B9A67`; status remains `PENDING_VERIFICATION` because compile was gated | estimate: 18000 us
+
+## Loop 11
+
+- [x] Re-scan first-party runtime obsolete identity/API debt while compile gate is blocked | DOD: found live `GetInstanceID()` debt in `LogisticsPipeNode.cs`, all other `GetInstanceID(`/`enableWordWrapping` hits in `Assets/_Project/Scripts` resolved to zero after patch | estimate: 30000 us
+- [x] Patch LogisticsPipeNode runtime identity cache | DOD: replaced only lines 550 and 556 with `EntityId.ToULong(crate.GetEntityId())`; did not overwrite existing parallel dirty scheduler changes in the same file | estimate: 12000 us
+- [x] Static Zero-GC scan for new LogisticsPipeNode edits | DOD: changed lines contain no reference `new`, `string.Format`, `.ToString()`, LINQ, or `foreach`; whole-file `new` hits are struct signal/math constructors | estimate: 16000 us
+- [ ] Guarded Core compile after LogisticsPipeNode patch | DOD: BLOCKED BY CONTENTION; additional CPU samples 99/71/88/100 percent with compiler process count 0, so no `dotnet build` launched | estimate: 0 us
+- [x] Refresh proof artifact and hash | DOD: `Docs/Reports/APEX_COMPILE_MEDIC_POST_SHINOBU_BUFFERID_AUDIT_20260528.json` SHA-256 `1ABC36D53628DE8311B6FCCCA4C851F03E136643F710E0742BA53B43D7486EA0` | estimate: 12000 us
+
+## Loop 12
+
+- [x] Re-sample compile gate after context resume | DOD: CPU samples 100/100/100 percent with compiler process count 0; build remains forbidden by the local >50% rule | estimate: 60000000 us
+- [x] Re-run static violation scans while build is gated | DOD: `GetInstanceID(`/`enableWordWrapping` remains zero in `Assets/_Project/Scripts`; sampled global-system hits classify as editor/authoring/diagnostic/crash or dispatcher fence paths | estimate: 45000 us
+- [ ] Guarded Core compile after post-resume samples | DOD: BLOCKED BY CONTENTION; no `dotnet build` launched, no green claim made | estimate: 0 us
+- [x] Refresh post-patch JSON artifact and sidecar hash | DOD: `Docs/Reports/APEX_COMPILE_MEDIC_POST_SHINOBU_BUFFERID_AUDIT_20260528.json` SHA-256 `F43CDECCA929138BA9FA6C19A01517AADCEA642E92D266EEADCC32CB4B2D52D4` | estimate: 12000 us
+
+## Loop 13
+
+- [x] Re-read current COMPILE_MEDIC state, rationale, AGENTS domain context, Unity skill note, and relevant mandates | DOD: selected GlobalRegistry DI, Execution Phases, Signal Lane, Zero-GC, Native Jobs, Struct Layout, and Cinematic Cheat mandates before source edits; `CURRENT_BATCH.md` has no `COMPILE_MEDIC` tag, so the explicit APEX integrator prompt is the active task | estimate: 60000 us
+- [x] Repair DataVault pinned read alias release route | DOD: `GlobalDataVault.PinReadOnlyAlias<T>` now uses counted owner-tagged `TryLockBuffer` plus generation-handle resolve, and releases failed pins through `TryUnlockBuffer`; rejected the previous external-view route because it had no valid release path through `TryUnlockBuffer` | estimate: 25000 us
+- [x] Flatten Hazard exposure scheduled-job write locks | DOD: `ScheduleExposureJob` releases `_jobVolumes` write lock in `finally` before acquiring `_jobResultHandle`; job input buffers are read-only pinned aliases, released by `ReleaseExposureJobLocks` after `LateFrameTick` job finalization | estimate: 70000 us
+- [x] Flatten Hazard register/unregister state mutation locks | DOD: replaced four simultaneous Hazard state write locks with `HazardStateMutationGuardMask` and direct mutable resolves under one mutation guard; `rg TryAcquireWriteLock` now shows only wrapper definition plus scheduled `_jobVolumes` and `_jobResultHandle` writer fences in HazardZoneManager | estimate: 45000 us
+- [x] Run static hot dependency and added-line Zero-GC scans | DOD: full hot-method lexical scan over `Assets/_Project/Scripts` reports `HOT_LOOKUP_HITS=0`; added-line scan reports `referenceNewText=0`, `string.Format=0`, `.ToString()=0`, LINQ=0, `foreachLoop=0`, `GlobalRegistry.Get=0`, `GetComponent=0` | estimate: 60000000 us
+- [ ] Guarded compile after integrator source patches | DOD: BLOCKED BY CONTENTION; CPU sample was 100 percent and compiler process count was 0, so no `dotnet build` was launched under the local >50% CPU rule | estimate: 0 us
+
+## Loop 14
+
+- [x] Repair current Shinobu and Core compile drift | DOD: added the missing `BoidIndirectArgsDTO` out parameter to the real Shinobu vault resolver, added `System.Runtime.CompilerServices` to `InputDispatcher`, and cast `VoxelDeltaProcessor` handle owner comparison to `(uint)SystemID.TerrainSeams`; rejected shims or owner changes | estimate: 90000 us
+- [x] Flatten Shinobu scheduled job writer reservations | DOD: replaced multi-buffer scheduled job locks with `TryAcquireMutationGuard` masks at `ShinobuEcosystemBalancer.cs:1907-1969`; release route uses one `ReleaseMutationGuard` and early macro returns are inside `finally` | estimate: 80000 us
+- [x] Verify Core and Editor compile | DOD: `dotnet build .\Hecton8.Core.csproj /m:1 /p:UseSharedCompilation=false --no-restore` and `dotnet build .\Hecton8.Editor.csproj /m:1 /p:UseSharedCompilation=false --no-restore` both completed with 0 warnings and 0 errors | estimate: 405000000 us
+- [x] Re-run hot dependency/static boundary scans | DOD: method-owner scan over `Assets/_Project/Scripts` saw 6779 methods and 0 hot `GlobalRegistry.Get<T>`/`GetComponent<T>`/`TryGetComponent<T>` hits; MapMagic/Crest conflict/stub scan had no hits | estimate: 20000000 us
+- [ ] Rebuild separate Crest/MapMagic editor targets after current CPU spike | DOD: BLOCKED BY THROTTLE; after Hecton8.Editor green, CPU samples stayed 100/79 percent with compiler count 0, so extra project builds were not launched | estimate: 0 us
+
+## Loop 15
+
+- [x] Re-run precise hot dependency scan after APEX prompt | DOD: declaration-only scanner over 416 lookup-bearing files saw 448 hot method declarations and 0 `GlobalRegistry.Get<T>`/`GetComponent`/`TryGetComponent` hits inside those methods; rejected the earlier broad 48-hit list because it matched non-declaration context | estimate: 129700000 us
+- [x] Re-run phase/GC transfer scans | DOD: `HazardZoneManager` `LateFrameTick`/consume/post-simulation, `ShinobuEcosystemBalancer` `LateFrameTick`/completion/render transfer, and `FoveatedSimulationManager` `VisualSyncTick`/completion/importance guard ranges all report `new=0`, `string.Format=0`, `.ToString()=0`, LINQ=0, `foreach=0`; `new HectonSpatialHash` was classified as cold `AllocateNativeState`, not phase transfer | estimate: 2000000 us
+- [x] Re-audit DataVault lock release routes | DOD: Shinobu render payload locks, Foveated importance guard, Hazard state/exposure mutation guards, and `GlobalDataVault.PinReadOnlyAlias` failure release paths show deterministic release through `finally` or direct guard failure cleanup; no nested write-lock route added in current patches | estimate: 1300000 us
+- [x] Re-audit Crest/MapMagic dirty boundary statically | DOD: `git diff --check -- Assets/Crest Assets/MapMagic` has no whitespace errors beyond LF-to-CRLF notices; conflict/stub scan has no changed-file hits; Crest changes are kernel/null/dispatch guards; MapMagic changes move camera/tag discovery into cold cache/render callbacks | estimate: 2500000 us
+- [ ] Rebuild separate Crest/MapMagic targets after Loop 15 static audit | DOD: BLOCKED BY THROTTLE; CPU samples were 99/83/90/100/100/100 and later 85/65/99/81/89/100 with compiler count 0, so no extra `dotnet build` was launched | estimate: 0 us

@@ -532,6 +532,7 @@ namespace Hecton8.Physics
         private bool _damageReceiverRegistered;
         private bool _damageJobRunning;
         private bool _nativeStateReady;
+        private bool _coldSupportsComputeShaders;
         private ISubmarineAtmosphereRoomReadModel _atmosphereSystem;
         private int _queuedImpactCount;
         private int _scheduledImpactCount;
@@ -694,6 +695,7 @@ namespace Hecton8.Physics
 
         private void Awake()
         {
+            CacheGraphicsCapabilitiesCold();
             CacheReferences();
             // COLD ALLOC: MaterialPropertyBlock[1] - procedural leak plume draw properties for RenderPrimitives - owner: SubmarineStructuralGrid
             _leakPlumeDrawProperties = new MaterialPropertyBlock();
@@ -1848,7 +1850,7 @@ namespace Hecton8.Physics
 
         private bool EnsureLeakPlumeGpuResources()
         {
-            if (leakPlumeCompute == null || !SystemInfo.supportsComputeShaders)
+            if (leakPlumeCompute == null || !_coldSupportsComputeShaders)
                 return false;
 
             if (_leakPlumeKernelIndex < 0)
@@ -1888,9 +1890,9 @@ namespace Hecton8.Physics
             _activeBreachGpuBufferIndex = 0;
         }
 
-        private static int ResolveKernelThreadGroupSizeX(ComputeShader compute, int kernel)
+        private int ResolveKernelThreadGroupSizeX(ComputeShader compute, int kernel)
         {
-            if (compute == null || kernel < 0 || !SystemInfo.supportsComputeShaders || !compute.IsSupported(kernel))
+            if (compute == null || kernel < 0 || !_coldSupportsComputeShaders || !compute.IsSupported(kernel))
                 return 0;
 
             compute.GetKernelThreadGroupSizes(kernel, out uint sizeX, out uint sizeY, out uint sizeZ);
@@ -1899,6 +1901,11 @@ namespace Hecton8.Physics
 
             ulong totalThreads = sizeX * (ulong)sizeY * sizeZ;
             return totalThreads <= PortableMaxComputeThreadsPerGroup ? (int)sizeX : 0;
+        }
+
+        private void CacheGraphicsCapabilitiesCold()
+        {
+            _coldSupportsComputeShaders = SystemInfo.supportsComputeShaders;
         }
 
         private static int CeilDividePositive(int value, int divisor)

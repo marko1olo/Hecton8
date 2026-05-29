@@ -527,6 +527,19 @@ namespace Hecton8.Physics
         private const uint FailureJob = 1u << 2;
         private const uint FailureDefrag = 1u << 3;
         private const uint FailureThread = 1u << 4;
+        private const ulong StressMutationGuardMask =
+            (1UL << (((int)BufferID.TetherVerletPositions) & 63)) |
+            (1UL << (((int)BufferID.TetherVerletPreviousPositions) & 63)) |
+            (1UL << (((int)BufferID.TetherVerletVelocities) & 63)) |
+            (1UL << (((int)BufferID.TetherVerletPinnedPositions) & 63)) |
+            (1UL << (((int)BufferID.TetherVerletPinnedMask) & 63)) |
+            (1UL << (((int)BufferID.TetherVerletSegmentRestLengths) & 63)) |
+            (1UL << (((int)BufferID.TetherVerletSegmentTensions) & 63)) |
+            (1UL << (((int)BufferID.TetherVerletCorrections) & 63)) |
+            (1UL << (((int)BufferID.TetherVerletCorrectionWeights) & 63)) |
+            (1UL << (((int)BufferID.TetherVerletSolverStats) & 63)) |
+            (1UL << (((int)BufferID.TetherVerletSolverFlags) & 63)) |
+            (1UL << (((int)BufferID.TetherVerletNodeFaultFlags) & 63));
 
         [UnityEditor.MenuItem("HECTON-8/Physics/Run Tether Memory Sovereignty Validator 1303")]
         public static void RunMenu()
@@ -608,122 +621,51 @@ namespace Hecton8.Physics
                 SystemID.Physics,
                 NativeArrayOptions.ClearMemory);
 
-            if (!ValidateHandle(in positionsHandle) ||
-                !ValidateHandle(in previousHandle) ||
-                !ValidateHandle(in velocitiesHandle) ||
-                !ValidateHandle(in pinnedPositionsHandle) ||
-                !ValidateHandle(in pinnedMaskHandle) ||
-                !ValidateHandle(in restLengthsHandle) ||
-                !ValidateHandle(in tensionsHandle) ||
-                !ValidateHandle(in correctionsHandle) ||
-                !ValidateHandle(in weightsHandle) ||
-                !ValidateHandle(in statsHandle) ||
-                !ValidateHandle(in flagsHandle) ||
-                !ValidateHandle(in nodeFaultsHandle))
+            if (!ValidateHandle(in positionsHandle, BufferID.TetherVerletPositions) ||
+                !ValidateHandle(in previousHandle, BufferID.TetherVerletPreviousPositions) ||
+                !ValidateHandle(in velocitiesHandle, BufferID.TetherVerletVelocities) ||
+                !ValidateHandle(in pinnedPositionsHandle, BufferID.TetherVerletPinnedPositions) ||
+                !ValidateHandle(in pinnedMaskHandle, BufferID.TetherVerletPinnedMask) ||
+                !ValidateHandle(in restLengthsHandle, BufferID.TetherVerletSegmentRestLengths) ||
+                !ValidateHandle(in tensionsHandle, BufferID.TetherVerletSegmentTensions) ||
+                !ValidateHandle(in correctionsHandle, BufferID.TetherVerletCorrections) ||
+                !ValidateHandle(in weightsHandle, BufferID.TetherVerletCorrectionWeights) ||
+                !ValidateHandle(in statsHandle, BufferID.TetherVerletSolverStats) ||
+                !ValidateHandle(in flagsHandle, BufferID.TetherVerletSolverFlags) ||
+                !ValidateHandle(in nodeFaultsHandle, BufferID.TetherVerletNodeFaultFlags))
             {
                 failureFlags |= FailureHandle;
                 return false;
             }
 
-            bool positionsLocked = false;
-            bool previousLocked = false;
-            bool velocitiesLocked = false;
-            bool pinnedPositionsLocked = false;
-            bool pinnedMaskLocked = false;
-            bool restLengthsLocked = false;
-            bool tensionsLocked = false;
-            bool correctionsLocked = false;
-            bool weightsLocked = false;
-            bool statsLocked = false;
-            bool flagsLocked = false;
-            bool nodeFaultsLocked = false;
+            bool mutationGuardHeld = false;
 
             try
             {
-                if (!vault.TryAcquireWriteLock(in positionsHandle, SystemID.Physics, out NativeArray<float3> positions))
+                if (!vault.TryAcquireMutationGuard(StressMutationGuardMask))
                 {
                     failureFlags |= FailureLock;
                     return false;
                 }
 
-                positionsLocked = true;
-                if (!vault.TryAcquireWriteLock(in previousHandle, SystemID.Physics, out NativeArray<float3> previousPositions))
+                mutationGuardHeld = true;
+                if (!TryResolveStressBuffer(vault, in positionsHandle, BufferID.TetherVerletPositions, StressNodeCount, out NativeArray<float3> positions) ||
+                    !TryResolveStressBuffer(vault, in previousHandle, BufferID.TetherVerletPreviousPositions, StressNodeCount, out NativeArray<float3> previousPositions) ||
+                    !TryResolveStressBuffer(vault, in velocitiesHandle, BufferID.TetherVerletVelocities, StressNodeCount, out NativeArray<float3> velocities) ||
+                    !TryResolveStressBuffer(vault, in pinnedPositionsHandle, BufferID.TetherVerletPinnedPositions, StressNodeCount, out NativeArray<float3> pinnedPositions) ||
+                    !TryResolveStressBuffer(vault, in pinnedMaskHandle, BufferID.TetherVerletPinnedMask, StressNodeCount, out NativeArray<byte> pinnedMask) ||
+                    !TryResolveStressBuffer(vault, in restLengthsHandle, BufferID.TetherVerletSegmentRestLengths, StressSegmentCount, out NativeArray<float> restLengths) ||
+                    !TryResolveStressBuffer(vault, in tensionsHandle, BufferID.TetherVerletSegmentTensions, StressSegmentCount, out NativeArray<float> tensions) ||
+                    !TryResolveStressBuffer(vault, in correctionsHandle, BufferID.TetherVerletCorrections, StressNodeCount, out NativeArray<float3> corrections) ||
+                    !TryResolveStressBuffer(vault, in weightsHandle, BufferID.TetherVerletCorrectionWeights, StressNodeCount, out NativeArray<float> weights) ||
+                    !TryResolveStressBuffer(vault, in statsHandle, BufferID.TetherVerletSolverStats, 1, out NativeArray<float> stats) ||
+                    !TryResolveStressBuffer(vault, in flagsHandle, BufferID.TetherVerletSolverFlags, 1, out NativeArray<int> flags) ||
+                    !TryResolveStressBuffer(vault, in nodeFaultsHandle, BufferID.TetherVerletNodeFaultFlags, StressNodeCount, out NativeArray<byte> nodeFaults))
                 {
                     failureFlags |= FailureLock;
                     return false;
                 }
 
-                previousLocked = true;
-                if (!vault.TryAcquireWriteLock(in velocitiesHandle, SystemID.Physics, out NativeArray<float3> velocities))
-                {
-                    failureFlags |= FailureLock;
-                    return false;
-                }
-
-                velocitiesLocked = true;
-                if (!vault.TryAcquireWriteLock(in pinnedPositionsHandle, SystemID.Physics, out NativeArray<float3> pinnedPositions))
-                {
-                    failureFlags |= FailureLock;
-                    return false;
-                }
-
-                pinnedPositionsLocked = true;
-                if (!vault.TryAcquireWriteLock(in pinnedMaskHandle, SystemID.Physics, out NativeArray<byte> pinnedMask))
-                {
-                    failureFlags |= FailureLock;
-                    return false;
-                }
-
-                pinnedMaskLocked = true;
-                if (!vault.TryAcquireWriteLock(in restLengthsHandle, SystemID.Physics, out NativeArray<float> restLengths))
-                {
-                    failureFlags |= FailureLock;
-                    return false;
-                }
-
-                restLengthsLocked = true;
-                if (!vault.TryAcquireWriteLock(in tensionsHandle, SystemID.Physics, out NativeArray<float> tensions))
-                {
-                    failureFlags |= FailureLock;
-                    return false;
-                }
-
-                tensionsLocked = true;
-                if (!vault.TryAcquireWriteLock(in correctionsHandle, SystemID.Physics, out NativeArray<float3> corrections))
-                {
-                    failureFlags |= FailureLock;
-                    return false;
-                }
-
-                correctionsLocked = true;
-                if (!vault.TryAcquireWriteLock(in weightsHandle, SystemID.Physics, out NativeArray<float> weights))
-                {
-                    failureFlags |= FailureLock;
-                    return false;
-                }
-
-                weightsLocked = true;
-                if (!vault.TryAcquireWriteLock(in statsHandle, SystemID.Physics, out NativeArray<float> stats))
-                {
-                    failureFlags |= FailureLock;
-                    return false;
-                }
-
-                statsLocked = true;
-                if (!vault.TryAcquireWriteLock(in flagsHandle, SystemID.Physics, out NativeArray<int> flags))
-                {
-                    failureFlags |= FailureLock;
-                    return false;
-                }
-
-                flagsLocked = true;
-                if (!vault.TryAcquireWriteLock(in nodeFaultsHandle, SystemID.Physics, out NativeArray<byte> nodeFaults))
-                {
-                    failureFlags |= FailureLock;
-                    return false;
-                }
-
-                nodeFaultsLocked = true;
                 worker = new System.Threading.Thread(
                     () => RunCompactionWorker(vault, ref stop, ref compactionTicks, ref workerFailures))
                 {
@@ -799,30 +741,8 @@ namespace Hecton8.Physics
                 if (worker != null && worker.IsAlive && !worker.Join(3000))
                     failureFlags |= FailureThread;
 
-                if (nodeFaultsLocked)
-                    vault.ReleaseWriteLock(in nodeFaultsHandle, SystemID.Physics);
-                if (flagsLocked)
-                    vault.ReleaseWriteLock(in flagsHandle, SystemID.Physics);
-                if (statsLocked)
-                    vault.ReleaseWriteLock(in statsHandle, SystemID.Physics);
-                if (weightsLocked)
-                    vault.ReleaseWriteLock(in weightsHandle, SystemID.Physics);
-                if (correctionsLocked)
-                    vault.ReleaseWriteLock(in correctionsHandle, SystemID.Physics);
-                if (tensionsLocked)
-                    vault.ReleaseWriteLock(in tensionsHandle, SystemID.Physics);
-                if (restLengthsLocked)
-                    vault.ReleaseWriteLock(in restLengthsHandle, SystemID.Physics);
-                if (pinnedMaskLocked)
-                    vault.ReleaseWriteLock(in pinnedMaskHandle, SystemID.Physics);
-                if (pinnedPositionsLocked)
-                    vault.ReleaseWriteLock(in pinnedPositionsHandle, SystemID.Physics);
-                if (velocitiesLocked)
-                    vault.ReleaseWriteLock(in velocitiesHandle, SystemID.Physics);
-                if (previousLocked)
-                    vault.ReleaseWriteLock(in previousHandle, SystemID.Physics);
-                if (positionsLocked)
-                    vault.ReleaseWriteLock(in positionsHandle, SystemID.Physics);
+                if (mutationGuardHeld)
+                    vault.ReleaseMutationGuard(StressMutationGuardMask);
             }
 
             bool relocated = vault.GenerateMockVaultRelocationForValidation(
@@ -904,9 +824,27 @@ namespace Hecton8.Physics
                    flags[0] == TetherVerletFaultFlags.None;
         }
 
-        private static bool ValidateHandle<T>(in VaultGenerationHandle<T> handle) where T : struct
+        private static bool ValidateHandle<T>(in VaultGenerationHandle<T> handle, BufferID expectedBufferId) where T : struct
         {
-            return handle.BufferID != 0u && handle.Generation != 0u;
+            return handle.BufferID == unchecked((uint)(int)expectedBufferId) &&
+                   handle.SystemID == unchecked((uint)SystemID.Physics) &&
+                   handle.Generation != 0u;
+        }
+
+        private static bool TryResolveStressBuffer<T>(
+            GlobalDataVault vault,
+            in VaultGenerationHandle<T> handle,
+            BufferID expectedBufferId,
+            int minLength,
+            out NativeArray<T> buffer) where T : struct
+        {
+            buffer = default;
+            return vault != null &&
+                   minLength >= 0 &&
+                   ValidateHandle(in handle, expectedBufferId) &&
+                   vault.TryResolveHandle(in handle, out buffer) &&
+                   buffer.IsCreated &&
+                   buffer.Length >= minLength;
         }
     }
 #endif

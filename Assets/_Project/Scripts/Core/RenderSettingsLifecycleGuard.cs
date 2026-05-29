@@ -78,6 +78,7 @@ namespace Hecton8.Core
         // COLD ALLOC: ulong[4] - active render-settings lifecycle guard owners - owner: RenderSettingsLifecycleGuard
         private static ulong[] _ownerIds = new ulong[4];
         private static int _ownerCount;
+        private static int _ownerOverflowCount;
         private static bool _snapshotCaptured;
         private static RenderSettingsSnapshot _snapshot;
 #if UNITY_EDITOR
@@ -88,6 +89,7 @@ namespace Hecton8.Core
         private static void ResetStaticState()
         {
             _ownerCount = 0;
+            _ownerOverflowCount = 0;
             _snapshotCaptured = false;
             _snapshot = default;
             Array.Clear(_ownerIds, 0, _ownerIds.Length);
@@ -102,6 +104,12 @@ namespace Hecton8.Core
             if (IndexOfOwner(ownerId) >= 0)
                 return;
 
+            if (_ownerCount >= _ownerIds.Length)
+            {
+                _ownerOverflowCount++;
+                return;
+            }
+
             if (_ownerCount == 0)
             {
                 _snapshot = RenderSettingsSnapshot.Capture();
@@ -111,7 +119,6 @@ namespace Hecton8.Core
 #endif
             }
 
-            EnsureOwnerCapacity(_ownerCount + 1);
             _ownerIds[_ownerCount] = ownerId;
             _ownerCount++;
         }
@@ -124,14 +131,27 @@ namespace Hecton8.Core
             ulong ownerId = EntityId.ToULong(owner.GetEntityId());
             int ownerIndex = IndexOfOwner(ownerId);
             if (ownerIndex < 0)
+            {
+                if (_ownerOverflowCount > 0)
+                {
+                    _ownerOverflowCount--;
+                    RestoreIfNoOwnersRemain();
+                }
+
                 return;
+            }
 
             _ownerCount--;
             if (ownerIndex < _ownerCount)
                 _ownerIds[ownerIndex] = _ownerIds[_ownerCount];
 
             _ownerIds[_ownerCount] = 0;
-            if (_ownerCount != 0 || !_snapshotCaptured)
+            RestoreIfNoOwnersRemain();
+        }
+
+        private static void RestoreIfNoOwnersRemain()
+        {
+            if (_ownerCount != 0 || _ownerOverflowCount != 0 || !_snapshotCaptured)
                 return;
 
             _snapshot.Restore();
@@ -149,6 +169,7 @@ namespace Hecton8.Core
                 _snapshot.Restore();
 
             _ownerCount = 0;
+            _ownerOverflowCount = 0;
             _snapshotCaptured = false;
             _snapshot = default;
             Array.Clear(_ownerIds, 0, _ownerIds.Length);
@@ -166,30 +187,6 @@ namespace Hecton8.Core
             }
 
             return -1;
-        }
-
-        private static void EnsureOwnerCapacity(int requiredCount)
-        {
-            if (_ownerIds.Length >= requiredCount)
-                return;
-
-            int newCapacity = _ownerIds.Length;
-            int growthWatchdog = 31;
-            while (newCapacity < requiredCount && growthWatchdog-- > 0)
-            {
-                if (newCapacity > (int.MaxValue >> 1))
-                {
-                    newCapacity = requiredCount;
-                    break;
-                }
-
-                newCapacity <<= 1;
-            }
-
-            if (newCapacity < requiredCount)
-                newCapacity = requiredCount;
-
-            Array.Resize(ref _ownerIds, newCapacity);
         }
 
         private static Material CaptureSkybox()

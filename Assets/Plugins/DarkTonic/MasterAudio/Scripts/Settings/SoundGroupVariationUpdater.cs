@@ -190,6 +190,10 @@ namespace DarkTonic.MasterAudio {
             _useClipAgePriority = clipAgePriority;
 
             UpdateCachedObjects();
+            if (_maThisFrame == null) {
+                return;
+            }
+
             UpdateAudioLocationAndPriority(false); // in case we're not following, it should get one update.
         }
 
@@ -304,6 +308,10 @@ namespace DarkTonic.MasterAudio {
 
         private void DoneWithOcclusion() {
             _isWaitingForQueuedOcclusionRay = false;
+            if (_variation == null) {
+                return;
+            }
+
             MasterAudio.RemoveFromOcclusionFrequencyTransitioning(GrpVariation);
         }
 
@@ -335,9 +343,9 @@ namespace DarkTonic.MasterAudio {
             var is2DRaycast = _maThisFrame.occlusionRaycastMode == MasterAudio.RaycastMode.Physics2D;
 
             if (GrpVariation.LowPassFilter == null) {
-                // in case Occlusion got turned on during runtime.
-                var newFilter = GrpVariation.gameObject.AddComponent<AudioLowPassFilter>();
-                GrpVariation.LowPassFilter = newFilter;
+                // Occlusion filters are prepared during OnEnable; avoid hot AddComponent on ray frames.
+                MasterAudio.RemoveFromBlockedOcclusionSources(GrpVariation.GameObj);
+                return false;
             }
 
 #if PHY2D_ENABLED
@@ -710,6 +718,7 @@ namespace DarkTonic.MasterAudio {
         // ReSharper disable once UnusedMember.Local
         private void OnEnable() {
             _inited = false;
+            CacheRuntimeReferences();
 
             // values to be reset every time a sound plays.
             _fadeInOutWillFadeOut = false;
@@ -747,15 +756,22 @@ namespace DarkTonic.MasterAudio {
 
             // new frame. Update cached objects and frame counters;
             _maCachedFromFrame = _frameNum;
-            _maThisFrame = MasterAudio.Instance;
-            _listenerThisFrame = MasterAudio.ListenerTrans;
+            _maThisFrame = MasterAudio.CachedInstance;
+            _listenerThisFrame = MasterAudio.CachedListenerTrans;
         }
 
         /// <summary>
         /// This method will be called by MasterAudio.cs either during LateUpdate (default) or FixedUpdate, however you've configured it in Advanced Settings.
         /// </summary>
         public void ManualUpdate() {
+            if (_variation == null) {
+                return;
+            }
+
             UpdateCachedObjects();
+            if (_maThisFrame == null) {
+                return;
+            }
 
             _framesPlayed++;
 
@@ -958,12 +974,6 @@ namespace DarkTonic.MasterAudio {
 
         private SoundGroupVariation GrpVariation {
             get {
-                if (_variation != null) {
-                    return _variation;
-                }
-
-                _variation = GetComponent<SoundGroupVariation>();
-
                 return _variation;
             }
         }
@@ -990,6 +1000,31 @@ namespace DarkTonic.MasterAudio {
                 }
 
                 return false;
+            }
+        }
+
+        private void CacheRuntimeReferences() {
+            if (_variation == null) {
+                _variation = GetComponent<SoundGroupVariation>();
+            }
+
+            if (_variation == null) {
+                _trans = null;
+                _varAudio = null;
+                _parentGrp = null;
+                return;
+            }
+
+            _trans = _variation.Trans;
+            _varAudio = _variation.VarAudio;
+            _parentGrp = _variation.ParentGroup;
+
+            UpdateCachedObjects();
+            if (_maThisFrame != null && _variation.UsesOcclusion && _variation.LowPassFilter == null) {
+                _variation.LowPassFilter = _variation.gameObject.GetComponent<AudioLowPassFilter>();
+                if (_variation.LowPassFilter == null) {
+                    _variation.LowPassFilter = _variation.gameObject.AddComponent<AudioLowPassFilter>();
+                }
             }
         }
 #endregion

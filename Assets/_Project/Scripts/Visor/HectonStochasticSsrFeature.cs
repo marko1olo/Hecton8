@@ -126,9 +126,9 @@ namespace Hecton8.Visor
 
                 TextureDesc maskDesc = sourceDesc;
                 maskDesc.name = "_HectonStochasticSsrMask";
-                int maskShift = FrameTimeWatchdog.CurrentMathLodMode == MathLodMode.Low ? 2 : 1;
-                maskDesc.width = math.max(1, sourceDesc.width >> maskShift);
-                maskDesc.height = math.max(1, sourceDesc.height >> maskShift);
+                float maskScale = ResolveMaskScale01(FrameTimeWatchdog.CurrentVisualQualityWeight01);
+                maskDesc.width = math.max(1, (int)math.round(sourceDesc.width * maskScale));
+                maskDesc.height = math.max(1, (int)math.round(sourceDesc.height * maskScale));
                 maskDesc.clearBuffer = true;
                 maskDesc.clearColor = Color.black;
                 maskDesc.depthBufferBits = DepthBits.None;
@@ -237,6 +237,18 @@ namespace Hecton8.Visor
                         CoreUtils.DrawFullScreen(context.cmd, data.Material, null, data.ShaderPassIndex);
                     });
                 }
+            }
+
+            private static float ResolveMaskScale01(float visualQualityWeight01)
+            {
+                float safeQuality01 = math.saturate(math.select(1f, visualQualityWeight01, math.isfinite(visualQualityWeight01)));
+                return math.lerp(0.25f, 0.5f, SmoothStep01(safeQuality01));
+            }
+
+            private static float SmoothStep01(float value)
+            {
+                float t = math.saturate(value);
+                return t * t * (3f - 2f * t);
             }
 
             public void Dispose()

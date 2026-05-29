@@ -225,7 +225,6 @@ namespace Hecton8.UI
                 }
             }
 
-            RefreshTickRegistration();
         }
 
         // ══════════════════════════════════════════════════════════

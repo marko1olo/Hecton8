@@ -547,6 +547,7 @@ namespace Hecton8.Core
             where T : struct
         {
             buffer = default;
+            bool handedOff = false;
             if (vault == null ||
                 requiredLength <= 0 ||
                 handle.BufferID == 0u ||
@@ -556,12 +557,22 @@ namespace Hecton8.Core
                 return false;
             }
 
-            if (buffer.IsCreated && buffer.Length >= requiredLength)
-                return true;
+            try
+            {
+                if (buffer.IsCreated && buffer.Length >= requiredLength)
+                {
+                    handedOff = true;
+                    return true;
+                }
 
-            vault.ReleaseWriteLock(in handle, OwnerSystemId);
-            buffer = default;
-            return false;
+                buffer = default;
+                return false;
+            }
+            finally
+            {
+                if (!handedOff)
+                    vault.ReleaseWriteLock(in handle, OwnerSystemId);
+            }
         }
 
         private static bool WriteRuntimeState(IDataVault vault, in AupOriginShiftRuntimeState runtime)

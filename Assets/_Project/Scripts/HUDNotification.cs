@@ -323,11 +323,6 @@ namespace Hecton8.UI
             _registeredHotSwapListener = false;
         }
 
-        public void ShowWarning(string message)
-        {
-            Enqueue(message, NotificationSeverity.Warning);
-        }
-
         public void ShowWarning(ReadOnlySpan<char> message)
         {
             Enqueue(message, NotificationSeverity.Warning);
@@ -339,11 +334,6 @@ namespace Hecton8.UI
         public void ShowWarning(in FixedCharBuffer messageBuffer)
         {
             Enqueue(in messageBuffer, NotificationSeverity.Warning);
-        }
-
-        public void ShowCritical(string message)
-        {
-            Enqueue(message, NotificationSeverity.Critical);
         }
 
         public void ShowCritical(ReadOnlySpan<char> message)
@@ -359,11 +349,6 @@ namespace Hecton8.UI
             Enqueue(in messageBuffer, NotificationSeverity.Critical);
         }
 
-        public void ShowInfo(string message)
-        {
-            Enqueue(message, NotificationSeverity.Info);
-        }
-
         public void ShowInfo(ReadOnlySpan<char> message)
         {
             Enqueue(message, NotificationSeverity.Info);
@@ -375,17 +360,6 @@ namespace Hecton8.UI
         public void ShowInfo(in FixedCharBuffer messageBuffer)
         {
             Enqueue(in messageBuffer, NotificationSeverity.Info);
-        }
-
-        private void Enqueue(string message, NotificationSeverity severity)
-        {
-            EnsureBuilt();
-
-            uint messageHash = NotificationEvents.RegisterMessage(message);
-            if (messageHash == 0u)
-                return;
-
-            Enqueue(messageHash, severity);
         }
 
         private void Enqueue(ReadOnlySpan<char> message, NotificationSeverity severity)
@@ -879,11 +853,20 @@ namespace Hecton8.UI
                 return false;
             }
 
-            if (queue.IsCreated)
-                return true;
+            bool releaseOnExit = true;
+            try
+            {
+                if (!queue.IsCreated)
+                    return false;
 
-            vault.ReleaseWriteLock(in _queueHandle, VaultOwnerSystemId);
-            return false;
+                releaseOnExit = false;
+                return true;
+            }
+            finally
+            {
+                if (releaseOnExit)
+                    vault.ReleaseWriteLock(in _queueHandle, VaultOwnerSystemId);
+            }
         }
 
         private void ReleaseQueueWrite()

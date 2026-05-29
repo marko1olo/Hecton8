@@ -151,3 +151,51 @@ Solution: Generated `Docs/Reports/APEX_COMPILE_MEDIC_ZERO_GC_SCAN_20260528_3.jso
 Rejected Alternatives: Treating all `new StructName` regex hits as managed heap allocations was rejected because it would falsify the audit. Hiding Crest `FFTCompute.cs:280` was rejected; it remains recorded as a cache-miss managed constructor path, not proven 0 B/frame.
 Scalability potential: Ballistics uses `HomeostasisBrain.GlobalQualityWeight` to smoothly scale damage signal budget, primitive evaluation, and ricochet cost. Tether uses `SmoothRange01` continuous weighting. Low tier keeps minimal budgets; middle/high interpolate; ultra buys denser visual signaling without changing gameplay truth ownership.
 Hardware Impact: Runtime microseconds saved: 0 claimed. Expected runtime cost is neutral for compile fixes. Crest cache-miss allocation remains a runtime profiling target; no Unity Profiler/GCMonitor proof was produced in this dotnet-only pass.
+
+## 2026-05-28 Post-APEX Shinobu BufferID Contract Repair
+
+Problem: `APEX_COMPILE_MEDIC_CORE_GETENTITYID_RECHECK_20260528_1.log` failed with 51 errors. After comparing the log to current source, `StressDrivenSpawnDirector` and `PowerGrid` entries were stale parallel-source states. The remaining live fault was `ShinobuEcosystemBalancer.FlockingAvoidance.cs` calling `TryOpenVaultView` without the required expected `BufferID`.
+Solution: Added the authoritative BufferID arguments at lines 37-40 and 144-145: `ShinobuFlockingThreats`, `ShinobuFlockingThreatCount`, `ShinobuFlockingCounters64`, and `ShinobuFlockingTelemetryRing`. This keeps read-view validation aligned with the owner handle acquisition/release contract in `ShinobuEcosystemBalancer.cs`.
+Rejected Alternatives: Adding overload shims was rejected because it would bypass DataVault buffer identity checks. Editing `PowerGrid` was rejected because current source no longer contains the missing battery dispatch symbols. Editing `StressDrivenSpawnDirector` was rejected because current source already has the 5-argument `TryRead` contract and current calls match it.
+Scalability potential: Flocking threat capture remains continuous via `ResolveFlockingThreatBudget(globalQualityWeight)` and signal publication cadence remains continuous through `Smooth01(globalQualityWeight)`. No binary `isLowEnd` switch or physical simulation path was introduced.
+Hardware Impact: Runtime microseconds saved: 0 claimed. The change is compile-contract repair only. Post-patch build proof is blocked by the compilation throttle: CPU samples were 57%, 76%, 88%, 60%, 65%, and 100%; compiler process count was 0 on each sample, but CPU stayed above the 50% project gate.
+
+## 2026-05-28 LogisticsPipeNode EntityId Cleanup
+
+Problem: A fresh static scan while the build gate was blocked found two first-party runtime uses of obsolete `Object.GetInstanceID()` in `LogisticsPipeNode.cs`, added by an existing dirty scheduler-topology change.
+Solution: Replaced only the identity folding at lines 550 and 556 with `EntityId.ToULong(sourceCrate.GetEntityId())` and `EntityId.ToULong(destinationCrate.GetEntityId())`, preserving the existing scheduler topology key behavior and not touching unrelated dirty hunks.
+Rejected Alternatives: Reverting the scheduler-topology change was rejected because it belongs to parallel workspace work. Using hash codes or object references was rejected because Unity 6 already supplies `EntityId` as the forward-compatible identity route.
+Scalability potential: Runtime behavior is unchanged across low/middle/high/ultra tiers. The topology key remains a cheap integer cache and does not add polling, physics simulation, or quality-tier branching.
+Hardware Impact: Runtime microseconds saved: 0 claimed. The fix removes obsolete API debt only. Build proof remains blocked by CPU samples 99%, 71%, 88%, and 100% after the patch; compiler process count remained 0.
+
+## 2026-05-28 Post-Resume Compile Gate Hold
+
+Problem: The user requested final verification, but the local compilation throttle forbids `dotnet build` when CPU load is above 50%. Three post-resume CPU samples reported 100%, and no compiler processes were active.
+Solution: Did not launch a new build. Refreshed the JSON proof artifact with the post-resume samples and static scan classification instead of manufacturing a green compile claim.
+Rejected Alternatives: Running `dotnet build` at 100% CPU was rejected because it violates the project throttle. Treating stale green logs as post-patch proof was rejected because Shinobu and LogisticsPipeNode changed after those logs.
+Scalability potential: Runtime tier behavior is unchanged. This is verification hygiene only; no quality switches, physical simulation, or data ownership route changed.
+Hardware Impact: Runtime microseconds saved: 0 claimed. Verification state remains `PENDING_VERIFICATION` until CPU drops below 50% and a guarded build can run.
+
+## 2026-05-29 APEX Integrator Lock/Pin Repair
+
+Problem: The first Hazard exposure lock-flattening pass used `IDataVault.PinReadOnlyAlias<T>`, but the current `GlobalDataVault` implementation published read aliases through `BlockFlagExternalView` while `TryUnlockBuffer` only releases counted pins with `Reserved1 > 0`. That created a permanent external-view/compaction-stall vector if used by scheduled jobs.
+Solution: Re-routed `GlobalDataVault.PinReadOnlyAlias<T>` through the existing counted owner-tagged `TryLockBuffer` path, then resolved the current generation handle and returned a read-only alias. Failure releases the pin immediately through `TryUnlockBuffer`. `HazardZoneManager.ScheduleExposureJob` now holds one write lock only long enough to copy active volumes, releases it in `finally`, then schedules the job over read-only pinned aliases and one result write lock. `TryAcquireHazardStateWriteViews` no longer acquires four writer fences; it uses `HazardStateMutationGuardMask` plus direct mutable resolves under one guard.
+Rejected Alternatives: Keeping the external-view alias path was rejected because it had no proven release path. Holding `_jobVolumes`, `_volumeCurveLutSamples`, `_candidateVolumeFlags`, `_spatialQueryHandles`, and `_jobResultHandle` writer fences together was rejected because it multiplies deadlock/contention surface. Holding four Hazard state writer fences for register/unregister was rejected after mutation guard coverage proved the same buffer-bit exclusion without nested write locks. A new physical/spatial simulation rewrite was rejected because the exposure job only needed stable snapshots, not more realism.
+Scalability potential: Low tier pays a bounded active-volume snapshot and no extra allocation. Middle/high/ultra keep the same hazard truth while visual response remains a consumer concern in `LateFrameTick`/visual phases. No binary quality switch was introduced.
+Hardware Impact: Runtime microseconds saved: 0 claimed without profiler proof. Expected effect is lower DataVault writer-fence contention and safer compaction behavior; guarded compile remains blocked by CPU=100%.
+
+## 2026-05-29 Shinobu Lock Flattening and Final Compile Drift
+
+Problem: Fresh builds exposed live source drift after the earlier static pass: Shinobu's real vault resolver missed `BoidIndirectArgsDTO`, `InputDispatcher` used `MethodImpl` without the compiler-services namespace, and `VoxelDeltaProcessor` compared a `uint` handle owner to `SystemID`. Shinobu also still held many DataVault buffer reservations across scheduled jobs.
+Solution: Added the missing Shinobu out parameter and preserved the existing `BufferID.ShinobuBoidIndirectArgs` validation; flattened Shinobu scheduled frame/macro/initial-population reservations to mutation-guard masks released through one `ReleaseMutationGuard`; added `using System.Runtime.CompilerServices`; changed the voxel owner check to `(uint)SystemID.TerrainSeams`. Core and Hecton8.Editor builds now pass with 0 warnings and 0 errors.
+Rejected Alternatives: Adding overload shims, changing vault owner identity, or keeping multi-lock scheduled job helpers was rejected. Extra Crest/MapMagic builds were not launched while CPU stayed above the local threshold.
+Scalability potential: Shinobu quality still flows through `ResolveGlobalQualityWeight01`, spatial quality, stress, and budget math; no low/ultra binary path was added. Low tier avoids writer-fence pileups; higher tiers retain the same flocking/render payload pipeline.
+Hardware Impact: Runtime microseconds saved: 0 claimed without profiler proof. Expected impact is lower writer-lock contention and fewer compaction stalls; compile proof cost was about 405,000,000 us for Core plus Hecton8.Editor after throttle windows opened.
+
+## 2026-05-29 APEX Integrator Static Recheck Under Compile Throttle
+
+Problem: The user requested final APEX verification plus specific Crest/MapMagic/water graph confidence, but CPU stayed above the local 50 percent build threshold after the green Core and Hecton8.Editor builds.
+Solution: Did not launch extra builds. Re-ran declaration-only hot-method lookup scan, phase-transfer GC text scans, DataVault guard release scans, and Crest/MapMagic diff hygiene scans. The precise hot scan reports 416 lookup-bearing files, 448 hot method declarations, and 0 hot lookup hits. Phase-transfer ranges for Shinobu, Hazard, and Foveated report zero `new`, `string.Format`, `.ToString()`, LINQ, and `foreach` hits.
+Rejected Alternatives: Running Crest/MapMagic builds at CPU 65-100 percent was rejected by the project throttle. Treating the broad 48-hit lookup scan as proof was rejected because it matched non-declaration context. Claiming Unity graph/runtime proof was rejected because no Unity Editor import/play/profiler pass ran.
+Scalability potential: Current patches keep continuous quality/budget math and move expensive scene lookup/camera/tag resolution out of runtime refresh paths where touched. Crest changes prefer cheap guards and fallback passes over extra physical simulation.
+Hardware Impact: Runtime microseconds saved: 0 claimed. Expected risk reduction is fewer DataVault writer-fence stalls and fewer Crest compute-kernel null dispatch failures; Crest/MapMagic target build proof remains pending until CPU allows.

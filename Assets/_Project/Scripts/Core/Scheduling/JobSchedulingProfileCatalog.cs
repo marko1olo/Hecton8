@@ -56,27 +56,39 @@ namespace Hecton8.Core.Scheduling
                 SystemID.SystemDispatcher,
                 NativeArrayOptions.UninitializedMemory);
 
-            if (!vault.TryResolveHandle(in _profilesHandle, out NativeArray<JobSchedulingProfileDTO> profiles))
-                return;
-
 #if UNITY_EDITOR
-            if (!File.Exists(path))
+            Span<byte> csvScratch = stackalloc byte[CsvScratchBytes];
+            int byteCount = TryReadProfileCsvBytes(path, csvScratch);
+            if (byteCount <= 0)
                 return;
 
-            ParseProfileCsvFile(path, profiles);
+            if (!vault.TryAcquireWriteLock(in _profilesHandle, SystemID.SystemDispatcher, out NativeArray<JobSchedulingProfileDTO> profiles))
+                return;
+
+            try
+            {
+                if (profiles.IsCreated)
+                    _count = ParseProfileCsv(csvScratch.Slice(0, byteCount), profiles);
+            }
+            finally
+            {
+                vault.ReleaseWriteLock(in _profilesHandle, SystemID.SystemDispatcher);
+            }
 #else
             _count = 0;
 #endif
         }
 
 #if UNITY_EDITOR
-        private static void ParseProfileCsvFile(string path, NativeArray<JobSchedulingProfileDTO> profiles)
+        private static int TryReadProfileCsvBytes(string path, Span<byte> scratch)
         {
             try
             {
+                if (!File.Exists(path))
+                    return 0;
+
                 using (FileStream stream = File.Open(path, FileMode.Open, FileAccess.Read, FileShare.ReadWrite))
                 {
-                    Span<byte> scratch = stackalloc byte[CsvScratchBytes];
                     int byteCount = 0;
                     while (byteCount < scratch.Length)
                     {
@@ -87,16 +99,16 @@ namespace Hecton8.Core.Scheduling
                         byteCount += read;
                     }
 
-                    _count = ParseProfileCsv(scratch.Slice(0, byteCount), profiles);
+                    return byteCount;
                 }
             }
             catch (IOException)
             {
-                _count = 0;
+                return 0;
             }
             catch (UnauthorizedAccessException)
             {
-                _count = 0;
+                return 0;
             }
         }
 

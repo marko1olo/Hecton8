@@ -737,7 +737,7 @@ namespace Hecton8.Visor
             }
 
             bool allowComputeVolumetrics = settings.computeShader != null &&
-                                           HardwareTierDetector.AllowHighResourceComputeShaders;
+                                           SystemInfo.supportsComputeShaders;
             bool forceProxyOnly = !allowComputeVolumetrics;
             if (forceProxyOnly && _proxyMaterial == null)
                 return;

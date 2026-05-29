@@ -591,8 +591,8 @@ namespace Hecton8.Scavenging
                 HarvestDurationSeconds = math.max(0f, harvestDurationSeconds),
                 ValidLayerMask = SanitizeValidLayerMask(validLayers.value),
                 RequiredToolClass = (byte)requiredToolClass,
-                YieldCount = (byte)math.min(byte.MaxValue, harvestYield != null ? harvestYield.Length : 0),
-                RarityDropCount = (byte)math.min(byte.MaxValue, rarityDrops != null ? rarityDrops.Length : 0),
+                YieldCount = (byte)CountValidYieldEntries(byte.MaxValue),
+                RarityDropCount = (byte)CountValidRarityDropEntries(byte.MaxValue),
                 DefaultLootCount = (byte)math.min(byte.MaxValue, math.max(0, defaultLootCount)),
                 MinimumDensity = math.max(0f, minimumDensity),
                 MaximumDensity = math.max(math.max(0f, minimumDensity), maximumDensity),
@@ -632,7 +632,7 @@ namespace Hecton8.Scavenging
             for (int i = 0; i < maxEntries; i++)
             {
                 YieldAuthoringEntry source = harvestYield[i];
-                if (source.item == null || string.IsNullOrWhiteSpace(source.item.PersistentId))
+                if (!IsValidYieldEntry(in source))
                     continue;
 
                 YieldRuntimeEntry runtimeEntry = new YieldRuntimeEntry
@@ -666,7 +666,7 @@ namespace Hecton8.Scavenging
             for (int i = 0; i < maxEntries; i++)
             {
                 RarityDropAuthoringEntry source = rarityDrops[i];
-                if (source.item == null || string.IsNullOrWhiteSpace(source.item.PersistentId))
+                if (!IsValidRarityDropEntry(in source))
                     continue;
 
                 RarityDropRuntimeEntry runtimeEntry = new RarityDropRuntimeEntry
@@ -684,6 +684,48 @@ namespace Hecton8.Scavenging
             }
 
             return copiedCount;
+        }
+
+        private int CountValidYieldEntries(int maxCount)
+        {
+            if (harvestYield == null || maxCount <= 0)
+                return 0;
+
+            int count = 0;
+            int scanCount = math.min(harvestYield.Length, maxCount);
+            for (int i = 0; i < scanCount; i++)
+            {
+                if (IsValidYieldEntry(in harvestYield[i]))
+                    count++;
+            }
+
+            return count;
+        }
+
+        private int CountValidRarityDropEntries(int maxCount)
+        {
+            if (rarityDrops == null || maxCount <= 0)
+                return 0;
+
+            int count = 0;
+            int scanCount = math.min(rarityDrops.Length, maxCount);
+            for (int i = 0; i < scanCount; i++)
+            {
+                if (IsValidRarityDropEntry(in rarityDrops[i]))
+                    count++;
+            }
+
+            return count;
+        }
+
+        private static bool IsValidYieldEntry(in YieldAuthoringEntry entry)
+        {
+            return entry.item != null && !string.IsNullOrWhiteSpace(entry.item.PersistentId);
+        }
+
+        private static bool IsValidRarityDropEntry(in RarityDropAuthoringEntry entry)
+        {
+            return entry.item != null && !string.IsNullOrWhiteSpace(entry.item.PersistentId);
         }
 
 #if UNITY_EDITOR

@@ -64,7 +64,7 @@ namespace Hecton8.Construction
         private const byte DeconstructReasonAlreadyActive = 6;
         private const byte ModuleDeconstructOperationDeleteMarker = 1;
         private const byte ModuleDeconstructFlagForcePowerColdTick = 1 << 0;
-        private const byte ModuleDeconstructFlagDfsSkippedLowTier = 1 << 1;
+        private const byte ModuleDeconstructFlagDfsSkippedByBudget = 1 << 1;
         private const byte DeconstructionDebrisKindDisintegrate = 10;
         private const int DeconstructionDfsResultLength = 4;
         private const int DeconstructionBlackBoxCapacity = 300;
@@ -81,6 +81,20 @@ namespace Hecton8.Construction
         private const BufferID DeconstructionDfsResultBufferId = (BufferID)72142;
         private const BufferID DeconstructionBlackBoxBufferId = (BufferID)72143;
         private const BufferID DeconstructionFallbackCostsBufferId = (BufferID)72144;
+        private static readonly ulong DeconstructionMutationGuardMask =
+            DeconstructionMutationGuardBit(DeconstructionDfsStackBufferId) |
+            DeconstructionMutationGuardBit(DeconstructionDfsVisitedBufferId) |
+            DeconstructionMutationGuardBit(DeconstructionDfsResultBufferId) |
+            DeconstructionMutationGuardBit(DeconstructionBlackBoxBufferId) |
+            DeconstructionMutationGuardBit(DeconstructionFallbackCostsBufferId) |
+            DeconstructionMutationGuardBit(BufferID.Shinobu336TeardownTransactions) |
+            DeconstructionMutationGuardBit(BufferID.Shinobu336RefundCommands) |
+            DeconstructionMutationGuardBit(BufferID.Shinobu336LootCaches) |
+            DeconstructionMutationGuardBit(BufferID.Shinobu336Counters) |
+            DeconstructionMutationGuardBit(BufferID.Shinobu336TelemetryRing) |
+            DeconstructionMutationGuardBit(BufferID.Shinobu336TelemetryCursor) |
+            DeconstructionMutationGuardBit(BufferID.Shinobu336RefundProfiles) |
+            DeconstructionMutationGuardBit(BufferID.Shinobu336CsvScratch);
 
         [System.Runtime.InteropServices.StructLayout(System.Runtime.InteropServices.LayoutKind.Explicit, Size = 64)]
         private struct HabitatDeconstructionTelemetryEntry
@@ -275,6 +289,9 @@ namespace Hecton8.Construction
 #if UNITY_EDITOR
         private VaultGenerationHandle<byte> _deconstructionCsvScratchHandle;
 #endif
+        private IDataVault _deconstructionMutationGuardVault;
+        private ulong _deconstructionMutationGuardMask;
+        private int _deconstructionMutationGuardDepth;
         private int _deconstructionBlackBoxCursor;
         private int _lastShinobu336RefundedResources;
         private int _lastShinobu336OverflowCaches;
@@ -1005,7 +1022,7 @@ namespace Hecton8.Construction
 
             byte flags = ModuleDeconstructFlagForcePowerColdTick;
             if (dfsSkipped)
-                flags |= ModuleDeconstructFlagDfsSkippedLowTier;
+                flags |= ModuleDeconstructFlagDfsSkippedByBudget;
 
             SignalBus<ModuleDeconstructSignal>.TryPushTracked(new ModuleDeconstructSignal
             {
@@ -1034,7 +1051,7 @@ namespace Hecton8.Construction
 
         private void AcceptDeconstruction(in DeconstructRequestSignal request, ushort refundItemCount, bool dfsSkipped)
         {
-            byte reason = dfsSkipped ? ModuleDeconstructFlagDfsSkippedLowTier : DeconstructReasonNone;
+            byte reason = dfsSkipped ? ModuleDeconstructFlagDfsSkippedByBudget : DeconstructReasonNone;
             PublishDeconstructionResult(in request, DeconstructResultAccepted, reason, refundItemCount);
             WriteDeconstructionBlackBoxSample(in request, DeconstructResultAccepted, reason, ReadDfsVisitedCount(), ReadDfsExpectedCount());
         }
@@ -1499,45 +1516,71 @@ namespace Hecton8.Construction
             telemetryRing = default;
             telemetryCursor = default;
             if (vault == null ||
-                _deconstructionTelemetryHandle.Generation == 0u ||
-                _deconstructionTelemetryCursorHandle.Generation == 0u)
+                !IsDeconstructionVaultHandle(
+                    in _deconstructionTelemetryHandle,
+                    BufferID.Shinobu336TelemetryRing) ||
+                !IsDeconstructionVaultHandle(
+                    in _deconstructionTelemetryCursorHandle,
+                    BufferID.Shinobu336TelemetryCursor))
             {
                 return false;
             }
 
-            if (!vault.TryAcquireWriteLock(in _deconstructionTelemetryHandle, SystemID.Construction, out telemetryRing))
-                return false;
-
-            if (!telemetryRing.IsCreated || telemetryRing.Length < HabitatDeconstructionTransactionKernel.TelemetryCapacity)
+            if (!TryOpenDeconstructionVaultBuffer(
+                    vault,
+                    in _deconstructionTelemetryHandle,
+                    BufferID.Shinobu336TelemetryRing,
+                    HabitatDeconstructionTransactionKernel.TelemetryCapacity,
+                    out NativeArray<TeardownTelemetryEntry> _) ||
+                !TryOpenDeconstructionVaultBuffer(
+                    vault,
+                    in _deconstructionTelemetryCursorHandle,
+                    BufferID.Shinobu336TelemetryCursor,
+                    1,
+                    out NativeArray<int> _))
             {
-                vault.ReleaseWriteLock(in _deconstructionTelemetryHandle, SystemID.Construction);
-                telemetryRing = default;
                 return false;
             }
 
-            bool cursorLocked = vault.TryAcquireWriteLock(in _deconstructionTelemetryCursorHandle, SystemID.Construction, out telemetryCursor);
-            if (cursorLocked &&
-                telemetryCursor.IsCreated &&
-                telemetryCursor.Length > 0)
+            bool ownershipTransferred = false;
+            if (!TryAcquireDeconstructionMutationGuard(vault))
+                return false;
+
+            try
+            {
+                if (!TryOpenDeconstructionVaultBuffer(
+                        vault,
+                        in _deconstructionTelemetryHandle,
+                        BufferID.Shinobu336TelemetryRing,
+                        HabitatDeconstructionTransactionKernel.TelemetryCapacity,
+                        out telemetryRing) ||
+                    !TryOpenDeconstructionVaultBuffer(
+                        vault,
+                        in _deconstructionTelemetryCursorHandle,
+                        BufferID.Shinobu336TelemetryCursor,
+                        1,
+                        out telemetryCursor))
+                {
+                    return false;
+                }
+
+                ownershipTransferred = true;
                 return true;
-
-            if (cursorLocked)
-                vault.ReleaseWriteLock(in _deconstructionTelemetryCursorHandle, SystemID.Construction);
-            vault.ReleaseWriteLock(in _deconstructionTelemetryHandle, SystemID.Construction);
-            telemetryRing = default;
-            telemetryCursor = default;
-            return false;
+            }
+            finally
+            {
+                if (!ownershipTransferred)
+                {
+                    ReleaseDeconstructionMutationGuard(vault);
+                    telemetryRing = default;
+                    telemetryCursor = default;
+                }
+            }
         }
 
         private void ReleaseDeconstructionTelemetry(IDataVault vault)
         {
-            if (vault == null)
-                return;
-
-            if (_deconstructionTelemetryCursorHandle.Generation != 0u)
-                vault.ReleaseWriteLock(in _deconstructionTelemetryCursorHandle, SystemID.Construction);
-            if (_deconstructionTelemetryHandle.Generation != 0u)
-                vault.ReleaseWriteLock(in _deconstructionTelemetryHandle, SystemID.Construction);
+            ReleaseDeconstructionMutationGuard(vault);
         }
 
         private int ApplyRefundCommandsOrOverflow(
@@ -1716,14 +1759,26 @@ namespace Hecton8.Construction
         {
             IDataVault vault = _cachedDataVault;
             if (vault == null ||
-                _deconstructionTelemetryHandle.Generation == 0u ||
-                !vault.TryAcquireWriteLock(in _deconstructionTelemetryHandle, SystemID.Construction, out NativeArray<TeardownTelemetryEntry> telemetryRing))
+                !IsDeconstructionVaultHandle(
+                    in _deconstructionTelemetryHandle,
+                    BufferID.Shinobu336TelemetryRing) ||
+                !TryAcquireDeconstructionMutationGuard(vault))
             {
                 return;
             }
 
             try
             {
+                if (!TryOpenDeconstructionVaultBuffer(
+                        vault,
+                        in _deconstructionTelemetryHandle,
+                        BufferID.Shinobu336TelemetryRing,
+                        HabitatDeconstructionTransactionKernel.TelemetryCapacity,
+                        out NativeArray<TeardownTelemetryEntry> telemetryRing))
+                {
+                    return;
+                }
+
                 string path = Path.GetFullPath(Path.Combine(Application.dataPath, "..", Shinobu336DumpRelativePath));
                 string directory = Path.GetDirectoryName(path);
                 if (!string.IsNullOrEmpty(directory))
@@ -1755,7 +1810,7 @@ namespace Hecton8.Construction
             }
             finally
             {
-                vault.ReleaseWriteLock(in _deconstructionTelemetryHandle, SystemID.Construction);
+                ReleaseDeconstructionMutationGuard(vault);
             }
         }
 
@@ -1829,12 +1884,86 @@ namespace Hecton8.Construction
         {
             buffer = default;
             return vault != null &&
-                   handle.Generation != 0u &&
-                   handle.BufferID == (uint)bufferId &&
-                   handle.SystemID == (uint)SystemID.Construction &&
+                   IsDeconstructionVaultHandle(in handle, bufferId) &&
                    vault.TryReadHandle(in handle, out buffer) &&
                    buffer.IsCreated &&
                    buffer.Length >= requiredLength;
+        }
+
+        private static bool IsDeconstructionVaultHandle<T>(
+            in VaultGenerationHandle<T> handle,
+            BufferID bufferId) where T : struct
+        {
+            return handle.Generation != 0u &&
+                   handle.BufferID == (uint)bufferId &&
+                   handle.SystemID == (uint)SystemID.Construction;
+        }
+
+        private static ulong DeconstructionMutationGuardBit(BufferID bufferId)
+        {
+            return 1UL << (unchecked((int)(uint)(int)bufferId) & 31);
+        }
+
+        private bool TryAcquireDeconstructionMutationGuard(IDataVault vault)
+        {
+            if (vault == null || DeconstructionMutationGuardMask == 0UL)
+                return false;
+
+            if (_deconstructionMutationGuardDepth > 0)
+            {
+                if (!ReferenceEquals(_deconstructionMutationGuardVault, vault) ||
+                    _deconstructionMutationGuardMask != DeconstructionMutationGuardMask)
+                {
+                    return false;
+                }
+
+                _deconstructionMutationGuardDepth++;
+                return true;
+            }
+
+            if (!vault.TryAcquireMutationGuard(DeconstructionMutationGuardMask))
+                return false;
+
+            _deconstructionMutationGuardVault = vault;
+            _deconstructionMutationGuardMask = DeconstructionMutationGuardMask;
+            _deconstructionMutationGuardDepth = 1;
+            return true;
+        }
+
+        private void ReleaseDeconstructionMutationGuard(IDataVault vault)
+        {
+            if (_deconstructionMutationGuardDepth <= 0)
+            {
+                _deconstructionMutationGuardDepth = 0;
+                _deconstructionMutationGuardMask = 0UL;
+                _deconstructionMutationGuardVault = null;
+                return;
+            }
+
+            if (_deconstructionMutationGuardDepth > 1)
+            {
+                _deconstructionMutationGuardDepth--;
+                return;
+            }
+
+            IDataVault guardedVault = _deconstructionMutationGuardVault;
+            ulong guardMask = _deconstructionMutationGuardMask;
+            _deconstructionMutationGuardDepth = 0;
+            _deconstructionMutationGuardMask = 0UL;
+            _deconstructionMutationGuardVault = null;
+            if (guardedVault != null && guardMask != 0UL && (vault == null || ReferenceEquals(vault, guardedVault)))
+                guardedVault.ReleaseMutationGuard(guardMask);
+        }
+
+        private void ForceReleaseDeconstructionMutationGuard()
+        {
+            IDataVault guardedVault = _deconstructionMutationGuardVault;
+            ulong guardMask = _deconstructionMutationGuardMask;
+            _deconstructionMutationGuardDepth = 0;
+            _deconstructionMutationGuardMask = 0UL;
+            _deconstructionMutationGuardVault = null;
+            if (guardedVault != null && guardMask != 0UL)
+                guardedVault.ReleaseMutationGuard(guardMask);
         }
 
         private bool TryAcquireDeconstructionDfsBuffers(
@@ -1852,47 +1981,47 @@ namespace Hecton8.Construction
             if (!TryEnsureDeconstructionVaultBuffers(capacity) || vault == null)
                 return false;
 
-            int acquiredCount = 0;
-            if (!vault.TryAcquireWriteLock(in _deconstructionDfsStackHandle, SystemID.Construction, out dfsStack))
-            {
-                ReleaseDeconstructionDfsBuffers(vault, acquiredCount);
+            bool ownershipTransferred = false;
+            if (!TryAcquireDeconstructionMutationGuard(vault))
                 return false;
-            }
 
-            acquiredCount = 1;
-            if (!dfsStack.IsCreated || dfsStack.Length < capacity)
+            try
             {
-                ReleaseDeconstructionDfsBuffers(vault, acquiredCount);
-                return false;
-            }
+                if (!TryOpenDeconstructionVaultBuffer(
+                        vault,
+                        in _deconstructionDfsStackHandle,
+                        DeconstructionDfsStackBufferId,
+                        capacity,
+                        out dfsStack) ||
+                    !TryOpenDeconstructionVaultBuffer(
+                        vault,
+                        in _deconstructionDfsVisitedHandle,
+                        DeconstructionDfsVisitedBufferId,
+                        capacity,
+                        out dfsVisited) ||
+                    !TryOpenDeconstructionVaultBuffer(
+                        vault,
+                        in _deconstructionDfsResultHandle,
+                        DeconstructionDfsResultBufferId,
+                        DeconstructionDfsResultLength,
+                        out dfsResult))
+                {
+                    return false;
+                }
 
-            if (!vault.TryAcquireWriteLock(in _deconstructionDfsVisitedHandle, SystemID.Construction, out dfsVisited))
+                ownershipTransferred = true;
+                return true;
+            }
+            finally
             {
-                ReleaseDeconstructionDfsBuffers(vault, acquiredCount);
-                return false;
+                if (!ownershipTransferred)
+                {
+                    ReleaseDeconstructionDfsBuffers(vault, 1);
+                    dfsStack = default;
+                    dfsVisited = default;
+                    dfsResult = default;
+                }
             }
-
-            acquiredCount = 2;
-            if (!dfsVisited.IsCreated || dfsVisited.Length < capacity)
-            {
-                ReleaseDeconstructionDfsBuffers(vault, acquiredCount);
-                return false;
-            }
-
-            if (!vault.TryAcquireWriteLock(in _deconstructionDfsResultHandle, SystemID.Construction, out dfsResult))
-            {
-                ReleaseDeconstructionDfsBuffers(vault, acquiredCount);
-                return false;
-            }
-
-            acquiredCount = 3;
-            if (!dfsResult.IsCreated || dfsResult.Length < DeconstructionDfsResultLength)
-            {
-                ReleaseDeconstructionDfsBuffers(vault, acquiredCount);
-                return false;
-            }
-
-            return true;
         }
 
         private void ReleaseDeconstructionDfsBuffers(IDataVault vault)
@@ -1902,15 +2031,8 @@ namespace Hecton8.Construction
 
         private void ReleaseDeconstructionDfsBuffers(IDataVault vault, int acquiredCount)
         {
-            if (vault == null)
-                return;
-
-            if (acquiredCount >= 3)
-                vault.ReleaseWriteLock(in _deconstructionDfsResultHandle, SystemID.Construction);
-            if (acquiredCount >= 2)
-                vault.ReleaseWriteLock(in _deconstructionDfsVisitedHandle, SystemID.Construction);
-            if (acquiredCount >= 1)
-                vault.ReleaseWriteLock(in _deconstructionDfsStackHandle, SystemID.Construction);
+            if (acquiredCount > 0)
+                ReleaseDeconstructionMutationGuard(vault);
         }
 
         private bool TryAcquireDeconstructionTransactionBuffers(
@@ -1930,73 +2052,61 @@ namespace Hecton8.Construction
             if (!TryEnsureDeconstructionVaultBuffers(Mathf.Max(initialCapacity, ModuleCount)) || vault == null)
                 return false;
 
-            int acquiredCount = 0;
-            if (!vault.TryAcquireWriteLock(in _deconstructionTransactionsHandle, SystemID.Construction, out transactions))
-            {
-                ReleaseDeconstructionTransactionBuffers(vault, acquiredCount);
+            bool ownershipTransferred = false;
+            if (!TryAcquireDeconstructionMutationGuard(vault))
                 return false;
-            }
 
-            acquiredCount = 1;
-            if (!transactions.IsCreated || transactions.Length < 1)
+            try
             {
-                ReleaseDeconstructionTransactionBuffers(vault, acquiredCount);
-                return false;
-            }
+                if (!TryOpenDeconstructionVaultBuffer(
+                        vault,
+                        in _deconstructionTransactionsHandle,
+                        BufferID.Shinobu336TeardownTransactions,
+                        1,
+                        out transactions) ||
+                    !TryOpenDeconstructionVaultBuffer(
+                        vault,
+                        in _deconstructionRefundCommandsHandle,
+                        BufferID.Shinobu336RefundCommands,
+                        DeconstructionRefundCommandCapacity,
+                        out refundCommands) ||
+                    !TryOpenDeconstructionVaultBuffer(
+                        vault,
+                        in _deconstructionLootCachesHandle,
+                        BufferID.Shinobu336LootCaches,
+                        DeconstructionLootCacheCapacity,
+                        out lootCaches) ||
+                    !TryOpenDeconstructionVaultBuffer(
+                        vault,
+                        in _deconstructionCountersHandle,
+                        BufferID.Shinobu336Counters,
+                        DeconstructionCounterLaneLength,
+                        out counters) ||
+                    !TryOpenDeconstructionVaultBuffer(
+                        vault,
+                        in _deconstructionFallbackCostsHandle,
+                        DeconstructionFallbackCostsBufferId,
+                        1,
+                        out fallbackCosts))
+                {
+                    return false;
+                }
 
-            if (!vault.TryAcquireWriteLock(in _deconstructionRefundCommandsHandle, SystemID.Construction, out refundCommands))
+                ownershipTransferred = true;
+                return true;
+            }
+            finally
             {
-                ReleaseDeconstructionTransactionBuffers(vault, acquiredCount);
-                return false;
+                if (!ownershipTransferred)
+                {
+                    ReleaseDeconstructionTransactionBuffers(vault, 1);
+                    transactions = default;
+                    refundCommands = default;
+                    lootCaches = default;
+                    counters = default;
+                    fallbackCosts = default;
+                }
             }
-
-            acquiredCount = 2;
-            if (!refundCommands.IsCreated || refundCommands.Length < DeconstructionRefundCommandCapacity)
-            {
-                ReleaseDeconstructionTransactionBuffers(vault, acquiredCount);
-                return false;
-            }
-
-            if (!vault.TryAcquireWriteLock(in _deconstructionLootCachesHandle, SystemID.Construction, out lootCaches))
-            {
-                ReleaseDeconstructionTransactionBuffers(vault, acquiredCount);
-                return false;
-            }
-
-            acquiredCount = 3;
-            if (!lootCaches.IsCreated || lootCaches.Length < DeconstructionLootCacheCapacity)
-            {
-                ReleaseDeconstructionTransactionBuffers(vault, acquiredCount);
-                return false;
-            }
-
-            if (!vault.TryAcquireWriteLock(in _deconstructionCountersHandle, SystemID.Construction, out counters))
-            {
-                ReleaseDeconstructionTransactionBuffers(vault, acquiredCount);
-                return false;
-            }
-
-            acquiredCount = 4;
-            if (!counters.IsCreated || counters.Length < DeconstructionCounterLaneLength)
-            {
-                ReleaseDeconstructionTransactionBuffers(vault, acquiredCount);
-                return false;
-            }
-
-            if (!vault.TryAcquireWriteLock(in _deconstructionFallbackCostsHandle, SystemID.Construction, out fallbackCosts))
-            {
-                ReleaseDeconstructionTransactionBuffers(vault, acquiredCount);
-                return false;
-            }
-
-            acquiredCount = 5;
-            if (!fallbackCosts.IsCreated || fallbackCosts.Length < 1)
-            {
-                ReleaseDeconstructionTransactionBuffers(vault, acquiredCount);
-                return false;
-            }
-
-            return true;
         }
 
         private void ReleaseDeconstructionTransactionBuffers(IDataVault vault)
@@ -2006,19 +2116,8 @@ namespace Hecton8.Construction
 
         private void ReleaseDeconstructionTransactionBuffers(IDataVault vault, int acquiredCount)
         {
-            if (vault == null)
-                return;
-
-            if (acquiredCount >= 5)
-                vault.ReleaseWriteLock(in _deconstructionFallbackCostsHandle, SystemID.Construction);
-            if (acquiredCount >= 4)
-                vault.ReleaseWriteLock(in _deconstructionCountersHandle, SystemID.Construction);
-            if (acquiredCount >= 3)
-                vault.ReleaseWriteLock(in _deconstructionLootCachesHandle, SystemID.Construction);
-            if (acquiredCount >= 2)
-                vault.ReleaseWriteLock(in _deconstructionRefundCommandsHandle, SystemID.Construction);
-            if (acquiredCount >= 1)
-                vault.ReleaseWriteLock(in _deconstructionTransactionsHandle, SystemID.Construction);
+            if (acquiredCount > 0)
+                ReleaseDeconstructionMutationGuard(vault);
         }
 
         private bool TryAcquireDeconstructionBlackBox(
@@ -2030,25 +2129,53 @@ namespace Hecton8.Construction
             if (!TryEnsureDeconstructionVaultBuffers(Mathf.Max(initialCapacity, ModuleCount)) || vault == null)
                 return false;
 
-            if (!vault.TryAcquireWriteLock(in _deconstructionBlackBoxHandle, SystemID.Construction, out blackBox))
+            if (!TryOpenDeconstructionVaultBuffer(
+                    vault,
+                    in _deconstructionBlackBoxHandle,
+                    DeconstructionBlackBoxBufferId,
+                    DeconstructionBlackBoxCapacity,
+                    out NativeArray<HabitatDeconstructionTelemetryEntry> _))
+            {
+                return false;
+            }
+
+            if (!TryAcquireDeconstructionMutationGuard(vault))
                 return false;
 
-            if (blackBox.IsCreated && blackBox.Length >= DeconstructionBlackBoxCapacity)
-                return true;
+            bool ownershipTransferred = false;
+            try
+            {
+                if (!TryOpenDeconstructionVaultBuffer(
+                        vault,
+                        in _deconstructionBlackBoxHandle,
+                        DeconstructionBlackBoxBufferId,
+                        DeconstructionBlackBoxCapacity,
+                        out blackBox))
+                {
+                    return false;
+                }
 
-            vault.ReleaseWriteLock(in _deconstructionBlackBoxHandle, SystemID.Construction);
-            blackBox = default;
-            return false;
+                ownershipTransferred = true;
+                return true;
+            }
+            finally
+            {
+                if (!ownershipTransferred)
+                {
+                    ReleaseDeconstructionMutationGuard(vault);
+                    blackBox = default;
+                }
+            }
         }
 
         private void ReleaseDeconstructionBlackBox(IDataVault vault)
         {
-            if (vault != null)
-                vault.ReleaseWriteLock(in _deconstructionBlackBoxHandle, SystemID.Construction);
+            ReleaseDeconstructionMutationGuard(vault);
         }
 
         private void DisposeDeconstructionNativeBuffers()
         {
+            ForceReleaseDeconstructionMutationGuard();
             _deconstructionDfsStackHandle = default;
             _deconstructionDfsVisitedHandle = default;
             _deconstructionDfsResultHandle = default;
@@ -3005,7 +3132,7 @@ namespace Hecton8.Construction
                     _cachedPlayerInventoryService = currentService as IPlayerInventoryService;
                     break;
                 case GlobalRegistryServiceSlot.DataVault:
-                    _cachedDataVault = currentService as IDataVault;
+                    _cachedDataVault = currentService is IDataVault dataVault ? dataVault : null;
                     _habitatGraphManager?.SetDataVault(_cachedDataVault);
                     BaseLogisticsNetwork.BindDataVault(_cachedDataVault);
                     LogisticsPipeTransportScheduler.BindDataVault(_cachedDataVault);

@@ -2379,3 +2379,205 @@ Evidence:
 - PASS: build gate initially blocked at CPU `86.74`; retry allowed at CPU `48.01`, no compiler processes, no Unity lockfile.
 - PASS: `dotnet build Assembly-CSharp.csproj -v:minimal`; result `0 Warning(s)`, `0 Error(s)`.
 - NOT RUN: Unity MCP/Editor console verification; Unity MCP tools are unavailable in this session.
+
+## 2026-05-28 - Schema 100 Graph Node Authoring Interface
+
+What was wrong:
+- Graph-node apply was safe after schema 99, but graph-node creation was still not a serious modder-facing interface: free-text opcode, no parameter authoring, no disabled-node creation, and replace-on-apply was not visible in Workbench.
+- Root launcher verification exposed a real PowerShell usability failure: non-empty JSON can arrive quote-stripped through `powershell.exe -File`, so a normal external author command can fail before validation.
+
+What was done:
+- Added Workbench Graph Opcode Picker sourced from `Reference/allowed_opcodes.csv`.
+- Added Workbench Parameters JSON, Create Disabled Node, and Replace Existing On Apply controls for graph nodes.
+- Added `-NodeParametersJson` and `-NodeDisabled` support through root `h8mod.ps1`; removed brittle array splatting from the graph snippet route.
+- Hardened `Tools/create_graph_node_snippet.ps1`: strict JSON object validation, canonical parameter keys, 64-entry cap, disabled-node output, and flat CLI fallback like `{Quantity:3,Item:demo}`.
+- Hardened `Tools/apply_graph_node_snippet.ps1` parameter shape validation.
+- Updated SDK Hub generator so refreshed starter kits reuse the checked-in graph snippet template and emit the same launcher/docs route.
+- Updated docs, Runtime Verification Playbook, `Signal_Schema.json`, and static validator to schema revision `100`.
+- Regenerated starter review manifest and submission zip.
+
+Cinematic Cheats used:
+- Offline SDK authoring, bounded snippets, temp-write validation, and static gates instead of runtime graph mutation, arbitrary managed code, Harmony/BepInEx, or hot-lane gameplay authority.
+
+Exact Microseconds saved:
+- Runtime frame: `0 us/frame`. No gameplay, renderer, physics, SignalBus, GlobalDataVault, Burst/job, save, telemetry, or GlobalQualityWeight runtime route changed.
+- Low-end i3/MX350 impact: `0 us/frame`; prevents malformed graph packages and quote-broken CLI commands before runtime load/review.
+
+Evidence:
+- PASS: parser scan for root launcher, graph snippet/apply tools, and static validator.
+- PASS: direct relaxed parameters probe: `{Quantity:3,Item:demo}` generated a disabled node with preserved parameter values.
+- PASS: temp-copy root launcher probe: generated `node.param_test` with parameters/disabled state, applied it, preserved values in `Graphs/main.h8graph.json`, and revalidated the copied starter kit.
+- PASS: starter validate.
+- PASS: starter submission package build.
+- PASS: static validator schema revision `100`; Workbench opcode picker, Parameters JSON, disabled-node, root launcher parameter route, relaxed CLI fallback, and graph apply flags true.
+- PASS: review manifest parse: `33` hashed files, `135306` total bytes, graph snippet/apply/submission tools included, no `Generated/` or `Reports/` source entries.
+- PASS: submission zip inspection: `34` entries, graph snippet/apply tools and review manifest present, no `Generated/*` entry.
+- PASS: schema JSON parse, scoped diff check, touched-file trailing whitespace scan, editor C# ASCII scan, stale schema-99 scan.
+- DEFERRED: `dotnet build Assembly-CSharp.csproj -v:minimal`; build gate blocked at CPU `93.61`, then `98.65`, then `100.00`, with no compiler processes and no Unity lockfile.
+- NOT RUN: Unity MCP/Editor console verification; Unity MCP tools are unavailable in this session.
+
+## 2026-05-28 - Schema 101 Content Asset Manifest Authoring And Apply UX
+
+What was wrong:
+- `Content/assets.h8manifest.json` was present, but external authors still had to hand-author asset rows and manually keep `Id`, `Kind`, `Path`, `Crc32`, `Bytes`, and `Budgets.MaxAssetBytes` coherent.
+- Workbench preview covered settings/locale strongly, but content asset manifest state was not first-class enough for a random copied starter folder.
+- Static proof did not yet force generated starter kits, checked-in starter kits, Workbench, root launcher, docs, schema, review manifest, and submission zip to agree on content asset authoring.
+
+What was done:
+- Added `ModdingSDK/ExternalStarterKit/Tools/create_asset_entry_snippet.ps1` for Generated-only content asset entry creation with canonical id, kind, path, extension, CRC32, and byte validation.
+- Added `ModdingSDK/ExternalStarterKit/Tools/apply_asset_entry_snippet.ps1` for bounded insertion/replacement into `Content/assets.h8manifest.json`; it verifies referenced `Content/Assets/` files, rejects duplicates unless `-Replace`, raises `MaxAssetBytes`, validates after write, and rolls back content/authoring manifests on failure.
+- Added `Content/Assets/README.md`, updated starter docs, `h8mod.ps1`, SDK Hub generator, Workbench UI, Workbench authoring data preview, local validator, asset schema, schema revision 101, static validator probes, runtime playbook, and public modding docs.
+- Fixed static probe drift where JSON snippet output overwrote the text snippet before apply proof.
+- Fixed exact file-path markers in `External_Starter_Kit_File_Contract.md` so static docs proof catches content asset file support.
+
+Cinematic Cheats used:
+- No runtime asset loader was added. Current public runtime remains envelope-only and content asset files are review/bake inputs.
+- CRC32/byte proof is computed offline and checked before review handoff, not during gameplay.
+- `GlobalQualityWeight` is untouched because this pass changes only authoring UX and static package contracts, not simulation fidelity.
+
+Exact Microseconds saved:
+- Runtime frame time saved: `0 us/frame` claimed. No runtime loop changed.
+- Practical saved cost is failed handoff prevention: invalid asset path/CRC/byte/budget packages now fail in local CLI/Workbench validation before loader, asset ingestion, FutureCommandEnvelope validation, SignalBus, GlobalDataVault, save, rendering, Burst/job, or telemetry routes.
+
+Verification:
+- PASS: PowerShell parser scan for root launcher, asset snippet/apply helpers, local validator, and static validator.
+- PASS: temp-copy asset probe generated/applied `asset.validation_blob`, raised `MaxAssetBytes` to `5`, rejected duplicate apply, and revalidated the copied starter.
+- PASS: checked-in starter `validate` and `submission`.
+- PASS: review manifest has `36` source files, includes `Content/Assets/README.md`, asset snippet/apply tools, and excludes `Generated/`/`Reports/`.
+- PASS: submission zip has `37` entries, includes review manifest and asset tools, and excludes `Generated/*`.
+- PASS: `Validate_Mod_API_Static.ps1` schema revision `101`; negative Fail lines are expected fail-closed probes and process exit was `0`.
+- PASS: `Signal_Schema.json` parses and reports revision `101`.
+- PASS: scoped `git diff --check`, touched-file trailing whitespace scan, and stale schema-100/manual graph-copy scan.
+- DEFERRED: `dotnet build Assembly-CSharp.csproj -v:minimal` was not launched because CPU was `99.65`, then `72.51` percent under the project build gate. No active `dotnet`, `csc`, `VBCSCompiler`, or `MSBuild`, and no `Temp/UnityLockfile`.
+- NOT RUN: Unity MCP/Editor console verification because Unity MCP tools are not available in this session.
+
+## 2026-05-29 - Schema 102 Manifest Contract Capability And Budget UX
+
+What was wrong:
+- External authors could edit graph, settings, locale, and content asset data through bounded routes, but `mod.h8manifest.json` `Capabilities` and `Budgets` still had no first-class safe authoring surface.
+- Manual capability edits could imply fake runtime rights. Manual budget edits could lower package budgets below existing graph/content requirements.
+- During verification, `build_submission_package.ps1` failed after prepare/review because it wrote `Generated/com.example.starter_submission.zip.tmp` and same-folder cleanup hit `Access denied`.
+
+What was done:
+- Added `ModdingSDK/ExternalStarterKit/Tools/configure_manifest_contract.ps1` for no-Unity capability/budget configuration with public allowlist, capped budgets, lower-bound checks against current graph/content manifests, validation after write, and manifest restore on failure.
+- Added `manifest-contract` routing to `ModdingSDK/ExternalStarterKit/h8mod.ps1`.
+- Added a Manifest Contract panel to `ExternalStarterKitWorkbenchWindow` with capability action, capped budget fields, current manifest loading, and copy that states capabilities are review metadata, not runtime rights.
+- Updated `ModdingSdkHubWindow` generated starter output, local validator, authoring schema, docs, runtime playbook, static validator, review manifest output, and submission zip.
+- Changed `build_submission_package.ps1` and generated starter output to create temp zip/backup artifacts in system temp and copy/restore final `Generated/<id>_submission.zip`, eliminating stale `.tmp` files in `Generated`.
+
+Cinematic Cheats used:
+- No runtime mod permission expansion was added. Current public runtime remains envelope-only.
+- Capability and budget edits are offline review metadata. The runtime owner routes, SignalBus, HectonEventBus isolation, save identity, DTO layouts, and continuous `GlobalQualityWeight` are untouched.
+- Submission packaging remains a review handoff artifact, not a runtime install stamp.
+
+Exact Microseconds saved:
+- Runtime frame time saved: `0 us/frame` claimed. No runtime loop changed.
+- Practical saved cost is failed handoff prevention: invalid capability/budget packages and stale temp submission packages now fail or recover in local CLI/Workbench tooling before loader/review/runtime routes.
+
+Verification:
+- PASS: PowerShell parser scan for static validator, root launcher, manifest contract helper, submission packer, and local validator.
+- PASS: checked-in starter `validate`.
+- PASS: checked-in starter `manifest-contract` unchanged probe with budget sentinel values.
+- PASS: checked-in starter `submission` after temp-path packer fix.
+- PASS: review manifest schema `hecton8.external_review_manifest.v1`, runtime `envelope-only`, `37` source files, `190415` bytes, manifest-contract tool included, no `Generated/` or `Reports/` source entries.
+- PASS: submission zip has `38` entries, includes `Tools/configure_manifest_contract.ps1` and `Reports/review_manifest.json`, and has no `Generated/*`, `.tmp`, or `.previous` entries.
+- PASS: `Validate_Mod_API_Static.ps1` schema revision `102`; negative Fail lines are expected fail-closed probes and process exit was `0`.
+- PASS: `Signal_Schema.json` parses and reports revision `102`.
+- PASS: scoped `git diff --check` and touched-file trailing whitespace scan. Git line-ending warnings only.
+- DEFERRED: `dotnet build Assembly-CSharp.csproj -v:minimal` was not launched because CPU gate reported `100`, `100`, then `97` percent. No active `dotnet`, `csc`, `VBCSCompiler`, or `MSBuild`, and no `Temp/UnityLockfile`.
+- NOT RUN: Unity MCP/Editor console verification because Unity MCP tools are not available in this session.
+
+## 2026-05-29 - Schema 103 VS Code Task Surface
+
+What was wrong:
+- The public starter kit had `.vscode/settings.json` schema mapping and a root launcher, but no VS Code `Tasks: Run Task` surface.
+- Random external authors still had to copy long PowerShell commands, increasing the chance of calling `Tools/*.ps1` directly, skipping validation, or assuming the Unity project is required.
+- Static proof did not yet force the checked-in starter, generated starter, Workbench, local validator, schema, runtime playbook, review manifest, and submission zip to agree on VS Code authoring support.
+
+What was done:
+- Added `ModdingSDK/ExternalStarterKit/.vscode/tasks.json` with tasks for identity setup, validation, review, submission, capability/opcode discovery, graph/settings/locale/content asset snippet creation/apply, and manifest contract configuration.
+- Added `hecton8.powerShellExecutable` to `.vscode/settings.json` so Windows authors can use `powershell` and macOS/Linux authors can switch to `pwsh` without editing every task.
+- Updated `ModdingSdkHubWindow` to generate `.vscode/tasks.json` from the checked-in template and document it in generated README output.
+- Updated `ExternalStarterKitWorkbenchWindow` required-file health and file actions to include both VS Code settings and tasks.
+- Updated `Tools/validate_structure.ps1` to require `.vscode/tasks.json`, version `2.0.0`, all required task labels/inputs, `${config:hecton8.powerShellExecutable}`, `h8mod.ps1`, `-Action`, and no direct `Tools/*.ps1` task calls.
+- Updated schema revision 103, static validator, runtime playbook, file contract, authoring plan, product blueprint, API spec, starter README, tools README, and capabilities docs.
+
+Cinematic Cheats used:
+- No runtime mod authority was expanded. VS Code tasks are offline authoring buttons over the same root launcher.
+- No new HectonEventBus, SignalBus, GlobalRegistry, GlobalDataVault, loader, save, rendering, Burst/job, telemetry, or `GlobalQualityWeight` runtime route was added.
+- Package review remains the gate; VS Code tasks only reduce authoring friction and keep command routing deterministic.
+
+Exact Microseconds saved:
+- Runtime frame time saved: `0 us/frame` claimed. No runtime loop changed.
+- Practical saved cost is failed-handoff prevention: authors can run bounded tasks from VS Code without command-copy mistakes or direct inner-tool calls.
+
+Verification:
+- PASS: PowerShell parser scan for static validator, root launcher, starter validator, submission packer, and manifest contract helper.
+- PASS: JSON parse for `.vscode/tasks.json`, `.vscode/settings.json`, and `Signal_Schema.json`.
+- PASS: checked-in starter `validate`.
+- PASS: checked-in starter `submission`.
+- PASS: review manifest schema `hecton8.external_review_manifest.v1`, runtime `envelope-only`, `38` source files, `203730` bytes, `.vscode/tasks.json` and `.vscode/settings.json` included, no `Generated/` or `Reports/` source entries.
+- PASS: submission zip has `39` entries, includes `.vscode/tasks.json`, `.vscode/settings.json`, and `Reports/review_manifest.json`, and has no `Generated/*`, `.tmp`, or `.previous` entries.
+- PASS: `Validate_Mod_API_Static.ps1` schema revision `103`; negative Fail lines are expected fail-closed probes and process exit was `0`.
+- PASS: scoped `git diff --check`, touched-file trailing whitespace scan, editor C# ASCII scan, and stale schema-102 scan. Git line-ending warnings only.
+- DEFERRED: `dotnet build Assembly-CSharp.csproj -v:minimal` was not launched because CPU gate reported `79`, `87`, then `62` percent. No active `dotnet`, `csc`, `VBCSCompiler`, or `MSBuild`, and no `Temp/UnityLockfile`.
+- NOT RUN: Unity MCP/Editor console verification because Unity MCP tools are not available in this session.
+## 2026-05-29 - Schema 104 VS Code Disabled And Replace Task Surface
+
+What was wrong:
+- The schema 103 VS Code surface gave random external authors task labels for setup/validate/prepare/submission and basic snippet/apply routes, but missed disabled graph node creation and explicit replace apply routes.
+- Workbench and CLI already had these safe paths, so VS Code users still had to hand-edit commands for common overwrite/disable flows.
+
+What was done:
+- Added VS Code tasks for disabled graph node snippets and explicit graph/settings/locale/content asset replacement.
+- Kept every task behind root `h8mod.ps1 -Action`; no task calls `Tools/*.ps1` directly and no runtime rights were added.
+- Extended `Tools/validate_structure.ps1`, `Validate_Mod_API_Static.ps1`, `Signal_Schema.json` schema revision `104`, Runtime Playbook, and public SDK docs to prove the task labels, `-NodeDisabled`, and `-Replace` flags.
+- Rebuilt starter review/submission artifacts after validation.
+
+Cinematic Cheats used:
+- No runtime simulation was added. This is a zero-frame-cost SDK usability improvement that turns unsafe manual command editing into explicit offline task labels.
+
+Exact Microseconds saved:
+- Runtime frame cost: 0 us/frame.
+- Authoring risk removed: manual disabled-node and replace command editing for VS Code users.
+
+Verification:
+- PASS: parser scan, JSON parse, starter validate, starter submission, static validator schema `104`, review manifest inspection, zip inspection, scoped diff check, trailing whitespace scan, stale schema-103 scan.
+- PASS: temp-copy disabled/replace probe for graph/settings/locale/content asset routes.
+- DEFERRED: dotnet build was not launched because CPU was `79`, then `85`, above the project `<=50` build gate; no active compiler process and no Unity lock were present.
+
+## 2026-05-29 - Schema 105 Checked-In Starter Template Generator Parity
+
+What was wrong:
+- The checked-in External Starter Kit had current docs, schemas, tools, and VS Code task surface, but `ModdingSdkHubWindow` still regenerated many missing files from hardcoded C# strings.
+- That meant a missing-file refresh from the Unity SDK Hub could recreate stale starter content and diverge from the validated package that public modders use outside Unity.
+
+What was done:
+- Added `BuildStarterKitTemplateFile(relativePath, fallbackFactory)` to make the SDK Hub prefer checked-in `ModdingSDK/ExternalStarterKit` files before C# fallback builders.
+- Routed starter docs, manifests, content/graph/table/locale files, schemas, tools, and `.vscode` files through the checked-in template source.
+- Kept fallback builders for missing-template recovery only.
+- Moved static proof to schema revision `105` and required every generator template path in `Validate_Mod_API_Static.ps1`.
+- Updated Runtime Playbook, file contract, API spec, product blueprint, authoring plan, and public README with the generator parity rule.
+- Regenerated `Reports/review_manifest.json` and `Generated/com.example.starter_submission.zip`.
+
+Cinematic Cheats used:
+- No runtime mod authority was expanded. This is offline SDK generation parity over the existing envelope-only public mod boundary.
+- No runtime HectonEventBus, SignalBus, GlobalRegistry, GlobalDataVault, save, rendering, Burst/job, telemetry, or `GlobalQualityWeight` route changed.
+
+Exact Microseconds saved:
+- Runtime frame cost: 0 us/frame.
+- Practical cost removed: stale starter regeneration from the Unity SDK Hub now uses the same reviewed files as the public no-Unity starter kit.
+
+Verification:
+- PASS: PowerShell parser scan for static validator, root launcher, and starter validator.
+- PASS: JSON parse for `.vscode/tasks.json` and `Signal_Schema.json` revision `105`.
+- PASS: checked-in starter `validate`.
+- PASS: static validator schema revision `105`; `ExternalStarterKitGeneratorUsesCheckedInTemplates = True`; expected fail-closed negative probes did not fail the process.
+- PASS: checked-in starter `submission`.
+- PASS: review manifest schema `hecton8.external_review_manifest.v1`, runtime `envelope-only`, `38` source files, `206817` bytes, `.vscode/tasks.json` included, no `Generated/` or `Reports/` source entries.
+- PASS: submission zip has `39` entries, includes `.vscode/tasks.json`, `.vscode/settings.json`, and `Reports/review_manifest.json`, and has no `Generated/*`, `.tmp`, or `.previous` entries.
+- PASS: scoped `git diff --check`, touched-file trailing whitespace scan, and stale schema-104 scan. Git line-ending warnings only.
+- TIMEOUT/HUNG: full `dotnet build Hecton8.slnx -nologo -clp:ErrorsOnly -maxcpucount:1` exceeded the tool timeout and left an owned `dotnet` process running; it was stopped and the build server was shut down.
+- PASS: targeted `dotnet build Assembly-CSharp-Editor.csproj -nologo -clp:ErrorsOnly -maxcpucount:1` passed with 0 warnings and 0 errors in 21.53s.
+- CLEANUP: no `dotnet`, `csc`, `VBCSCompiler`, or `MSBuild` processes remain.
+- NOT RUN: Unity MCP/Editor console verification because Unity MCP tools are not available in this session.

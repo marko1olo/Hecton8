@@ -895,22 +895,22 @@ namespace Hecton8.AI
 
         private void ReleaseVaultHandles(IDataVault vault)
         {
-            ReleaseVaultHandle(vault, ref _entitiesHandle);
-            ReleaseVaultHandle(vault, ref _footPositionsHandle);
-            ReleaseVaultHandle(vault, ref _targetFootPositionsHandle);
-            ReleaseVaultHandle(vault, ref _stepStatesHandle);
-            ReleaseVaultHandle(vault, ref _bodyPosesHandle);
-            ReleaseVaultHandle(vault, ref _solvedJointMatricesHandle);
-            ReleaseVaultHandle(vault, ref _telemetryRingHandle);
+            ReleaseVaultHandle(vault, ref _entitiesHandle, BufferID.ProceduralCrabLegEntities);
+            ReleaseVaultHandle(vault, ref _footPositionsHandle, BufferID.ProceduralCrabLegFootPositions);
+            ReleaseVaultHandle(vault, ref _targetFootPositionsHandle, BufferID.ProceduralCrabLegTargetFootPositions);
+            ReleaseVaultHandle(vault, ref _stepStatesHandle, BufferID.ProceduralCrabLegStepStates);
+            ReleaseVaultHandle(vault, ref _bodyPosesHandle, BufferID.ProceduralCrabBodyPoses);
+            ReleaseVaultHandle(vault, ref _solvedJointMatricesHandle, BufferID.ProceduralCrabSolvedJointMatrices);
+            ReleaseVaultHandle(vault, ref _telemetryRingHandle, BufferID.ProceduralCrabIkTelemetryRing);
         }
 
-        private static void ReleaseVaultHandle<T>(IDataVault vault, ref VaultGenerationHandle<T> handle)
+        private static void ReleaseVaultHandle<T>(
+            IDataVault vault,
+            ref VaultGenerationHandle<T> handle,
+            BufferID expectedBufferId)
             where T : struct
         {
-            if (vault != null &&
-                handle.BufferID != 0u &&
-                handle.Generation != 0u &&
-                handle.SystemID == (uint)SystemID.AnimationFauna)
+            if (vault != null && IsAnimationFaunaHandle(in handle, expectedBufferId))
             {
                 vault.ReleaseBuffer(in handle);
             }
@@ -968,9 +968,18 @@ namespace Hecton8.AI
         {
             buffer = default;
             return vault != null &&
-                   handle.BufferID == unchecked((uint)(int)expectedBufferId) &&
+                   IsAnimationFaunaHandle(in handle, expectedBufferId) &&
                    vault.TryResolveHandle(in handle, out buffer) &&
                    buffer.IsCreated;
+        }
+
+        private static bool IsAnimationFaunaHandle<T>(
+            in VaultGenerationHandle<T> handle,
+            BufferID expectedBufferId) where T : struct
+        {
+            return handle.BufferID == unchecked((uint)(int)expectedBufferId) &&
+                   handle.Generation != 0u &&
+                   handle.SystemID == (uint)SystemID.AnimationFauna;
         }
 
         private void TryRegister()
@@ -1028,8 +1037,9 @@ namespace Hecton8.AI
             if (serviceSlot != GlobalRegistryServiceSlot.DataVault)
                 return;
 
-            IDataVault vault = currentService as IDataVault;
-            RebindDataVaultForLifecycle(vault, previousService as IDataVault);
+            IDataVault currentVault = currentService is IDataVault typedCurrent ? typedCurrent : null;
+            IDataVault previousVault = previousService is IDataVault typedPrevious ? typedPrevious : null;
+            RebindDataVaultForLifecycle(currentVault, previousVault);
             EnsurePersistentBuffers();
         }
 

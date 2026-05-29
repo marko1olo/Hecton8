@@ -267,7 +267,7 @@ namespace Hecton8.World
                 _defaultRenderScale = _urpAsset.renderScale;
             }
 
-            _qualityPresetMinimumRenderScale = GetMinimumRenderScaleForPreset(_qualityPreset);
+            _qualityPresetMinimumRenderScale = ResolveMinimumRenderScaleFromPreset(_qualityPreset);
             RefreshMinimumRenderScale();
             _currentRenderScale = Mathf.Clamp(ResolveDefaultRenderScale(), _minRenderScale, ResolveMaxRenderScale());
             _targetRenderScale = _currentRenderScale;
@@ -607,7 +607,7 @@ namespace Hecton8.World
         public void SetQualityPreset(LODQualityPreset preset)
         {
             _qualityPreset = preset;
-            _qualityPresetMinimumRenderScale = GetMinimumRenderScaleForPreset(preset);
+            _qualityPresetMinimumRenderScale = ResolveMinimumRenderScaleFromPreset(preset);
             RefreshMinimumRenderScale();
 
             // Clamp current scale to new minimum
@@ -1046,26 +1046,30 @@ namespace Hecton8.World
             }
         }
 
-        private float GetMinimumRenderScaleForPreset(LODQualityPreset preset)
+        private static float ResolveMinimumRenderScaleFromPreset(LODQualityPreset preset)
         {
-            switch (preset)
-            {
-                case LODQualityPreset.Low:
-                    return 0.7f;
-                case LODQualityPreset.Medium:
-                    return 0.8f;
-                case LODQualityPreset.High:
-                    return 0.9f;
-                default:
-                    return 0.8f;
-            }
+            return ResolveMinimumRenderScaleFromQualityWeight(ResolveQualityPresetWeight01(preset));
+        }
+
+        private static float ResolveQualityPresetWeight01(LODQualityPreset preset)
+        {
+            int rawPreset = (int)preset;
+            float ordinalWeight = rawPreset * 0.5f;
+            return math.select(0.5f, math.saturate(ordinalWeight), (uint)rawPreset <= 2u);
+        }
+
+        private static float ResolveMinimumRenderScaleFromQualityWeight(float qualityWeight01)
+        {
+            float quality = math.saturate(math.isfinite(qualityWeight01) ? qualityWeight01 : 0.5f);
+            float q = quality * quality * (3f - (2f * quality));
+            return math.lerp(0.7f, 0.9f, q);
         }
 
         private void RefreshMinimumRenderScale()
         {
             float presetScale = IsFinite(_qualityPresetMinimumRenderScale) && _qualityPresetMinimumRenderScale > 0f
                 ? _qualityPresetMinimumRenderScale
-                : GetMinimumRenderScaleForPreset(_qualityPreset);
+                : ResolveMinimumRenderScaleFromPreset(_qualityPreset);
             float maxRenderScale = ResolveMaxRenderScale();
             float presetMinimum = Mathf.Clamp(presetScale, SystemOverrideMinimumRenderScale, maxRenderScale);
             float platformMinimum = IsFinite(_platformPressureMinimumRenderScale) && _platformPressureMinimumRenderScale > 0f

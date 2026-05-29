@@ -15,7 +15,7 @@ namespace Hecton8.Rendering
 {
     [DisallowMultipleComponent]
     [DefaultExecutionOrder(-9210)]
-    public sealed unsafe class HectonBilateralDrsUpscalerRuntime : MonoBehaviour, IDispatcherSystem, IGlobalRegistryHotSwapListener
+    public sealed unsafe class HectonBilateralDrsUpscalerRuntime : MonoBehaviour, IDispatcherSystem, ISlowTickable, IGlobalRegistryHotSwapListener
     {
         private const SystemID OwnerSystemId = SystemID.GraphicsScalability;
         private const uint SimulationSystemHash = 0x4232534Du; // B2SM
@@ -179,19 +179,23 @@ namespace Hecton8.Rendering
         private bool _registeredSimulationDispatcher;
         private bool _registeredPostSimulationDispatcher;
         private bool _registeredVisualSyncDispatcher;
+        private bool _registeredSlowTick;
         private bool _dispatcherRouteReady;
         private bool _registeredHotSwapListener;
         private bool _coldDependenciesCached;
         private bool _isInitialized;
+        private bool _resourceRefreshRequested;
         private bool _vaultStateReady;
+        private bool _coldSupportsSetConstantBuffer;
         private bool _tuningSeeded;
         private bool _telemetrySeeded;
         private bool _telemetryCursorSeeded;
         private bool _profilesSeeded;
         private bool _mockStateSeeded;
-        private bool _simulationKernelScheduled;
+        private bool _simulationPendingPublish;
         private bool _pendingGpuUpload;
         private bool _faultDumped;
+        private int _telemetryWriteCursor;
         private uint _lastFaultFlags;
         private uint _presentationFrameIndex;
         private float _presentationTimeSeconds;
@@ -403,7 +407,9 @@ namespace Hecton8.Rendering
             }
 
             s_runtimeInstance = this;
+            CacheGraphicsCapabilitiesCold();
             InitializeServiceForVisualSync(allowAllocation: true);
+            TryRegisterSlowTick();
         }
 
         private void OnDisable()
@@ -447,12 +453,20 @@ namespace Hecton8.Rendering
         {
         }
 
+        public void SlowTick()
+        {
+            if (!_resourceRefreshRequested && _isInitialized && _dispatcherRouteReady)
+                return;
+
+            InitializeServiceForVisualSync(allowAllocation: true);
+            _resourceRefreshRequested = !_isInitialized || !_dispatcherRouteReady;
+        }
+
         private void RunOwnerPreSimulation(float deltaTime)
         {
             if (!_isInitialized)
             {
-                InitializeServiceForSimulation(allowAllocation: false);
-                if (!_isInitialized)
+                if (!TryUsePreparedServiceStateHot(requireConstantBuffers: false))
                     return;
             }
 
@@ -472,11 +486,10 @@ namespace Hecton8.Rendering
             if (!_isInitialized || !_vaultStateReady)
                 return dependsOn;
 
-            IDataVault vault = _dataVault;
             bool parametersLocked = false;
-            bool telemetryLocked = false;
-            bool telemetryCursorLocked = false;
             uint failureFlags = 0u;
+            UpscalerTelemetryEntry telemetryEntry = default;
+            bool hasTelemetryEntry = false;
             try
             {
                 if (!TryAcquireVaultWriteBuffer(
@@ -501,30 +514,6 @@ namespace Hecton8.Rendering
                     return dependsOn;
                 }
 
-                if (!TryAcquireVaultWriteBuffer(
-                        in _telemetryHandle,
-                        BufferID.Shinobu236BilateralDrsTelemetry,
-                        BilateralDrsUpscalerConstants.TelemetryCapacity,
-                        out NativeArray<UpscalerTelemetryEntry> telemetry))
-                {
-                    failureFlags = BilateralDrsUpscalerConstants.FaultVaultUnavailable;
-                    return dependsOn;
-                }
-
-                telemetryLocked = true;
-
-                if (!TryAcquireVaultWriteBuffer(
-                        in _telemetryCursorHandle,
-                        BufferID.Shinobu236BilateralDrsTelemetryCursor,
-                        1,
-                        out NativeArray<int> telemetryCursor))
-                {
-                    failureFlags = BilateralDrsUpscalerConstants.FaultVaultUnavailable;
-                    return dependsOn;
-                }
-
-                telemetryCursorLocked = true;
-
                 if (!TryReadVaultBuffer(
                         in _profilesHandle,
                         BufferID.Shinobu236BilateralDrsProfiles,
@@ -542,11 +531,10 @@ namespace Hecton8.Rendering
                 if (useMock)
                     mockStateSnapshot = BuildMockDrsStateSnapshot();
 
-                JobHandle handle = dependsOn;
                 CalculateUpscalerParamsJob job;
                 job.Parameters = parameters;
-                job.Telemetry = telemetry;
-                job.TelemetryCursor = telemetryCursor;
+                job.Telemetry = default;
+                job.TelemetryCursor = default;
                 job.Tuning = tuning;
                 job.Profiles = profiles;
                 job.ScaleStateSnapshot = scaleState;
@@ -562,22 +550,116 @@ namespace Hecton8.Rendering
                 job.OutputIndex = BilateralDrsUpscalerConstants.PendingParameterIndex;
                 job.HasScaleState = hasScaleState ? (byte)1 : (byte)0;
                 job.UseMockState = useMock ? (byte)1 : (byte)0;
-                handle = job.Schedule(handle);
-                _simulationKernelScheduled = true;
-                H8Memory.RegisterActiveJob(OwnerSystemId, handle);
-                return handle;
+                job.LastTelemetry = default;
+                job.HasLastTelemetry = 0;
+                job.Execute();
+                hasTelemetryEntry = job.HasLastTelemetry != 0;
+                telemetryEntry = job.LastTelemetry;
             }
             finally
             {
-                if (telemetryCursorLocked)
-                    vault?.ReleaseWriteLock(in _telemetryCursorHandle, OwnerSystemId);
-                if (telemetryLocked)
-                    vault?.ReleaseWriteLock(in _telemetryHandle, OwnerSystemId);
                 if (parametersLocked)
-                    vault?.ReleaseWriteLock(in _parametersHandle, OwnerSystemId);
+                    _dataVault?.ReleaseWriteLock(in _parametersHandle, OwnerSystemId);
                 if (failureFlags != 0u)
                     FailClosedRuntimeRoute(failureFlags);
             }
+
+            if (!hasTelemetryEntry)
+            {
+                FailClosedRuntimeRoute(BilateralDrsUpscalerConstants.FaultVaultUnavailable);
+                return dependsOn;
+            }
+
+            RecordUpscalerTelemetryOneLock(in telemetryEntry);
+            _simulationPendingPublish = true;
+            return dependsOn;
+        }
+
+        private void RecordUpscalerTelemetryOneLock(in UpscalerTelemetryEntry entry)
+        {
+            if (!TryAcquireVaultWriteBuffer(
+                    in _telemetryHandle,
+                    BufferID.Shinobu236BilateralDrsTelemetry,
+                    BilateralDrsUpscalerConstants.TelemetryCapacity,
+                    out NativeArray<UpscalerTelemetryEntry> telemetry))
+            {
+                FailClosedRuntimeRoute(BilateralDrsUpscalerConstants.FaultVaultUnavailable);
+                return;
+            }
+
+            int nextCursor = _telemetryWriteCursor;
+            bool wroteTelemetry = false;
+            bool faultAfterRelease = false;
+            try
+            {
+                if (!telemetry.IsCreated || telemetry.Length <= 0)
+                {
+                    faultAfterRelease = true;
+                }
+                else
+                {
+                    int cursor = WrapTelemetryCursor(_telemetryWriteCursor, telemetry.Length);
+                    telemetry[cursor] = entry;
+                    nextCursor = cursor + 1;
+                    if (nextCursor >= telemetry.Length)
+                        nextCursor = 0;
+                    _telemetryWriteCursor = nextCursor;
+                    wroteTelemetry = true;
+                }
+            }
+            finally
+            {
+                _dataVault?.ReleaseWriteLock(in _telemetryHandle, OwnerSystemId);
+            }
+
+            if (faultAfterRelease)
+                FailClosedRuntimeRoute(BilateralDrsUpscalerConstants.FaultVaultUnavailable);
+
+            if (wroteTelemetry)
+                WriteTelemetryCursorOneLock(nextCursor);
+        }
+
+        private void WriteTelemetryCursorOneLock(int nextCursor)
+        {
+            if (!TryAcquireVaultWriteBuffer(
+                    in _telemetryCursorHandle,
+                    BufferID.Shinobu236BilateralDrsTelemetryCursor,
+                    1,
+                    out NativeArray<int> telemetryCursor))
+            {
+                FailClosedRuntimeRoute(BilateralDrsUpscalerConstants.FaultVaultUnavailable);
+                return;
+            }
+
+            bool faultAfterRelease = false;
+            try
+            {
+                if (!telemetryCursor.IsCreated || telemetryCursor.Length <= 0)
+                {
+                    faultAfterRelease = true;
+                }
+                else
+                {
+                    telemetryCursor[0] = WrapTelemetryCursor(nextCursor, BilateralDrsUpscalerConstants.TelemetryCapacity);
+                    _telemetryCursorSeeded = true;
+                }
+            }
+            finally
+            {
+                _dataVault?.ReleaseWriteLock(in _telemetryCursorHandle, OwnerSystemId);
+            }
+
+            if (faultAfterRelease)
+                FailClosedRuntimeRoute(BilateralDrsUpscalerConstants.FaultVaultUnavailable);
+        }
+
+        private static int WrapTelemetryCursor(int cursor, int capacity)
+        {
+            if (capacity <= 0)
+                return 0;
+
+            int wrapped = cursor % capacity;
+            return wrapped < 0 ? wrapped + capacity : wrapped;
         }
 
         private DrsStateDTO BuildMockDrsStateSnapshot()
@@ -595,10 +677,10 @@ namespace Hecton8.Rendering
 
         private void RunOwnerPostSimulation()
         {
-            if (!_simulationKernelScheduled)
+            if (!_simulationPendingPublish)
                 return;
 
-            _simulationKernelScheduled = false;
+            _simulationPendingPublish = false;
             PublishPendingParameters();
         }
 
@@ -606,8 +688,7 @@ namespace Hecton8.Rendering
         {
             if (!_isInitialized)
             {
-                InitializeServiceForVisualSync(allowAllocation: false);
-                if (!_isInitialized)
+                if (!TryUsePreparedServiceStateHot(requireConstantBuffers: true))
                     return;
             }
 
@@ -647,6 +728,22 @@ namespace Hecton8.Rendering
             {
                 _isInitialized = false;
             }
+        }
+
+        private bool TryUsePreparedServiceStateHot(bool requireConstantBuffers)
+        {
+            bool ready =
+                _coldDependenciesCached &&
+                _vaultStateReady &&
+                _dispatcherRouteReady &&
+                (!requireConstantBuffers || HasConstantBuffers()) &&
+                UpscalerParamsLayoutValidator.Validate();
+
+            _isInitialized = ready;
+            if (!ready)
+                _resourceRefreshRequested = true;
+
+            return ready;
         }
 
         private bool PrepareServiceState(bool allowAllocation)
@@ -822,7 +919,15 @@ namespace Hecton8.Rendering
         private void SeedTelemetryCursorIfNeeded()
         {
             if (_telemetryCursorSeeded)
+            {
+                if (TryReadVaultBuffer(
+                        in _telemetryCursorHandle,
+                        BufferID.Shinobu236BilateralDrsTelemetryCursor,
+                        1,
+                        out NativeArray<int>.ReadOnly telemetryCursor))
+                    _telemetryWriteCursor = WrapTelemetryCursor(telemetryCursor[0], BilateralDrsUpscalerConstants.TelemetryCapacity);
                 return;
+            }
 
             if (!TryAcquireVaultWriteBuffer(
                     in _telemetryCursorHandle,
@@ -836,6 +941,7 @@ namespace Hecton8.Rendering
             try
             {
                 telemetryCursor[0] = 0;
+                _telemetryWriteCursor = 0;
                 _telemetryCursorSeeded = true;
             }
             finally
@@ -1016,7 +1122,7 @@ namespace Hecton8.Rendering
 
         private bool EnsureConstantBuffers(bool allowAllocation)
         {
-            if (!SystemInfo.supportsSetConstantBuffer)
+            if (!_coldSupportsSetConstantBuffer)
             {
                 _lastFaultFlags = BilateralDrsUpscalerConstants.FaultConstantBufferUnsupported;
                 if (allowAllocation && !_faultDumped)
@@ -1053,6 +1159,11 @@ namespace Hecton8.Rendering
 
             return _constantBufferA != null && _constantBufferA.IsValid() &&
                    _constantBufferB != null && _constantBufferB.IsValid();
+        }
+
+        private void CacheGraphicsCapabilitiesCold()
+        {
+            _coldSupportsSetConstantBuffer = SystemInfo.supportsSetConstantBuffer;
         }
 
         private bool HasConstantBuffers()
@@ -1434,6 +1545,23 @@ namespace Hecton8.Rendering
             _registeredHotSwapListener = false;
         }
 
+        private void TryRegisterSlowTick()
+        {
+            if (_registeredSlowTick || !Application.isPlaying)
+                return;
+
+            _registeredSlowTick = GlobalRegistry.TryRegisterSlowTickable(this, PriorityLayer.Core);
+        }
+
+        private void TryUnregisterSlowTick()
+        {
+            if (!_registeredSlowTick)
+                return;
+
+            GlobalRegistry.UnregisterSlowTickable(this, PriorityLayer.Core);
+            _registeredSlowTick = false;
+        }
+
         private void TryUnregisterPreSimulationDispatcher()
         {
             if (!_registeredPreSimulationDispatcher)
@@ -1489,7 +1617,7 @@ namespace Hecton8.Rendering
 
             _isInitialized = false;
             _vaultStateReady = false;
-            _simulationKernelScheduled = false;
+            _simulationPendingPublish = false;
             _pendingGpuUpload = false;
             _dispatcherRouteReady = false;
             InvalidatePublishedParameters();
@@ -1560,8 +1688,9 @@ namespace Hecton8.Rendering
             _telemetryCursorSeeded = false;
             _profilesSeeded = false;
             _mockStateSeeded = false;
-            _simulationKernelScheduled = false;
+            _simulationPendingPublish = false;
             _pendingGpuUpload = false;
+            _telemetryWriteCursor = 0;
             _dispatcherRouteReady = false;
             _faultDumped = false;
             _lastFaultFlags = 0u;
@@ -1571,6 +1700,7 @@ namespace Hecton8.Rendering
 
         private void ShutdownServiceState()
         {
+            TryUnregisterSlowTick();
             TryUnregisterPreSimulationDispatcher();
             TryUnregisterSimulationDispatcher();
             TryUnregisterPostSimulationDispatcher();
@@ -1599,6 +1729,7 @@ namespace Hecton8.Rendering
             ResetVaultSeedState();
             _coldDependenciesCached = false;
             _isInitialized = false;
+            _resourceRefreshRequested = false;
             _dataVault = null;
             _resolutionScaler = null;
         }

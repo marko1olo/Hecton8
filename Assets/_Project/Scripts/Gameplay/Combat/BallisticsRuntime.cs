@@ -267,7 +267,6 @@ namespace Hecton8.Gameplay
         private static long _activeScheduleTicks;
         private static bool _initialized;
         private static bool _jobScheduled;
-        private static bool _solverBuffersLocked;
         private static bool _telemetryDumped;
         private static BallisticsTelemetryEntry _lastTelemetry;
 
@@ -301,7 +300,6 @@ namespace Hecton8.Gameplay
             if (vaultChanged)
             {
                 CompleteScheduledForTeardown();
-                UnlockSolverBuffers();
                 ResetTransientState();
             }
             else if (!_initialized)
@@ -369,7 +367,6 @@ namespace Hecton8.Gameplay
             if (_vault != null)
             {
                 CompleteScheduledForTeardown();
-                UnlockSolverBuffers();
                 ReleaseVaultLanes(_vault);
                 _initialized = false;
                 ResetTransientState();
@@ -687,7 +684,7 @@ namespace Hecton8.Gameplay
                 if (trajectoryCount <= 0)
                     return;
 
-                if (!TryLockSolverBuffers(ResolveWriteBufferId()))
+                if (_vault == null || _vault.IsCompactionFenceActive)
                     return;
 
                 _activeReadCount = trajectoryCount;
@@ -771,7 +768,6 @@ namespace Hecton8.Gameplay
         public static void Shutdown()
         {
             CompleteScheduledForTeardown();
-            UnlockSolverBuffers();
             ReleaseVaultLanes(_vault);
             _initialized = false;
             _vault = null;
@@ -835,19 +831,8 @@ namespace Hecton8.Gameplay
             if (!_vault.TryAcquireMutationGuard(MutationGuardBit))
                 return false;
 
-            BufferID writeBufferId = ResolveWriteBufferId();
-            bool trajectoriesLocked = false;
-            bool primitivesLocked = false;
             try
             {
-                trajectoriesLocked = _vault.TryLockBuffer(writeBufferId, OwnerSystem);
-                if (!trajectoriesLocked)
-                    return false;
-
-                primitivesLocked = _vault.TryLockBuffer(BallisticsVaultBufferIds.AabbPrimitives, OwnerSystem);
-                if (!primitivesLocked)
-                    return false;
-
                 NativeArray<BallisticTrajectoryDTO> trajectories = ResolveWriteTrajectories();
                 NativeArray<AABBPrimitiveDTO> primitives = OpenVaultLane(in _primitiveHandle);
                 if (!trajectories.IsCreated ||
@@ -859,6 +844,9 @@ namespace Hecton8.Gameplay
                 int safeTrajectoryCount = math.clamp(trajectoryCount, 1, math.min(trajectories.Length, MaxTrajectories));
                 int safePrimitiveCount = math.clamp(primitiveCount, 1, math.min(primitives.Length, MaxAabbPrimitives));
                 if (safeTrajectoryCount <= 0 || safePrimitiveCount <= 0)
+                    return false;
+
+                if (_vault == null || _vault.IsCompactionFenceActive)
                     return false;
 
                 BallisticsTuningDTO tuning = ResolveTuning(ResolveGlobalQualityWeight());
@@ -885,10 +873,6 @@ namespace Hecton8.Gameplay
             }
             finally
             {
-                if (primitivesLocked)
-                    _vault.TryUnlockBuffer(BallisticsVaultBufferIds.AabbPrimitives, OwnerSystem);
-                if (trajectoriesLocked)
-                    _vault.TryUnlockBuffer(writeBufferId, OwnerSystem);
                 _vault.ReleaseMutationGuard(MutationGuardBit);
             }
         }
@@ -900,17 +884,11 @@ namespace Hecton8.Gameplay
             if (!EnsureInitialized() || _jobScheduled || string.IsNullOrEmpty(csvPath) || !File.Exists(csvPath))
                 return false;
 
-            bool scratchLocked = false;
-            bool lutLocked = false;
             bool mutationGuarded = false;
             try
             {
-                scratchLocked = _vault.TryLockBuffer(BallisticsVaultBufferIds.CsvScratch, OwnerSystem);
-                if (!scratchLocked)
-                    return false;
-
-                lutLocked = _vault.TryLockBuffer(BallisticsVaultBufferIds.PenetrationLut, OwnerSystem);
-                if (!lutLocked)
+                mutationGuarded = _vault.TryAcquireMutationGuard(MutationGuardBit);
+                if (!mutationGuarded)
                     return false;
 
                 NativeArray<byte> scratch = OpenVaultLane(in _csvScratchHandle);
@@ -920,6 +898,9 @@ namespace Hecton8.Gameplay
 
                 FileInfo info = new FileInfo(csvPath);
                 if (!info.Exists || info.Length <= 0L || info.Length > scratch.Length)
+                    return false;
+
+                if (_vault == null || _vault.IsCompactionFenceActive)
                     return false;
 
                 unsafe
@@ -941,10 +922,6 @@ namespace Hecton8.Gameplay
                         }
                     }
 
-                    mutationGuarded = _vault.TryAcquireMutationGuard(MutationGuardBit);
-                    if (!mutationGuarded)
-                        return false;
-
                     ReadOnlySpan<byte> bytes = new ReadOnlySpan<byte>(ptr, bytesRead);
                     return ApplyPenetrationCsvBytes(bytes, lut);
                 }
@@ -961,10 +938,6 @@ namespace Hecton8.Gameplay
             {
                 if (mutationGuarded)
                     _vault.ReleaseMutationGuard(MutationGuardBit);
-                if (lutLocked)
-                    _vault.TryUnlockBuffer(BallisticsVaultBufferIds.PenetrationLut, OwnerSystem);
-                if (scratchLocked)
-                    _vault.TryUnlockBuffer(BallisticsVaultBufferIds.CsvScratch, OwnerSystem);
             }
         }
 
@@ -1209,7 +1182,6 @@ namespace Hecton8.Gameplay
         private static void FinishScheduledCompletion()
         {
             _jobScheduled = false;
-            UnlockSolverBuffers();
             double elapsedUs =
                 (System.Diagnostics.Stopwatch.GetTimestamp() - _activeScheduleTicks) *
                 1000000.0d /
@@ -1359,7 +1331,6 @@ namespace Hecton8.Gameplay
             _simulationFrame = 0u;
             _activeScheduleTicks = 0L;
             _jobScheduled = false;
-            _solverBuffersLocked = false;
             _telemetryDumped = false;
             _lastTelemetry = default;
         }
@@ -1514,73 +1485,6 @@ namespace Hecton8.Gameplay
             return (_activeReadBufferIndex & 1) == 0
                 ? BallisticsVaultBufferIds.TrajectoriesA
                 : BallisticsVaultBufferIds.TrajectoriesB;
-        }
-
-        private static bool TryLockSolverBuffers(BufferID trajectoryBufferId)
-        {
-            if (_solverBuffersLocked)
-                return true;
-
-            bool trajectoryLocked = false;
-            bool primitivesLocked = false;
-            bool hitsLocked = false;
-            bool vfxLocked = false;
-            bool lutLocked = false;
-            bool telemetryLocked = false;
-            bool countersLocked = false;
-            try
-            {
-                trajectoryLocked = _vault.TryLockBuffer(trajectoryBufferId, OwnerSystem);
-                primitivesLocked = trajectoryLocked && _vault.TryLockBuffer(BallisticsVaultBufferIds.AabbPrimitives, OwnerSystem);
-                hitsLocked = primitivesLocked && _vault.TryLockBuffer(BallisticsVaultBufferIds.HitResults, OwnerSystem);
-                vfxLocked = hitsLocked && _vault.TryLockBuffer(BallisticsVaultBufferIds.ImpactVfx, OwnerSystem);
-                lutLocked = vfxLocked && _vault.TryLockBuffer(BallisticsVaultBufferIds.PenetrationLut, OwnerSystem);
-                telemetryLocked = lutLocked && _vault.TryLockBuffer(BallisticsVaultBufferIds.TelemetryRing, OwnerSystem);
-                countersLocked = telemetryLocked && _vault.TryLockBuffer(BallisticsVaultBufferIds.Counters, OwnerSystem);
-                if (!countersLocked)
-                    return false;
-
-                _solverBuffersLocked = true;
-                return true;
-            }
-            finally
-            {
-                if (!_solverBuffersLocked)
-                {
-                    if (countersLocked)
-                        _vault.TryUnlockBuffer(BallisticsVaultBufferIds.Counters, OwnerSystem);
-                    if (telemetryLocked)
-                        _vault.TryUnlockBuffer(BallisticsVaultBufferIds.TelemetryRing, OwnerSystem);
-                    if (lutLocked)
-                        _vault.TryUnlockBuffer(BallisticsVaultBufferIds.PenetrationLut, OwnerSystem);
-                    if (vfxLocked)
-                        _vault.TryUnlockBuffer(BallisticsVaultBufferIds.ImpactVfx, OwnerSystem);
-                    if (hitsLocked)
-                        _vault.TryUnlockBuffer(BallisticsVaultBufferIds.HitResults, OwnerSystem);
-                    if (primitivesLocked)
-                        _vault.TryUnlockBuffer(BallisticsVaultBufferIds.AabbPrimitives, OwnerSystem);
-                    if (trajectoryLocked)
-                        _vault.TryUnlockBuffer(trajectoryBufferId, OwnerSystem);
-                }
-            }
-        }
-
-        private static void UnlockSolverBuffers()
-        {
-            if (!_solverBuffersLocked || _vault == null)
-                return;
-
-            BufferID activeReadBufferId = (_activeReadBufferIndex & 1) == 0
-                ? BallisticsVaultBufferIds.TrajectoriesA
-                : BallisticsVaultBufferIds.TrajectoriesB;
-            _vault.TryUnlockBuffer(activeReadBufferId, OwnerSystem);
-            _vault.TryUnlockBuffer(BallisticsVaultBufferIds.AabbPrimitives, OwnerSystem);
-            _vault.TryUnlockBuffer(BallisticsVaultBufferIds.HitResults, OwnerSystem);
-            _vault.TryUnlockBuffer(BallisticsVaultBufferIds.ImpactVfx, OwnerSystem);
-            _vault.TryUnlockBuffer(BallisticsVaultBufferIds.PenetrationLut, OwnerSystem);
-            _vault.TryUnlockBuffer(BallisticsVaultBufferIds.TelemetryRing, OwnerSystem);
-            _vault.TryUnlockBuffer(BallisticsVaultBufferIds.Counters, OwnerSystem);
-            _solverBuffersLocked = false;
         }
 
         private static void ClearCounter(

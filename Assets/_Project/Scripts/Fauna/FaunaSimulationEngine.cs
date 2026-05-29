@@ -350,13 +350,14 @@ namespace Hecton8.AI
                 owner,
                 options);
 
-            return TryOpen(vault, in handle, bufferId, requiredLength, out buffer) ? handle : default;
+            return TryOpen(vault, in handle, bufferId, owner, requiredLength, out buffer) ? handle : default;
         }
 
         private static bool TryOpen<T>(
             IDataVault vault,
             in VaultGenerationHandle<T> handle,
             BufferID bufferId,
+            SystemID owner,
             int requiredLength,
             out NativeArray<T> buffer)
             where T : struct
@@ -364,8 +365,7 @@ namespace Hecton8.AI
             buffer = default;
             if (vault == null ||
                 requiredLength < 0 ||
-                handle.BufferID != unchecked((uint)(int)bufferId) ||
-                handle.Generation == 0u)
+                !IsOwnedVaultHandle(in handle, bufferId, owner))
             {
                 return false;
             }
@@ -379,13 +379,28 @@ namespace Hecton8.AI
             return true;
         }
 
-        private static void Release<T>(IDataVault vault, ref VaultGenerationHandle<T> handle)
+        private static void Release<T>(
+            IDataVault vault,
+            ref VaultGenerationHandle<T> handle,
+            BufferID bufferId,
+            SystemID owner)
             where T : struct
         {
-            if (vault != null && handle.BufferID != 0u && handle.Generation != 0u)
+            if (vault != null && IsOwnedVaultHandle(in handle, bufferId, owner))
                 vault.ReleaseBuffer(in handle);
 
             handle = default;
+        }
+
+        private static bool IsOwnedVaultHandle<T>(
+            in VaultGenerationHandle<T> handle,
+            BufferID bufferId,
+            SystemID owner)
+            where T : struct
+        {
+            return handle.BufferID == unchecked((uint)(int)bufferId) &&
+                   handle.Generation != 0u &&
+                   handle.SystemID == (uint)owner;
         }
 
     }
@@ -613,9 +628,9 @@ namespace Hecton8.AI
         private void ReleaseVaultAliases()
         {
             IDataVault vault = _vault;
-            ReleaseVaultBuffer(vault, ref _poolSlotsHandle);
-            ReleaseVaultBuffer(vault, ref _linearVelocitiesHandle);
-            ReleaseVaultBuffer(vault, ref _simulationFlagsHandle);
+            ReleaseVaultBuffer(vault, ref _poolSlotsHandle, BufferID.FaunaSimulationPoolSlots, SystemID.AICognition);
+            ReleaseVaultBuffer(vault, ref _linearVelocitiesHandle, BufferID.FaunaSimulationLinearVelocities, SystemID.AICognition);
+            ReleaseVaultBuffer(vault, ref _simulationFlagsHandle, BufferID.FaunaSimulationFlags, SystemID.AICognition);
             FreeSlots.Dispose();
             _vault = null;
             Capacity = 0;
@@ -640,13 +655,14 @@ namespace Hecton8.AI
                 owner,
                 options);
 
-            return TryOpenVaultBuffer(vault, in handle, bufferId, requiredLength, out buffer) ? handle : default;
+            return TryOpenVaultBuffer(vault, in handle, bufferId, owner, requiredLength, out buffer) ? handle : default;
         }
 
         private static bool TryOpenVaultBuffer<T>(
             IDataVault vault,
             in VaultGenerationHandle<T> handle,
             BufferID bufferId,
+            SystemID owner,
             int requiredLength,
             out NativeArray<T> buffer)
             where T : struct
@@ -654,8 +670,7 @@ namespace Hecton8.AI
             buffer = default;
             if (vault == null ||
                 requiredLength < 0 ||
-                handle.BufferID != unchecked((uint)(int)bufferId) ||
-                handle.Generation == 0u)
+                !IsOwnedVaultHandle(in handle, bufferId, owner))
             {
                 return false;
             }
@@ -669,13 +684,28 @@ namespace Hecton8.AI
             return true;
         }
 
-        private static void ReleaseVaultBuffer<T>(IDataVault vault, ref VaultGenerationHandle<T> handle)
+        private static void ReleaseVaultBuffer<T>(
+            IDataVault vault,
+            ref VaultGenerationHandle<T> handle,
+            BufferID bufferId,
+            SystemID owner)
             where T : struct
         {
-            if (vault != null && handle.BufferID != 0u && handle.Generation != 0u)
+            if (vault != null && IsOwnedVaultHandle(in handle, bufferId, owner))
                 vault.ReleaseBuffer(in handle);
 
             handle = default;
+        }
+
+        private static bool IsOwnedVaultHandle<T>(
+            in VaultGenerationHandle<T> handle,
+            BufferID bufferId,
+            SystemID owner)
+            where T : struct
+        {
+            return handle.BufferID == unchecked((uint)(int)bufferId) &&
+                   handle.Generation != 0u &&
+                   handle.SystemID == (uint)owner;
         }
 
         private NativeArray<PoolSlotData> ResolvePoolSlots()
@@ -699,6 +729,7 @@ namespace Hecton8.AI
                 _vault,
                 in _poolSlotsHandle,
                 BufferID.FaunaSimulationPoolSlots,
+                SystemID.AICognition,
                 Capacity,
                 out buffer);
         }
@@ -709,6 +740,7 @@ namespace Hecton8.AI
                 _vault,
                 in _linearVelocitiesHandle,
                 BufferID.FaunaSimulationLinearVelocities,
+                SystemID.AICognition,
                 Capacity,
                 out buffer);
         }
@@ -719,6 +751,7 @@ namespace Hecton8.AI
                 _vault,
                 in _simulationFlagsHandle,
                 BufferID.FaunaSimulationFlags,
+                SystemID.AICognition,
                 Capacity,
                 out buffer);
         }
@@ -756,12 +789,13 @@ namespace Hecton8.AI
         private IDataVault _vault;
         private VaultGenerationHandle<int> _slotsHandle;
         private BufferID _bufferId;
+        private SystemID _owner;
         private int _count;
         private int _capacity;
 
         public bool IsCreated =>
             _capacity > 0 &&
-            TryOpenVaultBuffer(_vault, in _slotsHandle, _bufferId, _capacity, out NativeArray<int> slots) &&
+            TryOpenVaultBuffer(_vault, in _slotsHandle, _bufferId, _owner, _capacity, out NativeArray<int> slots) &&
             slots.IsCreated;
 
         public void Allocate(IDataVault vault, int capacity, BufferID bufferId, SystemID owner)
@@ -769,6 +803,7 @@ namespace Hecton8.AI
             Dispose();
             _vault = vault;
             _bufferId = bufferId;
+            _owner = owner;
             _capacity = math.max(0, capacity);
             if (_vault == null || _capacity <= 0)
             {
@@ -796,7 +831,7 @@ namespace Hecton8.AI
         public void Reset()
         {
             Clear();
-            NativeArray<int> slots = ResolveSlots(_vault, in _slotsHandle, _bufferId, _capacity);
+            NativeArray<int> slots = ResolveSlots(_vault, in _slotsHandle, _bufferId, _owner, _capacity);
             if (!slots.IsCreated)
                 return;
 
@@ -816,7 +851,7 @@ namespace Hecton8.AI
         public bool TryDequeue(out int slotIndex)
         {
             slotIndex = -1;
-            NativeArray<int> slots = ResolveSlots(_vault, in _slotsHandle, _bufferId, _capacity);
+            NativeArray<int> slots = ResolveSlots(_vault, in _slotsHandle, _bufferId, _owner, _capacity);
             if (!slots.IsCreated || _count <= 0)
                 return false;
 
@@ -833,7 +868,7 @@ namespace Hecton8.AI
 
         public void Enqueue(int slotIndex)
         {
-            NativeArray<int> slots = ResolveSlots(_vault, in _slotsHandle, _bufferId, _capacity);
+            NativeArray<int> slots = ResolveSlots(_vault, in _slotsHandle, _bufferId, _owner, _capacity);
             if (!slots.IsCreated ||
                 (uint)slotIndex >= (uint)_capacity ||
                 _count >= _capacity ||
@@ -848,9 +883,10 @@ namespace Hecton8.AI
 
         public void Dispose()
         {
-            ReleaseVaultBuffer(_vault, ref _slotsHandle);
+            ReleaseVaultBuffer(_vault, ref _slotsHandle, _bufferId, _owner);
             _vault = null;
             _bufferId = default;
+            _owner = default;
             _count = 0;
             _capacity = 0;
         }
@@ -859,9 +895,10 @@ namespace Hecton8.AI
             IDataVault vault,
             in VaultGenerationHandle<int> slotsHandle,
             BufferID bufferId,
+            SystemID owner,
             int capacity)
         {
-            return TryOpenVaultBuffer(vault, in slotsHandle, bufferId, capacity, out NativeArray<int> slots)
+            return TryOpenVaultBuffer(vault, in slotsHandle, bufferId, owner, capacity, out NativeArray<int> slots)
                 ? slots
                 : default;
         }
@@ -885,13 +922,14 @@ namespace Hecton8.AI
                 owner,
                 options);
 
-            return TryOpenVaultBuffer(vault, in handle, bufferId, requiredLength, out buffer) ? handle : default;
+            return TryOpenVaultBuffer(vault, in handle, bufferId, owner, requiredLength, out buffer) ? handle : default;
         }
 
         private static bool TryOpenVaultBuffer<T>(
             IDataVault vault,
             in VaultGenerationHandle<T> handle,
             BufferID bufferId,
+            SystemID owner,
             int requiredLength,
             out NativeArray<T> buffer)
             where T : struct
@@ -899,8 +937,7 @@ namespace Hecton8.AI
             buffer = default;
             if (vault == null ||
                 requiredLength < 0 ||
-                handle.BufferID != unchecked((uint)(int)bufferId) ||
-                handle.Generation == 0u)
+                !IsOwnedVaultHandle(in handle, bufferId, owner))
             {
                 return false;
             }
@@ -914,13 +951,28 @@ namespace Hecton8.AI
             return true;
         }
 
-        private static void ReleaseVaultBuffer<T>(IDataVault vault, ref VaultGenerationHandle<T> handle)
+        private static void ReleaseVaultBuffer<T>(
+            IDataVault vault,
+            ref VaultGenerationHandle<T> handle,
+            BufferID bufferId,
+            SystemID owner)
             where T : struct
         {
-            if (vault != null && handle.BufferID != 0u && handle.Generation != 0u)
+            if (vault != null && IsOwnedVaultHandle(in handle, bufferId, owner))
                 vault.ReleaseBuffer(in handle);
 
             handle = default;
+        }
+
+        private static bool IsOwnedVaultHandle<T>(
+            in VaultGenerationHandle<T> handle,
+            BufferID bufferId,
+            SystemID owner)
+            where T : struct
+        {
+            return handle.BufferID == unchecked((uint)(int)bufferId) &&
+                   handle.Generation != 0u &&
+                   handle.SystemID == (uint)owner;
         }
     }
 }

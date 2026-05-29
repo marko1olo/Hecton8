@@ -288,6 +288,10 @@ namespace Hecton8.Construction
         public const BufferID DebugRayBufferId = BufferID.FoundationSnappingDebugRays;
         public const BufferID IndirectArgsBufferId = BufferID.FoundationSnappingIndirectArgs;
         public const string DumpPath = "Docs/AgentLogs/Dump_1306_Construction_FoundationCalculator.bin";
+        private const ulong ProfileEditMutationGuardMask =
+            (1UL << ((int)RayOriginBufferId & 31)) |
+            (1UL << ((int)ProfileRangeBufferId & 31)) |
+            (1UL << ((int)CsvScratchBufferId & 31));
 
         private const uint FnvOffset = 2166136261u;
         private const uint FnvPrime = 16777619u;
@@ -1159,26 +1163,10 @@ namespace Hecton8.Construction
             if (vault == null)
                 return false;
 
-            if (!vault.TryLockBuffer(RayOriginBufferId, SystemID.Construction))
+            if (!vault.TryAcquireMutationGuard(ProfileEditMutationGuardMask))
                 return false;
+
             lockedCount = 1;
-
-            if (!vault.TryLockBuffer(ProfileRangeBufferId, SystemID.Construction))
-            {
-                EndProfileEditLocks(vault, lockedCount);
-                lockedCount = 0;
-                return false;
-            }
-            lockedCount = 2;
-
-            if (!vault.TryLockBuffer(CsvScratchBufferId, SystemID.Construction))
-            {
-                EndProfileEditLocks(vault, lockedCount);
-                lockedCount = 0;
-                return false;
-            }
-            lockedCount = 3;
-
             return true;
         }
 
@@ -1187,12 +1175,7 @@ namespace Hecton8.Construction
             if (vault == null || lockedCount <= 0)
                 return;
 
-            if (lockedCount >= 3)
-                vault.TryUnlockBuffer(CsvScratchBufferId, SystemID.Construction);
-            if (lockedCount >= 2)
-                vault.TryUnlockBuffer(ProfileRangeBufferId, SystemID.Construction);
-            if (lockedCount >= 1)
-                vault.TryUnlockBuffer(RayOriginBufferId, SystemID.Construction);
+            vault.ReleaseMutationGuard(ProfileEditMutationGuardMask);
         }
 #endif
 

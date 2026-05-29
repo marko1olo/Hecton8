@@ -74,6 +74,46 @@ namespace Hecton8.Physics.Exosuit
         private const uint CsvHashGravityMultiplierLabel = 0xDCECF566u;
         private const uint CsvHashMaxSubsteps = 0x067BC8D3u;
         private const uint CsvHashMaxSubstepsLabel = 0x5D7F47C0u;
+        private const ulong GuardState = 1UL << ((int)BufferID.ShinobuExosuitState & 63);
+        private const ulong GuardInput = 1UL << ((int)BufferID.ShinobuExosuitFrameInput & 63);
+        private const ulong GuardTuning = 1UL << ((int)BufferID.ShinobuExosuitTuning & 63);
+        private const ulong GuardTerrain = 1UL << ((int)BufferID.ShinobuExosuitMockTerrainSdf & 63);
+        private const ulong GuardFlow = 1UL << ((int)BufferID.ShinobuExosuitMockFlowField & 63);
+        private const ulong GuardCrushDepth = 1UL << ((int)BufferID.ShinobuExosuitMockCrushDepth & 63);
+        private const ulong GuardOutput = 1UL << ((int)BufferID.ShinobuExosuitSolverOutput & 63);
+        private const ulong GuardScreen = 1UL << ((int)BufferID.ShinobuExosuitScreenDto & 63);
+        private const ulong GuardTelemetry = 1UL << ((int)BufferID.ShinobuExosuitTelemetryRing & 63);
+        private const ulong GuardTelemetryCursor = 1UL << ((int)BufferID.ShinobuExosuitTelemetryCursor & 63);
+        private const ulong GuardFootstep = 1UL << ((int)BufferID.ShinobuExosuitFootstepAccumulator & 63);
+        private const ulong GuardHaptic = 1UL << ((int)BufferID.ShinobuExosuitHapticSignals & 63);
+        private const ulong GuardSilt = 1UL << ((int)BufferID.ShinobuExosuitSiltSignals & 63);
+        private const ulong GuardAcoustic = 1UL << ((int)BufferID.ShinobuExosuitAcousticTaps & 63);
+        private const ulong GuardVoxelSdfPayloadDescriptor = 1UL << ((int)BufferID.VoxelSdfPayloadDescriptor & 63);
+        private const ulong GuardVoxelSdfTexture3D = 1UL << ((int)BufferID.VoxelSdfTexture3D & 63);
+        private const ulong FrameInputMutationGuardMask =
+            GuardTuning |
+            GuardInput |
+            GuardTerrain |
+            GuardFlow |
+            GuardCrushDepth;
+        private const ulong JobMutationGuardMask =
+            GuardState |
+            GuardInput |
+            GuardTuning |
+            GuardTerrain |
+            GuardFlow |
+            GuardCrushDepth |
+            GuardOutput |
+            GuardScreen |
+            GuardTelemetry |
+            GuardTelemetryCursor |
+            GuardFootstep |
+            GuardHaptic |
+            GuardSilt |
+            GuardAcoustic;
+        private const ulong VoxelSdfPayloadMutationGuardMask =
+            GuardVoxelSdfPayloadDescriptor |
+            GuardVoxelSdfTexture3D;
 
         [Header("Mass And Hydraulics")]
         [SerializeField, Min(1f), Tooltip("Cold boot mass seeded into ExosuitTuningDTO before CSV/editor overrides.")]
@@ -161,8 +201,8 @@ namespace Hecton8.Physics.Exosuit
         private long _jobStartTimestamp;
         private bool _jobScheduled;
         private bool _jobBuffersLocked;
-        private bool _voxelSdfBufferLocked;
-        private bool _voxelSdfDescriptorLocked;
+        private IDataVault _jobGuardedVault;
+        private ulong _jobBufferGuardMask;
         private bool _registeredFixed;
         private bool _registeredPostFixed;
         private bool _registeredLateFrame;
@@ -414,9 +454,17 @@ namespace Hecton8.Physics.Exosuit
             buffer = default;
             return _dataVault != null &&
                    IsHandleCreated(in handle) &&
-                   _dataVault.TryReadHandle(in handle, out buffer) &&
+                   _dataVault.TryResolveHandle(in handle, out buffer) &&
                    buffer.IsCreated &&
                    buffer.Length > 0;
+        }
+
+        private static bool IsVoxelSdfHandle<T>(in VaultGenerationHandle<T> handle, BufferID expectedBufferId)
+            where T : struct
+        {
+            return handle.BufferID == (uint)expectedBufferId &&
+                   handle.SystemID == (uint)SystemID.WorldStreaming &&
+                   handle.Generation != 0u;
         }
 
         private bool TryOpenHeldJobWriteBuffer<T>(
@@ -426,39 +474,30 @@ namespace Hecton8.Physics.Exosuit
             where T : struct
         {
             buffer = default;
+            IDataVault vault = _jobGuardedVault ?? _dataVault;
             return _jobBuffersLocked &&
-                   _dataVault != null &&
+                   vault != null &&
                    IsHandleCreated(in handle) &&
                    handle.BufferID == (uint)expectedBufferId &&
-                   _dataVault.TryReadHandle(in handle, out buffer) &&
+                   vault.TryReadHandle(in handle, out buffer) &&
                    buffer.IsCreated &&
                    buffer.Length > 0;
         }
 
-        private bool TryAcquireWriteBuffer<T>(in VaultGenerationHandle<T> handle, out NativeArray<T> buffer)
+        private static bool TryResolveJobBuffer<T>(
+            IDataVault vault,
+            in VaultGenerationHandle<T> handle,
+            BufferID expectedBufferId,
+            out NativeArray<T> buffer)
             where T : struct
         {
             buffer = default;
-            if (_dataVault == null ||
-                !IsHandleCreated(in handle) ||
-                !_dataVault.TryAcquireWriteLock(in handle, SystemID.Physics, out buffer))
-            {
-                return false;
-            }
-
-            if (buffer.IsCreated && buffer.Length > 0)
-                return true;
-
-            _dataVault.ReleaseWriteLock(in handle, SystemID.Physics);
-            buffer = default;
-            return false;
-        }
-
-        private void ReleaseWriteBuffer<T>(in VaultGenerationHandle<T> handle)
-            where T : struct
-        {
-            if (_dataVault != null && IsHandleCreated(in handle))
-                _dataVault.ReleaseWriteLock(in handle, SystemID.Physics);
+            return vault != null &&
+                   IsHandleCreated(in handle) &&
+                   handle.BufferID == (uint)expectedBufferId &&
+                   vault.TryResolveHandle(in handle, out buffer) &&
+                   buffer.IsCreated &&
+                   buffer.Length > 0;
         }
 
         private void ReleaseVaultBuffers()
@@ -540,36 +579,25 @@ namespace Hecton8.Physics.Exosuit
 
         private bool GenerateEmergencyMockExoData()
         {
-            bool stateLocked = TryAcquireWriteBuffer(in _stateHandle, out NativeArray<ExosuitStateDTO> stateBuffer);
-            if (!stateLocked)
+            IDataVault vault = _dataVault;
+            if (vault == null || !vault.TryAcquireMutationGuard(JobMutationGuardMask))
                 return false;
 
-            bool tuningLocked = false;
-            bool inputLocked = false;
-            bool terrainLocked = false;
-            bool flowLocked = false;
-            bool crushLocked = false;
-            bool outputLocked = false;
-            bool screenLocked = false;
-            bool hapticLocked = false;
-            bool siltLocked = false;
-            bool acousticLocked = false;
-            bool cursorLocked = false;
-            bool footstepLocked = false;
             try
             {
-                if (!(tuningLocked = TryAcquireWriteBuffer(in _tuningHandle, out NativeArray<ExosuitTuningDTO> tuningBuffer)) ||
-                    !(inputLocked = TryAcquireWriteBuffer(in _inputHandle, out NativeArray<ExosuitFrameInputDTO> inputBuffer)) ||
-                    !(terrainLocked = TryAcquireWriteBuffer(in _terrainHandle, out NativeArray<MockTerrainSDF> terrainBuffer)) ||
-                    !(flowLocked = TryAcquireWriteBuffer(in _flowHandle, out NativeArray<MockFlowField> flowBuffer)) ||
-                    !(crushLocked = TryAcquireWriteBuffer(in _crushDepthHandle, out NativeArray<MockCrushDepthSignal> crushBuffer)) ||
-                    !(outputLocked = TryAcquireWriteBuffer(in _outputHandle, out NativeArray<ExosuitSolverOutput> outputBuffer)) ||
-                    !(screenLocked = TryAcquireWriteBuffer(in _screenHandle, out NativeArray<ExoScreenDTO> screenBuffer)) ||
-                    !(hapticLocked = TryAcquireWriteBuffer(in _hapticHandle, out NativeArray<MechHapticSignalDTO> hapticBuffer)) ||
-                    !(siltLocked = TryAcquireWriteBuffer(in _siltHandle, out NativeArray<SiltExplosionSignal> siltBuffer)) ||
-                    !(acousticLocked = TryAcquireWriteBuffer(in _acousticHandle, out NativeArray<ExosuitAcousticEchoTap> acousticBuffer)) ||
-                    !(cursorLocked = TryAcquireWriteBuffer(in _telemetryCursorHandle, out NativeArray<int> cursorBuffer)) ||
-                    !(footstepLocked = TryAcquireWriteBuffer(in _footstepAccumulatorHandle, out NativeArray<float> footstepBuffer)))
+                if (!TryResolveBuffer(in _stateHandle, out NativeArray<ExosuitStateDTO> stateBuffer) ||
+                    !TryResolveBuffer(in _tuningHandle, out NativeArray<ExosuitTuningDTO> tuningBuffer) ||
+                    !TryResolveBuffer(in _inputHandle, out NativeArray<ExosuitFrameInputDTO> inputBuffer) ||
+                    !TryResolveBuffer(in _terrainHandle, out NativeArray<MockTerrainSDF> terrainBuffer) ||
+                    !TryResolveBuffer(in _flowHandle, out NativeArray<MockFlowField> flowBuffer) ||
+                    !TryResolveBuffer(in _crushDepthHandle, out NativeArray<MockCrushDepthSignal> crushBuffer) ||
+                    !TryResolveBuffer(in _outputHandle, out NativeArray<ExosuitSolverOutput> outputBuffer) ||
+                    !TryResolveBuffer(in _screenHandle, out NativeArray<ExoScreenDTO> screenBuffer) ||
+                    !TryResolveBuffer(in _hapticHandle, out NativeArray<MechHapticSignalDTO> hapticBuffer) ||
+                    !TryResolveBuffer(in _siltHandle, out NativeArray<SiltExplosionSignal> siltBuffer) ||
+                    !TryResolveBuffer(in _acousticHandle, out NativeArray<ExosuitAcousticEchoTap> acousticBuffer) ||
+                    !TryResolveBuffer(in _telemetryCursorHandle, out NativeArray<int> cursorBuffer) ||
+                    !TryResolveBuffer(in _footstepAccumulatorHandle, out NativeArray<float> footstepBuffer))
                 {
                     return false;
                 }
@@ -615,32 +643,7 @@ namespace Hecton8.Physics.Exosuit
             }
             finally
             {
-                if (footstepLocked)
-                    ReleaseWriteBuffer(in _footstepAccumulatorHandle);
-                if (cursorLocked)
-                    ReleaseWriteBuffer(in _telemetryCursorHandle);
-                if (acousticLocked)
-                    ReleaseWriteBuffer(in _acousticHandle);
-                if (siltLocked)
-                    ReleaseWriteBuffer(in _siltHandle);
-                if (hapticLocked)
-                    ReleaseWriteBuffer(in _hapticHandle);
-                if (screenLocked)
-                    ReleaseWriteBuffer(in _screenHandle);
-                if (outputLocked)
-                    ReleaseWriteBuffer(in _outputHandle);
-                if (crushLocked)
-                    ReleaseWriteBuffer(in _crushDepthHandle);
-                if (flowLocked)
-                    ReleaseWriteBuffer(in _flowHandle);
-                if (terrainLocked)
-                    ReleaseWriteBuffer(in _terrainHandle);
-                if (inputLocked)
-                    ReleaseWriteBuffer(in _inputHandle);
-                if (tuningLocked)
-                    ReleaseWriteBuffer(in _tuningHandle);
-                if (stateLocked)
-                    ReleaseWriteBuffer(in _stateHandle);
+                vault.ReleaseMutationGuard(JobMutationGuardMask);
             }
         }
 
@@ -649,20 +652,17 @@ namespace Hecton8.Physics.Exosuit
             if (!TryResolveBuffer(in _screenHandle, out NativeArray<ExoScreenDTO> screenBuffer))
                 return _scheduledFrame;
 
-            bool tuningLocked = TryAcquireWriteBuffer(in _tuningHandle, out NativeArray<ExosuitTuningDTO> tuningBuffer);
-            if (!tuningLocked)
+            IDataVault vault = _dataVault;
+            if (vault == null || !vault.TryAcquireMutationGuard(FrameInputMutationGuardMask))
                 return _scheduledFrame;
 
-            bool inputLocked = false;
-            bool terrainLocked = false;
-            bool flowLocked = false;
-            bool crushLocked = false;
             try
             {
-                if (!(inputLocked = TryAcquireWriteBuffer(in _inputHandle, out NativeArray<ExosuitFrameInputDTO> inputBuffer)) ||
-                    !(terrainLocked = TryAcquireWriteBuffer(in _terrainHandle, out NativeArray<MockTerrainSDF> terrainBuffer)) ||
-                    !(flowLocked = TryAcquireWriteBuffer(in _flowHandle, out NativeArray<MockFlowField> flowBuffer)) ||
-                    !(crushLocked = TryAcquireWriteBuffer(in _crushDepthHandle, out NativeArray<MockCrushDepthSignal> crushBuffer)))
+                if (!TryResolveBuffer(in _tuningHandle, out NativeArray<ExosuitTuningDTO> tuningBuffer) ||
+                    !TryResolveBuffer(in _inputHandle, out NativeArray<ExosuitFrameInputDTO> inputBuffer) ||
+                    !TryResolveBuffer(in _terrainHandle, out NativeArray<MockTerrainSDF> terrainBuffer) ||
+                    !TryResolveBuffer(in _flowHandle, out NativeArray<MockFlowField> flowBuffer) ||
+                    !TryResolveBuffer(in _crushDepthHandle, out NativeArray<MockCrushDepthSignal> crushBuffer))
                 {
                     return _scheduledFrame;
                 }
@@ -718,16 +718,7 @@ namespace Hecton8.Physics.Exosuit
             }
             finally
             {
-                if (crushLocked)
-                    ReleaseWriteBuffer(in _crushDepthHandle);
-                if (flowLocked)
-                    ReleaseWriteBuffer(in _flowHandle);
-                if (terrainLocked)
-                    ReleaseWriteBuffer(in _terrainHandle);
-                if (inputLocked)
-                    ReleaseWriteBuffer(in _inputHandle);
-                if (tuningLocked)
-                    ReleaseWriteBuffer(in _tuningHandle);
+                vault.ReleaseMutationGuard(FrameInputMutationGuardMask);
             }
         }
 
@@ -823,7 +814,6 @@ namespace Hecton8.Physics.Exosuit
             bool budgetExceeded = elapsedMs > 0.1f;
             JobAdmissionScheduleExtensions.ReportAdmittedJobCompleted<ExosuitKinematicIntegrationJob>(JobAdmissionLane.Lane0_Critical, elapsedMs);
             PatchLastTelemetryElapsed(elapsedMs, budgetExceeded);
-            UnlockVoxelSdfPayloadBuffers();
             if (budgetExceeded)
                 DumpTelemetryBuffer();
             EmitReadbackSignals();
@@ -1000,73 +990,51 @@ namespace Hecton8.Physics.Exosuit
             silt = default;
             acoustic = default;
 
-            if (_jobBuffersLocked || _dataVault == null)
+            IDataVault vault = _dataVault;
+            if (_jobBuffersLocked || vault == null)
                 return false;
 
-            int locked = 0;
-            if (!TryAcquireJobWriteBuffer(in _stateHandle, BufferID.ShinobuExosuitState, out state))
-                return false;
-            locked++;
-
-            if (!TryAcquireJobWriteBuffer(in _inputHandle, BufferID.ShinobuExosuitFrameInput, out input))
-                return RollbackJobBufferLocks(locked);
-            locked++;
-
-            if (!TryAcquireJobWriteBuffer(in _tuningHandle, BufferID.ShinobuExosuitTuning, out tuning))
-                return RollbackJobBufferLocks(locked);
-            locked++;
-
-            if (!TryAcquireJobReadBuffer(in _terrainHandle, BufferID.ShinobuExosuitMockTerrainSdf, out terrain))
-                return RollbackJobBufferLocks(locked);
-            locked++;
-
-            if (!TryAcquireJobReadBuffer(in _flowHandle, BufferID.ShinobuExosuitMockFlowField, out flow))
-                return RollbackJobBufferLocks(locked);
-            locked++;
-
-            if (!TryAcquireJobReadBuffer(in _crushDepthHandle, BufferID.ShinobuExosuitMockCrushDepth, out crushDepth))
-                return RollbackJobBufferLocks(locked);
-            locked++;
-
-            if (!TryAcquireJobWriteBuffer(in _outputHandle, BufferID.ShinobuExosuitSolverOutput, out output))
-                return RollbackJobBufferLocks(locked);
-            locked++;
-
-            if (!TryAcquireJobWriteBuffer(in _screenHandle, BufferID.ShinobuExosuitScreenDto, out screen))
-                return RollbackJobBufferLocks(locked);
-            locked++;
-
-            if (!TryAcquireJobWriteBuffer(in _telemetryHandle, BufferID.ShinobuExosuitTelemetryRing, out telemetry))
-                return RollbackJobBufferLocks(locked);
-            locked++;
-
-            if (!TryAcquireJobWriteBuffer(in _telemetryCursorHandle, BufferID.ShinobuExosuitTelemetryCursor, out telemetryCursor))
-                return RollbackJobBufferLocks(locked);
-            locked++;
-
-            if (!TryAcquireJobWriteBuffer(in _footstepAccumulatorHandle, BufferID.ShinobuExosuitFootstepAccumulator, out footstepAccumulator))
-                return RollbackJobBufferLocks(locked);
-            locked++;
-
-            if (!TryAcquireJobWriteBuffer(in _hapticHandle, BufferID.ShinobuExosuitHapticSignals, out haptics))
-                return RollbackJobBufferLocks(locked);
-            locked++;
-
-            if (!TryAcquireJobWriteBuffer(in _siltHandle, BufferID.ShinobuExosuitSiltSignals, out silt))
-                return RollbackJobBufferLocks(locked);
-            locked++;
-
-            if (!TryAcquireJobWriteBuffer(in _acousticHandle, BufferID.ShinobuExosuitAcousticTaps, out acoustic))
-                return RollbackJobBufferLocks(locked);
-
-            if (telemetry.Length < TelemetryCapacity)
+            ulong guardMask = JobMutationGuardMask | VoxelSdfPayloadMutationGuardMask;
+            if (!vault.TryAcquireMutationGuard(guardMask))
             {
-                UnlockJobBuffers(JobBufferLockCount);
-                return false;
+                guardMask = JobMutationGuardMask;
+                if (!vault.TryAcquireMutationGuard(guardMask))
+                    return false;
             }
 
-            _jobBuffersLocked = true;
-            return true;
+            bool guardTransferred = false;
+            try
+            {
+                if (!TryResolveJobBuffer(vault, in _stateHandle, BufferID.ShinobuExosuitState, out state) ||
+                    !TryResolveJobBuffer(vault, in _inputHandle, BufferID.ShinobuExosuitFrameInput, out input) ||
+                    !TryResolveJobBuffer(vault, in _tuningHandle, BufferID.ShinobuExosuitTuning, out tuning) ||
+                    !TryResolveJobBuffer(vault, in _terrainHandle, BufferID.ShinobuExosuitMockTerrainSdf, out terrain) ||
+                    !TryResolveJobBuffer(vault, in _flowHandle, BufferID.ShinobuExosuitMockFlowField, out flow) ||
+                    !TryResolveJobBuffer(vault, in _crushDepthHandle, BufferID.ShinobuExosuitMockCrushDepth, out crushDepth) ||
+                    !TryResolveJobBuffer(vault, in _outputHandle, BufferID.ShinobuExosuitSolverOutput, out output) ||
+                    !TryResolveJobBuffer(vault, in _screenHandle, BufferID.ShinobuExosuitScreenDto, out screen) ||
+                    !TryResolveJobBuffer(vault, in _telemetryHandle, BufferID.ShinobuExosuitTelemetryRing, out telemetry) ||
+                    !TryResolveJobBuffer(vault, in _telemetryCursorHandle, BufferID.ShinobuExosuitTelemetryCursor, out telemetryCursor) ||
+                    !TryResolveJobBuffer(vault, in _footstepAccumulatorHandle, BufferID.ShinobuExosuitFootstepAccumulator, out footstepAccumulator) ||
+                    !TryResolveJobBuffer(vault, in _hapticHandle, BufferID.ShinobuExosuitHapticSignals, out haptics) ||
+                    !TryResolveJobBuffer(vault, in _siltHandle, BufferID.ShinobuExosuitSiltSignals, out silt) ||
+                    !TryResolveJobBuffer(vault, in _acousticHandle, BufferID.ShinobuExosuitAcousticTaps, out acoustic) ||
+                    telemetry.Length < TelemetryCapacity)
+                {
+                    return false;
+                }
+
+                _jobGuardedVault = vault;
+                _jobBufferGuardMask = guardMask;
+                _jobBuffersLocked = true;
+                guardTransferred = true;
+                return true;
+            }
+            finally
+            {
+                if (!guardTransferred)
+                    vault.ReleaseMutationGuard(guardMask);
+            }
         }
 
         private bool TryAcquireVoxelSdfPayload(
@@ -1084,9 +1052,6 @@ namespace Hecton8.Physics.Exosuit
             cellSize = float3.zero;
             rangeMeters = 0.0f;
 
-            if (_voxelSdfBufferLocked || _voxelSdfDescriptorLocked)
-                UnlockVoxelSdfPayloadBuffers();
-
             if (!math.all(math.isfinite(state.AUP_Position)) ||
                 !math.all(math.isfinite(terrain.CameraAup)))
             {
@@ -1097,22 +1062,18 @@ namespace Hecton8.Physics.Exosuit
             if (!math.all(math.isfinite(localDouble)))
                 return false;
 
-            IDataVault vault = _dataVault;
-            if (vault == null ||
-                !vault.TryLockBuffer(BufferID.VoxelSdfPayloadDescriptor, SystemID.Physics))
-            {
+            IDataVault vault = _jobGuardedVault ?? _dataVault;
+            if (!_jobBuffersLocked ||
+                vault == null ||
+                (_jobBufferGuardMask & VoxelSdfPayloadMutationGuardMask) != VoxelSdfPayloadMutationGuardMask)
                 return false;
-            }
 
-            _voxelSdfDescriptorLocked = true;
             if (!vault.TryGetGenerationHandle<VoxelSdfPayloadDescriptorDTO>(BufferID.VoxelSdfPayloadDescriptor, out VaultGenerationHandle<VoxelSdfPayloadDescriptorDTO> descriptorHandle) ||
-                descriptorHandle.BufferID != unchecked((uint)(int)BufferID.VoxelSdfPayloadDescriptor) ||
-                descriptorHandle.SystemID != (uint)SystemID.WorldStreaming ||
+                !IsVoxelSdfHandle(in descriptorHandle, BufferID.VoxelSdfPayloadDescriptor) ||
                 !vault.TryReadHandle(in descriptorHandle, out NativeArray<VoxelSdfPayloadDescriptorDTO> descriptors) ||
                 !descriptors.IsCreated ||
                 descriptors.Length <= 0)
             {
-                UnlockVoxelSdfPayloadBuffers();
                 return false;
             }
 
@@ -1125,27 +1086,16 @@ namespace Hecton8.Physics.Exosuit
                 descriptor.OwnerSystemId != (uint)SystemID.WorldStreaming ||
                 (descriptor.Flags & VoxelSdfPayloadDescriptorDTO.FlagValid) == 0u)
             {
-                UnlockVoxelSdfPayloadBuffers();
                 return false;
             }
 
-            if (!vault.TryLockBuffer(BufferID.VoxelSdfTexture3D, SystemID.Physics))
-            {
-                UnlockVoxelSdfPayloadBuffers();
-                return false;
-            }
-
-            _voxelSdfBufferLocked = true;
             if (!vault.TryGetGenerationHandle<byte>(BufferID.VoxelSdfTexture3D, out VaultGenerationHandle<byte> sdfHandle) ||
-                sdfHandle.BufferID != unchecked((uint)(int)BufferID.VoxelSdfTexture3D) ||
-                sdfHandle.SystemID != (uint)SystemID.WorldStreaming ||
-                sdfHandle.Generation == 0u ||
+                !IsVoxelSdfHandle(in sdfHandle, BufferID.VoxelSdfTexture3D) ||
                 sdfHandle.Generation != descriptor.BufferGeneration ||
                 !vault.TryReadHandle(in sdfHandle, out NativeArray<byte> resolvedSdf) ||
                 !resolvedSdf.IsCreated ||
                 resolvedSdf.Length < expectedLength)
             {
-                UnlockVoxelSdfPayloadBuffers();
                 return false;
             }
 
@@ -1160,7 +1110,6 @@ namespace Hecton8.Physics.Exosuit
                 !math.all(math.isfinite(resolvedCellSize)) ||
                 !math.isfinite(resolvedRange))
             {
-                UnlockVoxelSdfPayloadBuffers();
                 return false;
             }
 
@@ -1172,156 +1121,19 @@ namespace Hecton8.Physics.Exosuit
             return true;
         }
 
-        private bool TryAcquireJobWriteBuffer<T>(
-            in VaultGenerationHandle<T> handle,
-            BufferID expectedBufferId,
-            out NativeArray<T> buffer)
-            where T : struct
-        {
-            buffer = default;
-            if (_dataVault == null ||
-                !IsHandleCreated(in handle) ||
-                handle.BufferID != (uint)expectedBufferId ||
-                !_dataVault.TryAcquireWriteLock(in handle, SystemID.Physics, out buffer))
-            {
-                return false;
-            }
-
-            if (buffer.IsCreated && buffer.Length > 0)
-                return true;
-
-            _dataVault.ReleaseWriteLock(in handle, SystemID.Physics);
-            buffer = default;
-            return false;
-        }
-
-        private bool TryAcquireJobReadBuffer<T>(
-            in VaultGenerationHandle<T> handle,
-            BufferID expectedBufferId,
-            out NativeArray<T> buffer)
-            where T : struct
-        {
-            buffer = default;
-            if (_dataVault == null ||
-                !IsHandleCreated(in handle) ||
-                handle.BufferID != (uint)expectedBufferId ||
-                !_dataVault.TryLockBuffer(expectedBufferId, SystemID.Physics))
-            {
-                return false;
-            }
-
-            if (TryResolveBuffer(in handle, out buffer))
-                return true;
-
-            _dataVault.TryUnlockBuffer(expectedBufferId, SystemID.Physics);
-            buffer = default;
-            return false;
-        }
-
-        private bool RollbackJobBufferLocks(int lockedCount)
-        {
-            UnlockJobBuffers(lockedCount);
-            return false;
-        }
-
         private void UnlockJobBuffers()
         {
-            UnlockVoxelSdfPayloadBuffers();
             if (!_jobBuffersLocked)
                 return;
 
-            UnlockJobBuffers(JobBufferLockCount);
+            IDataVault vault = _jobGuardedVault ?? _dataVault;
+            ulong guardMask = _jobBufferGuardMask != 0UL ? _jobBufferGuardMask : JobMutationGuardMask;
+            if (vault != null)
+                vault.ReleaseMutationGuard(guardMask);
+
+            _jobGuardedVault = null;
+            _jobBufferGuardMask = 0UL;
             _jobBuffersLocked = false;
-        }
-
-        private void UnlockVoxelSdfPayloadBuffers()
-        {
-            IDataVault vault = _dataVault;
-            if (vault != null && _voxelSdfBufferLocked)
-                vault.TryUnlockBuffer(BufferID.VoxelSdfTexture3D, SystemID.Physics);
-
-            if (vault != null && _voxelSdfDescriptorLocked)
-                vault.TryUnlockBuffer(BufferID.VoxelSdfPayloadDescriptor, SystemID.Physics);
-
-            _voxelSdfBufferLocked = false;
-            _voxelSdfDescriptorLocked = false;
-        }
-
-        private void UnlockJobBuffers(int lockedCount)
-        {
-            if (_dataVault == null)
-                return;
-
-            for (int i = lockedCount - 1; i >= 0; i--)
-                UnlockJobBuffer(i);
-        }
-
-        private void UnlockJobBuffer(int index)
-        {
-            switch (index)
-            {
-                case 0:
-                    ReleaseWriteBuffer(in _stateHandle);
-                    break;
-                case 1:
-                    ReleaseWriteBuffer(in _inputHandle);
-                    break;
-                case 2:
-                    ReleaseWriteBuffer(in _tuningHandle);
-                    break;
-                case 3:
-                case 4:
-                case 5:
-                    _dataVault.TryUnlockBuffer(ResolveJobBufferId(index), SystemID.Physics);
-                    break;
-                case 6:
-                    ReleaseWriteBuffer(in _outputHandle);
-                    break;
-                case 7:
-                    ReleaseWriteBuffer(in _screenHandle);
-                    break;
-                case 8:
-                    ReleaseWriteBuffer(in _telemetryHandle);
-                    break;
-                case 9:
-                    ReleaseWriteBuffer(in _telemetryCursorHandle);
-                    break;
-                case 10:
-                    ReleaseWriteBuffer(in _footstepAccumulatorHandle);
-                    break;
-                case 11:
-                    ReleaseWriteBuffer(in _hapticHandle);
-                    break;
-                case 12:
-                    ReleaseWriteBuffer(in _siltHandle);
-                    break;
-                default:
-                    ReleaseWriteBuffer(in _acousticHandle);
-                    break;
-            }
-        }
-
-        private const int JobBufferLockCount = 14;
-
-        private static BufferID ResolveJobBufferId(int index)
-        {
-            switch (index)
-            {
-                case 0: return BufferID.ShinobuExosuitState;
-                case 1: return BufferID.ShinobuExosuitFrameInput;
-                case 2: return BufferID.ShinobuExosuitTuning;
-                case 3: return BufferID.ShinobuExosuitMockTerrainSdf;
-                case 4: return BufferID.ShinobuExosuitMockFlowField;
-                case 5: return BufferID.ShinobuExosuitMockCrushDepth;
-                case 6: return BufferID.ShinobuExosuitSolverOutput;
-                case 7: return BufferID.ShinobuExosuitScreenDto;
-                case 8: return BufferID.ShinobuExosuitTelemetryRing;
-                case 9: return BufferID.ShinobuExosuitTelemetryCursor;
-                case 10: return BufferID.ShinobuExosuitFootstepAccumulator;
-                case 11: return BufferID.ShinobuExosuitHapticSignals;
-                case 12: return BufferID.ShinobuExosuitSiltSignals;
-                default: return BufferID.ShinobuExosuitAcousticTaps;
-            }
         }
 
 #if UNITY_EDITOR
@@ -1349,46 +1161,54 @@ namespace Hecton8.Physics.Exosuit
             if (vault == null ||
                 !IsHandleCreated(in _csvScratchHandle) ||
                 !IsHandleCreated(in _tuningHandle) ||
+                !vault.TryReadOnlyHandle(in _tuningHandle, out NativeArray<ExosuitTuningDTO>.ReadOnly tuningRead) ||
+                tuningRead.Length <= 0 ||
                 !vault.TryAcquireWriteLock(in _csvScratchHandle, SystemID.Physics, out NativeArray<byte> scratch))
             {
                 return;
             }
 
             bool commitWriteTicks = false;
+            bool parsedTuning = false;
+            ExosuitTuningDTO tuning = tuningRead[0];
+            int csvByteCount = 0;
             try
             {
-                int count = ReadCsvBytes(_csvPath, scratch);
-                if (count <= 0)
-                {
-                    commitWriteTicks = true;
-                    return;
-                }
+                csvByteCount = ReadCsvBytes(_csvPath, scratch);
+                if (csvByteCount > 0)
+                    parsedTuning = ParseCsvIntoTuning(scratch, csvByteCount, ref tuning);
 
-                if (!vault.TryAcquireWriteLock(in _tuningHandle, SystemID.Physics, out NativeArray<ExosuitTuningDTO> tuningBuffer))
-                    return;
-
-                try
-                {
-                    if (!tuningBuffer.IsCreated || tuningBuffer.Length <= 0)
-                        return;
-
-                    ExosuitTuningDTO tuning = tuningBuffer[0];
-                    if (ParseCsvIntoTuning(scratch, count, ref tuning))
-                    {
-                        tuning.CsvVersion++;
-                        tuningBuffer[0] = SanitizeManagedTuning(tuning);
-                    }
-
-                    commitWriteTicks = true;
-                }
-                finally
-                {
-                    vault.ReleaseWriteLock(in _tuningHandle, SystemID.Physics);
-                }
             }
             finally
             {
                 vault.ReleaseWriteLock(in _csvScratchHandle, SystemID.Physics);
+            }
+
+            if (csvByteCount <= 0)
+            {
+                _lastCsvWriteTicks = writeTicks;
+                return;
+            }
+
+            if (!vault.TryAcquireWriteLock(in _tuningHandle, SystemID.Physics, out NativeArray<ExosuitTuningDTO> tuningBuffer))
+                return;
+
+            try
+            {
+                if (!tuningBuffer.IsCreated || tuningBuffer.Length <= 0)
+                    return;
+
+                if (parsedTuning)
+                {
+                    tuning.CsvVersion++;
+                    tuningBuffer[0] = SanitizeManagedTuning(tuning);
+                }
+
+                commitWriteTicks = true;
+            }
+            finally
+            {
+                vault.ReleaseWriteLock(in _tuningHandle, SystemID.Physics);
                 if (commitWriteTicks)
                     _lastCsvWriteTicks = writeTicks;
             }

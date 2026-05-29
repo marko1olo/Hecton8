@@ -123,25 +123,16 @@ namespace Hecton8.UI
         public void LateFrameTick()
         {
             if (_pendingContentRootBootstrap)
-            {
-                RectTransform contentRoot = EnsureContentRoot();
-                if (contentRoot == null)
-                {
-                    _pendingContentRootBootstrap = true;
-                    return;
-                }
+                return;
 
-                DisableUnityLayoutGroupsIfConfigured();
-                ApplyManualLinearLayout();
-                ApplyScale(force: true);
-                _pendingContentRootBootstrap = ResolveContentRootInternal(createIfMissing: false) == null;
+            RectTransform contentRoot = TryGetCachedContentRoot();
+            if (contentRoot == null)
+            {
+                _pendingContentRootBootstrap = true;
                 return;
             }
 
-            if (ResolveContentRootInternal(createIfMissing: false) == null)
-                return;
-
-            ApplyScale(force: false);
+            ApplyScaleToCachedRoot(contentRoot, force: false);
         }
 
         public void SlowTick()
@@ -149,8 +140,22 @@ namespace Hecton8.UI
             if (!Application.isPlaying)
                 return;
 
-            RegisterToTickManager();
-            if (!_pendingContentRootBootstrap && ResolveContentRootInternal(createIfMissing: false) != null)
+            RectTransform contentRoot = TryGetCachedContentRoot();
+            if (_pendingContentRootBootstrap)
+            {
+                if (contentRoot == null)
+                {
+                    _pendingContentRootBootstrap = true;
+                    return;
+                }
+
+                ApplyManualLinearLayout();
+                ApplyScaleToCachedRoot(contentRoot, force: true);
+                _pendingContentRootBootstrap = false;
+                return;
+            }
+
+            if (contentRoot != null)
                 return;
 
             _pendingContentRootBootstrap = true;
@@ -164,12 +169,13 @@ namespace Hecton8.UI
             _lastAppliedScale = -1f;
             _lastAppliedReferenceResolution = Vector2.zero;
             _lastAppliedMatch = -1f;
-            _pendingContentRootBootstrap = ResolveContentRootInternal(createIfMissing: false) == null;
+            RectTransform contentRoot = TryGetCachedContentRoot();
+            _pendingContentRootBootstrap = contentRoot == null;
 
             if (_pendingContentRootBootstrap)
                 return;
 
-            ApplyScale(force: true);
+            ApplyScaleToCachedRoot(contentRoot, force: true);
         }
 
 #if UNITY_EDITOR
@@ -218,7 +224,7 @@ namespace Hecton8.UI
             matchWidthOrHeight = sanitizedMatch;
             if (Application.isPlaying)
             {
-                _pendingContentRootBootstrap = _pendingContentRootBootstrap || ResolveContentRootInternal(createIfMissing: false) == null;
+                _pendingContentRootBootstrap = _pendingContentRootBootstrap || TryGetCachedContentRoot() == null;
                 if (!_pendingContentRootBootstrap)
                     ApplyScale(force: true);
             }
@@ -282,6 +288,11 @@ namespace Hecton8.UI
                 TryGetComponent(out _targetCanvas);
         }
 
+        private RectTransform TryGetCachedContentRoot()
+        {
+            return _contentRoot != null ? _contentRoot : null;
+        }
+
         private RectTransform EnsureContentRoot()
         {
             ResolveCanvas();
@@ -300,7 +311,7 @@ namespace Hecton8.UI
                 // COLD ALLOC: GameObject[1] — matrix-scaled HUD content root — owner: HectonUIScaler
                 GameObject rootObject = new GameObject(ContentRootName, typeof(RectTransform));
                 rootObject.layer = canvasRoot.gameObject.layer;
-                rootObject.TryGetComponent(out _contentRoot);
+                _contentRoot = rootObject.transform as RectTransform;
                 _contentRoot.SetParent(canvasRoot, false);
             }
 
@@ -329,6 +340,14 @@ namespace Hecton8.UI
         private void ApplyScale(bool force)
         {
             RectTransform contentRoot = ResolveContentRootInternal(createIfMissing: false);
+            if (contentRoot == null)
+                return;
+
+            ApplyScaleToCachedRoot(contentRoot, force);
+        }
+
+        private void ApplyScaleToCachedRoot(RectTransform contentRoot, bool force)
+        {
             if (contentRoot == null)
                 return;
 

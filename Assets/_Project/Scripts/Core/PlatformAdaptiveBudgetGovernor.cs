@@ -51,6 +51,12 @@ namespace Hecton8.Core
         private static int _frostTickIntervalFrames = StableFrostTickFrames;
         private static int _secondaryHudEffectWeightMilli = DefaultQualityWeightMilli;
         private static bool _secondaryHudEffectsAllowed = true;
+        private static bool _coldSharedMemoryModeActive;
+        private static bool _coldSteamDeckLike;
+        private static bool _coldQuest3Like;
+        private static long _coldRecommendedVramBudgetBytes;
+        private static float _coldTargetFrameTimeMs = DefaultTargetFrameTimeMs;
+        private static int _coldSharedMemoryBaselineRenderScaleMilli = HardwareProfileCatalog.SteamDeckLcdBaselineRenderScaleMilli;
         private static float _frameTimeTrendMs = DefaultTargetFrameTimeMs;
         private static int _sustainedFramePressureSamples;
         private static bool _hasFrameTimeSample;
@@ -108,6 +114,12 @@ namespace Hecton8.Core
             _frostTickIntervalFrames = StableFrostTickFrames;
             _secondaryHudEffectWeightMilli = DefaultQualityWeightMilli;
             _secondaryHudEffectsAllowed = true;
+            _coldSharedMemoryModeActive = false;
+            _coldSteamDeckLike = false;
+            _coldQuest3Like = false;
+            _coldRecommendedVramBudgetBytes = 0L;
+            _coldTargetFrameTimeMs = DefaultTargetFrameTimeMs;
+            _coldSharedMemoryBaselineRenderScaleMilli = HardwareProfileCatalog.SteamDeckLcdBaselineRenderScaleMilli;
             _frameTimeTrendMs = DefaultTargetFrameTimeMs;
             _sustainedFramePressureSamples = 0;
             _hasFrameTimeSample = false;
@@ -131,12 +143,10 @@ namespace Hecton8.Core
         /// <param name="deltaTime">Dispatcher delta time in seconds.</param>
         public static void SampleAndApply(float deltaTime)
         {
-            HardwareTierDetector.EnsureInitialized();
-
             uint flags = 0u;
-            if (HardwareTierDetector.SharedMemoryModeActive)
+            if (_coldSharedMemoryModeActive)
                 flags |= (uint)PlatformAdaptivePressureFlags.SharedMemory;
-            if (HardwareTierDetector.IsSteamDeckLike)
+            if (_coldSteamDeckLike)
                 flags |= (uint)PlatformAdaptivePressureFlags.SteamDeckLike;
             if (IsVramNearBudget())
                 flags |= (uint)PlatformAdaptivePressureFlags.VramNearBudget;
@@ -181,7 +191,7 @@ namespace Hecton8.Core
 
         private static bool IsVramNearBudget()
         {
-            long budgetBytes = HardwareTierDetector.RecommendedVramBudgetBytes;
+            long budgetBytes = _coldRecommendedVramBudgetBytes;
             if (budgetBytes <= 0L)
                 return false;
 
@@ -191,7 +201,7 @@ namespace Hecton8.Core
 
         private static float ResolveVramPressure01()
         {
-            long budgetBytes = HardwareTierDetector.RecommendedVramBudgetBytes;
+            long budgetBytes = _coldRecommendedVramBudgetBytes;
             if (budgetBytes <= 0L)
                 return 0f;
 
@@ -288,12 +298,7 @@ namespace Hecton8.Core
 
         private static float ResolveTargetFrameTimeMs()
         {
-            if (HardwareTierDetector.IsQuest3Like)
-                return MillisecondsPerSecond / HardwareProfileCatalog.Quest3TargetFps;
-            if (HardwareTierDetector.IsSteamDeckLike)
-                return MillisecondsPerSecond / HardwareProfileCatalog.SteamDeckLcdTargetFps;
-
-            return DefaultTargetFrameTimeMs;
+            return _coldTargetFrameTimeMs;
         }
 
         private static float ResolvePlatformPressure01(uint flags)
@@ -344,10 +349,7 @@ namespace Hecton8.Core
                 baseline = math.min(baseline, HardwareProfileCatalog.SteamDeckLcdBaselineRenderScaleMilli);
             if ((flags & (uint)PlatformAdaptivePressureFlags.SharedMemory) != 0u)
             {
-                int sharedBaseline = HardwareTierDetector.IsQuest3Like
-                    ? HardwareProfileCatalog.Quest3BaselineRenderScaleMilli
-                    : HardwareProfileCatalog.SteamDeckLcdBaselineRenderScaleMilli;
-                baseline = math.min(baseline, sharedBaseline);
+                baseline = math.min(baseline, _coldSharedMemoryBaselineRenderScaleMilli);
             }
 
             int pressureTarget = baseline;
@@ -428,8 +430,32 @@ namespace Hecton8.Core
 
         private static void RebindServicesCold()
         {
+            CacheHardwareBudgetProfileCold();
             _hardwareThermalService = GlobalRegistry.HardwareThermal;
             _dynamicResolutionRuntime = GlobalRegistry.DynamicResolutionRuntime;
+        }
+
+        private static void CacheHardwareBudgetProfileCold()
+        {
+            HardwareTierDetector.EnsureInitialized();
+            _coldSharedMemoryModeActive = HardwareTierDetector.SharedMemoryModeActive;
+            _coldSteamDeckLike = HardwareTierDetector.IsSteamDeckLike;
+            _coldQuest3Like = HardwareTierDetector.IsQuest3Like;
+            _coldRecommendedVramBudgetBytes = HardwareTierDetector.RecommendedVramBudgetBytes;
+            _coldTargetFrameTimeMs = ResolveColdTargetFrameTimeMs(_coldQuest3Like, _coldSteamDeckLike);
+            _coldSharedMemoryBaselineRenderScaleMilli = _coldQuest3Like
+                ? HardwareProfileCatalog.Quest3BaselineRenderScaleMilli
+                : HardwareProfileCatalog.SteamDeckLcdBaselineRenderScaleMilli;
+        }
+
+        private static float ResolveColdTargetFrameTimeMs(bool quest3Like, bool steamDeckLike)
+        {
+            if (quest3Like)
+                return MillisecondsPerSecond / HardwareProfileCatalog.Quest3TargetFps;
+            if (steamDeckLike)
+                return MillisecondsPerSecond / HardwareProfileCatalog.SteamDeckLcdTargetFps;
+
+            return DefaultTargetFrameTimeMs;
         }
 
         private static void TryRegisterHotSwap()

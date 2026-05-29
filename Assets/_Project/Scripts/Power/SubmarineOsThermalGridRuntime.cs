@@ -285,6 +285,40 @@ namespace Hecton8.Power
         private static readonly BufferID PendingCountersId = (BufferID)731077;
         private static readonly BufferID ConvergenceStateId = (BufferID)731078;
         private static readonly BufferID ResidualSamplesId = (BufferID)731079;
+        private static readonly ulong TopologyRebuildMutationGuardMask =
+            ThermalGridBufferGuardBit(PendingNodesId) |
+            ThermalGridBufferGuardBit(PendingEdgesId) |
+            ThermalGridBufferGuardBit(PendingInjectionsId) |
+            ThermalGridBufferGuardBit(PendingAnchorsId) |
+            ThermalGridBufferGuardBit(PendingVisualStateId) |
+            ThermalGridBufferGuardBit(PendingCountersId);
+        private static readonly ulong TopologyCommitMutationGuardMask =
+            ThermalGridBufferGuardBit(NodesAId) |
+            ThermalGridBufferGuardBit(NodesBId) |
+            ThermalGridBufferGuardBit(EdgesId) |
+            ThermalGridBufferGuardBit(InjectionsId) |
+            ThermalGridBufferGuardBit(AnchorsId) |
+            ThermalGridBufferGuardBit(VisualStateId) |
+            ThermalGridBufferGuardBit(CountersId);
+        private static readonly ulong SolveMutationGuardMask =
+            ThermalGridBufferGuardBit(NodesAId) |
+            ThermalGridBufferGuardBit(NodesBId) |
+            ThermalGridBufferGuardBit(EdgesId) |
+            ThermalGridBufferGuardBit(InjectionsId) |
+            ThermalGridBufferGuardBit(ExternalHeatId) |
+            ThermalGridBufferGuardBit(VisualStateId) |
+            ThermalGridBufferGuardBit(ConvergenceStateId) |
+            ThermalGridBufferGuardBit(ResidualSamplesId) |
+            ThermalGridBufferGuardBit(TelemetryId) |
+            ThermalGridBufferGuardBit(CountersId);
+        private static readonly ulong ExternalHeatMutationGuardMask =
+            ThermalGridBufferGuardBit(ExternalHeatId) |
+            ThermalGridBufferGuardBit(AnchorsId);
+        private static readonly ulong CsvImportMutationGuardMask =
+            ThermalGridBufferGuardBit(CsvBytesId) |
+            ThermalGridBufferGuardBit(SpecsId) |
+            ThermalGridBufferGuardBit(TuningId) |
+            ThermalGridBufferGuardBit(CountersId);
 
         private IDataVault _vault;
         private VaultGenerationHandle<GridNodeDTO> _nodesAHandle;
@@ -432,23 +466,33 @@ namespace Hecton8.Power
             if (_topologyRebuildPending)
             {
                 // COLD SYNC JOB: fallback mock must be materialized before the runtime can expose a readback handle.
-                DispatcherJobFence.TryComplete(ref _topologyRebuildHandle, forceComplete: true);
+                ForceCompleteTopologyRebuildInPostSimulationWindow();
                 _topologyRebuildPending = false;
                 if (TryLockTopologyCommitTargetBuffers(out int commitLockedCount))
                 {
-                    if (!TryCommitPendingTopologySnapshot())
+                    bool committed = false;
+                    try
+                    {
+                        committed = TryCommitPendingTopologySnapshot();
+                        if (committed)
+                        {
+                            _activeFrontIsA = true;
+                            _pendingFrontIsA = true;
+                        }
+                    }
+                    finally
                     {
                         UnlockTopologyCommitTargetBuffers(commitLockedCount);
                         UnlockTopologyRebuildBuffers();
+                    }
+
+                    if (!committed)
+                    {
                         _initialized = false;
                         if (ReferenceEquals(s_active, this))
                             s_active = null;
                         return false;
                     }
-
-                    UnlockTopologyCommitTargetBuffers(commitLockedCount);
-                    _activeFrontIsA = true;
-                    _pendingFrontIsA = true;
                 }
                 else
                 {
@@ -458,8 +502,6 @@ namespace Hecton8.Power
                         s_active = null;
                     return false;
                 }
-
-                UnlockTopologyRebuildBuffers();
             }
             return true;
         }
@@ -582,26 +624,32 @@ namespace Hecton8.Power
             if (!TryLockTopologyCommitTargetBuffers(out int commitLockedCount))
                 return false;
 
-            if (!DispatcherJobFence.TryFinalizeCompleted(ref _topologyRebuildHandle))
+            bool finalized = false;
+            try
             {
-                UnlockTopologyCommitTargetBuffers(commitLockedCount);
-                return false;
-            }
+                if (!DispatcherJobFence.TryFinalizeCompleted(ref _topologyRebuildHandle))
+                    return false;
 
-            if (!TryCommitPendingTopologySnapshot())
-            {
-                UnlockTopologyCommitTargetBuffers(commitLockedCount);
+                finalized = true;
+                bool committed = TryCommitPendingTopologySnapshot();
                 _topologyRebuildPending = false;
-                UnlockTopologyRebuildBuffers();
-                return false;
-            }
+                if (committed)
+                {
+                    _activeFrontIsA = true;
+                    _pendingFrontIsA = true;
+                }
 
-            UnlockTopologyCommitTargetBuffers(commitLockedCount);
-            _topologyRebuildPending = false;
-            UnlockTopologyRebuildBuffers();
-            _activeFrontIsA = true;
-            _pendingFrontIsA = true;
-            return true;
+                return committed;
+            }
+            finally
+            {
+                UnlockTopologyCommitTargetBuffers(commitLockedCount);
+                if (finalized)
+                {
+                    _topologyRebuildPending = false;
+                    UnlockTopologyRebuildBuffers();
+                }
+            }
         }
 
         public bool ScheduleExternalThermalInjection(
@@ -804,32 +852,38 @@ namespace Hecton8.Power
                 return false;
 
             _solvePending = false;
-            UnlockSolveBuffers();
-            _activeFrontIsA = _pendingFrontIsA;
-
-            const SubmarineThermalGridFaultFlags dumpFaultMask =
-                SubmarineThermalGridFaultFlags.CriticalThermalFailure |
-                SubmarineThermalGridFaultFlags.NonFinite |
-                SubmarineThermalGridFaultFlags.Divergent |
-                SubmarineThermalGridFaultFlags.MaxIterations;
-            NativeArray<int> counters;
-            if (TryResolveCounters(out counters))
+            try
             {
-                int activeFaultMask = counters[CounterFaultFlags] & (int)dumpFaultMask;
-                if (activeFaultMask != 0)
+                _activeFrontIsA = _pendingFrontIsA;
+
+                const SubmarineThermalGridFaultFlags dumpFaultMask =
+                    SubmarineThermalGridFaultFlags.CriticalThermalFailure |
+                    SubmarineThermalGridFaultFlags.NonFinite |
+                    SubmarineThermalGridFaultFlags.Divergent |
+                    SubmarineThermalGridFaultFlags.MaxIterations;
+                NativeArray<int> counters;
+                if (TryResolveCounters(out counters))
                 {
-                    int dumpedFaultMask = counters[CounterDumpedFaultMask];
-                    int newFaultMask = activeFaultMask & ~dumpedFaultMask;
-                    if (newFaultMask != 0)
+                    int activeFaultMask = counters[CounterFaultFlags] & (int)dumpFaultMask;
+                    if (activeFaultMask != 0)
                     {
-                        DumpBlackBox();
-                        counters[CounterDumpedFaultMask] = dumpedFaultMask | activeFaultMask;
+                        int dumpedFaultMask = counters[CounterDumpedFaultMask];
+                        int newFaultMask = activeFaultMask & ~dumpedFaultMask;
+                        if (newFaultMask != 0)
+                        {
+                            DumpBlackBox();
+                            counters[CounterDumpedFaultMask] = dumpedFaultMask | activeFaultMask;
+                        }
+                    }
+                    else
+                    {
+                        counters[CounterDumpedFaultMask] = 0;
                     }
                 }
-                else
-                {
-                    counters[CounterDumpedFaultMask] = 0;
-                }
+            }
+            finally
+            {
+                UnlockSolveBuffers();
             }
 
             return true;
@@ -846,8 +900,14 @@ namespace Hecton8.Power
                 return false;
 
             _externalHeatPending = false;
-            UnlockExternalHeatBuffers();
-            return true;
+            try
+            {
+                return true;
+            }
+            finally
+            {
+                UnlockExternalHeatBuffers();
+            }
         }
 
         public bool TryGetGridReadback(
@@ -945,16 +1005,19 @@ namespace Hecton8.Power
             IDataVault vault = _vault;
             if (vault == null ||
                 vault.IsCompactionFenceActive ||
-                !IsHandleValid(in _tuningHandle) ||
-                !vault.TryAcquireWriteLock(in _tuningHandle, SystemID.CoreDiagnostics, out NativeArray<SubmarineThermalGridTuningDTO> tuningBuffer) ||
-                !tuningBuffer.IsCreated ||
-                tuningBuffer.Length <= 0)
+                !IsHandleValid(in _tuningHandle))
             {
                 return false;
             }
 
+            if (!vault.TryAcquireWriteLock(in _tuningHandle, SystemID.CoreDiagnostics, out NativeArray<SubmarineThermalGridTuningDTO> tuningBuffer))
+                return false;
+
             try
             {
+                if (!tuningBuffer.IsCreated || tuningBuffer.Length <= 0)
+                    return false;
+
                 tuningBuffer[0] = SanitizeTuning(in tuning);
                 return true;
             }
@@ -1082,29 +1145,7 @@ namespace Hecton8.Power
 
         public void Dispose()
         {
-            if (_solvePending)
-            {
-                // TEARDOWN FENCE: dispose cannot leave vault buffers locked behind live worker pointers.
-                DispatcherJobFence.TryComplete(ref _solveHandle, forceComplete: true);
-                _solvePending = false;
-                UnlockSolveBuffers();
-            }
-
-            if (_topologyRebuildPending)
-            {
-                // TEARDOWN FENCE: topology staging buffers must be released before the runtime drops its vault aliases.
-                DispatcherJobFence.TryComplete(ref _topologyRebuildHandle, forceComplete: true);
-                _topologyRebuildPending = false;
-                UnlockTopologyRebuildBuffers();
-            }
-
-            if (_externalHeatPending)
-            {
-                // TEARDOWN FENCE: external heat writes must finish before buffer aliases are cleared.
-                DispatcherJobFence.TryComplete(ref _externalHeatJobHandle, forceComplete: true);
-                _externalHeatPending = false;
-                UnlockExternalHeatBuffers();
-            }
+            ForceCompletePendingJobsInPostSimulationWindow();
 
             _nodesAHandle = default;
             _nodesBHandle = default;
@@ -1129,6 +1170,54 @@ namespace Hecton8.Power
             _initialized = false;
             if (ReferenceEquals(s_active, this))
                 s_active = null;
+        }
+
+        private bool ForceCompleteTopologyRebuildInPostSimulationWindow()
+        {
+            DispatcherJobFence.BeginPostSimulationSwapWindow();
+            try
+            {
+                return DispatcherJobFence.TryComplete(ref _topologyRebuildHandle, forceComplete: true);
+            }
+            finally
+            {
+                DispatcherJobFence.EndPostSimulationSwapWindow();
+            }
+        }
+
+        private void ForceCompletePendingJobsInPostSimulationWindow()
+        {
+            DispatcherJobFence.BeginPostSimulationSwapWindow();
+            try
+            {
+                if (_solvePending)
+                {
+                    // TEARDOWN FENCE: dispose cannot leave vault buffers locked behind live worker pointers.
+                    DispatcherJobFence.TryComplete(ref _solveHandle, forceComplete: true);
+                    _solvePending = false;
+                    UnlockSolveBuffers();
+                }
+
+                if (_topologyRebuildPending)
+                {
+                    // TEARDOWN FENCE: topology staging buffers must be released before the runtime drops its vault aliases.
+                    DispatcherJobFence.TryComplete(ref _topologyRebuildHandle, forceComplete: true);
+                    _topologyRebuildPending = false;
+                    UnlockTopologyRebuildBuffers();
+                }
+
+                if (_externalHeatPending)
+                {
+                    // TEARDOWN FENCE: external heat writes must finish before buffer aliases are cleared.
+                    DispatcherJobFence.TryComplete(ref _externalHeatJobHandle, forceComplete: true);
+                    _externalHeatPending = false;
+                    UnlockExternalHeatBuffers();
+                }
+            }
+            finally
+            {
+                DispatcherJobFence.EndPostSimulationSwapWindow();
+            }
         }
 
         public static int ResolvePropagationIterations(float globalQualityWeight)
@@ -1358,61 +1447,20 @@ namespace Hecton8.Power
         {
             views = default;
             lockedCount = 0;
-            IDataVault vault = _vault;
-            if (vault == null)
+            if (!TryAcquireThermalGridMutationGuard(CsvImportMutationGuardMask, out lockedCount))
                 return false;
 
-            if (!TryAcquireWriteView(vault, in _csvBytesHandle, CsvByteCapacity, out views.CsvBytes))
-                return false;
-            lockedCount++;
-
-            if (!TryAcquireWriteView(vault, in _specsHandle, CsvSpecCapacity, out views.Specs))
+            if (TryResolveVaultBuffer(_csvBytesHandle, CsvByteCapacity, out views.CsvBytes) &&
+                TryResolveVaultBuffer(_specsHandle, CsvSpecCapacity, out views.Specs) &&
+                TryResolveVaultBuffer(_tuningHandle, 1, out views.Tuning) &&
+                TryResolveVaultBuffer(_countersHandle, CounterCount, out views.Counters))
             {
-                ReleaseCsvImportViews(lockedCount);
-                lockedCount = 0;
-                return false;
-            }
-            lockedCount++;
-
-            if (!TryAcquireWriteView(vault, in _tuningHandle, 1, out views.Tuning))
-            {
-                ReleaseCsvImportViews(lockedCount);
-                lockedCount = 0;
-                return false;
-            }
-            lockedCount++;
-
-            if (!TryAcquireWriteView(vault, in _countersHandle, CounterCount, out views.Counters))
-            {
-                ReleaseCsvImportViews(lockedCount);
-                lockedCount = 0;
-                return false;
-            }
-            lockedCount++;
-            return true;
-        }
-
-        private static bool TryAcquireWriteView<T>(
-            IDataVault vault,
-            in VaultGenerationHandle<T> handle,
-            int requiredLength,
-            out NativeArray<T> buffer) where T : struct
-        {
-            buffer = default;
-            if (vault == null ||
-                requiredLength <= 0 ||
-                !IsHandleValid(in handle) ||
-                vault.IsCompactionFenceActive ||
-                !vault.TryAcquireWriteLock(in handle, SystemID.CoreDiagnostics, out buffer))
-            {
-                return false;
-            }
-
-            if (buffer.IsCreated && buffer.Length >= requiredLength)
                 return true;
+            }
 
-            vault.ReleaseWriteLock(in handle, SystemID.CoreDiagnostics);
-            buffer = default;
+            ReleaseCsvImportViews(lockedCount);
+            lockedCount = 0;
+            views = default;
             return false;
         }
 
@@ -1439,102 +1487,36 @@ namespace Hecton8.Power
 
         private bool TryLockTopologyRebuildBuffers(out int lockedCount)
         {
-            lockedCount = 0;
-            IDataVault vault = _vault;
-            if (vault == null)
-                return false;
-
-            if (!TryLockBuffer(vault, PendingNodesId, ref lockedCount) ||
-                !TryLockBuffer(vault, PendingEdgesId, ref lockedCount) ||
-                !TryLockBuffer(vault, PendingInjectionsId, ref lockedCount) ||
-                !TryLockBuffer(vault, PendingAnchorsId, ref lockedCount) ||
-                !TryLockBuffer(vault, PendingVisualStateId, ref lockedCount) ||
-                !TryLockBuffer(vault, PendingCountersId, ref lockedCount))
-            {
-                UnlockTopologyRebuildBuffers(lockedCount);
-                lockedCount = 0;
-                return false;
-            }
-
-            return true;
+            return TryAcquireThermalGridMutationGuard(TopologyRebuildMutationGuardMask, out lockedCount);
         }
 
         private bool TryLockTopologyCommitTargetBuffers(out int lockedCount)
         {
-            lockedCount = 0;
-            IDataVault vault = _vault;
-            if (vault == null)
-                return false;
-
-            if (!TryLockBuffer(vault, NodesAId, ref lockedCount) ||
-                !TryLockBuffer(vault, NodesBId, ref lockedCount) ||
-                !TryLockBuffer(vault, EdgesId, ref lockedCount) ||
-                !TryLockBuffer(vault, InjectionsId, ref lockedCount) ||
-                !TryLockBuffer(vault, AnchorsId, ref lockedCount) ||
-                !TryLockBuffer(vault, VisualStateId, ref lockedCount) ||
-                !TryLockBuffer(vault, CountersId, ref lockedCount))
-            {
-                UnlockTopologyCommitTargetBuffers(lockedCount);
-                lockedCount = 0;
-                return false;
-            }
-
-            return true;
+            return TryAcquireThermalGridMutationGuard(TopologyCommitMutationGuardMask, out lockedCount);
         }
 
         private bool TryLockSolveBuffers(out int lockedCount)
         {
-            lockedCount = 0;
-            IDataVault vault = _vault;
-            if (vault == null)
-                return false;
-
-            if (!TryLockBuffer(vault, NodesAId, ref lockedCount) ||
-                !TryLockBuffer(vault, NodesBId, ref lockedCount) ||
-                !TryLockBuffer(vault, EdgesId, ref lockedCount) ||
-                !TryLockBuffer(vault, InjectionsId, ref lockedCount) ||
-                !TryLockBuffer(vault, ExternalHeatId, ref lockedCount) ||
-                !TryLockBuffer(vault, VisualStateId, ref lockedCount) ||
-                !TryLockBuffer(vault, ConvergenceStateId, ref lockedCount) ||
-                !TryLockBuffer(vault, ResidualSamplesId, ref lockedCount) ||
-                !TryLockBuffer(vault, TelemetryId, ref lockedCount) ||
-                !TryLockBuffer(vault, CountersId, ref lockedCount))
-            {
-                UnlockSolveBuffers(lockedCount);
-                lockedCount = 0;
-                return false;
-            }
-
-            return true;
+            return TryAcquireThermalGridMutationGuard(SolveMutationGuardMask, out lockedCount);
         }
 
         private bool TryLockExternalHeatBuffers(out int lockedCount)
         {
+            return TryAcquireThermalGridMutationGuard(ExternalHeatMutationGuardMask, out lockedCount);
+        }
+
+        private bool TryAcquireThermalGridMutationGuard(ulong mutationGuardMask, out int lockedCount)
+        {
             lockedCount = 0;
             IDataVault vault = _vault;
-            if (vault == null)
-                return false;
-
-            if (!TryLockBuffer(vault, ExternalHeatId, ref lockedCount) ||
-                !TryLockBuffer(vault, AnchorsId, ref lockedCount))
+            if (vault == null ||
+                vault.IsCompactionFenceActive ||
+                !vault.TryAcquireMutationGuard(mutationGuardMask))
             {
-                UnlockExternalHeatBuffers(lockedCount);
-                lockedCount = 0;
                 return false;
             }
 
-            return true;
-        }
-
-        private static bool TryLockBuffer(IDataVault vault, BufferID bufferId, ref int lockedCount)
-        {
-            if (vault == null || vault.IsCompactionFenceActive)
-                return false;
-
-            if (!vault.TryLockBuffer(bufferId, SystemID.Power))
-                return false;
-
-            lockedCount++;
+            lockedCount = 1;
             return true;
         }
 
@@ -1558,71 +1540,42 @@ namespace Hecton8.Power
 
         private void ReleaseCsvImportViews(int lockedCount)
         {
-            IDataVault vault = _vault;
-            if (vault == null || lockedCount <= 0)
-                return;
-
-            if (lockedCount >= 4) vault.ReleaseWriteLock(in _countersHandle, SystemID.CoreDiagnostics);
-            if (lockedCount >= 3) vault.ReleaseWriteLock(in _tuningHandle, SystemID.CoreDiagnostics);
-            if (lockedCount >= 2) vault.ReleaseWriteLock(in _specsHandle, SystemID.CoreDiagnostics);
-            if (lockedCount >= 1) vault.ReleaseWriteLock(in _csvBytesHandle, SystemID.CoreDiagnostics);
+            ReleaseThermalGridMutationGuard(CsvImportMutationGuardMask, lockedCount);
         }
 
         private void UnlockTopologyRebuildBuffers(int lockedCount)
         {
-            IDataVault vault = _vault;
-            if (vault == null || lockedCount <= 0)
-                return;
-
-            if (lockedCount >= 6) vault.TryUnlockBuffer(PendingCountersId, SystemID.Power);
-            if (lockedCount >= 5) vault.TryUnlockBuffer(PendingVisualStateId, SystemID.Power);
-            if (lockedCount >= 4) vault.TryUnlockBuffer(PendingAnchorsId, SystemID.Power);
-            if (lockedCount >= 3) vault.TryUnlockBuffer(PendingInjectionsId, SystemID.Power);
-            if (lockedCount >= 2) vault.TryUnlockBuffer(PendingEdgesId, SystemID.Power);
-            if (lockedCount >= 1) vault.TryUnlockBuffer(PendingNodesId, SystemID.Power);
+            ReleaseThermalGridMutationGuard(TopologyRebuildMutationGuardMask, lockedCount);
         }
 
         private void UnlockTopologyCommitTargetBuffers(int lockedCount)
         {
-            IDataVault vault = _vault;
-            if (vault == null || lockedCount <= 0)
-                return;
-
-            if (lockedCount >= 7) vault.TryUnlockBuffer(CountersId, SystemID.Power);
-            if (lockedCount >= 6) vault.TryUnlockBuffer(VisualStateId, SystemID.Power);
-            if (lockedCount >= 5) vault.TryUnlockBuffer(AnchorsId, SystemID.Power);
-            if (lockedCount >= 4) vault.TryUnlockBuffer(InjectionsId, SystemID.Power);
-            if (lockedCount >= 3) vault.TryUnlockBuffer(EdgesId, SystemID.Power);
-            if (lockedCount >= 2) vault.TryUnlockBuffer(NodesBId, SystemID.Power);
-            if (lockedCount >= 1) vault.TryUnlockBuffer(NodesAId, SystemID.Power);
+            ReleaseThermalGridMutationGuard(TopologyCommitMutationGuardMask, lockedCount);
         }
 
         private void UnlockSolveBuffers(int lockedCount)
         {
-            IDataVault vault = _vault;
-            if (vault == null || lockedCount <= 0)
-                return;
-
-            if (lockedCount >= 10) vault.TryUnlockBuffer(CountersId, SystemID.Power);
-            if (lockedCount >= 9) vault.TryUnlockBuffer(TelemetryId, SystemID.Power);
-            if (lockedCount >= 8) vault.TryUnlockBuffer(ResidualSamplesId, SystemID.Power);
-            if (lockedCount >= 7) vault.TryUnlockBuffer(ConvergenceStateId, SystemID.Power);
-            if (lockedCount >= 6) vault.TryUnlockBuffer(VisualStateId, SystemID.Power);
-            if (lockedCount >= 5) vault.TryUnlockBuffer(ExternalHeatId, SystemID.Power);
-            if (lockedCount >= 4) vault.TryUnlockBuffer(InjectionsId, SystemID.Power);
-            if (lockedCount >= 3) vault.TryUnlockBuffer(EdgesId, SystemID.Power);
-            if (lockedCount >= 2) vault.TryUnlockBuffer(NodesBId, SystemID.Power);
-            if (lockedCount >= 1) vault.TryUnlockBuffer(NodesAId, SystemID.Power);
+            ReleaseThermalGridMutationGuard(SolveMutationGuardMask, lockedCount);
         }
 
         private void UnlockExternalHeatBuffers(int lockedCount)
+        {
+            ReleaseThermalGridMutationGuard(ExternalHeatMutationGuardMask, lockedCount);
+        }
+
+        private void ReleaseThermalGridMutationGuard(ulong mutationGuardMask, int lockedCount)
         {
             IDataVault vault = _vault;
             if (vault == null || lockedCount <= 0)
                 return;
 
-            if (lockedCount >= 2) vault.TryUnlockBuffer(AnchorsId, SystemID.Power);
-            if (lockedCount >= 1) vault.TryUnlockBuffer(ExternalHeatId, SystemID.Power);
+            vault.ReleaseMutationGuard(mutationGuardMask);
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private static ulong ThermalGridBufferGuardBit(BufferID bufferId)
+        {
+            return 1UL << (unchecked((int)(uint)(int)bufferId) & 31);
         }
 
         private bool TryCommitPendingTopologySnapshot()

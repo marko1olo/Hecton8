@@ -220,6 +220,7 @@ namespace Hecton8.Narrative.Campaign
         private int _blackBoxCursor;
         private ushort _sequence;
         private ISaveService _saveService;
+        private IEcosystemDirectorService _ecosystemDirector;
 
         public bool IsInitialized =>
             _dataVault != null &&
@@ -265,6 +266,7 @@ namespace Hecton8.Narrative.Campaign
                 return;
 
             _saveService = GlobalRegistry.Save;
+            _ecosystemDirector = GlobalRegistry.EcosystemDirector;
             TryRegisterHotSwapListener();
             TryRegisterSaveService();
             PublishCachedVisualState(GlobalWorldStateSignal.ChangeKindLoad, (uint)Hecton8.Core.SystemDispatcher.CurrentFrameIndex);
@@ -277,6 +279,8 @@ namespace Hecton8.Narrative.Campaign
             {
                 if (_saveService == null)
                     _saveService = GlobalRegistry.Save;
+                if (_ecosystemDirector == null)
+                    _ecosystemDirector = GlobalRegistry.EcosystemDirector;
                 TryRegisterHotSwapListener();
                 TryRegisterSaveService();
             }
@@ -455,7 +459,7 @@ namespace Hecton8.Narrative.Campaign
 
         private void BuildRules()
         {
-            if (!TryAcquireRulesWrite(out NativeArray<MetaCampaignRule> rules))
+            if (!TryAcquireRulesWrite(out NativeArray<MetaCampaignRule> rules, out IDataVault lockedVault))
                 return;
 
             byte fullShiftFlags = (byte)(GlobalWorldStateSignal.FlagVisualRefresh |
@@ -472,7 +476,7 @@ namespace Hecton8.Narrative.Campaign
             }
             finally
             {
-                ReleaseRulesWrite();
+                ReleaseRulesWrite(lockedVault);
             }
         }
 
@@ -549,6 +553,12 @@ namespace Hecton8.Narrative.Campaign
                     RefreshCachedStateFromVariables();
                 }
 
+                return;
+            }
+
+            if (serviceSlot == GlobalRegistryServiceSlot.EcosystemDirector)
+            {
+                _ecosystemDirector = currentService as IEcosystemDirectorService;
                 return;
             }
 
@@ -759,7 +769,7 @@ namespace Hecton8.Narrative.Campaign
             }
 
             Shader.SetGlobalFloat(_HectonOceanToxicityId, _toxicity01);
-            IEcosystemDirectorService ecosystemDirector = GlobalRegistry.EcosystemDirector;
+            IEcosystemDirectorService ecosystemDirector = _ecosystemDirector;
             if (ecosystemDirector != null)
                 ecosystemDirector.ApplyCampaignToxicityPressure(_toxicity01, _currentStageHash, frame);
 
@@ -832,7 +842,7 @@ namespace Hecton8.Narrative.Campaign
             if (variableHash == 0u || !IsInitialized)
                 return;
 
-            if (!TryAcquireVariablesWrite(out NativeArray<MetaCampaignVariableSlot> variables))
+            if (!TryAcquireVariablesWrite(out NativeArray<MetaCampaignVariableSlot> variables, out IDataVault lockedVault))
                 return;
 
             try
@@ -863,7 +873,7 @@ namespace Hecton8.Narrative.Campaign
             }
             finally
             {
-                ReleaseVariablesWrite();
+                ReleaseVariablesWrite(lockedVault);
             }
         }
 
@@ -878,7 +888,7 @@ namespace Hecton8.Narrative.Campaign
 
         private void ClearGlobalVariables()
         {
-            if (!TryAcquireVariablesWrite(out NativeArray<MetaCampaignVariableSlot> variables))
+            if (!TryAcquireVariablesWrite(out NativeArray<MetaCampaignVariableSlot> variables, out IDataVault lockedVault))
                 return;
 
             try
@@ -888,7 +898,7 @@ namespace Hecton8.Narrative.Campaign
             }
             finally
             {
-                ReleaseVariablesWrite();
+                ReleaseVariablesWrite(lockedVault);
             }
         }
 
@@ -1110,9 +1120,10 @@ namespace Hecton8.Narrative.Campaign
                    rules.Length >= RuleCapacity;
         }
 
-        private bool TryAcquireVariablesWrite(out NativeArray<MetaCampaignVariableSlot> variables)
+        private bool TryAcquireVariablesWrite(out NativeArray<MetaCampaignVariableSlot> variables, out IDataVault lockedVault)
         {
             variables = default;
+            lockedVault = null;
             IDataVault vault = _dataVault;
             if (vault == null ||
                 !IsExactVaultHandle(in _variablesHandle, VariablesBufferId) ||
@@ -1122,23 +1133,26 @@ namespace Hecton8.Narrative.Campaign
             }
 
             if (variables.IsCreated && variables.Length >= GlobalVariableCapacity)
+            {
+                lockedVault = vault;
                 return true;
+            }
 
             vault.ReleaseWriteLock(in _variablesHandle, VaultOwnerSystemId);
             variables = default;
             return false;
         }
 
-        private void ReleaseVariablesWrite()
+        private void ReleaseVariablesWrite(IDataVault lockedVault)
         {
-            IDataVault vault = _dataVault;
-            if (vault != null && IsExactVaultHandle(in _variablesHandle, VariablesBufferId))
-                vault.ReleaseWriteLock(in _variablesHandle, VaultOwnerSystemId);
+            if (lockedVault != null && IsExactVaultHandle(in _variablesHandle, VariablesBufferId))
+                lockedVault.ReleaseWriteLock(in _variablesHandle, VaultOwnerSystemId);
         }
 
-        private bool TryAcquireRulesWrite(out NativeArray<MetaCampaignRule> rules)
+        private bool TryAcquireRulesWrite(out NativeArray<MetaCampaignRule> rules, out IDataVault lockedVault)
         {
             rules = default;
+            lockedVault = null;
             IDataVault vault = _dataVault;
             if (vault == null ||
                 !IsExactVaultHandle(in _rulesHandle, RulesBufferId) ||
@@ -1148,23 +1162,26 @@ namespace Hecton8.Narrative.Campaign
             }
 
             if (rules.IsCreated && rules.Length >= RuleCapacity)
+            {
+                lockedVault = vault;
                 return true;
+            }
 
             vault.ReleaseWriteLock(in _rulesHandle, VaultOwnerSystemId);
             rules = default;
             return false;
         }
 
-        private void ReleaseRulesWrite()
+        private void ReleaseRulesWrite(IDataVault lockedVault)
         {
-            IDataVault vault = _dataVault;
-            if (vault != null && IsExactVaultHandle(in _rulesHandle, RulesBufferId))
-                vault.ReleaseWriteLock(in _rulesHandle, VaultOwnerSystemId);
+            if (lockedVault != null && IsExactVaultHandle(in _rulesHandle, RulesBufferId))
+                lockedVault.ReleaseWriteLock(in _rulesHandle, VaultOwnerSystemId);
         }
 
-        private bool TryAcquireBlackBoxWrite(out NativeArray<MetaCampaignBlackBoxEntry> blackBox)
+        private bool TryAcquireBlackBoxWrite(out NativeArray<MetaCampaignBlackBoxEntry> blackBox, out IDataVault lockedVault)
         {
             blackBox = default;
+            lockedVault = null;
             IDataVault vault = _dataVault;
             if (vault == null ||
                 !IsExactVaultHandle(in _blackBoxHandle, BlackBoxBufferId) ||
@@ -1174,18 +1191,20 @@ namespace Hecton8.Narrative.Campaign
             }
 
             if (blackBox.IsCreated && blackBox.Length >= BlackBoxCapacity)
+            {
+                lockedVault = vault;
                 return true;
+            }
 
             vault.ReleaseWriteLock(in _blackBoxHandle, VaultOwnerSystemId);
             blackBox = default;
             return false;
         }
 
-        private void ReleaseBlackBoxWrite()
+        private void ReleaseBlackBoxWrite(IDataVault lockedVault)
         {
-            IDataVault vault = _dataVault;
-            if (vault != null && IsExactVaultHandle(in _blackBoxHandle, BlackBoxBufferId))
-                vault.ReleaseWriteLock(in _blackBoxHandle, VaultOwnerSystemId);
+            if (lockedVault != null && IsExactVaultHandle(in _blackBoxHandle, BlackBoxBufferId))
+                lockedVault.ReleaseWriteLock(in _blackBoxHandle, VaultOwnerSystemId);
         }
 
         private bool TryReadBlackBox(out NativeArray<MetaCampaignBlackBoxEntry>.ReadOnly blackBox)
@@ -1230,7 +1249,7 @@ namespace Hecton8.Narrative.Campaign
                 return;
             }
 
-            if (!TryAcquireBlackBoxWrite(out NativeArray<MetaCampaignBlackBoxEntry> blackBox))
+            if (!TryAcquireBlackBoxWrite(out NativeArray<MetaCampaignBlackBoxEntry> blackBox, out IDataVault lockedVault))
                 return;
 
             try
@@ -1251,7 +1270,7 @@ namespace Hecton8.Narrative.Campaign
             }
             finally
             {
-                ReleaseBlackBoxWrite();
+                ReleaseBlackBoxWrite(lockedVault);
             }
         }
 

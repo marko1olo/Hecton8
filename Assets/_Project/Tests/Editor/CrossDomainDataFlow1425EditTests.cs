@@ -118,6 +118,87 @@ namespace Hecton8.Tests.Editor
         }
 
         [Test]
+        public void ComponentCacheValue_IsPureReadAccessor()
+        {
+            string sourcePath = Path.Combine(
+                Application.dataPath,
+                "_Project/Scripts/ComponentCache.cs");
+            string source = File.ReadAllText(sourcePath);
+            string valueBody = ExtractMethodBody(source, "public T Value");
+            string refreshBody = ExtractMethodBody(source, "public bool TryRefreshCold()");
+
+            StringAssert.DoesNotContain("TryGetComponent", valueBody);
+            StringAssert.DoesNotContain("GetComponent", valueBody);
+            StringAssert.DoesNotContain("TryRefreshCold", valueBody);
+            StringAssert.Contains("TryGetComponent", refreshBody);
+        }
+
+        [Test]
+        public void WorldContentSocketZoneAnchor_IsCachedBeforeSlowTickReads()
+        {
+            string sourcePath = Path.Combine(
+                Application.dataPath,
+                "_Project/Scripts/WorldContentSocket.cs");
+            string source = File.ReadAllText(sourcePath);
+            string getterBody = ExtractMethodBody(source, "public WorldZoneAnchor GetZoneAnchor()");
+            string onEnableBody = ExtractMethodBody(source, "private void OnEnable()");
+            string refreshBody = ExtractMethodBody(source, "public void RefreshZoneAnchorCold()");
+
+            StringAssert.DoesNotContain("TryGetComponent", getterBody);
+            StringAssert.DoesNotContain("GetComponentInParent", getterBody);
+            StringAssert.Contains("RefreshZoneAnchorCold", onEnableBody);
+            StringAssert.Contains("TryGetComponent", refreshBody);
+            StringAssert.Contains("GetComponentInParent", refreshBody);
+        }
+
+        [Test]
+        public void AcousticZoneTick_UsesCachedPlayerBuoyancyContext()
+        {
+            string acousticPath = Path.Combine(
+                Application.dataPath,
+                "_Project/Scripts/AcousticZoneController.cs");
+            string acousticSource = File.ReadAllText(acousticPath);
+            string tickBody = ExtractMethodBody(acousticSource, "public void Tick(float deltaTime)");
+            string movementBody = ExtractMethodBody(acousticSource, "private HectonPlayerMovement ResolvePlayerMovement()");
+
+            StringAssert.Contains("TryBindPlayerBuoyancyFromCachedContext", tickBody);
+            StringAssert.DoesNotContain("FindPlayerBuoyancy", tickBody);
+            StringAssert.DoesNotContain("TryGetComponent", tickBody);
+            StringAssert.DoesNotContain("GetComponent", tickBody);
+            StringAssert.DoesNotContain("GlobalRegistry.", tickBody);
+            StringAssert.DoesNotContain("TryGetComponent", movementBody);
+            StringAssert.Contains("PlayerBuoyancyAirState", acousticSource);
+
+            string contractsPath = Path.Combine(
+                Application.dataPath,
+                "_Project/Scripts/Core/GlobalRegistryContracts.cs");
+            string contractsSource = File.ReadAllText(contractsPath);
+            StringAssert.Contains("IBuoyancyAirStateReadModel PlayerBuoyancyAirState", contractsSource);
+
+            string contextPath = Path.Combine(
+                Application.dataPath,
+                "_Project/Scripts/Core/PlayerRuntimeContextService.cs");
+            string contextSource = File.ReadAllText(contextPath);
+            StringAssert.Contains("_playerObject.TryGetComponent(out _playerBuoyancyAirState)", contextSource);
+        }
+
+        [Test]
+        public void SubmarineCoreNativeStateRefresh_AvoidsMultiVaultWriteLocks()
+        {
+            string sourcePath = Path.Combine(
+                Application.dataPath,
+                "_Project/Scripts/Gameplay/SubmarineCoreDirector.cs");
+            string source = File.ReadAllText(sourcePath);
+            string refreshBody = ExtractMethodBody(source, "private void RefreshNativeState()");
+            string resolveBody = ExtractMethodBody(source, "private bool TryResolveNativeStateWriteBuffers");
+
+            StringAssert.Contains("TryResolveNativeStateWriteBuffers", refreshBody);
+            StringAssert.DoesNotContain("ReleaseNativeStateWriteBuffers", source);
+            StringAssert.DoesNotContain("TryAcquireNativeStateWriteBuffers", source);
+            AssertOwnerViewUsesResolveHandleOnly(resolveBody);
+        }
+
+        [Test]
         public void VocalWarningDirectQueue_UsesSignalBusInsteadOfVaultMutation()
         {
             string sourcePath = Path.Combine(
@@ -147,6 +228,363 @@ namespace Hecton8.Tests.Editor
             StringAssert.DoesNotContain("TryAcquireWriteLock", methodBody);
             StringAssert.DoesNotContain("ReleaseWriteLock", methodBody);
             StringAssert.DoesNotContain("TryLockBuffer", methodBody);
+        }
+
+        [Test]
+        public void AdaptiveStemOwnerViews_AvoidDataVaultWriteLocks()
+        {
+            string sourcePath = Path.Combine(
+                Application.dataPath,
+                "_Project/Scripts/Audio/AdaptiveStem/AdaptiveStemAudioMixer.cs");
+            string source = File.ReadAllText(sourcePath);
+            string tickBody = ExtractMethodBody(source, "public void Tick(float deltaTime)");
+            string ownerViewBody = ExtractMethodBody(source, "private bool TryResolveStemOwnerViews");
+
+            StringAssert.Contains("TryResolveStemOwnerViews", tickBody);
+            StringAssert.DoesNotContain("TryAcquireStemWriteViews", source);
+            StringAssert.DoesNotContain("ReleaseStemWriteViews", source);
+            AssertOwnerViewUsesResolveHandleOnly(ownerViewBody);
+        }
+
+        [Test]
+        public void ProceduralAudioEventOwnerViews_AvoidDataVaultWriteLocks()
+        {
+            string sourcePath = Path.Combine(
+                Application.dataPath,
+                "_Project/Scripts/Audio/ProceduralAudioEvents.cs");
+            string source = File.ReadAllText(sourcePath);
+            string ownerViewBody = ExtractMethodBody(source, "private static bool TryResolveAudioEventOwnerViews");
+            string flushBody = ExtractMethodBody(source, "private static bool FlushAudioEvents()");
+            string promoteBody = ExtractMethodBody(source, "private static void PromoteNextFrameEvents()");
+
+            StringAssert.DoesNotContain("TryAcquireAudioEventWriteViews", source);
+            StringAssert.DoesNotContain("ReleaseAudioEventWriteViews", source);
+            AssertOwnerViewUsesResolveHandleOnly(ownerViewBody);
+            StringAssert.Contains("TryResolveAudioEventOwnerViews", flushBody);
+            StringAssert.Contains("TryResolveAudioEventOwnerViews", promoteBody);
+        }
+
+        [Test]
+        public void BiolumEditorWriteRoutes_AvoidNestedDataVaultWriteLocks()
+        {
+            string sourcePath = Path.Combine(
+                Application.dataPath,
+                "_Project/Scripts/VFX/Bioluminescence/BiolumPulseSyncRuntime.cs");
+            string source = File.ReadAllText(sourcePath);
+
+            AssertBiolumRouteUsesOwnerViewsOnly(ExtractMethodBody(source, "public static bool TryWriteEditorSpeciesTuning"));
+            AssertBiolumRouteUsesOwnerViewsOnly(ExtractMethodBody(source, "public static bool TryWriteEditorPulseControls"));
+            AssertBiolumRouteUsesOwnerViewsOnly(ExtractMethodBody(source, "public static bool TryTriggerEditorGlobalPulse"));
+        }
+
+        [Test]
+        public void BiolumColdOwnerPhaseRoutes_AvoidBufferLockStacks()
+        {
+            string sourcePath = Path.Combine(
+                Application.dataPath,
+                "_Project/Scripts/VFX/Bioluminescence/BiolumPulseSyncRuntime.cs");
+            string source = File.ReadAllText(sourcePath);
+
+            AssertBiolumRouteUsesOwnerViewsOnly(ExtractMethodBody(source, "private unsafe void GenerateEmergencyMockGlows()"));
+            AssertBiolumRouteUsesOwnerViewsOnly(ExtractMethodBody(source, "private void GenerateMockLightingState()"));
+            AssertBiolumRouteUsesOwnerViewsOnly(ExtractMethodBody(source, "private unsafe void ApplyCsvOverridesIfReady()"));
+            AssertBiolumRouteUsesOwnerViewsOnly(ExtractMethodBody(source, "private void ConsumeMockPredatorSignalToPulse()"));
+            AssertBiolumRouteUsesOwnerViewsOnly(ExtractMethodBody(source, "private void AdvanceSyncPulseAges"));
+        }
+
+        [Test]
+        public void BiolumStateJobSchedule_AvoidsDataVaultLockLifetimePins()
+        {
+            string sourcePath = Path.Combine(
+                Application.dataPath,
+                "_Project/Scripts/VFX/Bioluminescence/BiolumPulseSyncRuntime.cs");
+            string source = File.ReadAllText(sourcePath);
+            string scheduleBody = ExtractMethodBody(source, "private void ScheduleStateJob");
+            string teardownBody = ExtractMethodBody(source, "private void CompleteScheduledJobForTeardown()");
+
+            StringAssert.Contains("TryResolveBiolumVaultBuffer", scheduleBody);
+            StringAssert.Contains("phaseJob.Schedule()", scheduleBody);
+            StringAssert.DoesNotContain("TryLockBuffer", scheduleBody);
+            StringAssert.DoesNotContain("TryUnlockBuffer", scheduleBody);
+            StringAssert.DoesNotContain("_jobLocksHeld", source);
+            StringAssert.DoesNotContain("UnlockJobBuffers", source);
+            StringAssert.DoesNotContain("TryUnlockBuffer", teardownBody);
+        }
+
+        [Test]
+        public void SymbiosisColdTick_AvoidsScheduledJobDataVaultLockPins()
+        {
+            string sourcePath = Path.Combine(
+                Application.dataPath,
+                "_Project/Scripts/AI/Ecosystem/ShinobuFloraFaunaSymbiosisSolver.cs");
+            string source = File.ReadAllText(sourcePath);
+            string coldTickBody = ExtractMethodBody(source, "public void ColdTick()");
+            string bindBody = ExtractMethodBody(source, "private bool TryBindJobBuffers");
+            string finishBody = ExtractMethodBody(source, "private void FinishFrameJobCompletion()");
+
+            StringAssert.Contains("TryBindJobBuffers", coldTickBody);
+            StringAssert.Contains("vault.IsCompactionFenceActive", coldTickBody);
+            StringAssert.Contains("solveJob.Schedule", coldTickBody);
+            StringAssert.Contains("H8Memory.RegisterActiveJob", coldTickBody);
+            StringAssert.Contains("TryResolveOwnedVaultBuffer", bindBody);
+            StringAssert.Contains("DispatcherJobFence.TryFinalizeCompleted", source);
+            StringAssert.DoesNotContain("TryLockJobBuffers", source);
+            StringAssert.DoesNotContain("UnlockJobBuffers", source);
+            StringAssert.DoesNotContain("UnlockLockedJobBuffers", source);
+            StringAssert.DoesNotContain("_jobLocksHeld", source);
+            StringAssert.DoesNotContain("TryLockBuffer", source);
+            StringAssert.DoesNotContain("TryUnlockBuffer", source);
+            StringAssert.DoesNotContain("TryLockBuffer", coldTickBody);
+            StringAssert.DoesNotContain("TryUnlockBuffer", finishBody);
+        }
+
+        [Test]
+        public void EcosystemBalancerScheduledJobs_AvoidCrossFrameDataVaultLockPins()
+        {
+            string sourcePath = Path.Combine(
+                Application.dataPath,
+                "_Project/Scripts/AI/Ecosystem/ShinobuEcosystemBalancer.cs");
+            string source = File.ReadAllText(sourcePath);
+            string tickBody = ExtractMethodBody(source, "public void Tick(float deltaTime)");
+            string macroBody = ExtractMethodBody(source, "private void RunMacroBiomassPass");
+            string finishBody = ExtractMethodBody(source, "private void FinishFrameJobCompletion()");
+
+            StringAssert.Contains("vault.IsCompactionFenceActive", tickBody);
+            StringAssert.Contains("vault.IsCompactionFenceActive", macroBody);
+            StringAssert.Contains("H8Memory.RegisterActiveJob", tickBody);
+            StringAssert.Contains("H8Memory.RegisterActiveJob", macroBody);
+            StringAssert.DoesNotContain("TryLockJobBuffers", source);
+            StringAssert.DoesNotContain("UnlockJobBuffers", source);
+            StringAssert.DoesNotContain("_jobLocksHeld", source);
+            StringAssert.DoesNotContain("_jobLockedBufferCount", source);
+            StringAssert.DoesNotContain("_jobLockPlan", source);
+            StringAssert.DoesNotContain("TryLockBuffer", tickBody);
+            StringAssert.DoesNotContain("TryUnlockBuffer", tickBody);
+            StringAssert.DoesNotContain("TryLockBuffer", macroBody);
+            StringAssert.DoesNotContain("TryUnlockBuffer", macroBody);
+            StringAssert.DoesNotContain("TryUnlockBuffer", finishBody);
+        }
+
+        [Test]
+        public void EcosystemBalancerColdTelemetryRoutes_AvoidDataVaultLocks()
+        {
+            string sourcePath = Path.Combine(
+                Application.dataPath,
+                "_Project/Scripts/AI/Ecosystem/ShinobuEcosystemBalancer.cs");
+            string source = File.ReadAllText(sourcePath);
+
+            StringAssert.Contains("TryOpenVaultView", source);
+            StringAssert.Contains("EnsureSnapshotBuffer", source);
+            StringAssert.Contains("vault.IsCompactionFenceActive", ExtractMethodBody(source, "private static bool TryOpenVaultView"));
+            StringAssert.DoesNotContain("TryAcquireWriteLock", source);
+            StringAssert.DoesNotContain("ReleaseWriteLock", source);
+            StringAssert.DoesNotContain("TryLockBuffer", source);
+            StringAssert.DoesNotContain("TryUnlockBuffer", source);
+        }
+
+        [Test]
+        public void SpatialGridDiagnostics_AvoidDataVaultLocks()
+        {
+            string sourcePath = Path.Combine(
+                Application.dataPath,
+                "_Project/Scripts/AI/Ecosystem/ShinobuSpatialGridSolver.cs");
+            string source = File.ReadAllText(sourcePath);
+            string failureBody = ExtractMethodBody(source, "private void RecordQueryFailure");
+
+            StringAssert.Contains("TryResolveHandle(in TelemetryCursorHandle", failureBody);
+            StringAssert.Contains("TryResolveHandle(in TelemetryHandle", failureBody);
+            StringAssert.Contains("vault.IsCompactionFenceActive", failureBody);
+            StringAssert.Contains("EnsureSnapshotBuffer", source);
+            StringAssert.DoesNotContain("TryAcquireWriteLock", source);
+            StringAssert.DoesNotContain("ReleaseWriteLock", source);
+            StringAssert.DoesNotContain("TryLockBuffer", source);
+            StringAssert.DoesNotContain("TryUnlockBuffer", source);
+        }
+
+        [Test]
+        public void EcosystemBalancerFlockingTelemetry_AvoidsDataVaultLocks()
+        {
+            string sourcePath = Path.Combine(
+                Application.dataPath,
+                "_Project/Scripts/AI/Ecosystem/ShinobuEcosystemBalancer.FlockingAvoidance.cs");
+            string source = File.ReadAllText(sourcePath);
+            string writeBody = ExtractMethodBody(source, "private void WriteFlockingTelemetryAndFaultDump");
+
+            StringAssert.Contains("TryOpenVaultView", writeBody);
+            StringAssert.DoesNotContain("TryAcquireWriteLock", source);
+            StringAssert.DoesNotContain("ReleaseWriteLock", source);
+            StringAssert.DoesNotContain("TryLockBuffer", source);
+            StringAssert.DoesNotContain("TryUnlockBuffer", source);
+        }
+
+        [Test]
+        public void EcosystemPopulationBalancerScheduledJob_AvoidsDataVaultLockPins()
+        {
+            string sourcePath = Path.Combine(
+                Application.dataPath,
+                "_Project/Scripts/AI/Ecosystem/EcosystemPopulationBalancer.cs");
+            string source = File.ReadAllText(sourcePath);
+            string scheduleBody = ExtractMethodBody(source, "private void ScheduleBalancerJob");
+            string completeBody = ExtractMethodBody(source, "private void CompleteScheduledJobForTeardown()");
+            string openBody = ExtractMethodBody(source, "private static bool TryOpenVaultView");
+
+            StringAssert.Contains("vault.IsCompactionFenceActive", scheduleBody);
+            StringAssert.Contains("H8Memory.RegisterActiveJob", scheduleBody);
+            StringAssert.Contains("vault.IsCompactionFenceActive", openBody);
+            StringAssert.DoesNotContain("UnlockJobBuffers", completeBody);
+            StringAssert.DoesNotContain("_jobLocksHeld", source);
+            StringAssert.DoesNotContain("TryLockJobBuffers", source);
+            StringAssert.DoesNotContain("UnlockJobBuffers", source);
+            StringAssert.DoesNotContain("TryAcquireWriteLock", source);
+            StringAssert.DoesNotContain("ReleaseWriteLock", source);
+            StringAssert.DoesNotContain("TryLockBuffer", source);
+            StringAssert.DoesNotContain("TryUnlockBuffer", source);
+        }
+
+        [Test]
+        public void TopographicalSonarScheduledJobs_UseLocalH8MemoryBuffers()
+        {
+            string sourcePath = Path.Combine(
+                Application.dataPath,
+                "_Project/Scripts/UI/TopographicalSonar/TopographicalSonarSynthesizer.cs");
+            string source = File.ReadAllText(sourcePath);
+            string scheduleBody = ExtractMethodBody(source, "private void ScheduleSonarScan");
+            string fadeBody = ExtractMethodBody(source, "private void TryScheduleFadeJob");
+            string resolveBody = ExtractMethodBody(source, "private bool TryResolveNativeState");
+            string lateBody = ExtractMethodBody(source, "public void LateFrameTick()");
+            string completeBody = ExtractMethodBody(source, "private void CompleteScheduledJobs()");
+
+            StringAssert.Contains("EnsureJobBuffers", source);
+            StringAssert.Contains("_jobPoints", resolveBody);
+            StringAssert.Contains("H8Memory.RegisterActiveJob", scheduleBody);
+            StringAssert.Contains("H8Memory.RegisterActiveJob", fadeBody);
+            StringAssert.Contains("MirrorCompletedScanToVault", source);
+            StringAssert.Contains("MirrorCompletedPointsToVault", source);
+            StringAssert.Contains("DispatcherJobFence.TryFinalizeCompleted", lateBody);
+            StringAssert.DoesNotContain("TryLockScanVaultBuffers", source);
+            StringAssert.DoesNotContain("UnlockScanVaultBuffers", source);
+            StringAssert.DoesNotContain("TryLockFadeVaultBuffers", source);
+            StringAssert.DoesNotContain("UnlockFadeVaultBuffers", source);
+            StringAssert.DoesNotContain("TryLockVaultBuffer", source);
+            StringAssert.DoesNotContain("_scanVaultBuffersLocked", source);
+            StringAssert.DoesNotContain("_fadeVaultBuffersLocked", source);
+            StringAssert.DoesNotContain("TryLockBuffer", source);
+            StringAssert.DoesNotContain("TryUnlockBuffer", source);
+            StringAssert.DoesNotContain("TryResolveVaultBuffer", scheduleBody);
+            StringAssert.DoesNotContain("TryResolveVaultBuffer", fadeBody);
+            StringAssert.DoesNotContain("Unlock", completeBody);
+        }
+
+        [Test]
+        public void LaserCutterScheduledJobs_AvoidDataVaultLockLifetimePins()
+        {
+            string sourcePath = Path.Combine(
+                Application.dataPath,
+                "_Project/Scripts/Tools/LaserCutterDodRuntime.cs");
+            string source = File.ReadAllText(sourcePath);
+            string scheduleBody = ExtractMethodBody(source, "public static bool TryScheduleSdfProbeBatch");
+            string evaluateBody = ExtractMethodBody(source, "public static bool TryCompleteScheduledSdfProbesAndEvaluate");
+            string finalizeBody = ExtractMethodBody(source, "private static bool TryFinalizeScheduledEvaluation");
+            string snapshotBody = ExtractMethodBody(source, "private static bool TryCopySdfLeaseToSnapshot");
+
+            StringAssert.Contains("BindSchedulerBuffers", scheduleBody);
+            StringAssert.Contains("buildJob.Schedule", scheduleBody);
+            StringAssert.Contains("H8Memory.RegisterActiveJob", scheduleBody);
+            StringAssert.Contains("BindSchedulerBuffers", evaluateBody);
+            StringAssert.Contains("evaluateJob.Schedule", evaluateBody);
+            StringAssert.Contains("DispatcherJobFence.TryFinalizeCompleted", evaluateBody);
+            StringAssert.Contains("BindSchedulerBuffers", finalizeBody);
+            StringAssert.Contains("BindOrAcquireBuffer", snapshotBody);
+            StringAssert.DoesNotContain("TryLockBuffer", source);
+            StringAssert.DoesNotContain("TryUnlockBuffer", source);
+            StringAssert.DoesNotContain("TryLockSdfProbeJobBuffers", source);
+            StringAssert.DoesNotContain("TryLockEvaluationJobBuffers", source);
+            StringAssert.DoesNotContain("ReleaseScheduledSdfProbeJobBufferLocks", source);
+            StringAssert.DoesNotContain("ReleaseScheduledEvaluationJobBufferLocks", source);
+            StringAssert.DoesNotContain("_scheduledSdfProbeBufferLockCount", source);
+            StringAssert.DoesNotContain("_scheduledEvaluationBufferLockCount", source);
+            StringAssert.DoesNotContain("_scheduledSdfSnapshotLocked", source);
+        }
+
+        [Test]
+        public void FontStreamingVisiblePrefetch_AvoidsDataVaultJobLockPins()
+        {
+            string sourcePath = Path.Combine(
+                Application.dataPath,
+                "_Project/Scripts/UI/FontStreamingManager.cs");
+            string source = File.ReadAllText(sourcePath);
+            string collectBody = ExtractMethodBody(source, "private void CollectSwapQueue");
+
+            StringAssert.Contains("ResolveVisibleTextOffsetPrefetchBudget", collectBody);
+            StringAssert.Contains("TryResolveVisibleTextOffsetSlice", collectBody);
+            StringAssert.Contains("_swapScheduler.Enqueue(entry, prefetchedSlice, hasPrefetchedSlice)", collectBody);
+            StringAssert.DoesNotContain("IDataVault", source);
+            StringAssert.DoesNotContain("NativeArray", source);
+            StringAssert.DoesNotContain("JobHandle", source);
+            StringAssert.DoesNotContain("TryAcquireWriteLock", source);
+            StringAssert.DoesNotContain("ReleaseWriteLock", source);
+            StringAssert.DoesNotContain("TryLockBuffer", source);
+            StringAssert.DoesNotContain("_visiblePrefetchBuffersLocked", source);
+            StringAssert.DoesNotContain("ReleaseVisiblePrefetchJobBufferLocks", source);
+            StringAssert.DoesNotContain("TryAcquireVisiblePrefetchJobBuffers", source);
+            StringAssert.DoesNotContain("TryAcquireVisibleHashPrefetchWriteBuffer", source);
+            StringAssert.DoesNotContain("TryScheduleVisibleTextOffsetPrefetch", source);
+        }
+
+        [Test]
+        public void DiegeticGlitchColdRoutes_AvoidNestedDataVaultWriteLocks()
+        {
+            string sourcePath = Path.Combine(
+                Application.dataPath,
+                "_Project/Scripts/UI/DiegeticGlitchSurgeonRuntime.cs");
+            string source = File.ReadAllText(sourcePath);
+
+            AssertGlitchRouteUsesOwnerViewsOnly(ExtractMethodBody(source, "private void InitializeVaultDefaults()"));
+            AssertGlitchRouteUsesOwnerViewsOnly(ExtractMethodBody(source, "private void SeedMockText()"));
+            AssertGlitchRouteUsesOwnerViewsOnly(ExtractMethodBody(source, "private bool TryApplyCsvOverride"));
+
+            string tuningSnapshotBody = ExtractMethodBody(source, "public bool TryReadTuningSnapshot");
+            StringAssert.Contains("TryReadGlitchVaultBuffer", tuningSnapshotBody);
+            StringAssert.DoesNotContain("TryLockBuffer", tuningSnapshotBody);
+            StringAssert.DoesNotContain("TryUnlockBuffer", tuningSnapshotBody);
+            StringAssert.DoesNotContain("TryAcquireWriteLock", tuningSnapshotBody);
+            StringAssert.DoesNotContain("ReleaseWriteLock", tuningSnapshotBody);
+        }
+
+        [Test]
+        public void BabelSubtitleSyncRuntime_UsesMutationGuardsInsteadOfDataVaultWriteLocks()
+        {
+            string subtitlePath = Path.Combine(
+                Application.dataPath,
+                "_Project/Scripts/UI/BabelSubtitleSyncRuntime.cs");
+            string subtitleSource = File.ReadAllText(subtitlePath);
+            string prepareBody = ExtractMethodBody(subtitleSource, "public static void PreparePresentationFrame()");
+            string registerBody = ExtractMethodBody(subtitleSource, "private static bool RegisterCue");
+            string scheduleBody = ExtractMethodBody(subtitleSource, "private static JobHandle ScheduleCueEvaluation");
+            string telemetryBody = ExtractMethodBody(subtitleSource, "private static void WriteFrameTelemetry");
+            string uiTelemetryBody = ExtractMethodBody(subtitleSource, "public static void RecordUIOptimizationFailure");
+            string acquireBody = ExtractMethodBody(subtitleSource, "private static bool TryAcquireSubtitleMutationBuffer");
+
+            AssertBabelSubtitleSourceAvoidsDataVaultWriteLocks(subtitleSource);
+            AssertHotMethodAvoidsLookupAndLocks(prepareBody);
+            StringAssert.Contains("CueStateMutationGuardMask", subtitleSource);
+            StringAssert.Contains("TelemetryMutationGuardMask", subtitleSource);
+            StringAssert.Contains("UIOptimizationTelemetryMutationGuardMask", subtitleSource);
+            StringAssert.Contains("TryAcquireCueMutationBuffer", registerBody);
+            StringAssert.Contains("ReleaseCueMutationBuffer", registerBody);
+            StringAssert.Contains("TryAcquireCueMutationBuffer", scheduleBody);
+            StringAssert.Contains("ReleaseCueMutationBuffer", scheduleBody);
+            StringAssert.Contains("TryAcquireTelemetryMutationBuffer", telemetryBody);
+            StringAssert.Contains("ReleaseTelemetryMutationBuffer", telemetryBody);
+            StringAssert.Contains("TryAcquireUIOptimizationTelemetryMutationBuffer", uiTelemetryBody);
+            StringAssert.Contains("ReleaseUIOptimizationTelemetryMutationBuffer", uiTelemetryBody);
+            StringAssert.Contains("TryAcquireMutationGuard", acquireBody);
+            StringAssert.Contains("TryResolveHandle", acquireBody);
+            StringAssert.Contains("ReleaseMutationGuard", acquireBody);
+            StringAssert.Contains("finally", registerBody);
+            StringAssert.Contains("finally", scheduleBody);
+            StringAssert.Contains("finally", telemetryBody);
+            StringAssert.Contains("finally", uiTelemetryBody);
         }
 
         [Test]
@@ -186,6 +624,147 @@ namespace Hecton8.Tests.Editor
         }
 
         [Test]
+        public void CombatReceiverBodyResolution_RequiresCachedBodySource()
+        {
+            string sourcePath = Path.Combine(
+                Application.dataPath,
+                "_Project/Scripts/Gameplay/Combat/CombatDamageRuntime.cs");
+            string source = File.ReadAllText(sourcePath);
+            string methodBody = ExtractMethodBody(source, "private static Rigidbody ResolveReceiverBody");
+
+            StringAssert.Contains("ICombatPushbackBodySource", methodBody);
+            StringAssert.DoesNotContain("TryGetComponent", methodBody);
+            StringAssert.DoesNotContain("GetComponent", methodBody);
+        }
+
+        [Test]
+        public void BallisticsRuntime_AvoidsDataVaultLockLifetimePins()
+        {
+            string sourcePath = Path.Combine(
+                Application.dataPath,
+                "_Project/Scripts/Gameplay/Combat/BallisticsRuntime.cs");
+            string source = File.ReadAllText(sourcePath);
+            string frameBody = ExtractMethodBody(source, "public static void FrameTick");
+            string mockBody = ExtractMethodBody(source, "public static bool GenerateMockBallistics");
+            string csvBody = ExtractMethodBody(source, "public static bool TryLoadPenetrationCsv");
+            string completionBody = ExtractMethodBody(source, "private static void FinishScheduledCompletion");
+
+            StringAssert.Contains("OpenVaultLane", frameBody);
+            StringAssert.Contains("intersectionJob.Schedule", frameBody);
+            StringAssert.Contains("H8Memory.RegisterActiveJob", frameBody);
+            StringAssert.Contains("DispatcherJobSwap.TryFinalizeCompleted", source);
+            StringAssert.Contains("TryAcquireMutationGuard", mockBody);
+            StringAssert.Contains("TryAcquireMutationGuard", csvBody);
+            StringAssert.DoesNotContain("TryLockBuffer", source);
+            StringAssert.DoesNotContain("TryUnlockBuffer", source);
+            StringAssert.DoesNotContain("_solverBuffersLocked", source);
+            StringAssert.DoesNotContain("TryLockSolverBuffers", source);
+            StringAssert.DoesNotContain("UnlockSolverBuffers", source);
+            StringAssert.DoesNotContain("TryUnlockBuffer", completionBody);
+        }
+
+        [Test]
+        public void PlayerToolSpawnPresentation_UsesLifecycleCaches()
+        {
+            string managerPath = Path.Combine(
+                Application.dataPath,
+                "_Project/Scripts/PlayerToolManager.cs");
+            string managerSource = File.ReadAllText(managerPath);
+            string spawnBody = ExtractMethodBody(managerSource, "private void SpawnNewToolImmediate");
+            string carrierBody = ExtractMethodBody(managerSource, "private void CacheInteriorCarrierFromContext");
+
+            StringAssert.DoesNotContain("TryGetComponent", spawnBody);
+            StringAssert.DoesNotContain("GetComponent", spawnBody);
+            StringAssert.Contains("PhysicalToolGripOffsets.TryResolveLastSpawned", spawnBody);
+            StringAssert.Contains("PlayerTool.TryResolveLastSpawnedTool", spawnBody);
+            StringAssert.Contains("BindSpawnedPresentationContractsCold", spawnBody);
+            StringAssert.Contains("PlayerToolSwimContract.TryResolveLastSpawned", spawnBody);
+            StringAssert.Contains("PlayerTransportFeelContract.TryResolveLastSpawned", spawnBody);
+            StringAssert.DoesNotContain("TryGetComponent", carrierBody);
+            StringAssert.Contains("HullRigidbody", carrierBody);
+
+            string toolPath = Path.Combine(
+                Application.dataPath,
+                "_Project/Scripts/PlayerTool.cs");
+            string toolSource = File.ReadAllText(toolPath);
+            StringAssert.Contains("s_lastSpawnedTool = this", ExtractMethodBody(toolSource, "public virtual void OnSpawn()"));
+            StringAssert.Contains("TryResolveLastSpawnedTool", toolSource);
+            StringAssert.DoesNotContain("TryGetComponent", ExtractMethodBody(toolSource, "public virtual void OnSpawn()"));
+
+            string gripPath = Path.Combine(
+                Application.dataPath,
+                "_Project/Scripts/Interaction/PhysicalToolGripOffsets.cs");
+            string gripSource = File.ReadAllText(gripPath);
+            StringAssert.Contains("MonoBehaviour, IPoolable", gripSource);
+            StringAssert.Contains("s_lastSpawnedOffsets = this", ExtractMethodBody(gripSource, "public void OnSpawn()"));
+            StringAssert.Contains("TryResolveLastSpawned", gripSource);
+
+            string swimPath = Path.Combine(
+                Application.dataPath,
+                "_Project/Scripts/Gameplay/PlayerToolSwimContract.cs");
+            string swimSource = File.ReadAllText(swimPath);
+            StringAssert.Contains("MonoBehaviour, IPoolable", swimSource);
+            StringAssert.Contains("s_lastSpawnedContract = this", ExtractMethodBody(swimSource, "public void OnSpawn()"));
+
+            string feelPath = Path.Combine(
+                Application.dataPath,
+                "_Project/Scripts/Gameplay/PlayerTransportFeelContract.cs");
+            string feelSource = File.ReadAllText(feelPath);
+            StringAssert.Contains("MonoBehaviour, IPoolable", feelSource);
+            StringAssert.Contains("s_lastSpawnedContract = this", ExtractMethodBody(feelSource, "public void OnSpawn()"));
+        }
+
+        [Test]
+        public void ParasiteTelemetryOwnerViews_AvoidDataVaultWriteLocks()
+        {
+            string sourcePath = Path.Combine(
+                Application.dataPath,
+                "_Project/Scripts/VFX/Parasites/ParasiteSwarmGpuRuntime.cs");
+            string source = File.ReadAllText(sourcePath);
+            string lateFrameBody = ExtractMethodBody(source, "public void LateFrameTick()");
+            string targetBody = ExtractMethodBody(source, "private bool TryResolveTargetOwnerViews");
+            string telemetryBody = ExtractMethodBody(source, "private bool TryResolveTelemetryOwnerViews");
+
+            StringAssert.Contains("TryResolveTelemetryOwnerViews", lateFrameBody);
+            StringAssert.Contains("TryResolveTargetOwnerViews", source);
+            StringAssert.DoesNotContain("TryAcquireTargetWriteBuffers", source);
+            StringAssert.DoesNotContain("TryAcquireTelemetryWriteBuffers", source);
+            AssertOwnerViewUsesResolveHandleOnly(targetBody);
+            AssertOwnerViewUsesResolveHandleOnly(telemetryBody);
+        }
+
+        [Test]
+        public void ParasiteProfileCsvLoader_AvoidsNestedDataVaultWriteLocks()
+        {
+            string sourcePath = Path.Combine(
+                Application.dataPath,
+                "_Project/Scripts/VFX/Parasites/ParasiteSwarmContracts.cs");
+            string source = File.ReadAllText(sourcePath);
+            string methodBody = ExtractMethodBody(source, "public static int LoadProfilesFromCsv");
+
+            StringAssert.Contains("TryResolveHandle", methodBody);
+            StringAssert.DoesNotContain("TryAcquireWriteLock", methodBody);
+            StringAssert.DoesNotContain("ReleaseWriteLock", methodBody);
+            StringAssert.DoesNotContain("TryLockBuffer", methodBody);
+        }
+
+        [Test]
+        public void BatteryChargerProfileCsv_AvoidsNestedBufferLocks()
+        {
+            string sourcePath = Path.Combine(
+                Application.dataPath,
+                "_Project/Scripts/Power/BatteryChargerLogistics/BatteryChargerLogisticsRuntime.cs");
+            string source = File.ReadAllText(sourcePath);
+            string methodBody = ExtractMethodBody(source, "private void MonitorProfileCsv()");
+
+            StringAssert.Contains("Resolve(in _handles.CsvScratch", methodBody);
+            StringAssert.Contains("Resolve(in _handles.Profiles", methodBody);
+            StringAssert.DoesNotContain("TryLockBuffer", methodBody);
+            StringAssert.DoesNotContain("TryUnlockBuffer", methodBody);
+            StringAssert.DoesNotContain("TryAcquireWriteLock", methodBody);
+        }
+
+        [Test]
         public void CombatNarrowOwnerViews_AvoidDataVaultWriteLocks()
         {
             string sourcePath = Path.Combine(
@@ -206,6 +785,382 @@ namespace Hecton8.Tests.Editor
             AssertOwnerViewUsesResolveHandleOnly(telemetryBody);
         }
 
+        [Test]
+        public void CombatStructuralTargetMutation_UsesOwnerViewsInsteadOfNestedLocks()
+        {
+            string combatPath = Path.Combine(
+                Application.dataPath,
+                "_Project/Scripts/Gameplay/Combat/CombatDamageRuntime.cs");
+            string combatSource = File.ReadAllText(combatPath);
+            string registerBody = ExtractMethodBody(combatSource, "public static bool RegisterTarget(");
+            string unregisterBody = ExtractMethodBody(combatSource, "public static bool UnregisterTarget(");
+            string protectionBody = ExtractMethodBody(combatSource, "public static bool SyncTargetProtection(");
+
+            StringAssert.Contains("TryResolveCombatTargetOwnerViews", registerBody);
+            StringAssert.Contains("TryResolveStatusEffectStatesOwnerView", registerBody);
+            StringAssert.Contains("TryResolveArmorTargetOwnerViews", registerBody);
+            StringAssert.Contains("TryResolveCombatTargetOwnerViews", unregisterBody);
+            StringAssert.Contains("TryResolveStatusEffectStatesOwnerView", unregisterBody);
+            StringAssert.Contains("TryResolveArmorTargetOwnerViews", unregisterBody);
+            StringAssert.Contains("TryResolveArmorTargetOwnerViews", protectionBody);
+            AssertCombatStructuralBodyAvoidsWriteLocks(registerBody);
+            AssertCombatStructuralBodyAvoidsWriteLocks(unregisterBody);
+            AssertCombatStructuralBodyAvoidsWriteLocks(protectionBody);
+
+            string vaultPath = Path.Combine(
+                Application.dataPath,
+                "_Project/Scripts/Gameplay/Combat/CombatDamageRuntime_VaultViews.cs");
+            string vaultSource = File.ReadAllText(vaultPath);
+            AssertOwnerViewUsesResolveHandleOnly(ExtractMethodBody(vaultSource, "private static bool TryResolveCombatTargetOwnerViews"));
+
+            string armorPath = Path.Combine(
+                Application.dataPath,
+                "_Project/Scripts/Gameplay/Combat/HectonCombatRuntime_ArmorPenetration.cs");
+            string armorSource = File.ReadAllText(armorPath);
+            AssertOwnerViewUsesResolveHandleOnly(ExtractMethodBody(armorSource, "private static bool TryResolveArmorTargetOwnerViews"));
+
+            string statusPath = Path.Combine(
+                Application.dataPath,
+                "_Project/Scripts/Gameplay/Combat/CombatDamageRuntime_StatusEffects.cs");
+            string statusSource = File.ReadAllText(statusPath);
+            AssertOwnerViewUsesResolveHandleOnly(ExtractMethodBody(statusSource, "private static bool TryResolveStatusEffectStatesOwnerView"));
+        }
+
+        [Test]
+        public void CombatDamageIngress_UsesOwnerViewsInsteadOfWriterLocks()
+        {
+            string combatPath = Path.Combine(
+                Application.dataPath,
+                "_Project/Scripts/Gameplay/Combat/CombatDamageRuntime.cs");
+            string combatSource = File.ReadAllText(combatPath);
+            string queueBody = ExtractMethodBody(combatSource, "public static bool TryQueueDamage(in CombatDamageRequest signal, in CombatDamageSignalDetail detail, double3 impactAup)");
+            string ingressBody = ExtractMethodBody(combatSource, "private static bool TryResolveDamageIngressOwnerViews");
+
+            StringAssert.Contains("TryResolveDamageIngressOwnerViews", queueBody);
+            StringAssert.DoesNotContain("TryAcquireDamageIngressWriteLocks", combatSource);
+            StringAssert.DoesNotContain("ReleaseDamageIngressWriteLocks", combatSource);
+            AssertCombatStructuralBodyAvoidsWriteLocks(queueBody);
+            AssertOwnerViewUsesResolveHandleOnly(ingressBody);
+        }
+
+        [Test]
+        public void CombatStatusColdAndIngressRoutes_UseOwnerViewsInsteadOfWriterLocks()
+        {
+            string statusPath = Path.Combine(
+                Application.dataPath,
+                "_Project/Scripts/Gameplay/Combat/CombatDamageRuntime_StatusEffects.cs");
+            string statusSource = File.ReadAllText(statusPath);
+
+            string queueBody = ExtractMethodBody(statusSource, "public static bool TryQueueStatusEffect");
+            string writeTuningBody = ExtractMethodBody(statusSource, "private static bool TryWriteStatusEffectTuningOwnerView");
+            string counterBody = ExtractMethodBody(statusSource, "private static void WriteStatusCounter(int index, int value)");
+
+            StringAssert.Contains("TryResolveHandle", queueBody);
+            AssertCombatStructuralBodyAvoidsWriteLocks(queueBody);
+            AssertOwnerViewUsesResolveHandleOnly(writeTuningBody);
+            AssertOwnerViewUsesResolveHandleOnly(counterBody);
+            StringAssert.DoesNotContain("TryWriteStatusEffectTuningLocked", statusSource);
+            StringAssert.DoesNotContain("TryAcquireStatusEffectStatesWriteLock", statusSource);
+        }
+
+        [Test]
+        public void ArmorPenetrationColdRoutes_UseOwnerViewsInsteadOfWriterLocks()
+        {
+            string armorPath = Path.Combine(
+                Application.dataPath,
+                "_Project/Scripts/Gameplay/Combat/HectonCombatRuntime_ArmorPenetration.cs");
+            string armorSource = File.ReadAllText(armorPath);
+
+            AssertOwnerViewUsesResolveHandleOnly(ExtractMethodBody(armorSource, "private static bool TryWriteDefaultArmorTuning"));
+            AssertOwnerViewUsesResolveHandleOnly(ExtractMethodBody(armorSource, "public static bool WriteArmorTuning"));
+
+            string csvBody = ExtractMethodBody(armorSource, "public static unsafe bool ApplyArmorProfilesCsvBytes");
+            StringAssert.Contains("TryResolveHandle", csvBody);
+            AssertCombatStructuralBodyAvoidsWriteLocks(csvBody);
+        }
+
+        [Test]
+        public void CombatScheduledJobs_UseMutationGuardLeasesInsteadOfDataVaultLocks()
+        {
+            string combatPath = Path.Combine(
+                Application.dataPath,
+                "_Project/Scripts/Gameplay/Combat/CombatDamageRuntime.cs");
+            string combatSource = File.ReadAllText(combatPath);
+            string frameBody = ExtractMethodBody(combatSource, "public static void FrameTick(float deltaTime)");
+            string lateFrameBody = ExtractMethodBody(combatSource, "public static void LateFrameTick()");
+            string clearCountersBody = ExtractMethodBody(combatSource, "private static void ClearCounters()");
+
+            string vaultPath = Path.Combine(
+                Application.dataPath,
+                "_Project/Scripts/Gameplay/Combat/CombatDamageRuntime_VaultViews.cs");
+            string vaultSource = File.ReadAllText(vaultPath);
+
+            string statusPath = Path.Combine(
+                Application.dataPath,
+                "_Project/Scripts/Gameplay/Combat/CombatDamageRuntime_StatusEffects.cs");
+            string statusSource = File.ReadAllText(statusPath);
+            string statusScheduleBody = ExtractMethodBody(statusSource, "private static bool TryScheduleStatusEffectJobs");
+            string statusCompleteBody = ExtractMethodBody(statusSource, "private static void CompleteStatusEffectFrame()");
+
+            string armorPath = Path.Combine(
+                Application.dataPath,
+                "_Project/Scripts/Gameplay/Combat/HectonCombatRuntime_ArmorPenetration.cs");
+            string armorSource = File.ReadAllText(armorPath);
+            string armorCompleteBody = ExtractMethodBody(armorSource, "private static void FinishArmorPenetrationScheduledCompletion()");
+
+            AssertCombatSourceAvoidsDataVaultLocks(combatSource);
+            AssertCombatSourceAvoidsDataVaultLocks(vaultSource);
+            AssertCombatSourceAvoidsDataVaultLocks(statusSource);
+            AssertCombatSourceAvoidsDataVaultLocks(armorSource);
+
+            StringAssert.Contains("TryAcquireDamageJobMutationGuardLease", frameBody);
+            StringAssert.Contains("TryAcquireCombatDispatchMutationGuardLease", lateFrameBody);
+            StringAssert.Contains("TryAcquireCombatCounterMutationGuardLease", clearCountersBody);
+            StringAssert.Contains("TryAcquireStatusEffectJobMutationGuardLease", statusScheduleBody);
+            StringAssert.Contains("_statusJobMutationGuardLease.Release", statusCompleteBody);
+            StringAssert.Contains("_damageJobMutationGuardLease.Release", armorCompleteBody);
+            StringAssert.Contains("CombatVaultMutationGuardLease", vaultSource);
+            StringAssert.Contains("TryAcquireMutationGuard", vaultSource);
+            StringAssert.Contains("ReleaseMutationGuard", vaultSource);
+            StringAssert.Contains("ArmorMockMutationGuardMask", armorSource);
+            StringAssert.Contains("ArmorEvaluatorTortureMutationGuardMask", armorSource);
+            StringAssert.Contains("ArmorCasTortureMutationGuardMask", armorSource);
+        }
+
+        [Test]
+        public void ScannerDataMiningRouter_UsesMutationGuardsInsteadOfDataVaultLocks()
+        {
+            string scannerPath = Path.Combine(
+                Application.dataPath,
+                "_Project/Scripts/Gameplay/ScannerDataMiningRouter.cs");
+            string scannerSource = File.ReadAllText(scannerPath);
+            string fastTickBody = ExtractMethodBody(scannerSource, "public void FastTick(float deltaTime)");
+            string finalizeBody = ExtractMethodBody(scannerSource, "private bool TryFinalizeScheduledQuery()");
+            string processBody = ExtractMethodBody(scannerSource, "private void ProcessCompletedQuery(float deltaTime)");
+
+            AssertScannerSourceAvoidsDataVaultLocks(scannerSource);
+            StringAssert.Contains("ScannerQueryMutationGuardMask", scannerSource);
+            StringAssert.Contains("ScannerCompletionMutationGuardMask", scannerSource);
+            StringAssert.Contains("ScannerMutationGuardBit", scannerSource);
+            StringAssert.Contains("TryAcquireQueryMutationGuard", fastTickBody);
+            StringAssert.Contains("TryReadVaultViews(out views)", fastTickBody);
+            StringAssert.Contains("ReleaseQueryMutationGuard", finalizeBody);
+            StringAssert.Contains("try", finalizeBody);
+            StringAssert.Contains("finally", finalizeBody);
+            StringAssert.Contains("TryAcquireScannerMutationGuard", processBody);
+            StringAssert.Contains("ReleaseScannerMutationGuard", processBody);
+            StringAssert.Contains("finally", processBody);
+        }
+
+        [Test]
+        public void KineticCharacterAnimatorSolver_UsesMutationGuardsInsteadOfDataVaultLocks()
+        {
+            string kineticPath = Path.Combine(
+                Application.dataPath,
+                "_Project/Scripts/Animation/KineticCharacter/KineticCharacterAnimatorRuntime.cs");
+            string kineticSource = File.ReadAllText(kineticPath);
+            string tickBody = ExtractMethodBody(kineticSource, "public void Tick(float deltaTime)");
+            string writeInputBody = ExtractMethodBody(kineticSource, "private bool WriteFrameInput");
+            string finishBody = ExtractMethodBody(kineticSource, "private bool FinishPendingSolverCompletion()");
+            string acquireBody = ExtractMethodBody(kineticSource, "private bool TryAcquireSolverMutationGuard(");
+
+            AssertKineticSourceAvoidsDataVaultLocks(kineticSource);
+            StringAssert.Contains("SolverMutationGuardRequiredMask", kineticSource);
+            StringAssert.Contains("SolverPlayerStateReadGuardMask", kineticSource);
+            StringAssert.Contains("SolverSdfMutationGuardMask", kineticSource);
+            StringAssert.Contains("SolverPlayerHandIkMutationGuardMask", kineticSource);
+            StringAssert.Contains("TryAcquireSolverMutationGuard(vault, ref includePlayerState, ref includeSdf, ref includePlayerHandIk)", tickBody);
+            StringAssert.Contains("TryResolveRuntimeBuffers", tickBody);
+            StringAssert.Contains("WriteFrameInput(vault, inputs, includePlayerState", tickBody);
+            StringAssert.Contains("H8Memory.RegisterActiveJob", tickBody);
+            StringAssert.Contains("ReleaseSolverMutationGuard", tickBody);
+            StringAssert.DoesNotContain("TryAcquireWriteLock", writeInputBody);
+            StringAssert.DoesNotContain("ReleaseWriteLock", writeInputBody);
+            StringAssert.Contains("ReleaseSolverMutationGuard", finishBody);
+            StringAssert.Contains("finally", finishBody);
+            StringAssert.Contains("includePlayerState = false", acquireBody);
+            StringAssert.Contains("includeSdf = false", acquireBody);
+            StringAssert.Contains("includePlayerHandIk = false", acquireBody);
+        }
+
+        [Test]
+        public void ProceduralLadderClimbRuntime_UsesMutationGuardsInsteadOfDataVaultLocks()
+        {
+            string ladderPath = Path.Combine(
+                Application.dataPath,
+                "_Project/Scripts/Animation/Locomotion/ProceduralLadderClimbRuntime.cs");
+            string ladderSource = File.ReadAllText(ladderPath);
+            string fastTickBody = ExtractMethodBody(ladderSource, "public void FastTick(float deltaTime)");
+            string lateFrameBody = ExtractMethodBody(ladderSource, "public void LateFrameTick()");
+            string scheduleBody = ExtractMethodBody(ladderSource, "private void ScheduleSolve()");
+            string writeAupBody = ExtractMethodBody(ladderSource, "private bool TryWriteLadderAup");
+            string acquireBody = ExtractMethodBody(ladderSource, "private bool TryAcquireSolveMutationGuard");
+            string completeBody = ExtractMethodBody(ladderSource, "private void CompleteOutstandingJobForBarrier()");
+
+            AssertLadderClimbSourceAvoidsDataVaultLocks(ladderSource);
+            AssertHotMethodAvoidsLookupAndLocks(fastTickBody);
+            AssertHotMethodAvoidsLookupAndLocks(lateFrameBody);
+            AssertHotMethodAvoidsLookupAndLocks(scheduleBody);
+            StringAssert.Contains("SolveMutationGuardMask", ladderSource);
+            StringAssert.Contains("LadderAupMutationGuardMask", ladderSource);
+            StringAssert.Contains("TryAcquireSolveMutationGuard", scheduleBody);
+            StringAssert.Contains("views.Inputs[0]", scheduleBody);
+            StringAssert.Contains("H8Memory.RegisterActiveJob", scheduleBody);
+            StringAssert.Contains("ReleaseSolveMutationGuard", scheduleBody);
+            StringAssert.Contains("ReleaseSolveMutationGuard", lateFrameBody);
+            StringAssert.Contains("ReleaseSolveMutationGuard", completeBody);
+            StringAssert.Contains("finally", scheduleBody);
+            StringAssert.Contains("finally", lateFrameBody);
+            StringAssert.Contains("finally", completeBody);
+            StringAssert.Contains("TryAcquireMutationGuard(LadderAupMutationGuardMask)", writeAupBody);
+            StringAssert.Contains("ReleaseMutationGuard(LadderAupMutationGuardMask)", writeAupBody);
+            StringAssert.Contains("TryResolveVaultViews(vault, out views)", acquireBody);
+        }
+
+        [Test]
+        public void ProceduralBoneBlenderRuntime_UsesMutationGuardsInsteadOfDataVaultLocks()
+        {
+            string blenderPath = Path.Combine(
+                Application.dataPath,
+                "_Project/Scripts/Animation/FaunaProcedural/ProceduralBoneBlenderRuntime.cs");
+            string blenderSource = File.ReadAllText(blenderPath);
+            string tickBody = ExtractMethodBody(blenderSource, "public void Tick(float deltaTime)");
+            string lateFrameBody = ExtractMethodBody(blenderSource, "public void LateFrameTick()");
+            string acquireBody = ExtractMethodBody(blenderSource, "private bool TryAcquireJobMutationGuardAndResolveBuffers");
+            string finishBody = ExtractMethodBody(blenderSource, "private bool FinishPendingSolverCompletion()");
+
+            AssertProceduralBoneBlenderSourceAvoidsDataVaultLocks(blenderSource);
+            AssertHotMethodAvoidsLookupAndLocks(tickBody);
+            AssertHotMethodAvoidsLookupAndLocks(lateFrameBody);
+            AssertHotMethodAvoidsLookupAndLocks(finishBody);
+            StringAssert.Contains("TryAcquireMutationGuard(tuningGuardMask)", tickBody);
+            StringAssert.Contains("TryAcquireJobMutationGuardAndResolveBuffers", tickBody);
+            StringAssert.Contains("H8Memory.RegisterActiveJob", tickBody);
+            StringAssert.Contains("ReleaseJobMutationGuard", tickBody);
+            StringAssert.Contains("ReleaseJobMutationGuard", finishBody);
+            StringAssert.Contains("finally", tickBody);
+            StringAssert.Contains("finally", finishBody);
+            StringAssert.Contains("TryResolveRuntimeBuffers", acquireBody);
+            StringAssert.Contains("TryAcquireMutationGuard", acquireBody);
+            StringAssert.Contains("ReleaseMutationGuard", acquireBody);
+        }
+
+        [Test]
+        public void SumpPumpPipeGridRuntime_UsesMutationGuardsInsteadOfDataVaultLocks()
+        {
+            string sumpPath = Path.Combine(
+                Application.dataPath,
+                "_Project/Scripts/Construction/SumpPumpPipeGridRuntime.cs");
+            string sumpSource = File.ReadAllText(sumpPath);
+            string slowTickBody = ExtractMethodBody(sumpSource, "public void SlowTick()");
+            string lateFrameBody = ExtractMethodBody(sumpSource, "public void LateFrameTick()");
+            string mockBody = ExtractMethodBody(sumpSource, "public void GenerateMockDrainageNetwork()");
+            string scheduleBody = ExtractMethodBody(sumpSource, "private bool ScheduleDrainageSolve");
+            string finalizeMockBody = ExtractMethodBody(sumpSource, "private bool TryFinalizeMockSeedNoWait()");
+            string completeSolverBody = ExtractMethodBody(sumpSource, "private void CompleteScheduledSolverForTeardown()");
+            string profileCsvBody = ExtractMethodBody(sumpSource, "public bool TryLoadPipeProfilesFromCsv");
+            string initTuningBody = ExtractMethodBody(sumpSource, "private void InitializeTuningIfNeeded()");
+            string writeTuningBody = ExtractMethodBody(sumpSource, "private bool TryWriteTuning");
+
+            AssertSumpPumpSourceAvoidsDataVaultLocks(sumpSource);
+            AssertHotMethodAvoidsLookupAndLocks(slowTickBody);
+            AssertHotMethodAvoidsLookupAndLocks(lateFrameBody);
+            AssertHotMethodAvoidsLookupAndLocks(scheduleBody);
+            StringAssert.Contains("DrainageVaultMutationGuardMask", sumpSource);
+            StringAssert.Contains("TryAcquireDrainageMutationGuard", mockBody);
+            StringAssert.Contains("TryAcquireDrainageMutationGuard", scheduleBody);
+            StringAssert.Contains("H8Memory.RegisterActiveJob", mockBody);
+            StringAssert.Contains("H8Memory.RegisterActiveJob", scheduleBody);
+            StringAssert.Contains("ReleaseDrainageMutationGuard", lateFrameBody);
+            StringAssert.Contains("ReleaseDrainageMutationGuard", finalizeMockBody);
+            StringAssert.Contains("ReleaseDrainageMutationGuard", completeSolverBody);
+            StringAssert.Contains("finally", lateFrameBody);
+            StringAssert.Contains("finally", finalizeMockBody);
+            StringAssert.Contains("finally", completeSolverBody);
+            StringAssert.Contains("TryAcquireLocalDrainageMutationGuard", profileCsvBody);
+            StringAssert.Contains("ReleaseLocalDrainageMutationGuard", profileCsvBody);
+            StringAssert.Contains("TryAcquireLocalDrainageMutationGuard", initTuningBody);
+            StringAssert.Contains("ReleaseLocalDrainageMutationGuard", initTuningBody);
+            StringAssert.Contains("TryAcquireLocalDrainageMutationGuard", writeTuningBody);
+            StringAssert.Contains("ReleaseLocalDrainageMutationGuard", writeTuningBody);
+        }
+
+        [Test]
+        public void HabitatFluidIncursionDirector_UsesMutationGuardsInsteadOfDataVaultLocks()
+        {
+            string fluidPath = Path.Combine(
+                Application.dataPath,
+                "_Project/Scripts/Physics/HabitatFluidIncursionDirector.cs");
+            string fluidSource = File.ReadAllText(fluidPath);
+            string fixedTickBody = ExtractMethodBody(fluidSource, "public void FixedTick(float fixedDeltaTime)");
+            string postFixedTickBody = ExtractMethodBody(fluidSource, "public void PostFixedTick(float fixedDeltaTime)");
+            string completeBody = ExtractMethodBody(fluidSource, "private void CompleteScheduledSimulationForAuthoritativeWrite()");
+            string breachBody = ExtractMethodBody(fluidSource, "public bool GenerateMockHullBreach");
+            string floodBody = ExtractMethodBody(fluidSource, "public bool GenerateMockFloodDistribution");
+
+            AssertHabitatFluidSourceAvoidsDataVaultLocks(fluidSource);
+            AssertHotMethodAvoidsLookupAndLocks(fixedTickBody);
+            AssertHotMethodAvoidsLookupAndLocks(postFixedTickBody);
+            StringAssert.Contains("FluidSimulationMutationGuardMask", fluidSource);
+            StringAssert.Contains("TryAcquireFluidSimulationMutationGuard", fixedTickBody);
+            StringAssert.Contains("H8Memory.RegisterActiveJob", fixedTickBody);
+            StringAssert.Contains("ReleaseFluidSimulationMutationGuard", fixedTickBody);
+            StringAssert.Contains("ReleaseFluidSimulationMutationGuard", postFixedTickBody);
+            StringAssert.Contains("ReleaseFluidSimulationMutationGuard", completeBody);
+            StringAssert.Contains("finally", fixedTickBody);
+            StringAssert.Contains("finally", postFixedTickBody);
+            StringAssert.Contains("finally", completeBody);
+            StringAssert.Contains("TryAcquireLocalFluidMutationGuard", fluidSource);
+            StringAssert.Contains("ReleaseLocalFluidMutationGuard", breachBody);
+            StringAssert.Contains("ReleaseLocalFluidMutationGuard", floodBody);
+            StringAssert.Contains("finally", breachBody);
+            StringAssert.Contains("finally", floodBody);
+        }
+
+        [Test]
+        public void ShinobuPlasmaBeamRuntime_UsesMutationGuardInsteadOfDataVaultLocks()
+        {
+            string beamPath = Path.Combine(
+                Application.dataPath,
+                "_Project/Scripts/VFX/PlasmaBeam/ShinobuPlasmaBeamRuntime.cs");
+            string beamSource = File.ReadAllText(beamPath);
+            string scheduleBody = ExtractMethodBody(beamSource, "private JobHandle ScheduleSimulation");
+            string postBody = ExtractMethodBody(beamSource, "private void PostSimulationTick");
+            string completeBody = ExtractMethodBody(beamSource, "private void CompleteSimulationForLifecycle()");
+
+            AssertPlasmaBeamSourceAvoidsDataVaultLocks(beamSource);
+            AssertHotMethodAvoidsLookupAndLocks(scheduleBody);
+            AssertHotMethodAvoidsLookupAndLocks(postBody);
+            StringAssert.Contains("PlasmaBeamJobMutationGuardMask", beamSource);
+            StringAssert.Contains("TryAcquirePlasmaBeamJobMutationGuard", scheduleBody);
+            StringAssert.Contains("H8Memory.RegisterActiveJob", scheduleBody);
+            StringAssert.Contains("ReleasePlasmaBeamJobMutationGuard", scheduleBody);
+            StringAssert.Contains("ReleasePlasmaBeamJobMutationGuard", postBody);
+            StringAssert.Contains("ReleasePlasmaBeamJobMutationGuard", completeBody);
+            StringAssert.Contains("finally", scheduleBody);
+            StringAssert.Contains("finally", postBody);
+            StringAssert.Contains("finally", completeBody);
+        }
+
+        [Test]
+        public void CameraJuiceTelemetry_UsesOwnerViewInsteadOfLateFrameWriteLock()
+        {
+            string cameraJuicePath = Path.Combine(
+                Application.dataPath,
+                "_Project/Scripts/VFX/CameraJuiceSystem.cs");
+            string cameraJuiceSource = File.ReadAllText(cameraJuicePath);
+            string lateFrameBody = ExtractMethodBody(cameraJuiceSource, "public void LateFrameTick()");
+            string recordBody = ExtractMethodBody(cameraJuiceSource, "private void RecordCameraJuiceTelemetry()");
+            string resolveBody = ExtractMethodBody(cameraJuiceSource, "private static bool TryResolveCameraJuiceTelemetryWriteBuffer");
+
+            AssertCameraJuiceSourceAvoidsTelemetryWriteLocks(cameraJuiceSource);
+            AssertHotMethodAvoidsLookupAndLocks(lateFrameBody);
+            AssertHotMethodAvoidsLookupAndLocks(recordBody);
+            AssertOwnerViewUsesResolveHandleOnly(resolveBody);
+            StringAssert.Contains("RecordCameraJuiceTelemetry", lateFrameBody);
+            StringAssert.Contains("TryResolveCameraJuiceTelemetryWriteBuffer", recordBody);
+        }
+
         private static void AssertUnmanagedSignalPayload<T>()
             where T : unmanaged, ISignal
         {
@@ -220,6 +1175,175 @@ namespace Hecton8.Tests.Editor
             StringAssert.DoesNotContain("TryAcquireWriteLock", methodBody);
             StringAssert.DoesNotContain("ReleaseWriteLock", methodBody);
             StringAssert.DoesNotContain("TryLockBuffer", methodBody);
+        }
+
+        private static void AssertCombatStructuralBodyAvoidsWriteLocks(string methodBody)
+        {
+            StringAssert.DoesNotContain("TryAcquireCombatTargetWriteLocks", methodBody);
+            StringAssert.DoesNotContain("ReleaseCombatTargetWriteLocks", methodBody);
+            StringAssert.DoesNotContain("TryAcquireArmorTargetWriteLocks", methodBody);
+            StringAssert.DoesNotContain("ReleaseArmorTargetWriteLocks", methodBody);
+            StringAssert.DoesNotContain("TryAcquireStatusEffectStatesWriteLock", methodBody);
+            StringAssert.DoesNotContain("ReleaseStatusEffectStatesWriteLock", methodBody);
+            StringAssert.DoesNotContain("TryAcquireWriteLock", methodBody);
+            StringAssert.DoesNotContain("ReleaseWriteLock", methodBody);
+            StringAssert.DoesNotContain("TryLockBuffer", methodBody);
+            StringAssert.DoesNotContain("TryUnlockBuffer", methodBody);
+        }
+
+        private static void AssertCombatSourceAvoidsDataVaultLocks(string source)
+        {
+            StringAssert.DoesNotContain("TryAcquireWriteLock", source);
+            StringAssert.DoesNotContain("ReleaseWriteLock", source);
+            StringAssert.DoesNotContain("TryLockBuffer", source);
+            StringAssert.DoesNotContain("TryUnlockBuffer", source);
+            StringAssert.DoesNotContain("TryLockCombatDamageVaultBuffersForJobs", source);
+            StringAssert.DoesNotContain("UnlockCombatDamageVaultBuffersForJobs", source);
+            StringAssert.DoesNotContain("TryLockStatusEffectVaultBuffersForJobs", source);
+            StringAssert.DoesNotContain("UnlockStatusEffectVaultBuffersForJobs", source);
+            StringAssert.DoesNotContain("TryLockArmorVaultBuffersForJobs", source);
+            StringAssert.DoesNotContain("UnlockArmorVaultBuffersForJobs", source);
+        }
+
+        private static void AssertScannerSourceAvoidsDataVaultLocks(string source)
+        {
+            StringAssert.DoesNotContain("TryAcquireWriteLock", source);
+            StringAssert.DoesNotContain("ReleaseWriteLock", source);
+            StringAssert.DoesNotContain("TryLockBuffer", source);
+            StringAssert.DoesNotContain("TryUnlockBuffer", source);
+            StringAssert.DoesNotContain("TryLockQueryBuffers", source);
+            StringAssert.DoesNotContain("UnlockQueryBuffers", source);
+            StringAssert.DoesNotContain("TryLockCompletionBuffers", source);
+            StringAssert.DoesNotContain("UnlockCompletionBuffers", source);
+            StringAssert.DoesNotContain("_queryBuffersLocked", source);
+            StringAssert.DoesNotContain("_completionBuffersLocked", source);
+        }
+
+        private static void AssertKineticSourceAvoidsDataVaultLocks(string source)
+        {
+            StringAssert.DoesNotContain("TryAcquireWriteLock", source);
+            StringAssert.DoesNotContain("ReleaseWriteLock", source);
+            StringAssert.DoesNotContain("TryLockBuffer", source);
+            StringAssert.DoesNotContain("TryUnlockBuffer", source);
+            StringAssert.DoesNotContain("TryLockJobBuffers", source);
+            StringAssert.DoesNotContain("UnlockJobBuffers", source);
+            StringAssert.DoesNotContain("TryAcquireWriteView", source);
+            StringAssert.DoesNotContain("ReleaseWriteView", source);
+            StringAssert.DoesNotContain("_lockedBuffers", source);
+        }
+
+        private static void AssertProceduralBoneBlenderSourceAvoidsDataVaultLocks(string source)
+        {
+            StringAssert.DoesNotContain("TryAcquireWriteLock", source);
+            StringAssert.DoesNotContain("ReleaseWriteLock", source);
+            StringAssert.DoesNotContain("TryLockBuffer", source);
+            StringAssert.DoesNotContain("TryUnlockBuffer", source);
+            StringAssert.DoesNotContain("TryLockJobBuffers", source);
+            StringAssert.DoesNotContain("UnlockJobBuffers", source);
+            StringAssert.DoesNotContain("TryAcquireWriteView", source);
+            StringAssert.DoesNotContain("ReleaseWriteView", source);
+            StringAssert.DoesNotContain("_lockedBuffers", source);
+        }
+
+        private static void AssertLadderClimbSourceAvoidsDataVaultLocks(string source)
+        {
+            StringAssert.DoesNotContain("TryAcquireWriteLock", source);
+            StringAssert.DoesNotContain("ReleaseWriteLock", source);
+            StringAssert.DoesNotContain("TryLockBuffer", source);
+            StringAssert.DoesNotContain("TryUnlockBuffer", source);
+            StringAssert.DoesNotContain("TryLockJobBuffers", source);
+            StringAssert.DoesNotContain("UnlockJobBuffers", source);
+            StringAssert.DoesNotContain("TryAcquireWriteView", source);
+            StringAssert.DoesNotContain("ReleaseWriteView", source);
+            StringAssert.DoesNotContain("TryPinSolveBuffers", source);
+            StringAssert.DoesNotContain("ReleaseSolveBufferPins", source);
+            StringAssert.DoesNotContain("_solveBufferPinMask", source);
+            StringAssert.DoesNotContain("_solveBufferGuardVault", source);
+        }
+
+        private static void AssertSumpPumpSourceAvoidsDataVaultLocks(string source)
+        {
+            StringAssert.DoesNotContain("TryAcquireWriteLock", source);
+            StringAssert.DoesNotContain("ReleaseWriteLock", source);
+            StringAssert.DoesNotContain("TryLockBuffer", source);
+            StringAssert.DoesNotContain("TryUnlockBuffer", source);
+            StringAssert.DoesNotContain("TryLockJobBuffers", source);
+            StringAssert.DoesNotContain("UnlockJobBuffers", source);
+            StringAssert.DoesNotContain("TryLockTelemetryWriteBuffers", source);
+            StringAssert.DoesNotContain("_activeVaultGuardMask", source);
+        }
+
+        private static void AssertHabitatFluidSourceAvoidsDataVaultLocks(string source)
+        {
+            StringAssert.DoesNotContain("TryAcquireWriteLock", source);
+            StringAssert.DoesNotContain("ReleaseWriteLock", source);
+            StringAssert.DoesNotContain("TryLockBuffer", source);
+            StringAssert.DoesNotContain("TryUnlockBuffer", source);
+            StringAssert.DoesNotContain("TryLockJobBuffers", source);
+            StringAssert.DoesNotContain("UnlockJobBuffers", source);
+            StringAssert.DoesNotContain("_lockedBufferMask", source);
+        }
+
+        private static void AssertPlasmaBeamSourceAvoidsDataVaultLocks(string source)
+        {
+            StringAssert.DoesNotContain("TryAcquireWriteLock", source);
+            StringAssert.DoesNotContain("ReleaseWriteLock", source);
+            StringAssert.DoesNotContain("TryLockBuffer", source);
+            StringAssert.DoesNotContain("TryUnlockBuffer", source);
+            StringAssert.DoesNotContain("TryLockJobBuffers", source);
+            StringAssert.DoesNotContain("UnlockJobBuffers", source);
+            StringAssert.DoesNotContain("_lockedBufferMask", source);
+        }
+
+        private static void AssertCameraJuiceSourceAvoidsTelemetryWriteLocks(string source)
+        {
+            StringAssert.DoesNotContain("TryAcquireCameraJuiceTelemetryWriteBuffer", source);
+            StringAssert.DoesNotContain("TryAcquireWriteLock", source);
+            StringAssert.DoesNotContain("ReleaseWriteLock", source);
+            StringAssert.DoesNotContain("TryLockBuffer", source);
+            StringAssert.DoesNotContain("TryUnlockBuffer", source);
+        }
+
+        private static void AssertBabelSubtitleSourceAvoidsDataVaultWriteLocks(string source)
+        {
+            StringAssert.DoesNotContain("TryAcquireCueWriteBuffer", source);
+            StringAssert.DoesNotContain("TryAcquireTelemetryWriteBuffer", source);
+            StringAssert.DoesNotContain("TryAcquireUIOptimizationTelemetryWriteBuffer", source);
+            StringAssert.DoesNotContain("TryAcquireSubtitleWriteBuffer", source);
+            StringAssert.DoesNotContain("TryAcquireWriteLock", source);
+            StringAssert.DoesNotContain("ReleaseWriteLock", source);
+            StringAssert.DoesNotContain("TryLockBuffer", source);
+            StringAssert.DoesNotContain("TryUnlockBuffer", source);
+        }
+
+        private static void AssertHotMethodAvoidsLookupAndLocks(string methodBody)
+        {
+            StringAssert.DoesNotContain("GlobalRegistry.Get", methodBody);
+            StringAssert.DoesNotContain("GetComponent", methodBody);
+            StringAssert.DoesNotContain("TryGetComponent", methodBody);
+            StringAssert.DoesNotContain("TryAcquireWriteLock", methodBody);
+            StringAssert.DoesNotContain("ReleaseWriteLock", methodBody);
+            StringAssert.DoesNotContain("TryLockBuffer", methodBody);
+            StringAssert.DoesNotContain("TryUnlockBuffer", methodBody);
+        }
+
+        private static void AssertBiolumRouteUsesOwnerViewsOnly(string methodBody)
+        {
+            StringAssert.Contains("TryResolveBiolumVaultBuffer", methodBody);
+            StringAssert.DoesNotContain("TryAcquireWriteLock", methodBody);
+            StringAssert.DoesNotContain("ReleaseWriteLock", methodBody);
+            StringAssert.DoesNotContain("TryLockBuffer", methodBody);
+        }
+
+        private static void AssertGlitchRouteUsesOwnerViewsOnly(string methodBody)
+        {
+            StringAssert.Contains("TryResolveGlitchVaultBuffer", methodBody);
+            StringAssert.DoesNotContain("TryAcquireGlitchVaultWriteBuffer", methodBody);
+            StringAssert.DoesNotContain("ReleaseGlitchVaultWriteBuffer", methodBody);
+            StringAssert.DoesNotContain("TryAcquireWriteLock", methodBody);
+            StringAssert.DoesNotContain("ReleaseWriteLock", methodBody);
+            StringAssert.DoesNotContain("TryLockBuffer", methodBody);
+            StringAssert.DoesNotContain("TryUnlockBuffer", methodBody);
         }
 
         private static Type[] GetLoadableTypes(Assembly assembly)

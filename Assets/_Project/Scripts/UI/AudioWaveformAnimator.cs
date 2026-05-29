@@ -120,7 +120,6 @@ namespace Hecton8.UI
             if (_cachedSubtitleManager == null)
             {
                 ClearSubtitleManagerBinding();
-                RefreshTickRegistration();
                 return;
             }
 
@@ -152,7 +151,6 @@ namespace Hecton8.UI
                     ApplyIdlePose();
                 }
 
-                RefreshTickRegistration();
                 return;
             }
 
@@ -166,7 +164,6 @@ namespace Hecton8.UI
             {
                 _amplitude = 0f;
                 ApplyIdlePose();
-                RefreshTickRegistration();
             }
         }
 
@@ -184,7 +181,6 @@ namespace Hecton8.UI
             }
 
             ApplyOptionalCueText(textBuffer, textStart, textLength);
-            RefreshTickRegistration();
         }
 
         private void ConsumeCueSnapshot()

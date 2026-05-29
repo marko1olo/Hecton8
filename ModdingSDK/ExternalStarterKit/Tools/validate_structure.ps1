@@ -122,6 +122,30 @@ function Read-AllowedGraphOpcodeTokens() {
     return $tokens
 }
 
+function Get-AllowedManifestCapabilities() {
+    return @(
+        'cap.graph.command_draft',
+        'cap.settings.table',
+        'cap.locale.en',
+        'cap.content.asset_manifest',
+        'cap.review.submission_package'
+    )
+}
+
+function Validate-ManifestCapabilities([object]$Value) {
+    [void](Validate-JsonArray $Value 'mod.h8manifest.json Capabilities')
+    $capabilities = @($Value)
+    if ($capabilities.Count -gt 16) { Fail 'mod.h8manifest.json Capabilities exceeds 16 entries.' }
+    $allowed = Get-AllowedManifestCapabilities
+    $seen = @{}
+    for ($i = 0; $i -lt $capabilities.Count; $i++) {
+        $capabilityId = Validate-ModId ([string]$capabilities[$i]) ('mod.h8manifest.json Capabilities[' + $i + ']')
+        if ($seen.ContainsKey($capabilityId)) { Fail ('mod.h8manifest.json duplicate Capability: ' + $capabilityId) }
+        if ($allowed -notcontains $capabilityId) { Fail ('mod.h8manifest.json Capability is not public: ' + $capabilityId) }
+        $seen[$capabilityId] = $true
+    }
+}
+
 function Validate-JsonArray([object]$Value, [string]$Label) {
     if ($null -eq $Value -or -not $Value.GetType().IsArray) {
         Fail ($Label + ' must be a JSON array.')
@@ -211,7 +235,215 @@ function Validate-LocaleTable([object]$LocaleDocument) {
     }
 }
 
-@('Content','Docs','Graphs','Tables','Locales','Generated','Reports','Reference','Schemas','Tools','.vscode') | ForEach-Object { Require-Directory $_ }
+function Get-AssetAllowedExtensions([string]$Kind) {
+    switch ($Kind) {
+        'raw_texture' { return @('.png','.jpg','.jpeg','.webp') }
+        'audio_clip' { return @('.wav','.ogg') }
+        'data_blob' { return @('.json','.bytes','.bin') }
+        default { Fail 'Asset Kind must be one of: raw_texture, audio_clip, data_blob.' }
+    }
+}
+
+function Resolve-AssetRelativePath([string]$RelativePath, [string]$Kind, [string]$Label) {
+    if ([string]::IsNullOrWhiteSpace($RelativePath)) { Fail ($Label + ' Path is required.') }
+    $normalized = $RelativePath.Replace('\','/').Trim()
+    if ($normalized -ne $RelativePath.Replace('\','/')) { Fail ($Label + ' Path must not contain leading or trailing whitespace.') }
+    if ([System.IO.Path]::IsPathRooted($normalized)) { Fail ($Label + ' Path must be starter-relative.') }
+    if ($normalized.StartsWith('../') -or $normalized.Contains('/../') -or $normalized.Contains('..')) { Fail ($Label + ' Path must not contain .. segments.') }
+    if (-not $normalized.StartsWith('Content/Assets/', [System.StringComparison]::Ordinal)) { Fail ($Label + ' Path must stay under Content/Assets/.') }
+    $extension = [System.IO.Path]::GetExtension($normalized).ToLowerInvariant()
+    if ((Get-AssetAllowedExtensions $Kind) -notcontains $extension) {
+        Fail ($Label + ' Path extension is not allowed for ' + $Kind + ': ' + $extension)
+    }
+    return $normalized
+}
+
+function New-Crc32Table {
+    $table = New-Object 'uint64[]' 256
+    for ($i = 0; $i -lt 256; $i++) {
+        [uint64]$crc = [uint64]$i
+        for ($j = 0; $j -lt 8; $j++) {
+            if (($crc -band 1) -ne 0) {
+                $crc = ([uint64]3988292384 -bxor ($crc -shr 1)) -band [uint64]4294967295
+            } else {
+                $crc = ($crc -shr 1) -band [uint64]4294967295
+            }
+        }
+        $table[$i] = $crc
+    }
+    return $table
+}
+
+$script:Crc32Table = New-Crc32Table
+
+function Get-Crc32Hex([string]$Path) {
+    $stream = [System.IO.File]::OpenRead($Path)
+    try {
+        $buffer = New-Object byte[] 8192
+        [uint64]$crc = [uint64]4294967295
+        while (($read = $stream.Read($buffer, 0, $buffer.Length)) -gt 0) {
+            for ($i = 0; $i -lt $read; $i++) {
+                $index = [int](($crc -bxor [uint64]$buffer[$i]) -band 255)
+                $crc = ($script:Crc32Table[$index] -bxor ($crc -shr 8)) -band [uint64]4294967295
+            }
+        }
+        $crc = ($crc -bxor [uint64]4294967295) -band [uint64]4294967295
+        return ('{0:X8}' -f $crc)
+    } finally {
+        $stream.Dispose()
+    }
+}
+
+function Validate-AssetManifest([object]$AssetDocument, [long]$MaxAssetBytes) {
+    if ([string]$AssetDocument.Schema -ne 'hecton8.assets.draft.v1') {
+        Fail 'Content/assets.h8manifest.json Schema must be hecton8.assets.draft.v1.'
+    }
+
+    [void](Validate-JsonArray $AssetDocument.Assets 'Content/assets.h8manifest.json Assets')
+    $assetRows = @($AssetDocument.Assets)
+    if ($assetRows.Count -gt 512) { Fail 'Content/assets.h8manifest.json Assets exceeds 512 entries.' }
+    $assetIds = @{}
+    [long]$totalBytes = 0
+    for ($i = 0; $i -lt $assetRows.Count; $i++) {
+        $asset = $assetRows[$i]
+        if ($null -eq $asset) { Fail ('Content/assets.h8manifest.json Assets[' + $i + '] must not be null.') }
+        $label = 'Content/assets.h8manifest.json Assets[' + $i + ']'
+        $assetId = Validate-ModId ([string]$asset.Id) ($label + ' Id')
+        if ($assetIds.ContainsKey($assetId)) { Fail ('Content/assets.h8manifest.json duplicate asset Id: ' + $assetId) }
+        $assetIds[$assetId] = $true
+
+        $kind = Validate-RequiredText ([string]$asset.Kind) ($label + ' Kind')
+        if (@('raw_texture','audio_clip','data_blob') -notcontains $kind) {
+            Fail ($label + ' Kind must be one of: raw_texture, audio_clip, data_blob.')
+        }
+
+        $relativePath = Resolve-AssetRelativePath ([string]$asset.Path) $kind $label
+        $fullPath = Join-StarterPath $Root $relativePath
+        if (-not (Test-Path -LiteralPath $fullPath -PathType Leaf)) {
+            Fail ($label + ' file is missing: ' + $relativePath)
+        }
+
+        $fileInfo = Get-Item -LiteralPath $fullPath
+        if ([long]$fileInfo.Length -gt 4194304) {
+            Fail ($label + ' file exceeds 4194304 bytes: ' + $relativePath)
+        }
+
+        $bytesProperty = $asset.PSObject.Properties['Bytes']
+        if ($null -eq $bytesProperty) { Fail ($label + ' Bytes is required.') }
+        [long]$declaredBytes = 0
+        try {
+            $declaredBytes = [long]$bytesProperty.Value
+        } catch {
+            Fail ($label + ' Bytes must be a JSON integer.')
+        }
+        if ($declaredBytes -lt 0) { Fail ($label + ' Bytes must be >= 0.') }
+        if ($declaredBytes -ne [long]$fileInfo.Length) {
+            Fail ($label + ' Bytes does not match file length for ' + $relativePath + '.')
+        }
+
+        $crc32 = Validate-RequiredText ([string]$asset.Crc32) ($label + ' Crc32')
+        if ($crc32 -notmatch '^[0-9A-Fa-f]{8}$') {
+            Fail ($label + ' Crc32 must be 8 hex characters.')
+        }
+        $computedCrc32 = Get-Crc32Hex $fullPath
+        if ($computedCrc32 -ne $crc32.ToUpperInvariant()) {
+            Fail ($label + ' Crc32 does not match file for ' + $relativePath + '.')
+        }
+
+        $totalBytes += $declaredBytes
+    }
+
+    if ($totalBytes -gt $MaxAssetBytes) {
+        Fail 'Content/assets.h8manifest.json total Bytes must not exceed mod.h8manifest.json Budgets.MaxAssetBytes.'
+    }
+}
+
+function Validate-VsCodeTasks([object]$TasksJson) {
+    if ([string]$TasksJson.version -ne '2.0.0') {
+        Fail '.vscode/tasks.json requires version 2.0.0.'
+    }
+
+    [void](Validate-JsonArray $TasksJson.tasks '.vscode/tasks.json tasks')
+    [void](Validate-JsonArray $TasksJson.inputs '.vscode/tasks.json inputs')
+
+    $taskByLabel = @{}
+    foreach ($task in @($TasksJson.tasks)) {
+        if ($null -eq $task) { Fail '.vscode/tasks.json tasks must not contain null entries.' }
+        $label = Validate-RequiredText ([string]$task.label) '.vscode/tasks.json task label'
+        if ($taskByLabel.ContainsKey($label)) { Fail ('.vscode/tasks.json duplicate task label: ' + $label) }
+        $taskByLabel[$label] = $task
+    }
+
+    $requiredTaskLabels = @(
+        'HECTON-8: setup identity',
+        'HECTON-8: validate starter',
+        'HECTON-8: prepare review manifest',
+        'HECTON-8: build submission zip',
+        'HECTON-8: show capabilities',
+        'HECTON-8: show opcodes',
+        'HECTON-8: create graph node snippet',
+        'HECTON-8: create disabled graph node snippet',
+        'HECTON-8: apply graph node snippet',
+        'HECTON-8: replace graph node snippet',
+        'HECTON-8: create settings row snippet',
+        'HECTON-8: apply settings row snippet',
+        'HECTON-8: replace settings row snippet',
+        'HECTON-8: create locale entry snippet',
+        'HECTON-8: apply locale entry snippet',
+        'HECTON-8: replace locale entry snippet',
+        'HECTON-8: create asset entry snippet',
+        'HECTON-8: apply asset entry snippet',
+        'HECTON-8: replace asset entry snippet',
+        'HECTON-8: configure manifest contract'
+    )
+    foreach ($requiredTaskLabel in $requiredTaskLabels) {
+        if (-not $taskByLabel.ContainsKey($requiredTaskLabel)) {
+            Fail ('.vscode/tasks.json missing task: ' + $requiredTaskLabel)
+        }
+
+        $task = $taskByLabel[$requiredTaskLabel]
+        if ([string]$task.type -ne 'shell') { Fail ('.vscode/tasks.json task must use shell type: ' + $requiredTaskLabel) }
+        if ([string]$task.command -ne '${config:hecton8.powerShellExecutable}') {
+            Fail ('.vscode/tasks.json task must use ${config:hecton8.powerShellExecutable}: ' + $requiredTaskLabel)
+        }
+
+        $args = @($task.args | ForEach-Object { [string]$_ })
+        if ($args -notcontains 'h8mod.ps1') { Fail ('.vscode/tasks.json task must route through h8mod.ps1: ' + $requiredTaskLabel) }
+        if ($args -notcontains '-Action') { Fail ('.vscode/tasks.json task missing -Action: ' + $requiredTaskLabel) }
+        foreach ($arg in $args) {
+            $normalizedArg = ([string]$arg).Replace('\','/')
+            if ($normalizedArg -match '^Tools/.*[.]ps1$') {
+                Fail ('.vscode/tasks.json task must not call Tools scripts directly: ' + $requiredTaskLabel)
+            }
+        }
+    }
+
+    $disabledNodeTask = $taskByLabel['HECTON-8: create disabled graph node snippet']
+    if (@($disabledNodeTask.args | ForEach-Object { [string]$_ }) -notcontains '-NodeDisabled') {
+        Fail '.vscode/tasks.json disabled graph task must pass -NodeDisabled.'
+    }
+
+    foreach ($replaceTaskLabel in @('HECTON-8: replace graph node snippet','HECTON-8: replace settings row snippet','HECTON-8: replace locale entry snippet','HECTON-8: replace asset entry snippet')) {
+        $replaceTask = $taskByLabel[$replaceTaskLabel]
+        if (@($replaceTask.args | ForEach-Object { [string]$_ }) -notcontains '-Replace') {
+            Fail ('.vscode/tasks.json replace task must pass -Replace: ' + $replaceTaskLabel)
+        }
+    }
+
+    $inputIds = @{}
+    foreach ($input in @($TasksJson.inputs)) {
+        if ($null -eq $input) { Fail '.vscode/tasks.json inputs must not contain null entries.' }
+        $inputId = Validate-RequiredText ([string]$input.id) '.vscode/tasks.json input id'
+        $inputIds[$inputId] = $true
+    }
+    foreach ($requiredInputId in @('modId','displayName','author','version','nodeId','opcode','nodeParametersJson','settingId','settingKind','settingDefault','localeKey','localeValue','assetId','assetKind','assetPath','capability','capabilityState','maxEnvelopesPerFrame','maxAssetBytes')) {
+        if (-not $inputIds.ContainsKey($requiredInputId)) {
+            Fail ('.vscode/tasks.json missing input: ' + $requiredInputId)
+        }
+    }
+}
+
+@('Content','Content/Assets','Docs','Graphs','Tables','Locales','Generated','Reports','Reference','Schemas','Tools','.vscode') | ForEach-Object { Require-Directory $_ }
 @(
     'README.md',
     'Docs/capabilities.md',
@@ -219,6 +451,7 @@ function Validate-LocaleTable([object]$LocaleDocument) {
     'mod.h8manifest.json',
     'mod.json',
     'Content/README.md',
+    'Content/Assets/README.md',
     'Content/assets.h8manifest.json',
     'Graphs/main.h8graph.json',
     'Tables/settings.h8table.json',
@@ -235,23 +468,27 @@ function Validate-LocaleTable([object]$LocaleDocument) {
     'Schemas/runtime.mod.schema.json',
     'Schemas/settings_table.schema.json',
     'Tools/README.md',
+    'Tools/apply_asset_entry_snippet.ps1',
     'Tools/build_review_manifest.ps1',
     'Tools/build_submission_package.ps1',
     'Tools/apply_graph_node_snippet.ps1',
     'Tools/apply_locale_entry_snippet.ps1',
     'Tools/apply_settings_row_snippet.ps1',
     'Tools/create_locale_entry_snippet.ps1',
+    'Tools/create_asset_entry_snippet.ps1',
     'Tools/create_graph_node_snippet.ps1',
     'Tools/create_settings_row_snippet.ps1',
+    'Tools/configure_manifest_contract.ps1',
     'Tools/list_allowed_opcodes.ps1',
     'Tools/prepare_mod.ps1',
     'Tools/set_mod_identity.ps1',
     'Tools/validate_structure.ps1',
-    '.vscode/settings.json'
+    '.vscode/settings.json',
+    '.vscode/tasks.json'
 ) | ForEach-Object { [void](Require-File $_) }
 
 $capabilitiesText = Get-Content -Raw -LiteralPath (Require-File 'Docs/capabilities.md')
-foreach ($requiredCapabilityText in @('Supported now','Not public rights','envelope-only','FutureCommandEnvelope','Harmony','BepInEx','h8mod.ps1 -Action capabilities','h8mod.ps1 -Action node-snippet','h8mod.ps1 -Action apply-node-snippet','h8mod.ps1 -Action setting-snippet','h8mod.ps1 -Action locale-snippet','h8mod.ps1 -Action apply-setting-snippet','h8mod.ps1 -Action apply-locale-snippet')) {
+foreach ($requiredCapabilityText in @('Supported now','Not public rights','envelope-only','FutureCommandEnvelope','Harmony','BepInEx','h8mod.ps1 -Action capabilities','h8mod.ps1 -Action manifest-contract','configure_manifest_contract.ps1','h8mod.ps1 -Action node-snippet','h8mod.ps1 -Action apply-node-snippet','h8mod.ps1 -Action setting-snippet','h8mod.ps1 -Action locale-snippet','h8mod.ps1 -Action apply-setting-snippet','h8mod.ps1 -Action apply-locale-snippet','h8mod.ps1 -Action asset-snippet','h8mod.ps1 -Action apply-asset-snippet')) {
     if (-not $capabilitiesText.Contains($requiredCapabilityText)) {
         Fail ('Docs/capabilities.md missing required capability text: ' + $requiredCapabilityText)
     }
@@ -264,6 +501,7 @@ $assets = Read-Json 'Content/assets.h8manifest.json'
 $settings = Read-Json 'Tables/settings.h8table.json'
 $locale = Read-Json 'Locales/en.h8loc.json'
 $vscodeSettings = Read-Json '.vscode/settings.json'
+$vscodeTasks = Read-Json '.vscode/tasks.json'
 $schemaFiles = @(
     'Schemas/assets.schema.json',
     'Schemas/h8graph.schema.json',
@@ -285,6 +523,11 @@ $authoringAuthor = Validate-RequiredText ([string]$authoring.Author) 'mod.h8mani
 $authoringVersion = Validate-Version ([string]$authoring.Version) 'mod.h8manifest.json Version'
 if ([string]$authoring.Compatibility.Runtime -ne 'envelope-only') { Fail 'mod.h8manifest.json Compatibility.Runtime must be envelope-only.' }
 if ([int]$authoring.RequiredAPIVersion -lt 2) { Fail 'mod.h8manifest.json RequiredAPIVersion must be >= 2.' }
+Validate-ManifestCapabilities $authoring.Capabilities
+if ([int]$authoring.Budgets.MaxEnvelopesPerFrame -lt 0) { Fail 'mod.h8manifest.json Budgets.MaxEnvelopesPerFrame must be >= 0.' }
+if ([int]$authoring.Budgets.MaxEnvelopesPerFrame -gt 256) { Fail 'mod.h8manifest.json Budgets.MaxEnvelopesPerFrame exceeds 256.' }
+if ([long]$authoring.Budgets.MaxAssetBytes -lt 0) { Fail 'mod.h8manifest.json Budgets.MaxAssetBytes must be >= 0.' }
+if ([long]$authoring.Budgets.MaxAssetBytes -gt 33554432) { Fail 'mod.h8manifest.json Budgets.MaxAssetBytes exceeds 33554432.' }
 $runtimeId = Validate-ModId ([string]$runtime.Id) 'mod.json Id'
 if ($authoringId -ne $runtimeId) { Fail 'mod.h8manifest.json Id must match mod.json Id.' }
 $runtimeName = Validate-RequiredText ([string]$runtime.Name) 'mod.json Name'
@@ -329,7 +572,7 @@ foreach ($node in $graphNodes) {
     $graphOpcodeNodeCount++
 }
 if ($graphOpcodeNodeCount -gt 0 -and [int]$graph.MaxEnvelopesPerFrame -lt 1) { Fail 'Graphs/main.h8graph.json MaxEnvelopesPerFrame must be >= 1 when opcode nodes exist.' }
-if ($null -eq $assets.Assets) { Fail 'Content/assets.h8manifest.json requires Assets array.' }
+Validate-AssetManifest $assets ([long]$authoring.Budgets.MaxAssetBytes)
 Validate-SettingsTable $settings
 Validate-LocaleTable $locale
 if ($null -eq $vscodeSettings.PSObject.Properties['json.schemas']) { Fail '.vscode/settings.json requires json.schemas mapping.' }
@@ -355,5 +598,6 @@ foreach ($requiredMapping in $requiredSchemaMappings) {
         Fail ('.vscode/settings.json missing schema mapping ' + $requiredMapping.Url + ' -> ' + $requiredMapping.Match)
     }
 }
+Validate-VsCodeTasks $vscodeTasks
 
 Write-Host 'PASS HECTON-8 external starter structure'

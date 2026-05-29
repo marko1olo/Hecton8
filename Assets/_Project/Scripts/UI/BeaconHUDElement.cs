@@ -77,6 +77,8 @@ namespace Hecton8.UI
         private IPlayerRuntimeContext _cachedPlayerContext;
         private ILocalizationTextReadModel _cachedLocalization;
         private GameLanguage _distanceLanguage = GameLanguage.English;
+        private GameLanguage _pendingDistanceLanguage = GameLanguage.English;
+        private bool _localizedPresentationDirty;
         private float _cameraRetryTimer;
         private float _idlePollTimer;
         private const float CameraRetryInterval = 2f;
@@ -133,7 +135,8 @@ namespace Hecton8.UI
             CacheRegistryServicesCold();
             TryRegisterHotSwapListener();
             LocalizationEvents.RegisterLanguageListener(this);
-            RebuildLocalizationCache();
+            _pendingDistanceLanguage = ResolveCachedDistanceLanguage();
+            RebuildLocalizationCache(_pendingDistanceLanguage);
             RegisterToTick();
         }
 
@@ -151,6 +154,7 @@ namespace Hecton8.UI
 
         public void LateFrameTick()
         {
+            ApplyPendingLocalizationRefresh();
             SampleBeaconDisplay(SystemDispatcher.CurrentFrameUnscaledDeltaTime);
         }
 
@@ -308,8 +312,7 @@ namespace Hecton8.UI
                     break;
                 case GlobalRegistryServiceSlot.LocalizationRuntime:
                     _cachedLocalization = currentService as ILocalizationTextReadModel;
-                    RebuildLocalizationCache();
-                    InvalidateDisplayCaches();
+                    QueueLocalizationPresentationRefresh(ResolveCachedDistanceLanguage());
                     break;
             }
         }
@@ -652,19 +655,40 @@ namespace Hecton8.UI
 
         private void HandleLanguageChanged(GameLanguage language)
         {
-            RebuildLocalizationCache();
+            QueueLocalizationPresentationRefresh(language);
+        }
+
+        private void QueueLocalizationPresentationRefresh(GameLanguage language)
+        {
+            _pendingDistanceLanguage = language;
+            _localizedPresentationDirty = true;
+        }
+
+        private void ApplyPendingLocalizationRefresh()
+        {
+            if (!_localizedPresentationDirty)
+                return;
+
+            _localizedPresentationDirty = false;
+            RebuildLocalizationCache(_pendingDistanceLanguage);
             InvalidateDisplayCaches();
         }
 
-        private void RebuildLocalizationCache()
+        private GameLanguage ResolveCachedDistanceLanguage()
         {
             ILocalizationTextReadModel manager = _cachedLocalization;
-            _distanceLanguage = manager != null ? (GameLanguage)manager.ActiveLanguageId : GameLanguage.English;
-            string unitLabel = LocalizedMeasurementFormatter.ResolveDistanceUnitLabel(_distanceLanguage);
-            if (string.IsNullOrEmpty(unitLabel))
-                unitLabel = "m";
+            return manager != null ? (GameLanguage)manager.ActiveLanguageId : GameLanguage.English;
+        }
 
-            const string prefix = "{0:0} ";
+        private void RebuildLocalizationCache(GameLanguage language)
+        {
+            ILocalizationTextReadModel manager = _cachedLocalization;
+            _distanceLanguage = language;
+            System.ReadOnlySpan<char> unitLabel = LocalizedMeasurementFormatter.ResolveDistanceUnitLabelSpan(_distanceLanguage, manager);
+            if (unitLabel.Length == 0)
+                unitLabel = System.MemoryExtensions.AsSpan("m");
+
+            System.ReadOnlySpan<char> prefix = System.MemoryExtensions.AsSpan("{0:0} ");
             int cursor = 0;
             for (int i = 0; i < prefix.Length && cursor < _distancePatternBuffer.Length; i++)
                 _distancePatternBuffer[cursor++] = prefix[i];

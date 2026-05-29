@@ -874,7 +874,7 @@ namespace Hecton8.Power
         private static VaultGenerationHandle<CelestialStateDTO> s_celestialStateReadHandle;
         private static VaultGenerationHandle<EnvironmentStateDTO> s_environmentStateHandle;
         private static JobHandle s_pendingHandle;
-        private static ulong s_lockedBufferMask;
+        private static bool s_jobMutationGuardHeld;
         private static long s_scheduleTimestamp;
         private static uint s_frameIndex;
         private static uint s_completedOutputFrameIndex;
@@ -886,13 +886,24 @@ namespace Hecton8.Power
         private static bool s_blackBoxDumped;
         private static bool s_conditionsInitialized;
         private static SolarConditionsDTO s_offlineTuning = DefaultConditions();
+        private static readonly ulong JobMutationGuardMask =
+            SolarBufferGuardBit(SolarPowerBufferIds.PanelStates) |
+            SolarBufferGuardBit(SolarPowerBufferIds.PanelOutputs) |
+            SolarBufferGuardBit(SolarPowerBufferIds.PanelPowerNodeIndices) |
+            SolarBufferGuardBit(SolarPowerBufferIds.NodeSolarInputMilliWatts) |
+            SolarBufferGuardBit(SolarPowerBufferIds.Conditions) |
+            SolarBufferGuardBit(SolarPowerBufferIds.TelemetryRing) |
+            SolarBufferGuardBit(SolarPowerBufferIds.TelemetryCursor) |
+            SolarBufferGuardBit(PowerGridBufferIds.Nodes) |
+            SolarBufferGuardBit(BufferID.VoxelSdfPayloadDescriptor) |
+            SolarBufferGuardBit(BufferID.VoxelSdfTexture3D);
 
         public static bool HasPendingJob => s_pending;
 
         public static void ResetForSubsystemRegistration()
         {
             if (s_pending)
-                DispatcherJobFence.TryComplete(ref s_pendingHandle, forceComplete: true);
+                ForceCompletePendingJobInPostSimulationWindow();
 
             UnlockJobBuffers();
             s_vault = null;
@@ -900,7 +911,7 @@ namespace Hecton8.Power
             s_celestialStateReadHandle = default;
             s_environmentStateHandle = default;
             s_pendingHandle = default;
-            s_lockedBufferMask = 0UL;
+            s_jobMutationGuardHeld = false;
             s_scheduleTimestamp = 0L;
             s_frameIndex = 0u;
             s_completedOutputFrameIndex = 0u;
@@ -1011,39 +1022,39 @@ namespace Hecton8.Power
                 return false;
 
             int activePanels = math.clamp(panelCount, 0, s_panelCapacity);
-            if (!ResolveCoreBuffers(
-                    out NativeArray<SolarPanelStateDTO> states,
-                    out NativeArray<SolarPanelOpticalOutputDTO> outputs,
-                    out NativeArray<int> nodeIndices,
-                    out NativeArray<SolarNodeInputCounter64> nodeSolarInput,
-                    out NativeArray<SolarConditionsDTO> conditions,
-                    out NativeArray<SolarTelemetryEntry> telemetry,
-                    out NativeArray<int> telemetryCursor))
-            {
-                return false;
-            }
-
             UnlockJobBuffers();
 
-            bool hasPowerNodes = TryResolveExistingPowerNodes(out NativeArray<PowerNodeDTO> powerNodes);
-            NativeArray<byte>.ReadOnly voxelSdf = default;
-            SolarConditionsDTO conditionRow = SanitizeConditions(requestedConditions);
-            uint inputFlags = 0u;
-            if (!hasPowerNodes)
-                inputFlags |= SolarPowerGenerationConstants.FlagMissingPowerVault;
-            if (!TryAcquireVoxelSdfPayload(ref conditionRow, out voxelSdf))
-                inputFlags |= SolarPowerGenerationConstants.FlagMissingSdfVault;
-            if (forceMockConditions)
-                inputFlags |= SolarPowerGenerationConstants.FlagMockConditions;
-
-            conditionRow.DeltaTimeSeconds = math.max(0f, deltaSeconds);
-
-            if (!TryLockJobBuffers(hasPowerNodes, voxelSdf.IsCreated))
+            if (!TryAcquireJobMutationGuard())
                 return false;
 
             bool scheduled = false;
             try
             {
+                if (!ResolveCoreBuffers(
+                        out NativeArray<SolarPanelStateDTO> states,
+                        out NativeArray<SolarPanelOpticalOutputDTO> outputs,
+                        out NativeArray<int> nodeIndices,
+                        out NativeArray<SolarNodeInputCounter64> nodeSolarInput,
+                        out NativeArray<SolarConditionsDTO> conditions,
+                        out NativeArray<SolarTelemetryEntry> telemetry,
+                        out NativeArray<int> telemetryCursor))
+                {
+                    return false;
+                }
+
+                bool hasPowerNodes = TryResolveExistingPowerNodes(out NativeArray<PowerNodeDTO> powerNodes);
+                NativeArray<byte>.ReadOnly voxelSdf = default;
+                SolarConditionsDTO conditionRow = SanitizeConditions(requestedConditions);
+                uint inputFlags = 0u;
+                if (!hasPowerNodes)
+                    inputFlags |= SolarPowerGenerationConstants.FlagMissingPowerVault;
+                if (!TryAcquireVoxelSdfPayload(ref conditionRow, out voxelSdf))
+                    inputFlags |= SolarPowerGenerationConstants.FlagMissingSdfVault;
+                if (forceMockConditions)
+                    inputFlags |= SolarPowerGenerationConstants.FlagMockConditions;
+
+                conditionRow.DeltaTimeSeconds = math.max(0f, deltaSeconds);
+
                 SolarConditionsDTO* conditionPtr = (SolarConditionsDTO*)NativeArrayUnsafeUtility.GetUnsafePtr(conditions);
                 UnsafeUtility.AsRef<SolarConditionsDTO>(conditionPtr) = conditionRow;
                 SolarPanelStateDTO* statesPtr = (SolarPanelStateDTO*)NativeArrayUnsafeUtility.GetUnsafeReadOnlyPtr(states);
@@ -1143,19 +1154,28 @@ namespace Hecton8.Power
             if (!DispatcherJobFence.TryFinalizeCompleted(ref s_pendingHandle))
                 return false;
 
-            s_pending = false;
-            uint elapsed = ResolveElapsedMicroseconds(s_scheduleTimestamp);
-            StampSolverWallTime(elapsed);
-            SolarTelemetryEntry entry = ReadLatestTelemetry();
-            s_completedOutputFrameIndex = entry.FrameIndex;
-            s_hasCompletedOutput = true;
-            if ((entry.ReasonFlags & (SolarPowerGenerationConstants.FlagNonFinite | SolarPowerGenerationConstants.FlagSolverOverBudget)) != 0u ||
-                elapsed > SolarPowerGenerationConstants.SolverBudgetMicroseconds)
+            uint dumpFlags = 0u;
+            bool shouldDump = false;
+            try
             {
-                DumpBlackBoxOnce(entry.ReasonFlags | (elapsed > SolarPowerGenerationConstants.SolverBudgetMicroseconds ? SolarPowerGenerationConstants.FlagSolverOverBudget : 0u));
+                s_pending = false;
+                uint elapsed = ResolveElapsedMicroseconds(s_scheduleTimestamp);
+                StampSolverWallTime(elapsed);
+                SolarTelemetryEntry entry = ReadLatestTelemetry();
+                s_completedOutputFrameIndex = entry.FrameIndex;
+                s_hasCompletedOutput = true;
+                dumpFlags = entry.ReasonFlags | (elapsed > SolarPowerGenerationConstants.SolverBudgetMicroseconds ? SolarPowerGenerationConstants.FlagSolverOverBudget : 0u);
+                shouldDump = (entry.ReasonFlags & (SolarPowerGenerationConstants.FlagNonFinite | SolarPowerGenerationConstants.FlagSolverOverBudget)) != 0u ||
+                             elapsed > SolarPowerGenerationConstants.SolverBudgetMicroseconds;
+            }
+            finally
+            {
+                UnlockJobBuffers();
             }
 
-            UnlockJobBuffers();
+            if (shouldDump)
+                DumpBlackBoxOnce(dumpFlags);
+
             return true;
         }
 
@@ -1420,109 +1440,88 @@ namespace Hecton8.Power
         {
             voxelSdf = default;
             IDataVault vault = s_vault;
-            if (vault == null || !vault.TryLockBuffer(BufferID.VoxelSdfPayloadDescriptor, OwnerSystem))
+            if (vault == null || !s_jobMutationGuardHeld)
                 return false;
 
-            s_lockedBufferMask |= 1UL << 9;
-            bool keepSdfLock = false;
-            try
+            if (!vault.TryGetGenerationHandle<VoxelSdfPayloadDescriptorDTO>(BufferID.VoxelSdfPayloadDescriptor, out VaultGenerationHandle<VoxelSdfPayloadDescriptorDTO> descriptorHandle) ||
+                descriptorHandle.BufferID != unchecked((uint)(int)BufferID.VoxelSdfPayloadDescriptor) ||
+                !vault.TryReadOnlyHandle(in descriptorHandle, out NativeArray<VoxelSdfPayloadDescriptorDTO>.ReadOnly descriptors) ||
+                descriptors.Length <= 0)
             {
-                if (!vault.TryGetGenerationHandle<VoxelSdfPayloadDescriptorDTO>(BufferID.VoxelSdfPayloadDescriptor, out VaultGenerationHandle<VoxelSdfPayloadDescriptorDTO> descriptorHandle) ||
-                    descriptorHandle.BufferID != unchecked((uint)(int)BufferID.VoxelSdfPayloadDescriptor) ||
-                    !vault.TryReadOnlyHandle(in descriptorHandle, out NativeArray<VoxelSdfPayloadDescriptorDTO>.ReadOnly descriptors) ||
-                    descriptors.Length <= 0)
-                {
-                    return false;
-                }
-
-                VoxelSdfPayloadDescriptorDTO descriptor = descriptors[0];
-                int3 dimensions = descriptor.GridDimensions;
-                long expected = (long)dimensions.x * dimensions.y * dimensions.z;
-                if (expected <= 0L ||
-                    expected > int.MaxValue ||
-                    descriptor.ByteCount != (int)expected ||
-                    descriptor.BufferId != unchecked((uint)(int)BufferID.VoxelSdfTexture3D) ||
-                    (descriptor.Flags & VoxelSdfPayloadDescriptorDTO.FlagValid) == 0u)
-                {
-                    return false;
-                }
-
-                if (!vault.TryLockBuffer(BufferID.VoxelSdfTexture3D, OwnerSystem))
-                    return false;
-
-                s_lockedBufferMask |= 1UL << 8;
-                if (!vault.TryGetGenerationHandle<byte>(BufferID.VoxelSdfTexture3D, out VaultGenerationHandle<byte> sdfHandle) ||
-                    sdfHandle.BufferID != unchecked((uint)(int)BufferID.VoxelSdfTexture3D) ||
-                    sdfHandle.Generation == 0u ||
-                    sdfHandle.Generation != descriptor.BufferGeneration ||
-                    !vault.TryReadOnlyHandle(in sdfHandle, out voxelSdf) ||
-                    voxelSdf.Length < expected)
-                {
-                    return false;
-                }
-
-                conditions.VoxelSdfOriginAUP = conditions.RuntimeOriginAUP + new double3(descriptor.VolumeOrigin.x, descriptor.VolumeOrigin.y, descriptor.VolumeOrigin.z);
-                conditions.VoxelSdfDimensions = dimensions;
-                conditions.VoxelSdfCellSize = math.max(descriptor.VoxelCellSize, new float3(0.0001f));
-                conditions.VoxelSdfRangeMeters = math.max(0.0001f, math.isfinite(descriptor.SdfRangeMeters) ? descriptor.SdfRangeMeters : SolarPowerGenerationConstants.DefaultSdfRangeMeters);
-                keepSdfLock = true;
-                return true;
+                return false;
             }
-            finally
+
+            VoxelSdfPayloadDescriptorDTO descriptor = descriptors[0];
+            int3 dimensions = descriptor.GridDimensions;
+            long expected = (long)dimensions.x * dimensions.y * dimensions.z;
+            if (expected <= 0L ||
+                expected > int.MaxValue ||
+                descriptor.ByteCount != (int)expected ||
+                descriptor.BufferId != unchecked((uint)(int)BufferID.VoxelSdfTexture3D) ||
+                (descriptor.Flags & VoxelSdfPayloadDescriptorDTO.FlagValid) == 0u)
             {
-                vault.TryUnlockBuffer(BufferID.VoxelSdfPayloadDescriptor, OwnerSystem);
-                s_lockedBufferMask &= ~(1UL << 9);
-                if (!keepSdfLock && (s_lockedBufferMask & (1UL << 8)) != 0UL)
-                {
-                    vault.TryUnlockBuffer(BufferID.VoxelSdfTexture3D, OwnerSystem);
-                    s_lockedBufferMask &= ~(1UL << 8);
-                }
+                return false;
             }
+
+            if (!vault.TryGetGenerationHandle<byte>(BufferID.VoxelSdfTexture3D, out VaultGenerationHandle<byte> sdfHandle) ||
+                sdfHandle.BufferID != unchecked((uint)(int)BufferID.VoxelSdfTexture3D) ||
+                sdfHandle.Generation == 0u ||
+                sdfHandle.Generation != descriptor.BufferGeneration ||
+                !vault.TryReadOnlyHandle(in sdfHandle, out voxelSdf) ||
+                voxelSdf.Length < expected)
+            {
+                voxelSdf = default;
+                return false;
+            }
+
+            conditions.VoxelSdfOriginAUP = conditions.RuntimeOriginAUP + new double3(descriptor.VolumeOrigin.x, descriptor.VolumeOrigin.y, descriptor.VolumeOrigin.z);
+            conditions.VoxelSdfDimensions = dimensions;
+            conditions.VoxelSdfCellSize = math.max(descriptor.VoxelCellSize, new float3(0.0001f));
+            conditions.VoxelSdfRangeMeters = math.max(0.0001f, math.isfinite(descriptor.SdfRangeMeters) ? descriptor.SdfRangeMeters : SolarPowerGenerationConstants.DefaultSdfRangeMeters);
+            return true;
         }
 
-        private static bool TryLockJobBuffers(bool includePowerNodes, bool includeVoxelSdf)
+        private static bool TryAcquireJobMutationGuard()
         {
-            s_lockedBufferMask = includeVoxelSdf ? 1UL << 8 : 0UL;
-            return TryLock(SolarPowerBufferIds.PanelStates, 0) &&
-                   TryLock(SolarPowerBufferIds.PanelOutputs, 1) &&
-                   TryLock(SolarPowerBufferIds.PanelPowerNodeIndices, 2) &&
-                   TryLock(SolarPowerBufferIds.NodeSolarInputMilliWatts, 3) &&
-                   TryLock(SolarPowerBufferIds.Conditions, 4) &&
-                   TryLock(SolarPowerBufferIds.TelemetryRing, 5) &&
-                   TryLock(SolarPowerBufferIds.TelemetryCursor, 6) &&
-                   (!includePowerNodes || TryLock(PowerGridBufferIds.Nodes, 7));
-        }
-
-        private static bool TryLock(BufferID bufferId, int bit)
-        {
-            if (s_vault != null && s_vault.TryLockBuffer(bufferId, OwnerSystem))
+            IDataVault vault = s_vault;
+            if (vault == null ||
+                s_jobMutationGuardHeld ||
+                vault.IsCompactionFenceActive ||
+                !vault.TryAcquireMutationGuard(JobMutationGuardMask))
             {
-                s_lockedBufferMask |= 1UL << bit;
-                return true;
+                return false;
             }
 
-            UnlockJobBuffers();
-            return false;
+            s_jobMutationGuardHeld = true;
+            return true;
         }
 
         private static void UnlockJobBuffers()
         {
-            UnlockIf(BufferID.VoxelSdfTexture3D, 8);
-            UnlockIf(PowerGridBufferIds.Nodes, 7);
-            UnlockIf(SolarPowerBufferIds.TelemetryCursor, 6);
-            UnlockIf(SolarPowerBufferIds.TelemetryRing, 5);
-            UnlockIf(SolarPowerBufferIds.Conditions, 4);
-            UnlockIf(SolarPowerBufferIds.NodeSolarInputMilliWatts, 3);
-            UnlockIf(SolarPowerBufferIds.PanelPowerNodeIndices, 2);
-            UnlockIf(SolarPowerBufferIds.PanelOutputs, 1);
-            UnlockIf(SolarPowerBufferIds.PanelStates, 0);
-            s_lockedBufferMask = 0UL;
+            if (!s_jobMutationGuardHeld)
+                return;
+
+            s_vault?.ReleaseMutationGuard(JobMutationGuardMask);
+            s_jobMutationGuardHeld = false;
         }
 
-        private static void UnlockIf(BufferID bufferId, int bit)
+        private static void ForceCompletePendingJobInPostSimulationWindow()
         {
-            if ((s_lockedBufferMask & (1UL << bit)) != 0UL)
-                s_vault?.TryUnlockBuffer(bufferId, OwnerSystem);
+            DispatcherJobFence.BeginPostSimulationSwapWindow();
+            try
+            {
+                DispatcherJobFence.TryComplete(ref s_pendingHandle, forceComplete: true);
+            }
+            finally
+            {
+                DispatcherJobFence.EndPostSimulationSwapWindow();
+            }
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private static ulong SolarBufferGuardBit(BufferID bufferId)
+        {
+            return 1UL << (unchecked((int)(uint)(int)bufferId) & 31);
         }
 
         private static SolarConditionsDTO DefaultConditions()

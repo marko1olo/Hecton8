@@ -201,6 +201,15 @@ namespace Hecton8.Graphics.Materials
 
         private static readonly int MaterialStatesBufferId = Shader.PropertyToID("_H8UberNoirMaterialStates");
         private static readonly int MaterialGlobalsBufferId = Shader.PropertyToID("H8UberNoirMaterialGlobals");
+        private static readonly ulong JobMutationGuardMask =
+            MaterialMutationGuardBit(BufferID.ShinobuMaterialStates) |
+            MaterialMutationGuardBit(BufferID.ShinobuMaterialPowers) |
+            MaterialMutationGuardBit(BufferID.ShinobuMaterialVisibleIndices) |
+            MaterialMutationGuardBit(BufferID.ShinobuMaterialVisiblePayload) |
+            MaterialMutationGuardBit(BufferID.ShinobuMaterialConstants) |
+            MaterialMutationGuardBit(BufferID.ShinobuMaterialMockBiomassSignals) |
+            MaterialMutationGuardBit(BufferID.ShinobuMaterialWearRates) |
+            MaterialMutationGuardBit(BufferID.ShinobuMaterialBiomassScalar);
 
         private static ShinobuMaterialResponseRuntime s_active;
         private static bool s_hasPendingEditorTuning;
@@ -236,7 +245,7 @@ namespace Hecton8.Graphics.Materials
         private string _dumpPath;
         private JobHandle _simulationHandle;
         private long _csvLastWriteTicks;
-        private int _lockedBufferMask;
+        private IDataVault _jobBufferGuardVault;
         private int _activeVisibleCount;
         private int _lastScheduledCount;
         private int _lastUploadedVisibleCount;
@@ -258,6 +267,7 @@ namespace Hecton8.Graphics.Materials
         private bool _registeredHotSwapListener;
         private bool _vaultInitialized;
         private bool _defaultsInitialized;
+        private bool _jobBufferGuardHeld;
         private bool _simulationScheduled;
         private bool _dumpedUploadFault;
         private bool _shutdown;
@@ -564,7 +574,13 @@ namespace Hecton8.Graphics.Materials
         private static bool IsMatchingVaultHandle<T>(in VaultGenerationHandle<T> handle, BufferID bufferId) where T : struct
         {
             return handle.BufferID == unchecked((uint)(int)bufferId) &&
+                   handle.SystemID == (uint)OwnerSystemId &&
                    handle.Generation != 0u;
+        }
+
+        private static ulong MaterialMutationGuardBit(BufferID bufferId)
+        {
+            return 1UL << ((int)bufferId & 31);
         }
 
         private void ResetVaultHandles()
@@ -647,66 +663,80 @@ namespace Hecton8.Graphics.Materials
             if (cadence > 1 && (context.Frame % (uint)cadence) != 0u)
                 return dependsOn;
 
-            if (!TryResolveSimulationBuffers(
-                    vault,
-                    out NativeArray<InstanceMaterialDTO> states,
-                    out NativeArray<MaterialPowerDTO> powers,
-                    out NativeArray<uint> visibleIndices,
-                    out NativeArray<MaterialVisibleDTO> visiblePayload,
-                    out NativeArray<GlobalShaderConstantsDTO> constants,
-                    out NativeArray<MockBiomassDensitySignal> biomassSignals,
-                    out NativeArray<WearRateDTO> wearRates))
-            {
+            if (!TryPinJobBuffers(vault))
                 return dependsOn;
+
+            bool scheduled = false;
+            try
+            {
+                if (!TryOpenVaultBuffer(vault, ref _scalarsHandle, BufferID.ShinobuMaterialBiomassScalar, ScalarCount, out scalars))
+                    return dependsOn;
+
+                quality = math.saturate(scalars[0].GlobalQualityWeight);
+                if (!TryResolveSimulationBuffers(
+                        vault,
+                        out NativeArray<InstanceMaterialDTO> states,
+                        out NativeArray<MaterialPowerDTO> powers,
+                        out NativeArray<uint> visibleIndices,
+                        out NativeArray<MaterialVisibleDTO> visiblePayload,
+                        out NativeArray<GlobalShaderConstantsDTO> constants,
+                        out NativeArray<MockBiomassDensitySignal> biomassSignals,
+                        out NativeArray<WearRateDTO> wearRates))
+                {
+                    return dependsOn;
+                }
+
+                int sourceCount = math.min(states.Length, powers.Length);
+                int requestedVisibleCount = (int)math.min(scalars[0].VisibleCount, (uint)math.min(visibleIndices.Length, visiblePayload.Length));
+                int visibleCount = math.clamp(requestedVisibleCount <= 0 ? sourceCount : requestedVisibleCount, 1, math.min(sourceCount, visiblePayload.Length));
+                int simulationCount = math.clamp(ResolveSimulationBudget(sourceCount, quality), 1, sourceCount);
+                _lastScheduledCount = simulationCount;
+                _activeVisibleCount = visibleCount;
+
+                JobHandle handle = new MockBiomassScalarJob
+                {
+                    Signals = biomassSignals,
+                    Scalars = scalars,
+                    Frame = context.Frame,
+                    SectorHash = SystemHash,
+                    GlobalQualityWeight = quality
+                }.Schedule(dependsOn);
+
+                handle = new MaterialWearUpdateJob
+                {
+                    States = states,
+                    Powers = powers,
+                    WearRates = wearRates,
+                    Scalars = scalars,
+                    Constants = constants,
+                    Frame = context.Frame,
+                    DeltaSeconds = SanitizeDelta(timing.FixedDelta > 0.0f ? timing.FixedDelta : timing.FrameDelta),
+                    GlobalQualityWeight = quality
+                }.Schedule(simulationCount, JobBatchSize, handle);
+
+                handle = new VisibleMaterialPackJob
+                {
+                    States = states,
+                    Powers = powers,
+                    VisibleIndices = visibleIndices,
+                    VisiblePayload = visiblePayload,
+                    Scalars = scalars,
+                    GlobalQualityWeight = quality,
+                    VisibleCount = visibleCount
+                }.Schedule(visibleCount, JobBatchSize, handle);
+
+                _simulationScheduled = true;
+                _simulationHandle = handle;
+                _visiblePayloadDirty = true;
+                H8Memory.RegisterActiveJob(OwnerSystemId, handle);
+                scheduled = true;
+                return handle;
             }
-
-            if (!TryLockJobBuffers(vault))
-                return dependsOn;
-
-            int sourceCount = math.min(states.Length, powers.Length);
-            int requestedVisibleCount = (int)math.min(scalars[0].VisibleCount, (uint)math.min(visibleIndices.Length, visiblePayload.Length));
-            int visibleCount = math.clamp(requestedVisibleCount <= 0 ? sourceCount : requestedVisibleCount, 1, math.min(sourceCount, visiblePayload.Length));
-            int simulationCount = math.clamp(ResolveSimulationBudget(sourceCount, quality), 1, sourceCount);
-            _lastScheduledCount = simulationCount;
-            _activeVisibleCount = visibleCount;
-
-            JobHandle handle = new MockBiomassScalarJob
+            finally
             {
-                Signals = biomassSignals,
-                Scalars = scalars,
-                Frame = context.Frame,
-                SectorHash = SystemHash,
-                GlobalQualityWeight = quality
-            }.Schedule(dependsOn);
-
-            handle = new MaterialWearUpdateJob
-            {
-                States = states,
-                Powers = powers,
-                WearRates = wearRates,
-                Scalars = scalars,
-                Constants = constants,
-                Frame = context.Frame,
-                DeltaSeconds = SanitizeDelta(timing.FixedDelta > 0.0f ? timing.FixedDelta : timing.FrameDelta),
-                GlobalQualityWeight = quality
-            }.Schedule(simulationCount, JobBatchSize, handle);
-
-            handle = new VisibleMaterialPackJob
-            {
-                States = states,
-                Powers = powers,
-                VisibleIndices = visibleIndices,
-                VisiblePayload = visiblePayload,
-                Scalars = scalars,
-                GlobalQualityWeight = quality,
-                VisibleCount = visibleCount
-            }.Schedule(visibleCount, JobBatchSize, handle);
-
-            _simulationScheduled = true;
-            _simulationHandle = handle;
-            _visiblePayloadDirty = true;
-            H8Memory.RegisterActiveJob(OwnerSystemId, handle);
-            return handle;
+                if (!scheduled)
+                    UnlockJobBuffers();
+            }
         }
 
         private void PostSimulationTick(in DispatcherTimingDTO timing)
@@ -985,29 +1015,17 @@ namespace Hecton8.Graphics.Materials
             return TryOpenVaultBuffer(vault, ref _wearRateHandle, BufferID.ShinobuMaterialWearRates, WearRateCount, out wearRates);
         }
 
-        private bool TryLockJobBuffers(IDataVault vault)
+        private bool TryPinJobBuffers(IDataVault vault)
         {
             UnlockJobBuffers();
-            if (!TryLock(vault, BufferID.ShinobuMaterialStates, 1 << 0)) return false;
-            if (!TryLock(vault, BufferID.ShinobuMaterialPowers, 1 << 1)) return false;
-            if (!TryLock(vault, BufferID.ShinobuMaterialVisibleIndices, 1 << 2)) return false;
-            if (!TryLock(vault, BufferID.ShinobuMaterialVisiblePayload, 1 << 3)) return false;
-            if (!TryLock(vault, BufferID.ShinobuMaterialConstants, 1 << 4)) return false;
-            if (!TryLock(vault, BufferID.ShinobuMaterialMockBiomassSignals, 1 << 5)) return false;
-            if (!TryLock(vault, BufferID.ShinobuMaterialWearRates, 1 << 6)) return false;
-            if (!TryLock(vault, BufferID.ShinobuMaterialBiomassScalar, 1 << 7)) return false;
-            return true;
-        }
-
-        private bool TryLock(IDataVault vault, BufferID bufferId, int bit)
-        {
-            if (!vault.TryLockBuffer(bufferId, OwnerSystemId))
-            {
-                UnlockJobBuffers();
+            if (vault == null || _jobBufferGuardHeld)
                 return false;
-            }
 
-            _lockedBufferMask |= bit;
+            if (!vault.TryAcquireMutationGuard(JobMutationGuardMask))
+                return false;
+
+            _jobBufferGuardVault = vault;
+            _jobBufferGuardHeld = true;
             return true;
         }
 
@@ -1018,21 +1036,13 @@ namespace Hecton8.Graphics.Materials
 
         private void UnlockJobBuffers(IDataVault vault)
         {
-            if (vault == null || _lockedBufferMask == 0)
-            {
-                _lockedBufferMask = 0;
+            if (!_jobBufferGuardHeld)
                 return;
-            }
 
-            if ((_lockedBufferMask & (1 << 7)) != 0) vault.TryUnlockBuffer(BufferID.ShinobuMaterialBiomassScalar, OwnerSystemId);
-            if ((_lockedBufferMask & (1 << 6)) != 0) vault.TryUnlockBuffer(BufferID.ShinobuMaterialWearRates, OwnerSystemId);
-            if ((_lockedBufferMask & (1 << 5)) != 0) vault.TryUnlockBuffer(BufferID.ShinobuMaterialMockBiomassSignals, OwnerSystemId);
-            if ((_lockedBufferMask & (1 << 4)) != 0) vault.TryUnlockBuffer(BufferID.ShinobuMaterialConstants, OwnerSystemId);
-            if ((_lockedBufferMask & (1 << 3)) != 0) vault.TryUnlockBuffer(BufferID.ShinobuMaterialVisiblePayload, OwnerSystemId);
-            if ((_lockedBufferMask & (1 << 2)) != 0) vault.TryUnlockBuffer(BufferID.ShinobuMaterialVisibleIndices, OwnerSystemId);
-            if ((_lockedBufferMask & (1 << 1)) != 0) vault.TryUnlockBuffer(BufferID.ShinobuMaterialPowers, OwnerSystemId);
-            if ((_lockedBufferMask & (1 << 0)) != 0) vault.TryUnlockBuffer(BufferID.ShinobuMaterialStates, OwnerSystemId);
-            _lockedBufferMask = 0;
+            IDataVault guardVault = _jobBufferGuardVault ?? vault;
+            _jobBufferGuardVault = null;
+            _jobBufferGuardHeld = false;
+            guardVault?.ReleaseMutationGuard(JobMutationGuardMask);
         }
 
         private void CompleteSimulationForLifecycle(IDataVault lockVault)

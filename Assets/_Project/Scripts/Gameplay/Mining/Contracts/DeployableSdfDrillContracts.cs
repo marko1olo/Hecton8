@@ -28,7 +28,7 @@ namespace Hecton8.Gameplay.Mining.Contracts
         DormantNoPower = 1 << 1,
         Broken = 1 << 2,
         InventoryFull = 1 << 3,
-        LowTierSdfSkipped = 1 << 4,
+        SdfVisualDeferred = 1 << 4,
         MacroResident = 1 << 5,
         Snapped = 1 << 6,
         FaultDumped = 1 << 7

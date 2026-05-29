@@ -23,23 +23,6 @@ namespace Hecton8.AI.Ecosystem
         private const int FlockingDumpVersion = 1;
         private const string FlockingDumpRelativePath = "Docs/AgentLogs/Dump_SHINOBU_307_Flocking.bin";
 
-        private bool TryResolveFlockingBuffers(
-            IDataVault vault,
-            out NativeArray<FlockingThreatDTO> threats,
-            out NativeArray<int> threatCount,
-            out NativeArray<FlockingCounter64> counters,
-            out NativeArray<FlockingTelemetryEntry> telemetry)
-        {
-            threats = default;
-            threatCount = default;
-            counters = default;
-            telemetry = default;
-            return TryOpenVaultView(vault, in _flockingThreatHandle, FlockingThreatCapacity, out threats) &&
-                   TryOpenVaultView(vault, in _flockingThreatCountHandle, 1, out threatCount) &&
-                   TryOpenVaultView(vault, in _flockingCounterHandle, FlockingCounterCapacity, out counters) &&
-                   TryOpenVaultView(vault, in _flockingTelemetryHandle, FlockingTelemetryCapacity, out telemetry);
-        }
-
         private void CaptureFlockingThreatSignals(
             NativeArray<FlockingThreatDTO> threats,
             NativeArray<int> threatCount,
@@ -123,43 +106,33 @@ namespace Hecton8.AI.Ecosystem
                 return;
             }
 
-            threats[written++] = new FlockingThreatDTO
-            {
-                LocalPosition = localPosition,
-                RadiusMeters = math.max(0.25f, radiusMeters),
-                Intensity01 = math.saturate(intensity01),
-                SourceId = sourceId,
-                TypeHash = typeHash,
-                DirectionalBias = 0f
-            };
+            FlockingThreatDTO threat = default;
+            threat.LocalPosition = localPosition;
+            threat.RadiusMeters = math.max(0.25f, radiusMeters);
+            threat.Intensity01 = math.saturate(intensity01);
+            threat.SourceId = sourceId;
+            threat.TypeHash = typeHash;
+            threat.DirectionalBias = 0f;
+            threats[written++] = threat;
         }
 
-        private void WriteFlockingTelemetryAndFaultDump(
-            IDataVault vault,
+        private bool TryBuildFlockingTelemetryEntry(
             int activeBoidCount,
             int invalidMathCount,
-            int overflowCount)
+            int overflowCount,
+            out FlockingTelemetryEntry entry,
+            out bool shouldDump)
         {
-            if (vault == null ||
-                !TryOpenVaultView(vault, in _flockingCounterHandle, FlockingCounterCapacity, out NativeArray<FlockingCounter64> flockingCounters) ||
-                !TryOpenVaultView(vault, in _flockingTelemetryHandle, FlockingTelemetryCapacity, out NativeArray<FlockingTelemetryEntry> telemetry))
-            {
-                return;
-            }
+            entry = default;
+            shouldDump = false;
+            if (!_flockingCounterJobScratch.IsCreated)
+                return false;
 
-            int cursor = _flockingTelemetryCursor;
-            if (cursor < 0 || cursor >= int.MaxValue - telemetry.Length)
-                cursor = 0;
-
-            int index = cursor % telemetry.Length;
-            int nextCursor = cursor + 1;
-            _flockingTelemetryCursor = nextCursor;
-
-            int samples = ReadFlockingCounter(flockingCounters, FlockingCounterNeighborSamples);
-            int evaluated = math.max(1, ReadFlockingCounter(flockingCounters, FlockingCounterEvaluatedBoids));
-            int panicCount = ReadFlockingCounter(flockingCounters, FlockingCounterPanicBoids);
-            int activeThreats = ReadFlockingCounter(flockingCounters, FlockingCounterActiveThreats);
-            int maxNeighbors = ReadFlockingCounter(flockingCounters, FlockingCounterMaxNeighbors);
+            int samples = ReadFlockingCounter(_flockingCounterJobScratch, FlockingCounterNeighborSamples);
+            int evaluated = math.max(1, ReadFlockingCounter(_flockingCounterJobScratch, FlockingCounterEvaluatedBoids));
+            int panicCount = ReadFlockingCounter(_flockingCounterJobScratch, FlockingCounterPanicBoids);
+            int activeThreats = ReadFlockingCounter(_flockingCounterJobScratch, FlockingCounterActiveThreats);
+            int maxNeighbors = ReadFlockingCounter(_flockingCounterJobScratch, FlockingCounterMaxNeighbors);
             float averageNeighbors = samples * math.rcp(evaluated);
             bool solveOverBudget = _lastFlockingMs > FlockingTelemetryFaultThresholdMs;
             uint flags = (invalidMathCount != 0 ? EntityFlagInvalidMath : 0u) |
@@ -167,33 +140,98 @@ namespace Hecton8.AI.Ecosystem
                          (solveOverBudget ? TelemetryFlagSolveOverBudget : 0u);
             uint frame = ResolveCurrentSimulationFrame();
 
-            telemetry[index] = new FlockingTelemetryEntry
-            {
-                Frame = frame,
-                StateHash = MixFlockingTelemetryHash(activeBoidCount, samples, activeThreats, panicCount, overflowCount),
-                SimulatedBoidCount = activeBoidCount,
-                NeighborSamplesTotal = samples,
-                AverageNeighbors = averageNeighbors,
-                ActiveThreatCount = activeThreats,
-                BurstExecutionMicroseconds = math.max(0f, _lastFlockingMs) * 1000f,
-                GlobalQualityWeight = _lastGlobalQualityWeight,
-                Flags = flags,
-                PanicBoidCount = panicCount,
-                MaxNeighborsPerBoid = maxNeighbors,
-                SpatialHashOverflowCount = overflowCount,
-                InvalidMathCount = invalidMathCount,
-                SpatialHashMicroseconds = math.max(0f, _lastSpatialHashMs) * 1000f,
-                MatrixUploadMicroseconds = math.max(0f, _lastMatrixUploadMs) * 1000f,
-                Pad0 = 0u
-            };
+            entry = default;
+            entry.Frame = frame;
+            entry.StateHash = MixFlockingTelemetryHash(activeBoidCount, samples, activeThreats, panicCount, overflowCount);
+            entry.SimulatedBoidCount = activeBoidCount;
+            entry.NeighborSamplesTotal = samples;
+            entry.AverageNeighbors = averageNeighbors;
+            entry.ActiveThreatCount = activeThreats;
+            entry.BurstExecutionMicroseconds = math.max(0f, _lastFlockingMs) * 1000f;
+            entry.GlobalQualityWeight = _lastGlobalQualityWeight;
+            entry.Flags = flags;
+            entry.PanicBoidCount = panicCount;
+            entry.MaxNeighborsPerBoid = maxNeighbors;
+            entry.SpatialHashOverflowCount = overflowCount;
+            entry.InvalidMathCount = invalidMathCount;
+            entry.SpatialHashMicroseconds = math.max(0f, _lastSpatialHashMs) * 1000f;
+            entry.MatrixUploadMicroseconds = math.max(0f, _lastMatrixUploadMs) * 1000f;
+            entry.Pad0 = 0u;
 
-            TryPublishFlockingDispersalSignal(activeBoidCount, activeThreats, panicCount, _lastGlobalQualityWeight, frame);
+            shouldDump = invalidMathCount != 0 || overflowCount != 0 || solveOverBudget;
+            return true;
+        }
 
-            if ((invalidMathCount != 0 || overflowCount != 0 || solveOverBudget) && !_dumpedFlockingFault)
+        private void WriteFlockingCountersAfterRelease(IDataVault vault)
+        {
+            if (!_flockingCounterJobScratch.IsCreated ||
+                vault == null ||
+                !vault.TryLockBuffer(BufferID.ShinobuFlockingCounters64, SystemID.AIEcology))
             {
-                _dumpedFlockingFault = true;
-                DumpFlockingBlackBox(telemetry, nextCursor);
+                return;
             }
+
+            try
+            {
+                if (!TryOpenVaultView(vault, in _flockingCounterHandle, BufferID.ShinobuFlockingCounters64, FlockingCounterCapacity, out NativeArray<FlockingCounter64> counters) ||
+                    counters.Length <= 0)
+                {
+                    return;
+                }
+
+                int count = math.min(counters.Length, _flockingCounterJobScratch.Length);
+                for (int i = 0; i < count; i++)
+                    counters[i] = _flockingCounterJobScratch[i];
+            }
+            finally
+            {
+                vault.TryUnlockBuffer(BufferID.ShinobuFlockingCounters64, SystemID.AIEcology);
+            }
+        }
+
+        private void WriteFlockingTelemetryAndFaultDump(
+            IDataVault vault,
+            in FlockingTelemetryEntry entry,
+            bool shouldDump)
+        {
+            if (vault == null || !vault.TryLockBuffer(BufferID.ShinobuFlockingTelemetryRing, SystemID.AIEcology))
+                return;
+
+            bool dumpAfterRelease = false;
+            int dumpCursor = 0;
+            try
+            {
+                if (!TryOpenVaultView(vault, in _flockingTelemetryHandle, BufferID.ShinobuFlockingTelemetryRing, FlockingTelemetryCapacity, out NativeArray<FlockingTelemetryEntry> telemetry) ||
+                    telemetry.Length <= 0)
+                {
+                    return;
+                }
+
+                int cursor = _flockingTelemetryCursor;
+                if (cursor < 0 || cursor >= int.MaxValue - telemetry.Length)
+                    cursor = 0;
+
+                int index = cursor % telemetry.Length;
+                int nextCursor = cursor + 1;
+                _flockingTelemetryCursor = nextCursor;
+                telemetry[index] = entry;
+                if (_flockingTelemetryMirror.IsCreated && _flockingTelemetryMirror.Length == telemetry.Length)
+                    _flockingTelemetryMirror[index] = entry;
+
+                if (shouldDump && !_dumpedFlockingFault)
+                {
+                    _dumpedFlockingFault = true;
+                    dumpAfterRelease = true;
+                    dumpCursor = nextCursor;
+                }
+            }
+            finally
+            {
+                vault.TryUnlockBuffer(BufferID.ShinobuFlockingTelemetryRing, SystemID.AIEcology);
+            }
+
+            if (dumpAfterRelease && _flockingTelemetryMirror.IsCreated)
+                DumpFlockingBlackBox(_flockingTelemetryMirror, dumpCursor);
         }
 
         private void TryPublishFlockingDispersalSignal(
@@ -226,16 +264,14 @@ namespace Hecton8.AI.Ecosystem
             if (intensity01 <= 0.001f)
                 return;
 
-            SwarmDispersedSignal signal = new SwarmDispersedSignal
-            {
-                PositionAup = _cameraAup,
-                RadiusMeters = math.lerp(12f, 96f, math.saturate(intensity01 * math.lerp(0.75f, 1.35f, Smooth01(quality01)))),
-                Intensity01 = intensity01,
-                SourceId = SourceHash ^ 0x00000307u,
-                EstimatedBoidCount = (ushort)math.clamp(panicBoidCount, 0, ushort.MaxValue),
-                Flags = 0,
-                QualityTier = (byte)math.clamp((int)math.round(quality01 * 255f), 0, 255)
-            };
+            SwarmDispersedSignal signal = default;
+            signal.PositionAup = _cameraAup;
+            signal.RadiusMeters = math.lerp(12f, 96f, math.saturate(intensity01 * math.lerp(0.75f, 1.35f, Smooth01(quality01))));
+            signal.Intensity01 = intensity01;
+            signal.SourceId = SourceHash ^ 0x00000307u;
+            signal.EstimatedBoidCount = (ushort)math.clamp(panicBoidCount, 0, ushort.MaxValue);
+            signal.Flags = 0;
+            signal.QualityTier = (byte)math.clamp((int)math.round(quality01 * 255f), 0, 255);
 
             if (SignalBus<SwarmDispersedSignal>.TryPushTracked(in signal, ref s_x001DirectSignalPushDropCount_ShinobuEcosystemBalancer_FlockingAvoidance))
                 _lastFlockingDispersalSignalFrame = frame;

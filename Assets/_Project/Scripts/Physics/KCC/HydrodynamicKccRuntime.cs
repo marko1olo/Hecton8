@@ -2727,6 +2727,27 @@ namespace Hecton8.Physics.KCC
         private const int EnvironmentGridCellCount = EnvironmentGridAxisX * EnvironmentGridAxisY * EnvironmentGridAxisZ;
         private const uint MetabolismFatigueFlag = 1u << 9;
         private const ulong MetabolismStateMutationGuardMask = 1UL << 48;
+        private const ulong ScheduledLockStates = 1UL << 0;
+        private const ulong ScheduledLockInputs = 1UL << 1;
+        private const ulong ScheduledLockProposedVelocities = 1UL << 2;
+        private const ulong ScheduledLockResolvedHits = 1UL << 3;
+        private const ulong ScheduledLockFaultFlags = 1UL << 4;
+        private const ulong ScheduledLockWakePackets = 1UL << 5;
+        private const ulong ScheduledLockTuning = 1UL << 6;
+        private const ulong ScheduledLockEnvironmentProfile = 1UL << 7;
+        private const ulong ScheduledLockEnvironmentGrid = 1UL << 8;
+        private const ulong ScheduledLockEnvironmentFlowField = 1UL << 9;
+        private const ulong ScheduledLockEnvironmentSdf = 1UL << 10;
+        private const ulong ScheduledLockEnvironmentMockMetabolism = 1UL << 11;
+        private const ulong ScheduledLockEnvironmentDebug = 1UL << 12;
+        private const ulong ScheduledLockPreviousAup = 1UL << 13;
+        private const ulong ScheduledLockVisualOutputs = 1UL << 14;
+        private const ulong ScheduledLockTelemetryRing = 1UL << 15;
+        private const ulong ScheduledLockTelemetryCursor = 1UL << 16;
+        private const ulong ScheduledLockRollbackBytes = 1UL << 17;
+        private const ulong ScheduledLockDebugOutputs = 1UL << 18;
+        private const ulong ScheduledLockEnvironmentTelemetryRing = 1UL << 19;
+        private const ulong ScheduledLockEnvironmentTelemetryCursor = 1UL << 20;
         private const uint KccFaultEventHash = 0x4B464654u; // KFFT
         private const uint KccFaultDumpHash = 0x4B464450u; // KFDP
 
@@ -2784,6 +2805,7 @@ namespace Hecton8.Physics.KCC
         private bool _externalInputArmed;
         private bool _metabolismStateReadGuardHeld;
         private bool _coreBlackboxWarmed;
+        private ulong _scheduledVaultBufferLocks;
         private int _dumpedFaultMask;
         private int _rollbackVisualBypassFrames;
         private int _respawnCollisionBypassFrames;
@@ -2957,6 +2979,12 @@ namespace Hecton8.Physics.KCC
             int capacity = math.min(_entityCapacity, _resolvedBufferCapacity);
             int maxHits = MaxCollisionHitsPerCommand;
             int rawHitCapacity = capacity * maxHits;
+            if (!TryLockScheduledVaultBuffers())
+                return;
+
+            bool scheduled = false;
+            try
+            {
             if (!TryOpenVaultBuffer(_dataVault, ref _statesHandle, BufferID.ShinobuHydroKccStates, SystemID.Physics, capacity, out NativeArray<KinematicStateDTO> states) ||
                 !TryOpenVaultBuffer(_dataVault, ref _inputsHandle, BufferID.ShinobuHydroKccInputs, SystemID.Physics, capacity, out NativeArray<HydrodynamicKccInputDTO> inputs) ||
                 !TryOpenVaultBuffer(_dataVault, ref _proposedVelocitiesHandle, BufferID.ShinobuHydroKccProposedVelocities, SystemID.Physics, capacity, out NativeArray<float3> proposed) ||
@@ -3107,6 +3135,7 @@ namespace Hecton8.Physics.KCC
                 _commandHandle = _integrationHandle;
                 _collisionHandle = _integrationHandle;
                 _collisionScheduled = true;
+                scheduled = true;
                 return;
             }
 
@@ -3124,6 +3153,13 @@ namespace Hecton8.Physics.KCC
                 MaxHitsPerEntity = maxHits
             }.Schedule(capacity, 32, _integrationHandle);
             _collisionScheduled = true;
+            scheduled = true;
+            }
+            finally
+            {
+                if (!scheduled)
+                    ReleaseScheduledVaultBufferPins();
+            }
         }
 
         public void PostFixedTick(float fixedDeltaTime)
@@ -3305,6 +3341,7 @@ namespace Hecton8.Physics.KCC
                 }
 
                 ReleaseMetabolismStateReadGuard();
+                ReleaseScheduledVaultBufferPins();
                 _postScheduled = false;
                 _collisionScheduled = false;
                 _scheduledEntityCount = 0;
@@ -3397,6 +3434,7 @@ namespace Hecton8.Physics.KCC
                 return;
 
             ReleaseMetabolismStateReadGuard();
+            ReleaseScheduledVaultBufferPins();
             _postScheduled = false;
             if (!EnsureVaultBuffers(allowAcquire: false))
                 return;
@@ -3656,6 +3694,86 @@ namespace Hecton8.Physics.KCC
             }
 
             return -1;
+        }
+
+        private bool TryLockScheduledVaultBuffers()
+        {
+            if (_dataVault == null || _scheduledVaultBufferLocks != 0UL)
+                return false;
+
+            return TryLockScheduledVaultBuffer(BufferID.ShinobuHydroKccStates, ScheduledLockStates) &&
+                   TryLockScheduledVaultBuffer(BufferID.ShinobuHydroKccInputs, ScheduledLockInputs) &&
+                   TryLockScheduledVaultBuffer(BufferID.ShinobuHydroKccProposedVelocities, ScheduledLockProposedVelocities) &&
+                   TryLockScheduledVaultBuffer(BufferID.ShinobuHydroKccResolvedHits, ScheduledLockResolvedHits) &&
+                   TryLockScheduledVaultBuffer(BufferID.ShinobuHydroKccFaultFlags, ScheduledLockFaultFlags) &&
+                   TryLockScheduledVaultBuffer(BufferID.ShinobuHydroKccWakePackets, ScheduledLockWakePackets) &&
+                   TryLockScheduledVaultBuffer(BufferID.ShinobuHydroKccTuning, ScheduledLockTuning) &&
+                   TryLockScheduledVaultBuffer(BufferID.ShinobuKccEnvironmentProfile, ScheduledLockEnvironmentProfile) &&
+                   TryLockScheduledVaultBuffer(BufferID.ShinobuKccEnvironmentGrid, ScheduledLockEnvironmentGrid) &&
+                   TryLockScheduledVaultBuffer(BufferID.ShinobuKccEnvironmentFlowField, ScheduledLockEnvironmentFlowField) &&
+                   TryLockScheduledVaultBuffer(BufferID.ShinobuKccEnvironmentSdf, ScheduledLockEnvironmentSdf) &&
+                   TryLockScheduledVaultBuffer(BufferID.ShinobuKccEnvironmentMockMetabolism, ScheduledLockEnvironmentMockMetabolism) &&
+                   TryLockScheduledVaultBuffer(BufferID.ShinobuKccEnvironmentDebug, ScheduledLockEnvironmentDebug) &&
+                   TryLockScheduledVaultBuffer(BufferID.ShinobuHydroKccPreviousAup, ScheduledLockPreviousAup) &&
+                   TryLockScheduledVaultBuffer(BufferID.ShinobuHydroKccVisualOutputs, ScheduledLockVisualOutputs) &&
+                   TryLockScheduledVaultBuffer(BufferID.ShinobuHydroKccTelemetryRing, ScheduledLockTelemetryRing) &&
+                   TryLockScheduledVaultBuffer(BufferID.ShinobuHydroKccTelemetryCursor, ScheduledLockTelemetryCursor) &&
+                   TryLockScheduledVaultBuffer(BufferID.ShinobuHydroKccRollbackBytes, ScheduledLockRollbackBytes) &&
+                   TryLockScheduledVaultBuffer(BufferID.ShinobuHydroKccDebugOutputs, ScheduledLockDebugOutputs) &&
+                   TryLockScheduledVaultBuffer(BufferID.ShinobuKccEnvironmentTelemetryRing, ScheduledLockEnvironmentTelemetryRing) &&
+                   TryLockScheduledVaultBuffer(BufferID.ShinobuKccEnvironmentTelemetryCursor, ScheduledLockEnvironmentTelemetryCursor);
+        }
+
+        private bool TryLockScheduledVaultBuffer(BufferID bufferId, ulong bit)
+        {
+            IDataVault vault = _dataVault;
+            if (vault != null && vault.TryLockBuffer(bufferId, SystemID.Physics))
+            {
+                _scheduledVaultBufferLocks |= bit;
+                return true;
+            }
+
+            ReleaseScheduledVaultBufferPins();
+            return false;
+        }
+
+        private void ReleaseScheduledVaultBufferPins()
+        {
+            IDataVault vault = _dataVault;
+            if (vault == null || _scheduledVaultBufferLocks == 0UL)
+            {
+                _scheduledVaultBufferLocks = 0UL;
+                return;
+            }
+
+            UnlockScheduledVaultBuffer(vault, BufferID.ShinobuHydroKccStates, ScheduledLockStates);
+            UnlockScheduledVaultBuffer(vault, BufferID.ShinobuHydroKccInputs, ScheduledLockInputs);
+            UnlockScheduledVaultBuffer(vault, BufferID.ShinobuHydroKccProposedVelocities, ScheduledLockProposedVelocities);
+            UnlockScheduledVaultBuffer(vault, BufferID.ShinobuHydroKccResolvedHits, ScheduledLockResolvedHits);
+            UnlockScheduledVaultBuffer(vault, BufferID.ShinobuHydroKccFaultFlags, ScheduledLockFaultFlags);
+            UnlockScheduledVaultBuffer(vault, BufferID.ShinobuHydroKccWakePackets, ScheduledLockWakePackets);
+            UnlockScheduledVaultBuffer(vault, BufferID.ShinobuHydroKccTuning, ScheduledLockTuning);
+            UnlockScheduledVaultBuffer(vault, BufferID.ShinobuKccEnvironmentProfile, ScheduledLockEnvironmentProfile);
+            UnlockScheduledVaultBuffer(vault, BufferID.ShinobuKccEnvironmentGrid, ScheduledLockEnvironmentGrid);
+            UnlockScheduledVaultBuffer(vault, BufferID.ShinobuKccEnvironmentFlowField, ScheduledLockEnvironmentFlowField);
+            UnlockScheduledVaultBuffer(vault, BufferID.ShinobuKccEnvironmentSdf, ScheduledLockEnvironmentSdf);
+            UnlockScheduledVaultBuffer(vault, BufferID.ShinobuKccEnvironmentMockMetabolism, ScheduledLockEnvironmentMockMetabolism);
+            UnlockScheduledVaultBuffer(vault, BufferID.ShinobuKccEnvironmentDebug, ScheduledLockEnvironmentDebug);
+            UnlockScheduledVaultBuffer(vault, BufferID.ShinobuHydroKccPreviousAup, ScheduledLockPreviousAup);
+            UnlockScheduledVaultBuffer(vault, BufferID.ShinobuHydroKccVisualOutputs, ScheduledLockVisualOutputs);
+            UnlockScheduledVaultBuffer(vault, BufferID.ShinobuHydroKccTelemetryRing, ScheduledLockTelemetryRing);
+            UnlockScheduledVaultBuffer(vault, BufferID.ShinobuHydroKccTelemetryCursor, ScheduledLockTelemetryCursor);
+            UnlockScheduledVaultBuffer(vault, BufferID.ShinobuHydroKccRollbackBytes, ScheduledLockRollbackBytes);
+            UnlockScheduledVaultBuffer(vault, BufferID.ShinobuHydroKccDebugOutputs, ScheduledLockDebugOutputs);
+            UnlockScheduledVaultBuffer(vault, BufferID.ShinobuKccEnvironmentTelemetryRing, ScheduledLockEnvironmentTelemetryRing);
+            UnlockScheduledVaultBuffer(vault, BufferID.ShinobuKccEnvironmentTelemetryCursor, ScheduledLockEnvironmentTelemetryCursor);
+            _scheduledVaultBufferLocks = 0UL;
+        }
+
+        private void UnlockScheduledVaultBuffer(IDataVault vault, BufferID bufferId, ulong bit)
+        {
+            if ((_scheduledVaultBufferLocks & bit) != 0UL)
+                vault.TryUnlockBuffer(bufferId, SystemID.Physics);
         }
 
         private bool OpenPublishedMetabolismStateView(int requiredLength, out NativeArray<MetabolicStateDTO> states)
@@ -3973,6 +4091,7 @@ namespace Hecton8.Physics.KCC
         private void ClearScheduledBatchState()
         {
             ReleaseMetabolismStateReadGuard();
+            ReleaseScheduledVaultBufferPins();
             _collisionScheduled = false;
             _postScheduled = false;
             _scheduledEntityCount = 0;

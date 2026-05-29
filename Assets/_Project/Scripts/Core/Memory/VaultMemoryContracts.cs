@@ -639,6 +639,13 @@ namespace Hecton8.Core.Memory
         private const uint FlagAupWrapped = 1u << 0;
         private const uint FlagSweepExecuted = 1u << 1;
         private const uint FlagCompleted = 1u << 2;
+        private static readonly ulong MaintenanceMutationGuardMask =
+            MutationGuardBit(BufferID.VaultHotEntityData) |
+            MutationGuardBit(BufferID.VaultAup64) |
+            MutationGuardBit(BufferID.VaultAupSectorLocal32) |
+            MutationGuardBit(BufferID.VaultSovereigntyActiveEntityCount) |
+            MutationGuardBit(BufferID.VaultMemoryAddressShiftRecords) |
+            MutationGuardBit(BufferID.VaultMemoryAddressShiftCount);
 
         public static bool PrewarmBuffers(IDataVault vault, int hotEntityCapacity)
         {
@@ -708,33 +715,33 @@ namespace Hecton8.Core.Memory
             float quality = math.saturate(math.isfinite(globalQualityWeight) ? globalQualityWeight : 1f);
             float strideAggressiveness = ResolveStrideAggressiveness(vault);
             bool executed = false;
+            bool guardAcquired = vault.TryAcquireMutationGuard(MaintenanceMutationGuardMask);
+            if (!guardAcquired)
+                return stats;
 
             NativeArray<VaultHotEntityData> hotEntities = default;
-            TryResolveCoreVaultBuffer(vault, BufferID.VaultHotEntityData, 1, out hotEntities);
+            NativeArray<VaultAup64> aups = default;
+            NativeArray<VaultAupSectorLocal32> sectorLocal = default;
 
-            if (TryResolveCoreVaultBuffer(vault, BufferID.VaultAup64, 1, out NativeArray<VaultAup64> aups) &&
-                aups.IsCreated &&
-                hotEntities.IsCreated)
+            try
             {
-                int count = math.min(aups.Length, hotEntities.Length);
-                if (count > 0)
+                TryResolveCoreVaultBuffer(vault, BufferID.VaultHotEntityData, 1, out hotEntities);
+                TryResolveCoreVaultBuffer(vault, BufferID.VaultAup64, 1, out aups);
+                TryResolveCoreVaultBuffer(vault, BufferID.VaultAupSectorLocal32, 1, out sectorLocal);
+
+                if (aups.IsCreated &&
+                    hotEntities.IsCreated &&
+                    sectorLocal.IsCreated)
                 {
-                    bool hasSectorLocal = TryEnsureCoreVaultBuffer(
-                        vault,
-                        BufferID.VaultAupSectorLocal32,
-                        count,
-                        NativeArrayOptions.UninitializedMemory,
-                        out NativeArray<VaultAupSectorLocal32> sectorLocal);
-                    if (hasSectorLocal && sectorLocal.IsCreated)
+                    int count = math.min(math.min(aups.Length, hotEntities.Length), sectorLocal.Length);
+                    if (count > 0)
                     {
-                        VaultAupPrecisionDeltaCompactionJob job = new VaultAupPrecisionDeltaCompactionJob
-                        {
-                            Aups = aups,
-                            SectorLocal32 = sectorLocal,
-                            HotEntities = hotEntities,
-                            SectorSizeMeters = HectonPhysicsContract.AupSectorSizeMetersFloat,
-                            Frame = frame
-                        };
+                        VaultAupPrecisionDeltaCompactionJob job = default;
+                        job.Aups = aups;
+                        job.SectorLocal32 = sectorLocal;
+                        job.HotEntities = hotEntities;
+                        job.SectorSizeMeters = HectonPhysicsContract.AupSectorSizeMetersFloat;
+                        job.Frame = frame;
                         for (int index = 0; index < count; index++)
                             job.Execute(index);
                         executed = true;
@@ -742,57 +749,66 @@ namespace Hecton8.Core.Memory
                         stats.Flags |= FlagAupWrapped;
                     }
                 }
-            }
 
-            if (hotEntities.IsCreated && hotEntities.Length > 0)
-            {
-                bool hasActiveCount = TryEnsureCoreVaultBuffer(
-                    vault,
-                    BufferID.VaultSovereigntyActiveEntityCount,
-                    1,
-                    NativeArrayOptions.ClearMemory,
-                    out NativeArray<int> activeCount);
-                if (hasActiveCount && activeCount.IsCreated)
+                if (hotEntities.IsCreated && hotEntities.Length > 0)
                 {
-                    int active = activeCount[0];
-                    if (active <= 0 || active > hotEntities.Length)
-                        activeCount[0] = hotEntities.Length;
-
-                    int budget = ResolveSweepBudget(activeCount[0], hotEntities.Length, quality, strideAggressiveness);
-                    stats.ScanBudget = budget;
-                    TryEnsureCoreVaultBuffer(
+                    bool hasActiveCount = TryResolveCoreVaultBuffer(
+                        vault,
+                        BufferID.VaultSovereigntyActiveEntityCount,
+                        1,
+                        out NativeArray<int> activeCount);
+                    bool hasShiftRecords = TryResolveCoreVaultBuffer(
                         vault,
                         BufferID.VaultMemoryAddressShiftRecords,
-                        math.max(1, budget),
-                        NativeArrayOptions.UninitializedMemory,
+                        1,
                         out NativeArray<VaultMemoryAddressShiftRecord> shiftRecords);
-                    TryEnsureCoreVaultBuffer(
+                    bool hasShiftCount = TryResolveCoreVaultBuffer(
                         vault,
                         BufferID.VaultMemoryAddressShiftCount,
                         1,
-                        NativeArrayOptions.ClearMemory,
                         out NativeArray<int> shiftCount);
-                    if (shiftCount.IsCreated && shiftCount.Length > 0)
-                        shiftCount[0] = 0;
 
-                    VaultOrphanedPointerSweepJob job = new VaultOrphanedPointerSweepJob
+                    if (hasActiveCount &&
+                        hasShiftRecords &&
+                        hasShiftCount &&
+                        activeCount.IsCreated &&
+                        shiftRecords.IsCreated &&
+                        shiftCount.IsCreated)
                     {
-                        HotEntities = hotEntities,
-                        Aups = ResolveOptionalAup64(vault),
-                        SectorLocal32 = ResolveOptionalSectorLocal32(vault),
-                        ActiveCount = activeCount,
-                        ShiftRecords = shiftRecords,
-                        ShiftCount = shiftCount,
-                        MaxScanCount = budget,
-                        BufferId = BufferID.VaultHotEntityData,
-                        Frame = frame,
-                        SourceHash = SourceHash,
-                        SystemId = (byte)SystemID.CoreDataVault
-                    };
-                    job.Execute();
-                    executed = true;
-                    stats.Flags |= FlagSweepExecuted;
+                        int active = activeCount[0];
+                        if (active <= 0 || active > hotEntities.Length)
+                            activeCount[0] = hotEntities.Length;
+
+                        int budget = ResolveSweepBudget(activeCount[0], hotEntities.Length, quality, strideAggressiveness);
+                        budget = math.min(budget, shiftRecords.Length);
+                        stats.ScanBudget = budget;
+                        if (shiftCount.Length > 0)
+                            shiftCount[0] = 0;
+
+                        if (budget > 0)
+                        {
+                            VaultOrphanedPointerSweepJob job = default;
+                            job.HotEntities = hotEntities;
+                            job.Aups = aups;
+                            job.SectorLocal32 = sectorLocal;
+                            job.ActiveCount = activeCount;
+                            job.ShiftRecords = shiftRecords;
+                            job.ShiftCount = shiftCount;
+                            job.MaxScanCount = budget;
+                            job.BufferId = BufferID.VaultHotEntityData;
+                            job.Frame = frame;
+                            job.SourceHash = SourceHash;
+                            job.SystemId = (byte)SystemID.CoreDataVault;
+                            job.Execute();
+                            executed = true;
+                            stats.Flags |= FlagSweepExecuted;
+                        }
+                    }
                 }
+            }
+            finally
+            {
+                vault.ReleaseMutationGuard(MaintenanceMutationGuardMask);
             }
 
             if (executed)
@@ -809,6 +825,13 @@ namespace Hecton8.Core.Memory
                 System.Diagnostics.Stopwatch.Frequency;
             stats.MaxJobUs = (float)math.max(0.0d, elapsedUs);
             return stats;
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private static ulong MutationGuardBit(BufferID bufferId)
+        {
+            int bitIndex = unchecked((int)((uint)(int)bufferId & 63u));
+            return 1UL << bitIndex;
         }
 
         private static NativeArray<VaultAup64> ResolveOptionalAup64(IDataVault vault)

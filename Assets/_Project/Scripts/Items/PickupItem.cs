@@ -101,6 +101,7 @@ namespace Hecton8.Interaction
         private long _worldStatePersistenceKey;
         private long _worldStateChunkKey;
         private Vector3 _worldStateAnchorPosition;
+        private bool _isPooledRuntimeInstance;
         private PersistentWorldRegistry _persistentWorldRegistry;
         private int _persistentWorldRecordIndex = -1;
         private bool _registeredToWorldStateRegistry;
@@ -195,6 +196,7 @@ namespace Hecton8.Interaction
             RefreshCachedItemHash();
             ApplyPhysicalMetadata();
             InvalidateWorldStateIdentity();
+            ResolveWorldStateIdentity();
             RebuildInteractTextCache();
         }
 
@@ -238,6 +240,7 @@ namespace Hecton8.Interaction
             TryGetComponent(out _buoyancy);
             TryGetComponent(out _collider);
             TryGetComponent(out _lootMagnetRenderer);
+            RefreshPoolMarkerCacheCold();
             _defaultColliderMaterial = _collider != null ? _collider.sharedMaterial : null;
             _defaultMotionVectorMode = _lootMagnetRenderer != null
                 ? _lootMagnetRenderer.motionVectorGenerationMode
@@ -278,6 +281,7 @@ namespace Hecton8.Interaction
         private void OnEnable()
         {
             RefreshColdRegistryReferences();
+            RefreshPoolMarkerCacheCold();
             InteractableRegistry.RegisterTree(this);
             RegisterWorldStateRegistry();
 
@@ -419,7 +423,6 @@ namespace Hecton8.Interaction
 
         internal bool TryGetWorldStatePersistenceIdentity(out long persistenceKey, out long chunkKey)
         {
-            ResolveWorldStateIdentity();
             persistenceKey = _worldStatePersistenceKey;
             chunkKey = _worldStateChunkKey;
             return _worldStateIdentityAvailable;
@@ -695,7 +698,7 @@ namespace Hecton8.Interaction
                 _highlighter.SetHighlight(false);
 
             IObjectPoolService pool = s_objectPool;
-            if (pool != null && TryGetComponent(out ObjectPoolManager.PoolItemMarker _))
+            if (pool != null && _isPooledRuntimeInstance)
             {
                 pool.Despawn(gameObject);
                 return;
@@ -851,9 +854,8 @@ namespace Hecton8.Interaction
             }
 
             _worldStateAnchorPosition = anchorPosition;
-            bool isPooledRuntimeInstance = TryGetComponent(out ObjectPoolManager.PoolItemMarker _);
             _worldStateIdentityAvailable = persistWorldState &&
-                                           !isPooledRuntimeInstance &&
+                                           !_isPooledRuntimeInstance &&
                                            WorldPickupStateCodec.TryBuildIdentity(
                                                transform,
                                                gameObject.scene,
@@ -876,6 +878,11 @@ namespace Hecton8.Interaction
             _worldStatePersistenceKey = 0L;
             _worldStateChunkKey = 0L;
             _worldStateAnchorPosition = default;
+        }
+
+        private void RefreshPoolMarkerCacheCold()
+        {
+            _isPooledRuntimeInstance = TryGetComponent(out ObjectPoolManager.PoolItemMarker _);
         }
 
         private void RefreshColdRegistryReferences()

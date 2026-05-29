@@ -103,8 +103,6 @@ namespace Hecton8.Gameplay
 
         private static ScanLogSystem s_activeRuntimeInstance;
 
-        public static ScanLogSystem Instance => s_activeRuntimeInstance;
-
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
         private static void ResetStaticState()
         {

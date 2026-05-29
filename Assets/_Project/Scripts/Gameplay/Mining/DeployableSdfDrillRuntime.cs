@@ -82,8 +82,10 @@ namespace Hecton8.Gameplay.Mining
         [SerializeField] private float sdfRaymarchDistanceMeters = 12f;
         [Tooltip("Step size for public SDF volume resolution. Used only on the sparse carve cadence.")]
         [SerializeField] private float sdfRaymarchStepMeters = 0.35f;
-        [Tooltip("When true, Low/MX350 skips visible SDF carve packets while extraction continues.")]
-        [SerializeField] private bool skipSdfVisualOnLowTier = true;
+        [Tooltip("Quality weight where visual SDF carve packets begin returning to extraction cadence. Extraction truth is unchanged.")]
+        [SerializeField, Range(0f, 1f)] private float sdfVisualCarveQualityFloor01 = 0.18f;
+        [Tooltip("Multiplier applied to visual carve cadence at survival quality. Higher values reduce visual carve traffic without changing extraction truth.")]
+        [SerializeField, Min(1f)] private float sdfVisualCarveSurvivalCadenceMultiplier = 4f;
         [Tooltip("Minimum seconds before a scalability tier switch changes drill math or visual output.")]
         [SerializeField] private float mathLodHysteresisSeconds = DefaultMathLodHysteresisSeconds;
 
@@ -327,8 +329,10 @@ namespace Hecton8.Gameplay.Mining
             }
 
             DeployableSdfDrillMathLod mathLod = ResolveMathLod();
-            bool lowTierSdfSkipped = skipSdfVisualOnLowTier && mathLod == DeployableSdfDrillMathLod.Low;
-            SetFlag(DeployableSdfDrillFlags.LowTierSdfSkipped, lowTierSdfSkipped);
+            float sdfVisualCarveWeight01 = ResolveSdfVisualCarveWeight01();
+            float sdfVisualCarveIntervalSeconds = ResolveSdfVisualCarveIntervalSeconds(sdfVisualCarveWeight01);
+            bool sdfVisualDeferred = now - _lastCarveUnscaledTime < sdfVisualCarveIntervalSeconds;
+            SetFlag(DeployableSdfDrillFlags.SdfVisualDeferred, sdfVisualDeferred);
 
             bool hasPower = !_broken && _snappedToTerrain && TryReservePower();
             SetFlag(DeployableSdfDrillFlags.DormantNoPower, !hasPower);
@@ -344,7 +348,7 @@ namespace Hecton8.Gameplay.Mining
 
             ScheduleExtractionJob(now, mathLod, ResolveMaxRuntimeCycles(mathLod));
             PublishAcousticThreat();
-            if (!lowTierSdfSkipped && now - _lastCarveUnscaledTime >= math.max(1f, extractionCycleSeconds))
+            if (!sdfVisualDeferred)
             {
                 TryEmitVoxelCarveEvent();
                 _lastCarveUnscaledTime = now;
@@ -1381,21 +1385,6 @@ namespace Hecton8.Gameplay.Mining
             _cachedMathLod = _targetMathLod;
         }
 
-        private static DeployableSdfDrillMathLod ToMathLod(HectonQualityTier tier)
-        {
-            switch (tier)
-            {
-                case HectonQualityTier.Ultra:
-                    return DeployableSdfDrillMathLod.Ultra;
-                case HectonQualityTier.High:
-                    return DeployableSdfDrillMathLod.High;
-                case HectonQualityTier.Mid:
-                    return DeployableSdfDrillMathLod.Middle;
-                default:
-                    return DeployableSdfDrillMathLod.Low;
-            }
-        }
-
         private static ushort ResolveMaxRuntimeCycles(DeployableSdfDrillMathLod lod)
         {
             return 8;
@@ -1404,6 +1393,24 @@ namespace Hecton8.Gameplay.Mining
         private static ushort ResolveMaxOfflineCycles(DeployableSdfDrillMathLod lod)
         {
             return 512;
+        }
+
+        private float ResolveSdfVisualCarveWeight01()
+        {
+            float globalQualityWeight = HomeostasisBrain.GlobalQualityWeight;
+            float quality = math.saturate(math.isfinite(globalQualityWeight) ? globalQualityWeight : 1f);
+            float floor = math.saturate(sdfVisualCarveQualityFloor01);
+            float denom = math.max(0.0001f, 1f - floor);
+            float normalized = math.saturate((quality - floor) * math.rcp(denom));
+            return normalized * normalized * (3f - 2f * normalized);
+        }
+
+        private float ResolveSdfVisualCarveIntervalSeconds(float visualWeight01)
+        {
+            float baseInterval = math.max(1f, extractionCycleSeconds);
+            float survivalMultiplier = math.max(1f, sdfVisualCarveSurvivalCadenceMultiplier);
+            float cadenceMultiplier = math.lerp(survivalMultiplier, 1f, math.saturate(visualWeight01));
+            return baseInterval * cadenceMultiplier;
         }
 
         private bool ValidateFiniteState()

@@ -6,8 +6,8 @@ namespace CandiceAIforGames.AI
     public class CandiceProjectile : MonoBehaviour
     {
         private const int MaxRegisteredProjectiles = 64;
-        // COLD ALLOC: GameObject[64] - active Candice projectile registry for possession lookup - owner: CandiceProjectile
-        private static readonly GameObject[] RegisteredProjectiles = new GameObject[MaxRegisteredProjectiles];
+        // COLD ALLOC: CandiceProjectile[64] - active Candice projectile registry for possession lookup - owner: CandiceProjectile
+        private static readonly CandiceProjectile[] RegisteredProjectiles = new CandiceProjectile[MaxRegisteredProjectiles];
 
         public Rigidbody rb;
         public GameObject target;
@@ -25,18 +25,26 @@ namespace CandiceAIforGames.AI
         private bool _deactivateScheduled;
         private float _deactivateAt;
         private Transform _initialParent;
+        private Transform _cachedCameraParent;
+        private Transform _cachedVsfxRoot;
         private RigidbodyConstraints _initialConstraints;
+
+        public Transform CachedCameraParent => _cachedCameraParent;
+        public Transform CachedVsfxRoot => _cachedVsfxRoot;
+
         // Start is called before the first frame update
         void Awake()
         {
             rb = GetComponent<Rigidbody>();
             _initialParent = transform.parent;
+            _cachedCameraParent = transform.Find("CameraParent");
+            _cachedVsfxRoot = transform.Find("VSFX");
             _initialConstraints = rb == null ? RigidbodyConstraints.None : rb.constraints;
         }
 
         void OnEnable()
         {
-            RegisterProjectile(gameObject);
+            RegisterProjectile(this);
             timeElapsed = 0f;
             if (destroyAfterDelay)
             {
@@ -46,7 +54,7 @@ namespace CandiceAIforGames.AI
 
         void OnDisable()
         {
-            UnregisterProjectile(gameObject);
+            UnregisterProjectile(this);
             _deactivateScheduled = false;
         }
 
@@ -175,10 +183,22 @@ namespace CandiceAIforGames.AI
 
         public static bool TryGetActiveProjectile(out GameObject projectile)
         {
+            if (TryGetActiveProjectileComponent(out CandiceProjectile projectileComponent))
+            {
+                projectile = projectileComponent.gameObject;
+                return true;
+            }
+
+            projectile = null;
+            return false;
+        }
+
+        public static bool TryGetActiveProjectileComponent(out CandiceProjectile projectile)
+        {
             for (int i = 0; i < RegisteredProjectiles.Length; i++)
             {
-                GameObject candidate = RegisteredProjectiles[i];
-                if (candidate != null && candidate.activeInHierarchy)
+                CandiceProjectile candidate = RegisteredProjectiles[i];
+                if (candidate != null && candidate.isActiveAndEnabled)
                 {
                     projectile = candidate;
                     return true;
@@ -189,7 +209,7 @@ namespace CandiceAIforGames.AI
             return false;
         }
 
-        private static void RegisterProjectile(GameObject projectile)
+        private static void RegisterProjectile(CandiceProjectile projectile)
         {
             for (int i = 0; i < RegisteredProjectiles.Length; i++)
             {
@@ -206,7 +226,7 @@ namespace CandiceAIforGames.AI
             }
         }
 
-        private static void UnregisterProjectile(GameObject projectile)
+        private static void UnregisterProjectile(CandiceProjectile projectile)
         {
             for (int i = 0; i < RegisteredProjectiles.Length; i++)
             {

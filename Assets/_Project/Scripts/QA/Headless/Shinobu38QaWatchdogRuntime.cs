@@ -325,6 +325,23 @@ namespace Hecton8.QA.Headless
         private const BufferID FileWriterCursorBufferId = (BufferID)70593;
         private const BufferID WaypointIngestStateBufferId = (BufferID)70594;
         private const SystemID OwnerSystemId = SystemID.External;
+        private static readonly ulong RuntimeBufferMutationGuardMask =
+            WatchdogMutationGuardBit(StateBufferId) |
+            WatchdogMutationGuardBit(SnapshotBufferId) |
+            WatchdogMutationGuardBit(BufferID.ShinobuInputCurrentDto) |
+            WatchdogMutationGuardBit(WaypointsBufferId) |
+            WatchdogMutationGuardBit(RebaseSignalsBufferId) |
+            WatchdogMutationGuardBit(TuningBufferId) |
+            WatchdogMutationGuardBit(MockVaultBufferId) |
+            WatchdogMutationGuardBit(TelemetryRingBufferId) |
+            WatchdogMutationGuardBit(CsvScratchBufferId) |
+            WatchdogMutationGuardBit(WaypointScratchBufferId) |
+            WatchdogMutationGuardBit(DumpScratchBufferId) |
+            WatchdogMutationGuardBit(FileWriteCommandsBufferId) |
+            WatchdogMutationGuardBit(FileWritePayloadBufferId) |
+            WatchdogMutationGuardBit(FileWriterStateBufferId) |
+            WatchdogMutationGuardBit(FileWriterCursorBufferId) |
+            WatchdogMutationGuardBit(WaypointIngestStateBufferId);
 
         private static Shinobu38QaWatchdogRuntime _instance;
         private static bool _autoCreated;
@@ -338,6 +355,7 @@ namespace Hecton8.QA.Headless
         };
 
         private IDataVault _dataVault;
+        private IDataVault _runtimeBufferGuardVault;
         private VaultGenerationHandle<WatchdogStateDTO> _stateHandle;
         private VaultGenerationHandle<TelemetrySnapshotDTO> _snapshotHandle;
         private VaultGenerationHandle<InputStateDTO> _agent36InputHandle;
@@ -399,6 +417,7 @@ namespace Hecton8.QA.Headless
         private uint _lastEventHash;
         private uint _hardwareFlags;
         private uint _shiftFrameId;
+        private ulong _runtimeBufferGuardMask;
         private bool _started;
         private bool _finished;
         private bool _registeredFast;
@@ -795,6 +814,7 @@ namespace Hecton8.QA.Headless
             BufferID bufferId) where T : struct
         {
             return handle.BufferID == unchecked((uint)(int)bufferId) &&
+                   handle.SystemID == (uint)OwnerSystemId &&
                    handle.Generation != 0u;
         }
 
@@ -816,65 +836,32 @@ namespace Hecton8.QA.Headless
             if (vault == null)
                 return false;
 
-            int locked = 0;
-            for (int i = 0; i < RuntimeBufferLockCount; i++)
-            {
-                BufferID bufferId = ResolveRuntimeBufferIdByLockIndex(i);
-                if (!vault.TryLockBuffer(bufferId, OwnerSystemId))
-                {
-                    UnlockLockedRuntimeBuffers(vault, locked);
-                    return false;
-                }
+            if (!vault.TryAcquireMutationGuard(RuntimeBufferMutationGuardMask))
+                return false;
 
-                locked++;
-            }
-
+            _runtimeBufferGuardVault = vault;
+            _runtimeBufferGuardMask = RuntimeBufferMutationGuardMask;
             _vaultBuffersLocked = true;
             return true;
         }
 
         private void UnlockRuntimeBuffers()
         {
-            if (!_vaultBuffersLocked || _dataVault == null)
+            if (!_vaultBuffersLocked)
                 return;
 
-            UnlockLockedRuntimeBuffers(_dataVault, RuntimeBufferLockCount);
+            IDataVault vault = _runtimeBufferGuardVault ?? _dataVault;
+            ulong guardMask = _runtimeBufferGuardMask;
+            _runtimeBufferGuardVault = null;
+            _runtimeBufferGuardMask = 0UL;
             _vaultBuffersLocked = false;
+            if (vault != null && guardMask != 0UL)
+                vault.ReleaseMutationGuard(guardMask);
         }
 
-        private static void UnlockLockedRuntimeBuffers(IDataVault vault, int lockedCount)
+        private static ulong WatchdogMutationGuardBit(BufferID bufferId)
         {
-            if (vault == null)
-                return;
-
-            for (int i = lockedCount - 1; i >= 0; i--)
-                vault.TryUnlockBuffer(ResolveRuntimeBufferIdByLockIndex(i), OwnerSystemId);
-        }
-
-        private const int RuntimeBufferLockCount = 16;
-
-        private static BufferID ResolveRuntimeBufferIdByLockIndex(int index)
-        {
-            switch (index)
-            {
-                case 0: return StateBufferId;
-                case 1: return SnapshotBufferId;
-                case 2: return BufferID.ShinobuInputCurrentDto;
-                case 3: return WaypointsBufferId;
-                case 4: return RebaseSignalsBufferId;
-                case 5: return TuningBufferId;
-                case 6: return MockVaultBufferId;
-                case 7: return TelemetryRingBufferId;
-                case 8: return CsvScratchBufferId;
-                case 9: return WaypointScratchBufferId;
-                case 10: return DumpScratchBufferId;
-                case 11: return FileWriteCommandsBufferId;
-                case 12: return FileWritePayloadBufferId;
-                case 13: return FileWriterStateBufferId;
-                case 14: return FileWriterCursorBufferId;
-                case 15: return WaypointIngestStateBufferId;
-                default: return BufferID.Unknown;
-            }
+            return 1UL << ((int)bufferId & 31);
         }
 
         private void ReleaseWatchdogVaultHandles(IDataVault vault)

@@ -47,6 +47,12 @@ namespace CandiceAIforGames.AI
     {
 
         #region Member Variables
+        private const string ModuleCombatName = "CandiceModuleCombat";
+        private const string ModuleMovementName = "CandiceModuleMovement";
+        private const string ModuleDetectionName = "CandiceModuleDetection";
+        private const string WanderTargetName = "CandiceWanderTarget";
+        private const int MaxWanderTargetAttempts = 16;
+
         /*
          * General Variables
          */
@@ -334,8 +340,63 @@ namespace CandiceAIforGames.AI
             else
                 col = GetComponent<Collider2D>();
 
+            InitialiseRuntimeModules();
+            EnsureWanderTarget();
+            EnsurePathCache();
+
             //New Animations initialization           
             InitializeAnimations();
+        }
+
+        private void InitialiseRuntimeModules()
+        {
+            if (combatModule == null)
+            {
+                // COLD ALLOC: CandiceModuleCombat[1] - controller-owned combat adapter - owner: CandiceAIController
+                combatModule = new CandiceModuleCombat(transform, onAttackComplete, ModuleCombatName);
+            }
+
+            combatModule.PrepareProjectilePool(Projectile, ProjectileSpawnPos);
+
+            if (movementModule == null)
+            {
+                // COLD ALLOC: CandiceModuleMovement[1] - controller-owned movement adapter - owner: CandiceAIController
+                movementModule = new CandiceModuleMovement(ModuleMovementName);
+            }
+
+            if (detectionModule == null)
+            {
+                // COLD ALLOC: CandiceModuleDetection[1] - controller-owned detection adapter - owner: CandiceAIController
+                detectionModule = new CandiceModuleDetection(gameObject.transform, onObjectFound, ModuleDetectionName);
+            }
+        }
+
+        private void EnsureWanderTarget()
+        {
+            if (wanderTarget != null)
+            {
+                return;
+            }
+
+            if (candice == null || candice.grid == null)
+            {
+                return;
+            }
+
+            // COLD ALLOC: GameObject[1] - persistent Candice wander target transform - owner: CandiceAIController
+            wanderTarget = new GameObject(WanderTargetName);
+            FindTarget(wanderTarget);
+        }
+
+        private void EnsurePathCache()
+        {
+            if (_path != null || candice == null || candice.grid == null)
+            {
+                return;
+            }
+
+            // COLD ALLOC: Path[grid.MaxSize] - reusable Candice A* path boundary cache - owner: CandiceAIController
+            _path = new Path(candice.grid.MaxSize);
         }
 
         private void EnsureRuntimeListCapacity()
@@ -390,10 +451,6 @@ namespace CandiceAIforGames.AI
             if (isRegistered)
             {
                 AgentID = agentId;
-                combatModule = new CandiceModuleCombat(transform, onAttackComplete, "Agent" + AgentID + "-CandiceModuleCombat");
-                combatModule.PrepareProjectilePool(Projectile, ProjectileSpawnPos);
-                movementModule = new CandiceModuleMovement("Agent" + AgentID + "-CandiceModuleMovement");
-                detectionModule = new CandiceModuleDetection(gameObject.transform, onObjectFound, "Agent" + AgentID + "-CandiceModuleDetection");
                 if(is3D)
                     HalfHeight = ((Collider)col).bounds.extents.y;
                 else
@@ -493,7 +550,16 @@ namespace CandiceAIforGames.AI
         /// <returns></returns>
         private void CalculateAStarPath()
         {
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
             Debug.Log("Calculate");
+#endif
+            if (candice == null)
+            {
+                IsCalculatingPath = false;
+                IsFollowingPath = false;
+                return;
+            }
+
             sqrMoveThreshold = _pathUpdateMoveThreshold * _pathUpdateMoveThreshold;
             candice.RequestASTARPath(new PathRequest(transform.position, MovePoint, OnPathFound));
             targetPosOld = MovePoint;
@@ -515,6 +581,12 @@ namespace CandiceAIforGames.AI
         /// <returns></returns>
         private void FollowAStarPath()
         {
+            if (_path == null || _path.lookPointCount <= 0 || pathIndex < 0 || pathIndex >= _path.lookPointCount)
+            {
+                IsFollowingPath = false;
+                return;
+            }
+
             SetLookPointY(_path.lookPoints[pathIndex]);
             MovePoint = _path.lookPoints[pathIndex];
             //MovePoint = _path.lookPoints[pathIndex];
@@ -549,17 +621,19 @@ namespace CandiceAIforGames.AI
             }
         }
 
-        public void OnPathFound(Vector3[] waypoints, bool pathSuccessful)
+        public void OnPathFound(Vector3[] waypoints, int waypointCount, bool pathSuccessful)
         {
-            if (pathSuccessful)
+            if (pathSuccessful && waypoints != null && waypointCount > 0 && _path != null)
             {
-                _path = new Path(waypoints, transform.position, _turnDist, _stoppingDist);
+                _path.Set(waypoints, waypointCount, transform.position, _turnDist, _stoppingDist);
                 IsCalculatingPath = false;
                 IsFollowingPath = true;
                 pathIndex = 0;
             }
             else
             {
+                IsCalculatingPath = false;
+                IsFollowingPath = false;
                 //Debug.LogError("Failed to find path");
             }
         }
@@ -636,8 +710,7 @@ namespace CandiceAIforGames.AI
              */
             if (wanderTarget == null)
             {
-                wanderTarget = new GameObject("WanderTarget: " + AgentID);
-                FindTarget(wanderTarget);
+                return;
             }
 
             float distance = Vector3.Distance(wanderTarget.transform.position, transform.position);
@@ -674,16 +747,32 @@ namespace CandiceAIforGames.AI
         }
         private void FindTarget(GameObject target)
         {
-            do
+            if (target == null || candice == null || candice.grid == null)
             {
-                target.transform.position = new Vector3(UnityEngine.Random.Range(transform.position.x - DetectionRadius, transform.position.x + DetectionRadius), 1, UnityEngine.Random.Range(transform.position.z - DetectionRadius, transform.position.z + DetectionRadius));
+                return;
             }
-            while (!VerifyPoint(target.transform.position));
+
+            for (int i = 0; i < MaxWanderTargetAttempts; i++)
+            {
+                Vector3 candidate = new Vector3(UnityEngine.Random.Range(transform.position.x - DetectionRadius, transform.position.x + DetectionRadius), 1, UnityEngine.Random.Range(transform.position.z - DetectionRadius, transform.position.z + DetectionRadius));
+                if (VerifyPoint(candidate))
+                {
+                    target.transform.position = candidate;
+                    return;
+                }
+            }
+
+            target.transform.position = transform.position;
         }
 
         private bool VerifyPoint(Vector3 point)
         {
             //This method verifies if the chosen wander/flee point is within the game map and is on a walkable region
+            if (candice == null || candice.grid == null)
+            {
+                return false;
+            }
+
             bool isValid = false;
             CandiceGrid grid = candice.grid;
             Vector3 worldBottomLeft = grid.worldBottomLeft;
@@ -761,15 +850,12 @@ namespace CandiceAIforGames.AI
 
         public bool WithinAttackRange()
         {
-            float distance = float.MaxValue;
-            try
+            if (AttackTarget == null)
             {
-                distance = Vector3.Distance(transform.position, AttackTarget.transform.position);
+                return false;
             }
-            catch (Exception e)
-            {
-                Debug.LogError("DefaultBehaviors.WithinAttackRange: No target within attack range: " + e.Message);
-            }
+
+            float distance = Vector3.Distance(transform.position, AttackTarget.transform.position);
             if (distance <= AttackRange)
             {
                 LookPoint = AttackTarget.transform.position;

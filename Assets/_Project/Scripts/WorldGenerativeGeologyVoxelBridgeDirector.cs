@@ -42,6 +42,7 @@ namespace Hecton8.World
         [SerializeField] private bool colliderEnabled;
 
         private bool _registeredInActiveSet;
+        private HectonVoxelVolume _volume;
 
         public long RuntimeKey => runtimeKey;
         public int RequestSignature => requestSignature;
@@ -49,6 +50,7 @@ namespace Hecton8.World
         public int DetailBand => detailBand;
         public string FamilyId => familyId;
         public string GeologyProfileId => geologyProfileId;
+        public HectonVoxelVolume Volume => _volume;
         public bool ColliderEnabled => colliderEnabled;
         public static int ActiveRuntimeCount => Mathf.Max(0, _activeRuntimeCount);
         public static int ActiveColliderCount => Mathf.Max(0, _activeColliderCount);
@@ -80,6 +82,48 @@ namespace Hecton8.World
             return false;
         }
 
+        public static bool TryGetActiveRuntime(HectonVoxelVolume targetVolume, out WorldGenerativeGeologyVoxelRuntime runtime)
+        {
+            runtime = null;
+            if (targetVolume == null)
+                return false;
+
+            WorldGenerativeGeologyVoxelRuntime[] rawArray = _activeVoxelRuntimes.RawArray;
+            int count = _activeVoxelRuntimes.Count;
+            for (int i = 0; i < count; i++)
+            {
+                WorldGenerativeGeologyVoxelRuntime candidate = rawArray[i];
+                if (candidate == null || !candidate.isActiveAndEnabled || !ReferenceEquals(candidate._volume, targetVolume))
+                    continue;
+
+                runtime = candidate;
+                return true;
+            }
+
+            return false;
+        }
+
+        public static bool TryGetActiveRuntime(GameObject targetVolumeObject, out WorldGenerativeGeologyVoxelRuntime runtime)
+        {
+            runtime = null;
+            if (targetVolumeObject == null)
+                return false;
+
+            WorldGenerativeGeologyVoxelRuntime[] rawArray = _activeVoxelRuntimes.RawArray;
+            int count = _activeVoxelRuntimes.Count;
+            for (int i = 0; i < count; i++)
+            {
+                WorldGenerativeGeologyVoxelRuntime candidate = rawArray[i];
+                if (candidate == null || !candidate.isActiveAndEnabled || !ReferenceEquals(candidate.gameObject, targetVolumeObject))
+                    continue;
+
+                runtime = candidate;
+                return true;
+            }
+
+            return false;
+        }
+
         private void OnEnable()
         {
             if (!Application.isPlaying)
@@ -87,6 +131,9 @@ namespace Hecton8.World
 
             if (_registeredInActiveSet)
                 return;
+
+            if (_volume == null)
+                TryGetComponent(out _volume);
 
             _registeredInActiveSet = _activeVoxelRuntimes.TryRegister(this);
             if (!_registeredInActiveSet)
@@ -107,6 +154,8 @@ namespace Hecton8.World
             _activeRuntimeCount = Mathf.Max(0, _activeRuntimeCount - 1);
             if (colliderEnabled)
                 _activeColliderCount = Mathf.Max(0, _activeColliderCount - 1);
+
+            _volume = null;
         }
 
         public void Configure(
@@ -297,6 +346,9 @@ namespace Hecton8.World
             ResolveReferences();
             EnsureFallbackGenerationPreset();
             RefreshColdRegistryDependencies();
+            EnsureVoxelPoolWarmCold(
+                ResolveRuntimeVolumeBudget(ResolveGlobalQualityWeight()),
+                ResolveGlobalQualityWeight());
             TryRegisterRuntimeService();
             TryRegisterRuntimeCallbacks();
         }
@@ -306,6 +358,9 @@ namespace Hecton8.World
             ResolveReferences();
             EnsureFallbackGenerationPreset();
             RefreshColdRegistryDependencies();
+            EnsureVoxelPoolWarmCold(
+                ResolveRuntimeVolumeBudget(ResolveGlobalQualityWeight()),
+                ResolveGlobalQualityWeight());
             TryRegisterRuntimeService();
             TryRegisterRuntimeCallbacks();
         }
@@ -360,6 +415,9 @@ namespace Hecton8.World
             if (serviceSlot == GlobalRegistryServiceSlot.ObjectPool)
             {
                 _objectPoolService = currentService as IObjectPoolService;
+                EnsureVoxelPoolWarmCold(
+                    ResolveRuntimeVolumeBudget(ResolveGlobalQualityWeight()),
+                    ResolveGlobalQualityWeight());
                 return;
             }
 
@@ -634,7 +692,7 @@ namespace Hecton8.World
             }
 
             requestFilterEndTimestamp = System.Diagnostics.Stopwatch.GetTimestamp();
-            EnsureVoxelPoolWarm(_sortedRequests.Count, visualQualityWeight);
+            RefreshVoxelPoolWarmTargetHot(_sortedRequests.Count, visualQualityWeight);
             long poolWarmEndTimestamp = System.Diagnostics.Stopwatch.GetTimestamp();
             _sortedRequests.Sort(CompareRequestsByPriority);
             int spawnBudgetUsed = 0;
@@ -1092,7 +1150,7 @@ namespace Hecton8.World
                         return;
                     }
 
-                    if (!volume.TryGetComponent(out WorldGenerativeGeologyVoxelRuntime runtime))
+                    if (!WorldGenerativeGeologyVoxelRuntime.TryGetActiveRuntime(volume, out WorldGenerativeGeologyVoxelRuntime runtime))
                         runtime = volume.AddComponent<WorldGenerativeGeologyVoxelRuntime>();
                     runtime.Configure(
                         request.runtimeKey,
@@ -1978,7 +2036,19 @@ namespace Hecton8.World
             WorldRuntimeReferenceUtility.TryResolveVoxelEngine(ref voxelEngine);
         }
 
-        private void EnsureVoxelPoolWarm(int requestCount, float visualQualityWeight)
+        private void RefreshVoxelPoolWarmTargetHot(int requestCount, float visualQualityWeight)
+        {
+            int desiredTarget = ResolveVoxelPoolWarmTarget(requestCount, visualQualityWeight);
+            if (desiredTarget > _estimatedWarmedPoolCount)
+            {
+                _debugWarmedPoolTarget = desiredTarget;
+                return;
+            }
+
+            _debugWarmedPoolTarget = _estimatedWarmedPoolCount;
+        }
+
+        private void EnsureVoxelPoolWarmCold(int requestCount, float visualQualityWeight)
         {
             if (!prewarmVoxelPool || voxelEngine == null || voxelEngine.voxelVolumePrefab == null)
             {
@@ -1993,14 +2063,7 @@ namespace Hecton8.World
                 return;
             }
 
-            int runtimeVolumeBudget = ResolveRuntimeVolumeBudget(visualQualityWeight);
-            int warmPadding = ResolvePoolWarmPadding(visualQualityWeight);
-            int desiredTarget = Mathf.Clamp(
-                Mathf.Max(
-                    _activeVolumes.Count + _pendingRuntimeKeys.Count + 1,
-                    Mathf.Min(requestCount, runtimeVolumeBudget) + warmPadding),
-                1,
-                Mathf.Max(1, runtimeVolumeBudget + warmPadding));
+            int desiredTarget = ResolveVoxelPoolWarmTarget(requestCount, visualQualityWeight);
 
             if (desiredTarget <= _estimatedWarmedPoolCount)
             {
@@ -2015,6 +2078,18 @@ namespace Hecton8.World
             pool.Warmup(voxelEngine.voxelVolumePrefab, warmupBatch);
             _estimatedWarmedPoolCount += warmupBatch;
             _debugWarmedPoolTarget = _estimatedWarmedPoolCount;
+        }
+
+        private int ResolveVoxelPoolWarmTarget(int requestCount, float visualQualityWeight)
+        {
+            int runtimeVolumeBudget = ResolveRuntimeVolumeBudget(visualQualityWeight);
+            int warmPadding = ResolvePoolWarmPadding(visualQualityWeight);
+            return Mathf.Clamp(
+                Mathf.Max(
+                    _activeVolumes.Count + _pendingRuntimeKeys.Count + 1,
+                    Mathf.Min(requestCount, runtimeVolumeBudget) + warmPadding),
+                1,
+                Mathf.Max(1, runtimeVolumeBudget + warmPadding));
         }
 
         private void RecordVoxelBridgeBlackBox(

@@ -12,12 +12,13 @@ using Unity.Collections.LowLevel.Unsafe;
 using Unity.Jobs;
 using Unity.Mathematics;
 using UnityEngine;
+using UnityEngine.Serialization;
 
 namespace Hecton8.Atmosphere
 {
     [DisallowMultipleComponent]
     [AddComponentMenu("Hecton/Atmosphere/Gas Dynamics Solver")]
-    public sealed class GasDynamicsSolver : MonoBehaviour, IGasDynamicsSolver, IFixedTickable, IPostFixedTickable, IFrostTickable, IGlobalRegistryHotSwapListener
+    public sealed class GasDynamicsSolver : MonoBehaviour, IGasDynamicsSolver, IFixedTickable, IPostFixedTickable, IFrostTickable, ILateFrameTickable, IGlobalRegistryHotSwapListener
     {
         private const int MaxRoomCapacity = 128;
         private const int MaxBulkheadCapacity = 256;
@@ -44,7 +45,7 @@ namespace Hecton8.Atmosphere
         private const float FreezingScrubberEfficiencyScale = HectonSurvivalContract.FreezingScrubberEfficiencyScale;
         private const float DefaultDiffusionConductancePerSecond = HectonSurvivalContract.DefaultDiffusionConductancePerSecond;
         private const float DefaultHibernationDistanceMeters = HectonSurvivalContract.DefaultHibernationDistanceMeters;
-        private const float DefaultLowTierHibernationDistanceMeters = HectonSurvivalContract.DefaultLowTierHibernationDistanceMeters;
+        private const float DefaultSurvivalHibernationDistanceMeters = HectonSurvivalContract.DefaultLowTierHibernationDistanceMeters;
         private const float DefaultHibernationHysteresisMeters = HectonSurvivalContract.DefaultHibernationHysteresisMeters;
         private const float DefaultBaseIdleDrawWatts = HectonSurvivalContract.DefaultBaseIdleDrawWatts;
         private const float DefaultBaseBatteryWattSeconds = HectonSurvivalContract.DefaultBaseBatteryWattSeconds;
@@ -130,12 +131,16 @@ namespace Hecton8.Atmosphere
         private const uint LockBulkheadRoomA = 1u << 28;
         private const uint LockBulkheadRoomB = 1u << 29;
         private const uint LockBulkheadSealed = 1u << 30;
+        private const uint AllStateWriteLockMask = 0x7FFFFFFFu;
 
         [SerializeField, Range(1, MaxRoomCapacity)] private int roomCapacity = 64;
         [SerializeField, Range(0, MaxBulkheadCapacity)] private int bulkheadCapacity = 128;
-        [SerializeField, Min(0.1f)] private float lowTierColdTickSeconds = 2.0f;
-        [SerializeField, Min(0.05f)] private float midTierColdTickSeconds = 0.5f;
-        [SerializeField, Min(0.02f)] private float highTierColdTickSeconds = 0.1f;
+        [FormerlySerializedAs("lowTierColdTickSeconds")]
+        [SerializeField, Min(0.1f)] private float survivalColdTickSeconds = 2.0f;
+        [FormerlySerializedAs("midTierColdTickSeconds")]
+        [SerializeField, Min(0.05f)] private float standardColdTickSeconds = 0.5f;
+        [FormerlySerializedAs("highTierColdTickSeconds")]
+        [SerializeField, Min(0.02f)] private float overkillColdTickSeconds = 0.1f;
         [SerializeField, Min(0f)] private float playerOxygenKPaPerSecond = DefaultPlayerO2KPaPerSecond;
         [SerializeField, Min(0f)] private float playerCarbonDioxideKPaPerSecond = DefaultPlayerCO2KPaPerSecond;
         [SerializeField, Min(0f)] private float fireOxygenDrainKPaPerSecond = DefaultFireO2KPaPerSecond;
@@ -154,7 +159,8 @@ namespace Hecton8.Atmosphere
         [Tooltip("Authoritative hibernation distance. Hardware quality must not alter gas truth.")]
         [SerializeField, Min(1f)] private float hibernationDistanceMeters = DefaultHibernationDistanceMeters;
         [Tooltip("Legacy serialized fallback. Gas authority treats this only as a conservative distance floor.")]
-        [SerializeField, Min(1f)] private float lowTierHibernationDistanceMeters = DefaultLowTierHibernationDistanceMeters;
+        [FormerlySerializedAs("lowTierHibernationDistanceMeters")]
+        [SerializeField, Min(1f)] private float survivalHibernationDistanceMeters = DefaultSurvivalHibernationDistanceMeters;
         [Tooltip("Distance band preventing awake/sleep flicker around the hibernation threshold.")]
         [SerializeField, Min(3f)] private float hibernationHysteresisMeters = DefaultHibernationHysteresisMeters;
         [Tooltip("Fallback battery capacity for unconfigured base atmosphere islands.")]
@@ -198,6 +204,7 @@ namespace Hecton8.Atmosphere
         private VaultGenerationHandle<int> _bulkheadRoomBHandle;
         private VaultGenerationHandle<byte> _bulkheadSealedHandle;
         private VaultGenerationHandle<GasDynamicsTelemetryEntry> _telemetryRingHandle;
+        private GasDynamicsScratchBuffers _scratchBuffers = new GasDynamicsScratchBuffers();
         // COLD ALLOC: PendingBaseTransitionSignal[128] - fixed managed staging for same-phase gas mutation - owner: GasDynamicsSolver
         private readonly PendingBaseTransitionSignal[] _deferredBaseTransitions = new PendingBaseTransitionSignal[PendingBaseTransitionCapacity];
         private int _deferredBaseTransitionCount;
@@ -207,6 +214,8 @@ namespace Hecton8.Atmosphere
         private bool _registeredHotSwap;
         private bool _telemetryRingLocked;
         private uint _stateWriteLockMask;
+        private IDataVault _stateWriteMutationGuardVault;
+        private ulong _stateWriteMutationGuardMask;
         private int _stateWriteLockDepth;
         private int _stateWriteRequiredRoomCount;
         private int _stateWriteRequiredBaseCount;
@@ -220,6 +229,9 @@ namespace Hecton8.Atmosphere
         private int _latestToxicitySignalSequence;
         private int _toxicitySignalReadSequence;
         private int _toxicityExposureSignalDropCount;
+        private bool _pendingPostFixedPresentation;
+        private bool _pendingTelemetryFaultCheck;
+        private float _pendingPresentationDeltaTime;
         // Fixed 128-room bitmask stages repair seals while the gas job owns room lanes.
         private ulong _pendingHullRepairRoomsLo;
         private ulong _pendingHullRepairRoomsHi;
@@ -238,37 +250,44 @@ namespace Hecton8.Atmosphere
         private IPlayerMovementContracts _playerMovementContracts;
         private IDataVault _dataVault;
 
-        private NativeArray<float> ResolveRoomO2() => ResolveLane(in _roomO2Handle);
-        private NativeArray<float> ResolveRoomCO2() => ResolveLane(in _roomCO2Handle);
-        private NativeArray<float> ResolveRoomPressure() => ResolveLane(in _roomPressureHandle);
-        private NativeArray<float> ResolveRoomO2Back() => ResolveLane(in _roomO2BackHandle);
-        private NativeArray<float> ResolveRoomCO2Back() => ResolveLane(in _roomCO2BackHandle);
-        private NativeArray<float> ResolveRoomNitrogen() => ResolveLane(in _roomNitrogenHandle);
-        private NativeArray<float> ResolveRoomNitrogenBack() => ResolveLane(in _roomNitrogenBackHandle);
-        private NativeArray<float> ResolveRoomPressureBack() => ResolveLane(in _roomPressureBackHandle);
-        private NativeArray<float> ResolveRoomAmbientPressure() => ResolveLane(in _roomAmbientPressureHandle);
-        private NativeArray<float> ResolveRoomSubmerged01() => ResolveLane(in _roomSubmerged01Handle);
-        private NativeArray<float> ResolveRoomPlayerStress01() => ResolveLane(in _roomPlayerStress01Handle);
-        private NativeArray<float> ResolveRoomPlayerHeartRateBpm() => ResolveLane(in _roomPlayerHeartRateBpmHandle);
-        private NativeArray<float> ResolveRoomTemperatureCelsius() => ResolveLane(in _roomTemperatureCelsiusHandle);
-        private NativeArray<byte> ResolveRoomPlayerPresent() => ResolveLane(in _roomPlayerPresentHandle);
-        private NativeArray<byte> ResolveRoomScrubberPowered() => ResolveLane(in _roomScrubberPoweredHandle);
-        private NativeArray<ushort> ResolveRoomFlags() => ResolveLane(in _roomFlagsHandle);
-        private NativeArray<int> ResolveRoomBaseIndex() => ResolveLane(in _roomBaseIndexHandle);
-        private NativeArray<byte> ResolveBaseAwakeState() => ResolveLane(in _baseAwakeStateHandle);
-        private NativeArray<byte> ResolveBasePlayerInside() => ResolveLane(in _basePlayerInsideHandle);
-        private NativeArray<int> ResolveBasePlayerInsideCount() => ResolveLane(in _basePlayerInsideCountHandle);
-        private NativeArray<int> ResolveBaseRoomStart() => ResolveLane(in _baseRoomStartHandle);
-        private NativeArray<int> ResolveBaseRoomCount() => ResolveLane(in _baseRoomCountHandle);
-        private NativeArray<AbsoluteUniversePosition> ResolveBaseCenterAup() => ResolveLane(in _baseCenterAupHandle);
-        private NativeArray<double> ResolveBaseHibernatedUnscaledTime() => ResolveLane(in _baseHibernatedUnscaledTimeHandle);
-        private NativeArray<float> ResolveBaseBatteryWattSeconds() => ResolveLane(in _baseBatteryWattSecondsHandle);
-        private NativeArray<float> ResolveBaseIdleDrawWatts() => ResolveLane(in _baseIdleDrawWattsHandle);
-        private NativeArray<float> ResolveBaseLeakRatePerSecond() => ResolveLane(in _baseLeakRatePerSecondHandle);
-        private NativeArray<float> ResolveBaseAmbientOxygenKPa() => ResolveLane(in _baseAmbientOxygenKPaHandle);
-        private NativeArray<int> ResolveBulkheadRoomA() => ResolveLane(in _bulkheadRoomAHandle);
-        private NativeArray<int> ResolveBulkheadRoomB() => ResolveLane(in _bulkheadRoomBHandle);
-        private NativeArray<byte> ResolveBulkheadSealed() => ResolveLane(in _bulkheadSealedHandle);
+        private ref NativeArray<GasDynamicsTelemetryEntry> _stepTelemetryScratch => ref _scratchBuffers.StepTelemetry;
+
+        private sealed class GasDynamicsScratchBuffers
+        {
+            public NativeArray<GasDynamicsTelemetryEntry> StepTelemetry;
+        }
+
+        private NativeArray<float> ResolveRoomO2() => ResolveLane(in _roomO2Handle, RoomO2BufferId);
+        private NativeArray<float> ResolveRoomCO2() => ResolveLane(in _roomCO2Handle, RoomCO2BufferId);
+        private NativeArray<float> ResolveRoomPressure() => ResolveLane(in _roomPressureHandle, RoomPressureBufferId);
+        private NativeArray<float> ResolveRoomO2Back() => ResolveLane(in _roomO2BackHandle, RoomO2BackBufferId);
+        private NativeArray<float> ResolveRoomCO2Back() => ResolveLane(in _roomCO2BackHandle, RoomCO2BackBufferId);
+        private NativeArray<float> ResolveRoomNitrogen() => ResolveLane(in _roomNitrogenHandle, RoomNitrogenBufferId);
+        private NativeArray<float> ResolveRoomNitrogenBack() => ResolveLane(in _roomNitrogenBackHandle, RoomNitrogenBackBufferId);
+        private NativeArray<float> ResolveRoomPressureBack() => ResolveLane(in _roomPressureBackHandle, RoomPressureBackBufferId);
+        private NativeArray<float> ResolveRoomAmbientPressure() => ResolveLane(in _roomAmbientPressureHandle, RoomAmbientPressureBufferId);
+        private NativeArray<float> ResolveRoomSubmerged01() => ResolveLane(in _roomSubmerged01Handle, RoomSubmerged01BufferId);
+        private NativeArray<float> ResolveRoomPlayerStress01() => ResolveLane(in _roomPlayerStress01Handle, RoomPlayerStress01BufferId);
+        private NativeArray<float> ResolveRoomPlayerHeartRateBpm() => ResolveLane(in _roomPlayerHeartRateBpmHandle, RoomPlayerHeartRateBpmBufferId);
+        private NativeArray<float> ResolveRoomTemperatureCelsius() => ResolveLane(in _roomTemperatureCelsiusHandle, RoomTemperatureCelsiusBufferId);
+        private NativeArray<byte> ResolveRoomPlayerPresent() => ResolveLane(in _roomPlayerPresentHandle, RoomPlayerPresentBufferId);
+        private NativeArray<byte> ResolveRoomScrubberPowered() => ResolveLane(in _roomScrubberPoweredHandle, RoomScrubberPoweredBufferId);
+        private NativeArray<ushort> ResolveRoomFlags() => ResolveLane(in _roomFlagsHandle, RoomFlagsBufferId);
+        private NativeArray<int> ResolveRoomBaseIndex() => ResolveLane(in _roomBaseIndexHandle, RoomBaseIndexBufferId);
+        private NativeArray<byte> ResolveBaseAwakeState() => ResolveLane(in _baseAwakeStateHandle, BufferID.HabitatBaseAwakeState);
+        private NativeArray<byte> ResolveBasePlayerInside() => ResolveLane(in _basePlayerInsideHandle, BasePlayerInsideBufferId);
+        private NativeArray<int> ResolveBasePlayerInsideCount() => ResolveLane(in _basePlayerInsideCountHandle, BasePlayerInsideCountBufferId);
+        private NativeArray<int> ResolveBaseRoomStart() => ResolveLane(in _baseRoomStartHandle, BaseRoomStartBufferId);
+        private NativeArray<int> ResolveBaseRoomCount() => ResolveLane(in _baseRoomCountHandle, BaseRoomCountBufferId);
+        private NativeArray<AbsoluteUniversePosition> ResolveBaseCenterAup() => ResolveLane(in _baseCenterAupHandle, BaseCenterAupBufferId);
+        private NativeArray<double> ResolveBaseHibernatedUnscaledTime() => ResolveLane(in _baseHibernatedUnscaledTimeHandle, BaseHibernatedUnscaledTimeBufferId);
+        private NativeArray<float> ResolveBaseBatteryWattSeconds() => ResolveLane(in _baseBatteryWattSecondsHandle, BaseBatteryWattSecondsBufferId);
+        private NativeArray<float> ResolveBaseIdleDrawWatts() => ResolveLane(in _baseIdleDrawWattsHandle, BaseIdleDrawWattsBufferId);
+        private NativeArray<float> ResolveBaseLeakRatePerSecond() => ResolveLane(in _baseLeakRatePerSecondHandle, BaseLeakRatePerSecondBufferId);
+        private NativeArray<float> ResolveBaseAmbientOxygenKPa() => ResolveLane(in _baseAmbientOxygenKPaHandle, BaseAmbientOxygenKPaBufferId);
+        private NativeArray<int> ResolveBulkheadRoomA() => ResolveLane(in _bulkheadRoomAHandle, BulkheadRoomABufferId);
+        private NativeArray<int> ResolveBulkheadRoomB() => ResolveLane(in _bulkheadRoomBHandle, BulkheadRoomBBufferId);
+        private NativeArray<byte> ResolveBulkheadSealed() => ResolveLane(in _bulkheadSealedHandle, BulkheadSealedBufferId);
 
         public bool IsInitialized =>
             _deferredBaseTransitions.Length >= PendingBaseTransitionCapacity &&
@@ -371,6 +390,11 @@ namespace Hecton8.Atmosphere
             TryCompleteStep();
         }
 
+        public void LateFrameTick()
+        {
+            FlushPostFixedPresentation();
+        }
+
         public void FrostTick()
         {
             if (!Application.isPlaying)
@@ -408,11 +432,11 @@ namespace Hecton8.Atmosphere
             if (_stepRunning ||
                 roomId < 0 ||
                 roomId >= _roomCount ||
-                !TryReadLane(in _roomO2Handle, roomId + 1, out NativeArray<float>.ReadOnly RoomO2) ||
-                !TryReadLane(in _roomCO2Handle, roomId + 1, out NativeArray<float>.ReadOnly RoomCO2) ||
-                !TryReadLane(in _roomNitrogenHandle, roomId + 1, out NativeArray<float>.ReadOnly _roomNitrogen) ||
-                !TryReadLane(in _roomAmbientPressureHandle, roomId + 1, out NativeArray<float>.ReadOnly _roomAmbientPressure) ||
-                !TryReadLane(in _roomFlagsHandle, roomId + 1, out NativeArray<ushort>.ReadOnly _roomFlags))
+                !TryReadLane(in _roomO2Handle, RoomO2BufferId, roomId + 1, out NativeArray<float>.ReadOnly RoomO2) ||
+                !TryReadLane(in _roomCO2Handle, RoomCO2BufferId, roomId + 1, out NativeArray<float>.ReadOnly RoomCO2) ||
+                !TryReadLane(in _roomNitrogenHandle, RoomNitrogenBufferId, roomId + 1, out NativeArray<float>.ReadOnly _roomNitrogen) ||
+                !TryReadLane(in _roomAmbientPressureHandle, RoomAmbientPressureBufferId, roomId + 1, out NativeArray<float>.ReadOnly _roomAmbientPressure) ||
+                !TryReadLane(in _roomFlagsHandle, RoomFlagsBufferId, roomId + 1, out NativeArray<ushort>.ReadOnly _roomFlags))
             {
                 return false;
             }
@@ -441,15 +465,15 @@ namespace Hecton8.Atmosphere
             if (_stepRunning ||
                 baseId < 0 ||
                 baseId >= _baseCount ||
-                !TryReadLane(in _baseRoomStartHandle, baseId + 1, out NativeArray<int>.ReadOnly _baseRoomStart) ||
-                !TryReadLane(in _baseRoomCountHandle, baseId + 1, out NativeArray<int>.ReadOnly _baseRoomCount) ||
-                !TryReadLane(in _baseCenterAupHandle, baseId + 1, out NativeArray<AbsoluteUniversePosition>.ReadOnly _baseCenterAup) ||
-                !TryReadLane(in _baseAwakeStateHandle, baseId + 1, out NativeArray<byte>.ReadOnly BaseAwakeState) ||
-                !TryReadLane(in _basePlayerInsideHandle, baseId + 1, out NativeArray<byte>.ReadOnly _basePlayerInside) ||
-                !TryReadLane(in _baseBatteryWattSecondsHandle, baseId + 1, out NativeArray<float>.ReadOnly _baseBatteryWattSeconds) ||
-                !TryReadLane(in _baseIdleDrawWattsHandle, baseId + 1, out NativeArray<float>.ReadOnly _baseIdleDrawWatts) ||
-                !TryReadLane(in _baseLeakRatePerSecondHandle, baseId + 1, out NativeArray<float>.ReadOnly _baseLeakRatePerSecond) ||
-                !TryReadLane(in _baseHibernatedUnscaledTimeHandle, baseId + 1, out NativeArray<double>.ReadOnly _baseHibernatedUnscaledTime))
+                !TryReadLane(in _baseRoomStartHandle, BaseRoomStartBufferId, baseId + 1, out NativeArray<int>.ReadOnly _baseRoomStart) ||
+                !TryReadLane(in _baseRoomCountHandle, BaseRoomCountBufferId, baseId + 1, out NativeArray<int>.ReadOnly _baseRoomCount) ||
+                !TryReadLane(in _baseCenterAupHandle, BaseCenterAupBufferId, baseId + 1, out NativeArray<AbsoluteUniversePosition>.ReadOnly _baseCenterAup) ||
+                !TryReadLane(in _baseAwakeStateHandle, BufferID.HabitatBaseAwakeState, baseId + 1, out NativeArray<byte>.ReadOnly BaseAwakeState) ||
+                !TryReadLane(in _basePlayerInsideHandle, BasePlayerInsideBufferId, baseId + 1, out NativeArray<byte>.ReadOnly _basePlayerInside) ||
+                !TryReadLane(in _baseBatteryWattSecondsHandle, BaseBatteryWattSecondsBufferId, baseId + 1, out NativeArray<float>.ReadOnly _baseBatteryWattSeconds) ||
+                !TryReadLane(in _baseIdleDrawWattsHandle, BaseIdleDrawWattsBufferId, baseId + 1, out NativeArray<float>.ReadOnly _baseIdleDrawWatts) ||
+                !TryReadLane(in _baseLeakRatePerSecondHandle, BaseLeakRatePerSecondBufferId, baseId + 1, out NativeArray<float>.ReadOnly _baseLeakRatePerSecond) ||
+                !TryReadLane(in _baseHibernatedUnscaledTimeHandle, BaseHibernatedUnscaledTimeBufferId, baseId + 1, out NativeArray<double>.ReadOnly _baseHibernatedUnscaledTime))
             {
                 return false;
             }
@@ -898,37 +922,37 @@ namespace Hecton8.Atmosphere
         public bool TryGetNativeMemoryAudit(out GasDynamicsNativeMemoryAudit audit)
         {
             audit = default;
-            if (!TryReadLane(in _roomO2Handle, _roomCount, out NativeArray<float>.ReadOnly RoomO2) ||
-                !TryReadLane(in _roomCO2Handle, _roomCount, out NativeArray<float>.ReadOnly RoomCO2) ||
-                !TryReadLane(in _roomPressureHandle, _roomCount, out NativeArray<float>.ReadOnly RoomPressure) ||
-                !TryReadLane(in _roomO2BackHandle, _roomCount, out NativeArray<float>.ReadOnly _roomO2Back) ||
-                !TryReadLane(in _roomCO2BackHandle, _roomCount, out NativeArray<float>.ReadOnly _roomCO2Back) ||
-                !TryReadLane(in _roomNitrogenHandle, _roomCount, out NativeArray<float>.ReadOnly _roomNitrogen) ||
-                !TryReadLane(in _roomNitrogenBackHandle, _roomCount, out NativeArray<float>.ReadOnly _roomNitrogenBack) ||
-                !TryReadLane(in _roomPressureBackHandle, _roomCount, out NativeArray<float>.ReadOnly _roomPressureBack) ||
-                !TryReadLane(in _roomAmbientPressureHandle, _roomCount, out NativeArray<float>.ReadOnly _roomAmbientPressure) ||
-                !TryReadLane(in _roomSubmerged01Handle, _roomCount, out NativeArray<float>.ReadOnly _roomSubmerged01) ||
-                !TryReadLane(in _roomPlayerStress01Handle, _roomCount, out NativeArray<float>.ReadOnly _roomPlayerStress01) ||
-                !TryReadLane(in _roomPlayerHeartRateBpmHandle, _roomCount, out NativeArray<float>.ReadOnly _roomPlayerHeartRateBpm) ||
-                !TryReadLane(in _roomTemperatureCelsiusHandle, _roomCount, out NativeArray<float>.ReadOnly _roomTemperatureCelsius) ||
-                !TryReadLane(in _roomPlayerPresentHandle, _roomCount, out NativeArray<byte>.ReadOnly _roomPlayerPresent) ||
-                !TryReadLane(in _roomScrubberPoweredHandle, _roomCount, out NativeArray<byte>.ReadOnly _roomScrubberPowered) ||
-                !TryReadLane(in _roomFlagsHandle, _roomCount, out NativeArray<ushort>.ReadOnly _roomFlags) ||
-                !TryReadLane(in _roomBaseIndexHandle, _roomCount, out NativeArray<int>.ReadOnly _roomBaseIndex) ||
-                !TryReadLane(in _baseAwakeStateHandle, _baseCount, out NativeArray<byte>.ReadOnly BaseAwakeState) ||
-                !TryReadLane(in _basePlayerInsideHandle, _baseCount, out NativeArray<byte>.ReadOnly _basePlayerInside) ||
-                !TryReadLane(in _basePlayerInsideCountHandle, _baseCount, out NativeArray<int>.ReadOnly _basePlayerInsideCount) ||
-                !TryReadLane(in _baseRoomStartHandle, _baseCount, out NativeArray<int>.ReadOnly _baseRoomStart) ||
-                !TryReadLane(in _baseRoomCountHandle, _baseCount, out NativeArray<int>.ReadOnly _baseRoomCount) ||
-                !TryReadLane(in _baseCenterAupHandle, _baseCount, out NativeArray<AbsoluteUniversePosition>.ReadOnly _baseCenterAup) ||
-                !TryReadLane(in _baseHibernatedUnscaledTimeHandle, _baseCount, out NativeArray<double>.ReadOnly _baseHibernatedUnscaledTime) ||
-                !TryReadLane(in _baseBatteryWattSecondsHandle, _baseCount, out NativeArray<float>.ReadOnly _baseBatteryWattSeconds) ||
-                !TryReadLane(in _baseIdleDrawWattsHandle, _baseCount, out NativeArray<float>.ReadOnly _baseIdleDrawWatts) ||
-                !TryReadLane(in _baseLeakRatePerSecondHandle, _baseCount, out NativeArray<float>.ReadOnly _baseLeakRatePerSecond) ||
-                !TryReadLane(in _baseAmbientOxygenKPaHandle, _baseCount, out NativeArray<float>.ReadOnly _baseAmbientOxygenKPa) ||
-                !TryReadLane(in _bulkheadRoomAHandle, _bulkheadCount, out NativeArray<int>.ReadOnly _bulkheadRoomA) ||
-                !TryReadLane(in _bulkheadRoomBHandle, _bulkheadCount, out NativeArray<int>.ReadOnly _bulkheadRoomB) ||
-                !TryReadLane(in _bulkheadSealedHandle, _bulkheadCount, out NativeArray<byte>.ReadOnly _bulkheadSealed) ||
+            if (!TryReadLane(in _roomO2Handle, RoomO2BufferId, _roomCount, out NativeArray<float>.ReadOnly RoomO2) ||
+                !TryReadLane(in _roomCO2Handle, RoomCO2BufferId, _roomCount, out NativeArray<float>.ReadOnly RoomCO2) ||
+                !TryReadLane(in _roomPressureHandle, RoomPressureBufferId, _roomCount, out NativeArray<float>.ReadOnly RoomPressure) ||
+                !TryReadLane(in _roomO2BackHandle, RoomO2BackBufferId, _roomCount, out NativeArray<float>.ReadOnly _roomO2Back) ||
+                !TryReadLane(in _roomCO2BackHandle, RoomCO2BackBufferId, _roomCount, out NativeArray<float>.ReadOnly _roomCO2Back) ||
+                !TryReadLane(in _roomNitrogenHandle, RoomNitrogenBufferId, _roomCount, out NativeArray<float>.ReadOnly _roomNitrogen) ||
+                !TryReadLane(in _roomNitrogenBackHandle, RoomNitrogenBackBufferId, _roomCount, out NativeArray<float>.ReadOnly _roomNitrogenBack) ||
+                !TryReadLane(in _roomPressureBackHandle, RoomPressureBackBufferId, _roomCount, out NativeArray<float>.ReadOnly _roomPressureBack) ||
+                !TryReadLane(in _roomAmbientPressureHandle, RoomAmbientPressureBufferId, _roomCount, out NativeArray<float>.ReadOnly _roomAmbientPressure) ||
+                !TryReadLane(in _roomSubmerged01Handle, RoomSubmerged01BufferId, _roomCount, out NativeArray<float>.ReadOnly _roomSubmerged01) ||
+                !TryReadLane(in _roomPlayerStress01Handle, RoomPlayerStress01BufferId, _roomCount, out NativeArray<float>.ReadOnly _roomPlayerStress01) ||
+                !TryReadLane(in _roomPlayerHeartRateBpmHandle, RoomPlayerHeartRateBpmBufferId, _roomCount, out NativeArray<float>.ReadOnly _roomPlayerHeartRateBpm) ||
+                !TryReadLane(in _roomTemperatureCelsiusHandle, RoomTemperatureCelsiusBufferId, _roomCount, out NativeArray<float>.ReadOnly _roomTemperatureCelsius) ||
+                !TryReadLane(in _roomPlayerPresentHandle, RoomPlayerPresentBufferId, _roomCount, out NativeArray<byte>.ReadOnly _roomPlayerPresent) ||
+                !TryReadLane(in _roomScrubberPoweredHandle, RoomScrubberPoweredBufferId, _roomCount, out NativeArray<byte>.ReadOnly _roomScrubberPowered) ||
+                !TryReadLane(in _roomFlagsHandle, RoomFlagsBufferId, _roomCount, out NativeArray<ushort>.ReadOnly _roomFlags) ||
+                !TryReadLane(in _roomBaseIndexHandle, RoomBaseIndexBufferId, _roomCount, out NativeArray<int>.ReadOnly _roomBaseIndex) ||
+                !TryReadLane(in _baseAwakeStateHandle, BufferID.HabitatBaseAwakeState, _baseCount, out NativeArray<byte>.ReadOnly BaseAwakeState) ||
+                !TryReadLane(in _basePlayerInsideHandle, BasePlayerInsideBufferId, _baseCount, out NativeArray<byte>.ReadOnly _basePlayerInside) ||
+                !TryReadLane(in _basePlayerInsideCountHandle, BasePlayerInsideCountBufferId, _baseCount, out NativeArray<int>.ReadOnly _basePlayerInsideCount) ||
+                !TryReadLane(in _baseRoomStartHandle, BaseRoomStartBufferId, _baseCount, out NativeArray<int>.ReadOnly _baseRoomStart) ||
+                !TryReadLane(in _baseRoomCountHandle, BaseRoomCountBufferId, _baseCount, out NativeArray<int>.ReadOnly _baseRoomCount) ||
+                !TryReadLane(in _baseCenterAupHandle, BaseCenterAupBufferId, _baseCount, out NativeArray<AbsoluteUniversePosition>.ReadOnly _baseCenterAup) ||
+                !TryReadLane(in _baseHibernatedUnscaledTimeHandle, BaseHibernatedUnscaledTimeBufferId, _baseCount, out NativeArray<double>.ReadOnly _baseHibernatedUnscaledTime) ||
+                !TryReadLane(in _baseBatteryWattSecondsHandle, BaseBatteryWattSecondsBufferId, _baseCount, out NativeArray<float>.ReadOnly _baseBatteryWattSeconds) ||
+                !TryReadLane(in _baseIdleDrawWattsHandle, BaseIdleDrawWattsBufferId, _baseCount, out NativeArray<float>.ReadOnly _baseIdleDrawWatts) ||
+                !TryReadLane(in _baseLeakRatePerSecondHandle, BaseLeakRatePerSecondBufferId, _baseCount, out NativeArray<float>.ReadOnly _baseLeakRatePerSecond) ||
+                !TryReadLane(in _baseAmbientOxygenKPaHandle, BaseAmbientOxygenKPaBufferId, _baseCount, out NativeArray<float>.ReadOnly _baseAmbientOxygenKPa) ||
+                !TryReadLane(in _bulkheadRoomAHandle, BulkheadRoomABufferId, _bulkheadCount, out NativeArray<int>.ReadOnly _bulkheadRoomA) ||
+                !TryReadLane(in _bulkheadRoomBHandle, BulkheadRoomBBufferId, _bulkheadCount, out NativeArray<int>.ReadOnly _bulkheadRoomB) ||
+                !TryReadLane(in _bulkheadSealedHandle, BulkheadSealedBufferId, _bulkheadCount, out NativeArray<byte>.ReadOnly _bulkheadSealed) ||
                 !TryReadTelemetryRing(out NativeArray<GasDynamicsTelemetryEntry>.ReadOnly telemetryRing))
             {
                 return false;
@@ -988,7 +1012,7 @@ namespace Hecton8.Atmosphere
             depthStress01 = FiniteSaturate01(depthStress01);
             if (roomId < 0 ||
                 roomId >= _roomCount ||
-                !TryReadLane(in _roomPressureHandle, roomId + 1, out NativeArray<float>.ReadOnly RoomPressure))
+                !TryReadLane(in _roomPressureHandle, RoomPressureBufferId, roomId + 1, out NativeArray<float>.ReadOnly RoomPressure))
             {
                 return depthStress01;
             }
@@ -1053,7 +1077,7 @@ namespace Hecton8.Atmosphere
                     _playerMovementContracts = currentService as IPlayerMovementContracts;
                     break;
                 case GlobalRegistryServiceSlot.DataVault:
-                    IDataVault nextVault = currentService as IDataVault;
+                    IDataVault nextVault = currentService is IDataVault dataVault ? dataVault : null;
                     RebindDataVaultForLifecycle(nextVault);
 
                     if (nextVault != null && isActiveAndEnabled)
@@ -1072,13 +1096,16 @@ namespace Hecton8.Atmosphere
 
             bool fixedRegistered = GlobalRegistry.TryRegisterFixedTickable(this, PriorityLayer.Environment);
             bool postFixedRegistered = GlobalRegistry.TryRegisterPostFixedTickable(this, PriorityLayer.Environment);
+            bool lateFrameRegistered = GlobalRegistry.TryRegisterLateFrameTickable(this, PriorityLayer.Environment);
             bool frostRegistered = GlobalRegistry.TryRegisterFrostTickable(this, PriorityLayer.Environment);
-            if (!fixedRegistered || !postFixedRegistered || !frostRegistered)
+            if (!fixedRegistered || !postFixedRegistered || !lateFrameRegistered || !frostRegistered)
             {
                 if (fixedRegistered)
                     GlobalRegistry.UnregisterFixedTickable(this, PriorityLayer.Environment);
                 if (postFixedRegistered)
                     GlobalRegistry.UnregisterPostFixedTickable(this, PriorityLayer.Environment);
+                if (lateFrameRegistered)
+                    GlobalRegistry.UnregisterLateFrameTickable(this, PriorityLayer.Environment);
                 if (frostRegistered)
                     GlobalRegistry.UnregisterFrostTickable(this, PriorityLayer.Environment);
                 return;
@@ -1093,6 +1120,7 @@ namespace Hecton8.Atmosphere
                 return;
 
             GlobalRegistry.UnregisterPostFixedTickable(this, PriorityLayer.Environment);
+            GlobalRegistry.UnregisterLateFrameTickable(this, PriorityLayer.Environment);
             GlobalRegistry.UnregisterFixedTickable(this, PriorityLayer.Environment);
             GlobalRegistry.UnregisterFrostTickable(this, PriorityLayer.Environment);
             _registeredTicks = false;
@@ -1106,7 +1134,7 @@ namespace Hecton8.Atmosphere
             if (!AreDtoLayoutsValid())
                 return;
 
-            if (_roomO2Handle.BufferID != 0u)
+            if (IsOwnedGasLane(in _roomO2Handle, RoomO2BufferId))
                 DisposeNativeStateDeferred();
 
             int safeRoomCapacity = math.clamp(roomCapacity, 1, MaxRoomCapacity);
@@ -1124,6 +1152,7 @@ namespace Hecton8.Atmosphere
 
             if (!TryEnsureGasStateHandles(safeRoomCapacity, safeBaseCapacity, safeBulkheadCapacity) ||
                 !TryEnsureTelemetryRing() ||
+                !TryEnsureTelemetryScratchCold() ||
                 !TryAcquireStateWriteLocks(safeRoomCapacity, safeBaseCapacity, math.max(1, safeBulkheadCapacity)))
             {
                 DisposeNativeStateDeferred();
@@ -1251,14 +1280,16 @@ namespace Hecton8.Atmosphere
                    buffer.Length >= safeLength;
         }
 
-        private NativeArray<T> ResolveLane<T>(in VaultGenerationHandle<T> handle) where T : struct
+        private NativeArray<T> ResolveLane<T>(
+            in VaultGenerationHandle<T> handle,
+            BufferID bufferId) where T : struct
         {
             IDataVault vault = _dataVault;
             if (vault == null ||
                 vault.IsCompactionFenceActive ||
                 _stateWriteLockMask == 0u ||
-                handle.BufferID == 0u ||
-                handle.SystemID != (uint)OwnerSystemId ||
+                _stateWriteMutationGuardMask == 0UL ||
+                !IsOwnedGasLane(in handle, bufferId) ||
                 !vault.TryReadHandle(in handle, out NativeArray<T> buffer) ||
                 vault.IsCompactionFenceActive ||
                 !buffer.IsCreated)
@@ -1271,6 +1302,7 @@ namespace Hecton8.Atmosphere
 
         private bool TryReadLane<T>(
             in VaultGenerationHandle<T> handle,
+            BufferID bufferId,
             int requiredLength,
             out NativeArray<T>.ReadOnly buffer) where T : struct
         {
@@ -1279,8 +1311,7 @@ namespace Hecton8.Atmosphere
             requiredLength = math.max(0, requiredLength);
             if (vault == null ||
                 vault.IsCompactionFenceActive ||
-                handle.BufferID == 0u ||
-                handle.SystemID != (uint)OwnerSystemId ||
+                !IsOwnedGasLane(in handle, bufferId) ||
                 !vault.TryReadOnlyHandle(in handle, out buffer) ||
                 vault.IsCompactionFenceActive ||
                 !buffer.IsCreated ||
@@ -1310,8 +1341,20 @@ namespace Hecton8.Atmosphere
             if (vault == null || vault.IsCompactionFenceActive)
                 return false;
 
-            if (_stateWriteLockMask != 0u)
+            if (_stateWriteLockMask != 0u || _stateWriteMutationGuardMask != 0UL)
             {
+                if (_stateWriteLockMask != AllStateWriteLockMask ||
+                    _stateWriteMutationGuardMask == 0UL ||
+                    !ReferenceEquals(_stateWriteMutationGuardVault, vault))
+                {
+                    IDataVault orphanedGuardVault = _stateWriteMutationGuardVault;
+                    ulong orphanedGuardMask = _stateWriteMutationGuardMask;
+                    ResetStateWriteLockBookkeeping();
+                    if (orphanedGuardVault != null && orphanedGuardMask != 0UL)
+                        orphanedGuardVault.ReleaseMutationGuard(orphanedGuardMask);
+                    return false;
+                }
+
                 if (requiredRoomCount > _stateWriteRequiredRoomCount ||
                     requiredBaseCount > _stateWriteRequiredBaseCount ||
                     requiredBulkheadCount > _stateWriteRequiredBulkheadCount)
@@ -1327,72 +1370,173 @@ namespace Hecton8.Atmosphere
             _stateWriteRequiredRoomCount = requiredRoomCount;
             _stateWriteRequiredBaseCount = requiredBaseCount;
             _stateWriteRequiredBulkheadCount = requiredBulkheadCount;
-            if (!TryAcquireLaneWriteLock(vault, in _roomO2Handle, LockRoomO2) ||
-                !TryAcquireLaneWriteLock(vault, in _roomCO2Handle, LockRoomCO2) ||
-                !TryAcquireLaneWriteLock(vault, in _roomPressureHandle, LockRoomPressure) ||
-                !TryAcquireLaneWriteLock(vault, in _roomO2BackHandle, LockRoomO2Back) ||
-                !TryAcquireLaneWriteLock(vault, in _roomCO2BackHandle, LockRoomCO2Back) ||
-                !TryAcquireLaneWriteLock(vault, in _roomNitrogenHandle, LockRoomNitrogen) ||
-                !TryAcquireLaneWriteLock(vault, in _roomNitrogenBackHandle, LockRoomNitrogenBack) ||
-                !TryAcquireLaneWriteLock(vault, in _roomPressureBackHandle, LockRoomPressureBack) ||
-                !TryAcquireLaneWriteLock(vault, in _roomAmbientPressureHandle, LockRoomAmbientPressure) ||
-                !TryAcquireLaneWriteLock(vault, in _roomSubmerged01Handle, LockRoomSubmerged01) ||
-                !TryAcquireLaneWriteLock(vault, in _roomPlayerStress01Handle, LockRoomPlayerStress01) ||
-                !TryAcquireLaneWriteLock(vault, in _roomPlayerHeartRateBpmHandle, LockRoomPlayerHeartRateBpm) ||
-                !TryAcquireLaneWriteLock(vault, in _roomTemperatureCelsiusHandle, LockRoomTemperatureCelsius) ||
-                !TryAcquireLaneWriteLock(vault, in _roomPlayerPresentHandle, LockRoomPlayerPresent) ||
-                !TryAcquireLaneWriteLock(vault, in _roomScrubberPoweredHandle, LockRoomScrubberPowered) ||
-                !TryAcquireLaneWriteLock(vault, in _roomFlagsHandle, LockRoomFlags) ||
-                !TryAcquireLaneWriteLock(vault, in _roomBaseIndexHandle, LockRoomBaseIndex) ||
-                !TryAcquireLaneWriteLock(vault, in _baseAwakeStateHandle, LockBaseAwakeState) ||
-                !TryAcquireLaneWriteLock(vault, in _basePlayerInsideHandle, LockBasePlayerInside) ||
-                !TryAcquireLaneWriteLock(vault, in _basePlayerInsideCountHandle, LockBasePlayerInsideCount) ||
-                !TryAcquireLaneWriteLock(vault, in _baseRoomStartHandle, LockBaseRoomStart) ||
-                !TryAcquireLaneWriteLock(vault, in _baseRoomCountHandle, LockBaseRoomCount) ||
-                !TryAcquireLaneWriteLock(vault, in _baseCenterAupHandle, LockBaseCenterAup) ||
-                !TryAcquireLaneWriteLock(vault, in _baseHibernatedUnscaledTimeHandle, LockBaseHibernatedUnscaledTime) ||
-                !TryAcquireLaneWriteLock(vault, in _baseBatteryWattSecondsHandle, LockBaseBatteryWattSeconds) ||
-                !TryAcquireLaneWriteLock(vault, in _baseIdleDrawWattsHandle, LockBaseIdleDrawWatts) ||
-                !TryAcquireLaneWriteLock(vault, in _baseLeakRatePerSecondHandle, LockBaseLeakRatePerSecond) ||
-                !TryAcquireLaneWriteLock(vault, in _baseAmbientOxygenKPaHandle, LockBaseAmbientOxygenKPa) ||
-                !TryAcquireLaneWriteLock(vault, in _bulkheadRoomAHandle, LockBulkheadRoomA) ||
-                !TryAcquireLaneWriteLock(vault, in _bulkheadRoomBHandle, LockBulkheadRoomB) ||
-                !TryAcquireLaneWriteLock(vault, in _bulkheadSealedHandle, LockBulkheadSealed))
+
+            if (!ValidateStateWriteLanes(vault))
             {
-                ReleaseStateWriteLocks();
+                ResetStateWriteLockBookkeeping();
                 return false;
             }
 
-            _stateWriteLockDepth = 1;
-            _consecutiveStateWriteLockFailures = 0;
-            return true;
+            ulong mutationGuardMask = ResolveStateWriteMutationGuardMask();
+            if (mutationGuardMask == 0UL ||
+                !vault.TryAcquireMutationGuard(mutationGuardMask))
+            {
+                ResetStateWriteLockBookkeeping();
+                return false;
+            }
+
+            bool ownershipTransferred = false;
+            try
+            {
+                if (vault.IsCompactionFenceActive ||
+                    !ValidateStateWriteLanes(vault))
+                {
+                    return false;
+                }
+
+                _stateWriteMutationGuardMask = mutationGuardMask;
+                _stateWriteMutationGuardVault = vault;
+                _stateWriteLockMask = AllStateWriteLockMask;
+                _stateWriteLockDepth = 1;
+                _consecutiveStateWriteLockFailures = 0;
+                ownershipTransferred = true;
+                return true;
+            }
+            finally
+            {
+                if (!ownershipTransferred)
+                {
+                    ResetStateWriteLockBookkeeping();
+                    vault.ReleaseMutationGuard(mutationGuardMask);
+                }
+            }
         }
 
-        private bool TryAcquireLaneWriteLock<T>(
+        private bool ValidateStateWriteLanes(IDataVault vault)
+        {
+            return ValidateStateWriteLane(vault, in _roomO2Handle, LockRoomO2) &&
+                   ValidateStateWriteLane(vault, in _roomCO2Handle, LockRoomCO2) &&
+                   ValidateStateWriteLane(vault, in _roomPressureHandle, LockRoomPressure) &&
+                   ValidateStateWriteLane(vault, in _roomO2BackHandle, LockRoomO2Back) &&
+                   ValidateStateWriteLane(vault, in _roomCO2BackHandle, LockRoomCO2Back) &&
+                   ValidateStateWriteLane(vault, in _roomNitrogenHandle, LockRoomNitrogen) &&
+                   ValidateStateWriteLane(vault, in _roomNitrogenBackHandle, LockRoomNitrogenBack) &&
+                   ValidateStateWriteLane(vault, in _roomPressureBackHandle, LockRoomPressureBack) &&
+                   ValidateStateWriteLane(vault, in _roomAmbientPressureHandle, LockRoomAmbientPressure) &&
+                   ValidateStateWriteLane(vault, in _roomSubmerged01Handle, LockRoomSubmerged01) &&
+                   ValidateStateWriteLane(vault, in _roomPlayerStress01Handle, LockRoomPlayerStress01) &&
+                   ValidateStateWriteLane(vault, in _roomPlayerHeartRateBpmHandle, LockRoomPlayerHeartRateBpm) &&
+                   ValidateStateWriteLane(vault, in _roomTemperatureCelsiusHandle, LockRoomTemperatureCelsius) &&
+                   ValidateStateWriteLane(vault, in _roomPlayerPresentHandle, LockRoomPlayerPresent) &&
+                   ValidateStateWriteLane(vault, in _roomScrubberPoweredHandle, LockRoomScrubberPowered) &&
+                   ValidateStateWriteLane(vault, in _roomFlagsHandle, LockRoomFlags) &&
+                   ValidateStateWriteLane(vault, in _roomBaseIndexHandle, LockRoomBaseIndex) &&
+                   ValidateStateWriteLane(vault, in _baseAwakeStateHandle, LockBaseAwakeState) &&
+                   ValidateStateWriteLane(vault, in _basePlayerInsideHandle, LockBasePlayerInside) &&
+                   ValidateStateWriteLane(vault, in _basePlayerInsideCountHandle, LockBasePlayerInsideCount) &&
+                   ValidateStateWriteLane(vault, in _baseRoomStartHandle, LockBaseRoomStart) &&
+                   ValidateStateWriteLane(vault, in _baseRoomCountHandle, LockBaseRoomCount) &&
+                   ValidateStateWriteLane(vault, in _baseCenterAupHandle, LockBaseCenterAup) &&
+                   ValidateStateWriteLane(vault, in _baseHibernatedUnscaledTimeHandle, LockBaseHibernatedUnscaledTime) &&
+                   ValidateStateWriteLane(vault, in _baseBatteryWattSecondsHandle, LockBaseBatteryWattSeconds) &&
+                   ValidateStateWriteLane(vault, in _baseIdleDrawWattsHandle, LockBaseIdleDrawWatts) &&
+                   ValidateStateWriteLane(vault, in _baseLeakRatePerSecondHandle, LockBaseLeakRatePerSecond) &&
+                   ValidateStateWriteLane(vault, in _baseAmbientOxygenKPaHandle, LockBaseAmbientOxygenKPa) &&
+                   ValidateStateWriteLane(vault, in _bulkheadRoomAHandle, LockBulkheadRoomA) &&
+                   ValidateStateWriteLane(vault, in _bulkheadRoomBHandle, LockBulkheadRoomB) &&
+                   ValidateStateWriteLane(vault, in _bulkheadSealedHandle, LockBulkheadSealed);
+        }
+
+        private bool ValidateStateWriteLane<T>(
             IDataVault vault,
             in VaultGenerationHandle<T> handle,
             uint mask) where T : struct
         {
+            BufferID expectedBufferId = ResolveBufferIdForStateLock(mask);
             if (vault == null ||
                 vault.IsCompactionFenceActive ||
-                handle.BufferID == 0u ||
-                handle.SystemID != (uint)OwnerSystemId ||
-                !vault.TryAcquireWriteLock(in handle, OwnerSystemId, out NativeArray<T> buffer))
+                ToHandleBufferId(expectedBufferId) == 0u ||
+                !IsOwnedGasLane(in handle, expectedBufferId) ||
+                !vault.TryReadOnlyHandle(in handle, out NativeArray<T>.ReadOnly buffer) ||
+                vault.IsCompactionFenceActive ||
+                !buffer.IsCreated)
             {
                 return false;
             }
 
             int requiredLength = ResolveRequiredLengthForStateLock(mask);
-            if (vault.IsCompactionFenceActive ||
-                !buffer.IsCreated ||
-                buffer.Length < requiredLength)
-            {
-                vault.ReleaseWriteLock(in handle, OwnerSystemId);
-                return false;
-            }
+            return buffer.Length >= requiredLength;
+        }
 
-            _stateWriteLockMask |= mask;
-            return true;
+        private static BufferID ResolveBufferIdForStateLock(uint mask)
+        {
+            switch (mask)
+            {
+                case LockRoomO2:
+                    return RoomO2BufferId;
+                case LockRoomCO2:
+                    return RoomCO2BufferId;
+                case LockRoomPressure:
+                    return RoomPressureBufferId;
+                case LockRoomO2Back:
+                    return RoomO2BackBufferId;
+                case LockRoomCO2Back:
+                    return RoomCO2BackBufferId;
+                case LockRoomNitrogen:
+                    return RoomNitrogenBufferId;
+                case LockRoomNitrogenBack:
+                    return RoomNitrogenBackBufferId;
+                case LockRoomPressureBack:
+                    return RoomPressureBackBufferId;
+                case LockRoomAmbientPressure:
+                    return RoomAmbientPressureBufferId;
+                case LockRoomSubmerged01:
+                    return RoomSubmerged01BufferId;
+                case LockRoomPlayerStress01:
+                    return RoomPlayerStress01BufferId;
+                case LockRoomPlayerHeartRateBpm:
+                    return RoomPlayerHeartRateBpmBufferId;
+                case LockRoomTemperatureCelsius:
+                    return RoomTemperatureCelsiusBufferId;
+                case LockRoomPlayerPresent:
+                    return RoomPlayerPresentBufferId;
+                case LockRoomScrubberPowered:
+                    return RoomScrubberPoweredBufferId;
+                case LockRoomFlags:
+                    return RoomFlagsBufferId;
+                case LockRoomBaseIndex:
+                    return RoomBaseIndexBufferId;
+                case LockBaseAwakeState:
+                    return BufferID.HabitatBaseAwakeState;
+                case LockBasePlayerInside:
+                    return BasePlayerInsideBufferId;
+                case LockBasePlayerInsideCount:
+                    return BasePlayerInsideCountBufferId;
+                case LockBaseRoomStart:
+                    return BaseRoomStartBufferId;
+                case LockBaseRoomCount:
+                    return BaseRoomCountBufferId;
+                case LockBaseCenterAup:
+                    return BaseCenterAupBufferId;
+                case LockBaseHibernatedUnscaledTime:
+                    return BaseHibernatedUnscaledTimeBufferId;
+                case LockBaseBatteryWattSeconds:
+                    return BaseBatteryWattSecondsBufferId;
+                case LockBaseIdleDrawWatts:
+                    return BaseIdleDrawWattsBufferId;
+                case LockBaseLeakRatePerSecond:
+                    return BaseLeakRatePerSecondBufferId;
+                case LockBaseAmbientOxygenKPa:
+                    return BaseAmbientOxygenKPaBufferId;
+                case LockBulkheadRoomA:
+                    return BulkheadRoomABufferId;
+                case LockBulkheadRoomB:
+                    return BulkheadRoomBBufferId;
+                case LockBulkheadSealed:
+                    return BulkheadSealedBufferId;
+                default:
+                    return (BufferID)0;
+            }
         }
 
         private int ResolveRequiredLengthForStateLock(uint mask)
@@ -1406,15 +1550,53 @@ namespace Hecton8.Atmosphere
             return _stateWriteRequiredBulkheadCount;
         }
 
+        private static ulong ResolveStateWriteMutationGuardMask()
+        {
+            return ResolveMutationGuardBit(RoomO2BufferId) |
+                   ResolveMutationGuardBit(RoomCO2BufferId) |
+                   ResolveMutationGuardBit(RoomPressureBufferId) |
+                   ResolveMutationGuardBit(RoomO2BackBufferId) |
+                   ResolveMutationGuardBit(RoomCO2BackBufferId) |
+                   ResolveMutationGuardBit(RoomNitrogenBufferId) |
+                   ResolveMutationGuardBit(RoomNitrogenBackBufferId) |
+                   ResolveMutationGuardBit(RoomPressureBackBufferId) |
+                   ResolveMutationGuardBit(RoomAmbientPressureBufferId) |
+                   ResolveMutationGuardBit(RoomSubmerged01BufferId) |
+                   ResolveMutationGuardBit(RoomPlayerStress01BufferId) |
+                   ResolveMutationGuardBit(RoomPlayerHeartRateBpmBufferId) |
+                   ResolveMutationGuardBit(RoomTemperatureCelsiusBufferId) |
+                   ResolveMutationGuardBit(RoomPlayerPresentBufferId) |
+                   ResolveMutationGuardBit(RoomScrubberPoweredBufferId) |
+                   ResolveMutationGuardBit(RoomFlagsBufferId) |
+                   ResolveMutationGuardBit(RoomBaseIndexBufferId) |
+                   ResolveMutationGuardBit(BufferID.HabitatBaseAwakeState) |
+                   ResolveMutationGuardBit(BasePlayerInsideBufferId) |
+                   ResolveMutationGuardBit(BasePlayerInsideCountBufferId) |
+                   ResolveMutationGuardBit(BaseRoomStartBufferId) |
+                   ResolveMutationGuardBit(BaseRoomCountBufferId) |
+                   ResolveMutationGuardBit(BaseCenterAupBufferId) |
+                   ResolveMutationGuardBit(BaseHibernatedUnscaledTimeBufferId) |
+                   ResolveMutationGuardBit(BaseBatteryWattSecondsBufferId) |
+                   ResolveMutationGuardBit(BaseIdleDrawWattsBufferId) |
+                   ResolveMutationGuardBit(BaseLeakRatePerSecondBufferId) |
+                   ResolveMutationGuardBit(BaseAmbientOxygenKPaBufferId) |
+                   ResolveMutationGuardBit(BulkheadRoomABufferId) |
+                   ResolveMutationGuardBit(BulkheadRoomBBufferId) |
+                   ResolveMutationGuardBit(BulkheadSealedBufferId);
+        }
+
+        private static ulong ResolveMutationGuardBit(BufferID bufferId)
+        {
+            return 1UL << (unchecked((int)(uint)(int)bufferId) & 31);
+        }
+
         private void ReleaseStateWriteLocks()
         {
             uint mask = _stateWriteLockMask;
-            if (mask == 0u)
+            ulong mutationGuardMask = _stateWriteMutationGuardMask;
+            if (mask == 0u && mutationGuardMask == 0UL)
             {
-                _stateWriteLockDepth = 0;
-                _stateWriteRequiredRoomCount = 0;
-                _stateWriteRequiredBaseCount = 0;
-                _stateWriteRequiredBulkheadCount = 0;
+                ResetStateWriteLockBookkeeping();
                 return;
             }
 
@@ -1424,46 +1606,23 @@ namespace Hecton8.Atmosphere
                 return;
             }
 
+            IDataVault vault = _stateWriteMutationGuardVault;
+            ResetStateWriteLockBookkeeping();
+            if (vault == null || mutationGuardMask == 0UL)
+                return;
+
+            vault.ReleaseMutationGuard(mutationGuardMask);
+        }
+
+        private void ResetStateWriteLockBookkeeping()
+        {
             _stateWriteLockDepth = 0;
             _stateWriteLockMask = 0u;
+            _stateWriteMutationGuardVault = null;
+            _stateWriteMutationGuardMask = 0UL;
             _stateWriteRequiredRoomCount = 0;
             _stateWriteRequiredBaseCount = 0;
             _stateWriteRequiredBulkheadCount = 0;
-            IDataVault vault = _dataVault;
-            if (vault == null)
-                return;
-
-            if ((mask & LockRoomO2) != 0u) vault.ReleaseWriteLock(in _roomO2Handle, OwnerSystemId);
-            if ((mask & LockRoomCO2) != 0u) vault.ReleaseWriteLock(in _roomCO2Handle, OwnerSystemId);
-            if ((mask & LockRoomPressure) != 0u) vault.ReleaseWriteLock(in _roomPressureHandle, OwnerSystemId);
-            if ((mask & LockRoomO2Back) != 0u) vault.ReleaseWriteLock(in _roomO2BackHandle, OwnerSystemId);
-            if ((mask & LockRoomCO2Back) != 0u) vault.ReleaseWriteLock(in _roomCO2BackHandle, OwnerSystemId);
-            if ((mask & LockRoomNitrogen) != 0u) vault.ReleaseWriteLock(in _roomNitrogenHandle, OwnerSystemId);
-            if ((mask & LockRoomNitrogenBack) != 0u) vault.ReleaseWriteLock(in _roomNitrogenBackHandle, OwnerSystemId);
-            if ((mask & LockRoomPressureBack) != 0u) vault.ReleaseWriteLock(in _roomPressureBackHandle, OwnerSystemId);
-            if ((mask & LockRoomAmbientPressure) != 0u) vault.ReleaseWriteLock(in _roomAmbientPressureHandle, OwnerSystemId);
-            if ((mask & LockRoomSubmerged01) != 0u) vault.ReleaseWriteLock(in _roomSubmerged01Handle, OwnerSystemId);
-            if ((mask & LockRoomPlayerStress01) != 0u) vault.ReleaseWriteLock(in _roomPlayerStress01Handle, OwnerSystemId);
-            if ((mask & LockRoomPlayerHeartRateBpm) != 0u) vault.ReleaseWriteLock(in _roomPlayerHeartRateBpmHandle, OwnerSystemId);
-            if ((mask & LockRoomTemperatureCelsius) != 0u) vault.ReleaseWriteLock(in _roomTemperatureCelsiusHandle, OwnerSystemId);
-            if ((mask & LockRoomPlayerPresent) != 0u) vault.ReleaseWriteLock(in _roomPlayerPresentHandle, OwnerSystemId);
-            if ((mask & LockRoomScrubberPowered) != 0u) vault.ReleaseWriteLock(in _roomScrubberPoweredHandle, OwnerSystemId);
-            if ((mask & LockRoomFlags) != 0u) vault.ReleaseWriteLock(in _roomFlagsHandle, OwnerSystemId);
-            if ((mask & LockRoomBaseIndex) != 0u) vault.ReleaseWriteLock(in _roomBaseIndexHandle, OwnerSystemId);
-            if ((mask & LockBaseAwakeState) != 0u) vault.ReleaseWriteLock(in _baseAwakeStateHandle, OwnerSystemId);
-            if ((mask & LockBasePlayerInside) != 0u) vault.ReleaseWriteLock(in _basePlayerInsideHandle, OwnerSystemId);
-            if ((mask & LockBasePlayerInsideCount) != 0u) vault.ReleaseWriteLock(in _basePlayerInsideCountHandle, OwnerSystemId);
-            if ((mask & LockBaseRoomStart) != 0u) vault.ReleaseWriteLock(in _baseRoomStartHandle, OwnerSystemId);
-            if ((mask & LockBaseRoomCount) != 0u) vault.ReleaseWriteLock(in _baseRoomCountHandle, OwnerSystemId);
-            if ((mask & LockBaseCenterAup) != 0u) vault.ReleaseWriteLock(in _baseCenterAupHandle, OwnerSystemId);
-            if ((mask & LockBaseHibernatedUnscaledTime) != 0u) vault.ReleaseWriteLock(in _baseHibernatedUnscaledTimeHandle, OwnerSystemId);
-            if ((mask & LockBaseBatteryWattSeconds) != 0u) vault.ReleaseWriteLock(in _baseBatteryWattSecondsHandle, OwnerSystemId);
-            if ((mask & LockBaseIdleDrawWatts) != 0u) vault.ReleaseWriteLock(in _baseIdleDrawWattsHandle, OwnerSystemId);
-            if ((mask & LockBaseLeakRatePerSecond) != 0u) vault.ReleaseWriteLock(in _baseLeakRatePerSecondHandle, OwnerSystemId);
-            if ((mask & LockBaseAmbientOxygenKPa) != 0u) vault.ReleaseWriteLock(in _baseAmbientOxygenKPaHandle, OwnerSystemId);
-            if ((mask & LockBulkheadRoomA) != 0u) vault.ReleaseWriteLock(in _bulkheadRoomAHandle, OwnerSystemId);
-            if ((mask & LockBulkheadRoomB) != 0u) vault.ReleaseWriteLock(in _bulkheadRoomBHandle, OwnerSystemId);
-            if ((mask & LockBulkheadSealed) != 0u) vault.ReleaseWriteLock(in _bulkheadSealedHandle, OwnerSystemId);
         }
 
         private bool TryEnsureTelemetryRing()
@@ -1549,17 +1708,86 @@ namespace Hecton8.Atmosphere
                 return false;
             }
 
-            if (vault.IsCompactionFenceActive ||
-                !telemetryRing.IsCreated ||
-                telemetryRing.Length < TelemetryCapacity)
+            bool ownershipTransferred = false;
+            try
             {
-                vault.ReleaseWriteLock(in _telemetryRingHandle, SystemID.HabitatAtmosphere);
-                telemetryRing = default;
-                return false;
-            }
+                if (vault.IsCompactionFenceActive ||
+                    !telemetryRing.IsCreated ||
+                    telemetryRing.Length < TelemetryCapacity)
+                {
+                    telemetryRing = default;
+                    return false;
+                }
 
-            _telemetryRingLocked = true;
-            return true;
+                _telemetryRingLocked = true;
+                ownershipTransferred = true;
+                return true;
+            }
+            finally
+            {
+                if (!ownershipTransferred)
+                    vault.ReleaseWriteLock(in _telemetryRingHandle, SystemID.HabitatAtmosphere);
+            }
+        }
+
+        private bool TryEnsureTelemetryScratchCold()
+        {
+            ref NativeArray<GasDynamicsTelemetryEntry> scratch = ref _stepTelemetryScratch;
+            if (scratch.IsCreated)
+                return scratch.Length >= 1;
+
+            scratch = new NativeArray<GasDynamicsTelemetryEntry>(
+                1,
+                Allocator.Persistent,
+                NativeArrayOptions.ClearMemory);
+            NativeMemorySentinel.RegisterNativeArray(
+                scratch,
+                nameof(GasDynamicsSolver),
+                nameof(_stepTelemetryScratch),
+                NativeAllocationLifetime.Session);
+            return scratch.IsCreated && scratch.Length >= 1;
+        }
+
+        private void DisposeTelemetryScratchCold()
+        {
+            ref NativeArray<GasDynamicsTelemetryEntry> scratch = ref _stepTelemetryScratch;
+            if (!scratch.IsCreated)
+                return;
+
+            NativeMemorySentinel.UnregisterNativeArray(scratch);
+            scratch.Dispose();
+            scratch = default;
+        }
+
+        private bool TryPublishStepTelemetryFromScratch()
+        {
+            NativeArray<GasDynamicsTelemetryEntry> scratch = _stepTelemetryScratch;
+            if (!scratch.IsCreated || scratch.Length <= 0)
+                return false;
+
+            GasDynamicsTelemetryEntry entry = scratch[0];
+            if (!TryAcquireTelemetryRingForStep(out NativeArray<GasDynamicsTelemetryEntry> telemetryRing))
+                return false;
+
+            try
+            {
+                int telemetryLength = telemetryRing.Length;
+                if (telemetryLength <= 0)
+                    return false;
+
+                int writeIndex = _telemetryWriteIndex % telemetryLength;
+                _telemetryWriteIndex = (writeIndex + 1) % telemetryLength;
+                entry.PackedOwner = ((ulong)_telemetryRingHandle.BufferID << 32) | _telemetryRingHandle.SystemID;
+                entry.BufferId = _telemetryRingHandle.BufferID;
+                entry.SystemId = _telemetryRingHandle.SystemID;
+                entry.Generation = _telemetryRingHandle.Generation;
+                telemetryRing[writeIndex] = entry;
+                return true;
+            }
+            finally
+            {
+                ReleaseTelemetryRingStepLock();
+            }
         }
 
         private bool TryWriteFailureTelemetry(uint failedBufferId, ushort failureCode)
@@ -1575,24 +1803,16 @@ namespace Hecton8.Atmosphere
 
                 int writeIndex = _telemetryWriteIndex % telemetryLength;
                 _telemetryWriteIndex = (writeIndex + 1) % telemetryLength;
-                telemetryRing[writeIndex] = new GasDynamicsTelemetryEntry
-                {
-                    PackedOwner = ((ulong)_telemetryRingHandle.BufferID << 32) | _telemetryRingHandle.SystemID,
-                    FrameIndex = Hecton8.Core.SystemDispatcher.CurrentFrameId,
-                    RoomCount = _roomCount,
-                    TotalO2KPa = 0f,
-                    TotalCO2KPa = 0f,
-                    TotalNitrogenKPa = 0f,
-                    MaxPressureKPa = 0f,
-                    StateHash = 0u,
-                    BufferId = failedBufferId,
-                    SystemId = _telemetryRingHandle.SystemID,
-                    Generation = _telemetryRingHandle.Generation,
-                    DroppedUpdates = 1,
-                    CpuMicroseconds = 0f,
-                    Flags = failureCode,
-                    Reserved = 0
-                };
+                GasDynamicsTelemetryEntry entry = default;
+                entry.PackedOwner = ((ulong)_telemetryRingHandle.BufferID << 32) | _telemetryRingHandle.SystemID;
+                entry.FrameIndex = Hecton8.Core.SystemDispatcher.CurrentFrameId;
+                entry.RoomCount = _roomCount;
+                entry.BufferId = failedBufferId;
+                entry.SystemId = _telemetryRingHandle.SystemID;
+                entry.Generation = _telemetryRingHandle.Generation;
+                entry.DroppedUpdates = 1;
+                entry.Flags = failureCode;
+                telemetryRing[writeIndex] = entry;
                 return true;
             }
             finally
@@ -1625,7 +1845,7 @@ namespace Hecton8.Atmosphere
 
             IDataVault vault = _dataVault;
             if (vault != null &&
-                _telemetryRingHandle.BufferID == unchecked((uint)(int)BufferID.GasDynamicsTelemetryRing))
+                IsOwnedGasLane(in _telemetryRingHandle, BufferID.GasDynamicsTelemetryRing))
             {
                 vault.ReleaseWriteLock(in _telemetryRingHandle, SystemID.HabitatAtmosphere);
             }
@@ -1770,7 +1990,7 @@ namespace Hecton8.Atmosphere
         {
             if (!seedStandardAtmosphereOnEnable ||
                 _seededStandardAtmosphere ||
-                !TryReadLane(in _roomO2Handle, _roomCount, out NativeArray<float>.ReadOnly _))
+                !TryReadLane(in _roomO2Handle, RoomO2BufferId, _roomCount, out NativeArray<float>.ReadOnly _))
             {
                 return;
             }
@@ -1832,6 +2052,9 @@ namespace Hecton8.Atmosphere
             if (_stepRunning || !IsInitialized)
                 return;
 
+            if (!TryEnsureTelemetryScratchCold())
+                return;
+
             float co2Threshold = FiniteNonNegativeOrZero(co2ToxicityThresholdKPa);
             float co2Fatal = math.max(co2Threshold + 0.01f, FiniteNonNegativeOrZero(co2FatalKPa));
             float narcosisThreshold = math.max(1f, FiniteNonNegativeOrZero(narcosisThresholdAtm));
@@ -1845,14 +2068,10 @@ namespace Hecton8.Atmosphere
             bool completed = false;
             try
             {
-                if (!TryAcquireTelemetryRingForStep(out NativeArray<GasDynamicsTelemetryEntry> telemetryRing))
-                    return;
-
+                NativeArray<GasDynamicsTelemetryEntry> telemetryScratch = _stepTelemetryScratch;
+                telemetryScratch[0] = default;
                 try
                 {
-                    int telemetryLength = telemetryRing.Length;
-                    int writeIndex = telemetryLength > 0 ? _telemetryWriteIndex % telemetryLength : 0;
-                    _telemetryWriteIndex = telemetryLength > 0 ? (writeIndex + 1) % telemetryLength : 0;
                     NativeArray<float> RoomO2 = ResolveRoomO2();
                     NativeArray<float> RoomCO2 = ResolveRoomCO2();
                     NativeArray<float> _roomNitrogen = ResolveRoomNitrogen();
@@ -1873,47 +2092,41 @@ namespace Hecton8.Atmosphere
                     NativeArray<int> _bulkheadRoomA = ResolveBulkheadRoomA();
                     NativeArray<int> _bulkheadRoomB = ResolveBulkheadRoomB();
                     NativeArray<byte> _bulkheadSealed = ResolveBulkheadSealed();
-                    GasDynamicsStepJob job = new GasDynamicsStepJob
-                    {
-                        DeltaTime = math.max(0f, deltaTime),
-                        RoomCount = _roomCount,
-                        BulkheadCount = _bulkheadCount,
-                        FrameIndex = Hecton8.Core.SystemDispatcher.CurrentFrameId,
-                        PlayerO2KPaPerSecond = FiniteNonNegativeOrZero(playerOxygenKPaPerSecond),
-                        PlayerCO2KPaPerSecond = FiniteNonNegativeOrZero(playerCarbonDioxideKPaPerSecond),
-                        FireO2KPaPerSecond = FiniteNonNegativeOrZero(fireOxygenDrainKPaPerSecond),
-                        ScrubberKPaPerSecond = FiniteNonNegativeOrZero(scrubberKPaPerSecond),
-                        DiffusionConductancePerSecond = FiniteNonNegativeOrZero(diffusionConductancePerSecond),
-                        Co2ToxicityThresholdKPa = co2Threshold,
-                        Co2FatalKPa = co2Fatal,
-                        NarcosisThresholdAtm = narcosisThreshold,
-                        NarcosisFullAtm = narcosisFull,
-                        TelemetryWriteIndex = writeIndex,
-                        TelemetryBufferId = _telemetryRingHandle.BufferID,
-                        TelemetrySystemId = _telemetryRingHandle.SystemID,
-                        TelemetryGeneration = _telemetryRingHandle.Generation,
-                        RoomO2Front = RoomO2,
-                        RoomCO2Front = RoomCO2,
-                        RoomNitrogenFront = _roomNitrogen,
-                        RoomO2Back = _roomO2Back,
-                        RoomCO2Back = _roomCO2Back,
-                        RoomNitrogenBack = _roomNitrogenBack,
-                        RoomPressureBack = _roomPressureBack,
-                        RoomAmbientPressure = _roomAmbientPressure,
-                        RoomSubmerged01 = _roomSubmerged01,
-                        RoomPlayerStress01 = _roomPlayerStress01,
-                        RoomPlayerHeartRateBpm = _roomPlayerHeartRateBpm,
-                        RoomTemperatureCelsius = _roomTemperatureCelsius,
-                        RoomPlayerPresent = _roomPlayerPresent,
-                        RoomScrubberPowered = _roomScrubberPowered,
-                        RoomFlags = _roomFlags,
-                        RoomBaseIndex = _roomBaseIndex,
-                        BaseAwakeState = BaseAwakeState,
-                        BulkheadRoomA = _bulkheadRoomA,
-                        BulkheadRoomB = _bulkheadRoomB,
-                        BulkheadSealed = _bulkheadSealed,
-                        TelemetryRing = telemetryRing
-                    };
+                    GasDynamicsStepJob job;
+                    job.DeltaTime = math.max(0f, deltaTime);
+                    job.RoomCount = _roomCount;
+                    job.BulkheadCount = _bulkheadCount;
+                    job.FrameIndex = Hecton8.Core.SystemDispatcher.CurrentFrameId;
+                    job.PlayerO2KPaPerSecond = FiniteNonNegativeOrZero(playerOxygenKPaPerSecond);
+                    job.PlayerCO2KPaPerSecond = FiniteNonNegativeOrZero(playerCarbonDioxideKPaPerSecond);
+                    job.FireO2KPaPerSecond = FiniteNonNegativeOrZero(fireOxygenDrainKPaPerSecond);
+                    job.ScrubberKPaPerSecond = FiniteNonNegativeOrZero(scrubberKPaPerSecond);
+                    job.DiffusionConductancePerSecond = FiniteNonNegativeOrZero(diffusionConductancePerSecond);
+                    job.Co2ToxicityThresholdKPa = co2Threshold;
+                    job.Co2FatalKPa = co2Fatal;
+                    job.NarcosisThresholdAtm = narcosisThreshold;
+                    job.NarcosisFullAtm = narcosisFull;
+                    job.RoomO2Front = RoomO2;
+                    job.RoomCO2Front = RoomCO2;
+                    job.RoomNitrogenFront = _roomNitrogen;
+                    job.RoomO2Back = _roomO2Back;
+                    job.RoomCO2Back = _roomCO2Back;
+                    job.RoomNitrogenBack = _roomNitrogenBack;
+                    job.RoomPressureBack = _roomPressureBack;
+                    job.RoomAmbientPressure = _roomAmbientPressure;
+                    job.RoomSubmerged01 = _roomSubmerged01;
+                    job.RoomPlayerStress01 = _roomPlayerStress01;
+                    job.RoomPlayerHeartRateBpm = _roomPlayerHeartRateBpm;
+                    job.RoomTemperatureCelsius = _roomTemperatureCelsius;
+                    job.RoomPlayerPresent = _roomPlayerPresent;
+                    job.RoomScrubberPowered = _roomScrubberPowered;
+                    job.RoomFlags = _roomFlags;
+                    job.RoomBaseIndex = _roomBaseIndex;
+                    job.BaseAwakeState = BaseAwakeState;
+                    job.BulkheadRoomA = _bulkheadRoomA;
+                    job.BulkheadRoomB = _bulkheadRoomB;
+                    job.BulkheadSealed = _bulkheadSealed;
+                    job.TelemetryScratch = telemetryScratch;
 
                     _stepRunning = true;
                     job.Run();
@@ -1922,7 +2135,6 @@ namespace Hecton8.Atmosphere
                 finally
                 {
                     _stepRunning = false;
-                    ReleaseTelemetryRingStepLock();
                 }
             }
             finally
@@ -1937,15 +2149,38 @@ namespace Hecton8.Atmosphere
             Swap(ref _roomCO2Handle, ref _roomCO2BackHandle);
             Swap(ref _roomNitrogenHandle, ref _roomNitrogenBackHandle);
             Swap(ref _roomPressureHandle, ref _roomPressureBackHandle);
+            bool telemetryPublished = TryPublishStepTelemetryFromScratch();
             _tickCount++;
-            PublishActiveRoomUi();
-            PublishActiveRoomToxicitySignal(deltaTime);
-            CheckTelemetryForFault();
+            _pendingPresentationDeltaTime = deltaTime;
+            _pendingPostFixedPresentation = true;
+            _pendingTelemetryFaultCheck |= telemetryPublished;
         }
 
         private bool TryCompleteStep()
         {
             return !_stepRunning;
+        }
+
+        private void FlushPostFixedPresentation()
+        {
+            if (!_pendingPostFixedPresentation && !_pendingTelemetryFaultCheck)
+                return;
+
+            float deltaTime = _pendingPresentationDeltaTime;
+            bool publishPresentation = _pendingPostFixedPresentation;
+            bool checkTelemetry = _pendingTelemetryFaultCheck;
+            _pendingPostFixedPresentation = false;
+            _pendingTelemetryFaultCheck = false;
+            _pendingPresentationDeltaTime = 0f;
+
+            if (publishPresentation)
+            {
+                PublishActiveRoomUi();
+                PublishActiveRoomToxicitySignal(deltaTime);
+            }
+
+            if (checkTelemetry)
+                CheckTelemetryForFault();
         }
 
         private void DrainBaseTransitionSignals(bool allowWake)
@@ -2456,54 +2691,54 @@ namespace Hecton8.Atmosphere
         private float ResolveHibernationDistanceMeters()
         {
             float normalDistance = math.max(1f, hibernationDistanceMeters);
-            float legacyDistanceFloor = math.max(1f, lowTierHibernationDistanceMeters);
+            float legacyDistanceFloor = math.max(1f, survivalHibernationDistanceMeters);
             return math.max(normalDistance, legacyDistanceFloor);
         }
 
         private bool AreRoomStateLanesReady(int requiredCount)
         {
             requiredCount = math.max(0, requiredCount);
-            return TryReadLane(in _roomO2Handle, requiredCount, out NativeArray<float>.ReadOnly _) &&
-                   TryReadLane(in _roomCO2Handle, requiredCount, out NativeArray<float>.ReadOnly _) &&
-                   TryReadLane(in _roomPressureHandle, requiredCount, out NativeArray<float>.ReadOnly _) &&
-                   TryReadLane(in _roomO2BackHandle, requiredCount, out NativeArray<float>.ReadOnly _) &&
-                   TryReadLane(in _roomCO2BackHandle, requiredCount, out NativeArray<float>.ReadOnly _) &&
-                   TryReadLane(in _roomNitrogenHandle, requiredCount, out NativeArray<float>.ReadOnly _) &&
-                   TryReadLane(in _roomNitrogenBackHandle, requiredCount, out NativeArray<float>.ReadOnly _) &&
-                   TryReadLane(in _roomPressureBackHandle, requiredCount, out NativeArray<float>.ReadOnly _) &&
-                   TryReadLane(in _roomAmbientPressureHandle, requiredCount, out NativeArray<float>.ReadOnly _) &&
-                   TryReadLane(in _roomSubmerged01Handle, requiredCount, out NativeArray<float>.ReadOnly _) &&
-                   TryReadLane(in _roomPlayerStress01Handle, requiredCount, out NativeArray<float>.ReadOnly _) &&
-                   TryReadLane(in _roomPlayerHeartRateBpmHandle, requiredCount, out NativeArray<float>.ReadOnly _) &&
-                   TryReadLane(in _roomTemperatureCelsiusHandle, requiredCount, out NativeArray<float>.ReadOnly _) &&
-                   TryReadLane(in _roomPlayerPresentHandle, requiredCount, out NativeArray<byte>.ReadOnly _) &&
-                   TryReadLane(in _roomScrubberPoweredHandle, requiredCount, out NativeArray<byte>.ReadOnly _) &&
-                   TryReadLane(in _roomFlagsHandle, requiredCount, out NativeArray<ushort>.ReadOnly _) &&
-                   TryReadLane(in _roomBaseIndexHandle, requiredCount, out NativeArray<int>.ReadOnly _);
+            return TryReadLane(in _roomO2Handle, RoomO2BufferId, requiredCount, out NativeArray<float>.ReadOnly _) &&
+                   TryReadLane(in _roomCO2Handle, RoomCO2BufferId, requiredCount, out NativeArray<float>.ReadOnly _) &&
+                   TryReadLane(in _roomPressureHandle, RoomPressureBufferId, requiredCount, out NativeArray<float>.ReadOnly _) &&
+                   TryReadLane(in _roomO2BackHandle, RoomO2BackBufferId, requiredCount, out NativeArray<float>.ReadOnly _) &&
+                   TryReadLane(in _roomCO2BackHandle, RoomCO2BackBufferId, requiredCount, out NativeArray<float>.ReadOnly _) &&
+                   TryReadLane(in _roomNitrogenHandle, RoomNitrogenBufferId, requiredCount, out NativeArray<float>.ReadOnly _) &&
+                   TryReadLane(in _roomNitrogenBackHandle, RoomNitrogenBackBufferId, requiredCount, out NativeArray<float>.ReadOnly _) &&
+                   TryReadLane(in _roomPressureBackHandle, RoomPressureBackBufferId, requiredCount, out NativeArray<float>.ReadOnly _) &&
+                   TryReadLane(in _roomAmbientPressureHandle, RoomAmbientPressureBufferId, requiredCount, out NativeArray<float>.ReadOnly _) &&
+                   TryReadLane(in _roomSubmerged01Handle, RoomSubmerged01BufferId, requiredCount, out NativeArray<float>.ReadOnly _) &&
+                   TryReadLane(in _roomPlayerStress01Handle, RoomPlayerStress01BufferId, requiredCount, out NativeArray<float>.ReadOnly _) &&
+                   TryReadLane(in _roomPlayerHeartRateBpmHandle, RoomPlayerHeartRateBpmBufferId, requiredCount, out NativeArray<float>.ReadOnly _) &&
+                   TryReadLane(in _roomTemperatureCelsiusHandle, RoomTemperatureCelsiusBufferId, requiredCount, out NativeArray<float>.ReadOnly _) &&
+                   TryReadLane(in _roomPlayerPresentHandle, RoomPlayerPresentBufferId, requiredCount, out NativeArray<byte>.ReadOnly _) &&
+                   TryReadLane(in _roomScrubberPoweredHandle, RoomScrubberPoweredBufferId, requiredCount, out NativeArray<byte>.ReadOnly _) &&
+                   TryReadLane(in _roomFlagsHandle, RoomFlagsBufferId, requiredCount, out NativeArray<ushort>.ReadOnly _) &&
+                   TryReadLane(in _roomBaseIndexHandle, RoomBaseIndexBufferId, requiredCount, out NativeArray<int>.ReadOnly _);
         }
 
         private bool AreBulkheadLanesReady(int requiredCount)
         {
             requiredCount = math.max(0, requiredCount);
-            return TryReadLane(in _bulkheadRoomAHandle, requiredCount, out NativeArray<int>.ReadOnly _) &&
-                   TryReadLane(in _bulkheadRoomBHandle, requiredCount, out NativeArray<int>.ReadOnly _) &&
-                   TryReadLane(in _bulkheadSealedHandle, requiredCount, out NativeArray<byte>.ReadOnly _);
+            return TryReadLane(in _bulkheadRoomAHandle, BulkheadRoomABufferId, requiredCount, out NativeArray<int>.ReadOnly _) &&
+                   TryReadLane(in _bulkheadRoomBHandle, BulkheadRoomBBufferId, requiredCount, out NativeArray<int>.ReadOnly _) &&
+                   TryReadLane(in _bulkheadSealedHandle, BulkheadSealedBufferId, requiredCount, out NativeArray<byte>.ReadOnly _);
         }
 
         private bool AreBaseStateLanesReady(int requiredCount)
         {
             requiredCount = math.max(0, requiredCount);
-            return TryReadLane(in _baseAwakeStateHandle, requiredCount, out NativeArray<byte>.ReadOnly _) &&
-                   TryReadLane(in _basePlayerInsideHandle, requiredCount, out NativeArray<byte>.ReadOnly _) &&
-                   TryReadLane(in _basePlayerInsideCountHandle, requiredCount, out NativeArray<int>.ReadOnly _) &&
-                   TryReadLane(in _baseRoomStartHandle, requiredCount, out NativeArray<int>.ReadOnly _) &&
-                   TryReadLane(in _baseRoomCountHandle, requiredCount, out NativeArray<int>.ReadOnly _) &&
-                   TryReadLane(in _baseCenterAupHandle, requiredCount, out NativeArray<AbsoluteUniversePosition>.ReadOnly _) &&
-                   TryReadLane(in _baseHibernatedUnscaledTimeHandle, requiredCount, out NativeArray<double>.ReadOnly _) &&
-                   TryReadLane(in _baseBatteryWattSecondsHandle, requiredCount, out NativeArray<float>.ReadOnly _) &&
-                   TryReadLane(in _baseIdleDrawWattsHandle, requiredCount, out NativeArray<float>.ReadOnly _) &&
-                   TryReadLane(in _baseLeakRatePerSecondHandle, requiredCount, out NativeArray<float>.ReadOnly _) &&
-                   TryReadLane(in _baseAmbientOxygenKPaHandle, requiredCount, out NativeArray<float>.ReadOnly _);
+            return TryReadLane(in _baseAwakeStateHandle, BufferID.HabitatBaseAwakeState, requiredCount, out NativeArray<byte>.ReadOnly _) &&
+                   TryReadLane(in _basePlayerInsideHandle, BasePlayerInsideBufferId, requiredCount, out NativeArray<byte>.ReadOnly _) &&
+                   TryReadLane(in _basePlayerInsideCountHandle, BasePlayerInsideCountBufferId, requiredCount, out NativeArray<int>.ReadOnly _) &&
+                   TryReadLane(in _baseRoomStartHandle, BaseRoomStartBufferId, requiredCount, out NativeArray<int>.ReadOnly _) &&
+                   TryReadLane(in _baseRoomCountHandle, BaseRoomCountBufferId, requiredCount, out NativeArray<int>.ReadOnly _) &&
+                   TryReadLane(in _baseCenterAupHandle, BaseCenterAupBufferId, requiredCount, out NativeArray<AbsoluteUniversePosition>.ReadOnly _) &&
+                   TryReadLane(in _baseHibernatedUnscaledTimeHandle, BaseHibernatedUnscaledTimeBufferId, requiredCount, out NativeArray<double>.ReadOnly _) &&
+                   TryReadLane(in _baseBatteryWattSecondsHandle, BaseBatteryWattSecondsBufferId, requiredCount, out NativeArray<float>.ReadOnly _) &&
+                   TryReadLane(in _baseIdleDrawWattsHandle, BaseIdleDrawWattsBufferId, requiredCount, out NativeArray<float>.ReadOnly _) &&
+                   TryReadLane(in _baseLeakRatePerSecondHandle, BaseLeakRatePerSecondBufferId, requiredCount, out NativeArray<float>.ReadOnly _) &&
+                   TryReadLane(in _baseAmbientOxygenKPaHandle, BaseAmbientOxygenKPaBufferId, requiredCount, out NativeArray<float>.ReadOnly _);
         }
 
         private void HibernateBase(int baseId, double now)
@@ -2746,8 +2981,9 @@ namespace Hecton8.Atmosphere
 
         private void DisposeNativeStateDeferred()
         {
-            if (_roomO2Handle.BufferID == 0u &&
-                _telemetryRingHandle.BufferID == 0u)
+            if (!IsOwnedGasLane(in _roomO2Handle, RoomO2BufferId) &&
+                !IsOwnedGasLane(in _telemetryRingHandle, BufferID.GasDynamicsTelemetryRing) &&
+                !_stepTelemetryScratch.IsCreated)
                 return;
 
             _stepRunning = false;
@@ -2755,6 +2991,7 @@ namespace Hecton8.Atmosphere
             ReleaseStateWriteLocks();
             ReleaseGasStateBuffers();
             ReleaseTelemetryRingBuffer();
+            DisposeTelemetryScratchCold();
             _deferredBaseTransitionCount = 0;
 
             _stepRunning = false;
@@ -2772,6 +3009,9 @@ namespace Hecton8.Atmosphere
             _latestToxicitySignalSequence = 0;
             _toxicitySignalReadSequence = 0;
             _toxicityExposureSignalDropCount = 0;
+            _pendingPostFixedPresentation = false;
+            _pendingTelemetryFaultCheck = false;
+            _pendingPresentationDeltaTime = 0f;
             _consecutiveStateWriteLockFailures = 0;
         }
 
@@ -2865,6 +3105,11 @@ namespace Hecton8.Atmosphere
                    handle.SystemID == (uint)OwnerSystemId;
         }
 
+        private static uint ToHandleBufferId(BufferID bufferId)
+        {
+            return unchecked((uint)(int)bufferId);
+        }
+
         private void ReleaseTelemetryRingBuffer()
         {
             ReleaseTelemetryRingStepLock();
@@ -2928,12 +3173,12 @@ namespace Hecton8.Atmosphere
 
         private float ResolveCadenceSeconds(float globalQualityWeight01)
         {
-            float lowCadence = math.max(0.1f, lowTierColdTickSeconds);
-            float midCadence = math.max(0.05f, midTierColdTickSeconds);
-            float highCadence = math.max(0.02f, highTierColdTickSeconds);
+            float survivalCadence = math.max(0.1f, survivalColdTickSeconds);
+            float standardCadence = math.max(0.05f, standardColdTickSeconds);
+            float overkillCadence = math.max(0.02f, overkillColdTickSeconds);
             float q = Smooth01(math.saturate(math.isfinite(globalQualityWeight01) ? globalQualityWeight01 : AuthoritativeQualityWeight));
-            float lowToMid = math.lerp(lowCadence, midCadence, q);
-            return math.max(0.02f, math.lerp(lowToMid, highCadence, q));
+            float survivalToStandard = math.lerp(survivalCadence, standardCadence, q);
+            return math.max(0.02f, math.lerp(survivalToStandard, overkillCadence, q));
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -3126,11 +3371,6 @@ namespace Hecton8.Atmosphere
             public float Co2FatalKPa;
             public float NarcosisThresholdAtm;
             public float NarcosisFullAtm;
-            public int TelemetryWriteIndex;
-            public uint TelemetryBufferId;
-            public uint TelemetrySystemId;
-            public uint TelemetryGeneration;
-
             [ReadOnly, NoAlias] public NativeArray<float> RoomO2Front;
             [ReadOnly, NoAlias] public NativeArray<float> RoomCO2Front;
             [ReadOnly, NoAlias] public NativeArray<float> RoomNitrogenFront;
@@ -3151,7 +3391,7 @@ namespace Hecton8.Atmosphere
             [ReadOnly, NoAlias] public NativeArray<int> BulkheadRoomA;
             [ReadOnly, NoAlias] public NativeArray<int> BulkheadRoomB;
             [ReadOnly, NoAlias] public NativeArray<byte> BulkheadSealed;
-            [WriteOnly, NoAlias] public NativeArray<GasDynamicsTelemetryEntry> TelemetryRing;
+            [WriteOnly, NoAlias] public NativeArray<GasDynamicsTelemetryEntry> TelemetryScratch;
 
             public void Execute()
             {
@@ -3303,27 +3543,20 @@ namespace Hecton8.Atmosphere
                     stateHash = HashFloat(stateHash, pressure);
                 }
 
-                if (!TelemetryRing.IsCreated || (uint)TelemetryWriteIndex >= (uint)TelemetryRing.Length)
+                if (!TelemetryScratch.IsCreated || TelemetryScratch.Length <= 0)
                     return;
 
-                TelemetryRing[TelemetryWriteIndex] = new GasDynamicsTelemetryEntry
-                {
-                    PackedOwner = ((ulong)TelemetryBufferId << 32) | TelemetrySystemId,
-                    FrameIndex = FrameIndex,
-                    RoomCount = roomLimit,
-                    TotalO2KPa = totalOxygen,
-                    TotalCO2KPa = totalCarbonDioxide,
-                    TotalNitrogenKPa = totalNitrogen,
-                    MaxPressureKPa = maxPressure,
-                    StateHash = stateHash,
-                    BufferId = TelemetryBufferId,
-                    SystemId = TelemetrySystemId,
-                    Generation = TelemetryGeneration,
-                    Flags = telemetryFlags,
-                    Reserved = (ushort)math.min(ushort.MaxValue, sleepingRoomCount),
-                    DroppedUpdates = 0,
-                    CpuMicroseconds = 0f
-                };
+                GasDynamicsTelemetryEntry entry = default;
+                entry.FrameIndex = FrameIndex;
+                entry.RoomCount = roomLimit;
+                entry.TotalO2KPa = totalOxygen;
+                entry.TotalCO2KPa = totalCarbonDioxide;
+                entry.TotalNitrogenKPa = totalNitrogen;
+                entry.MaxPressureKPa = maxPressure;
+                entry.StateHash = stateHash;
+                entry.Flags = telemetryFlags;
+                entry.Reserved = (ushort)math.min(ushort.MaxValue, sleepingRoomCount);
+                TelemetryScratch[0] = entry;
             }
 
             [MethodImpl(MethodImplOptions.AggressiveInlining)]

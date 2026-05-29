@@ -42,47 +42,55 @@ namespace Hecton8.World
     public static class FloraGenomeLSystemUtility
     {
         public const int StatsDecoderIndex = 0;
-        public const int LowTierMatrixCap = 512;
-        public const int MiddleTierMatrixCap = 2048;
-        public const int HighTierMatrixCap = 8192;
-        public const int UltraTierMatrixCap = 16384;
+        public const int SurvivalMatrixCap = 512;
+        public const int StandardMatrixCap = 2048;
+        public const int HighFidelityMatrixCap = 8192;
+        public const int VisualOverkillMatrixCap = 16384;
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public static int ResolveIterationCap(byte hardwareTier, byte requestedIterations)
+        public static int ResolveIterationCap(float qualityWeight01, byte requestedIterations)
         {
             int requested = math.clamp((int)requestedIterations, 0, FloraGenomeLSystemConstants.MaxRuntimeIterations);
-            switch ((FloraGenomeHardwareTier)hardwareTier)
-            {
-                case FloraGenomeHardwareTier.Low:
-                    return math.min(requested, FloraGenomeLSystemConstants.ToasterIterationCap);
-                case FloraGenomeHardwareTier.Middle:
-                    return math.min(requested, 4);
-                case FloraGenomeHardwareTier.High:
-                case FloraGenomeHardwareTier.Ultra:
-                    return requested;
-                default:
-                    return FloraGenomeLSystemConstants.ToasterIterationCap;
-            }
+            float q = Smooth01(SaturateFinite(qualityWeight01, 1f));
+            int cap = math.clamp(
+                (int)math.floor(math.lerp(
+                    FloraGenomeLSystemConstants.ToasterIterationCap,
+                    FloraGenomeLSystemConstants.MaxRuntimeIterations + 0.999f,
+                    q)),
+                FloraGenomeLSystemConstants.ToasterIterationCap,
+                FloraGenomeLSystemConstants.MaxRuntimeIterations);
+            return math.min(requested, cap);
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public static int ResolveMatrixCap(byte hardwareTier, int bufferCapacity)
+        public static int ResolveMatrixCap(float qualityWeight01, int bufferCapacity)
         {
-            int tierCap = LowTierMatrixCap;
-            switch ((FloraGenomeHardwareTier)hardwareTier)
-            {
-                case FloraGenomeHardwareTier.Middle:
-                    tierCap = MiddleTierMatrixCap;
-                    break;
-                case FloraGenomeHardwareTier.High:
-                    tierCap = HighTierMatrixCap;
-                    break;
-                case FloraGenomeHardwareTier.Ultra:
-                    tierCap = UltraTierMatrixCap;
-                    break;
-            }
+            float q = SaturateFinite(qualityWeight01, 1f);
+            float survivalToStandard = math.lerp(SurvivalMatrixCap, StandardMatrixCap, SmoothRange01(0f, 0.35f, q));
+            float standardToHigh = math.lerp(survivalToStandard, HighFidelityMatrixCap, SmoothRange01(0.35f, 0.75f, q));
+            float curvedCap = math.lerp(standardToHigh, VisualOverkillMatrixCap, SmoothRange01(0.75f, 1f, q));
+            int scalarCap = math.clamp((int)math.round(curvedCap), SurvivalMatrixCap, VisualOverkillMatrixCap);
+            return math.max(0, math.min(bufferCapacity, scalarCap));
+        }
 
-            return math.max(0, math.min(bufferCapacity, tierCap));
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private static float Smooth01(float value)
+        {
+            float q = math.saturate(value);
+            return q * q * (3f - (2f * q));
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private static float SmoothRange01(float start, float end, float value)
+        {
+            float range = math.max(0.0001f, end - start);
+            return Smooth01((value - start) * math.rcp(range));
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private static float SaturateFinite(float value, float fallback)
+        {
+            return math.saturate(math.select(fallback, value, math.isfinite(value)));
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -277,7 +285,7 @@ namespace Hecton8.World
     {
         [ReadOnly, NoAlias] public NativeArray<FloraGenomeDTO> Genomes;
         public int GenomeIndex;
-        public byte HardwareTier;
+        public float QualityWeight01;
         [NoAlias] public NativeArray<byte> ExpandedSymbols;
         [NoAlias] public NativeArray<byte> ScratchSymbols;
         [NoAlias] public NativeArray<FloraGenomeJobStats> Stats;
@@ -295,7 +303,7 @@ namespace Hecton8.World
             }
 
             FloraGenomeDTO genome = Genomes[GenomeIndex];
-            int iterations = FloraGenomeLSystemUtility.ResolveIterationCap(HardwareTier, genome.MaxIterations);
+            int iterations = FloraGenomeLSystemUtility.ResolveIterationCap(QualityWeight01, genome.MaxIterations);
             int expandedCount = 0;
             int scratchCount = 0;
             int axiomLength = math.min(genome.Axiom.Length, FixedString32Bytes.UTF8MaxLengthInBytes);
@@ -461,7 +469,7 @@ namespace Hecton8.World
         public int GenomeIndex;
         public int PlantIndex;
         public uint FrameIndex;
-        public byte HardwareTier;
+        public float QualityWeight01;
         [NoAlias] public NativeArray<TurtleStackFrameDTO> TurtleStack;
         [NoAlias] public NativeArray<BranchMatrixDTO> BranchMatrices;
         public int MatrixWriteOffset;
@@ -507,7 +515,7 @@ namespace Hecton8.World
 
             TurtleStackFrameDTO frame = CreateRootFrame(seed, genome, plantHash, variance, ref faultFlags);
             int branchCapacity = ResolveBranchWriteCapacity();
-            int matrixCap = FloraGenomeLSystemUtility.ResolveMatrixCap(HardwareTier, branchCapacity);
+            int matrixCap = FloraGenomeLSystemUtility.ResolveMatrixCap(QualityWeight01, branchCapacity);
             if (!BranchMatrices.IsCreated || matrixCap <= 0)
             {
                 faultFlags |= (uint)FloraGenomeFaultFlags.MatrixCapacityClamped;

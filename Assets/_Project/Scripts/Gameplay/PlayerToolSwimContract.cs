@@ -1,3 +1,4 @@
+using Hecton8.Core;
 using UnityEngine;
 
 namespace Hecton8.Gameplay
@@ -11,8 +12,10 @@ namespace Hecton8.Gameplay
     /// </remarks>
     [DisallowMultipleComponent]
     [AddComponentMenu("Hecton8/Gameplay/Player Tool Swim Contract")]
-    public sealed class PlayerToolSwimContract : MonoBehaviour
+    public sealed class PlayerToolSwimContract : MonoBehaviour, IPoolable
     {
+        private static PlayerToolSwimContract s_lastSpawnedContract;
+
         [System.Serializable]
         [System.Runtime.InteropServices.StructLayout(System.Runtime.InteropServices.LayoutKind.Sequential)]
         private struct PoseBiasData
@@ -65,6 +68,29 @@ namespace Hecton8.Gameplay
 
         /// <summary>Primary near-camera hand owned by the tool.</summary>
         public PlayerToolSwimHandedness ToolHand => toolHand;
+
+        internal static bool TryResolveLastSpawned(GameObject instance, out PlayerToolSwimContract contract)
+        {
+            contract = s_lastSpawnedContract;
+            return contract != null && ReferenceEquals(contract.gameObject, instance);
+        }
+
+        public void OnSpawn()
+        {
+            s_lastSpawnedContract = this;
+        }
+
+        public void OnDespawn()
+        {
+            if (ReferenceEquals(s_lastSpawnedContract, this))
+                s_lastSpawnedContract = null;
+        }
+
+        private void OnDestroy()
+        {
+            if (ReferenceEquals(s_lastSpawnedContract, this))
+                s_lastSpawnedContract = null;
+        }
 
         /// <summary>Root-level swim presentation weight while this tool is equipped.</summary>
         public float SwimRootPresentationWeight => swimRootPresentationWeight;

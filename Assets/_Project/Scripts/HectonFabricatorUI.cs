@@ -90,6 +90,17 @@ namespace Hecton8.UI
 
         // COLD ALLOC: int[6] - shared fabricator hologram billboard indices - owner: HectonFabricatorUI
         private static readonly int[] s_billboardQuadTriangles = { 0, 2, 1, 0, 3, 2 };
+        // COLD ALLOC: FabricationGroup[7] - stable recipe group cycle order - owner: HectonFabricatorUI
+        private static readonly FabricationGroup[] s_fabricationGroupCycle =
+        {
+            FabricationGroup.Unspecified,
+            FabricationGroup.Materials,
+            FabricationGroup.Components,
+            FabricationGroup.Tools,
+            FabricationGroup.Suit,
+            FabricationGroup.Construction,
+            FabricationGroup.Power
+        };
 
         [Header("References")]
         [SerializeField] private Camera hudCamera;
@@ -190,6 +201,7 @@ namespace Hecton8.UI
         private bool _hotSwapListenerRegistered;
         private bool _originShiftListenerRegistered;
         private bool _localizationListenerRegistered;
+        private ILocalizationTextReadModel _localizationManager;
         private IInputService _inputService;
         private IPlayerInventoryService _playerInventoryService;
         private IPlayerRuntimeContext _playerRuntimeContext;
@@ -251,7 +263,7 @@ namespace Hecton8.UI
             GlobalTelemetryBus.Initialize();
             CharBufferPool.Prewarm();
             CacheRegistryServicesCold();
-            ResolveRuntimeReferences(allowFallbackLookup: true);
+            BindRuntimeReferencesCold(allowFallbackLookup: true);
             EnsureCanvasSplit();
 
             EnsureHologramResources();
@@ -266,6 +278,7 @@ namespace Hecton8.UI
             TryRegisterOriginShiftListener();
             SubscribeInputManagerIfAvailable();
             TryRegisterLocalizationListener();
+            RegisterLateFrameTick();
 
             CraftingEvents.Register(this);
         }
@@ -273,7 +286,7 @@ namespace Hecton8.UI
         private void Start()
         {
             CacheRegistryServicesCold();
-            ResolveRuntimeReferences(allowFallbackLookup: true);
+            BindRuntimeReferencesCold(allowFallbackLookup: true);
             TryRegisterHotSwapListener();
             SubscribeInputManagerIfAvailable();
         }
@@ -302,6 +315,7 @@ namespace Hecton8.UI
             TryUnregisterHotSwapListener();
             TryUnregisterOriginShiftListener();
             TryUnregisterLocalizationListener();
+            UnregisterLateFrameTick();
 
             if (_runtimeHologramMaterial != null)
             {
@@ -375,7 +389,7 @@ namespace Hecton8.UI
             }
 
             if (hudCamera == null || playerInventory == null)
-                ResolveRuntimeReferences(allowFallbackLookup: false);
+                RefreshRuntimeReferencesHot();
 
             AdvanceFailurePanelShake(deltaTime);
             UpdateRecipePointerSelection();
@@ -397,9 +411,11 @@ namespace Hecton8.UI
 
         private void RunFabricatorLateFrame()
         {
+            if (!_isOpen && !_isCrafting && !_hasPendingFabricatorVisualTick && !_hasPendingRecipeListVisibility)
+                return;
+
             RunFabricatorUiFrame(SystemDispatcher.CurrentFrameDeltaTime);
             FlushFabricatorVisualTick();
-            TryRetireLateFrameTickAfterClose();
         }
 
         private void FlushFabricatorVisualTick()
@@ -420,20 +436,12 @@ namespace Hecton8.UI
             }
 
             if (hudCamera == null || playerInventory == null)
-                ResolveRuntimeReferences(allowFallbackLookup: false);
+                RefreshRuntimeReferencesHot();
 
             UpdateRecipeListPose();
             RefreshRecipeListIfDirty();
             RenderActiveRecipeHologram(visualDeltaTime);
             UpdateDiagnostics();
-        }
-
-        private void TryRetireLateFrameTickAfterClose()
-        {
-            if (_isOpen || _isCrafting || _hasPendingFabricatorVisualTick || _hasPendingRecipeListVisibility)
-                return;
-
-            UnregisterLateFrameTick();
         }
 
         private void PublishSolveWarningIfNeeded(long startTimestamp)
@@ -809,6 +817,14 @@ namespace Hecton8.UI
                     _lastRecipeVisualVersion = int.MinValue;
                     InvalidateHologramMatrixCache();
                     return;
+                case GlobalRegistryServiceSlot.LocalizationRuntime:
+                    _localizationManager = currentService as ILocalizationTextReadModel;
+                    unchecked
+                    {
+                        _recipeLabelTextVersion++;
+                    }
+                    _lastRecipeVisualVersion = int.MinValue;
+                    return;
             }
         }
 
@@ -865,31 +881,20 @@ namespace Hecton8.UI
 
         private void CycleGroup(int direction)
         {
-            FabricationGroup[] groups =
-            {
-                FabricationGroup.Unspecified,
-                FabricationGroup.Materials,
-                FabricationGroup.Components,
-                FabricationGroup.Tools,
-                FabricationGroup.Suit,
-                FabricationGroup.Construction,
-                FabricationGroup.Power
-            };
-
             int currentIndex = 0;
-            for (int i = 0; i < groups.Length; i++)
+            for (int i = 0; i < s_fabricationGroupCycle.Length; i++)
             {
-                if (groups[i] == _selectedGroup)
+                if (s_fabricationGroupCycle[i] == _selectedGroup)
                 {
                     currentIndex = i;
                     break;
                 }
             }
 
-            for (int step = 1; step <= groups.Length; step++)
+            for (int step = 1; step <= s_fabricationGroupCycle.Length; step++)
             {
-                int nextIndex = (currentIndex + (step * direction) + groups.Length) % groups.Length;
-                FabricationGroup candidate = groups[nextIndex];
+                int nextIndex = (currentIndex + (step * direction) + s_fabricationGroupCycle.Length) % s_fabricationGroupCycle.Length;
+                FabricationGroup candidate = s_fabricationGroupCycle[nextIndex];
                 if (!HasRecipesInGroup(candidate))
                     continue;
 
@@ -1312,10 +1317,9 @@ namespace Hecton8.UI
                 _runtimeHologramMaterial.SetFloat(HologramPulseFrequencyId, math.max(0f, hologramPulseFrequency));
         }
 
-        private void ResolveRuntimeReferences(bool allowFallbackLookup)
+        private void BindRuntimeReferencesCold(bool allowFallbackLookup)
         {
-            RebindPlayerInventoryService(_playerInventoryService);
-            RebindPlayerRuntimeContext(_playerRuntimeContext);
+            RefreshRuntimeReferencesHot();
 
             if (allowFallbackLookup &&
                 playerInventory == null &&
@@ -1326,11 +1330,18 @@ namespace Hecton8.UI
             }
         }
 
+        private void RefreshRuntimeReferencesHot()
+        {
+            RebindPlayerInventoryService(_playerInventoryService);
+            RebindPlayerRuntimeContext(_playerRuntimeContext);
+        }
+
         private void CacheRegistryServicesCold()
         {
             _inputService = GlobalRegistry.Input;
             _nativeInputManager = GlobalRegistry.NativeInputRuntime;
             _resourceScarcityRuntime = GlobalRegistry.ResourceScarcityReadModel;
+            _localizationManager = GlobalRegistry.LocalizationText;
             RebindPlayerInventoryService(GlobalRegistry.PlayerInventory);
             RebindPlayerRuntimeContext(GlobalRegistry.Player);
         }
@@ -1489,7 +1500,7 @@ namespace Hecton8.UI
 
             text.maxVisibleCharacters = length;
             text.SetCharArray(stagingBuffer, 0, length);
-            text.SetCharArray(Array.Empty<char>(), 0, 0);
+            text.SetCharArray(stagingBuffer, 0, 0);
         }
 
         private void SetRecipeListVisible(bool visible)
@@ -1520,7 +1531,7 @@ namespace Hecton8.UI
                 return;
 
             if (hudCamera == null || playerInventory == null)
-                ResolveRuntimeReferences(allowFallbackLookup: false);
+                RefreshRuntimeReferencesHot();
 
             Transform anchor = _currentFabricator.transform;
             float3 anchorRuntimePosition = ResolveSelectedHologramAnchorRuntimePosition(anchor);
@@ -1653,10 +1664,13 @@ namespace Hecton8.UI
                         entry.InflationSharpness.Bind(entry.InflationLabel, hudCamera);
 
                     int displayNameLength = ResolveRecipeListDisplayName(ref entry, recipe);
+                    ReadOnlySpan<char> displayName = entry.CachedDisplayNameBuffer != null
+                        ? entry.CachedDisplayNameBuffer.AsSpan(0, displayNameLength)
+                        : ReadOnlySpan<char>.Empty;
                     int length = BuildRecipeLabel(
                         entry.Label,
                         recipe,
-                        entry.CachedDisplayNameBuffer.AsSpan(0, displayNameLength),
+                        displayName,
                         selected,
                         craftable);
                     entry.Label.SetCharArray(_recipeLabelBuffer, 0, length);
@@ -1685,7 +1699,6 @@ namespace Hecton8.UI
         {
             _pendingRecipeListVisibility = visible;
             _hasPendingRecipeListVisibility = true;
-            RegisterLateFrameTick();
         }
 
         private void FlushPendingRecipeListVisibility()
@@ -1777,7 +1790,7 @@ namespace Hecton8.UI
 
             if (!inflated)
             {
-                entry.InflationLabel.SetCharArray(Array.Empty<char>(), 0, 0);
+                entry.InflationLabel.SetCharArray(_fallbackBuffer, 0, 0);
                 return;
             }
 
@@ -1814,7 +1827,11 @@ namespace Hecton8.UI
             }
 
             if (entry.CachedDisplayNameBuffer == null || entry.CachedDisplayNameBuffer.Length != RecipeLabelBufferCapacity)
-                entry.CachedDisplayNameBuffer = new char[RecipeLabelBufferCapacity];
+            {
+                entry.CachedDisplayNameLength = 0;
+                entry.CachedDisplayNameVersion = _recipeLabelTextVersion;
+                return 0;
+            }
 
             if (!ReferenceEquals(entry.LabelRecipe, recipe) ||
                 entry.CachedDisplayNameVersion != _recipeLabelTextVersion ||
@@ -1822,7 +1839,7 @@ namespace Hecton8.UI
             {
                 entry.LabelRecipe = recipe;
                 entry.CachedDisplayNameVersion = _recipeLabelTextVersion;
-                if (!recipe.TryWriteDisplayNameOrFallback(entry.CachedDisplayNameBuffer, out int nameLength))
+                if (!recipe.TryWriteDisplayNameOrFallback(_localizationManager, entry.CachedDisplayNameBuffer, out int nameLength))
                     nameLength = CopySpanToBuffer(recipe.name.AsSpan(), entry.CachedDisplayNameBuffer);
                 entry.CachedDisplayNameLength = math.clamp(nameLength, 0, entry.CachedDisplayNameBuffer.Length);
             }

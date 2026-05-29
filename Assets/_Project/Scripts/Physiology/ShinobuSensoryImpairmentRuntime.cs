@@ -16,11 +16,38 @@ namespace Hecton8.Physiology
     public sealed unsafe class ShinobuSensoryImpairmentRuntime : MonoBehaviour, ISlowTickable, ILateFrameTickable, IGlobalRegistryHotSwapListener
     {
         private const SystemID OwnerSystem = SystemID.GameplayPlayer;
-        private const ulong InputMutationGuardMask = 1UL << 44;
 #if UNITY_EDITOR
         private const string CsvRelativePath = "sensory_impairment_profiles.csv";
 #endif
         private const string DumpRelativePath = "Docs/AgentLogs/Dump_SHINOBU_322.bin";
+
+        private static readonly ulong TuningMutationGuardMask =
+            MutationGuardBit(ShinobuSensoryImpairmentConstants.SensoryImpairmentTuningBuffer);
+        private static readonly ulong GasMutationGuardMask =
+            MutationGuardBit(ShinobuPhysiologyConstants.GasPhysiologyStatesBuffer);
+        private static readonly ulong TelemetryMutationGuardMask =
+            MutationGuardBit(ShinobuSensoryImpairmentConstants.SensoryImpairmentTelemetryBuffer);
+        private static readonly ulong DefaultsMutationGuardMask =
+            MutationGuardBit(ShinobuSensoryImpairmentConstants.SensoryImpairmentBuffer) |
+            MutationGuardBit(ShinobuSensoryImpairmentConstants.SensoryImpairmentTelemetryBuffer) |
+            MutationGuardBit(ShinobuSensoryImpairmentConstants.SensoryInputDriftDebugBuffer) |
+            MutationGuardBit(ShinobuSensoryImpairmentConstants.SensoryImpairmentTuningBuffer);
+        private static readonly ulong EvaluationMutationGuardMask =
+            MutationGuardBit(ShinobuPhysiologyConstants.GasPhysiologyStatesBuffer) |
+            MutationGuardBit(ShinobuSensoryImpairmentConstants.SensoryImpairmentBuffer) |
+            MutationGuardBit(ShinobuSensoryImpairmentConstants.SensoryImpairmentTuningBuffer) |
+            MutationGuardBit(BufferID.ShinobuEnvironmentVitals);
+        private static readonly ulong InputMutationGuardMask =
+            MutationGuardBit(BufferID.ShinobuInputCurrentDto) |
+            MutationGuardBit(BufferID.ShinobuPredictedInputRing) |
+            MutationGuardBit(ShinobuSensoryImpairmentConstants.SensoryImpairmentTelemetryBuffer) |
+            MutationGuardBit(ShinobuSensoryImpairmentConstants.SensoryInputDriftDebugBuffer);
+#if UNITY_EDITOR
+        private static readonly ulong CsvImportMutationGuardMask =
+            MutationGuardBit(ShinobuSensoryImpairmentConstants.SensoryImpairmentProfilesBuffer) |
+            MutationGuardBit(ShinobuSensoryImpairmentConstants.SensoryImpairmentTuningBuffer) |
+            MutationGuardBit(ShinobuSensoryImpairmentConstants.SensoryImpairmentCsvScratchBuffer);
+#endif
 
         [Header("Emergency Mock")]
         [SerializeField] private bool enableEmergencyMockToxicity;
@@ -194,13 +221,11 @@ namespace Hecton8.Physiology
                 return false;
             }
 
-            bool tuningLocked = false;
+            if (!vault.TryAcquireMutationGuard(TuningMutationGuardMask))
+                return false;
+
             try
             {
-                if (!vault.TryLockBuffer(ShinobuSensoryImpairmentConstants.SensoryImpairmentTuningBuffer, OwnerSystem))
-                    return false;
-                tuningLocked = true;
-
                 void* tuningPtr = NativeArrayUnsafeUtility.GetUnsafeBufferPointerWithoutChecks(rows);
                 ref SensoryImpairmentTuningDTO target = ref UnsafeUtility.AsRef<SensoryImpairmentTuningDTO>(tuningPtr);
                 target = ShinobuSensoryImpairmentJobMath.SanitizeTuning(tuning);
@@ -208,8 +233,7 @@ namespace Hecton8.Physiology
             }
             finally
             {
-                if (tuningLocked)
-                    vault.TryUnlockBuffer(ShinobuSensoryImpairmentConstants.SensoryImpairmentTuningBuffer, OwnerSystem);
+                vault.ReleaseMutationGuard(TuningMutationGuardMask);
             }
         }
 
@@ -281,13 +305,11 @@ namespace Hecton8.Physiology
                 return false;
             }
 
-            bool gasLocked = false;
+            if (!vault.TryAcquireMutationGuard(GasMutationGuardMask))
+                return false;
+
             try
             {
-                if (!vault.TryLockBuffer(ShinobuPhysiologyConstants.GasPhysiologyStatesBuffer, OwnerSystem))
-                    return false;
-                gasLocked = true;
-
                 GasPhysiologyStateDTO gas = gasStates[0];
                 gas.OxygenPartialPressure = math.max(0f, ShinobuSensoryImpairmentJobMath.SanitizeFinite(oxygenPartialPressureAtm, ShinobuPhysiologyConstants.SurfaceOxygenPartialPressureAtm));
                 gas.NitrogenPartialPressure = math.max(0f, ShinobuSensoryImpairmentJobMath.SanitizeFinite(nitrogenPartialPressureAtm, ShinobuPhysiologyConstants.SurfaceNitrogenPartialPressureAtm));
@@ -298,8 +320,7 @@ namespace Hecton8.Physiology
             }
             finally
             {
-                if (gasLocked)
-                    vault.TryUnlockBuffer(ShinobuPhysiologyConstants.GasPhysiologyStatesBuffer, OwnerSystem);
+                vault.ReleaseMutationGuard(GasMutationGuardMask);
             }
         }
 
@@ -358,25 +379,11 @@ namespace Hecton8.Physiology
             TryResolveOwnBuffer(ref _driftDebugHandle, ShinobuSensoryImpairmentConstants.SensoryInputDriftDebugBuffer, 1, out NativeArray<SensoryInputDriftDebugDTO> driftDebug);
             int initCount = math.max(impairment.IsCreated ? impairment.Length : 0, telemetry.IsCreated ? telemetry.Length : 0);
             initCount = math.max(initCount, driftDebug.IsCreated ? driftDebug.Length : 0);
-            bool impairmentLocked = false;
-            bool telemetryLocked = false;
-            bool driftDebugLocked = false;
-            bool tuningLocked = false;
+            if (!vault.TryAcquireMutationGuard(DefaultsMutationGuardMask))
+                return;
+
             try
             {
-                if (!vault.TryLockBuffer(ShinobuSensoryImpairmentConstants.SensoryImpairmentBuffer, OwnerSystem))
-                    return;
-                impairmentLocked = true;
-                if (!vault.TryLockBuffer(ShinobuSensoryImpairmentConstants.SensoryImpairmentTelemetryBuffer, OwnerSystem))
-                    return;
-                telemetryLocked = true;
-                if (!vault.TryLockBuffer(ShinobuSensoryImpairmentConstants.SensoryInputDriftDebugBuffer, OwnerSystem))
-                    return;
-                driftDebugLocked = true;
-                if (!vault.TryLockBuffer(ShinobuSensoryImpairmentConstants.SensoryImpairmentTuningBuffer, OwnerSystem))
-                    return;
-                tuningLocked = true;
-
                 if (initCount > 0)
                 {
                     new InitSensoryImpairmentJob
@@ -398,14 +405,7 @@ namespace Hecton8.Physiology
             }
             finally
             {
-                if (tuningLocked)
-                    vault.TryUnlockBuffer(ShinobuSensoryImpairmentConstants.SensoryImpairmentTuningBuffer, OwnerSystem);
-                if (driftDebugLocked)
-                    vault.TryUnlockBuffer(ShinobuSensoryImpairmentConstants.SensoryInputDriftDebugBuffer, OwnerSystem);
-                if (telemetryLocked)
-                    vault.TryUnlockBuffer(ShinobuSensoryImpairmentConstants.SensoryImpairmentTelemetryBuffer, OwnerSystem);
-                if (impairmentLocked)
-                    vault.TryUnlockBuffer(ShinobuSensoryImpairmentConstants.SensoryImpairmentBuffer, OwnerSystem);
+                vault.ReleaseMutationGuard(DefaultsMutationGuardMask);
             }
 
             _defaultsInitialized = true;
@@ -428,33 +428,27 @@ namespace Hecton8.Physiology
             if (!hasGas)
                 return false;
 
-            bool gasLocked = false;
-            bool impairmentLocked = false;
-            bool tuningLocked = false;
-            bool environmentLocked = false;
+            NativeArray<MockEnvironmentVitalsSignal> environment = default;
+            bool hasEnvironment = false;
+            if (enableEmergencyMockToxicity)
+            {
+                hasEnvironment =
+                    TryResolveExistingBuffer(ref _environmentHandle, BufferID.ShinobuEnvironmentVitals, 1, out environment) ||
+                    OpenOrAcquireSharedBuffer(ref _environmentHandle, BufferID.ShinobuEnvironmentVitals, 1, NativeArrayOptions.UninitializedMemory, out environment);
+            }
+
+            if (!vault.TryAcquireMutationGuard(EvaluationMutationGuardMask))
+                return false;
+
             try
             {
-                if (!vault.TryLockBuffer(ShinobuPhysiologyConstants.GasPhysiologyStatesBuffer, OwnerSystem))
-                    return false;
-                gasLocked = true;
-                if (!vault.TryLockBuffer(ShinobuSensoryImpairmentConstants.SensoryImpairmentBuffer, OwnerSystem))
-                    return false;
-                impairmentLocked = true;
-                if (!vault.TryLockBuffer(ShinobuSensoryImpairmentConstants.SensoryImpairmentTuningBuffer, OwnerSystem))
-                    return false;
-                tuningLocked = true;
-
                 SensoryImpairmentTuningDTO localTuning = ShinobuSensoryImpairmentJobMath.SanitizeTuning(tuning[0]);
                 localTuning.GlobalQualityWeight = quality;
                 localTuning.MockMaxDepthMeters = math.max(1f, mockMaxDepthMeters);
                 tuning[0] = localTuning;
 
-                if (enableEmergencyMockToxicity &&
-                    (TryResolveExistingBuffer(ref _environmentHandle, BufferID.ShinobuEnvironmentVitals, 1, out NativeArray<MockEnvironmentVitalsSignal> environment) ||
-                     OpenOrAcquireSharedBuffer(ref _environmentHandle, BufferID.ShinobuEnvironmentVitals, 1, NativeArrayOptions.UninitializedMemory, out environment)) &&
-                    vault.TryLockBuffer(BufferID.ShinobuEnvironmentVitals, OwnerSystem))
+                if (enableEmergencyMockToxicity && hasEnvironment)
                 {
-                    environmentLocked = true;
                     new GenerateMockToxicityDataJob
                     {
                         GasStates = gasStates,
@@ -478,14 +472,7 @@ namespace Hecton8.Physiology
             }
             finally
             {
-                if (environmentLocked)
-                    vault.TryUnlockBuffer(BufferID.ShinobuEnvironmentVitals, OwnerSystem);
-                if (tuningLocked)
-                    vault.TryUnlockBuffer(ShinobuSensoryImpairmentConstants.SensoryImpairmentTuningBuffer, OwnerSystem);
-                if (impairmentLocked)
-                    vault.TryUnlockBuffer(ShinobuSensoryImpairmentConstants.SensoryImpairmentBuffer, OwnerSystem);
-                if (gasLocked)
-                    vault.TryUnlockBuffer(ShinobuPhysiologyConstants.GasPhysiologyStatesBuffer, OwnerSystem);
+                vault.ReleaseMutationGuard(EvaluationMutationGuardMask);
             }
         }
 
@@ -506,25 +493,8 @@ namespace Hecton8.Physiology
             if (!vault.TryAcquireMutationGuard(InputMutationGuardMask))
                 return false;
 
-            bool currentLocked = false;
-            bool predictedLocked = false;
-            bool telemetryLocked = false;
-            bool driftDebugLocked = false;
             try
             {
-                if (!vault.TryLockBuffer(BufferID.ShinobuInputCurrentDto, OwnerSystem))
-                    return false;
-                currentLocked = true;
-                if (!vault.TryLockBuffer(BufferID.ShinobuPredictedInputRing, OwnerSystem))
-                    return false;
-                predictedLocked = true;
-                if (!vault.TryLockBuffer(ShinobuSensoryImpairmentConstants.SensoryImpairmentTelemetryBuffer, OwnerSystem))
-                    return false;
-                telemetryLocked = true;
-                if (!vault.TryLockBuffer(ShinobuSensoryImpairmentConstants.SensoryInputDriftDebugBuffer, OwnerSystem))
-                    return false;
-                driftDebugLocked = true;
-
                 double3 aupOrigin = ResolveAupOrigin();
                 SensoryImpairmentTuningDTO localTuning = ShinobuSensoryImpairmentJobMath.SanitizeTuning(tuning[0]);
                 long jobStart = Stopwatch.GetTimestamp();
@@ -553,14 +523,6 @@ namespace Hecton8.Physiology
             }
             finally
             {
-                if (driftDebugLocked)
-                    vault.TryUnlockBuffer(ShinobuSensoryImpairmentConstants.SensoryInputDriftDebugBuffer, OwnerSystem);
-                if (telemetryLocked)
-                    vault.TryUnlockBuffer(ShinobuSensoryImpairmentConstants.SensoryImpairmentTelemetryBuffer, OwnerSystem);
-                if (predictedLocked)
-                    vault.TryUnlockBuffer(BufferID.ShinobuPredictedInputRing, OwnerSystem);
-                if (currentLocked)
-                    vault.TryUnlockBuffer(BufferID.ShinobuInputCurrentDto, OwnerSystem);
                 vault.ReleaseMutationGuard(InputMutationGuardMask);
             }
         }
@@ -574,12 +536,11 @@ namespace Hecton8.Physiology
 
             TryResolveExistingBuffer(ref _gasStateHandle, ShinobuPhysiologyConstants.GasPhysiologyStatesBuffer, 1, out NativeArray<GasPhysiologyStateDTO> gasStates);
             TryResolveExistingBuffer(ref _environmentHandle, BufferID.ShinobuEnvironmentVitals, 1, out NativeArray<MockEnvironmentVitalsSignal> environment);
-            bool telemetryLocked = false;
+            if (!vault.TryAcquireMutationGuard(TelemetryMutationGuardMask))
+                return;
+
             try
             {
-                if (!vault.TryLockBuffer(ShinobuSensoryImpairmentConstants.SensoryImpairmentTelemetryBuffer, OwnerSystem))
-                    return;
-                telemetryLocked = true;
                 new PatchSensoryTelemetryGasJob
                 {
                     GasStates = gasStates,
@@ -591,8 +552,7 @@ namespace Hecton8.Physiology
             }
             finally
             {
-                if (telemetryLocked)
-                    vault.TryUnlockBuffer(ShinobuSensoryImpairmentConstants.SensoryImpairmentTelemetryBuffer, OwnerSystem);
+                vault.ReleaseMutationGuard(TelemetryMutationGuardMask);
             }
         }
 
@@ -692,21 +652,11 @@ namespace Hecton8.Physiology
                 return false;
             }
 
-            bool profilesLocked = false;
-            bool tuningLocked = false;
-            bool scratchLocked = false;
+            if (!vault.TryAcquireMutationGuard(CsvImportMutationGuardMask))
+                return false;
+
             try
             {
-                if (!vault.TryLockBuffer(ShinobuSensoryImpairmentConstants.SensoryImpairmentProfilesBuffer, OwnerSystem))
-                    return false;
-                profilesLocked = true;
-                if (!vault.TryLockBuffer(ShinobuSensoryImpairmentConstants.SensoryImpairmentTuningBuffer, OwnerSystem))
-                    return false;
-                tuningLocked = true;
-                if (!vault.TryLockBuffer(ShinobuSensoryImpairmentConstants.SensoryImpairmentCsvScratchBuffer, OwnerSystem))
-                    return false;
-                scratchLocked = true;
-
                 byte* scratchPtr = (byte*)NativeArrayUnsafeUtility.GetUnsafeBufferPointerWithoutChecks(scratch);
                 int count = 0;
                 using (FileStream stream = new FileStream(_csvPath, FileMode.Open, FileAccess.Read, FileShare.ReadWrite))
@@ -736,12 +686,7 @@ namespace Hecton8.Physiology
             }
             finally
             {
-                if (scratchLocked)
-                    vault.TryUnlockBuffer(ShinobuSensoryImpairmentConstants.SensoryImpairmentCsvScratchBuffer, OwnerSystem);
-                if (tuningLocked)
-                    vault.TryUnlockBuffer(ShinobuSensoryImpairmentConstants.SensoryImpairmentTuningBuffer, OwnerSystem);
-                if (profilesLocked)
-                    vault.TryUnlockBuffer(ShinobuSensoryImpairmentConstants.SensoryImpairmentProfilesBuffer, OwnerSystem);
+                vault.ReleaseMutationGuard(CsvImportMutationGuardMask);
             }
 
             return false;
@@ -1095,6 +1040,11 @@ namespace Hecton8.Physiology
             long delta = rawDelta > 0L ? rawDelta : 0L;
             double microseconds = delta * 1000000.0 / Stopwatch.Frequency;
             return math.isfinite(microseconds) ? (float)math.min(microseconds, float.MaxValue) : 0f;
+        }
+
+        private static ulong MutationGuardBit(BufferID bufferId)
+        {
+            return 1UL << (unchecked((int)(uint)(int)bufferId) & 31);
         }
 
 #if UNITY_EDITOR

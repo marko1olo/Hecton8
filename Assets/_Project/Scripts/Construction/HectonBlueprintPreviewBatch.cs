@@ -21,6 +21,10 @@ namespace Hecton8.Construction
     {
         private const string HologramShaderPath = "Assets/_Project/Shaders/Hecton_ConstructionDearLieHologram.shader";
         private const float DefaultDearLieWiggleSpeed = 18f;
+        private const ulong PreviewBuildMutationGuardMask =
+            (1UL << ((int)ShinobuSocketConstructionRuntime.BuilderGhostStateBufferId & 31)) |
+            (1UL << ((int)ShinobuSocketConstructionRuntime.BuilderGhostVisualBufferId & 31)) |
+            (1UL << ((int)ShinobuSocketConstructionRuntime.BuilderGhostIndirectArgsBufferId & 31));
 
         [SerializeField] private Material previewMaterial;
         [SerializeField] private Shader previewShader;
@@ -894,45 +898,40 @@ namespace Hecton8.Construction
             if (vault == null)
                 return false;
 
-            int resolvedCapacity = ResolveCapacity();
-            int acquiredCount = 0;
-            if (!IsBlueprintVaultHandle(in _stateHandle, ShinobuSocketConstructionRuntime.BuilderGhostStateBufferId) ||
-                !vault.TryAcquireWriteLock(in _stateHandle, SystemID.Construction, out states))
+            if (!vault.TryAcquireMutationGuard(PreviewBuildMutationGuardMask))
                 return false;
-            acquiredCount = 1;
-            if (!states.IsCreated || states.Length < resolvedCapacity)
-            {
-                ReleasePreviewBuildWriteLocks(vault, acquiredCount);
-                return false;
-            }
 
-            if (!IsBlueprintVaultHandle(in _visualHandle, ShinobuSocketConstructionRuntime.BuilderGhostVisualBufferId) ||
-                !vault.TryAcquireWriteLock(in _visualHandle, SystemID.Construction, out visuals))
+            bool guardTransferred = false;
+            try
             {
-                ReleasePreviewBuildWriteLocks(vault, acquiredCount);
-                return false;
-            }
-            acquiredCount = 2;
-            if (!visuals.IsCreated || visuals.Length < resolvedCapacity)
-            {
-                ReleasePreviewBuildWriteLocks(vault, acquiredCount);
-                return false;
-            }
+                int resolvedCapacity = ResolveCapacity();
+                if (!IsBlueprintVaultHandle(in _stateHandle, ShinobuSocketConstructionRuntime.BuilderGhostStateBufferId) ||
+                    !IsBlueprintVaultHandle(in _visualHandle, ShinobuSocketConstructionRuntime.BuilderGhostVisualBufferId) ||
+                    !IsBlueprintVaultHandle(in _argsHandle, ShinobuSocketConstructionRuntime.BuilderGhostIndirectArgsBufferId) ||
+                    !vault.TryResolveHandle(in _stateHandle, out states) ||
+                    !vault.TryResolveHandle(in _visualHandle, out visuals) ||
+                    !vault.TryResolveHandle(in _argsHandle, out args) ||
+                    !states.IsCreated ||
+                    states.Length < resolvedCapacity ||
+                    !visuals.IsCreated ||
+                    visuals.Length < resolvedCapacity ||
+                    !args.IsCreated ||
+                    args.Length < 1)
+                {
+                    states = default;
+                    visuals = default;
+                    args = default;
+                    return false;
+                }
 
-            if (!IsBlueprintVaultHandle(in _argsHandle, ShinobuSocketConstructionRuntime.BuilderGhostIndirectArgsBufferId) ||
-                !vault.TryAcquireWriteLock(in _argsHandle, SystemID.Construction, out args))
-            {
-                ReleasePreviewBuildWriteLocks(vault, acquiredCount);
-                return false;
+                guardTransferred = true;
+                return true;
             }
-            acquiredCount = 3;
-            if (!args.IsCreated || args.Length < 1)
+            finally
             {
-                ReleasePreviewBuildWriteLocks(vault, acquiredCount);
-                return false;
+                if (!guardTransferred)
+                    vault.ReleaseMutationGuard(PreviewBuildMutationGuardMask);
             }
-
-            return true;
         }
 
         private bool TryReadLockedPreviewBuildBuffers(
@@ -999,12 +998,7 @@ namespace Hecton8.Construction
             if (vault == null || acquiredCount <= 0)
                 return;
 
-            if (acquiredCount >= 3)
-                vault.ReleaseWriteLock(in _argsHandle, SystemID.Construction);
-            if (acquiredCount >= 2)
-                vault.ReleaseWriteLock(in _visualHandle, SystemID.Construction);
-            if (acquiredCount >= 1)
-                vault.ReleaseWriteLock(in _stateHandle, SystemID.Construction);
+            vault.ReleaseMutationGuard(PreviewBuildMutationGuardMask);
         }
 
         private bool TryBindVaultCold(out IDataVault vault)

@@ -1015,6 +1015,10 @@ namespace Hecton8.Celestial
         private Color _resolvedSkyHorizon;
         private Color _resolvedSkyNadir;
         private Texture2D _celestialAtmosphereLutTexture;
+        private TextureFormat _coldCelestialAtmosphereLutTextureFormat = TextureFormat.RGBAFloat;
+        private bool _coldSupportsComputeShaders;
+        private int _coldMaxTextureSize;
+        private int _coldGraphicsMemoryMb;
         private RenderTexture _bakedStarCubemap;
         private RenderTexture _atmosphereScatteringLutTexture;
         private bool _firmamentBakeComplete;
@@ -1390,6 +1394,7 @@ namespace Hecton8.Celestial
         private void Awake()
         {
             CacheCelestialOrbitReciprocals();
+            CacheCelestialGraphicsCapabilitiesCold();
             ForceMandatedSkyMaterialReference();
             EnsureCelestialAtmosphereLutReady(publishOnRebuild: false);
             EnsureFirmamentBakeCompute();
@@ -1413,6 +1418,7 @@ namespace Hecton8.Celestial
 
             ForceMandatedSkyMaterialReference();
             ValidateReferences();
+            CacheCelestialGraphicsCapabilitiesCold();
             EnsureAegirRingShadowCookieReady();
             EnsureCelestialAtmosphereLutReady();
             EnsureFirmamentBakeCompute();
@@ -2673,14 +2679,10 @@ namespace Hecton8.Celestial
             if (_celestialAtmosphereLutTexture != null)
                 return;
 
-            TextureFormat textureFormat = SystemInfo.SupportsTextureFormat(TextureFormat.RGBAHalf)
-                ? TextureFormat.RGBAHalf
-                : TextureFormat.RGBAFloat;
-
             _celestialAtmosphereLutTexture = new Texture2D(
                 CelestialAtmosphereLutResolution,
                 1,
-                textureFormat,
+                _coldCelestialAtmosphereLutTextureFormat,
                 false,
                 true)
             {
@@ -2689,6 +2691,16 @@ namespace Hecton8.Celestial
                 filterMode = FilterMode.Bilinear,
                 hideFlags = HideFlags.HideAndDontSave
             };
+        }
+
+        private void CacheCelestialGraphicsCapabilitiesCold()
+        {
+            _coldSupportsComputeShaders = SystemInfo.supportsComputeShaders;
+            _coldMaxTextureSize = SystemInfo.maxTextureSize;
+            _coldGraphicsMemoryMb = SystemInfo.graphicsMemorySize;
+            _coldCelestialAtmosphereLutTextureFormat = SystemInfo.SupportsTextureFormat(TextureFormat.RGBAHalf)
+                ? TextureFormat.RGBAHalf
+                : TextureFormat.RGBAFloat;
         }
 
         private void UpdateDynamicCelestialAtmosphere(
@@ -3446,13 +3458,13 @@ namespace Hecton8.Celestial
                 FirmamentHighVramResolutionCap);
         }
 
-        private static int ComputeFirmamentCubemapResolution(int requested)
+        private int ComputeFirmamentCubemapResolution(int requested)
         {
-            int hardwareMax = SystemInfo.maxTextureSize > 0
-                ? Mathf.Min(SystemInfo.maxTextureSize, FirmamentHighVramResolutionCap)
+            int hardwareMax = _coldMaxTextureSize > 0
+                ? Mathf.Min(_coldMaxTextureSize, FirmamentHighVramResolutionCap)
                 : FirmamentSurvivalResolutionCap;
             float qualityBudget01 = ResolveFirmamentQualityWeight01();
-            float memoryBudget01 = ResolveFirmamentMemoryBudget01(SystemInfo.graphicsMemorySize);
+            float memoryBudget01 = ResolveFirmamentMemoryBudget01(_coldGraphicsMemoryMb);
             float qualityCurve = SmoothStep01(qualityBudget01);
             float memoryCurve = SmoothStep01(memoryBudget01);
             float qualityTarget = math.lerp(FirmamentMinResolution, requested, qualityCurve);
@@ -3514,7 +3526,7 @@ namespace Hecton8.Celestial
 
         private bool EnsureFirmamentKernels()
         {
-            if (firmamentBakeCompute == null || !SystemInfo.supportsComputeShaders)
+            if (firmamentBakeCompute == null || !_coldSupportsComputeShaders)
                 return false;
 
             if (_firmamentClearKernel < 0)
@@ -3562,7 +3574,7 @@ namespace Hecton8.Celestial
             return true;
         }
 
-        private static void ResolveKernelThreadGroupSizes(
+        private void ResolveKernelThreadGroupSizes(
             ComputeShader compute,
             int kernel,
             out int sizeX,
@@ -3572,7 +3584,7 @@ namespace Hecton8.Celestial
             sizeX = 0;
             sizeY = 0;
             sizeZ = 0;
-            if (compute == null || kernel < 0 || !SystemInfo.supportsComputeShaders || !compute.IsSupported(kernel))
+            if (compute == null || kernel < 0 || !_coldSupportsComputeShaders || !compute.IsSupported(kernel))
                 return;
 
             compute.GetKernelThreadGroupSizes(kernel, out uint queryX, out uint queryY, out uint queryZ);

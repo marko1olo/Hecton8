@@ -146,7 +146,6 @@ namespace Hecton8.UI
                 _sharpnessUpdateRemaining = ResolveUpdateInterval();
             }
 
-            EnsureMaterialInstance();
             if (_materialInstance == null)
                 return;
 

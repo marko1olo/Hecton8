@@ -240,7 +240,6 @@ namespace Hecton8.UI
 
         public void LateFrameTick()
         {
-            EnsureRuntimeReady();
             if (!_nativeResourcesReady)
                 return;
 
@@ -1663,7 +1662,7 @@ namespace Hecton8.UI
 
         private bool EnsureComputeKernelForOwner()
         {
-            if (terminalBlitCompute == null || !HardwareTierDetector.AllowHighResourceComputeShaders)
+            if (terminalBlitCompute == null || !SystemInfo.supportsComputeShaders)
             {
                 ResetTerminalBlitComputeState();
                 return false;
@@ -2143,7 +2142,7 @@ namespace Hecton8.UI
         private int DispatchDirtyScreens(int dirtyCount, int ownerFrame)
         {
             if (terminalBlitCompute == null ||
-                !HardwareTierDetector.AllowHighResourceComputeShaders ||
+                !SystemInfo.supportsComputeShaders ||
                 _blitKernel < 0 ||
                 _terminalTextureArray == null ||
                 dirtyCount <= 0 ||

@@ -1318,15 +1318,14 @@ public class HectonWorldGenerator : MonoBehaviour, ITickable, IUpdatable, ILateF
             WorldGeneratorVaultOwner,
             NativeArrayOptions.UninitializedMemory);
 
-        if (!vault.TryAcquireWriteLock(in handle, WorldGeneratorVaultOwner, out NativeArray<float> lut) ||
-            !lut.IsCreated ||
-            lut.Length < LUT_RES)
-        {
+        if (!vault.TryAcquireWriteLock(in handle, WorldGeneratorVaultOwner, out NativeArray<float> lut))
             return false;
-        }
 
         try
         {
+            if (!lut.IsCreated || lut.Length < LUT_RES)
+                return false;
+
             FillLUT(lut, curve);
             return true;
         }

@@ -1419,6 +1419,15 @@ namespace Hecton8.Vehicles.Automation
         private const uint LockMockSdf = 1u << 8;
         private const uint LockFlowSamples = 1u << 9;
         private const uint LockHandlingProfiles = 1u << 10;
+        private static readonly ulong RouteWriteMutationGuardMask =
+            VaultMutationGuardBit(SubmarineAutopilotVaultRoute.AutopilotWaypoints) |
+            VaultMutationGuardBit(SubmarineAutopilotVaultRoute.AutopilotRouteRanges) |
+            VaultMutationGuardBit(SubmarineAutopilotVaultRoute.AutopilotStates);
+#if UNITY_EDITOR
+        private static readonly ulong HandlingProfilesCsvMutationGuardMask =
+            VaultMutationGuardBit(SubmarineAutopilotVaultRoute.AutopilotCsvScratch) |
+            VaultMutationGuardBit(SubmarineAutopilotVaultRoute.AutopilotHandlingProfiles);
+#endif
 
         [SerializeField, Range(1, SubmarineAutopilotConstants.MaxVehicles)] private int vehicleCapacity = 1;
         [SerializeField, Min(1f)] private float defaultTargetSpeed = 8f;
@@ -1461,8 +1470,7 @@ namespace Hecton8.Vehicles.Automation
         private bool _faulted;
         private bool _dumped;
         private bool _coreBlackboxWarmed;
-        private uint _writeLockMask;
-        private uint _readPinMask;
+        private uint _scheduledPinMask;
         private int _resolvedVehicleCapacity;
         private float _accumulatedSolverDeltaTime;
         private uint _frame;
@@ -1667,40 +1675,38 @@ namespace Hecton8.Vehicles.Automation
                     return false;
             }
 
-            bool waypointLocked = false;
-            bool routeLocked = false;
-            bool stateLocked = false;
             NativeArray<AutopilotWaypointDTO> waypointBuffer = default;
             NativeArray<AutopilotRouteRangeDTO> routeBuffer = default;
             NativeArray<AutopilotStateDTO> stateBuffer = default;
+            IDataVault vault = _dataVault;
+            if (!TryAcquireAutopilotMutationGuard(vault, RouteWriteMutationGuardMask))
+                return false;
+
             try
             {
-                if (!TryAcquireAutopilotVaultWrite(
-                        _dataVault,
+                if (!TryResolveAutopilotVaultBuffer(
+                        vault,
                         in _waypointHandle,
                         SubmarineAutopilotVaultRoute.AutopilotWaypoints,
                         SubmarineAutopilotConstants.WaypointCapacity,
                         out waypointBuffer))
                     return false;
-                waypointLocked = true;
 
-                if (!TryAcquireAutopilotVaultWrite(
-                        _dataVault,
+                if (!TryResolveAutopilotVaultBuffer(
+                        vault,
                         in _routeHandle,
                         SubmarineAutopilotVaultRoute.AutopilotRouteRanges,
                         capacity,
                         out routeBuffer))
                     return false;
-                routeLocked = true;
 
-                if (!TryAcquireAutopilotVaultWrite(
-                        _dataVault,
+                if (!TryResolveAutopilotVaultBuffer(
+                        vault,
                         in _autopilotHandle,
                         SubmarineAutopilotVaultRoute.AutopilotStates,
                         capacity,
                         out stateBuffer))
                     return false;
-                stateLocked = true;
 
                 uint resolvedHash = routeHash != 0u ? routeHash : HashRouteHeader(submarineIndex, count);
                 for (int i = 0; i < count; i++)
@@ -1729,12 +1735,7 @@ namespace Hecton8.Vehicles.Automation
             }
             finally
             {
-                if (stateLocked)
-                    ReleaseAutopilotVaultWrite(_dataVault, in _autopilotHandle);
-                if (routeLocked)
-                    ReleaseAutopilotVaultWrite(_dataVault, in _routeHandle);
-                if (waypointLocked)
-                    ReleaseAutopilotVaultWrite(_dataVault, in _waypointHandle);
+                vault.ReleaseMutationGuard(RouteWriteMutationGuardMask);
             }
         }
 
@@ -2035,7 +2036,7 @@ namespace Hecton8.Vehicles.Automation
                    buffer.Length >= requiredLength;
         }
 
-        private static bool TryPinAutopilotVaultRead<T>(
+        private static bool TryPinAutopilotVaultBuffer<T>(
             IDataVault vault,
             in VaultGenerationHandle<T> handle,
             BufferID bufferId,
@@ -2075,6 +2076,19 @@ namespace Hecton8.Vehicles.Automation
             }
         }
 
+        private static bool TryAcquireAutopilotMutationGuard(IDataVault vault, ulong mask)
+        {
+            return vault != null &&
+                   mask != 0UL &&
+                   !vault.IsCompactionFenceActive &&
+                   vault.TryAcquireMutationGuard(mask);
+        }
+
+        private static ulong VaultMutationGuardBit(BufferID bufferId)
+        {
+            return 1UL << ((int)bufferId & 63);
+        }
+
         private static void ReleaseAutopilotVaultWrite<T>(
             IDataVault vault,
             in VaultGenerationHandle<T> handle)
@@ -2084,7 +2098,7 @@ namespace Hecton8.Vehicles.Automation
                 vault.ReleaseWriteLock(in handle, SystemID.VehiclesPhysics);
         }
 
-        private static void ReleaseAutopilotVaultReadPin(IDataVault vault, BufferID bufferId)
+        private static void ReleaseAutopilotVaultBufferPin(IDataVault vault, BufferID bufferId)
         {
             if (vault != null)
                 vault.TryUnlockBuffer(bufferId, SystemID.VehiclesPhysics);
@@ -2419,17 +2433,16 @@ namespace Hecton8.Vehicles.Automation
                 return false;
 
             int capacity = math.clamp(vehicleCapacity, 1, SubmarineAutopilotConstants.MaxVehicles);
-            _writeLockMask = 0u;
-            _readPinMask = 0u;
+            _scheduledPinMask = 0u;
             bool success = false;
             try
             {
-                if (!TryPinReadOnlyBuffer(in _kinematicHandle, BufferID.SubmarineKinematicStates, capacity, LockKinematicStates)) return false;
-                if (!TryLockOwnedBuffer(in _autopilotHandle, SubmarineAutopilotVaultRoute.AutopilotStates, capacity, LockAutopilotStates)) return false;
-                if (!TryLockOwnedBuffer(in _avoidanceHandle, SubmarineAutopilotVaultRoute.AutopilotAvoidance, capacity, LockAutopilotAvoidance)) return false;
-                if (!TryLockOwnedBuffer(in _routeHandle, SubmarineAutopilotVaultRoute.AutopilotRouteRanges, capacity, LockRouteRanges)) return false;
-                if (!TryLockOwnedBuffer(in _mockSdfHandle, SubmarineAutopilotVaultRoute.AutopilotMockSdf, SubmarineAutopilotConstants.MockSdfVoxelCount, LockMockSdf)) return false;
-                if (!TryLockOwnedBuffer(in _flowHandle, SubmarineAutopilotVaultRoute.AutopilotFlowSamples, SubmarineAutopilotConstants.FlowSampleCount, LockFlowSamples)) return false;
+                if (!TryPinScheduledBuffer(in _kinematicHandle, BufferID.SubmarineKinematicStates, capacity, LockKinematicStates)) return false;
+                if (!TryPinScheduledBuffer(in _autopilotHandle, SubmarineAutopilotVaultRoute.AutopilotStates, capacity, LockAutopilotStates)) return false;
+                if (!TryPinScheduledBuffer(in _avoidanceHandle, SubmarineAutopilotVaultRoute.AutopilotAvoidance, capacity, LockAutopilotAvoidance)) return false;
+                if (!TryPinScheduledBuffer(in _routeHandle, SubmarineAutopilotVaultRoute.AutopilotRouteRanges, capacity, LockRouteRanges)) return false;
+                if (!TryPinScheduledBuffer(in _mockSdfHandle, SubmarineAutopilotVaultRoute.AutopilotMockSdf, SubmarineAutopilotConstants.MockSdfVoxelCount, LockMockSdf)) return false;
+                if (!TryPinScheduledBuffer(in _flowHandle, SubmarineAutopilotVaultRoute.AutopilotFlowSamples, SubmarineAutopilotConstants.FlowSampleCount, LockFlowSamples)) return false;
                 success = true;
                 return true;
             }
@@ -2446,22 +2459,21 @@ namespace Hecton8.Vehicles.Automation
                 return false;
 
             int capacity = math.clamp(vehicleCapacity, 1, SubmarineAutopilotConstants.MaxVehicles);
-            _writeLockMask = 0u;
-            _readPinMask = 0u;
+            _scheduledPinMask = 0u;
             bool success = false;
             try
             {
-                if (!TryPinReadOnlyBuffer(in _kinematicHandle, BufferID.SubmarineKinematicStates, capacity, LockKinematicStates)) return false;
-                if (!TryLockOwnedBuffer(in _autopilotHandle, SubmarineAutopilotVaultRoute.AutopilotStates, capacity, LockAutopilotStates)) return false;
-                if (!TryLockOwnedBuffer(in _avoidanceHandle, SubmarineAutopilotVaultRoute.AutopilotAvoidance, capacity, LockAutopilotAvoidance)) return false;
-                if (!TryLockOwnedBuffer(in _feelerHandle, SubmarineAutopilotVaultRoute.AutopilotFeelerResults, capacity * SubmarineAutopilotConstants.MaxFeelersPerVehicle, LockFeelerResults)) return false;
-                if (!TryPinReadOnlyBuffer(in _waypointHandle, SubmarineAutopilotVaultRoute.AutopilotWaypoints, SubmarineAutopilotConstants.WaypointCapacity, LockWaypoints)) return false;
-                if (!TryLockOwnedBuffer(in _routeHandle, SubmarineAutopilotVaultRoute.AutopilotRouteRanges, capacity, LockRouteRanges)) return false;
-                if (!TryLockOwnedBuffer(in _telemetryHandle, SubmarineAutopilotVaultRoute.AutopilotTelemetryRing, SubmarineAutopilotConstants.BlackBoxFrames, LockTelemetryRing)) return false;
-                if (!TryLockOwnedBuffer(in _telemetryCursorHandle, SubmarineAutopilotVaultRoute.AutopilotTelemetryCursor, 1, LockTelemetryCursor)) return false;
-                if (!TryPinReadOnlyBuffer(in _mockSdfHandle, SubmarineAutopilotVaultRoute.AutopilotMockSdf, SubmarineAutopilotConstants.MockSdfVoxelCount, LockMockSdf)) return false;
-                if (!TryPinReadOnlyBuffer(in _flowHandle, SubmarineAutopilotVaultRoute.AutopilotFlowSamples, SubmarineAutopilotConstants.FlowSampleCount, LockFlowSamples)) return false;
-                if (!TryPinReadOnlyBuffer(in _handlingProfileHandle, SubmarineAutopilotVaultRoute.AutopilotHandlingProfiles, SubmarineAutopilotConstants.HandlingProfileCapacity, LockHandlingProfiles)) return false;
+                if (!TryPinScheduledBuffer(in _kinematicHandle, BufferID.SubmarineKinematicStates, capacity, LockKinematicStates)) return false;
+                if (!TryPinScheduledBuffer(in _autopilotHandle, SubmarineAutopilotVaultRoute.AutopilotStates, capacity, LockAutopilotStates)) return false;
+                if (!TryPinScheduledBuffer(in _avoidanceHandle, SubmarineAutopilotVaultRoute.AutopilotAvoidance, capacity, LockAutopilotAvoidance)) return false;
+                if (!TryPinScheduledBuffer(in _feelerHandle, SubmarineAutopilotVaultRoute.AutopilotFeelerResults, capacity * SubmarineAutopilotConstants.MaxFeelersPerVehicle, LockFeelerResults)) return false;
+                if (!TryPinScheduledBuffer(in _waypointHandle, SubmarineAutopilotVaultRoute.AutopilotWaypoints, SubmarineAutopilotConstants.WaypointCapacity, LockWaypoints)) return false;
+                if (!TryPinScheduledBuffer(in _routeHandle, SubmarineAutopilotVaultRoute.AutopilotRouteRanges, capacity, LockRouteRanges)) return false;
+                if (!TryPinScheduledBuffer(in _telemetryHandle, SubmarineAutopilotVaultRoute.AutopilotTelemetryRing, SubmarineAutopilotConstants.BlackBoxFrames, LockTelemetryRing)) return false;
+                if (!TryPinScheduledBuffer(in _telemetryCursorHandle, SubmarineAutopilotVaultRoute.AutopilotTelemetryCursor, 1, LockTelemetryCursor)) return false;
+                if (!TryPinScheduledBuffer(in _mockSdfHandle, SubmarineAutopilotVaultRoute.AutopilotMockSdf, SubmarineAutopilotConstants.MockSdfVoxelCount, LockMockSdf)) return false;
+                if (!TryPinScheduledBuffer(in _flowHandle, SubmarineAutopilotVaultRoute.AutopilotFlowSamples, SubmarineAutopilotConstants.FlowSampleCount, LockFlowSamples)) return false;
+                if (!TryPinScheduledBuffer(in _handlingProfileHandle, SubmarineAutopilotVaultRoute.AutopilotHandlingProfiles, SubmarineAutopilotConstants.HandlingProfileCapacity, LockHandlingProfiles)) return false;
                 success = true;
                 return true;
             }
@@ -2472,65 +2484,43 @@ namespace Hecton8.Vehicles.Automation
             }
         }
 
-        private bool TryLockOwnedBuffer<T>(
+        private bool TryPinScheduledBuffer<T>(
             in VaultGenerationHandle<T> handle,
             BufferID bufferId,
             int requiredLength,
-            uint lockBit)
+            uint pinBit)
             where T : struct
         {
-            if (!TryAcquireAutopilotVaultWrite(_dataVault, in handle, bufferId, requiredLength, out NativeArray<T> _))
+            if (!TryPinAutopilotVaultBuffer(_dataVault, in handle, bufferId, requiredLength, out NativeArray<T> _))
                 return false;
 
-            _writeLockMask |= lockBit;
-            _buffersLocked = true;
-            return true;
-        }
-
-        private bool TryPinReadOnlyBuffer<T>(
-            in VaultGenerationHandle<T> handle,
-            BufferID bufferId,
-            int requiredLength,
-            uint lockBit)
-            where T : struct
-        {
-            if (!TryPinAutopilotVaultRead(_dataVault, in handle, bufferId, requiredLength, out NativeArray<T> _))
-                return false;
-
-            _readPinMask |= lockBit;
+            _scheduledPinMask |= pinBit;
             _buffersLocked = true;
             return true;
         }
 
         private void UnlockBuffers()
         {
-            if (!_buffersLocked && _writeLockMask == 0u && _readPinMask == 0u)
+            if (!_buffersLocked && _scheduledPinMask == 0u)
                 return;
 
-            uint writeLockMask = _writeLockMask;
-            uint readPinMask = _readPinMask;
+            uint scheduledPinMask = _scheduledPinMask;
             if (_dataVault != null)
             {
-                if ((writeLockMask & LockKinematicStates) != 0u) ReleaseAutopilotVaultWrite(_dataVault, in _kinematicHandle);
-                if ((writeLockMask & LockAutopilotStates) != 0u) ReleaseAutopilotVaultWrite(_dataVault, in _autopilotHandle);
-                if ((writeLockMask & LockAutopilotAvoidance) != 0u) ReleaseAutopilotVaultWrite(_dataVault, in _avoidanceHandle);
-                if ((writeLockMask & LockFeelerResults) != 0u) ReleaseAutopilotVaultWrite(_dataVault, in _feelerHandle);
-                if ((writeLockMask & LockWaypoints) != 0u) ReleaseAutopilotVaultWrite(_dataVault, in _waypointHandle);
-                if ((writeLockMask & LockRouteRanges) != 0u) ReleaseAutopilotVaultWrite(_dataVault, in _routeHandle);
-                if ((writeLockMask & LockTelemetryRing) != 0u) ReleaseAutopilotVaultWrite(_dataVault, in _telemetryHandle);
-                if ((writeLockMask & LockTelemetryCursor) != 0u) ReleaseAutopilotVaultWrite(_dataVault, in _telemetryCursorHandle);
-                if ((writeLockMask & LockMockSdf) != 0u) ReleaseAutopilotVaultWrite(_dataVault, in _mockSdfHandle);
-                if ((writeLockMask & LockFlowSamples) != 0u) ReleaseAutopilotVaultWrite(_dataVault, in _flowHandle);
-                if ((writeLockMask & LockHandlingProfiles) != 0u) ReleaseAutopilotVaultWrite(_dataVault, in _handlingProfileHandle);
-                if ((readPinMask & LockKinematicStates) != 0u) ReleaseAutopilotVaultReadPin(_dataVault, BufferID.SubmarineKinematicStates);
-                if ((readPinMask & LockWaypoints) != 0u) ReleaseAutopilotVaultReadPin(_dataVault, SubmarineAutopilotVaultRoute.AutopilotWaypoints);
-                if ((readPinMask & LockMockSdf) != 0u) ReleaseAutopilotVaultReadPin(_dataVault, SubmarineAutopilotVaultRoute.AutopilotMockSdf);
-                if ((readPinMask & LockFlowSamples) != 0u) ReleaseAutopilotVaultReadPin(_dataVault, SubmarineAutopilotVaultRoute.AutopilotFlowSamples);
-                if ((readPinMask & LockHandlingProfiles) != 0u) ReleaseAutopilotVaultReadPin(_dataVault, SubmarineAutopilotVaultRoute.AutopilotHandlingProfiles);
+                if ((scheduledPinMask & LockHandlingProfiles) != 0u) ReleaseAutopilotVaultBufferPin(_dataVault, SubmarineAutopilotVaultRoute.AutopilotHandlingProfiles);
+                if ((scheduledPinMask & LockFlowSamples) != 0u) ReleaseAutopilotVaultBufferPin(_dataVault, SubmarineAutopilotVaultRoute.AutopilotFlowSamples);
+                if ((scheduledPinMask & LockMockSdf) != 0u) ReleaseAutopilotVaultBufferPin(_dataVault, SubmarineAutopilotVaultRoute.AutopilotMockSdf);
+                if ((scheduledPinMask & LockTelemetryCursor) != 0u) ReleaseAutopilotVaultBufferPin(_dataVault, SubmarineAutopilotVaultRoute.AutopilotTelemetryCursor);
+                if ((scheduledPinMask & LockTelemetryRing) != 0u) ReleaseAutopilotVaultBufferPin(_dataVault, SubmarineAutopilotVaultRoute.AutopilotTelemetryRing);
+                if ((scheduledPinMask & LockRouteRanges) != 0u) ReleaseAutopilotVaultBufferPin(_dataVault, SubmarineAutopilotVaultRoute.AutopilotRouteRanges);
+                if ((scheduledPinMask & LockWaypoints) != 0u) ReleaseAutopilotVaultBufferPin(_dataVault, SubmarineAutopilotVaultRoute.AutopilotWaypoints);
+                if ((scheduledPinMask & LockFeelerResults) != 0u) ReleaseAutopilotVaultBufferPin(_dataVault, SubmarineAutopilotVaultRoute.AutopilotFeelerResults);
+                if ((scheduledPinMask & LockAutopilotAvoidance) != 0u) ReleaseAutopilotVaultBufferPin(_dataVault, SubmarineAutopilotVaultRoute.AutopilotAvoidance);
+                if ((scheduledPinMask & LockAutopilotStates) != 0u) ReleaseAutopilotVaultBufferPin(_dataVault, SubmarineAutopilotVaultRoute.AutopilotStates);
+                if ((scheduledPinMask & LockKinematicStates) != 0u) ReleaseAutopilotVaultBufferPin(_dataVault, BufferID.SubmarineKinematicStates);
             }
 
-            _writeLockMask = 0u;
-            _readPinMask = 0u;
+            _scheduledPinMask = 0u;
             _buffersLocked = false;
         }
 
@@ -2622,29 +2612,29 @@ namespace Hecton8.Vehicles.Automation
             if (ticks == _csvLastWriteTicks)
                 return false;
 
-            bool scratchLocked = false;
-            bool profilesLocked = false;
             NativeArray<byte> scratchBuffer = default;
             NativeArray<AutopilotHandlingProfileDTO> profileBuffer = default;
+            IDataVault vault = _dataVault;
+            if (!TryAcquireAutopilotMutationGuard(vault, HandlingProfilesCsvMutationGuardMask))
+                return false;
+
             try
             {
-                if (!TryAcquireAutopilotVaultWrite(
-                        _dataVault,
+                if (!TryResolveAutopilotVaultBuffer(
+                        vault,
                         in _csvScratchHandle,
                         SubmarineAutopilotVaultRoute.AutopilotCsvScratch,
                         SubmarineAutopilotConstants.CsvScratchBytes,
                         out scratchBuffer))
                     return false;
-                scratchLocked = true;
 
-                if (!TryAcquireAutopilotVaultWrite(
-                        _dataVault,
+                if (!TryResolveAutopilotVaultBuffer(
+                        vault,
                         in _handlingProfileHandle,
                         SubmarineAutopilotVaultRoute.AutopilotHandlingProfiles,
                         SubmarineAutopilotConstants.HandlingProfileCapacity,
                         out profileBuffer))
                     return false;
-                profilesLocked = true;
 
                 byte* scratch = (byte*)NativeArrayUnsafeUtility.GetUnsafePtr(scratchBuffer);
                 AutopilotHandlingProfileDTO* profiles = (AutopilotHandlingProfileDTO*)NativeArrayUnsafeUtility.GetUnsafePtr(profileBuffer);
@@ -2658,10 +2648,7 @@ namespace Hecton8.Vehicles.Automation
             }
             finally
             {
-                if (profilesLocked)
-                    ReleaseAutopilotVaultWrite(_dataVault, in _handlingProfileHandle);
-                if (scratchLocked)
-                    ReleaseAutopilotVaultWrite(_dataVault, in _csvScratchHandle);
+                vault.ReleaseMutationGuard(HandlingProfilesCsvMutationGuardMask);
             }
         }
 #endif

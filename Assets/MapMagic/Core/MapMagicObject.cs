@@ -5,6 +5,7 @@ using System.Threading;
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine.Profiling;
+using UnityEngine.Rendering;
 
 using Den.Tools;
 
@@ -42,6 +43,7 @@ namespace MapMagic.Core
 		public bool guiTiles = true;
 		public TerrainTileManager tiles = new TerrainTileManager() { allowMove=true };
 		public Vector2D tileSize = new Vector2D(1000,1000);  //IDEA: move to tiles manager?
+		[SerializeField] private Camera generationCamera;
 
 		[SerializeField] Coord previewCoord;
 		[SerializeField] bool previewAssigned;
@@ -103,6 +105,11 @@ namespace MapMagic.Core
 
 		public void OnEnable ()
 		{
+			RenderPipelineManager.beginCameraRendering -= OnBeginCameraRendering;
+			RenderPipelineManager.beginCameraRendering += OnBeginCameraRendering;
+			Camera.onPreCull -= OnCameraPreCull;
+			Camera.onPreCull += OnCameraPreCull;
+
 			#if UNITY_EDITOR
 			UnityEditor.EditorApplication.update -= EditorUpdate; //just in case OnDisabled was not called somehow
 			UnityEditor.EditorApplication.update += EditorUpdate;	
@@ -115,14 +122,25 @@ namespace MapMagic.Core
 			if (terrainSettings.material == null)
 				terrainSettings.material = DefaultTerrainMaterial();
 
+			CacheGenerationSources();
+
 			//generating all tiles that were not generated previously
 			StopGenerate();
 			StartGenerateNonReady(); //executing in update, otherwise will not find obj pool
 		}
 
 
+		public void Start ()
+		{
+			CacheGenerationSources();
+		}
+
+
 		public void OnDisable ()
 		{
+			RenderPipelineManager.beginCameraRendering -= OnBeginCameraRendering;
+			Camera.onPreCull -= OnCameraPreCull;
+
 			#if UNITY_EDITOR
 			UnityEditor.EditorApplication.update -= EditorUpdate;	
 			#endif
@@ -225,6 +243,8 @@ namespace MapMagic.Core
 			{
 				if (graph == null) return;
 
+				CacheGenerationSources();
+
 				if (instantGenerate)
 					foreach (TerrainTile tile in tiles.All())
 						tile.Refresh(graph, clearAll);
@@ -234,6 +254,66 @@ namespace MapMagic.Core
 					StopGenerate();
 					ClearChanged(clearAll);	
 				}
+			}
+
+
+			private void CacheGenerationSources ()
+			{
+				if (generationCamera == null && tiles.genAroundMainCam)
+				{
+					Camera resolvedCamera = Camera.main;
+					if (resolvedCamera == null)
+						resolvedCamera = UnityEngine.Object.FindAnyObjectByType<Camera>();
+
+					SetGenerationCamera(resolvedCamera, prepareStorage:true);
+				}
+				else
+				{
+					tiles.SetMainCamera(generationCamera);
+				}
+
+				if (tiles.genAroundObjsTag && !string.IsNullOrEmpty(tiles.genAroundTag))
+				{
+					GameObject[] taggedObjects = GameObject.FindGameObjectsWithTag(tiles.genAroundTag);
+					tiles.SetTaggedObjects(taggedObjects);
+				}
+				else
+				{
+					tiles.SetTaggedObjects(null);
+				}
+			}
+
+
+			private void OnBeginCameraRendering (ScriptableRenderContext context, Camera camera)
+			{
+				TrySetGenerationCameraFromRender(camera);
+			}
+
+
+			private void OnCameraPreCull (Camera camera)
+			{
+				TrySetGenerationCameraFromRender(camera);
+			}
+
+
+			private void TrySetGenerationCameraFromRender (Camera camera)
+			{
+				if (!Application.isPlaying || !tiles.genAroundMainCam || generationCamera != null)
+					return;
+
+				if (camera == null || !camera.isActiveAndEnabled || camera.cameraType != CameraType.Game)
+					return;
+
+				SetGenerationCamera(camera, prepareStorage:false);
+			}
+
+
+			private void SetGenerationCamera (Camera camera, bool prepareStorage)
+			{
+				if (generationCamera != camera)
+					generationCamera = camera;
+
+				tiles.SetMainCamera(generationCamera, prepareStorage);
 			}
 
 			private void ClearChanged (bool clearAll=false)
@@ -292,9 +372,22 @@ namespace MapMagic.Core
 				//else return true;
 				//might be doing other routine operations (will be added later)
 
-				foreach (TerrainTile tile in tiles.All())
-					if (tile.IsGenerating) 
+				Dictionary<Coord,TerrainTile>.Enumerator tileEnumerator = tiles.grid.GetEnumerator();
+				while (tileEnumerator.MoveNext())
+				{
+					TerrainTile tile = tileEnumerator.Current.Value;
+					if (tile != null && !tile.IsNull && tile.IsGenerating)
 						return true;
+				}
+
+				TerrainTile[] customTiles = tiles.customTiles;
+				int customCount = customTiles != null ? customTiles.Length : 0;
+				for (int i=0; i<customCount; i++)
+				{
+					TerrainTile tile = customTiles[i];
+					if (tile != null && !tile.IsNull && tile.IsGenerating)
+						return true;
+				}
 
 				return false;
 			}
@@ -309,13 +402,35 @@ namespace MapMagic.Core
 				float totalComplexity = 0;
 				float totalComplete = 0;
 
-				foreach (TerrainTile tile in tiles.All())
+				Dictionary<Coord,TerrainTile>.Enumerator tileEnumerator = tiles.grid.GetEnumerator();
+				while (tileEnumerator.MoveNext())
 				{
+					TerrainTile tile = tileEnumerator.Current.Value;
+					if (tile == null || tile.IsNull)
+						continue;
+
 					(float complete, float complexity) tileProgress = tile.GetProgress(graph, generateComplexity, applyComplexity);
 
 					totalComplete += tileProgress.complete;
 					totalComplexity += tileProgress.complexity;
 				}
+
+				TerrainTile[] customTiles = tiles.customTiles;
+				int customCount = customTiles != null ? customTiles.Length : 0;
+				for (int i=0; i<customCount; i++)
+				{
+					TerrainTile tile = customTiles[i];
+					if (tile == null || tile.IsNull)
+						continue;
+
+					(float complete, float complexity) tileProgress = tile.GetProgress(graph, generateComplexity, applyComplexity);
+
+					totalComplete += tileProgress.complete;
+					totalComplexity += tileProgress.complexity;
+				}
+
+				if (totalComplexity <= 0)
+					return 0;
 
 				return totalComplete / totalComplexity;
 

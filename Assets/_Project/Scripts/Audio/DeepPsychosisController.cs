@@ -72,9 +72,6 @@ namespace Hecton8.Audio
         private IEnvironmentalStrainReadModel _environmentalStrainReadModel;
         private IAudioService _audioService;
         private IAcousticZoneMadnessCueSink _acousticZone;
-        private bool _movementLookupAttempted;
-        private bool _survivalLookupAttempted;
-        private int _nextDependencyRetryFrame;
         private int _nextPlayerContextRetryFrame;
         private int _nextEnvironmentalStrainRetryFrame;
         private int _nextAudioServiceRetryFrame;
@@ -216,55 +213,13 @@ namespace Hecton8.Audio
             {
                 _dependencyPlayerTransform = resolvedPlayerTransform;
                 _playerTransform = resolvedPlayerTransform;
-                _playerMovement = playerContext != null &&
-                                  ReferenceEquals(playerContext.PlayerTransform, resolvedPlayerTransform)
-                    ? playerContext.PlayerMovement
-                    : null;
-                _survivalSystem = null;
-                _movementLookupAttempted = _playerMovement != null;
-                _survivalLookupAttempted = false;
-                _nextDependencyRetryFrame = 0;
             }
 
-            if ((_playerMovement == null && _movementLookupAttempted) ||
-                (_survivalSystem == null && _survivalLookupAttempted))
-            {
-                if (Hecton8.Core.SystemDispatcher.CurrentFrameIndex >= _nextDependencyRetryFrame)
-                {
-                    _movementLookupAttempted = _playerMovement != null;
-                    _survivalLookupAttempted = _survivalSystem != null;
-                }
-            }
-
-            if (_playerMovement == null &&
-                playerContext != null &&
-                ReferenceEquals(playerContext.PlayerTransform, resolvedPlayerTransform) &&
-                playerContext.PlayerMovement != null)
-            {
-                _playerMovement = playerContext.PlayerMovement;
-                _movementLookupAttempted = true;
-            }
-
-            if (_playerMovement == null && !_movementLookupAttempted && _playerTransform != null)
-            {
-                _movementLookupAttempted = true;
-                _playerTransform.TryGetComponent(out _playerMovement);
-                if (_playerMovement == null)
-                    _nextDependencyRetryFrame = Hecton8.Core.SystemDispatcher.CurrentFrameIndex + DependencyRetryFrameInterval;
-            }
-
-            if (_survivalSystem == null && !_survivalLookupAttempted)
-            {
-                _survivalLookupAttempted = true;
-                if (_playerTransform != null)
-                    _playerTransform.TryGetComponent(out _survivalSystem);
-
-                if (_survivalSystem == null)
-                    TryGetComponent(out _survivalSystem);
-
-                if (_survivalSystem == null)
-                    _nextDependencyRetryFrame = Hecton8.Core.SystemDispatcher.CurrentFrameIndex + DependencyRetryFrameInterval;
-            }
+            bool contextMatchesPlayer = playerContext != null &&
+                                        playerContext.PlayerTransform != null &&
+                                        ReferenceEquals(playerContext.PlayerTransform, resolvedPlayerTransform);
+            _playerMovement = contextMatchesPlayer ? playerContext.PlayerMovement : null;
+            _survivalSystem = contextMatchesPlayer ? playerContext.SurvivalSystem : null;
         }
 
         private void TryRegisterTickHandlers()
@@ -357,9 +312,6 @@ namespace Hecton8.Audio
                     _dependencyPlayerTransform = null;
                     _playerMovement = null;
                     _survivalSystem = null;
-                    _movementLookupAttempted = false;
-                    _survivalLookupAttempted = false;
-                    _nextDependencyRetryFrame = 0;
                     break;
                 case GlobalRegistryServiceSlot.EnvironmentalStrainRuntime:
                     CacheEnvironmentalStrainReadModel(currentService as IEnvironmentalStrainReadModel, frame);

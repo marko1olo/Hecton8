@@ -12,7 +12,7 @@ namespace Hecton8.Biolum
     /// Publishes a player-centered 3D bioluminescence radiance volume for flora shading.
     /// </summary>
     [DisallowMultipleComponent]
-    public sealed class HectonBiolumDiffusionVolume : MonoBehaviour, ILateFrameTickable, IOriginShiftListener, IGlobalRegistryHotSwapListener
+    public sealed class HectonBiolumDiffusionVolume : MonoBehaviour, ILateFrameTickable, ISlowTickable, IOriginShiftListener, IGlobalRegistryHotSwapListener
     {
         private const int DefaultResolution = 64;
         private const float DefaultVolumeWorldSize = 72f;
@@ -100,9 +100,13 @@ namespace Hecton8.Biolum
         [SerializeField] private Vector3 _debugVolumeCenter;
 
         private bool _registered;
+        private bool _registeredSlowTick;
         private bool _registeredHotSwapListener;
         private bool _needsClear = true;
         private bool _hasLastVolumeCenter;
+        private bool _supportsComputeShadersCold;
+        private bool _dependencyResolveRequested;
+        private bool _resourceRefreshRequested;
         private int _clearKernel = -1;
         private int _diffuseKernel = -1;
         private int _injectKernel = -1;
@@ -116,6 +120,7 @@ namespace Hecton8.Biolum
         private uint _injectThreadGroupSizeY;
         private uint _injectThreadGroupSizeZ;
         private Transform _playerTransform;
+        private IPlayerRuntimeContext _playerRuntimeContext;
         private HectonBiolumManager _biolumManager;
         private ITickDispatcher _dispatcher;
         private Vector3 _lastVolumeCenter;
@@ -141,6 +146,7 @@ namespace Hecton8.Biolum
 
         private void Awake()
         {
+            CacheGraphicsCapabilitiesCold();
             CacheRegistryServicesCold();
             ResolveDependencies();
             EnsureResources();
@@ -149,6 +155,7 @@ namespace Hecton8.Biolum
 
         private void OnEnable()
         {
+            CacheGraphicsCapabilitiesCold();
             CacheRegistryServicesCold();
             TryRegisterHotSwapListener();
             HectonFloatingOrigin.RegisterListener(this);
@@ -187,9 +194,14 @@ namespace Hecton8.Biolum
                 case GlobalRegistryServiceSlot.BiolumManagerRuntime:
                     _biolumManager = currentService as HectonBiolumManager;
                     break;
+                case GlobalRegistryServiceSlot.Player:
+                    _playerRuntimeContext = currentService as IPlayerRuntimeContext;
+                    CachePlayerTransformCold(_playerRuntimeContext);
+                    break;
                 case GlobalRegistryServiceSlot.Dispatcher:
                     _dispatcher = currentService as ITickDispatcher;
                     _registered = false;
+                    _registeredSlowTick = false;
                     if (currentService != null && isActiveAndEnabled)
                         TryRegister();
                     break;
@@ -220,8 +232,6 @@ namespace Hecton8.Biolum
                 return;
 
             float safeDeltaTime = SanitizeDelta(deltaTime);
-            ResolveDependencies();
-            EnsureResources();
             if (_playerTransform == null ||
                 _biolumManager == null ||
                 _volumeA == null ||
@@ -229,6 +239,8 @@ namespace Hecton8.Biolum
                 _activePointBuffer == null ||
                 !HasValidKernelState())
             {
+                _dependencyResolveRequested |= _playerTransform == null || _biolumManager == null;
+                _resourceRefreshRequested |= _volumeA == null || _volumeB == null || _activePointBuffer == null || !HasValidKernelState();
                 Shader.SetGlobalFloat(_GlobalActiveId, 0f);
                 PublishGlowPointGlobals(0, force: true);
                 return;
@@ -329,6 +341,22 @@ namespace Hecton8.Biolum
             _hasLastVolumeCenter = true;
         }
 
+        public void SlowTick()
+        {
+            if (_dependencyResolveRequested || _playerTransform == null)
+            {
+                _dependencyResolveRequested = false;
+                ResolveDependencies();
+            }
+
+            if (_resourceRefreshRequested || _volumeA == null || _volumeB == null || _activePointBuffer == null || !HasValidKernelState())
+            {
+                _resourceRefreshRequested = false;
+                EnsureResources();
+                PublishGlobals();
+            }
+        }
+
         private Vector3 ResolveVolumeCenterRuntimePosition()
         {
             return _playerTransform != null ? _playerTransform.position : Vector3.zero;
@@ -336,13 +364,20 @@ namespace Hecton8.Biolum
 
         private void ResolveDependencies()
         {
+            CachePlayerTransformCold(_playerRuntimeContext);
             if (_playerTransform == null && GameBootstrapper.TryGetCurrentPlayerTransform(out Transform playerTransform))
                 _playerTransform = playerTransform;
         }
 
+        private void CachePlayerTransformCold(IPlayerRuntimeContext playerRuntimeContext)
+        {
+            if (playerRuntimeContext != null)
+                _playerTransform = playerRuntimeContext.PlayerTransform;
+        }
+
         private void EnsureResources()
         {
-            if (biolumDiffusionCompute == null || !SystemInfo.supportsComputeShaders)
+            if (biolumDiffusionCompute == null || !_supportsComputeShadersCold)
             {
                 ResetKernelState();
                 return;
@@ -627,7 +662,7 @@ namespace Hecton8.Biolum
             sizeX = 0u;
             sizeY = 0u;
             sizeZ = 0u;
-            if (biolumDiffusionCompute == null || !SystemInfo.supportsComputeShaders)
+            if (biolumDiffusionCompute == null || !_supportsComputeShadersCold)
                 return false;
 
             if (!biolumDiffusionCompute.HasKernel(kernelName))
@@ -763,19 +798,29 @@ namespace Hecton8.Biolum
 
         private void TryRegister()
         {
-            if (_registered || !Application.isPlaying || _dispatcher == null)
+            if (!Application.isPlaying || _dispatcher == null)
                 return;
 
-            _registered = GlobalRegistry.TryRegisterLateFrameTickable(this, PriorityLayer.Environment);
+            if (!_registered)
+                _registered = GlobalRegistry.TryRegisterLateFrameTickable(this, PriorityLayer.Environment);
+
+            if (!_registeredSlowTick)
+                _registeredSlowTick = GlobalRegistry.TryRegisterSlowTickable(this, PriorityLayer.Environment);
         }
 
         private void TryUnregister()
         {
-            if (!_registered)
-                return;
+            if (_registeredSlowTick)
+            {
+                GlobalRegistry.UnregisterSlowTickable(this, PriorityLayer.Environment);
+                _registeredSlowTick = false;
+            }
 
-            GlobalRegistry.UnregisterLateFrameTickable(this, PriorityLayer.Environment);
-            _registered = false;
+            if (_registered)
+            {
+                GlobalRegistry.UnregisterLateFrameTickable(this, PriorityLayer.Environment);
+                _registered = false;
+            }
         }
 
         private void CacheRegistryServicesCold()
@@ -785,6 +830,16 @@ namespace Hecton8.Biolum
 
             if (_dispatcher == null)
                 _dispatcher = GlobalRegistry.Dispatcher;
+
+            if (_playerRuntimeContext == null)
+                _playerRuntimeContext = GlobalRegistry.Player;
+
+            CachePlayerTransformCold(_playerRuntimeContext);
+        }
+
+        private void CacheGraphicsCapabilitiesCold()
+        {
+            _supportsComputeShadersCold = SystemInfo.supportsComputeShaders;
         }
 
         private void TryRegisterHotSwapListener()

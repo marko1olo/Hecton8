@@ -100,15 +100,18 @@ namespace Hecton8.Construction
             public PowerNode Node;
         }
 
-        // COLD ALLOC: List<StorageEndpoint>[16] — logistics storage registry — owner: BaseLogisticsNetwork
+        // COLD ALLOC: StorageEndpoint[64] - fixed logistics storage registry - owner: BaseLogisticsNetwork
         private const int StorageEndpointCapacity = 64;
         private const int FabricatorEndpointCapacity = 32;
         private const int RecyclerEndpointCapacity = 32;
-        private static readonly List<StorageEndpoint> s_StorageEndpoints = new List<StorageEndpoint>(StorageEndpointCapacity);
-        // COLD ALLOC: List<FabricatorEndpoint>[8] — fabrication endpoint registry — owner: BaseLogisticsNetwork
-        private static readonly List<FabricatorEndpoint> s_FabricatorEndpoints = new List<FabricatorEndpoint>(FabricatorEndpointCapacity);
-        // COLD ALLOC: List<RecyclerEndpoint>[8] — recycler endpoint registry — owner: BaseLogisticsNetwork
-        private static readonly List<RecyclerEndpoint> s_RecyclerEndpoints = new List<RecyclerEndpoint>(RecyclerEndpointCapacity);
+        private static readonly StorageEndpoint[] s_StorageEndpoints = new StorageEndpoint[StorageEndpointCapacity];
+        // COLD ALLOC: FabricatorEndpoint[32] - fixed fabrication endpoint registry - owner: BaseLogisticsNetwork
+        private static readonly FabricatorEndpoint[] s_FabricatorEndpoints = new FabricatorEndpoint[FabricatorEndpointCapacity];
+        // COLD ALLOC: RecyclerEndpoint[32] - fixed recycler endpoint registry - owner: BaseLogisticsNetwork
+        private static readonly RecyclerEndpoint[] s_RecyclerEndpoints = new RecyclerEndpoint[RecyclerEndpointCapacity];
+        private static int s_StorageEndpointCount;
+        private static int s_FabricatorEndpointCount;
+        private static int s_RecyclerEndpointCount;
         private const int ReservationPoolCapacity = 64;
         // COLD ALLOC: LogisticsReservation[64] â€” fixed logistics reservation token pool â€” owner: BaseLogisticsNetwork
         private static readonly LogisticsReservation[] s_ReservationPool = CreateReservationPool();
@@ -119,9 +122,16 @@ namespace Hecton8.Construction
         [UnityEngine.RuntimeInitializeOnLoadMethod(UnityEngine.RuntimeInitializeLoadType.SubsystemRegistration)]
         private static void ResetStaticState()
         {
-            s_StorageEndpoints.Clear();
-            s_FabricatorEndpoints.Clear();
-            s_RecyclerEndpoints.Clear();
+            for (int i = 0; i < s_StorageEndpointCount; i++)
+                s_StorageEndpoints[i] = default;
+            for (int i = 0; i < s_FabricatorEndpointCount; i++)
+                s_FabricatorEndpoints[i] = default;
+            for (int i = 0; i < s_RecyclerEndpointCount; i++)
+                s_RecyclerEndpoints[i] = default;
+
+            s_StorageEndpointCount = 0;
+            s_FabricatorEndpointCount = 0;
+            s_RecyclerEndpointCount = 0;
             ResetReservationPool();
             s_NextReservationId = 1;
             LogisticsRouteScratchMemory.Dispose(s_DataVault);
@@ -142,28 +152,28 @@ namespace Hecton8.Construction
             if (crate == null || node == null)
                 return;
 
-            for (int i = 0; i < s_StorageEndpoints.Count; i++)
+            for (int i = 0; i < s_StorageEndpointCount; i++)
             {
                 if (ReferenceEquals(s_StorageEndpoints[i].Crate, crate))
                     return;
             }
 
-            if (s_StorageEndpoints.Count >= StorageEndpointCapacity)
+            if (s_StorageEndpointCount >= StorageEndpointCapacity)
                 return;
 
-            s_StorageEndpoints.Add(new StorageEndpoint
+            s_StorageEndpoints[s_StorageEndpointCount++] = new StorageEndpoint
             {
                 Crate = crate,
                 Node = node
-            });
+            };
         }
 
         public static void UnregisterStorage(StorageCrate crate)
         {
-            for (int i = s_StorageEndpoints.Count - 1; i >= 0; i--)
+            for (int i = s_StorageEndpointCount - 1; i >= 0; i--)
             {
                 if (ReferenceEquals(s_StorageEndpoints[i].Crate, crate))
-                    s_StorageEndpoints.RemoveAt(i);
+                    RemoveStorageEndpointAt(i);
             }
         }
 
@@ -182,7 +192,7 @@ namespace Hecton8.Construction
 
             float radiusSq = radius * radius;
             int count = 0;
-            for (int i = 0; i < s_StorageEndpoints.Count; i++)
+            for (int i = 0; i < s_StorageEndpointCount; i++)
             {
                 StorageEndpoint endpoint = s_StorageEndpoints[i];
                 StorageCrate crate = endpoint.Crate;
@@ -219,28 +229,28 @@ namespace Hecton8.Construction
             if (fabricator == null || node == null)
                 return;
 
-            for (int i = 0; i < s_FabricatorEndpoints.Count; i++)
+            for (int i = 0; i < s_FabricatorEndpointCount; i++)
             {
                 if (ReferenceEquals(s_FabricatorEndpoints[i].Fabricator, fabricator))
                     return;
             }
 
-            if (s_FabricatorEndpoints.Count >= FabricatorEndpointCapacity)
+            if (s_FabricatorEndpointCount >= FabricatorEndpointCapacity)
                 return;
 
-            s_FabricatorEndpoints.Add(new FabricatorEndpoint
+            s_FabricatorEndpoints[s_FabricatorEndpointCount++] = new FabricatorEndpoint
             {
                 Fabricator = fabricator,
                 Node = node
-            });
+            };
         }
 
         public static void UnregisterFabricator(Fabricator fabricator)
         {
-            for (int i = s_FabricatorEndpoints.Count - 1; i >= 0; i--)
+            for (int i = s_FabricatorEndpointCount - 1; i >= 0; i--)
             {
                 if (ReferenceEquals(s_FabricatorEndpoints[i].Fabricator, fabricator))
-                    s_FabricatorEndpoints.RemoveAt(i);
+                    RemoveFabricatorEndpointAt(i);
             }
         }
 
@@ -249,29 +259,68 @@ namespace Hecton8.Construction
             if (recycler == null || node == null)
                 return;
 
-            for (int i = 0; i < s_RecyclerEndpoints.Count; i++)
+            for (int i = 0; i < s_RecyclerEndpointCount; i++)
             {
                 if (ReferenceEquals(s_RecyclerEndpoints[i].Recycler, recycler))
                     return;
             }
 
-            if (s_RecyclerEndpoints.Count >= RecyclerEndpointCapacity)
+            if (s_RecyclerEndpointCount >= RecyclerEndpointCapacity)
                 return;
 
-            s_RecyclerEndpoints.Add(new RecyclerEndpoint
+            s_RecyclerEndpoints[s_RecyclerEndpointCount++] = new RecyclerEndpoint
             {
                 Recycler = recycler,
                 Node = node
-            });
+            };
         }
 
         public static void UnregisterRecycler(ResourceRecyclerModule recycler)
         {
-            for (int i = s_RecyclerEndpoints.Count - 1; i >= 0; i--)
+            for (int i = s_RecyclerEndpointCount - 1; i >= 0; i--)
             {
                 if (ReferenceEquals(s_RecyclerEndpoints[i].Recycler, recycler))
-                    s_RecyclerEndpoints.RemoveAt(i);
+                    RemoveRecyclerEndpointAt(i);
             }
+        }
+
+        private static void RemoveStorageEndpointAt(int index)
+        {
+            int lastIndex = s_StorageEndpointCount - 1;
+            if ((uint)index > (uint)lastIndex)
+                return;
+
+            for (int i = index; i < lastIndex; i++)
+                s_StorageEndpoints[i] = s_StorageEndpoints[i + 1];
+
+            s_StorageEndpoints[lastIndex] = default;
+            s_StorageEndpointCount = lastIndex;
+        }
+
+        private static void RemoveFabricatorEndpointAt(int index)
+        {
+            int lastIndex = s_FabricatorEndpointCount - 1;
+            if ((uint)index > (uint)lastIndex)
+                return;
+
+            for (int i = index; i < lastIndex; i++)
+                s_FabricatorEndpoints[i] = s_FabricatorEndpoints[i + 1];
+
+            s_FabricatorEndpoints[lastIndex] = default;
+            s_FabricatorEndpointCount = lastIndex;
+        }
+
+        private static void RemoveRecyclerEndpointAt(int index)
+        {
+            int lastIndex = s_RecyclerEndpointCount - 1;
+            if ((uint)index > (uint)lastIndex)
+                return;
+
+            for (int i = index; i < lastIndex; i++)
+                s_RecyclerEndpoints[i] = s_RecyclerEndpoints[i + 1];
+
+            s_RecyclerEndpoints[lastIndex] = default;
+            s_RecyclerEndpointCount = lastIndex;
         }
 
         public static int CountAccessibleItem(PowerGrid grid, ItemData item)
@@ -280,7 +329,7 @@ namespace Hecton8.Construction
                 return 0;
 
             int count = 0;
-            for (int i = 0; i < s_StorageEndpoints.Count; i++)
+            for (int i = 0; i < s_StorageEndpointCount; i++)
             {
                 StorageEndpoint endpoint = s_StorageEndpoints[i];
                 if (endpoint.Crate == null || endpoint.Node == null || endpoint.Node.Grid != grid)
@@ -298,7 +347,7 @@ namespace Hecton8.Construction
                 return 0;
 
             int count = 0;
-            for (int i = 0; i < s_StorageEndpoints.Count; i++)
+            for (int i = 0; i < s_StorageEndpointCount; i++)
             {
                 StorageEndpoint endpoint = s_StorageEndpoints[i];
                 if (endpoint.Crate == null || endpoint.Node == null || endpoint.Node.Grid != grid)
@@ -316,7 +365,7 @@ namespace Hecton8.Construction
             if (grid == null || item == null || amount <= 0)
                 return false;
 
-            for (int i = 0; i < s_StorageEndpoints.Count && deposited < amount; i++)
+            for (int i = 0; i < s_StorageEndpointCount && deposited < amount; i++)
             {
                 StorageEndpoint endpoint = s_StorageEndpoints[i];
                 if (endpoint.Crate == null || endpoint.Node == null || endpoint.Node.Grid != grid)
@@ -335,7 +384,7 @@ namespace Hecton8.Construction
                 return false;
 
             int remaining = amount;
-            for (int i = 0; i < s_StorageEndpoints.Count && remaining > 0; i++)
+            for (int i = 0; i < s_StorageEndpointCount && remaining > 0; i++)
             {
                 StorageEndpoint endpoint = s_StorageEndpoints[i];
                 if (endpoint.Crate == null || endpoint.Node == null || endpoint.Node.Grid != grid)
@@ -385,15 +434,28 @@ namespace Hecton8.Construction
             if (sourceNode == null || grid == null)
                 return false;
 
-            List<PowerNode> topologyNodes = grid.TopologyNodes;
-            int nodeCount = topologyNodes != null ? topologyNodes.Count : 0;
+            int nodeCount = grid.LogisticsNodeCount;
             if (nodeCount <= 0)
                 return TryResolveFirstStorageEndpoint(grid, out endpointIndex);
 
-            if (!TryResolveTopologyNodeIndex(topologyNodes, sourceNode, out int startNodeIndex))
+            if (!grid.TryResolveLogisticsNodeIndex(sourceNode, out int startNodeIndex))
                 return TryResolveFirstStorageEndpoint(grid, out endpointIndex);
 
-            int edgeCount = CountTopologyEdges(grid, topologyNodes, nodeCount);
+            NativeArray<int>.ReadOnly graphEdgeOffsets = grid.GetLogisticsEdgeOffsetsReadOnly();
+            NativeArray<int>.ReadOnly graphEdgeDestinations = grid.GetLogisticsEdgeDestinationsReadOnly();
+            if (!graphEdgeOffsets.IsCreated ||
+                !graphEdgeDestinations.IsCreated ||
+                graphEdgeOffsets.Length <= nodeCount)
+            {
+                return TryResolveFirstStorageEndpoint(grid, out endpointIndex);
+            }
+
+            int edgeCount = math.min(grid.LogisticsEdgeCount, graphEdgeDestinations.Length);
+            int terminalEdgeOffset = graphEdgeOffsets[nodeCount];
+            if (terminalEdgeOffset < 0 || terminalEdgeOffset > edgeCount)
+                return TryResolveFirstStorageEndpoint(grid, out endpointIndex);
+
+            edgeCount = terminalEdgeOffset;
             IDataVault vault = s_DataVault;
             if (!LogisticsRouteScratchMemory.TryAcquireWriteBuffers(
                     vault,
@@ -413,8 +475,8 @@ namespace Hecton8.Construction
             int targetNodeIndex;
             try
             {
-                BuildRouteStorageCapacityFlags(grid, topologyNodes, nodeCount, storageCapacityByNode);
-                BuildRouteCsr(grid, topologyNodes, nodeCount, edgeCount, edgeOffsets, edgeDestinations, edgeWriteCursor);
+                BuildRouteStorageCapacityFlags(grid, nodeCount, storageCapacityByNode);
+                CopyRouteCsr(graphEdgeOffsets, graphEdgeDestinations, nodeCount, edgeCount, edgeOffsets, edgeDestinations, edgeWriteCursor);
 
                 resultNodeIndex[0] = -1;
                 LogisticsPipeRoutingKernel.ExecuteRouteBfs(
@@ -437,24 +499,7 @@ namespace Hecton8.Construction
             if (targetNodeIndex < 0 || targetNodeIndex >= nodeCount)
                 return false;
 
-            PowerNode targetNode = topologyNodes[targetNodeIndex];
-            for (int i = 0; i < s_StorageEndpoints.Count; i++)
-            {
-                StorageEndpoint endpoint = s_StorageEndpoints[i];
-                if (endpoint.Crate == null ||
-                    endpoint.Node == null ||
-                    endpoint.Node.Grid != grid ||
-                    !ReferenceEquals(endpoint.Node, targetNode) ||
-                    !endpoint.Crate.HasAutomatedCapacity())
-                {
-                    continue;
-                }
-
-                endpointIndex = i;
-                return true;
-            }
-
-            return false;
+            return TryResolveStorageEndpointByNodeIndex(grid, targetNodeIndex, out endpointIndex);
         }
 
         private static bool TryResolveFirstStorageEndpoint(PowerGrid grid, out int endpointIndex)
@@ -463,7 +508,7 @@ namespace Hecton8.Construction
             if (grid == null)
                 return false;
 
-            for (int i = 0; i < s_StorageEndpoints.Count; i++)
+            for (int i = 0; i < s_StorageEndpointCount; i++)
             {
                 StorageEndpoint endpoint = s_StorageEndpoints[i];
                 if (endpoint.Crate == null ||
@@ -481,41 +526,15 @@ namespace Hecton8.Construction
             return false;
         }
 
-        private static int CountTopologyEdges(PowerGrid grid, List<PowerNode> topologyNodes, int nodeCount)
-        {
-            int edgeCount = 0;
-            for (int sourceIndex = 0; sourceIndex < nodeCount; sourceIndex++)
-            {
-                PowerNode sourceNode = topologyNodes[sourceIndex];
-                if (sourceNode == null)
-                    continue;
-
-                List<PowerNode> neighbors = sourceNode.Neighbors;
-                int neighborCount = neighbors != null ? neighbors.Count : 0;
-                for (int neighborIndex = 0; neighborIndex < neighborCount; neighborIndex++)
-                {
-                    PowerNode neighbor = neighbors[neighborIndex];
-                    if (neighbor == null || neighbor.Grid != grid)
-                        continue;
-
-                    if (TryResolveTopologyNodeIndex(topologyNodes, neighbor, out _))
-                        edgeCount++;
-                }
-            }
-
-            return edgeCount;
-        }
-
         private static void BuildRouteStorageCapacityFlags(
             PowerGrid grid,
-            List<PowerNode> topologyNodes,
             int nodeCount,
             NativeArray<byte> storageCapacityByNode)
         {
             for (int nodeIndex = 0; nodeIndex < nodeCount; nodeIndex++)
                 storageCapacityByNode[nodeIndex] = 0;
 
-            for (int endpointIndex = 0; endpointIndex < s_StorageEndpoints.Count; endpointIndex++)
+            for (int endpointIndex = 0; endpointIndex < s_StorageEndpointCount; endpointIndex++)
             {
                 StorageEndpoint endpoint = s_StorageEndpoints[endpointIndex];
                 if (endpoint.Crate == null ||
@@ -526,7 +545,7 @@ namespace Hecton8.Construction
                     continue;
                 }
 
-                if (TryResolveTopologyNodeIndex(topologyNodes, endpoint.Node, out int nodeIndex) &&
+                if (grid.TryResolveLogisticsNodeIndex(endpoint.Node, out int nodeIndex) &&
                     nodeIndex >= 0 &&
                     nodeIndex < nodeCount)
                 {
@@ -535,9 +554,9 @@ namespace Hecton8.Construction
             }
         }
 
-        private static void BuildRouteCsr(
-            PowerGrid grid,
-            List<PowerNode> topologyNodes,
+        private static void CopyRouteCsr(
+            NativeArray<int>.ReadOnly sourceEdgeOffsets,
+            NativeArray<int>.ReadOnly sourceEdgeDestinations,
             int nodeCount,
             int edgeCount,
             NativeArray<int> edgeOffsets,
@@ -545,89 +564,38 @@ namespace Hecton8.Construction
             NativeArray<int> edgeWriteCursor)
         {
             for (int nodeIndex = 0; nodeIndex <= nodeCount; nodeIndex++)
-                edgeOffsets[nodeIndex] = 0;
-
-            for (int sourceIndex = 0; sourceIndex < nodeCount; sourceIndex++)
-            {
-                PowerNode sourceNode = topologyNodes[sourceIndex];
-                if (sourceNode == null)
-                    continue;
-
-                List<PowerNode> neighbors = sourceNode.Neighbors;
-                int neighborCount = neighbors != null ? neighbors.Count : 0;
-                int outDegree = 0;
-                for (int neighborIndex = 0; neighborIndex < neighborCount; neighborIndex++)
-                {
-                    PowerNode neighbor = neighbors[neighborIndex];
-                    if (neighbor == null || neighbor.Grid != grid)
-                        continue;
-
-                    if (TryResolveTopologyNodeIndex(topologyNodes, neighbor, out _))
-                        outDegree++;
-                }
-
-                edgeOffsets[sourceIndex + 1] = outDegree;
-            }
-
-            for (int nodeIndex = 1; nodeIndex <= nodeCount; nodeIndex++)
-            {
-                edgeOffsets[nodeIndex] =
-                    edgeOffsets[nodeIndex] +
-                    edgeOffsets[nodeIndex - 1];
-            }
+                edgeOffsets[nodeIndex] = sourceEdgeOffsets[nodeIndex];
 
             for (int nodeIndex = 0; nodeIndex < nodeCount; nodeIndex++)
                 edgeWriteCursor[nodeIndex] = edgeOffsets[nodeIndex];
 
-            for (int sourceIndex = 0; sourceIndex < nodeCount; sourceIndex++)
-            {
-                PowerNode sourceNode = topologyNodes[sourceIndex];
-                if (sourceNode == null)
-                    continue;
-
-                List<PowerNode> neighbors = sourceNode.Neighbors;
-                int neighborCount = neighbors != null ? neighbors.Count : 0;
-                for (int neighborIndex = 0; neighborIndex < neighborCount; neighborIndex++)
-                {
-                    PowerNode neighbor = neighbors[neighborIndex];
-                    if (neighbor == null || neighbor.Grid != grid)
-                        continue;
-
-                    if (!TryResolveTopologyNodeIndex(topologyNodes, neighbor, out int destinationIndex))
-                        continue;
-
-                    int writeIndex = edgeWriteCursor[sourceIndex];
-                    if (writeIndex < 0 || writeIndex >= edgeCount)
-                        continue;
-
-                    edgeWriteCursor[sourceIndex] = writeIndex + 1;
-                    edgeDestinations[writeIndex] = destinationIndex;
-                }
-            }
+            for (int edgeIndex = 0; edgeIndex < edgeCount; edgeIndex++)
+                edgeDestinations[edgeIndex] = sourceEdgeDestinations[edgeIndex];
         }
 
-        private static bool TryResolveTopologyNodeIndex(List<PowerNode> topologyNodes, PowerNode node, out int nodeIndex)
+        private static bool TryResolveStorageEndpointByNodeIndex(PowerGrid grid, int targetNodeIndex, out int endpointIndex)
         {
-            nodeIndex = -1;
-            if (topologyNodes == null || node == null)
+            endpointIndex = -1;
+            if (grid == null || targetNodeIndex < 0)
                 return false;
 
-            int scratchIndex = node.GraphScratchIndex;
-            if (scratchIndex >= 0 &&
-                scratchIndex < topologyNodes.Count &&
-                ReferenceEquals(topologyNodes[scratchIndex], node))
+            for (int i = 0; i < s_StorageEndpointCount; i++)
             {
-                nodeIndex = scratchIndex;
-                return true;
-            }
-
-            for (int i = 0; i < topologyNodes.Count; i++)
-            {
-                if (!ReferenceEquals(topologyNodes[i], node))
+                StorageEndpoint endpoint = s_StorageEndpoints[i];
+                if (endpoint.Crate == null ||
+                    endpoint.Node == null ||
+                    endpoint.Node.Grid != grid ||
+                    !endpoint.Crate.HasAutomatedCapacity())
+                {
                     continue;
+                }
 
-                nodeIndex = i;
-                return true;
+                if (grid.TryResolveLogisticsNodeIndex(endpoint.Node, out int endpointNodeIndex) &&
+                    endpointNodeIndex == targetNodeIndex)
+                {
+                    endpointIndex = i;
+                    return true;
+                }
             }
 
             return false;
@@ -641,7 +609,7 @@ namespace Hecton8.Construction
 
             bool found = false;
             float bestDistanceSq = float.MaxValue;
-            for (int i = 0; i < s_StorageEndpoints.Count; i++)
+            for (int i = 0; i < s_StorageEndpointCount; i++)
             {
                 StorageEndpoint endpoint = s_StorageEndpoints[i];
                 if (endpoint.Crate == null ||
@@ -666,7 +634,7 @@ namespace Hecton8.Construction
             if (!hasNetworkStock)
                 return found;
 
-            for (int i = 0; i < s_FabricatorEndpoints.Count; i++)
+            for (int i = 0; i < s_FabricatorEndpointCount; i++)
             {
                 FabricatorEndpoint endpoint = s_FabricatorEndpoints[i];
                 if (endpoint.Fabricator == null || endpoint.Node == null || endpoint.Node.Grid != grid)
@@ -935,7 +903,7 @@ namespace Hecton8.Construction
             int remaining = amount;
             int reservationId = reservation.ReservationId;
 
-            for (int i = 0; i < s_StorageEndpoints.Count && remaining > 0; i++)
+            for (int i = 0; i < s_StorageEndpointCount && remaining > 0; i++)
             {
                 StorageEndpoint endpoint = s_StorageEndpoints[i];
                 if (endpoint.Crate == null || endpoint.Node == null || endpoint.Node.Grid != grid)
@@ -971,7 +939,7 @@ namespace Hecton8.Construction
             int remaining = amount;
             int reservationId = reservation.ReservationId;
 
-            for (int i = 0; i < s_StorageEndpoints.Count && remaining > 0; i++)
+            for (int i = 0; i < s_StorageEndpointCount && remaining > 0; i++)
             {
                 StorageEndpoint endpoint = s_StorageEndpoints[i];
                 if (endpoint.Crate == null || endpoint.Node == null || endpoint.Node.Grid != grid)

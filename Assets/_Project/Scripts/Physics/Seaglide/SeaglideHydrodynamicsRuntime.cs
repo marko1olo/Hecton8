@@ -81,21 +81,6 @@ namespace Hecton8.Physics
             return runtime != null;
         }
 
-        public static SeaglideHydrodynamicsRuntime EnsureRuntimeInstance()
-        {
-            if (s_activeRuntimeInstance != null)
-                return s_activeRuntimeInstance;
-
-            if (!Application.isPlaying)
-                return null;
-
-            PhysicsApplySystem physics = PhysicsApplySystem.Instance;
-            if (physics == null)
-                return null;
-
-            return physics.TryGetComponent(out SeaglideHydrodynamicsRuntime runtime) ? runtime : null;
-        }
-
         public bool TryResolveEditorViews(
             out NativeArray<SeaglideTuningDTO>.ReadOnly tuning,
             out NativeArray<SeaglideCounterDTO>.ReadOnly counters,

@@ -60,8 +60,8 @@ namespace Hecton8.World
         [System.NonSerialized] private uint _cachedZoneHash;
         [System.NonSerialized] private uint _cachedDiscoveryHash;
 
-        public string DisplayNameOrFallback => ResolveDisplayName(GlobalRegistry.LocalizationText);
-        public string DescriptionOrFallback => ResolveDescription(GlobalRegistry.LocalizationText);
+        public string DisplayNameOrFallback => ResolveDisplayName((ILocalizationTextReadModel)null);
+        public string DescriptionOrFallback => ResolveDescription((ILocalizationTextReadModel)null);
         public uint ZoneHash => _cachedZoneHash;
         public uint DiscoveryHash => _cachedDiscoveryHash;
 

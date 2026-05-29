@@ -572,7 +572,7 @@ namespace Hecton8.Biolum
         public void Tick(float deltaTime)
         {
             float safeDeltaTime = math.isfinite(deltaTime) ? math.max(0f, deltaTime) : 0f;
-            RefreshCameraSnapshotForOwnerPhase(false);
+            RefreshCameraSnapshotHot();
             DrainMovementAcousticSignals();
             UpdateTouchRipples(safeDeltaTime);
             UpdatePredatorBlackout(safeDeltaTime);
@@ -641,7 +641,7 @@ namespace Hecton8.Biolum
                 FindExistingZones();
             }
 
-            RefreshCameraSnapshotForOwnerPhase(true);
+            RefreshCameraSnapshotCold();
 
             _initialized = true;
             UpdateFloraShaderGlobals();
@@ -1505,9 +1505,20 @@ namespace Hecton8.Biolum
                 from.a + ((to.a - from.a) * t));
         }
 
-        private void RefreshCameraSnapshotForOwnerPhase(bool force)
+        private void RefreshCameraSnapshotHot()
         {
-            TryCacheCameraReferenceFromOwnerRoute(force);
+            TryCacheCameraReferenceCachedOnly();
+            WriteCameraSnapshot(force: false);
+        }
+
+        private void RefreshCameraSnapshotCold()
+        {
+            TryCacheCameraReferenceCold();
+            WriteCameraSnapshot(force: true);
+        }
+
+        private void WriteCameraSnapshot(bool force)
+        {
             int frame = Hecton8.Core.SystemDispatcher.CurrentFrameIndex;
             if (!force && _cachedCameraAupFrame == frame)
                 return;
@@ -1519,13 +1530,24 @@ namespace Hecton8.Biolum
             _cachedCameraAupFrame = frame;
         }
 
-        private bool TryCacheCameraReferenceFromOwnerRoute(bool force)
+        private bool TryCacheCameraReferenceCachedOnly()
         {
             if (_cachedCameraTransform != null)
                 return true;
 
+            return TryCacheCameraReferenceFromPlayerContext();
+        }
+
+        private bool TryCacheCameraReferenceCold()
+        {
+            if (_cachedCameraTransform != null)
+                return true;
+
+            if (TryCacheCameraReferenceFromPlayerContext())
+                return true;
+
             float currentTime = SampleCameraCacheClockSeconds();
-            if (!force && currentTime < _nextCameraResolveTime)
+            if (currentTime < _nextCameraResolveTime)
                 return false;
 
             _nextCameraResolveTime = currentTime + CameraResolveCooldown;
@@ -1550,6 +1572,29 @@ namespace Hecton8.Biolum
             }
 
             return false;
+        }
+
+        private bool TryCacheCameraReferenceFromPlayerContext()
+        {
+            IPlayerRuntimeContext playerContext = _cachedPlayerContext;
+            if (playerContext == null)
+                return false;
+
+            Camera playerCamera = playerContext.PlayerCamera;
+            if (playerCamera != null)
+            {
+                _cachedCamera = playerCamera;
+                _cachedCameraTransform = playerCamera.transform;
+                return true;
+            }
+
+            Transform playerTransform = playerContext.PlayerTransform;
+            if (playerTransform == null)
+                return false;
+
+            _cachedCamera = null;
+            _cachedCameraTransform = playerTransform;
+            return true;
         }
 
         private float SampleCameraCacheClockSeconds()

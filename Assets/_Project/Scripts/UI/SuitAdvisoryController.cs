@@ -168,7 +168,7 @@ namespace Hecton8.UI
         public void LateFrameTick()
         {
             if (survival == null)
-                ResolveReferences();
+                return;
 
             RefreshSurvivalSignalBinding();
             if (_survivalSignalSourceId == 0u)

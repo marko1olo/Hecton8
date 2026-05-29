@@ -25,6 +25,21 @@ namespace Hecton8.VFX.Parasites
         private const float VisualPhaseStepRadians = 6.28318531f / 4096f;
         private const string ComputeSampleName = "H8 Parasite Swarm Compute";
         private const SystemID OwnerSystemId = SystemID.Vfx;
+        private static readonly ulong TargetSelectionMutationGuardMask =
+            MutationGuardBit(BufferID.ShinobuParasiteTargets) |
+            MutationGuardBit(BufferID.ShinobuParasiteTargetCandidates) |
+            MutationGuardBit(BufferID.ShinobuParasiteTargetCount);
+        private static readonly ulong TelemetryMutationGuardMask =
+            MutationGuardBit(BufferID.ShinobuParasiteTelemetryRing) |
+            MutationGuardBit(BufferID.ShinobuParasiteTelemetryCursor);
+        private static readonly ulong TuningMutationGuardMask =
+            MutationGuardBit(BufferID.ShinobuParasiteTuning);
+#if UNITY_EDITOR
+        private static readonly ulong CsvImportMutationGuardMask =
+            MutationGuardBit(BufferID.ShinobuParasiteCsvScratch) |
+            MutationGuardBit(BufferID.ShinobuParasiteProfiles) |
+            MutationGuardBit(BufferID.ShinobuParasiteProfileCount);
+#endif
         [Header("GPU")]
         [SerializeField] private ComputeShader parasiteCompute;
         [SerializeField] private Material parasiteMaterial;
@@ -53,7 +68,7 @@ namespace Hecton8.VFX.Parasites
         private float3 _pendingAupShift;
         private string _dumpRootPath;
         private bool _targetSelectionPending;
-        private bool _targetWriteLocksHeld;
+        private bool _targetSelectionGuardHeld;
         private JobHandle _targetSelectionHandle;
         private int _lastResolvedTargetCount;
         private IPlayerRuntimeContext _playerContext;
@@ -102,6 +117,11 @@ namespace Hecton8.VFX.Parasites
         private static readonly int ParasiteFrameParamsId = Shader.PropertyToID("_H8ParasiteFrameParams");
         private static readonly int ParasiteAupShiftDeltaId = Shader.PropertyToID("_H8ParasiteAupShiftDelta");
         private static readonly int AbyssalFlowFieldId = Shader.PropertyToID("_H8AbyssalFlowField");
+
+        private static ulong MutationGuardBit(BufferID bufferId)
+        {
+            return 1UL << (unchecked((int)(uint)(int)bufferId) & 31);
+        }
 
         private void OnEnable()
         {
@@ -152,7 +172,6 @@ namespace Hecton8.VFX.Parasites
             }
 
             CompleteTargetSelectionForLifecycle();
-            ReleaseTargetWriteLocks();
             ReleaseVaultHandles(_vault);
             ClearVaultDescriptors();
             _vault = null;
@@ -223,7 +242,10 @@ namespace Hecton8.VFX.Parasites
             if (_lastCandidateOverflowCount > 0)
                 flags |= ParasiteSwarmContracts.TelemetryFlagTargetOverflow;
 
-            if (TryAcquireTelemetryWriteBuffers(out NativeArray<SwarmTelemetryEntry> telemetry, out NativeArray<int> telemetryCursor))
+            NativeArray<SwarmTelemetryEntry> dumpTelemetry = default;
+            int dumpCursor = 0;
+            bool shouldWriteDump = false;
+            if (TryResolveTelemetryOwnerViews(out NativeArray<SwarmTelemetryEntry> telemetry, out NativeArray<int> telemetryCursor))
             {
                 try
                 {
@@ -232,16 +254,19 @@ namespace Hecton8.VFX.Parasites
                         !_blackBoxDumped)
                     {
                         _dumpSequence++;
-                        int dumpCursor = telemetryCursor.IsCreated && telemetryCursor.Length > 0 ? telemetryCursor[0] : _telemetryCursor;
-                        _blackBoxDumped = ParasiteSwarmContracts.TryWriteTelemetryDump(_dumpRootPath, telemetry, dumpCursor);
+                        dumpCursor = telemetryCursor.IsCreated && telemetryCursor.Length > 0 ? telemetryCursor[0] : _telemetryCursor;
+                        dumpTelemetry = telemetry;
+                        shouldWriteDump = true;
                     }
                 }
                 finally
                 {
-                    _vault.ReleaseWriteLock(in _telemetryCursorHandle, OwnerSystemId);
-                    _vault.ReleaseWriteLock(in _telemetryHandle, OwnerSystemId);
+                    ReleaseTelemetryOwnerViews();
                 }
             }
+
+            if (shouldWriteDump)
+                _blackBoxDumped = ParasiteSwarmContracts.TryWriteTelemetryDump(_dumpRootPath, dumpTelemetry, dumpCursor);
 
             ScheduleTargetExtraction(cameraAup, globalQuality, visualPhaseRadians, in tuning);
         }
@@ -285,7 +310,6 @@ namespace Hecton8.VFX.Parasites
         private void ResetVaultEpochState()
         {
             _targetSelectionPending = false;
-            _targetWriteLocksHeld = false;
             _lastResolvedTargetCount = 0;
             _telemetryCursor = 0;
             _lastCandidateOverflowCount = 0;
@@ -325,7 +349,6 @@ namespace Hecton8.VFX.Parasites
                 return;
 
             CompleteTargetSelectionForLifecycle();
-            ReleaseTargetWriteLocks();
             ReleaseVaultHandles(_vault);
             ClearVaultDescriptors();
             _vault = vault;
@@ -342,11 +365,28 @@ namespace Hecton8.VFX.Parasites
         private void CompleteTargetSelectionForLifecycle()
         {
             if (!_targetSelectionPending)
+            {
+                ReleaseTargetSelectionGuard();
                 return;
+            }
 
             // Lifecycle-only fence. The hot path consumes target extraction one frame late.
-            DispatcherJobFence.TryComplete(ref _targetSelectionHandle, forceComplete: true);
+            ForceCompleteTargetSelectionInPostSimulationWindow(ref _targetSelectionHandle);
             _targetSelectionPending = false;
+            ReleaseTargetSelectionGuard();
+        }
+
+        private static void ForceCompleteTargetSelectionInPostSimulationWindow(ref JobHandle targetSelectionHandle)
+        {
+            DispatcherJobFence.BeginPostSimulationSwapWindow();
+            try
+            {
+                DispatcherJobFence.TryComplete(ref targetSelectionHandle, forceComplete: true);
+            }
+            finally
+            {
+                DispatcherJobFence.EndPostSimulationSwapWindow();
+            }
         }
 
 #if UNITY_EDITOR
@@ -368,22 +408,25 @@ namespace Hecton8.VFX.Parasites
             if (!IsOwnedHandle(in scratchHandle, BufferID.ShinobuParasiteCsvScratch))
                 return;
 
-            if (!vault.TryAcquireWriteLock(in scratchHandle, OwnerSystemId, out NativeArray<byte> scratch))
+            if (!vault.TryAcquireMutationGuard(CsvImportMutationGuardMask))
                 return;
 
             try
             {
+                if (!vault.TryResolveHandle(in scratchHandle, out NativeArray<byte> scratch) || !scratch.IsCreated)
+                    return;
+
                 int maxBytes = math.min(scratch.IsCreated ? scratch.Length : 0, ParasiteSwarmContracts.CsvScratchBytes);
                 int bytesRead = ReadCsvFileIntoScratch(path, scratch, maxBytes);
                 if (bytesRead <= 0)
                     return;
 
                 byte* ptr = (byte*)NativeArrayUnsafeUtility.GetUnsafeReadOnlyPtr(scratch);
-                ParasiteSwarmContracts.LoadProfilesFromCsv(vault, new ReadOnlySpan<byte>(ptr, bytesRead));
+                ParasiteSwarmContracts.LoadProfilesFromCsvWithMutationGuardHeld(vault, new ReadOnlySpan<byte>(ptr, bytesRead));
             }
             finally
             {
-                vault.ReleaseWriteLock(in scratchHandle, OwnerSystemId);
+                vault.ReleaseMutationGuard(CsvImportMutationGuardMask);
             }
         }
 
@@ -419,17 +462,20 @@ namespace Hecton8.VFX.Parasites
             if (_vault == null || !IsOwnedHandle(in _tuningHandle, BufferID.ShinobuParasiteTuning))
                 return;
 
-            if (!_vault.TryAcquireWriteLock(in _tuningHandle, OwnerSystemId, out NativeArray<ParasiteSwarmTuningDTO> tuning))
+            if (!_vault.TryAcquireMutationGuard(TuningMutationGuardMask))
                 return;
 
             try
             {
+                if (!_vault.TryResolveHandle(in _tuningHandle, out NativeArray<ParasiteSwarmTuningDTO> tuning) || !tuning.IsCreated)
+                    return;
+
                 if (tuning.Length > 0 && tuning[0].Version == 0u)
                     tuning[0] = ParasiteSwarmContracts.DefaultTuning();
             }
             finally
             {
-                _vault.ReleaseWriteLock(in _tuningHandle, OwnerSystemId);
+                _vault.ReleaseMutationGuard(TuningMutationGuardMask);
             }
         }
 
@@ -516,7 +562,7 @@ namespace Hecton8.VFX.Parasites
         private void ResolveComputeKernels()
         {
             ResetComputeKernelState();
-            if (parasiteCompute == null || !HardwareTierDetector.AllowHighResourceComputeShaders)
+            if (parasiteCompute == null || !SystemInfo.supportsComputeShaders)
                 return;
 
             _initKernel = TryFindKernel(parasiteCompute, "CS_InitParasites");
@@ -547,7 +593,7 @@ namespace Hecton8.VFX.Parasites
 
         private static int TryFindKernel(ComputeShader shader, string kernelName)
         {
-            if (shader == null || !HardwareTierDetector.AllowHighResourceComputeShaders || !shader.HasKernel(kernelName))
+            if (shader == null || !SystemInfo.supportsComputeShaders || !shader.HasKernel(kernelName))
                 return -1;
 
             int kernel = shader.FindKernel(kernelName);
@@ -612,14 +658,20 @@ namespace Hecton8.VFX.Parasites
             if (!_targetSelectionHandle.IsCompleted)
                 return _lastResolvedTargetCount;
 
-            // Safety fence after IsCompleted, so LateFrame never waits on target extraction.
-            DispatcherJobFence.TryFinalizeCompleted(ref _targetSelectionHandle);
-            _targetSelectionPending = false;
-            ReleaseTargetWriteLocks();
-            _lastResolvedTargetCount = targetCount.IsCreated && targetCount.Length > 0
-                ? math.clamp(targetCount[0], 0, ParasiteSwarmContracts.MaxTargetCount)
-                : 0;
-            return _lastResolvedTargetCount;
+            try
+            {
+                // Safety fence after IsCompleted, so LateFrame never waits on target extraction.
+                DispatcherJobFence.TryFinalizeCompleted(ref _targetSelectionHandle);
+                _lastResolvedTargetCount = targetCount.IsCreated && targetCount.Length > 0
+                    ? math.clamp(targetCount[0], 0, ParasiteSwarmContracts.MaxTargetCount)
+                    : 0;
+                return _lastResolvedTargetCount;
+            }
+            finally
+            {
+                _targetSelectionPending = false;
+                ReleaseTargetSelectionGuard();
+            }
         }
 
         private void ScheduleTargetExtraction(
@@ -631,73 +683,83 @@ namespace Hecton8.VFX.Parasites
             if (_targetSelectionPending)
                 return;
 
-            if (_targetWriteLocksHeld)
-                ReleaseTargetWriteLocks();
-
-            if (!TryAcquireTargetWriteBuffers(
-                    out NativeArray<ParasiteTargetDTO> targets,
-                    out NativeArray<ParasiteTargetCandidateDTO> candidates,
-                    out NativeArray<int> targetCount))
+            if (!TryAcquireTargetSelectionGuard())
                 return;
 
-            bool useMock = forceMockTargets || (tuning.Flags & ParasiteSwarmContracts.TuningFlagMockTargets) != 0u;
-            if (useMock)
+            bool guardTransferredToJob = false;
+            try
             {
-                _lastCandidateOverflowCount = 0;
-                int mockCount = math.min(ParasiteSwarmContracts.MaxTargetCount, targets.Length);
-                JobHandle mock = new GenerateMockThermalTargetsJob
+                if (!TryResolveTargetOwnerViews(
+                        out NativeArray<ParasiteTargetDTO> targets,
+                        out NativeArray<ParasiteTargetCandidateDTO> candidates,
+                        out NativeArray<int> targetCount))
+                    return;
+
+                bool useMock = forceMockTargets || (tuning.Flags & ParasiteSwarmContracts.TuningFlagMockTargets) != 0u;
+                if (useMock)
                 {
-                    Targets = targets,
+                    _lastCandidateOverflowCount = 0;
+                    int mockCount = math.min(ParasiteSwarmContracts.MaxTargetCount, targets.Length);
+                    JobHandle mock = new GenerateMockThermalTargetsJob
+                    {
+                        Targets = targets,
+                        Candidates = candidates,
+                        TargetCount = targetCount,
+                        CameraAup = cameraAup,
+                        PhaseRadians = visualPhaseRadians,
+                        GlobalQualityWeight = quality,
+                        Tuning = tuning
+                    }.Schedule(mockCount, 4);
+
+                    _targetSelectionHandle = new SelectTopParasiteTargetsJob
+                    {
+                        Candidates = candidates,
+                        CandidateCount = mockCount,
+                        Targets = targets,
+                        TargetCount = targetCount,
+                        CameraAup = cameraAup,
+                        Tuning = tuning
+                    }.Schedule(mock);
+                    _targetSelectionPending = true;
+                    guardTransferredToJob = true;
+                    return;
+                }
+
+                int candidateCount = StageThermalSourceSignals(cameraAup, in tuning, candidates, out int eligibleSignalCount);
+                _lastCandidateOverflowCount = math.max(0, eligibleSignalCount - ParasiteSwarmContracts.MaxTargetCount);
+                if (candidateCount <= 0)
+                {
+                    ClearTargets(targets, targetCount);
+                    _lastResolvedTargetCount = 0;
+                    return;
+                }
+
+                JobHandle extraction = new ExtractParasiteTargetsJob
+                {
                     Candidates = candidates,
-                    TargetCount = targetCount,
+                    CandidateCount = targetCount,
+                    StagedCount = candidateCount,
                     CameraAup = cameraAup,
-                    PhaseRadians = visualPhaseRadians,
-                    GlobalQualityWeight = quality,
                     Tuning = tuning
-                }.Schedule(mockCount, 4);
+                }.Schedule(candidateCount, 32);
 
                 _targetSelectionHandle = new SelectTopParasiteTargetsJob
                 {
                     Candidates = candidates,
-                    CandidateCount = mockCount,
+                    CandidateCount = candidateCount,
                     Targets = targets,
                     TargetCount = targetCount,
                     CameraAup = cameraAup,
                     Tuning = tuning
-                }.Schedule(mock);
+                }.Schedule(extraction);
                 _targetSelectionPending = true;
-                return;
+                guardTransferredToJob = true;
             }
-
-            int candidateCount = StageThermalSourceSignals(cameraAup, in tuning, candidates, out int eligibleSignalCount);
-            _lastCandidateOverflowCount = math.max(0, eligibleSignalCount - ParasiteSwarmContracts.MaxTargetCount);
-            if (candidateCount <= 0)
+            finally
             {
-                ClearTargets(targets, targetCount);
-                _lastResolvedTargetCount = 0;
-                ReleaseTargetWriteLocks();
-                return;
+                if (!guardTransferredToJob)
+                    ReleaseTargetSelectionGuard();
             }
-
-            JobHandle extraction = new ExtractParasiteTargetsJob
-            {
-                Candidates = candidates,
-                CandidateCount = targetCount,
-                StagedCount = candidateCount,
-                CameraAup = cameraAup,
-                Tuning = tuning
-            }.Schedule(candidateCount, 32);
-
-            _targetSelectionHandle = new SelectTopParasiteTargetsJob
-            {
-                Candidates = candidates,
-                CandidateCount = candidateCount,
-                Targets = targets,
-                TargetCount = targetCount,
-                CameraAup = cameraAup,
-                Tuning = tuning
-            }.Schedule(extraction);
-            _targetSelectionPending = true;
         }
 
         private void CachePlayerContext(IPlayerRuntimeContext playerContext)
@@ -714,7 +776,29 @@ namespace Hecton8.VFX.Parasites
             _renderCameraRuntimeResolved = true;
         }
 
-        private bool TryAcquireTargetWriteBuffers(
+        private bool TryAcquireTargetSelectionGuard()
+        {
+            if (_vault == null || _targetSelectionGuardHeld)
+                return false;
+
+            if (!_vault.TryAcquireMutationGuard(TargetSelectionMutationGuardMask))
+                return false;
+
+            _targetSelectionGuardHeld = true;
+            return true;
+        }
+
+        private void ReleaseTargetSelectionGuard()
+        {
+            if (!_targetSelectionGuardHeld)
+                return;
+
+            IDataVault vault = _vault;
+            _targetSelectionGuardHeld = false;
+            vault?.ReleaseMutationGuard(TargetSelectionMutationGuardMask);
+        }
+
+        private bool TryResolveTargetOwnerViews(
             out NativeArray<ParasiteTargetDTO> targets,
             out NativeArray<ParasiteTargetCandidateDTO> candidates,
             out NativeArray<int> targetCount)
@@ -723,97 +807,66 @@ namespace Hecton8.VFX.Parasites
             candidates = default;
             targetCount = default;
 
-            if (_vault == null ||
-                !IsOwnedHandle(in _targetsHandle, BufferID.ShinobuParasiteTargets) ||
-                !IsOwnedHandle(in _candidatesHandle, BufferID.ShinobuParasiteTargetCandidates) ||
-                !IsOwnedHandle(in _targetCountHandle, BufferID.ShinobuParasiteTargetCount))
-                return false;
-
-            if (!_vault.TryAcquireWriteLock(in _targetsHandle, OwnerSystemId, out targets))
-                return false;
-
-            if (!_vault.TryAcquireWriteLock(in _candidatesHandle, OwnerSystemId, out candidates))
-            {
-                _vault.ReleaseWriteLock(in _targetsHandle, OwnerSystemId);
-                targets = default;
-                return false;
-            }
-
-            if (!_vault.TryAcquireWriteLock(in _targetCountHandle, OwnerSystemId, out targetCount))
-            {
-                _vault.ReleaseWriteLock(in _candidatesHandle, OwnerSystemId);
-                _vault.ReleaseWriteLock(in _targetsHandle, OwnerSystemId);
-                targets = default;
-                candidates = default;
-                return false;
-            }
-
-            if (!targets.IsCreated ||
-                !candidates.IsCreated ||
-                !targetCount.IsCreated ||
-                targets.Length < ParasiteSwarmContracts.MaxTargetCount ||
-                candidates.Length < ParasiteSwarmContracts.CandidateCapacity ||
-                targetCount.Length <= 0)
-            {
-                _vault.ReleaseWriteLock(in _targetCountHandle, OwnerSystemId);
-                _vault.ReleaseWriteLock(in _candidatesHandle, OwnerSystemId);
-                _vault.ReleaseWriteLock(in _targetsHandle, OwnerSystemId);
-                targets = default;
-                candidates = default;
-                targetCount = default;
-                return false;
-            }
-
-            _targetWriteLocksHeld = true;
-            return true;
+            return TryResolveHandle(
+                       in _targetsHandle,
+                       BufferID.ShinobuParasiteTargets,
+                       ParasiteSwarmContracts.MaxTargetCount,
+                       out targets) &&
+                   TryResolveHandle(
+                       in _candidatesHandle,
+                       BufferID.ShinobuParasiteTargetCandidates,
+                       ParasiteSwarmContracts.CandidateCapacity,
+                       out candidates) &&
+                   TryResolveHandle(
+                       in _targetCountHandle,
+                       BufferID.ShinobuParasiteTargetCount,
+                       1,
+                       out targetCount);
         }
 
-        private bool TryAcquireTelemetryWriteBuffers(
+        private bool TryResolveTelemetryOwnerViews(
             out NativeArray<SwarmTelemetryEntry> telemetry,
             out NativeArray<int> telemetryCursor)
         {
             telemetry = default;
             telemetryCursor = default;
 
-            if (_vault == null ||
-                !IsOwnedHandle(in _telemetryHandle, BufferID.ShinobuParasiteTelemetryRing) ||
-                !IsOwnedHandle(in _telemetryCursorHandle, BufferID.ShinobuParasiteTelemetryCursor))
+            IDataVault vault = _vault;
+            if (vault == null || !vault.TryAcquireMutationGuard(TelemetryMutationGuardMask))
                 return false;
 
-            if (!_vault.TryAcquireWriteLock(in _telemetryHandle, OwnerSystemId, out telemetry))
-                return false;
-
-            if (!_vault.TryAcquireWriteLock(in _telemetryCursorHandle, OwnerSystemId, out telemetryCursor))
+            bool guardTransferred = false;
+            try
             {
-                _vault.ReleaseWriteLock(in _telemetryHandle, OwnerSystemId);
-                telemetry = default;
-                return false;
-            }
+                if (!TryResolveHandle(
+                        in _telemetryHandle,
+                        BufferID.ShinobuParasiteTelemetryRing,
+                        ParasiteSwarmContracts.TelemetryCapacity,
+                        out telemetry) ||
+                    !TryResolveHandle(
+                        in _telemetryCursorHandle,
+                        BufferID.ShinobuParasiteTelemetryCursor,
+                        1,
+                        out telemetryCursor))
+                {
+                    telemetry = default;
+                    telemetryCursor = default;
+                    return false;
+                }
 
-            if (!telemetry.IsCreated ||
-                !telemetryCursor.IsCreated ||
-                telemetry.Length < ParasiteSwarmContracts.TelemetryCapacity ||
-                telemetryCursor.Length <= 0)
+                guardTransferred = true;
+                return true;
+            }
+            finally
             {
-                _vault.ReleaseWriteLock(in _telemetryCursorHandle, OwnerSystemId);
-                _vault.ReleaseWriteLock(in _telemetryHandle, OwnerSystemId);
-                telemetry = default;
-                telemetryCursor = default;
-                return false;
+                if (!guardTransferred)
+                    vault.ReleaseMutationGuard(TelemetryMutationGuardMask);
             }
-
-            return true;
         }
 
-        private void ReleaseTargetWriteLocks()
+        private void ReleaseTelemetryOwnerViews()
         {
-            if (!_targetWriteLocksHeld || _vault == null)
-                return;
-
-            _vault.ReleaseWriteLock(in _targetCountHandle, OwnerSystemId);
-            _vault.ReleaseWriteLock(in _candidatesHandle, OwnerSystemId);
-            _vault.ReleaseWriteLock(in _targetsHandle, OwnerSystemId);
-            _targetWriteLocksHeld = false;
+            _vault?.ReleaseMutationGuard(TelemetryMutationGuardMask);
         }
 
         private static int StageThermalSourceSignals(
@@ -1241,7 +1294,7 @@ namespace Hecton8.VFX.Parasites
         {
             if (compute == null ||
                 kernel < 0 ||
-                !HardwareTierDetector.AllowHighResourceComputeShaders ||
+                !SystemInfo.supportsComputeShaders ||
                 !compute.IsSupported(kernel))
                 return 0;
 

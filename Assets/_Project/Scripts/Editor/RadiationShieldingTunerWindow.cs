@@ -148,16 +148,19 @@ namespace Hecton8.EditorTools
                 !vault.TryGetGenerationHandle(
                     BufferID.Shinobu274RadiationTuning,
                     out VaultGenerationHandle<RadiationHazardGrid.RadiationTuningDTO> tuningHandle) ||
-                !IsRadiationVaultHandle(in tuningHandle, BufferID.Shinobu274RadiationTuning) ||
-                !vault.TryAcquireWriteLock(in tuningHandle, SystemID.GameplayRadiation, out NativeArray<RadiationHazardGrid.RadiationTuningDTO> tuning) ||
-                !tuning.IsCreated ||
-                tuning.Length == 0)
+                !IsRadiationVaultHandle(in tuningHandle, BufferID.Shinobu274RadiationTuning))
             {
                 return;
             }
 
+            if (!vault.TryAcquireWriteLock(in tuningHandle, SystemID.GameplayRadiation, out NativeArray<RadiationHazardGrid.RadiationTuningDTO> tuning))
+                return;
+
             try
             {
+                if (!tuning.IsCreated || tuning.Length == 0)
+                    return;
+
                 tuning[0] = mutator(tuning[0]);
             }
             finally

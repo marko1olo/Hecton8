@@ -367,8 +367,12 @@ namespace Hecton8.UI.Tools
             if (releaseRenderTexture)
                 ReleaseRenderTexture();
 
-            if (ensureRenderTexture)
-                EnsureRenderTexture();
+            if (ensureRenderTexture && _renderTexture == null)
+            {
+                useRenderTexture = false;
+                fallbackActive = true;
+                renderThisFrame = false;
+            }
 
             bool hasRenderTexture = useRenderTexture && _renderTexture != null;
             if (applyScreenTexture)
@@ -653,7 +657,7 @@ namespace Hecton8.UI.Tools
             if (_poolUnavailableFallback && _poolRetrySeconds > 0f)
                 return;
 
-            IRenderTexturePoolService pool = ResolveRenderTexturePool();
+            IRenderTexturePoolService pool = CacheRenderTexturePoolCold();
             if (pool == null)
             {
                 _poolUnavailableFallback = true;
@@ -720,7 +724,7 @@ namespace Hecton8.UI.Tools
             Destroy(rt);
         }
 
-        private IRenderTexturePoolService ResolveRenderTexturePool()
+        private IRenderTexturePoolService CacheRenderTexturePoolCold()
         {
             if (_cachedRenderTexturePool != null)
                 return _cachedRenderTexturePool;

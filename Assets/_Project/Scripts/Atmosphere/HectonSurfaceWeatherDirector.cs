@@ -632,7 +632,8 @@ namespace Hecton8.Atmosphere
             }
             else if (serviceSlot == GlobalRegistryServiceSlot.DataVault)
             {
-                RebindDataVaultForLifecycle(currentService as IDataVault);
+                IDataVault nextVault = currentService is IDataVault dataVault ? dataVault : null;
+                RebindDataVaultForLifecycle(nextVault);
             }
 
             _ = previousService;

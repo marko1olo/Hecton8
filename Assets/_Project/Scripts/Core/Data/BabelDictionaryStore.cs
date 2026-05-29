@@ -1071,8 +1071,16 @@ namespace Hecton8.Core.Data
 
             // [BLOCKING_SYNC_POINT] Structural close/reload gate. The MMF/Vault pointer must not be
             // released while a scheduled lore decrypt job still reads SourceBytes.
-            DispatcherJobFence.TryComplete(ref _activeLoreReadHandle, forceComplete: true);
-            _activeLoreReadHandleValid = false;
+            DispatcherJobFence.BeginPostSimulationSwapWindow();
+            try
+            {
+                DispatcherJobFence.TryComplete(ref _activeLoreReadHandle, forceComplete: true);
+                _activeLoreReadHandleValid = false;
+            }
+            finally
+            {
+                DispatcherJobFence.EndPostSimulationSwapWindow();
+            }
         }
 
         private bool EnsureBlackBox()

@@ -226,6 +226,21 @@ namespace Hecton8.World
         private static readonly BufferID CsvScratchBufferId = (BufferID)71166;
         private static readonly BufferID EmitterProfileTableBufferId = (BufferID)71167;
         private static readonly BufferID EmitterProfileCountBufferId = (BufferID)71168;
+        private static readonly ulong SimulationMutationGuardMask =
+            MutationGuardBit(GridFrontBufferId) |
+            MutationGuardBit(GridBackBufferId) |
+            MutationGuardBit(PublishedGridBufferId) |
+            MutationGuardBit(OverlayGridBufferId) |
+            MutationGuardBit(PendingEmitterBufferId) |
+            MutationGuardBit(PendingEmitterCountBufferId) |
+            MutationGuardBit(ActiveEmitterBufferId) |
+            MutationGuardBit(ActiveEmitterCountBufferId) |
+            MutationGuardBit(MockEmitterBufferId) |
+            MutationGuardBit(MockEmitterCountBufferId) |
+            MutationGuardBit(TelemetryRingBufferId) |
+            MutationGuardBit(TelemetryCursorBufferId) |
+            MutationGuardBit(AtomicCounterBufferId) |
+            MutationGuardBit(DefoliantZoneBufferId);
 
         private static ChemicalInfluenceGrid _activeRuntimeInstance;
 
@@ -938,7 +953,16 @@ namespace Hecton8.World
                 CountBytes = UnsafeUtility.SizeOf<int>()
             };
             JobHandle zeroHandle = zeroJob.Schedule();
-            DispatcherJobSwap.TryComplete(ref zeroHandle, true);
+            DispatcherJobSwap.BeginPostSimulationSwapWindow();
+            try
+            {
+                DispatcherJobSwap.TryComplete(ref zeroHandle, true);
+            }
+            finally
+            {
+                DispatcherJobSwap.EndPostSimulationSwapWindow();
+            }
+
             return true;
         }
 
@@ -1469,6 +1493,9 @@ namespace Hecton8.World
             if (!TryLockSimulationBuffers())
                 return;
 
+            bool keepSimulationGuard = false;
+            try
+            {
             NativeArray<ChemicalCellDTO> frontCells = OpenChemicalVaultArray(ref _frontCellHandle, GridFrontBufferId, ChemicalCellCount);
             NativeArray<ChemicalCellDTO> backCells = OpenChemicalVaultArray(ref _backCellHandle, GridBackBufferId, ChemicalCellCount);
             NativeArray<float4> publishedGrid = OpenChemicalVaultArray(ref _publishedGridHandle, PublishedGridBufferId, ChemicalCellCount);
@@ -1659,7 +1686,14 @@ namespace Hecton8.World
             _scheduledStartTicks = System.Diagnostics.Stopwatch.GetTimestamp();
             _lastScheduledFrame = frame;
             _scheduledBuffersLocked = true;
+            keepSimulationGuard = true;
             H8Memory.RegisterActiveJob(SystemID.AISensory, _scheduledHandle);
+            }
+            finally
+            {
+                if (!keepSimulationGuard)
+                    UnlockSimulationBuffers();
+            }
         }
 
         private void TryFinalizeScheduledWork()
@@ -1678,8 +1712,16 @@ namespace Hecton8.World
             if (!_hasScheduledWork)
                 return;
 
-            if (!DispatcherJobSwap.TryComplete(ref _scheduledHandle, true))
-                return;
+            DispatcherJobSwap.BeginPostSimulationSwapWindow();
+            try
+            {
+                if (!DispatcherJobSwap.TryComplete(ref _scheduledHandle, true))
+                    return;
+            }
+            finally
+            {
+                DispatcherJobSwap.EndPostSimulationSwapWindow();
+            }
 
             FinishScheduledWorkCompletion();
         }
@@ -1702,9 +1744,15 @@ namespace Hecton8.World
 
             long elapsedTicks = System.Diagnostics.Stopwatch.GetTimestamp() - _scheduledStartTicks;
             float micros = (float)(elapsedTicks * 1000000.0 / System.Diagnostics.Stopwatch.Frequency);
-            PatchTelemetryAfterCompletion(micros);
-            RefreshDebugCountersFromVault();
-            UnlockSimulationBuffers();
+            try
+            {
+                PatchTelemetryAfterCompletion(micros);
+                RefreshDebugCountersFromVault();
+            }
+            finally
+            {
+                UnlockSimulationBuffers();
+            }
         }
 
         private void PatchTelemetryAfterCompletion(float solverMicros)
@@ -2037,25 +2085,9 @@ namespace Hecton8.World
             if (_scheduledBuffersLocked)
                 return true;
 
-            bool locked =
-                _dataVault.TryLockBuffer(GridFrontBufferId, SystemID.AISensory) &&
-                _dataVault.TryLockBuffer(GridBackBufferId, SystemID.AISensory) &&
-                _dataVault.TryLockBuffer(PublishedGridBufferId, SystemID.AISensory) &&
-                _dataVault.TryLockBuffer(OverlayGridBufferId, SystemID.AISensory) &&
-                _dataVault.TryLockBuffer(PendingEmitterBufferId, SystemID.AISensory) &&
-                _dataVault.TryLockBuffer(PendingEmitterCountBufferId, SystemID.AISensory) &&
-                _dataVault.TryLockBuffer(ActiveEmitterBufferId, SystemID.AISensory) &&
-                _dataVault.TryLockBuffer(ActiveEmitterCountBufferId, SystemID.AISensory) &&
-                _dataVault.TryLockBuffer(MockEmitterBufferId, SystemID.AISensory) &&
-                _dataVault.TryLockBuffer(MockEmitterCountBufferId, SystemID.AISensory) &&
-                _dataVault.TryLockBuffer(TelemetryRingBufferId, SystemID.AISensory) &&
-                _dataVault.TryLockBuffer(TelemetryCursorBufferId, SystemID.AISensory) &&
-                _dataVault.TryLockBuffer(AtomicCounterBufferId, SystemID.AISensory) &&
-                _dataVault.TryLockBuffer(DefoliantZoneBufferId, SystemID.AISensory);
-            if (!locked)
+            if (_dataVault == null ||
+                !_dataVault.TryAcquireMutationGuard(SimulationMutationGuardMask))
             {
-                _scheduledBuffersLocked = true;
-                UnlockSimulationBuffers();
                 return false;
             }
 
@@ -2065,24 +2097,16 @@ namespace Hecton8.World
 
         private void UnlockSimulationBuffers()
         {
-            if (!_scheduledBuffersLocked || _dataVault == null)
+            if (!_scheduledBuffersLocked)
                 return;
 
-            _dataVault.TryUnlockBuffer(GridFrontBufferId, SystemID.AISensory);
-            _dataVault.TryUnlockBuffer(GridBackBufferId, SystemID.AISensory);
-            _dataVault.TryUnlockBuffer(PublishedGridBufferId, SystemID.AISensory);
-            _dataVault.TryUnlockBuffer(OverlayGridBufferId, SystemID.AISensory);
-            _dataVault.TryUnlockBuffer(PendingEmitterBufferId, SystemID.AISensory);
-            _dataVault.TryUnlockBuffer(PendingEmitterCountBufferId, SystemID.AISensory);
-            _dataVault.TryUnlockBuffer(ActiveEmitterBufferId, SystemID.AISensory);
-            _dataVault.TryUnlockBuffer(ActiveEmitterCountBufferId, SystemID.AISensory);
-            _dataVault.TryUnlockBuffer(MockEmitterBufferId, SystemID.AISensory);
-            _dataVault.TryUnlockBuffer(MockEmitterCountBufferId, SystemID.AISensory);
-            _dataVault.TryUnlockBuffer(TelemetryRingBufferId, SystemID.AISensory);
-            _dataVault.TryUnlockBuffer(TelemetryCursorBufferId, SystemID.AISensory);
-            _dataVault.TryUnlockBuffer(AtomicCounterBufferId, SystemID.AISensory);
-            _dataVault.TryUnlockBuffer(DefoliantZoneBufferId, SystemID.AISensory);
             _scheduledBuffersLocked = false;
+            _dataVault?.ReleaseMutationGuard(SimulationMutationGuardMask);
+        }
+
+        private static ulong MutationGuardBit(BufferID bufferId)
+        {
+            return 1UL << (unchecked((int)(uint)(int)bufferId) & 31);
         }
 
         private void DumpTelemetryRing()

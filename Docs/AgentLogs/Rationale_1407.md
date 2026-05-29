@@ -3,7 +3,7 @@
 Agent: 1407
 Role: UNIVERSAL_OPENXR_COMFORT_AND_TUNNELING_SHADER_INTEGRATOR
 Domain: Echelon 8 Presentation and UX / VR Somatic Comfort / Diegetic Terminals
-State: APEX_MEMCPY_REPAIRED_STATIC_PROOF_COMPLETE_BUILD_TIMEOUT_UNKNOWN
+State: APEX_REAPPEARED_IMPORT_REPAIRED_BUILD_BLOCKED_BY_CPU
 
 ## Initialization
 Problem: Universal VR comfort masking can desync when secondary cockpit or terminal render paths ignore the global brownout scalar.
@@ -225,3 +225,15 @@ Solution: Did not launch a second build. Created forensic dump `Docs/AgentLogs/D
 Rejected Alternatives: Pretending the build succeeded, pretending it never started, or launching another build under uncertain process state. All three would be false or unsafe.
 Scalability potential: Host remains protected from repeated compiler load.
 Hardware Impact: The attempted build consumed host CPU; no further build was launched.
+
+Problem: 2026-05-29 APEX recheck found the same unused `using UnityEngine.Experimental.Rendering;` had reappeared in `HectonVRBrownoutFeature.cs`, and the saved reports still referenced stale source line numbers and stale dump hash data.
+Solution: Removed the import again; regenerated zero-GC, domain, final, universal, and build-gate artifacts from current disk state. Current source SHA is `70B9DBB3B20EC6CE724507BB649814286C589FC6C5ECBC35BE1D9C30E8FC8040`. Current report hashes: zero-GC `90036ED17CA33B13A10780712E6EE221458069FE39D310D1FC8E8E9E5C18AA2F`, domain `2C4720B06FDD68A221B099B8B8BA07BC82BA052A9DF392F6553F3B1DA146B811`, final/universal `A4BCB048193F0DBBC4DD4CA302A279568E1BFFF99E1BE11A1D31EDFE90672E1F`.
+Rejected Alternatives: Leaving stale hashes in the ledger, or claiming previous proof still applied. It did not: source line numbers changed and the dump file hash on disk is `DE192D0649B70DC7D784ED238524A67074723137E3AD707F6C939CD053DEAB6D`, not the older value.
+Scalability potential: Cold evidence repair only; runtime path remains one final brownout pass plus direct diegetic shader fake across weak, middle, high, and ultra tiers.
+Hardware Impact: Runtime cost unchanged. Static source scan reports 0 reference-type `new`, 0 `string.Format`, 0 `.ToString()`, 0 LINQ, 0 `foreach`; GPU upload remains one 64-byte `UnsafeUtility.MemCpy` to a double-buffered `GraphicsBuffer`.
+
+Problem: Legal final compilation gate was still closed after the import repair.
+Solution: Current final gate artifact `Docs/AgentLogs/Build_1407_FinalPreflight.json` sampled CPU at 76 percent and active `dotnet` PID 55948; `dotnet build` was not invoked. The previous delayed build attempt remains `UNKNOWN` and is preserved under `previousTimedOutBuild` with dump SHA `DE192D0649B70DC7D784ED238524A67074723137E3AD707F6C939CD053DEAB6D`.
+Rejected Alternatives: Running `dotnet build` while CPU exceeded the explicit 50 percent threshold or another dotnet process was active.
+Scalability potential: Host CPU remains available to concurrent agents; verification is static until a legal build window exists.
+Hardware Impact: No new compiler load was added during this recheck.

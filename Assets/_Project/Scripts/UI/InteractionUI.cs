@@ -37,6 +37,20 @@ namespace Hecton8.UI
     /// </summary>
     public class InteractionUI : MonoBehaviour, ILateFrameTickable, ILocalizationLanguageChangedListener, IGlobalRegistryHotSwapListener
     {
+        private enum PromptSource : byte
+        {
+            None = 0,
+            NoBattery = 1,
+            SwapBattery = 2,
+            DepositFuel = 3,
+            TakeItem = 4,
+            ActionInProgress = 5,
+            InsertBattery = 6,
+            BioReactor = 7,
+            OpenCrate = 8,
+            EmptyCrate = 9
+        }
+
         // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
         //  INSPECTOR
         // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
@@ -101,9 +115,9 @@ namespace Hecton8.UI
         private INativeInputManagerRuntime _cachedInputManager;
         private bool _registeredLateFrame;
         private string _currentPrompt;
-        private string _currentPromptSource;
+        private PromptSource _currentPromptSource;
         private Collider _cachedPromptCollider;
-        private string _cachedPrompt;
+        private PromptSource _cachedPromptSource;
         private int _cachedPromptStateHash;
         private bool _hasCachedPrompt;
         private BioReactor _cachedFuelProbeReactor;
@@ -136,6 +150,7 @@ namespace Hecton8.UI
         private string _localizedVerbUse;
         private string _localizedVerbTake;
         private uint _lastInputSchemeHash;
+        private bool _promptPresentationDirty;
 
         // COLD ALLOC: char[256] â€” interaction prompt TMP staging buffer â€” owner: InteractionUI
         private readonly char[] _promptCharBuffer = new char[256];
@@ -216,7 +231,7 @@ namespace Hecton8.UI
             {
                 // Show action in progress prompt, hide interaction prompt
                 _promptProbeTimer = 0f;
-                UpdatePrompt(_localizedActionInProgressPrompt);
+                TryApplyPromptSource(PromptSource.ActionInProgress);
                 SetVisible(true);
                 return;
             }
@@ -253,7 +268,6 @@ namespace Hecton8.UI
 
             Collider promptCollider = spatialHit.Collider;
             InteractableRegistry.TargetInfo targetInfo = spatialHit.TargetInfo;
-            float hitDistance = spatialHit.Distance;
 
             if (TryUpdatePromptFromTextProvider(in targetInfo))
             {
@@ -261,22 +275,20 @@ namespace Hecton8.UI
                 return;
             }
 
-            // Build context-sensitive prompt
-            string prompt = BuildPrompt(promptCollider, in targetInfo, hitDistance);
-
-            if (string.IsNullOrEmpty(prompt))
+            if (!TryResolvePromptSource(promptCollider, in targetInfo, out PromptSource promptSource) ||
+                !TryApplyPromptSource(promptSource))
             {
                 if (_isVisible)
                     SetVisible(false);
                 return;
             }
 
-            UpdatePrompt(prompt);
             SetVisible(true);
         }
 
         public void LateFrameTick()
         {
+            ApplyPendingPromptPresentationRefresh();
             SamplePromptState(SystemDispatcher.CurrentFrameUnscaledDeltaTime);
             HphiReactiveUiTelemetry.RecordActiveUiUpdate();
         }
@@ -302,12 +314,13 @@ namespace Hecton8.UI
             return _mainCamera != null && _mainCamera.isActiveAndEnabled;
         }
 
-        private string BuildPrompt(Collider collider, in InteractableRegistry.TargetInfo targetInfo, float distance)
+        private bool TryResolvePromptSource(Collider collider, in InteractableRegistry.TargetInfo targetInfo, out PromptSource promptSource)
         {
+            promptSource = PromptSource.None;
             if (targetInfo.Interactable == null)
             {
                 ClearPromptBuildCache();
-                return null;
+                return false;
             }
 
             bool canCachePrompt = CanCachePrompt(in targetInfo);
@@ -317,15 +330,16 @@ namespace Hecton8.UI
                 ReferenceEquals(_cachedPromptCollider, collider) &&
                 _cachedPromptStateHash == promptStateHash)
             {
-                return _cachedPrompt;
+                promptSource = _cachedPromptSource;
+                return promptSource != PromptSource.None;
             }
 
-            string prompt = BuildPromptUncached(in targetInfo);
+            promptSource = ResolvePromptSourceUncached(in targetInfo);
             if (canCachePrompt)
             {
                 _cachedPromptCollider = collider;
                 _cachedPromptStateHash = promptStateHash;
-                _cachedPrompt = prompt;
+                _cachedPromptSource = promptSource;
                 _hasCachedPrompt = true;
             }
             else
@@ -333,30 +347,30 @@ namespace Hecton8.UI
                 ClearPromptBuildCache();
             }
 
-            return prompt;
+            return promptSource != PromptSource.None;
         }
 
-        private string BuildPromptUncached(in InteractableRegistry.TargetInfo targetInfo)
+        private PromptSource ResolvePromptSourceUncached(in InteractableRegistry.TargetInfo targetInfo)
         {
             if (targetInfo.BatteryTool != null)
-                return BuildBatteryToolPrompt(targetInfo.BatteryTool);
+                return ResolveBatteryToolPromptSource(targetInfo.BatteryTool);
 
             if (targetInfo.Charger != null)
-                return BuildBatteryChargerPrompt(targetInfo.Charger);
+                return ResolveBatteryChargerPromptSource(targetInfo.Charger);
 
             if (targetInfo.Reactor != null)
-                return BuildBioReactorPrompt(targetInfo.Reactor);
+                return ResolveBioReactorPromptSource(targetInfo.Reactor);
 
             if (targetInfo.Crate != null)
-                return BuildStorageCratePrompt(targetInfo.Crate);
+                return ResolveStorageCratePromptSource(targetInfo.Crate);
 
             if (targetInfo.Pickup != null && targetInfo.Pickup.ItemData != null)
-                return BuildPickupItemPrompt(targetInfo.Pickup);
+                return PromptSource.TakeItem;
 
             if (targetInfo.Interactable != null)
-                return BuildInteractablePrompt(targetInfo);
+                return ResolveInteractablePromptSource(targetInfo);
 
-            return null;
+            return PromptSource.None;
         }
 
         private static bool CanCachePrompt(in InteractableRegistry.TargetInfo targetInfo)
@@ -433,58 +447,33 @@ namespace Hecton8.UI
             return value != null ? RuntimeHelpers.GetHashCode(value) : 0;
         }
 
-        /// <summary>
-        /// Builds prompt for pickup items from the pickup's cached interact text.
-        /// </summary>
-        private string BuildPickupItemPrompt(PickupItem pickup)
-        {
-            return _localizedTakeItemPrompt;
-        }
-
-        /// <summary>
-        /// Gets the verb for a consumable item (Eat, Drink, Apply, etc.).
-        /// Pre-cached strings for zero GC.
-        /// </summary>
-        private string GetConsumableVerb(ItemData item)
-        {
-            if (item.integrityRestore > 0f)
-                return _localizedVerbApply;
-            if (item.thirstRestore > 0f)
-                return _localizedVerbDrink;
-            if (item.hungerRestore > 0f)
-                return _localizedVerbEat;
-            if (item.oxygenRestore > 0f)
-                return _localizedVerbInhale;
-            return _localizedVerbUse;
-        }
-
-        private string BuildInteractablePrompt(in InteractableRegistry.TargetInfo targetInfo)
+        private PromptSource ResolveInteractablePromptSource(in InteractableRegistry.TargetInfo targetInfo)
         {
             IInteractable interactable = targetInfo.Interactable;
             if (interactable == null)
-                return null;
+                return PromptSource.None;
 
             // Check if this is a battery tool context
             IBatteryTool batteryTool = targetInfo.BatteryTool;
             if (batteryTool != null)
             {
-                return BuildBatteryToolPrompt(batteryTool);
+                return ResolveBatteryToolPromptSource(batteryTool);
             }
 
-            return null;
+            return PromptSource.None;
         }
 
-        private string BuildBatteryToolPrompt(IBatteryTool tool)
+        private PromptSource ResolveBatteryToolPromptSource(IBatteryTool tool)
         {
             if (!tool.HasBattery)
             {
-                return _localizedNoBatteryPrompt;
+                return PromptSource.NoBattery;
             }
 
-            return _localizedSwapBatteryPrompt;
+            return PromptSource.SwapBattery;
         }
 
-        private string BuildBatteryChargerPrompt(BatteryCharger charger)
+        private PromptSource ResolveBatteryChargerPromptSource(BatteryCharger charger)
         {
             // Check if player is holding a tool with battery
             if (_toolManager != null)
@@ -494,11 +483,11 @@ namespace Hecton8.UI
                 {
                     if (batteryTool.HasBattery)
                     {
-                        return _localizedSwapBatteryPrompt;
+                        return PromptSource.SwapBattery;
                     }
                     else
                     {
-                        return _localizedNoBatteryPrompt;
+                        return PromptSource.NoBattery;
                     }
                 }
             }
@@ -506,15 +495,15 @@ namespace Hecton8.UI
             // Check if charger has a battery to take
             if (charger.HasBatteryInSlot(0) || charger.HasBatteryInSlot(1))
             {
-                return _localizedTakeItemPrompt;
+                return PromptSource.TakeItem;
             }
 
-            return _localizedInsertBatteryPrompt;
+            return PromptSource.InsertBattery;
         }
 
-        private string BuildBioReactorPrompt(BioReactor reactor)
+        private PromptSource ResolveBioReactorPromptSource(BioReactor reactor)
         {
-            return HasDepositableFuelCached(reactor) ? _localizedDepositFuelPrompt : _localizedBioReactorPrompt;
+            return HasDepositableFuelCached(reactor) ? PromptSource.DepositFuel : PromptSource.BioReactor;
         }
 
         private bool HasDepositableFuelCached(BioReactor reactor)
@@ -564,14 +553,14 @@ namespace Hecton8.UI
             return false;
         }
 
-        private string BuildStorageCratePrompt(StorageCrate crate)
+        private PromptSource ResolveStorageCratePromptSource(StorageCrate crate)
         {
             if (crate.IsEmpty())
             {
-                return _localizedEmptyCratePrompt;
+                return PromptSource.EmptyCrate;
             }
 
-            return _localizedOpenCratePrompt;
+            return PromptSource.OpenCrate;
         }
 
         private bool TryUpdatePromptFromTextProvider(in InteractableRegistry.TargetInfo targetInfo)
@@ -593,7 +582,7 @@ namespace Hecton8.UI
                 promptText.SetCharArray(_promptCharBuffer, 0, safeLength);
 
             _currentPrompt = null;
-            _currentPromptSource = null;
+            _currentPromptSource = PromptSource.None;
             ClearPromptBuildCache();
             return true;
         }
@@ -602,49 +591,90 @@ namespace Hecton8.UI
         //  PRIVATE â€” UI UPDATE
         // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
 
-        private void UpdatePrompt(string prompt)
+        private bool TryApplyPromptSource(PromptSource promptSource)
         {
-            if (string.Equals(_currentPromptSource, prompt, StringComparison.Ordinal))
-                return;
+            if (promptSource == PromptSource.None)
+                return false;
 
-            _currentPromptSource = prompt;
-            if (_currentPrompt == prompt)
-                return;
+            ReadOnlySpan<char> prompt = ResolvePromptSourceSpan(promptSource, out string eventPrompt);
+            if (prompt.Length <= 0)
+                return false;
 
-            _currentPrompt = prompt;
+            if (_currentPromptSource == promptSource && ReferenceEquals(_currentPrompt, eventPrompt))
+                return true;
 
-            if (promptText != null)
-            {
-                ILocalizationTextExpansionReadModel localization = _cachedLocalization;
-                if (localization != null &&
-                    !string.IsNullOrEmpty(prompt) &&
-                    localization.TryExpandText(prompt.AsSpan(), _promptCharBuffer, out int expandedLength))
-                {
-                    promptText.SetCharArray(_promptCharBuffer, 0, expandedLength);
-                }
-                else
-                {
-                    ApplyPromptText(prompt);
-                }
-            }
-
-            OnPromptChanged?.Invoke(prompt);
+            _currentPromptSource = promptSource;
+            _currentPrompt = eventPrompt;
+            ApplyPromptSpan(prompt);
+            OnPromptChanged?.Invoke(eventPrompt);
+            return true;
         }
 
-        private void ApplyPromptText(string prompt)
+        private ReadOnlySpan<char> ResolvePromptSourceSpan(PromptSource promptSource, out string eventPrompt)
+        {
+            switch (promptSource)
+            {
+                case PromptSource.NoBattery:
+                    eventPrompt = _localizedNoBatteryPrompt;
+                    break;
+                case PromptSource.SwapBattery:
+                    eventPrompt = _localizedSwapBatteryPrompt;
+                    break;
+                case PromptSource.DepositFuel:
+                    eventPrompt = _localizedDepositFuelPrompt;
+                    break;
+                case PromptSource.TakeItem:
+                    eventPrompt = _localizedTakeItemPrompt;
+                    break;
+                case PromptSource.ActionInProgress:
+                    eventPrompt = _localizedActionInProgressPrompt;
+                    break;
+                case PromptSource.InsertBattery:
+                    eventPrompt = _localizedInsertBatteryPrompt;
+                    break;
+                case PromptSource.BioReactor:
+                    eventPrompt = _localizedBioReactorPrompt;
+                    break;
+                case PromptSource.OpenCrate:
+                    eventPrompt = _localizedOpenCratePrompt;
+                    break;
+                case PromptSource.EmptyCrate:
+                    eventPrompt = _localizedEmptyCratePrompt;
+                    break;
+                default:
+                    eventPrompt = null;
+                    return ReadOnlySpan<char>.Empty;
+            }
+
+            return PromptToSpan(eventPrompt);
+        }
+
+        private static ReadOnlySpan<char> PromptToSpan(string prompt)
+        {
+            return string.IsNullOrEmpty(prompt) ? ReadOnlySpan<char>.Empty : prompt.AsSpan();
+        }
+
+        private void ApplyPromptSpan(ReadOnlySpan<char> prompt)
         {
             if (promptText == null)
                 return;
 
-            if (string.IsNullOrEmpty(prompt))
+            if (prompt.Length <= 0)
             {
                 promptText.SetCharArray(_promptCharBuffer, 0, 0);
                 return;
             }
 
-            int charCount = prompt.Length;
-            int copyLength = charCount <= _promptCharBuffer.Length ? charCount : _promptCharBuffer.Length;
-            prompt.CopyTo(0, _promptCharBuffer, 0, copyLength);
+            ILocalizationTextExpansionReadModel localization = _cachedLocalization;
+            if (localization != null &&
+                localization.TryExpandText(prompt, _promptCharBuffer, out int expandedLength))
+            {
+                promptText.SetCharArray(_promptCharBuffer, 0, math.min(expandedLength, _promptCharBuffer.Length));
+                return;
+            }
+
+            int copyLength = math.min(prompt.Length, _promptCharBuffer.Length);
+            prompt.Slice(0, copyLength).CopyTo(_promptCharBuffer);
             promptText.SetCharArray(_promptCharBuffer, 0, copyLength);
         }
 
@@ -698,21 +728,34 @@ namespace Hecton8.UI
 
         private void HandleLanguageChanged(GameLanguage language)
         {
-            ConfigurePromptText();
-            RefreshLocalizedPromptCache();
-            _currentPrompt = null;
-            _currentPromptSource = null;
-            _promptProbeTimer = 0f;
-            ClearPromptBuildCache();
+            QueuePromptPresentationRefresh(resetPrompt: true);
         }
 
         private void HandleInputDisplayStyleChanged(byte displayStyleCode)
         {
-            RefreshLocalizedPromptCache();
+            QueuePromptPresentationRefresh(resetPrompt: true);
+        }
+
+        private void QueuePromptPresentationRefresh(bool resetPrompt)
+        {
+            _promptPresentationDirty = true;
+            if (!resetPrompt)
+                return;
+
             _currentPrompt = null;
-            _currentPromptSource = null;
+            _currentPromptSource = PromptSource.None;
             _promptProbeTimer = 0f;
             ClearPromptBuildCache();
+        }
+
+        private void ApplyPendingPromptPresentationRefresh()
+        {
+            if (!_promptPresentationDirty)
+                return;
+
+            _promptPresentationDirty = false;
+            ConfigurePromptText();
+            RefreshLocalizedPromptCache();
         }
 
         private void SubscribeInputManagerIfAvailable()
@@ -791,9 +834,7 @@ namespace Hecton8.UI
 
             if (serviceSlot == GlobalRegistryServiceSlot.Input)
                 SubscribeInputManagerIfAvailable();
-            RefreshLocalizedPromptCache();
-            _promptProbeTimer = 0f;
-            ClearPromptBuildCache();
+            QueuePromptPresentationRefresh(resetPrompt: true);
         }
 
         private void TryRegisterHotSwapListener()
@@ -816,7 +857,7 @@ namespace Hecton8.UI
         private void ClearPromptBuildCache()
         {
             _cachedPromptCollider = null;
-            _cachedPrompt = null;
+            _cachedPromptSource = PromptSource.None;
             _cachedPromptStateHash = 0;
             _hasCachedPrompt = false;
             _cachedFuelProbeReactor = null;

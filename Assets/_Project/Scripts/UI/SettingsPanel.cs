@@ -19,6 +19,8 @@ namespace Hecton8.UI
     [AddComponentMenu("Hecton8/UI/Settings Panel")]
     public sealed class SettingsPanel : MonoBehaviour, ILocalizationLanguageChangedListener
     {
+        private static ILocalizationTextReadModel s_localization;
+
         // ══════════════════════════════════════════════════════════
         // INSPECTOR
         // ══════════════════════════════════════════════════════════
@@ -267,6 +269,7 @@ namespace Hecton8.UI
         private void Initialize()
         {
             _settings = GlobalRegistry.Settings;
+            s_localization = GlobalRegistry.LocalizationText;
             if (_settings == null)
             {
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
@@ -959,7 +962,7 @@ namespace Hecton8.UI
 
         private static ReadOnlySpan<char> ResolveLocalizedSpan(string key, string fallback)
         {
-            ILocalizationTextReadModel manager = Hecton8.Core.GlobalRegistry.LocalizationText;
+            ILocalizationTextReadModel manager = s_localization;
             if (manager == null)
                 return fallback.AsSpan();
 

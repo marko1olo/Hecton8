@@ -62,6 +62,19 @@ namespace Hecton8.Audio.Synthesis
         private const int LockCsvMetadata = 1 << 7;
         private const int LockCsvScratch = 1 << 8;
 #endif
+        private static readonly ulong VocalMutationGuardMask =
+            VocalMutationGuardBit(BufferID.AudioVocalSynthesisState) |
+            VocalMutationGuardBit(BufferID.AudioVocalSynthesisCodecState) |
+            VocalMutationGuardBit(BufferID.AudioVocalSynthesisTelemetry) |
+            VocalMutationGuardBit(BufferID.AudioVocalSynthesisTelemetryCursor) |
+            VocalMutationGuardBit(BufferID.AudioVocalSynthesisWaveform) |
+            VocalMutationGuardBit(BufferID.AudioVocalSynthesisMockBankBytes) |
+            VocalMutationGuardBit(BufferID.AudioVocalSynthesisMockBankRecords)
+#if UNITY_EDITOR
+            | VocalMutationGuardBit(BufferID.AudioVocalSynthesisCsvMetadata)
+            | VocalMutationGuardBit(BufferID.AudioVocalSynthesisCsvScratch)
+#endif
+            ;
 
         private static VocalBankPlaybackRuntime _activeInstance;
         private static FunctionPointer<VocalDecodeDelegate> _decodeFunctionPointer;
@@ -96,6 +109,9 @@ namespace Hecton8.Audio.Synthesis
         private int _dumpRequested;
         private int _audioCallbackInFlight;
         private int _bankReleaseInProgress;
+        private IDataVault _vocalMutationGuardVault;
+        private ulong _vocalMutationGuardMask;
+        private int _vocalMutationGuardDepth;
 #if UNITY_EDITOR
         private int _csvMetadataCount;
 #endif
@@ -429,27 +445,38 @@ namespace Hecton8.Audio.Synthesis
             if (lockedVault == null)
                 return false;
 
-            if (!TryAcquireLockedView(lockedVault, in _stateHandle, BufferID.AudioVocalSynthesisState, LockState, ref lockMask, out views.State) ||
-                !TryAcquireLockedView(lockedVault, in _codecHandle, BufferID.AudioVocalSynthesisCodecState, LockCodec, ref lockMask, out views.Codec) ||
-                !TryAcquireLockedView(lockedVault, in _telemetryHandle, BufferID.AudioVocalSynthesisTelemetry, LockTelemetry, ref lockMask, out views.Telemetry) ||
-                !TryAcquireLockedView(lockedVault, in _countersHandle, BufferID.AudioVocalSynthesisTelemetryCursor, LockCounters, ref lockMask, out views.Counters) ||
-                !TryAcquireLockedView(lockedVault, in _waveformHandle, BufferID.AudioVocalSynthesisWaveform, LockWaveform, ref lockMask, out views.Waveform) ||
-                !TryAcquireLockedView(lockedVault, in _mockBankBytesHandle, BufferID.AudioVocalSynthesisMockBankBytes, LockMockBankBytes, ref lockMask, out views.MockBankBytes) ||
-                views.State.Length <= 0 ||
-                views.Codec.Length <= 0 ||
-                views.Telemetry.Length < TelemetryCapacity ||
-                views.Counters.Length <= 0 ||
-                views.Waveform.Length < WaveformCapacity ||
-                views.MockBankBytes.Length <= 0)
+            bool ownershipTransferred = false;
+            try
             {
-                ReleaseVocalWriteLocks(lockedVault, lockMask);
-                views = default;
-                lockMask = 0;
-                lockedVault = null;
-                return false;
-            }
+                if (!TryAcquireLockedView(lockedVault, in _stateHandle, BufferID.AudioVocalSynthesisState, LockState, ref lockMask, out views.State) ||
+                    !TryAcquireLockedView(lockedVault, in _codecHandle, BufferID.AudioVocalSynthesisCodecState, LockCodec, ref lockMask, out views.Codec) ||
+                    !TryAcquireLockedView(lockedVault, in _telemetryHandle, BufferID.AudioVocalSynthesisTelemetry, LockTelemetry, ref lockMask, out views.Telemetry) ||
+                    !TryAcquireLockedView(lockedVault, in _countersHandle, BufferID.AudioVocalSynthesisTelemetryCursor, LockCounters, ref lockMask, out views.Counters) ||
+                    !TryAcquireLockedView(lockedVault, in _waveformHandle, BufferID.AudioVocalSynthesisWaveform, LockWaveform, ref lockMask, out views.Waveform) ||
+                    !TryAcquireLockedView(lockedVault, in _mockBankBytesHandle, BufferID.AudioVocalSynthesisMockBankBytes, LockMockBankBytes, ref lockMask, out views.MockBankBytes) ||
+                    views.State.Length <= 0 ||
+                    views.Codec.Length <= 0 ||
+                    views.Telemetry.Length < TelemetryCapacity ||
+                    views.Counters.Length <= 0 ||
+                    views.Waveform.Length < WaveformCapacity ||
+                    views.MockBankBytes.Length <= 0)
+                {
+                    return false;
+                }
 
-            return true;
+                ownershipTransferred = true;
+                return true;
+            }
+            finally
+            {
+                if (!ownershipTransferred)
+                {
+                    ReleaseVocalWriteLocks(lockedVault, lockMask);
+                    views = default;
+                    lockMask = 0;
+                    lockedVault = null;
+                }
+            }
         }
 
         private bool TryAcquireControlViews(out VocalVaultViews views, out int lockMask, out IDataVault lockedVault)
@@ -460,23 +487,34 @@ namespace Hecton8.Audio.Synthesis
             if (lockedVault == null)
                 return false;
 
-            if (!TryAcquireLockedView(lockedVault, in _stateHandle, BufferID.AudioVocalSynthesisState, LockState, ref lockMask, out views.State) ||
-                !TryAcquireLockedView(lockedVault, in _codecHandle, BufferID.AudioVocalSynthesisCodecState, LockCodec, ref lockMask, out views.Codec) ||
-                !TryAcquireLockedView(lockedVault, in _countersHandle, BufferID.AudioVocalSynthesisTelemetryCursor, LockCounters, ref lockMask, out views.Counters) ||
-                !TryAcquireLockedView(lockedVault, in _mockBankBytesHandle, BufferID.AudioVocalSynthesisMockBankBytes, LockMockBankBytes, ref lockMask, out views.MockBankBytes) ||
-                views.State.Length <= 0 ||
-                views.Codec.Length <= 0 ||
-                views.Counters.Length <= 0 ||
-                views.MockBankBytes.Length <= 0)
+            bool ownershipTransferred = false;
+            try
             {
-                ReleaseVocalWriteLocks(lockedVault, lockMask);
-                views = default;
-                lockMask = 0;
-                lockedVault = null;
-                return false;
-            }
+                if (!TryAcquireLockedView(lockedVault, in _stateHandle, BufferID.AudioVocalSynthesisState, LockState, ref lockMask, out views.State) ||
+                    !TryAcquireLockedView(lockedVault, in _codecHandle, BufferID.AudioVocalSynthesisCodecState, LockCodec, ref lockMask, out views.Codec) ||
+                    !TryAcquireLockedView(lockedVault, in _countersHandle, BufferID.AudioVocalSynthesisTelemetryCursor, LockCounters, ref lockMask, out views.Counters) ||
+                    !TryAcquireLockedView(lockedVault, in _mockBankBytesHandle, BufferID.AudioVocalSynthesisMockBankBytes, LockMockBankBytes, ref lockMask, out views.MockBankBytes) ||
+                    views.State.Length <= 0 ||
+                    views.Codec.Length <= 0 ||
+                    views.Counters.Length <= 0 ||
+                    views.MockBankBytes.Length <= 0)
+                {
+                    return false;
+                }
 
-            return true;
+                ownershipTransferred = true;
+                return true;
+            }
+            finally
+            {
+                if (!ownershipTransferred)
+                {
+                    ReleaseVocalWriteLocks(lockedVault, lockMask);
+                    views = default;
+                    lockMask = 0;
+                    lockedVault = null;
+                }
+            }
         }
 
         private bool TryAcquireBankBuildViews(out VocalVaultViews views, out int lockMask, out IDataVault lockedVault)
@@ -487,19 +525,30 @@ namespace Hecton8.Audio.Synthesis
             if (lockedVault == null)
                 return false;
 
-            if (!TryAcquireLockedView(lockedVault, in _mockBankBytesHandle, BufferID.AudioVocalSynthesisMockBankBytes, LockMockBankBytes, ref lockMask, out views.MockBankBytes) ||
-                !TryAcquireLockedView(lockedVault, in _mockRecordsHandle, BufferID.AudioVocalSynthesisMockBankRecords, LockMockRecords, ref lockMask, out views.MockRecords) ||
-                views.MockBankBytes.Length <= 0 ||
-                views.MockRecords.Length <= 0)
+            bool ownershipTransferred = false;
+            try
             {
-                ReleaseVocalWriteLocks(lockedVault, lockMask);
-                views = default;
-                lockMask = 0;
-                lockedVault = null;
-                return false;
-            }
+                if (!TryAcquireLockedView(lockedVault, in _mockBankBytesHandle, BufferID.AudioVocalSynthesisMockBankBytes, LockMockBankBytes, ref lockMask, out views.MockBankBytes) ||
+                    !TryAcquireLockedView(lockedVault, in _mockRecordsHandle, BufferID.AudioVocalSynthesisMockBankRecords, LockMockRecords, ref lockMask, out views.MockRecords) ||
+                    views.MockBankBytes.Length <= 0 ||
+                    views.MockRecords.Length <= 0)
+                {
+                    return false;
+                }
 
-            return true;
+                ownershipTransferred = true;
+                return true;
+            }
+            finally
+            {
+                if (!ownershipTransferred)
+                {
+                    ReleaseVocalWriteLocks(lockedVault, lockMask);
+                    views = default;
+                    lockMask = 0;
+                    lockedVault = null;
+                }
+            }
         }
 
         private bool TryAcquireInitializeViews(out VocalVaultViews views, out int lockMask, out IDataVault lockedVault)
@@ -510,34 +559,45 @@ namespace Hecton8.Audio.Synthesis
             if (lockedVault == null)
                 return false;
 
-            if (!TryAcquireLockedView(lockedVault, in _stateHandle, BufferID.AudioVocalSynthesisState, LockState, ref lockMask, out views.State) ||
-                !TryAcquireLockedView(lockedVault, in _codecHandle, BufferID.AudioVocalSynthesisCodecState, LockCodec, ref lockMask, out views.Codec) ||
-                !TryAcquireLockedView(lockedVault, in _telemetryHandle, BufferID.AudioVocalSynthesisTelemetry, LockTelemetry, ref lockMask, out views.Telemetry) ||
-                !TryAcquireLockedView(lockedVault, in _countersHandle, BufferID.AudioVocalSynthesisTelemetryCursor, LockCounters, ref lockMask, out views.Counters) ||
-                !TryAcquireLockedView(lockedVault, in _waveformHandle, BufferID.AudioVocalSynthesisWaveform, LockWaveform, ref lockMask, out views.Waveform) ||
-                !TryAcquireLockedView(lockedVault, in _mockRecordsHandle, BufferID.AudioVocalSynthesisMockBankRecords, LockMockRecords, ref lockMask, out views.MockRecords) ||
-#if UNITY_EDITOR
-                !TryAcquireLockedView(lockedVault, in _csvMetadataHandle, BufferID.AudioVocalSynthesisCsvMetadata, LockCsvMetadata, ref lockMask, out views.CsvMetadata) ||
-#endif
-                views.State.Length <= 0 ||
-                views.Codec.Length <= 0 ||
-                views.Telemetry.Length <= 0 ||
-                views.Counters.Length <= 0 ||
-                views.Waveform.Length <= 0 ||
-                views.MockRecords.Length <= 0
-#if UNITY_EDITOR
-                || views.CsvMetadata.Length <= 0
-#endif
-                )
+            bool ownershipTransferred = false;
+            try
             {
-                ReleaseVocalWriteLocks(lockedVault, lockMask);
-                views = default;
-                lockMask = 0;
-                lockedVault = null;
-                return false;
-            }
+                if (!TryAcquireLockedView(lockedVault, in _stateHandle, BufferID.AudioVocalSynthesisState, LockState, ref lockMask, out views.State) ||
+                    !TryAcquireLockedView(lockedVault, in _codecHandle, BufferID.AudioVocalSynthesisCodecState, LockCodec, ref lockMask, out views.Codec) ||
+                    !TryAcquireLockedView(lockedVault, in _telemetryHandle, BufferID.AudioVocalSynthesisTelemetry, LockTelemetry, ref lockMask, out views.Telemetry) ||
+                    !TryAcquireLockedView(lockedVault, in _countersHandle, BufferID.AudioVocalSynthesisTelemetryCursor, LockCounters, ref lockMask, out views.Counters) ||
+                    !TryAcquireLockedView(lockedVault, in _waveformHandle, BufferID.AudioVocalSynthesisWaveform, LockWaveform, ref lockMask, out views.Waveform) ||
+                    !TryAcquireLockedView(lockedVault, in _mockRecordsHandle, BufferID.AudioVocalSynthesisMockBankRecords, LockMockRecords, ref lockMask, out views.MockRecords) ||
+#if UNITY_EDITOR
+                    !TryAcquireLockedView(lockedVault, in _csvMetadataHandle, BufferID.AudioVocalSynthesisCsvMetadata, LockCsvMetadata, ref lockMask, out views.CsvMetadata) ||
+#endif
+                    views.State.Length <= 0 ||
+                    views.Codec.Length <= 0 ||
+                    views.Telemetry.Length <= 0 ||
+                    views.Counters.Length <= 0 ||
+                    views.Waveform.Length <= 0 ||
+                    views.MockRecords.Length <= 0
+#if UNITY_EDITOR
+                    || views.CsvMetadata.Length <= 0
+#endif
+                    )
+                {
+                    return false;
+                }
 
-            return true;
+                ownershipTransferred = true;
+                return true;
+            }
+            finally
+            {
+                if (!ownershipTransferred)
+                {
+                    ReleaseVocalWriteLocks(lockedVault, lockMask);
+                    views = default;
+                    lockMask = 0;
+                    lockedVault = null;
+                }
+            }
         }
 
 #if UNITY_EDITOR
@@ -549,21 +609,99 @@ namespace Hecton8.Audio.Synthesis
             if (lockedVault == null)
                 return false;
 
-            if (!TryAcquireLockedView(lockedVault, in _csvMetadataHandle, BufferID.AudioVocalSynthesisCsvMetadata, LockCsvMetadata, ref lockMask, out views.CsvMetadata) ||
-                !TryAcquireLockedView(lockedVault, in _csvScratchHandle, BufferID.AudioVocalSynthesisCsvScratch, LockCsvScratch, ref lockMask, out views.CsvScratch) ||
-                views.CsvMetadata.Length <= 0 ||
-                views.CsvScratch.Length <= 0)
+            bool ownershipTransferred = false;
+            try
             {
-                ReleaseVocalWriteLocks(lockedVault, lockMask);
-                views = default;
-                lockMask = 0;
-                lockedVault = null;
-                return false;
-            }
+                if (!TryAcquireLockedView(lockedVault, in _csvMetadataHandle, BufferID.AudioVocalSynthesisCsvMetadata, LockCsvMetadata, ref lockMask, out views.CsvMetadata) ||
+                    !TryAcquireLockedView(lockedVault, in _csvScratchHandle, BufferID.AudioVocalSynthesisCsvScratch, LockCsvScratch, ref lockMask, out views.CsvScratch) ||
+                    views.CsvMetadata.Length <= 0 ||
+                    views.CsvScratch.Length <= 0)
+                {
+                    return false;
+                }
 
-            return true;
+                ownershipTransferred = true;
+                return true;
+            }
+            finally
+            {
+                if (!ownershipTransferred)
+                {
+                    ReleaseVocalWriteLocks(lockedVault, lockMask);
+                    views = default;
+                    lockMask = 0;
+                    lockedVault = null;
+                }
+            }
         }
 #endif
+
+        private static ulong VocalMutationGuardBit(BufferID bufferId)
+        {
+            return 1UL << (unchecked((int)(uint)(int)bufferId) & 31);
+        }
+
+        private bool TryAcquireVocalMutationGuard(IDataVault vault)
+        {
+            if (vault == null || VocalMutationGuardMask == 0UL)
+                return false;
+
+            if (_vocalMutationGuardDepth > 0)
+            {
+                if (!ReferenceEquals(_vocalMutationGuardVault, vault) ||
+                    _vocalMutationGuardMask != VocalMutationGuardMask)
+                {
+                    return false;
+                }
+
+                _vocalMutationGuardDepth++;
+                return true;
+            }
+
+            if (!vault.TryAcquireMutationGuard(VocalMutationGuardMask))
+                return false;
+
+            _vocalMutationGuardVault = vault;
+            _vocalMutationGuardMask = VocalMutationGuardMask;
+            _vocalMutationGuardDepth = 1;
+            return true;
+        }
+
+        private void ReleaseVocalMutationGuard(IDataVault vault)
+        {
+            if (_vocalMutationGuardDepth <= 0)
+            {
+                _vocalMutationGuardDepth = 0;
+                _vocalMutationGuardMask = 0UL;
+                _vocalMutationGuardVault = null;
+                return;
+            }
+
+            if (_vocalMutationGuardDepth > 1)
+            {
+                _vocalMutationGuardDepth--;
+                return;
+            }
+
+            IDataVault guardedVault = _vocalMutationGuardVault;
+            ulong guardMask = _vocalMutationGuardMask;
+            _vocalMutationGuardDepth = 0;
+            _vocalMutationGuardMask = 0UL;
+            _vocalMutationGuardVault = null;
+            if (guardedVault != null && guardMask != 0UL && (vault == null || ReferenceEquals(vault, guardedVault)))
+                guardedVault.ReleaseMutationGuard(guardMask);
+        }
+
+        private void ForceReleaseVocalMutationGuard()
+        {
+            IDataVault guardedVault = _vocalMutationGuardVault;
+            ulong guardMask = _vocalMutationGuardMask;
+            _vocalMutationGuardDepth = 0;
+            _vocalMutationGuardMask = 0UL;
+            _vocalMutationGuardVault = null;
+            if (guardedVault != null && guardMask != 0UL)
+                guardedVault.ReleaseMutationGuard(guardMask);
+        }
 
         private bool TryAcquireLockedView<T>(
             IDataVault vault,
@@ -575,19 +713,41 @@ namespace Hecton8.Audio.Synthesis
             where T : struct
         {
             buffer = default;
-            if (!IsVocalSynthesisVaultHandle(in handle, expectedBufferId) ||
-                !vault.TryAcquireWriteLock(in handle, VaultOwner, out buffer))
-                return false;
-
-            if (!buffer.IsCreated)
+            bool acquiredGuard = false;
+            if (lockMask == 0)
             {
-                vault.ReleaseWriteLock(in handle, VaultOwner);
-                buffer = default;
+                if (!TryAcquireVocalMutationGuard(vault))
+                    return false;
+
+                acquiredGuard = true;
+            }
+
+            if (!IsVocalSynthesisVaultHandle(in handle, expectedBufferId) ||
+                !vault.TryReadHandle(in handle, out buffer))
+            {
+                if (acquiredGuard)
+                    ReleaseVocalMutationGuard(vault);
                 return false;
             }
 
-            lockMask |= lockBit;
-            return true;
+            bool ownershipTransferred = false;
+            try
+            {
+                if (!buffer.IsCreated)
+                {
+                    buffer = default;
+                    return false;
+                }
+
+                lockMask |= lockBit;
+                ownershipTransferred = true;
+                return true;
+            }
+            finally
+            {
+                if (!ownershipTransferred && acquiredGuard)
+                    ReleaseVocalMutationGuard(vault);
+            }
         }
 
         private void ReleaseVocalWriteLocks(int lockMask)
@@ -600,29 +760,7 @@ namespace Hecton8.Audio.Synthesis
             if (lockMask == 0)
                 return;
 
-            if (vault == null)
-                return;
-
-            if ((lockMask & LockState) != 0)
-                vault.ReleaseWriteLock(in _stateHandle, VaultOwner);
-            if ((lockMask & LockCodec) != 0)
-                vault.ReleaseWriteLock(in _codecHandle, VaultOwner);
-            if ((lockMask & LockTelemetry) != 0)
-                vault.ReleaseWriteLock(in _telemetryHandle, VaultOwner);
-            if ((lockMask & LockCounters) != 0)
-                vault.ReleaseWriteLock(in _countersHandle, VaultOwner);
-            if ((lockMask & LockWaveform) != 0)
-                vault.ReleaseWriteLock(in _waveformHandle, VaultOwner);
-            if ((lockMask & LockMockBankBytes) != 0)
-                vault.ReleaseWriteLock(in _mockBankBytesHandle, VaultOwner);
-            if ((lockMask & LockMockRecords) != 0)
-                vault.ReleaseWriteLock(in _mockRecordsHandle, VaultOwner);
-#if UNITY_EDITOR
-            if ((lockMask & LockCsvMetadata) != 0)
-                vault.ReleaseWriteLock(in _csvMetadataHandle, VaultOwner);
-            if ((lockMask & LockCsvScratch) != 0)
-                vault.ReleaseWriteLock(in _csvScratchHandle, VaultOwner);
-#endif
+            ReleaseVocalMutationGuard(vault);
         }
 
         private void WriteVocalFault(ref VocalVaultViews views, uint flags, uint phraseHash)
@@ -856,6 +994,7 @@ namespace Hecton8.Audio.Synthesis
             IDataVault vault = _dataVault;
             try
             {
+                ForceReleaseVocalMutationGuard();
                 ReleaseVaultBuffer(vault, ref _stateHandle, BufferID.AudioVocalSynthesisState);
                 ReleaseVaultBuffer(vault, ref _codecHandle, BufferID.AudioVocalSynthesisCodecState);
                 ReleaseVaultBuffer(vault, ref _telemetryHandle, BufferID.AudioVocalSynthesisTelemetry);

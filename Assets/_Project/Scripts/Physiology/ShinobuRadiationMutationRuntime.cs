@@ -26,6 +26,34 @@ namespace Hecton8.Physiology
 #endif
         private const string DumpRelativePath = "Docs/AgentLogs/Dump_SHINOBU_324.bin";
 
+        private static readonly ulong EvaluationMutationGuardMask =
+            MutationGuardBit(ShinobuRadiationMutationConstants.MutationStateBuffer) |
+            MutationGuardBit(ShinobuRadiationMutationConstants.MutationTuningBuffer) |
+            MutationGuardBit(ShinobuRadiationMutationConstants.MutationTelemetryBuffer) |
+            MutationGuardBit(ShinobuRadiationMutationConstants.MutationMockDoseBuffer);
+        private static readonly ulong DefaultInitializationMutationGuardMask =
+            MutationGuardBit(ShinobuRadiationMutationConstants.MutationStateBuffer) |
+            MutationGuardBit(ShinobuRadiationMutationConstants.MutationTelemetryBuffer) |
+            MutationGuardBit(ShinobuRadiationMutationConstants.MutationMockDoseBuffer) |
+            MutationGuardBit(ShinobuRadiationMutationConstants.MutationTuningBuffer) |
+            MutationGuardBit(ShinobuRadiationMutationConstants.MutationProfileBuffer);
+        private static readonly ulong MetabolicBridgeMutationGuardMask =
+            ShinobuMetabolismVaultContract.MetabolismStateMutationGuardMask |
+            MutationGuardBit(ShinobuRadiationMutationConstants.MutationStateBuffer) |
+            MutationGuardBit(BufferID.ShinobuMetabolismStates);
+        private static readonly ulong TelemetryMutationGuardMask =
+            MutationGuardBit(ShinobuRadiationMutationConstants.MutationTelemetryBuffer);
+        private static readonly ulong TuningMutationGuardMask =
+            MutationGuardBit(ShinobuRadiationMutationConstants.MutationTuningBuffer);
+        private static readonly ulong MockDoseMutationGuardMask =
+            MutationGuardBit(ShinobuRadiationMutationConstants.MutationMockDoseBuffer);
+#if UNITY_EDITOR
+        private static readonly ulong CsvImportMutationGuardMask =
+            MutationGuardBit(ShinobuRadiationMutationConstants.MutationProfileBuffer) |
+            MutationGuardBit(ShinobuRadiationMutationConstants.MutationTuningBuffer) |
+            MutationGuardBit(ShinobuRadiationMutationConstants.MutationCsvScratchBuffer);
+#endif
+
         [Header("Emergency Mock")]
         [SerializeField] private bool enableEmergencyMockRadiation;
         [SerializeField, Min(1f)] private float mockPeakDoseRad = ShinobuRadiationMutationConstants.DefaultMockPeakDoseRad;
@@ -190,16 +218,27 @@ namespace Hecton8.Physiology
 
         public bool SetEditorTuning(RadiationMutationTuningDTO tuning)
         {
-            if (!TryResolveOwnBuffer(ref _tuningHandle, ShinobuRadiationMutationConstants.MutationTuningBuffer, 1, out NativeArray<RadiationMutationTuningDTO> rows) ||
-                rows.Length <= 0)
-            {
+            IDataVault vault = _dataVault;
+            if (vault == null || !vault.TryAcquireMutationGuard(TuningMutationGuardMask))
                 return false;
-            }
 
-            void* tuningPtr = NativeArrayUnsafeUtility.GetUnsafeBufferPointerWithoutChecks(rows);
-            ref RadiationMutationTuningDTO target = ref UnsafeUtility.AsRef<RadiationMutationTuningDTO>(tuningPtr);
-            target = ShinobuRadiationMutationJobMath.SanitizeTuning(tuning);
-            return true;
+            try
+            {
+                if (!TryResolveOwnBuffer(ref _tuningHandle, ShinobuRadiationMutationConstants.MutationTuningBuffer, 1, out NativeArray<RadiationMutationTuningDTO> rows) ||
+                    rows.Length <= 0)
+                {
+                    return false;
+                }
+
+                void* tuningPtr = NativeArrayUnsafeUtility.GetUnsafeBufferPointerWithoutChecks(rows);
+                ref RadiationMutationTuningDTO target = ref UnsafeUtility.AsRef<RadiationMutationTuningDTO>(tuningPtr);
+                target = ShinobuRadiationMutationJobMath.SanitizeTuning(tuning);
+                return true;
+            }
+            finally
+            {
+                vault.ReleaseMutationGuard(TuningMutationGuardMask);
+            }
         }
 
         public bool TryGetLatestTelemetry(out RadiationMutationTelemetryEntry entry)
@@ -247,16 +286,27 @@ namespace Hecton8.Physiology
 
         public bool InjectMockDose(float doseRad)
         {
-            if (!TryResolveOwnBuffer(ref _mockDoseHandle, ShinobuRadiationMutationConstants.MutationMockDoseBuffer, ShinobuRadiationMutationConstants.DefaultEntityCapacity, out NativeArray<float> mockDose) ||
-                mockDose.Length <= 0)
-            {
+            IDataVault vault = _dataVault;
+            if (vault == null || !vault.TryAcquireMutationGuard(MockDoseMutationGuardMask))
                 return false;
-            }
 
-            void* mockPtr = NativeArrayUnsafeUtility.GetUnsafeBufferPointerWithoutChecks(mockDose);
-            ref float target = ref UnsafeUtility.AsRef<float>(mockPtr);
-            target = math.max(0f, ShinobuRadiationMutationJobMath.SanitizeFinite(doseRad, 0f));
-            return true;
+            try
+            {
+                if (!TryResolveOwnBuffer(ref _mockDoseHandle, ShinobuRadiationMutationConstants.MutationMockDoseBuffer, ShinobuRadiationMutationConstants.DefaultEntityCapacity, out NativeArray<float> mockDose) ||
+                    mockDose.Length <= 0)
+                {
+                    return false;
+                }
+
+                void* mockPtr = NativeArrayUnsafeUtility.GetUnsafeBufferPointerWithoutChecks(mockDose);
+                ref float target = ref UnsafeUtility.AsRef<float>(mockPtr);
+                target = math.max(0f, ShinobuRadiationMutationJobMath.SanitizeFinite(doseRad, 0f));
+                return true;
+            }
+            finally
+            {
+                vault.ReleaseMutationGuard(MockDoseMutationGuardMask);
+            }
         }
 
         private void RebindColdServices()
@@ -318,34 +368,44 @@ namespace Hecton8.Physiology
             if (_defaultsInitialized)
                 return;
 
-            TryResolveOwnBuffer(ref _mutationStateHandle, ShinobuRadiationMutationConstants.MutationStateBuffer, ShinobuRadiationMutationConstants.DefaultEntityCapacity, out NativeArray<MutationStateDTO> states);
-            TryResolveOwnBuffer(ref _telemetryHandle, ShinobuRadiationMutationConstants.MutationTelemetryBuffer, ShinobuRadiationMutationConstants.TelemetryFrameCount, out NativeArray<RadiationMutationTelemetryEntry> telemetry);
-            TryResolveOwnBuffer(ref _mockDoseHandle, ShinobuRadiationMutationConstants.MutationMockDoseBuffer, ShinobuRadiationMutationConstants.DefaultEntityCapacity, out NativeArray<float> mockDose);
-            int initCount = math.max(math.max(states.IsCreated ? states.Length : 0, telemetry.IsCreated ? telemetry.Length : 0), mockDose.IsCreated ? mockDose.Length : 0);
-            for (int i = 0; i < initCount; i++)
-            {
-                if (states.IsCreated && i < states.Length)
-                    states[i] = default;
-                if (telemetry.IsCreated && i < telemetry.Length)
-                    telemetry[i] = default;
-                if (mockDose.IsCreated && i < mockDose.Length)
-                    mockDose[i] = 0f;
-            }
+            if (!vault.TryAcquireMutationGuard(DefaultInitializationMutationGuardMask))
+                return;
 
-            if (TryResolveOwnBuffer(ref _tuningHandle, ShinobuRadiationMutationConstants.MutationTuningBuffer, 1, out NativeArray<RadiationMutationTuningDTO> tuning) &&
-                tuning.Length > 0)
+            try
             {
-                RadiationMutationTuningDTO row = ShinobuRadiationMutationJobMath.BuildDefaultTuning();
-                row.MockPeakDoseRad = math.max(row.SafeDoseRad, mockPeakDoseRad);
-                tuning[0] = row;
-            }
+                TryResolveOwnBuffer(ref _mutationStateHandle, ShinobuRadiationMutationConstants.MutationStateBuffer, ShinobuRadiationMutationConstants.DefaultEntityCapacity, out NativeArray<MutationStateDTO> states);
+                TryResolveOwnBuffer(ref _telemetryHandle, ShinobuRadiationMutationConstants.MutationTelemetryBuffer, ShinobuRadiationMutationConstants.TelemetryFrameCount, out NativeArray<RadiationMutationTelemetryEntry> telemetry);
+                TryResolveOwnBuffer(ref _mockDoseHandle, ShinobuRadiationMutationConstants.MutationMockDoseBuffer, ShinobuRadiationMutationConstants.DefaultEntityCapacity, out NativeArray<float> mockDose);
+                int initCount = math.max(math.max(states.IsCreated ? states.Length : 0, telemetry.IsCreated ? telemetry.Length : 0), mockDose.IsCreated ? mockDose.Length : 0);
+                for (int i = 0; i < initCount; i++)
+                {
+                    if (states.IsCreated && i < states.Length)
+                        states[i] = default;
+                    if (telemetry.IsCreated && i < telemetry.Length)
+                        telemetry[i] = default;
+                    if (mockDose.IsCreated && i < mockDose.Length)
+                        mockDose[i] = 0f;
+                }
 
-            if (TryResolveOwnBuffer(ref _profilesHandle, ShinobuRadiationMutationConstants.MutationProfileBuffer, ShinobuRadiationMutationConstants.ProfileCapacity, out NativeArray<RadiationMutationProfileDTO> profiles) &&
-                profiles.Length > 0)
+                if (TryResolveOwnBuffer(ref _tuningHandle, ShinobuRadiationMutationConstants.MutationTuningBuffer, 1, out NativeArray<RadiationMutationTuningDTO> tuning) &&
+                    tuning.Length > 0)
+                {
+                    RadiationMutationTuningDTO row = ShinobuRadiationMutationJobMath.BuildDefaultTuning();
+                    row.MockPeakDoseRad = math.max(row.SafeDoseRad, mockPeakDoseRad);
+                    tuning[0] = row;
+                }
+
+                if (TryResolveOwnBuffer(ref _profilesHandle, ShinobuRadiationMutationConstants.MutationProfileBuffer, ShinobuRadiationMutationConstants.ProfileCapacity, out NativeArray<RadiationMutationProfileDTO> profiles) &&
+                    profiles.Length > 0)
+                {
+                    profiles[0] = BuildDefaultProfile(0x44454654u);
+                    for (int i = 1; i < profiles.Length; i++)
+                        profiles[i] = default;
+                }
+            }
+            finally
             {
-                profiles[0] = BuildDefaultProfile(0x44454654u);
-                for (int i = 1; i < profiles.Length; i++)
-                    profiles[i] = default;
+                vault.ReleaseMutationGuard(DefaultInitializationMutationGuardMask);
             }
 
             _defaultsInitialized = true;
@@ -356,44 +416,31 @@ namespace Hecton8.Physiology
 
         private bool RunEvaluation(IDataVault vault, uint frame, float quality)
         {
-            if (!TryResolveOwnBuffer(ref _mutationStateHandle, ShinobuRadiationMutationConstants.MutationStateBuffer, ShinobuRadiationMutationConstants.DefaultEntityCapacity, out NativeArray<MutationStateDTO> mutationStates) ||
-                !TryResolveOwnBuffer(ref _tuningHandle, ShinobuRadiationMutationConstants.MutationTuningBuffer, 1, out NativeArray<RadiationMutationTuningDTO> tuningRows) ||
-                !TryResolveOwnBuffer(ref _telemetryHandle, ShinobuRadiationMutationConstants.MutationTelemetryBuffer, ShinobuRadiationMutationConstants.TelemetryFrameCount, out NativeArray<RadiationMutationTelemetryEntry> telemetry) ||
-                !TryResolveOwnBuffer(ref _mockDoseHandle, ShinobuRadiationMutationConstants.MutationMockDoseBuffer, ShinobuRadiationMutationConstants.DefaultEntityCapacity, out NativeArray<float> mockDose))
-            {
-                return false;
-            }
-
-            if (mutationStates.Length <= 0 ||
-                tuningRows.Length <= 0 ||
-                telemetry.Length <= 0 ||
-                mockDose.Length <= 0)
-            {
-                return false;
-            }
-
-            bool hasRadiation = TryBindExistingSnapshot(ref _radiationStateHandle, BufferID.Shinobu274RadiationStates, ShinobuRadiationMutationConstants.DefaultEntityCapacity, out NativeArray<RadiationStateDTO> radiationStates);
-            if (!hasRadiation && !enableEmergencyMockRadiation)
+            if (!vault.TryAcquireMutationGuard(EvaluationMutationGuardMask))
                 return false;
 
-            bool mutationLocked = false;
-            bool tuningLocked = false;
-            bool telemetryLocked = false;
-            bool mockLocked = false;
             try
             {
-                if (!vault.TryLockBuffer(ShinobuRadiationMutationConstants.MutationStateBuffer, OwnerSystem))
+                if (!TryResolveOwnBuffer(ref _mutationStateHandle, ShinobuRadiationMutationConstants.MutationStateBuffer, ShinobuRadiationMutationConstants.DefaultEntityCapacity, out NativeArray<MutationStateDTO> mutationStates) ||
+                    !TryResolveOwnBuffer(ref _tuningHandle, ShinobuRadiationMutationConstants.MutationTuningBuffer, 1, out NativeArray<RadiationMutationTuningDTO> tuningRows) ||
+                    !TryResolveOwnBuffer(ref _telemetryHandle, ShinobuRadiationMutationConstants.MutationTelemetryBuffer, ShinobuRadiationMutationConstants.TelemetryFrameCount, out NativeArray<RadiationMutationTelemetryEntry> telemetry) ||
+                    !TryResolveOwnBuffer(ref _mockDoseHandle, ShinobuRadiationMutationConstants.MutationMockDoseBuffer, ShinobuRadiationMutationConstants.DefaultEntityCapacity, out NativeArray<float> mockDose))
+                {
                     return false;
-                mutationLocked = true;
-                if (!vault.TryLockBuffer(ShinobuRadiationMutationConstants.MutationTuningBuffer, OwnerSystem))
+                }
+
+                if (mutationStates.Length <= 0 ||
+                    tuningRows.Length <= 0 ||
+                    telemetry.Length <= 0 ||
+                    mockDose.Length <= 0)
+                {
                     return false;
-                tuningLocked = true;
-                if (!vault.TryLockBuffer(ShinobuRadiationMutationConstants.MutationTelemetryBuffer, OwnerSystem))
+                }
+
+                bool hasRadiation = TryBindExistingSnapshot(ref _radiationStateHandle, BufferID.Shinobu274RadiationStates, ShinobuRadiationMutationConstants.DefaultEntityCapacity, out NativeArray<RadiationStateDTO> radiationStates);
+                if (!hasRadiation && !enableEmergencyMockRadiation)
                     return false;
-                telemetryLocked = true;
-                if (!vault.TryLockBuffer(ShinobuRadiationMutationConstants.MutationMockDoseBuffer, OwnerSystem))
-                    return false;
-                mockLocked = true;
+
                 RadiationMutationTuningDTO tuning = ShinobuRadiationMutationJobMath.SanitizeTuning(tuningRows[0]);
                 tuning.GlobalQualityWeight = quality;
                 tuning.MockPeakDoseRad = math.max(tuning.SafeDoseRad, mockPeakDoseRad);
@@ -442,43 +489,26 @@ namespace Hecton8.Physiology
             }
             finally
             {
-                if (mockLocked)
-                    vault.TryUnlockBuffer(ShinobuRadiationMutationConstants.MutationMockDoseBuffer, OwnerSystem);
-                if (telemetryLocked)
-                    vault.TryUnlockBuffer(ShinobuRadiationMutationConstants.MutationTelemetryBuffer, OwnerSystem);
-                if (tuningLocked)
-                    vault.TryUnlockBuffer(ShinobuRadiationMutationConstants.MutationTuningBuffer, OwnerSystem);
-                if (mutationLocked)
-                    vault.TryUnlockBuffer(ShinobuRadiationMutationConstants.MutationStateBuffer, OwnerSystem);
+                vault.ReleaseMutationGuard(EvaluationMutationGuardMask);
             }
         }
 
         private bool RunMetabolicBridge(IDataVault vault)
         {
-            if (!TryResolveOwnBuffer(ref _mutationStateHandle, ShinobuRadiationMutationConstants.MutationStateBuffer, ShinobuRadiationMutationConstants.DefaultEntityCapacity, out NativeArray<MutationStateDTO> mutationStates) ||
-                !TryResolveOwnBuffer(ref _tuningHandle, ShinobuRadiationMutationConstants.MutationTuningBuffer, 1, out NativeArray<RadiationMutationTuningDTO> tuningRows) ||
-                !TryResolveExistingBuffer(ref _metabolicStateHandle, BufferID.ShinobuMetabolismStates, ShinobuRadiationMutationConstants.DefaultEntityCapacity, out NativeArray<MetabolicStateDTO> metabolicStates) ||
-                mutationStates.Length <= 0 ||
-                metabolicStates.Length <= 0 ||
-                tuningRows.Length <= 0)
-            {
+            if (!vault.TryAcquireMutationGuard(MetabolicBridgeMutationGuardMask))
                 return false;
-            }
 
-            bool mutationLocked = false;
-            bool metabolicLocked = false;
-            bool metabolicGuard = false;
             try
             {
-                if (!vault.TryAcquireMutationGuard(ShinobuMetabolismVaultContract.MetabolismStateMutationGuardMask))
+                if (!TryResolveOwnBuffer(ref _mutationStateHandle, ShinobuRadiationMutationConstants.MutationStateBuffer, ShinobuRadiationMutationConstants.DefaultEntityCapacity, out NativeArray<MutationStateDTO> mutationStates) ||
+                    !TryResolveOwnBuffer(ref _tuningHandle, ShinobuRadiationMutationConstants.MutationTuningBuffer, 1, out NativeArray<RadiationMutationTuningDTO> tuningRows) ||
+                    !TryResolveExistingBuffer(ref _metabolicStateHandle, BufferID.ShinobuMetabolismStates, ShinobuRadiationMutationConstants.DefaultEntityCapacity, out NativeArray<MetabolicStateDTO> metabolicStates) ||
+                    mutationStates.Length <= 0 ||
+                    metabolicStates.Length <= 0 ||
+                    tuningRows.Length <= 0)
+                {
                     return false;
-                metabolicGuard = true;
-                if (!vault.TryLockBuffer(ShinobuRadiationMutationConstants.MutationStateBuffer, OwnerSystem))
-                    return false;
-                mutationLocked = true;
-                if (!vault.TryLockBuffer(BufferID.ShinobuMetabolismStates, OwnerSystem))
-                    return false;
-                metabolicLocked = true;
+                }
 
                 RadiationMutationTuningDTO tuning = ShinobuRadiationMutationJobMath.SanitizeTuning(tuningRows[0]);
                 int count = math.min(ShinobuRadiationMutationConstants.DefaultEntityCapacity, math.min(mutationStates.Length, metabolicStates.Length));
@@ -495,26 +525,20 @@ namespace Hecton8.Physiology
             }
             finally
             {
-                if (metabolicLocked)
-                    vault.TryUnlockBuffer(BufferID.ShinobuMetabolismStates, OwnerSystem);
-                if (mutationLocked)
-                    vault.TryUnlockBuffer(ShinobuRadiationMutationConstants.MutationStateBuffer, OwnerSystem);
-                if (metabolicGuard)
-                    vault.ReleaseMutationGuard(ShinobuMetabolismVaultContract.MetabolismStateMutationGuardMask);
+                vault.ReleaseMutationGuard(MetabolicBridgeMutationGuardMask);
             }
         }
 
         private void PatchLatestTelemetry(IDataVault vault, float elapsedMicroseconds)
         {
-            if (!TryResolveOwnBuffer(ref _telemetryHandle, ShinobuRadiationMutationConstants.MutationTelemetryBuffer, ShinobuRadiationMutationConstants.TelemetryFrameCount, out NativeArray<RadiationMutationTelemetryEntry> telemetry))
+            if (!vault.TryAcquireMutationGuard(TelemetryMutationGuardMask))
                 return;
 
-            bool telemetryLocked = false;
             try
             {
-                if (!vault.TryLockBuffer(ShinobuRadiationMutationConstants.MutationTelemetryBuffer, OwnerSystem))
+                if (!TryResolveOwnBuffer(ref _telemetryHandle, ShinobuRadiationMutationConstants.MutationTelemetryBuffer, ShinobuRadiationMutationConstants.TelemetryFrameCount, out NativeArray<RadiationMutationTelemetryEntry> telemetry))
                     return;
-                telemetryLocked = true;
+
                 int latest = (_telemetryCursor + telemetry.Length - 1) % telemetry.Length;
                 RadiationMutationTelemetryEntry entry = telemetry[latest];
                 RadiationMutationKernel.PatchTelemetry(ref entry, elapsedMicroseconds);
@@ -522,8 +546,7 @@ namespace Hecton8.Physiology
             }
             finally
             {
-                if (telemetryLocked)
-                    vault.TryUnlockBuffer(ShinobuRadiationMutationConstants.MutationTelemetryBuffer, OwnerSystem);
+                vault.ReleaseMutationGuard(TelemetryMutationGuardMask);
             }
         }
 
@@ -666,27 +689,17 @@ namespace Hecton8.Physiology
             if (writeTicks == _csvLastWriteTicks)
                 return false;
 
-            if (!TryResolveOwnBuffer(ref _profilesHandle, ShinobuRadiationMutationConstants.MutationProfileBuffer, ShinobuRadiationMutationConstants.ProfileCapacity, out NativeArray<RadiationMutationProfileDTO> profiles) ||
-                !TryResolveOwnBuffer(ref _tuningHandle, ShinobuRadiationMutationConstants.MutationTuningBuffer, 1, out NativeArray<RadiationMutationTuningDTO> tuning) ||
-                !TryResolveOwnBuffer(ref _csvScratchHandle, ShinobuRadiationMutationConstants.MutationCsvScratchBuffer, ShinobuRadiationMutationConstants.CsvMaxBytes, out NativeArray<byte> scratch))
-            {
+            if (!vault.TryAcquireMutationGuard(CsvImportMutationGuardMask))
                 return false;
-            }
 
-            bool profilesLocked = false;
-            bool tuningLocked = false;
-            bool scratchLocked = false;
             try
             {
-                if (!vault.TryLockBuffer(ShinobuRadiationMutationConstants.MutationProfileBuffer, OwnerSystem))
+                if (!TryResolveOwnBuffer(ref _profilesHandle, ShinobuRadiationMutationConstants.MutationProfileBuffer, ShinobuRadiationMutationConstants.ProfileCapacity, out NativeArray<RadiationMutationProfileDTO> profiles) ||
+                    !TryResolveOwnBuffer(ref _tuningHandle, ShinobuRadiationMutationConstants.MutationTuningBuffer, 1, out NativeArray<RadiationMutationTuningDTO> tuning) ||
+                    !TryResolveOwnBuffer(ref _csvScratchHandle, ShinobuRadiationMutationConstants.MutationCsvScratchBuffer, ShinobuRadiationMutationConstants.CsvMaxBytes, out NativeArray<byte> scratch))
+                {
                     return false;
-                profilesLocked = true;
-                if (!vault.TryLockBuffer(ShinobuRadiationMutationConstants.MutationTuningBuffer, OwnerSystem))
-                    return false;
-                tuningLocked = true;
-                if (!vault.TryLockBuffer(ShinobuRadiationMutationConstants.MutationCsvScratchBuffer, OwnerSystem))
-                    return false;
-                scratchLocked = true;
+                }
 
                 byte* scratchPtr = (byte*)NativeArrayUnsafeUtility.GetUnsafeBufferPointerWithoutChecks(scratch);
                 int count = 0;
@@ -724,12 +737,7 @@ namespace Hecton8.Physiology
             }
             finally
             {
-                if (scratchLocked)
-                    vault.TryUnlockBuffer(ShinobuRadiationMutationConstants.MutationCsvScratchBuffer, OwnerSystem);
-                if (tuningLocked)
-                    vault.TryUnlockBuffer(ShinobuRadiationMutationConstants.MutationTuningBuffer, OwnerSystem);
-                if (profilesLocked)
-                    vault.TryUnlockBuffer(ShinobuRadiationMutationConstants.MutationProfileBuffer, OwnerSystem);
+                vault.ReleaseMutationGuard(CsvImportMutationGuardMask);
             }
 
             return false;
@@ -967,6 +975,11 @@ namespace Hecton8.Physiology
                 return false;
             value = rows[0];
             return true;
+        }
+
+        private static ulong MutationGuardBit(BufferID bufferId)
+        {
+            return 1UL << ((int)bufferId & 31);
         }
 
         private bool TryReadCachedBuffer<T>(

@@ -1070,3 +1070,87 @@ Rejected Alternatives: Leaving budgets unchanged was rejected because a generate
 Scalability potential: Low tier authors get a one-command valid graph. Middle tier Workbench authors get the same result without hidden state. High/Ultra tiers can later expose budget sliders or graph capacity planning over the same manifest/graph contract.
 
 Hardware Impact: Estimated runtime gain on i3/MX350 is 0 us/frame. Runtime cost does not change; the value is preventing invalid command graph packages from reaching loader and review.
+
+## Decision 90 - Graph node creation needs a real authoring interface, not free-text JSON friction
+
+Problem: Schema 99 made graph-node apply safe, but graph-node creation still forced modders through a weak surface: free-text opcode, no first-class parameter editing, no disabled-node creation, and no visible replace-on-apply intent. A second problem appeared during verification: non-empty JSON passed through `powershell.exe -File` can lose quotes, turning a correct command into `{Quantity:3,Item:demo}` and failing before the author reaches validation.
+
+Solution: Add a Workbench Graph Opcode Picker sourced from `Reference/allowed_opcodes.csv`, a Parameters JSON text area, Create Disabled Node, and Replace Existing On Apply controls. Root `h8mod.ps1` now calls `create_graph_node_snippet.ps1` explicitly instead of using array splatting. The snippet helper keeps strict JSON as the primary contract, enforces top-level object shape, canonical keys, and a 64-entry cap, and accepts a bounded flat CLI fallback for quote-stripped shell calls. Schema revision 100 and the static validator prove Workbench controls, root launcher pass-through, disabled nodes, relaxed CLI parameters, and graph apply preservation.
+
+Rejected Alternatives: Telling modders to escape JSON correctly was rejected because random external authors will use mixed shells and copy commands from docs. A full runtime graph editor was rejected because public runtime UGC ingress remains envelope-only. Arbitrary managed DLL/Harmony/BepInEx expansion was rejected because it lacks owner authority, save-boundary, hot-lane budget, sandbox, and telemetry proof.
+
+Scalability potential: Low tier authors can create/apply graph nodes from PowerShell or pwsh without Unity and without hand-splicing JSON. Middle tier authors use the Workbench picker and parameter controls. High tier can add a structured graph editor over the same snippet/apply contract. Ultra tier can add graph simulation, diff, package diagnostics, and visual authoring without changing runtime truth ownership.
+
+Hardware Impact: Estimated runtime gain on i3/MX350 is 0 us/frame. This is Editor/offline SDK tooling only. It prevents malformed graph packages before runtime loader, FutureCommandEnvelope validation, HectonEventBus isolation, SignalBus, GlobalDataVault, save, physics, rendering, Burst/job, telemetry, or continuous GlobalQualityWeight routes are touched.
+
+## Decision 91 - Content asset manifests need generated/apply proof before runtime rights
+
+Problem: `Content/assets.h8manifest.json` existed as a draft contract, but a random external author still had to hand-author asset entries and manually keep file path, kind, CRC32, byte size, and `Budgets.MaxAssetBytes` coherent. That is unsafe for public modding because a single bad byte count or path can bypass review intent, break package validation, or imply loose runtime loading that the current envelope-only boundary does not grant.
+
+Solution: Make content asset authoring follow the same Generated snippet plus bounded apply pattern as graph/settings/locale. `create_asset_entry_snippet.ps1` validates canonical ids, kind enum, `Content/Assets/` path containment, extension, CRC32, and byte length. `apply_asset_entry_snippet.ps1` verifies the referenced file, rejects duplicates unless `-Replace` is explicit, repairs `MaxAssetBytes`, writes through temp files, validates the whole starter kit, and restores content/authoring manifests on failure. Workbench and `h8mod.ps1` expose the same route; schema revision 101 and the static validator prove the files, root launcher actions, Workbench controls, local validator contracts, review manifest, and submission zip.
+
+Rejected Alternatives: Loose runtime asset loading was rejected because there is no owner-approved bake/import route, residency budget proof, save boundary, or hot-lane telemetry. Manual JSON editing was rejected because external authors will get CRCs and budgets wrong. A Unity-only asset editor was rejected because the starter kit must work without the full HECTON-8 Unity project.
+
+Scalability potential: Low tier authors use PowerShell/pwsh and small files under strict 4 MiB per-source review limits. Middle tier authors use the Workbench content asset panel. High tier can add preview/import diagnostics over the same manifest route. Ultra tier can add compression scoring, visual preview, package diffing, and bake simulation without granting loose runtime file authority.
+
+Hardware Impact: Estimated runtime gain on i3/MX350 is 0 us/frame. This is Editor/offline SDK tooling only. It prevents malformed content packages before runtime loader, approved asset ingestion, FutureCommandEnvelope validation, SignalBus, GlobalDataVault, save, rendering, Burst/job, telemetry, or continuous GlobalQualityWeight routes are touched.
+
+## Decision 92 - Manifest capability and budget edits need a bounded authoring contract
+
+Problem: `mod.h8manifest.json` had `Capabilities` and `Budgets`, but external authors had no safe interface for changing them. Random modders would either hand-edit JSON, invent runtime-like rights, or lower budgets below graph/content requirements and produce packages that pass intent text but fail real review. This was a UX and contract problem, not a runtime permission system.
+
+Solution: Add `Tools/configure_manifest_contract.ps1` and expose it through `h8mod.ps1 -Action manifest-contract`, the External Starter Kit Workbench Manifest Contract panel, SDK Hub generated kits, local validation, schema revision 102, static validation, runtime playbook evidence, and public docs. The helper uses a public allowlist, caps capability count and budget values, refuses unknown capability IDs, refuses lowering envelope/asset budgets below current graph/content requirements, validates after write, and restores the previous manifest on failure. Capabilities are explicitly review metadata, not runtime rights.
+
+Rejected Alternatives: Arbitrary capabilities were rejected because they look like authority without sandbox/loader proof. Runtime DLL/Harmony/BepInEx expansion was rejected because current public ingress remains envelope-only and lacks hot-lane, save, telemetry, trust, and device-budget proof. Manual manifest editing was rejected because it creates drift between schema, validator, Workbench, docs, and package review.
+
+Scalability potential: Low tier authors use one PowerShell command without Unity. Middle tier authors use the Workbench dropdown and budget fields. High tier can add dependency/version visualization over the same manifest contract. Ultra tier can add package simulation, conflict analysis, and visual review dashboards without changing runtime truth ownership.
+
+Hardware Impact: Estimated runtime gain on i3/MX350 is 0 us/frame. This is offline SDK UX only. It prevents invalid package metadata before runtime loader, FutureCommandEnvelope validation, HectonEventBus isolation, SignalBus, GlobalDataVault, save, physics, rendering, Burst/job, telemetry, or continuous GlobalQualityWeight routes are touched.
+
+## Decision 93 - Submission package temp files must not live beside final Generated artifacts
+
+Problem: `build_submission_package.ps1` wrote `Generated/<id>_submission.zip.tmp` and then renamed/moved files in the same generated folder. In this sandbox and likely on some locked/synced folders, cleanup failed with `Access to the path ... .tmp is denied`, leaving a stale temp zip and making one-command public submission fail after review and prepare had already passed.
+
+Solution: Create the temporary zip and backup copy in the system temp directory with unique `hecton8-*` names, copy the finished zip to `Generated/<id>_submission.zip`, keep a previous-output backup until the copy succeeds, restore it on failure, and best-effort cleanup only temp artifacts. Mirror the same implementation in `ModdingSdkHubWindow` generated starter kits and update static proof markers to require this safer copy/restore route.
+
+Rejected Alternatives: Keeping same-folder `.tmp` files was rejected because the failure was reproduced. Blind overwrite was rejected because a failed replacement can destroy the previous review handoff artifact. Deleting `Generated/` outputs wholesale was rejected because other agents or authors may have snippets there.
+
+Scalability potential: Low tier authors get a stable one-command zip handoff in copied starter folders. Middle tier authors use the Workbench submission button without stale temp artifacts. High/Ultra tiers can add signed packages and diffed package history over the same final zip path without changing the runtime install boundary.
+
+Hardware Impact: Estimated runtime gain on i3/MX350 is 0 us/frame. This is no-Unity packaging only. It removes a file-system failure mode before review handoff; runtime systems and frame budget are untouched.
+
+## Decision 94 - External modders need a VS Code task surface over the same bounded launcher
+
+Problem: The External Starter Kit had JSON schemas and a root launcher, but a random public author still had to copy long PowerShell commands from docs for setup, validation, review, submission, snippet creation/apply, opcode discovery, capabilities, and manifest budget/capability edits. That is a usability defect and a contract risk: people will call inner `Tools/*.ps1` scripts directly, skip validation, or assume Unity is mandatory.
+
+Solution: Add `.vscode/tasks.json` as a first-class no-Unity task surface and keep `.vscode/settings.json` as the single executable selector through `hecton8.powerShellExecutable`. Every VS Code task routes through root `h8mod.ps1` with `-Action`; no task calls inner tools directly and no task grants runtime rights. The SDK Hub generator emits the same task file from the checked-in template, the Workbench opens both VS Code settings/tasks files, the local validator checks task version, labels, inputs, and launcher-only routing, schema revision 103 records the contract, static validation proves it, and docs describe the workflow.
+
+Rejected Alternatives: Direct VS Code tasks against `Tools/*.ps1` were rejected because they bypass the public package entry point and would create drift. Runtime DLL/Harmony/BepInEx expansion was rejected because this pass is public authoring UX, not a sandbox/authority expansion. A Unity-only interface was rejected because external authors must be able to build mods from a copied starter folder with VS Code and PowerShell/pwsh only.
+
+Scalability potential: Low tier authors use VS Code `Tasks: Run Task` and `h8mod.ps1` without Unity. Middle tier authors use the Unity Workbench over the same package contract. High tier can add structured editors and package diff views over the task-backed files. Ultra tier can add preview simulation, conflict diagnostics, and visual review dashboards without changing runtime truth ownership.
+
+Hardware Impact: Estimated runtime gain on i3/MX350 is 0 us/frame. This is offline SDK/editor tooling only. Runtime loader, FutureCommandEnvelope validation, HectonEventBus isolation, SignalBus, GlobalRegistry, GlobalDataVault, save, rendering, Burst/job, telemetry, and continuous GlobalQualityWeight routes are untouched.
+
+## Decision 95 - VS Code tasks must expose disabled and replace authoring routes
+
+Problem: Schema 103 gave random external authors a VS Code task surface, but it still lacked the Workbench/CLI parity for disabled graph node creation and explicit replacement of graph/settings/locale/content asset entries. That forced VS Code users back to manual command editing for common safe-edit paths and made overwrite intent less visible.
+
+Solution: Extend `.vscode/tasks.json` with `HECTON-8: create disabled graph node snippet` plus explicit replace tasks for graph nodes, settings rows, locale entries, and content asset entries. Keep every task routed through root `h8mod.ps1`; add local validator checks for `-NodeDisabled` and `-Replace`; update schema revision 104, static validator assertions, runtime playbook, and public docs. A temp-copy probe verified disabled graph snippets, graph replace, settings replace, locale replace, content asset replace, and final validation without touching runtime authority.
+
+Rejected Alternatives: Hidden overwrite-by-default was rejected because replacement must be an explicit author action. Direct VS Code tasks against inner `Tools/*.ps1` were rejected because they bypass the public launcher contract. Runtime DLL/Harmony/BepInEx expansion was rejected again because this work is authoring UX, while runtime public ingress remains envelope-only.
+
+Scalability potential: Low tier authors use VS Code task labels instead of command escaping. Middle tier authors use the Unity Workbench controls over the same launcher. High tier can add structured diff/preview UI over these explicit replace routes. Ultra tier can add package simulation and conflict diagnostics without changing runtime truth ownership.
+
+Hardware Impact: Estimated runtime gain on i3/MX350 is 0 us/frame. This is offline SDK/editor tooling only. Runtime loader, FutureCommandEnvelope validation, HectonEventBus isolation, SignalBus, GlobalRegistry, GlobalDataVault, save, physics, rendering, Burst/job, telemetry, and continuous GlobalQualityWeight routes are untouched.
+
+## Decision 96 - SDK Hub starter generation must use reviewed starter templates
+
+Problem: The versioned ExternalStarterKit had current no-Unity docs/tasks/tools, but ModdingSdkHubWindow still regenerated many files from hardcoded C# strings. Missing-file refresh from the Hub could recreate stale README/schema/tool/manifest content and diverge from the validated starter template random modders actually receive.
+
+Solution: Add BuildStarterKitTemplateFile(relativePath, fallbackFactory) and route docs, manifests, content/graph/table/locale files, schemas, tools, and VS Code files through the checked-in ModdingSDK/ExternalStarterKit files first. Keep C# fallback factories only for missing-template recovery. Add schema 105/static validator proof for every generator path.
+
+Rejected Alternatives: Re-syncing every hardcoded C# string was rejected because the next SDK doc/tool pass would drift again. Removing fallbacks entirely was rejected because the Hub still needs a recovery path if a file is missing locally. Expanding runtime mod rights was rejected because this is authoring UX and runtime ingress remains envelope-only.
+
+Scalability potential: Low tier authors get a consistent copied starter with no Unity required. Middle tier authors get the same files from Workbench refresh. High tier can add structured editors over one stable template source. Ultra tier can add simulation/package diagnostics without changing runtime truth ownership.
+
+Hardware Impact: Estimated runtime gain on i3/MX350 is 0 us/frame. This is editor/offline SDK generation only; runtime loader, FutureCommandEnvelope, HectonEventBus, SignalBus, GlobalRegistry, GlobalDataVault, save, rendering, Burst/jobs, telemetry, and GlobalQualityWeight are untouched.

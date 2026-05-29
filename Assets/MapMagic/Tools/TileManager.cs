@@ -44,6 +44,23 @@ namespace Den.Tools
 
 
 		[System.NonSerialized] protected Coord[] camCoords = null;
+		[System.NonSerialized] protected int camCoordsCount = 0;
+		[System.NonSerialized] private static readonly Coord[] emptyCamCoords = Array.Empty<Coord>();
+		[System.NonSerialized] private readonly Coord[] editorSingleCamCoords = new Coord[1];
+		[System.NonSerialized] private Camera cachedMainCamera = null;
+		[System.NonSerialized] private Transform cachedMainCameraTransform = null;
+		[System.NonSerialized] private Transform[] cachedTaggedTransforms = Array.Empty<Transform>();
+		[System.NonSerialized] private int cachedTaggedTransformCount = 0;
+		[System.NonSerialized] private bool camCoordsStorageDirty = false;
+		// COLD ALLOC: Dictionary<Coord,T>[256] - reusable source snapshot for tile-ring deployment - owner: TileManager
+		[System.NonSerialized] private readonly Dictionary<Coord,T> deploySrcGrid = new Dictionary<Coord,T>(256);
+		// COLD ALLOC: List<T>[256] - reusable removed-tile pool for tile-ring movement - owner: TileManager
+		[System.NonSerialized] private readonly List<T> deployPool = new List<T>(256);
+		// COLD ALLOC: List<(T,Coord,float)>[256] - reusable move ordering buffer for tile-ring deployment - owner: TileManager
+		[System.NonSerialized] private readonly List<(T tile, Coord coord, float dist)> deployMoved = new List<(T,Coord,float)>(256);
+		[System.NonSerialized] private CoordRect[] deployRectsScratch = Array.Empty<CoordRect>();
+		[System.NonSerialized] private readonly List<Coord> removedCoordsScratch = new List<Coord>(256);
+		private static readonly Comparison<(T tile, Coord coord, float dist)> CompareMovedTilesByDistance = CompareMovedTiles;
 		//[System.NonSerialized] protected CoordRect[] deployRects;  //used to find chunks difference and for Unpin
 
 
@@ -82,12 +99,14 @@ namespace Den.Tools
 			float minDist = int.MaxValue;
 			T minTile = default;
 
-			foreach (var kvp in grid)
+			Dictionary<Coord,T>.Enumerator closestEnumerator = grid.GetEnumerator();
+			while (closestEnumerator.MoveNext())
 			{
+				KeyValuePair<Coord,T> kvp = closestEnumerator.Current;
 				if (camCoords == null) return kvp.Value;
 
 				Coord coord = kvp.Key;
-				float dist = GetRemoteness(coord, camCoords);
+				float dist = GetRemoteness(coord, camCoords, camCoordsCount);
 				if (dist<minDist) { minDist=dist; minTile=kvp.Value; }
 			}
 
@@ -109,7 +128,7 @@ namespace Den.Tools
 				
 				Profiler.BeginSample("RefreshCamCoords");
 				bool camCoordsChanged = RefreshCamCoords(tileSize.x, holder);
-				if (!camCoordsChanged || camCoords.Length==0) { Profiler.EndSample(); return; }
+				if (!camCoordsChanged || camCoordsCount==0) { Profiler.EndSample(); return; }
 				Profiler.EndSample();
 
 				Profiler.BeginSample("Deploy");
@@ -126,7 +145,9 @@ namespace Den.Tools
 			public void ReDeploy (Vector3 tileSize, Dictionary<Coord,T> pinned=null, MonoBehaviour holder=null)
 			{
 				RemoveNulls(); //excluding removed objects
+				PrepareCamCoordsStorage();
 				RefreshCamCoords(tileSize.x);
+				if (camCoordsCount == 0) return;
 				Deploy(camCoords, pinned:pinned, holder:holder);
 				ChangeDists(camCoords);
 			}
@@ -141,14 +162,18 @@ namespace Den.Tools
 				if (!UnityEditor.EditorApplication.isPlaying) 
 				{
 					if (UnityEditor.SceneView.lastActiveSceneView?.camera==null || UnityEditor.SceneView.lastActiveSceneView.camera==null) //this happens right after script compile 
-						camCoords = new Coord[0]; 
+					{
+						camCoords = emptyCamCoords;
+						camCoordsCount = 0;
+					}
 
 					else
 					{
 						Vector3 sceneCamPos = UnityEditor.SceneView.lastActiveSceneView.camera.transform.position;
 						Coord sceneCamCoord = Coord.Floor(sceneCamPos.x/tileSize, sceneCamPos.z/tileSize);
 
-						if (camCoords==null || camCoords.Length!=1) { camCoords = new Coord[1]; coordsChanged = true; }
+						if (!ReferenceEquals(camCoords, editorSingleCamCoords)) { camCoords = editorSingleCamCoords; coordsChanged = true; }
+						if (camCoordsCount != 1) { camCoordsCount = 1; coordsChanged = true; }
 						if (camCoords[0] != sceneCamCoord) { camCoords[0] = sceneCamCoord; coordsChanged = true; }
 					}
 				}
@@ -156,81 +181,227 @@ namespace Den.Tools
 				else
 				#endif
 				{
+					coordsChanged = camCoordsStorageDirty;
+					camCoordsStorageDirty = false;
+
 					//finding objects with tag
-					GameObject[] taggedObjects = null;
-					if (genAroundObjsTag) 
-						taggedObjects = GameObject.FindGameObjectsWithTag(genAroundTag);
+					Transform[] taggedObjects = genAroundObjsTag ? cachedTaggedTransforms : null;
+					int taggedObjectsCount = genAroundObjsTag ? cachedTaggedTransformCount : 0;
 
-					//excluding nulls from objs list
-					Transform[] tfms = null;
-					if (genAroundTfms)
-						tfms = ArrayTools.RemoveNulls(genAroundTfmsList);
+					Transform mainCamTransform = GetCachedMainCameraTransform();
 
-					//calculating cams array length and rescaling it
-					int camsLength = 0;
-					if (genAroundMainCam) camsLength++;
-					if (taggedObjects !=null) camsLength += taggedObjects.Length;
-					if (tfms != null) camsLength += tfms.Length;
-					if (genAroundCoordinates) camsLength += genCoordinates.Length;
+					//calculating cams array length
+					int camsLength = CountRuntimeCamCoords(mainCamTransform);
 
-					if (camCoords == null || camsLength != camCoords.Length) 
+					if (camCoords == null || camsLength > camCoords.Length)
 					{
-						camCoords = new Coord[camsLength]; 
-						coordsChanged = true; 
+						camCoords = camsLength == 0 ? emptyCamCoords : new Coord[camsLength];
+						coordsChanged = true;
+					}
+
+					if (camCoordsCount != camsLength)
+					{
+						camCoordsCount = camsLength;
+						coordsChanged = true;
 					}
 				
 					if (camsLength == 0) 
-						//throw new Exception("TileManager: No Camera in scene to generate tiles.");
 						return coordsChanged;
 
 					//filling cams array
 					int counter = 0;
-					if (genAroundMainCam) 
+					if (genAroundMainCam && mainCamTransform != null)
 					{
-						Camera mainCam = Camera.main;
-						if (mainCam == null) mainCam = GameObject.FindAnyObjectByType<Camera>(); //in case it was destroyed or something
-						if (mainCam != null) //if still no camera
-						{
-							Vector3 camPos = mainCam.transform.position;
-							if (holder != null) camPos = holder.transform.InverseTransformPoint(camPos);
+						Vector3 camPos = mainCamTransform.position;
+						if (holder != null) camPos = holder.transform.InverseTransformPoint(camPos);
 						
-							Coord camCoord = Coord.Floor(camPos.x/tileSize, camPos.z/tileSize);
-							if (camCoords[0] != camCoord) { camCoords[0] = camCoord; coordsChanged = true; }
-							counter++;
-						}
+						Coord camCoord = Coord.Floor(camPos.x/tileSize, camPos.z/tileSize);
+						if (camCoords[counter] != camCoord) { camCoords[counter] = camCoord; coordsChanged = true; }
+						counter++;
 					}
 
 					if (taggedObjects != null)
-						for (int i=0; i<taggedObjects.Length; i++) 
+						for (int i=0; i<taggedObjectsCount; i++)
 						{
-							Vector3 objPos = taggedObjects[i].transform.position;
+							Transform taggedTransform = taggedObjects[i];
+							if (taggedTransform == null) continue;
+
+							Vector3 objPos = taggedTransform.position;
 							if (holder != null) objPos = holder.transform.InverseTransformPoint(objPos);
 
 							Coord objCoord = Coord.Floor(objPos.x/tileSize, objPos.z/tileSize);
-							if (camCoords[i+counter] != objCoord) { camCoords[i+counter] = objCoord; coordsChanged = true; }
+							if (camCoords[counter] != objCoord) { camCoords[counter] = objCoord; coordsChanged = true; }
+							counter++;
 						}
 
-					if (tfms != null)
-						for (int i=0; i<tfms.Length; i++) 
+					if (genAroundTfms && genAroundTfmsList != null)
+						for (int i=0; i<genAroundTfmsList.Length; i++)
 						{
-							Vector3 objPos = tfms[i].position;
+							Transform tfm = genAroundTfmsList[i];
+							if (tfm == null) continue;
+
+							Vector3 objPos = tfm.position;
 							if (holder != null) objPos = holder.transform.InverseTransformPoint(objPos);
 
 							Coord objCoord = Coord.Floor(objPos.x/tileSize, objPos.z/tileSize);
-							if (camCoords[i+counter] != objCoord) 
-								{ camCoords[i+counter] = objCoord; coordsChanged = true; }
+							if (camCoords[counter] != objCoord)
+								{ camCoords[counter] = objCoord; coordsChanged = true; }
+							counter++;
 						}
 
-					if (genAroundCoordinates)
+					if (genAroundCoordinates && genCoordinates != null)
 						for (int i=0; i<genCoordinates.Length; i++) 
 						{
 							Coord objCoord = genCoordinates[i];
-							if (camCoords[i+counter] != objCoord) 
-								{ camCoords[i+counter] = objCoord; coordsChanged = true; }
+							if (camCoords[counter] != objCoord)
+								{ camCoords[counter] = objCoord; coordsChanged = true; }
+							counter++;
 						}
+
+					if (counter != camCoordsCount)
+					{
+						camCoordsCount = counter;
+						coordsChanged = true;
+					}
 				}
 
 				return coordsChanged;
+			}
+
+
+			public void SetMainCamera (Camera camera, bool prepareStorage=true)
+			{
+				cachedMainCamera = camera;
+				cachedMainCameraTransform = camera == null ? null : camera.transform;
+				if (prepareStorage)
+					PrepareCamCoordsStorage();
+			}
+
+
+			public void SetTaggedObjects (GameObject[] taggedObjects)
+			{
+				if (taggedObjects == null || taggedObjects.Length == 0)
+				{
+					ClearCachedTaggedTransforms();
+					PrepareCamCoordsStorage();
+					return;
+				}
+
+				if (cachedTaggedTransforms == null || cachedTaggedTransforms.Length < taggedObjects.Length)
+					cachedTaggedTransforms = new Transform[taggedObjects.Length];
+
+				cachedTaggedTransformCount = 0;
+				for (int i=0; i<taggedObjects.Length; i++)
+				{
+					GameObject taggedObject = taggedObjects[i];
+					if (taggedObject == null) continue;
+
+					cachedTaggedTransforms[cachedTaggedTransformCount] = taggedObject.transform;
+					cachedTaggedTransformCount++;
+				}
+
+				for (int i=cachedTaggedTransformCount; i<cachedTaggedTransforms.Length; i++)
+					cachedTaggedTransforms[i] = null;
+
+				PrepareCamCoordsStorage();
+			}
+
+
+			private void PrepareCamCoordsStorage ()
+			{
+				#if UNITY_EDITOR
+				if (!Application.isPlaying)
+					return;
+				#endif
+
+				Transform mainCamTransform = GetCachedMainCameraTransform();
+				int camsLength = CountRuntimeCamCoords(mainCamTransform);
+				int camsCapacity = CountRuntimeCamCoordCapacity();
+				if (camCoords == null || camCoords.Length < camsCapacity || (camsCapacity == 0 && !ReferenceEquals(camCoords, emptyCamCoords)))
+				{
+					camCoords = camsCapacity == 0 ? emptyCamCoords : new Coord[camsCapacity];
+					camCoordsStorageDirty = true;
+				}
+				EnsureDeployRectCapacity(camsCapacity);
+
+				if (camCoordsCount != camsLength)
+				{
+					camCoordsCount = camsLength;
+					camCoordsStorageDirty = true;
+				}
+			}
+
+
+			private Transform GetCachedMainCameraTransform ()
+			{
+				if (cachedMainCamera == null)
+				{
+					cachedMainCameraTransform = null;
+					return null;
+				}
+
+				if (!cachedMainCamera.isActiveAndEnabled)
+					return null;
+
+				return cachedMainCameraTransform;
+			}
+
+
+			private static int CountNonNullTransforms (Transform[] transforms)
+			{
+				if (transforms == null) return 0;
+
+				int count = 0;
+				for (int i=0; i<transforms.Length; i++)
+					if (transforms[i] != null) count++;
+
+				return count;
+			}
+
+
+			private int CountCachedTaggedTransforms ()
+			{
+				if (cachedTaggedTransforms == null) return 0;
+
+				int count = 0;
+				for (int i=0; i<cachedTaggedTransformCount; i++)
+					if (cachedTaggedTransforms[i] != null) count++;
+
+				return count;
+			}
+
+
+			private void ClearCachedTaggedTransforms ()
+			{
+				if (cachedTaggedTransforms != null)
+				{
+					for (int i=0; i<cachedTaggedTransforms.Length; i++)
+						cachedTaggedTransforms[i] = null;
+				}
+
+				cachedTaggedTransformCount = 0;
+			}
+
+
+			private int CountRuntimeCamCoords (Transform mainCamTransform)
+			{
+				int camsLength = 0;
+				if (genAroundMainCam && mainCamTransform != null) camsLength++;
+				if (genAroundObjsTag) camsLength += CountCachedTaggedTransforms();
+				camsLength += CountNonNullTransforms(genAroundTfms ? genAroundTfmsList : null);
+				if (genAroundCoordinates && genCoordinates != null) camsLength += genCoordinates.Length;
+				return camsLength;
+			}
+
+
+			private int CountRuntimeCamCoordCapacity ()
+			{
+				int camsLength = 0;
+				if (genAroundMainCam) camsLength++;
+				if (genAroundObjsTag && cachedTaggedTransforms != null) camsLength += cachedTaggedTransformCount;
+				camsLength += CountNonNullTransforms(genAroundTfms ? genAroundTfmsList : null);
+				if (genAroundCoordinates && genCoordinates != null) camsLength += genCoordinates.Length;
+				return camsLength;
 			}
 
 		#endregion
@@ -241,12 +412,15 @@ namespace Den.Tools
 			public virtual void ChangeDists (Coord[] camCoords)
 			/// Fast deploy that changes distances only
 			{
-				foreach (var kvp in grid)
+				int activeCamCoordCount = ActiveCamCoordCount(camCoords);
+				Dictionary<Coord,T>.Enumerator enumerator = grid.GetEnumerator();
+				while (enumerator.MoveNext())
 				{
+					KeyValuePair<Coord,T> kvp = enumerator.Current;
 					Coord coord = kvp.Key;
 					T tile = kvp.Value;
 
-					tile.Dist( GetRemoteness(coord, camCoords) );
+					tile.Dist( GetRemoteness(coord, camCoords, activeCamCoordCount) );
 				}
 			}	
 
@@ -256,34 +430,52 @@ namespace Den.Tools
 			/// Note that all rects contain chunks, not world units
 			/// Holder is a parent object that called refresh, to parent created tiles
 			{
-				CoordRect[] createRects = GetDeployRects(camCoords, generateRange);
+				int activeCamCoordCount = ActiveCamCoordCount(camCoords);
+				if (activeCamCoordCount == 0) return;
+
+				EnsureDeployRectCapacity(activeCamCoordCount);
+				FillDeployRects(camCoords, activeCamCoordCount, generateRange);
 
 				//it would be easier to create new grid and fill it then, but 
 				//no change should be made in original grid because of multithreading
-				Dictionary<Coord,T> dstGrid = new Dictionary<Coord,T>();
-				Dictionary<Coord,T> srcGrid = new Dictionary<Coord,T>(grid); 
+				int rectSide = generateRange*2 + 1;
+				int expectedGridCapacity = Math.Max(grid.Count, activeCamCoordCount*rectSide*rectSide + (pinned != null ? pinned.Count : 0));
+				Dictionary<Coord,T> dstGrid = new Dictionary<Coord,T>(expectedGridCapacity);
+
+				Dictionary<Coord,T> srcGrid = deploySrcGrid;
+				srcGrid.Clear();
+				Dictionary<Coord,T>.Enumerator gridEnumerator = grid.GetEnumerator();
+				while (gridEnumerator.MoveNext())
+				{
+					KeyValuePair<Coord,T> kvp = gridEnumerator.Current;
+					srcGrid.Add(kvp.Key, kvp.Value);
+				}
 
 				//transferring pinned tiles to new grid
 				Profiler.BeginSample("Transf Pin To New");
 				if (pinned != null)
-					foreach(KeyValuePair<Coord,T> kvp in pinned)
 				{
-					Coord coord = kvp.Key;
-					T tile = kvp.Value;
+					Dictionary<Coord,T>.Enumerator pinnedEnumerator = pinned.GetEnumerator();
+					while (pinnedEnumerator.MoveNext())
+					{
+						KeyValuePair<Coord,T> kvp = pinnedEnumerator.Current;
+						Coord coord = kvp.Key;
+						T tile = kvp.Value;
 					
-					srcGrid.Remove(coord);
-					dstGrid.Add(coord, tile);
+						srcGrid.Remove(coord);
+						dstGrid.Add(coord, tile);
 
-					tile.Dist(GetRemoteness(coord, camCoords)); //calculating dist to every tile added to dstGrid
+						tile.Dist(GetRemoteness(coord, camCoords, activeCamCoordCount)); //calculating dist to every tile added to dstGrid
+					}
 				}
 				Profiler.EndSample();
 
 
 				//adding objects within create range + margin (on their respective coordinates)
 				Profiler.BeginSample("Adding Objs");
-				for (int r=0; r<createRects.Length; r++)
+				for (int r=0; r<activeCamCoordCount; r++)
 				{
-					CoordRect rect = createRects[r];
+					CoordRect rect = deployRectsScratch[r];
 					//rect.Expand(retainMargin);
 					Coord min = rect.Min-retainMargin; Coord max = rect.Max+retainMargin;
 
@@ -297,7 +489,7 @@ namespace Den.Tools
 								srcGrid.Remove(coord);
 								dstGrid.Add(coord,tile);
 
-								tile.Dist(GetRemoteness(coord, camCoords));
+								tile.Dist(GetRemoteness(coord, camCoords, activeCamCoordCount));
 							}
 						}
 				}
@@ -305,11 +497,16 @@ namespace Den.Tools
 
 				//filling create rects empty areas with unused (or new) objects and moving them
 				Profiler.BeginSample("Fillin Empty");
-				Queue<T> pool = new Queue<T>(srcGrid.Values);
-				List<(T tile, Coord coord, float dist)> moved = new List<(T,Coord,float)>();
-				for (int r=0; r<createRects.Length; r++)
+				deployPool.Clear();
+				Dictionary<Coord,T>.Enumerator srcEnumerator = srcGrid.GetEnumerator();
+				while (srcEnumerator.MoveNext())
+					deployPool.Add(srcEnumerator.Current.Value);
+
+				int poolIndex = 0;
+				deployMoved.Clear();
+				for (int r=0; r<activeCamCoordCount; r++)
 				{
-					CoordRect rect = createRects[r];
+					CoordRect rect = deployRectsScratch[r];
 					Coord min = rect.Min; Coord max = rect.Max;
 
 					for (int x=min.x; x<max.x; x++)
@@ -322,11 +519,12 @@ namespace Den.Tools
 						T tile;
 
 						//moving
-						if (pool.Count != 0  &&  allowMove)
+						if (poolIndex < deployPool.Count  &&  allowMove)
 						{
 							//Coord oldCoord = srcGrid.AnyKey();
 							//T tile = srcGrid[oldCoord];
-							tile = pool.Dequeue();
+							tile = deployPool[poolIndex];
+							poolIndex++;
 						}
 
 						//creating
@@ -341,7 +539,7 @@ namespace Den.Tools
 						dstGrid.Add(newCoord, tile);
 
 						//tile.Move(newCoord, GetRemoteness(newCoord, camCoords)); //moving after according to their distance
-						moved.Add( (tile, newCoord, GetRemoteness(newCoord, camCoords)) );
+						deployMoved.Add( (tile, newCoord, GetRemoteness(newCoord, camCoords, activeCamCoordCount)) );
 					}
 
 					//HashSet<T> curChangedTiles = RelocateTiles(dstGrid, rect, pool, holder);
@@ -351,31 +549,29 @@ namespace Den.Tools
 
 				//calling remove fn on all other objs left (no need to remove from srcDict - just not including them in dst)
 				Profiler.BeginSample("Callin Remove");
-				while (pool.Count != 0)
+				for (int p=poolIndex; p<deployPool.Count; p++)
 				{
-					T tile = pool.Dequeue();
+					T tile = deployPool[p];
 					tile.Remove();
 				}
 				Profiler.EndSample();
 
 				//calling Move function in order depending on remoteness
 				Profiler.BeginSample("Callin Move");
-				moved.Sort((x,y) => 
-				{
-					float delta = x.dist-y.dist;
-					if (delta > 0.00001f) return 1;
-					else if (delta < -0.000001f) return -1;
-					else return 0;
-				});
+				deployMoved.Sort(CompareMovedTilesByDistance);
 
 				//assigning new grid and deployed rects
 				//this should be done before calling Move (moves calls MM welding, and welding reads grid)
 				lock (gridLocker)
 					grid = dstGrid;
 
-				int movedCount = moved.Count;
+				int movedCount = deployMoved.Count;
 				for (int m=0; m<movedCount; m++)
-					moved[m].tile.Move(moved[m].coord, moved[m].dist);
+					deployMoved[m].tile.Move(deployMoved[m].coord, deployMoved[m].dist);
+
+				srcGrid.Clear();
+				deployPool.Clear();
+				deployMoved.Clear();
 				Profiler.EndSample();
 			}
 
@@ -383,26 +579,49 @@ namespace Den.Tools
 
 		#region Helpers
 
-			private static CoordRect[] GetDeployRects (Coord[] camCoords, int range)
-			/// Converts each cam coord to chunk rect using the generate range
+			private int ActiveCamCoordCount (Coord[] coords)
 			{
-				CoordRect[] deployRects = new CoordRect[camCoords.Length]; 
-
-				for (int r=0; r<camCoords.Length; r++) 
-					deployRects[r] = new CoordRect(camCoords[r].x - range, camCoords[r].z - range, range*2 +1, range*2 +1);
-
-				return deployRects;
+				if (coords == null) return 0;
+				if (ReferenceEquals(coords, camCoords)) return camCoordsCount;
+				return coords.Length;
 			}
 
 
-			protected static float GetRemoteness (Coord coord, Coord[] camCoords)
+			private void EnsureDeployRectCapacity (int requiredCapacity)
+			{
+				if (deployRectsScratch.Length >= requiredCapacity)
+					return;
+
+				Array.Resize(ref deployRectsScratch, requiredCapacity);
+			}
+
+
+			private void FillDeployRects (Coord[] camCoords, int camCoordsCount, int range)
+			/// Converts each cam coord to chunk rect using the generate range
+			{
+				for (int r=0; r<camCoordsCount; r++)
+					deployRectsScratch[r] = new CoordRect(camCoords[r].x - range, camCoords[r].z - range, range*2 +1, range*2 +1);
+			}
+
+
+			private static int CompareMovedTiles ((T tile, Coord coord, float dist) x, (T tile, Coord coord, float dist) y)
+			{
+				float delta = x.dist-y.dist;
+				if (delta > 0.00001f) return 1;
+				if (delta < -0.000001f) return -1;
+				return 0;
+			}
+
+
+			protected static float GetRemoteness (Coord coord, Coord[] camCoords, int camCoordsCount=-1)
 			/// Returns an axis/priority distance to the closest cam
 			{
 				float minDist = float.MaxValue;
 
 				if (camCoords == null) return minDist;
+				if (camCoordsCount < 0 || camCoordsCount > camCoords.Length) camCoordsCount = camCoords.Length;
 
-				for (int r=0; r<camCoords.Length; r++)
+				for (int r=0; r<camCoordsCount; r++)
 				{
 					float dist = Coord.DistanceAxisPriority(camCoords[r], coord);
 					if (dist < minDist) minDist = dist;
@@ -415,22 +634,22 @@ namespace Den.Tools
 			public virtual void RemoveNulls ()
 			/// Removes tiles that were deleted externally from the collection
 			{
-				List<Coord> removedCoords = null;
+				removedCoordsScratch.Clear();
 
-				foreach (KeyValuePair<Coord,T> kvp in grid)
+				Dictionary<Coord,T>.Enumerator enumerator = grid.GetEnumerator();
+				while (enumerator.MoveNext())
 				{
+					KeyValuePair<Coord,T> kvp = enumerator.Current;
 					T tile = kvp.Value;
 
 					if (tile == null || tile.IsNull) 
-					{
-						if (removedCoords == null) removedCoords = new List<Coord>(); //do not create list if there's nothing to remove
-						removedCoords.Add(kvp.Key);
-					}
+						removedCoordsScratch.Add(kvp.Key);
 				}
 			
-				if (removedCoords != null)
-					foreach (Coord coord in removedCoords)
-						grid.Remove(coord);
+				for (int i=0; i<removedCoordsScratch.Count; i++)
+					grid.Remove(removedCoordsScratch[i]);
+
+				removedCoordsScratch.Clear();
 			}
 
 
@@ -508,13 +727,13 @@ namespace Den.Tools
 				grid.Add(coord, tile);
 
 				tile.Pin();
-				tile.Move(coord, camCoords != null ? GetRemoteness(coord,camCoords) : 0);
+				tile.Move(coord, camCoords != null ? GetRemoteness(coord, camCoords, camCoordsCount) : 0);
 			}
 
 			else
 				tile.Pin(); 
 
-			if (pinned.ContainsKey(coord))
+			if (!pinned.ContainsKey(coord))
 				pinned.Add(coord, tile);
 		}
 

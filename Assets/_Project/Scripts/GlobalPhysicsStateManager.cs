@@ -334,6 +334,18 @@ namespace Hecton8.Physics
                 return true;
             }
 
+            public bool TryResolve(out NativeArray<T> buffer)
+            {
+                buffer = ResolveExisting();
+                return buffer.IsCreated && buffer.Length >= RequiredLength;
+            }
+
+            public bool HasValidView()
+            {
+                NativeArray<T> buffer = ResolveExisting();
+                return buffer.IsCreated && buffer.Length >= RequiredLength;
+            }
+
             public T this[int index]
             {
                 get
@@ -590,6 +602,29 @@ namespace Hecton8.Physics
         private const double ColliderLodCompoundToSimpleDistanceSq = ColliderLodCompoundToSimpleDistanceMeters * ColliderLodCompoundToSimpleDistanceMeters;
         private const double ColliderLodSimpleToCompoundDistanceSq = ColliderLodSimpleToCompoundDistanceMeters * ColliderLodSimpleToCompoundDistanceMeters;
         private const SystemID OwnerSystemId = SystemID.GlobalPhysicsStateManager;
+        private static readonly ulong PhysicsCullingSchedulingMutationGuardMask1337 =
+            PhysicsVaultMutationGuardBit(BufferID.RigidbodyAUPs) |
+            PhysicsVaultMutationGuardBit(BufferID.RigidbodyCullingState) |
+            PhysicsVaultMutationGuardBit(BufferID.RigidbodyAwakeResults) |
+            PhysicsVaultMutationGuardBit(BufferID.RigidbodyCullingCommands) |
+            PhysicsVaultMutationGuardBit(BufferID.RigidbodyDistanceSq) |
+            PhysicsVaultMutationGuardBit(BufferID.ShinobuPhysicsCullingDtos) |
+            PhysicsVaultMutationGuardBit(BufferID.ShinobuPhysicsCullingStateAges) |
+            PhysicsVaultMutationGuardBit(BufferID.ShinobuPhysicsCullingSpatialCandidates) |
+            PhysicsVaultMutationGuardBit(BufferID.ShinobuPhysicsCullingSpatialCandidateMask) |
+            PhysicsVaultMutationGuardBit(BufferID.ShinobuPhysicsCullingMockSeismicSignals) |
+            PhysicsVaultMutationGuardBit(BufferID.ShinobuPhysicsCullingSpatialBucketHeads) |
+            PhysicsVaultMutationGuardBit(BufferID.ShinobuPhysicsCullingSpatialNext) |
+            PhysicsVaultMutationGuardBit(BufferID.ShinobuPhysicsCullingSpatialCellHashes) |
+            PhysicsVaultMutationGuardBit(BufferID.ShinobuPhysicsCullingChangedIndices) |
+            PhysicsVaultMutationGuardBit(BufferID.ShinobuPhysicsCullingChangedCount) |
+            PhysicsVaultMutationGuardBit(BufferID.ShinobuPhysicsCullingFrameTelemetry);
+        private static readonly ulong PhysicsCullingDispatchMutationGuardMask1337 =
+            PhysicsVaultMutationGuardBit(BufferID.ShinobuPhysicsCullingChangedIndices) |
+            PhysicsVaultMutationGuardBit(BufferID.ShinobuPhysicsCullingChangedCount) |
+            PhysicsVaultMutationGuardBit(BufferID.RigidbodyAwakeResults) |
+            PhysicsVaultMutationGuardBit(BufferID.RigidbodyCullingCommands) |
+            PhysicsVaultMutationGuardBit(BufferID.RigidbodyDistanceSq);
         private static readonly uint _nanRecoverySystemHash = unchecked((uint)LocHash.Compute(nameof(GlobalPhysicsStateManager)));
         private static readonly uint _kinematicHitStopHash = unchecked((uint)LocHash.Compute("GlobalPhysicsStateManager.KinematicHitStop"));
         private static GlobalPhysicsStateManager s_runtimeManager;
@@ -646,6 +681,7 @@ namespace Hecton8.Physics
         private Rigidbody _submarineHullBody;
         private ITickDispatcher _tickDispatcher;
         private ICelestialSkyDirectionReadModel _celestialEngineRuntime;
+        private IDataVault _nativeStateDataVault;
         private JobHandle _physicsCullingJobHandle;
         private int _trackedBodyCount;
         private int _connectionCount;
@@ -1219,6 +1255,7 @@ namespace Hecton8.Physics
         private void BindNativeStateDataVault()
         {
             IDataVault dataVault = GlobalRegistry.DataVault;
+            _nativeStateDataVault = dataVault;
             _lastValidPositions.BindDataVault(dataVault);
             _impactEvents.BindDataVault(dataVault);
             _rigidbodyAUPs.BindDataVault(dataVault);
@@ -1228,6 +1265,27 @@ namespace Hecton8.Physics
             _rigidbodyDistanceSqResults.BindDataVault(dataVault);
             _physicsCullingTelemetry.BindDataVault(dataVault);
             BindShinobu37PhysicsCullingDataVault(dataVault);
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private static ulong PhysicsVaultMutationGuardBit(BufferID bufferId)
+        {
+            return 1UL << (unchecked((int)(uint)(int)bufferId) & 31);
+        }
+
+        private bool TryAcquirePhysicsMutationGuard(ulong mutationGuardMask)
+        {
+            IDataVault vault = _nativeStateDataVault;
+            return mutationGuardMask != 0UL &&
+                vault != null &&
+                vault.TryAcquireMutationGuard(mutationGuardMask);
+        }
+
+        private void ReleasePhysicsMutationGuard(ulong mutationGuardMask)
+        {
+            IDataVault vault = _nativeStateDataVault;
+            if (mutationGuardMask != 0UL && vault != null)
+                vault.ReleaseMutationGuard(mutationGuardMask);
         }
 
         private void CacheColdRuntimeDependencies()
@@ -1354,6 +1412,7 @@ namespace Hecton8.Physics
             ReleaseShinobu37PhysicsCullingState();
             _submarineHullBody = null;
             _tickDispatcher = null;
+            _nativeStateDataVault = null;
 
             TryUnregisterService();
             _isInitialized = false;
@@ -3032,22 +3091,32 @@ namespace Hecton8.Physics
             rigidbodyAups = default;
             lastValidPositionsLocked = false;
             rigidbodyAupsLocked = false;
-            bool success = false;
+            ulong mutationGuardMask = 0UL;
+            if (_lastValidPositions.IsCreated)
+                mutationGuardMask |= PhysicsVaultMutationGuardBit(BufferID.RigidbodyLastValidPositions);
+            if (includeRigidbodyAups && _rigidbodyAUPs.IsCreated)
+                mutationGuardMask |= PhysicsVaultMutationGuardBit(BufferID.RigidbodyAUPs);
+            if (mutationGuardMask == 0UL)
+                return true;
 
+            if (!TryAcquirePhysicsMutationGuard(mutationGuardMask))
+                return false;
+
+            bool success = false;
             try
             {
                 if (_lastValidPositions.IsCreated)
                 {
-                    lastValidPositionsLocked = _lastValidPositions.TryAcquireWriteLock(out lastValidPositions);
-                    if (!lastValidPositionsLocked)
+                    if (!_lastValidPositions.TryResolve(out lastValidPositions))
                         return false;
+                    lastValidPositionsLocked = true;
                 }
 
                 if (includeRigidbodyAups && _rigidbodyAUPs.IsCreated)
                 {
-                    rigidbodyAupsLocked = _rigidbodyAUPs.TryAcquireWriteLock(out rigidbodyAups);
-                    if (!rigidbodyAupsLocked)
+                    if (!_rigidbodyAUPs.TryResolve(out rigidbodyAups))
                         return false;
+                    rigidbodyAupsLocked = true;
                 }
 
                 success = true;
@@ -3057,212 +3126,86 @@ namespace Hecton8.Physics
             {
                 if (!success)
                 {
-                    ReleaseTrackedBodyPositionPublishLocks1337(lastValidPositionsLocked, rigidbodyAupsLocked);
                     lastValidPositions = default;
                     rigidbodyAups = default;
                     lastValidPositionsLocked = false;
                     rigidbodyAupsLocked = false;
+                    ReleasePhysicsMutationGuard(mutationGuardMask);
                 }
             }
         }
 
         private void ReleaseTrackedBodyPositionPublishLocks1337(bool lastValidPositionsLocked, bool rigidbodyAupsLocked)
         {
-            if (rigidbodyAupsLocked)
-                _rigidbodyAUPs.ReleaseWriteLock();
+            ulong mutationGuardMask = 0UL;
             if (lastValidPositionsLocked)
-                _lastValidPositions.ReleaseWriteLock();
+                mutationGuardMask |= PhysicsVaultMutationGuardBit(BufferID.RigidbodyLastValidPositions);
+            if (rigidbodyAupsLocked)
+                mutationGuardMask |= PhysicsVaultMutationGuardBit(BufferID.RigidbodyAUPs);
+            ReleasePhysicsMutationGuard(mutationGuardMask);
         }
 
         private bool TryAcquirePhysicsCullingSchedulingLocks1337()
         {
-            bool lockedRigidbodyAups = false;
-            bool lockedStateSnapshot = false;
-            bool lockedAwakeResults = false;
-            bool lockedCommandResults = false;
-            bool lockedDistanceResults = false;
-            bool lockedCullingDtos = false;
-            bool lockedStateAges = false;
-            bool lockedSpatialCandidates = false;
-            bool lockedSpatialCandidateMask = false;
-            bool lockedMockSignals = false;
-            bool lockedBucketHeads = false;
-            bool lockedSpatialNext = false;
-            bool lockedCellHashes = false;
-            bool lockedChangedIndices = false;
-            bool lockedChangedCount = false;
-            bool lockedFrameTelemetry = false;
-            bool success = false;
+            if (!TryAcquirePhysicsMutationGuard(PhysicsCullingSchedulingMutationGuardMask1337))
+                return false;
 
-            try
-            {
-                lockedRigidbodyAups = _rigidbodyAUPs.TryAcquireWriteLock(out _);
-                if (!lockedRigidbodyAups)
-                    return false;
-                lockedStateSnapshot = _rigidbodyCullingStateSnapshot.TryAcquireWriteLock(out _);
-                if (!lockedStateSnapshot)
-                    return false;
-                lockedAwakeResults = _rigidbodyAwakeResults.TryAcquireWriteLock(out _);
-                if (!lockedAwakeResults)
-                    return false;
-                lockedCommandResults = _rigidbodyCullingCommandResults.TryAcquireWriteLock(out _);
-                if (!lockedCommandResults)
-                    return false;
-                lockedDistanceResults = _rigidbodyDistanceSqResults.TryAcquireWriteLock(out _);
-                if (!lockedDistanceResults)
-                    return false;
-                lockedCullingDtos = _physicsCullingDtos.TryAcquireWriteLock(out _);
-                if (!lockedCullingDtos)
-                    return false;
-                lockedStateAges = _physicsCullingStateAges.TryAcquireWriteLock(out _);
-                if (!lockedStateAges)
-                    return false;
-                lockedSpatialCandidates = _physicsCullingSpatialCandidates.TryAcquireWriteLock(out _);
-                if (!lockedSpatialCandidates)
-                    return false;
-                lockedSpatialCandidateMask = _physicsCullingSpatialCandidateMask.TryAcquireWriteLock(out _);
-                if (!lockedSpatialCandidateMask)
-                    return false;
-                lockedMockSignals = _physicsMockSeismicSignals.TryAcquireWriteLock(out _);
-                if (!lockedMockSignals)
-                    return false;
-                lockedBucketHeads = _physicsSpatialBucketHeads.TryAcquireWriteLock(out _);
-                if (!lockedBucketHeads)
-                    return false;
-                lockedSpatialNext = _physicsSpatialNext.TryAcquireWriteLock(out _);
-                if (!lockedSpatialNext)
-                    return false;
-                lockedCellHashes = _physicsSpatialCellHashes.TryAcquireWriteLock(out _);
-                if (!lockedCellHashes)
-                    return false;
-                lockedChangedIndices = _physicsStateChangedIndices.TryAcquireWriteLock(out _);
-                if (!lockedChangedIndices)
-                    return false;
-                lockedChangedCount = _physicsStateChangedCount.TryAcquireWriteLock(out _);
-                if (!lockedChangedCount)
-                    return false;
-                lockedFrameTelemetry = _physicsCullingFrameTelemetry.TryAcquireWriteLock(out _);
-                if (!lockedFrameTelemetry)
-                    return false;
-
-                success = true;
+            if (ValidatePhysicsCullingSchedulingViews1337())
                 return true;
-            }
-            finally
-            {
-                if (!success)
-                {
-                    if (lockedFrameTelemetry)
-                        _physicsCullingFrameTelemetry.ReleaseWriteLock();
-                    if (lockedChangedCount)
-                        _physicsStateChangedCount.ReleaseWriteLock();
-                    if (lockedChangedIndices)
-                        _physicsStateChangedIndices.ReleaseWriteLock();
-                    if (lockedCellHashes)
-                        _physicsSpatialCellHashes.ReleaseWriteLock();
-                    if (lockedSpatialNext)
-                        _physicsSpatialNext.ReleaseWriteLock();
-                    if (lockedBucketHeads)
-                        _physicsSpatialBucketHeads.ReleaseWriteLock();
-                    if (lockedMockSignals)
-                        _physicsMockSeismicSignals.ReleaseWriteLock();
-                    if (lockedSpatialCandidateMask)
-                        _physicsCullingSpatialCandidateMask.ReleaseWriteLock();
-                    if (lockedSpatialCandidates)
-                        _physicsCullingSpatialCandidates.ReleaseWriteLock();
-                    if (lockedStateAges)
-                        _physicsCullingStateAges.ReleaseWriteLock();
-                    if (lockedCullingDtos)
-                        _physicsCullingDtos.ReleaseWriteLock();
-                    if (lockedDistanceResults)
-                        _rigidbodyDistanceSqResults.ReleaseWriteLock();
-                    if (lockedCommandResults)
-                        _rigidbodyCullingCommandResults.ReleaseWriteLock();
-                    if (lockedAwakeResults)
-                        _rigidbodyAwakeResults.ReleaseWriteLock();
-                    if (lockedStateSnapshot)
-                        _rigidbodyCullingStateSnapshot.ReleaseWriteLock();
-                    if (lockedRigidbodyAups)
-                        _rigidbodyAUPs.ReleaseWriteLock();
-                }
-            }
+
+            ReleasePhysicsMutationGuard(PhysicsCullingSchedulingMutationGuardMask1337);
+            return false;
         }
 
         private void ReleasePhysicsCullingSchedulingLocks1337()
         {
-            _physicsCullingFrameTelemetry.ReleaseWriteLock();
-            _physicsStateChangedCount.ReleaseWriteLock();
-            _physicsStateChangedIndices.ReleaseWriteLock();
-            _physicsSpatialCellHashes.ReleaseWriteLock();
-            _physicsSpatialNext.ReleaseWriteLock();
-            _physicsSpatialBucketHeads.ReleaseWriteLock();
-            _physicsMockSeismicSignals.ReleaseWriteLock();
-            _physicsCullingSpatialCandidateMask.ReleaseWriteLock();
-            _physicsCullingSpatialCandidates.ReleaseWriteLock();
-            _physicsCullingStateAges.ReleaseWriteLock();
-            _physicsCullingDtos.ReleaseWriteLock();
-            _rigidbodyDistanceSqResults.ReleaseWriteLock();
-            _rigidbodyCullingCommandResults.ReleaseWriteLock();
-            _rigidbodyAwakeResults.ReleaseWriteLock();
-            _rigidbodyCullingStateSnapshot.ReleaseWriteLock();
-            _rigidbodyAUPs.ReleaseWriteLock();
+            ReleasePhysicsMutationGuard(PhysicsCullingSchedulingMutationGuardMask1337);
         }
 
         private bool TryAcquirePhysicsCullingDispatchLocks1337()
         {
-            bool lockedChangedIndices = false;
-            bool lockedChangedCount = false;
-            bool lockedAwakeResults = false;
-            bool lockedCommandResults = false;
-            bool lockedDistanceResults = false;
-            bool success = false;
+            if (!TryAcquirePhysicsMutationGuard(PhysicsCullingDispatchMutationGuardMask1337))
+                return false;
 
-            try
-            {
-                lockedChangedIndices = _physicsStateChangedIndices.TryAcquireWriteLock(out _);
-                if (!lockedChangedIndices)
-                    return false;
-                lockedChangedCount = _physicsStateChangedCount.TryAcquireWriteLock(out _);
-                if (!lockedChangedCount)
-                    return false;
-                lockedAwakeResults = _rigidbodyAwakeResults.TryAcquireWriteLock(out _);
-                if (!lockedAwakeResults)
-                    return false;
-                lockedCommandResults = _rigidbodyCullingCommandResults.TryAcquireWriteLock(out _);
-                if (!lockedCommandResults)
-                    return false;
-                lockedDistanceResults = _rigidbodyDistanceSqResults.TryAcquireWriteLock(out _);
-                if (!lockedDistanceResults)
-                    return false;
-
-                success = true;
+            if (ValidatePhysicsCullingDispatchViews1337())
                 return true;
-            }
-            finally
-            {
-                if (!success)
-                {
-                    if (lockedDistanceResults)
-                        _rigidbodyDistanceSqResults.ReleaseWriteLock();
-                    if (lockedCommandResults)
-                        _rigidbodyCullingCommandResults.ReleaseWriteLock();
-                    if (lockedAwakeResults)
-                        _rigidbodyAwakeResults.ReleaseWriteLock();
-                    if (lockedChangedCount)
-                        _physicsStateChangedCount.ReleaseWriteLock();
-                    if (lockedChangedIndices)
-                        _physicsStateChangedIndices.ReleaseWriteLock();
-                }
-            }
+
+            ReleasePhysicsMutationGuard(PhysicsCullingDispatchMutationGuardMask1337);
+            return false;
         }
 
         private void ReleasePhysicsCullingDispatchLocks1337()
         {
-            _rigidbodyDistanceSqResults.ReleaseWriteLock();
-            _rigidbodyCullingCommandResults.ReleaseWriteLock();
-            _rigidbodyAwakeResults.ReleaseWriteLock();
-            _physicsStateChangedCount.ReleaseWriteLock();
-            _physicsStateChangedIndices.ReleaseWriteLock();
+            ReleasePhysicsMutationGuard(PhysicsCullingDispatchMutationGuardMask1337);
+        }
+
+        private bool ValidatePhysicsCullingSchedulingViews1337()
+        {
+            return _rigidbodyAUPs.HasValidView() &&
+                _rigidbodyCullingStateSnapshot.HasValidView() &&
+                _rigidbodyAwakeResults.HasValidView() &&
+                _rigidbodyCullingCommandResults.HasValidView() &&
+                _rigidbodyDistanceSqResults.HasValidView() &&
+                _physicsCullingDtos.HasValidView() &&
+                _physicsCullingStateAges.HasValidView() &&
+                _physicsCullingSpatialCandidates.HasValidView() &&
+                _physicsCullingSpatialCandidateMask.HasValidView() &&
+                _physicsMockSeismicSignals.HasValidView() &&
+                _physicsSpatialBucketHeads.HasValidView() &&
+                _physicsSpatialNext.HasValidView() &&
+                _physicsSpatialCellHashes.HasValidView() &&
+                _physicsStateChangedIndices.HasValidView() &&
+                _physicsStateChangedCount.HasValidView() &&
+                _physicsCullingFrameTelemetry.HasValidView();
+        }
+
+        private bool ValidatePhysicsCullingDispatchViews1337()
+        {
+            return _physicsStateChangedIndices.HasValidView() &&
+                _physicsStateChangedCount.HasValidView() &&
+                _rigidbodyAwakeResults.HasValidView() &&
+                _rigidbodyCullingCommandResults.HasValidView() &&
+                _rigidbodyDistanceSqResults.HasValidView();
         }
 
         private void TickPhysicsCullingSlowCadence(float fixedDeltaTime)
@@ -4705,7 +4648,7 @@ namespace Hecton8.Physics
             _trackedBodyIndexByEntityId.Clear();
             _trackedBodyIndexByInstanceId.Clear();
 
-            bool runtimeClearLocksAcquired = TryAcquirePhysicsRuntimeClearLocks1337(out uint runtimeClearLockMask);
+            bool runtimeClearLocksAcquired = TryAcquirePhysicsRuntimeClearLocks1337(out ulong runtimeClearLockMask);
             if (!runtimeClearLocksAcquired)
             {
                 _physicsCullingLockContentionsThisFrame++;
@@ -4803,98 +4746,42 @@ namespace Hecton8.Physics
             }
         }
 
-        private const uint PhysicsRuntimeClearLastValidPositionsLock1337 = 1u << 0;
-        private const uint PhysicsRuntimeClearRigidbodyAupsLock1337 = 1u << 1;
-        private const uint PhysicsRuntimeClearStateSnapshotLock1337 = 1u << 2;
-        private const uint PhysicsRuntimeClearAwakeResultsLock1337 = 1u << 3;
-        private const uint PhysicsRuntimeClearCommandResultsLock1337 = 1u << 4;
-        private const uint PhysicsRuntimeClearDistanceResultsLock1337 = 1u << 5;
-        private const uint PhysicsRuntimeClearTelemetryLock1337 = 1u << 6;
-
-        private bool TryAcquirePhysicsRuntimeClearLocks1337(out uint acquiredLockMask)
+        private bool TryAcquirePhysicsRuntimeClearLocks1337(out ulong acquiredLockMask)
         {
-            acquiredLockMask = 0u;
-            bool success = false;
-            try
-            {
-                if (_lastValidPositions.IsCreated)
-                {
-                    if (!_lastValidPositions.TryAcquireWriteLock(out _))
-                        return false;
-                    acquiredLockMask |= PhysicsRuntimeClearLastValidPositionsLock1337;
-                }
-
-                if (_rigidbodyAUPs.IsCreated)
-                {
-                    if (!_rigidbodyAUPs.TryAcquireWriteLock(out _))
-                        return false;
-                    acquiredLockMask |= PhysicsRuntimeClearRigidbodyAupsLock1337;
-                }
-
-                if (_rigidbodyCullingStateSnapshot.IsCreated)
-                {
-                    if (!_rigidbodyCullingStateSnapshot.TryAcquireWriteLock(out _))
-                        return false;
-                    acquiredLockMask |= PhysicsRuntimeClearStateSnapshotLock1337;
-                }
-
-                if (_rigidbodyAwakeResults.IsCreated)
-                {
-                    if (!_rigidbodyAwakeResults.TryAcquireWriteLock(out _))
-                        return false;
-                    acquiredLockMask |= PhysicsRuntimeClearAwakeResultsLock1337;
-                }
-
-                if (_rigidbodyCullingCommandResults.IsCreated)
-                {
-                    if (!_rigidbodyCullingCommandResults.TryAcquireWriteLock(out _))
-                        return false;
-                    acquiredLockMask |= PhysicsRuntimeClearCommandResultsLock1337;
-                }
-
-                if (_rigidbodyDistanceSqResults.IsCreated)
-                {
-                    if (!_rigidbodyDistanceSqResults.TryAcquireWriteLock(out _))
-                        return false;
-                    acquiredLockMask |= PhysicsRuntimeClearDistanceResultsLock1337;
-                }
-
-                if (_physicsCullingTelemetry.IsCreated)
-                {
-                    if (!_physicsCullingTelemetry.TryAcquireWriteLock(out _))
-                        return false;
-                    acquiredLockMask |= PhysicsRuntimeClearTelemetryLock1337;
-                }
-
-                success = true;
+            acquiredLockMask = ResolvePhysicsRuntimeClearMutationGuardMask1337();
+            if (acquiredLockMask == 0UL)
                 return true;
-            }
-            finally
-            {
-                if (!success && acquiredLockMask != 0u)
-                {
-                    ReleasePhysicsRuntimeClearLocks1337(acquiredLockMask);
-                    acquiredLockMask = 0u;
-                }
-            }
+
+            if (TryAcquirePhysicsMutationGuard(acquiredLockMask))
+                return true;
+
+            acquiredLockMask = 0UL;
+            return false;
         }
 
-        private void ReleasePhysicsRuntimeClearLocks1337(uint acquiredLockMask)
+        private void ReleasePhysicsRuntimeClearLocks1337(ulong acquiredLockMask)
         {
-            if ((acquiredLockMask & PhysicsRuntimeClearTelemetryLock1337) != 0u)
-                _physicsCullingTelemetry.ReleaseWriteLock();
-            if ((acquiredLockMask & PhysicsRuntimeClearDistanceResultsLock1337) != 0u)
-                _rigidbodyDistanceSqResults.ReleaseWriteLock();
-            if ((acquiredLockMask & PhysicsRuntimeClearCommandResultsLock1337) != 0u)
-                _rigidbodyCullingCommandResults.ReleaseWriteLock();
-            if ((acquiredLockMask & PhysicsRuntimeClearAwakeResultsLock1337) != 0u)
-                _rigidbodyAwakeResults.ReleaseWriteLock();
-            if ((acquiredLockMask & PhysicsRuntimeClearStateSnapshotLock1337) != 0u)
-                _rigidbodyCullingStateSnapshot.ReleaseWriteLock();
-            if ((acquiredLockMask & PhysicsRuntimeClearRigidbodyAupsLock1337) != 0u)
-                _rigidbodyAUPs.ReleaseWriteLock();
-            if ((acquiredLockMask & PhysicsRuntimeClearLastValidPositionsLock1337) != 0u)
-                _lastValidPositions.ReleaseWriteLock();
+            ReleasePhysicsMutationGuard(acquiredLockMask);
+        }
+
+        private ulong ResolvePhysicsRuntimeClearMutationGuardMask1337()
+        {
+            ulong mutationGuardMask = 0UL;
+            if (_lastValidPositions.IsCreated)
+                mutationGuardMask |= PhysicsVaultMutationGuardBit(BufferID.RigidbodyLastValidPositions);
+            if (_rigidbodyAUPs.IsCreated)
+                mutationGuardMask |= PhysicsVaultMutationGuardBit(BufferID.RigidbodyAUPs);
+            if (_rigidbodyCullingStateSnapshot.IsCreated)
+                mutationGuardMask |= PhysicsVaultMutationGuardBit(BufferID.RigidbodyCullingState);
+            if (_rigidbodyAwakeResults.IsCreated)
+                mutationGuardMask |= PhysicsVaultMutationGuardBit(BufferID.RigidbodyAwakeResults);
+            if (_rigidbodyCullingCommandResults.IsCreated)
+                mutationGuardMask |= PhysicsVaultMutationGuardBit(BufferID.RigidbodyCullingCommands);
+            if (_rigidbodyDistanceSqResults.IsCreated)
+                mutationGuardMask |= PhysicsVaultMutationGuardBit(BufferID.RigidbodyDistanceSq);
+            if (_physicsCullingTelemetry.IsCreated)
+                mutationGuardMask |= PhysicsVaultMutationGuardBit(BufferID.PhysicsCullingTelemetry);
+            return mutationGuardMask;
         }
 
         private static PhysicsImpactWeightClass ResolveImpactWeightClass(float impactIntensity)

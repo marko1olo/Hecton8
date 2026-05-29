@@ -12,7 +12,7 @@ namespace Hecton8.World
     /// This is a local lighting proxy, not an authoritative world-voxel streamer.
     /// </summary>
     [DisallowMultipleComponent]
-    public sealed class HectonCaveVoxelLightingVolume : MonoBehaviour, ILateFrameTickable, IGlobalRegistryHotSwapListener
+    public sealed class HectonCaveVoxelLightingVolume : MonoBehaviour, ILateFrameTickable, ISlowTickable, IGlobalRegistryHotSwapListener
     {
         private static int s_x001HectonCaveVoxelLightingVolumeSignalPushDropCount;
         private const int MaxOverlapHits = 8;
@@ -96,6 +96,7 @@ namespace Hecton8.World
         [SerializeField] private float _debugPublishedSdfRange;
 
         private bool _registeredLateFrameTick;
+        private bool _registeredSlowTick;
         private bool _hotSwapListenerRegistered;
         private bool _scanInProgress;
         private bool _restartQueued;
@@ -105,6 +106,7 @@ namespace Hecton8.World
         private bool _textureUploadDirty;
         private bool _textureBindingDirty;
         private bool _resourceRefreshRequested;
+        private TextureFormat _coldVoxelDensityTextureFormat = TextureFormat.Alpha8;
         private int _resolutionRuntime;
         private int _scanSliceCursor;
         private int _lastLightLevelSignalFrame = -1;
@@ -139,6 +141,7 @@ namespace Hecton8.World
         private void Awake()
         {
             ActiveRuntimeInstance = this;
+            CacheGraphicsCapabilitiesCold();
             PredatorCognitionDomain.BindCaveVoxelLightingSource(this);
             _sourceEntityId = unchecked((uint)EntityId.ToULong(GetEntityId()));
             ResolveFollowTarget();
@@ -149,8 +152,10 @@ namespace Hecton8.World
         private void OnEnable()
         {
             ActiveRuntimeInstance = this;
+            CacheGraphicsCapabilitiesCold();
             PredatorCognitionDomain.BindCaveVoxelLightingSource(this);
             ResolveFollowTarget();
+            _resourceRefreshRequested = !HasRequiredResources();
             TryRegisterHotSwapListener();
             TryRegister();
         }
@@ -244,12 +249,6 @@ namespace Hecton8.World
         {
             AdvanceLightingVolumeState();
 
-            if (_resourceRefreshRequested)
-            {
-                EnsureResources();
-                _resourceRefreshRequested = false;
-            }
-
             if (_textureUploadDirty)
             {
                 if (_voxelDensityTexture != null && TryAcquireSdfUploadBuffer(out NativeArray<byte> sdfVolume))
@@ -275,6 +274,15 @@ namespace Hecton8.World
             FlushGlobals(_pendingHasVolume);
             _globalsDirty = false;
             _textureBindingDirty = false;
+        }
+
+        public void SlowTick()
+        {
+            if (!_resourceRefreshRequested && HasRequiredResources())
+                return;
+
+            EnsureResources();
+            _resourceRefreshRequested = false;
         }
 
         internal bool TryGetPublishedSignedDistanceVoxelPayload(
@@ -332,6 +340,11 @@ namespace Hecton8.World
             {
                 _registeredLateFrameTick = GlobalRegistry.TryRegisterLateFrameTickable(this, PriorityLayer.Environment);
             }
+
+            if (!_registeredSlowTick)
+            {
+                _registeredSlowTick = GlobalRegistry.TryRegisterSlowTickable(this, PriorityLayer.Environment);
+            }
         }
 
         private void TryUnregister()
@@ -340,6 +353,12 @@ namespace Hecton8.World
             {
                 GlobalRegistry.UnregisterLateFrameTickable(this, PriorityLayer.Environment);
                 _registeredLateFrameTick = false;
+            }
+
+            if (_registeredSlowTick)
+            {
+                GlobalRegistry.UnregisterSlowTickable(this, PriorityLayer.Environment);
+                _registeredSlowTick = false;
             }
 
         }
@@ -359,6 +378,7 @@ namespace Hecton8.World
             if (serviceSlot == GlobalRegistryServiceSlot.Dispatcher && currentService != null && isActiveAndEnabled)
             {
                 _registeredLateFrameTick = false;
+                _registeredSlowTick = false;
                 TryRegister();
             }
         }
@@ -424,10 +444,7 @@ namespace Hecton8.World
 
             // COLD ALLOC: Collider[8] - reusable overlap-box hit cache for cave lighting volume voxelization - owner: HectonCaveVoxelLightingVolume
             _overlapHits = new SpatialQueryHit[MaxOverlapHits];
-            TextureFormat textureFormat = SystemInfo.SupportsTextureFormat(TextureFormat.R8)
-                ? TextureFormat.R8
-                : TextureFormat.Alpha8;
-            _voxelDensityTexture = new Texture3D(clampedResolution, clampedResolution, clampedResolution, textureFormat, false)
+            _voxelDensityTexture = new Texture3D(clampedResolution, clampedResolution, clampedResolution, _coldVoxelDensityTextureFormat, false)
             {
                 name = "__HectonCaveVoxelSdfTex",
                 wrapMode = TextureWrapMode.Clamp,
@@ -441,6 +458,13 @@ namespace Hecton8.World
             _scanInProgress = false;
             _textureBindingDirty = true;
             QueueGlobals(hasVolume: false);
+        }
+
+        private void CacheGraphicsCapabilitiesCold()
+        {
+            _coldVoxelDensityTextureFormat = SystemInfo.SupportsTextureFormat(TextureFormat.R8)
+                ? TextureFormat.R8
+                : TextureFormat.Alpha8;
         }
 
         private bool HasRequiredResources()

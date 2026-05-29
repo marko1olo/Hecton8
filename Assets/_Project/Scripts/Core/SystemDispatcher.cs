@@ -206,6 +206,7 @@ namespace Hecton8.Core
         private const uint _BaseStressCascadeBreakerHash = 3838237614u;
         private const uint _SimulationBucketContextHash = 0x53424B54u; // SBKT
         private const uint _FramePacingWarningHash = 0x4650574Eu; // FPWN
+        private const uint _Lane4VfxKillSwitchMask = 1u << 4;
         private const ushort DispatcherBlackBoxFlagPaused = 1 << 0;
         private const ushort DispatcherBlackBoxFlagAupBarrier = 1 << 1;
         private const ushort DispatcherBlackBoxFlagOriginShiftLock = 1 << 2;
@@ -2999,9 +3000,17 @@ namespace Hecton8.Core
             if (_masterFixedJobsPending)
             {
                 long waitStart = System.Diagnostics.Stopwatch.GetTimestamp();
-                DispatcherJobFence.TryComplete(ref _masterFixedCombinedHandle, forceComplete: true);
-                _masterLastFixedWaitMs = ElapsedMilliseconds(waitStart);
-                _masterFixedJobsPending = false;
+                DispatcherJobFence.BeginPostFixedSwapWindow();
+                try
+                {
+                    DispatcherJobFence.TryComplete(ref _masterFixedCombinedHandle, forceComplete: true);
+                    _masterLastFixedWaitMs = ElapsedMilliseconds(waitStart);
+                    _masterFixedJobsPending = false;
+                }
+                finally
+                {
+                    DispatcherJobFence.EndPostFixedSwapWindow();
+                }
             }
             else
             {
@@ -5329,7 +5338,7 @@ namespace Hecton8.Core
                 slowTick2Hz: true,
                 forceTimeDilation09: true,
                 _FramePacingWarningHash);
-            GlobalRegistry.SetSystemKillSwitchBits(GlobalRegistry.SystemKillSwitchLane4VfxMask, true);
+            SignalBusRegistry.SetSystemKillSwitchBits(_Lane4VfxKillSwitchMask, true, _FramePacingWarningHash);
         }
 
         private static float ResolveCurrentFrameMilliseconds()
@@ -6636,19 +6645,29 @@ namespace Hecton8.Core
                     return;
                 }
 
-                for (int i = 0; i < _scheduledDispatcherSurfaceProbeCount; i++)
+                int scheduledCount = _scheduledDispatcherSurfaceProbeCount;
+                try
                 {
-                    IDispatcherSurfaceProbeReceiver receiver = GetScheduledDispatcherSurfaceProbeReceiverAt(i);
-                    if (receiver == null)
-                        continue;
+                    for (int i = 0; i < scheduledCount; i++)
+                    {
+                        IDispatcherSurfaceProbeReceiver receiver = GetScheduledDispatcherSurfaceProbeReceiverAt(i);
+                        if (receiver == null)
+                            continue;
 
-                    receiver.ConsumeDispatcherSurfaceHit(_scheduledDispatcherSurfaceProbeRequestIds[i], scheduledHits[i]);
-                    _scheduledDispatcherSurfaceProbeReceivers[i] = null;
-                    _scheduledDispatcherSurfaceProbeRequestIds[i] = 0;
+                        receiver.ConsumeDispatcherSurfaceHit(_scheduledDispatcherSurfaceProbeRequestIds[i], scheduledHits[i]);
+                    }
                 }
+                finally
+                {
+                    for (int i = 0; i < scheduledCount; i++)
+                    {
+                        _scheduledDispatcherSurfaceProbeReceivers[i] = null;
+                        _scheduledDispatcherSurfaceProbeRequestIds[i] = 0;
+                    }
 
-                _scheduledDispatcherSurfaceProbeCount = 0;
-                UnlockDispatcherSurfaceProbeScheduledVaultBuffers();
+                    _scheduledDispatcherSurfaceProbeCount = 0;
+                    UnlockDispatcherSurfaceProbeScheduledVaultBuffers();
+                }
             }
         }
 
@@ -6662,9 +6681,17 @@ namespace Hecton8.Core
         {
             if (_dispatcherSurfaceProbesScheduled)
             {
-                DispatcherJobFence.TryComplete(ref _scheduledDispatcherSurfaceProbeHandle, forceComplete: true);
-                _dispatcherSurfaceProbesScheduled = false;
-                UnlockDispatcherSurfaceProbeScheduledVaultBuffers(dataVault);
+                DispatcherJobFence.BeginPostSimulationSwapWindow();
+                try
+                {
+                    DispatcherJobFence.TryComplete(ref _scheduledDispatcherSurfaceProbeHandle, forceComplete: true);
+                    _dispatcherSurfaceProbesScheduled = false;
+                }
+                finally
+                {
+                    DispatcherJobFence.EndPostSimulationSwapWindow();
+                    UnlockDispatcherSurfaceProbeScheduledVaultBuffers(dataVault);
+                }
             }
             else
             {

@@ -22,6 +22,17 @@ namespace Hecton8.Equipment.Auxiliary
         private const string ProfilesCsvFileName = "auxiliary_equipment_profiles.csv";
 #endif
         private static readonly double s_timestampToMicroseconds = 1000000.0 / System.Diagnostics.Stopwatch.Frequency;
+        private static readonly ulong RuntimeMutationGuardMask =
+            MutationGuardBit(AuxiliaryEquipmentVaultIds.Deployments) |
+            MutationGuardBit(AuxiliaryEquipmentVaultIds.States) |
+            MutationGuardBit(AuxiliaryEquipmentVaultIds.TetherAnchors) |
+            MutationGuardBit(AuxiliaryEquipmentVaultIds.ActiveCount) |
+            MutationGuardBit(AuxiliaryEquipmentVaultIds.RouteCounters) |
+            MutationGuardBit(AuxiliaryEquipmentVaultIds.VfxMatrices) |
+            MutationGuardBit(AuxiliaryEquipmentVaultIds.TelemetryRing) |
+            MutationGuardBit(AuxiliaryEquipmentVaultIds.TelemetryCursor) |
+            MutationGuardBit(AuxiliaryEquipmentVaultIds.ActiveEquipmentState);
+        private static readonly ulong TuningMutationGuardMask = MutationGuardBit(AuxiliaryEquipmentVaultIds.Tuning);
 
         [SerializeField, Range(64, AuxiliaryEquipmentConstants.MaxDeployedAuxiliaries)]
         private int deploymentCapacity = AuxiliaryEquipmentConstants.MaxDeployedAuxiliaries;
@@ -69,7 +80,13 @@ namespace Hecton8.Equipment.Auxiliary
         private bool _dumpWritten;
         private bool _profilesLoaded;
         private bool _vfxUploadValid;
+        private bool _runtimeGuardHeld;
         private AuxiliaryProfileLoadResult _lastProfileLoadResult;
+
+        private static ulong MutationGuardBit(BufferID bufferId)
+        {
+            return 1UL << (unchecked((int)(uint)(int)bufferId) & 31);
+        }
 
         public static bool TryGetActiveRuntime(out AuxiliaryEquipmentRouterRuntime runtime)
         {
@@ -485,53 +502,60 @@ namespace Hecton8.Equipment.Auxiliary
             if (!TryLockRuntimeBuffers())
                 return;
 
-            if (!TryResolveExistingViews(out AuxiliaryVaultViews views))
+            bool keepRuntimeGuard = false;
+            try
             {
-                UnlockRuntimeBuffers();
-                return;
+                if (!TryResolveExistingViews(out AuxiliaryVaultViews views))
+                    return;
+
+                AuxiliaryTuningDTO tuning = ResolveTuning(views);
+                _lastQualityWeight = ResolveQualityWeight(tuning);
+                _lastCadenceHz = AuxiliaryEquipmentMath.ResolveCadenceHz(_lastQualityWeight, in tuning);
+                _lastCameraAup = ResolveCameraAup();
+
+                UpdateDeployedAuxiliaryJob updateJob = new UpdateDeployedAuxiliaryJob
+                {
+                    Deployments = views.Deployments,
+                    States = views.States,
+                    TetherAnchors = views.TetherAnchors,
+                    ActiveEquipment = views.ActiveEquipment,
+                    RouteCounters = views.RouteCounters,
+                    ActiveCount = views.ActiveCount,
+                    FlareWriter = SignalBus<AuxiliaryFlareLightSignal>.OpenParallelWriter(),
+                    FlareWriterBudget = SignalBus<AuxiliaryFlareLightSignal>.ParallelWriterBudget,
+                    SonarWriter = SignalBus<AuxiliarySonarRequestSignal>.OpenParallelWriter(),
+                    SonarWriterBudget = SignalBus<AuxiliarySonarRequestSignal>.ParallelWriterBudget,
+                    TetherWriter = SignalBus<AuxiliaryTetherConnectionSignal>.OpenParallelWriter(),
+                    TetherWriterBudget = SignalBus<AuxiliaryTetherConnectionSignal>.ParallelWriterBudget,
+                    Tuning = tuning,
+                    FrameIndex = _frameIndex,
+                    SimulationDeltaTime = deltaTime,
+                    GlobalQualityWeight = _lastQualityWeight
+                };
+
+                StageAuxiliaryVFXJob vfxJob = new StageAuxiliaryVFXJob
+                {
+                    Deployments = views.Deployments,
+                    States = views.States,
+                    ActiveCount = views.ActiveCount,
+                    VfxMatrices = views.VfxMatrices,
+                    CameraAup = _lastCameraAup,
+                    GlobalQualityWeight = _lastQualityWeight,
+                    VfxScale = tuning.VfxScale
+                };
+
+                _pendingStartTicks = System.Diagnostics.Stopwatch.GetTimestamp();
+                JobHandle updateHandle = updateJob.Schedule(deploymentCapacity, JobBatchSize);
+                _pendingHandle = vfxJob.Schedule(deploymentCapacity, JobBatchSize, updateHandle);
+                H8Memory.RegisterActiveJob(SystemID.GameplayTools, _pendingHandle);
+                _jobActive = true;
+                keepRuntimeGuard = true;
             }
-
-            AuxiliaryTuningDTO tuning = ResolveTuning(views);
-            _lastQualityWeight = ResolveQualityWeight(tuning);
-            _lastCadenceHz = AuxiliaryEquipmentMath.ResolveCadenceHz(_lastQualityWeight, in tuning);
-            _lastCameraAup = ResolveCameraAup();
-
-            UpdateDeployedAuxiliaryJob updateJob = new UpdateDeployedAuxiliaryJob
+            finally
             {
-                Deployments = views.Deployments,
-                States = views.States,
-                TetherAnchors = views.TetherAnchors,
-                ActiveEquipment = views.ActiveEquipment,
-                RouteCounters = views.RouteCounters,
-                ActiveCount = views.ActiveCount,
-                FlareWriter = SignalBus<AuxiliaryFlareLightSignal>.OpenParallelWriter(),
-                FlareWriterBudget = SignalBus<AuxiliaryFlareLightSignal>.ParallelWriterBudget,
-                SonarWriter = SignalBus<AuxiliarySonarRequestSignal>.OpenParallelWriter(),
-                SonarWriterBudget = SignalBus<AuxiliarySonarRequestSignal>.ParallelWriterBudget,
-                TetherWriter = SignalBus<AuxiliaryTetherConnectionSignal>.OpenParallelWriter(),
-                TetherWriterBudget = SignalBus<AuxiliaryTetherConnectionSignal>.ParallelWriterBudget,
-                Tuning = tuning,
-                FrameIndex = _frameIndex,
-                SimulationDeltaTime = deltaTime,
-                GlobalQualityWeight = _lastQualityWeight
-            };
-
-            StageAuxiliaryVFXJob vfxJob = new StageAuxiliaryVFXJob
-            {
-                Deployments = views.Deployments,
-                States = views.States,
-                ActiveCount = views.ActiveCount,
-                VfxMatrices = views.VfxMatrices,
-                CameraAup = _lastCameraAup,
-                GlobalQualityWeight = _lastQualityWeight,
-                VfxScale = tuning.VfxScale
-            };
-
-            _pendingStartTicks = System.Diagnostics.Stopwatch.GetTimestamp();
-            JobHandle updateHandle = updateJob.Schedule(deploymentCapacity, JobBatchSize);
-            _pendingHandle = vfxJob.Schedule(deploymentCapacity, JobBatchSize, updateHandle);
-            H8Memory.RegisterActiveJob(SystemID.GameplayTools, _pendingHandle);
-            _jobActive = true;
+                if (!keepRuntimeGuard)
+                    UnlockRuntimeBuffers();
+            }
         }
 
         public void LateFrameTick()
@@ -741,8 +765,21 @@ namespace Hecton8.Equipment.Auxiliary
             if (!_jobActive)
                 return;
 
-            DispatcherJobFence.TryComplete(ref _pendingHandle, forceComplete: true);
+            ForceCompletePendingJobInPostSimulationWindow();
             FinalizeCompletedPendingJob();
+        }
+
+        private void ForceCompletePendingJobInPostSimulationWindow()
+        {
+            DispatcherJobFence.BeginPostSimulationSwapWindow();
+            try
+            {
+                DispatcherJobFence.TryComplete(ref _pendingHandle, forceComplete: true);
+            }
+            finally
+            {
+                DispatcherJobFence.EndPostSimulationSwapWindow();
+            }
         }
 
         private void FinalizeCompletedPendingJob()
@@ -752,34 +789,39 @@ namespace Hecton8.Equipment.Auxiliary
             _jobActive = false;
             _frameIndex = _frameIndex == uint.MaxValue ? 1u : _frameIndex + 1u;
 
-            if (TryResolveExistingViews(out AuxiliaryVaultViews views))
+            try
             {
-                CompactActiveCount(views);
-                UploadVfxMatricesToGpu(views);
-                RecordAuxiliaryTelemetryPass telemetryPass = new RecordAuxiliaryTelemetryPass
+                if (TryResolveExistingViews(out AuxiliaryVaultViews views))
                 {
-                    Deployments = views.Deployments,
-                    RouteCounters = views.RouteCounters,
-                    TelemetryRing = views.TelemetryRing,
-                    TelemetryCursor = views.TelemetryCursor,
-                    ActiveCount = views.ActiveCount,
-                    FrameIndex = _frameIndex,
-                    EffectiveCadenceHz = _lastCadenceHz,
-                    CpuMicroseconds = cpuMicroseconds,
-                    GlobalQualityWeight = _lastQualityWeight,
-                    LaneDroppedSignals = ResolveLaneDroppedSignals(),
-                    LaneCorruptedSignals = ResolveLaneCorruptedSignals(),
-                    LanePeakQueuedSignals = ResolveLanePeakQueuedSignals()
-                };
-                telemetryPass.Execute();
-                if (cpuMicroseconds > AuxiliaryEquipmentConstants.FaultDumpThresholdMicroseconds ||
-                    TryLatestTelemetryHasFault(views.TelemetryRing, views.TelemetryCursor))
-                {
-                    TryDumpTelemetry(views.TelemetryRing);
+                    CompactActiveCount(views);
+                    UploadVfxMatricesToGpu(views);
+                    RecordAuxiliaryTelemetryPass telemetryPass = new RecordAuxiliaryTelemetryPass
+                    {
+                        Deployments = views.Deployments,
+                        RouteCounters = views.RouteCounters,
+                        TelemetryRing = views.TelemetryRing,
+                        TelemetryCursor = views.TelemetryCursor,
+                        ActiveCount = views.ActiveCount,
+                        FrameIndex = _frameIndex,
+                        EffectiveCadenceHz = _lastCadenceHz,
+                        CpuMicroseconds = cpuMicroseconds,
+                        GlobalQualityWeight = _lastQualityWeight,
+                        LaneDroppedSignals = ResolveLaneDroppedSignals(),
+                        LaneCorruptedSignals = ResolveLaneCorruptedSignals(),
+                        LanePeakQueuedSignals = ResolveLanePeakQueuedSignals()
+                    };
+                    telemetryPass.Execute();
+                    if (cpuMicroseconds > AuxiliaryEquipmentConstants.FaultDumpThresholdMicroseconds ||
+                        TryLatestTelemetryHasFault(views.TelemetryRing, views.TelemetryCursor))
+                    {
+                        TryDumpTelemetry(views.TelemetryRing);
+                    }
                 }
             }
-
-            UnlockRuntimeBuffers();
+            finally
+            {
+                UnlockRuntimeBuffers();
+            }
         }
 
         private bool EnsureRuntimeReady()
@@ -1234,27 +1276,19 @@ namespace Hecton8.Equipment.Auxiliary
             if (vault == null)
                 return false;
 
-            if (!vault.TryLockBuffer(AuxiliaryEquipmentVaultIds.Deployments, SystemID.GameplayTools) ||
-                !vault.TryLockBuffer(AuxiliaryEquipmentVaultIds.States, SystemID.GameplayTools) ||
-                !vault.TryLockBuffer(AuxiliaryEquipmentVaultIds.TetherAnchors, SystemID.GameplayTools) ||
-                !vault.TryLockBuffer(AuxiliaryEquipmentVaultIds.ActiveCount, SystemID.GameplayTools) ||
-                !vault.TryLockBuffer(AuxiliaryEquipmentVaultIds.RouteCounters, SystemID.GameplayTools) ||
-                !vault.TryLockBuffer(AuxiliaryEquipmentVaultIds.VfxMatrices, SystemID.GameplayTools) ||
-                !vault.TryLockBuffer(AuxiliaryEquipmentVaultIds.TelemetryRing, SystemID.GameplayTools) ||
-                !vault.TryLockBuffer(AuxiliaryEquipmentVaultIds.TelemetryCursor, SystemID.GameplayTools) ||
-                !vault.TryLockBuffer(AuxiliaryEquipmentVaultIds.ActiveEquipmentState, SystemID.GameplayTools))
-            {
-                UnlockRuntimeBuffers();
+            if (_runtimeGuardHeld)
+                return true;
+            if (!vault.TryAcquireMutationGuard(RuntimeMutationGuardMask))
                 return false;
-            }
 
+            _runtimeGuardHeld = true;
             return true;
         }
 
         private bool TryLockTuningBuffer()
         {
             IDataVault vault = _dataVault;
-            return vault != null && vault.TryLockBuffer(AuxiliaryEquipmentVaultIds.Tuning, SystemID.GameplayTools);
+            return vault != null && vault.TryAcquireMutationGuard(TuningMutationGuardMask);
         }
 
         private void UnlockTuningBuffer()
@@ -1263,24 +1297,17 @@ namespace Hecton8.Equipment.Auxiliary
             if (vault == null)
                 return;
 
-            vault.TryUnlockBuffer(AuxiliaryEquipmentVaultIds.Tuning, SystemID.GameplayTools);
+            vault.ReleaseMutationGuard(TuningMutationGuardMask);
         }
 
         private void UnlockRuntimeBuffers()
         {
             IDataVault vault = _dataVault;
-            if (vault == null)
+            if (vault == null || !_runtimeGuardHeld)
                 return;
 
-            vault.TryUnlockBuffer(AuxiliaryEquipmentVaultIds.Deployments, SystemID.GameplayTools);
-            vault.TryUnlockBuffer(AuxiliaryEquipmentVaultIds.States, SystemID.GameplayTools);
-            vault.TryUnlockBuffer(AuxiliaryEquipmentVaultIds.TetherAnchors, SystemID.GameplayTools);
-            vault.TryUnlockBuffer(AuxiliaryEquipmentVaultIds.ActiveCount, SystemID.GameplayTools);
-            vault.TryUnlockBuffer(AuxiliaryEquipmentVaultIds.RouteCounters, SystemID.GameplayTools);
-            vault.TryUnlockBuffer(AuxiliaryEquipmentVaultIds.VfxMatrices, SystemID.GameplayTools);
-            vault.TryUnlockBuffer(AuxiliaryEquipmentVaultIds.TelemetryRing, SystemID.GameplayTools);
-            vault.TryUnlockBuffer(AuxiliaryEquipmentVaultIds.TelemetryCursor, SystemID.GameplayTools);
-            vault.TryUnlockBuffer(AuxiliaryEquipmentVaultIds.ActiveEquipmentState, SystemID.GameplayTools);
+            vault.ReleaseMutationGuard(RuntimeMutationGuardMask);
+            _runtimeGuardHeld = false;
         }
 
         private void ReleaseOwnedVaultHandles()

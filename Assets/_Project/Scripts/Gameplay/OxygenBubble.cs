@@ -364,7 +364,7 @@ namespace Hecton8.Gameplay
 
             // Try pool despawn
             IObjectPoolService pool = _objectPool;
-            if (pool != null && TryGetComponent(out ObjectPoolManager.PoolItemMarker _))
+            if (pool != null && pool.CanDespawnWithoutDestroy(gameObject))
             {
                 pool.Despawn(gameObject);
                 return;

@@ -1,4 +1,5 @@
 {
+  "hecton8.powerShellExecutable": "powershell",
   "json.schemas": [
     {
       "fileMatch": ["/mod.h8manifest.json"],

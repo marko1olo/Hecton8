@@ -16,7 +16,7 @@ namespace Crest
     public class LodDataMgrDynWaves : LodDataMgrPersistent
     {
         protected override string ShaderSim => "UpdateDynWaves";
-        protected override int krnl_ShaderSim => _shader.FindKernel(ShaderSim);
+        protected override int krnl_ShaderSim => _krnlShaderSim;
 
         public override string SimName => "DynamicWaves";
         protected override GraphicsFormat RequestedTextureFormat => GraphicsFormat.R16G16_SFloat;

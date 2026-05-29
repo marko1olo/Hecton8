@@ -33,13 +33,6 @@ namespace Hecton8.Atmosphere
         private const string ImpactCsvRelativePath = "Assets/_SourceData/Atmosphere/storm_depth_impact_profiles.csv";
 #endif
         private const string DumpRelativePath = "Docs/AgentLogs/Dump_SHINOBU_234.bin";
-        private const uint JobLockWeather = 1u << 0;
-        private const uint JobLockTuning = 1u << 1;
-        private const uint JobLockProfiles = 1u << 2;
-        private const uint JobLockMockWeather = 1u << 3;
-        private const uint JobLockWriteState = 1u << 4;
-        private const uint JobLockTelemetry = 1u << 5;
-        private const uint JobLockTelemetryCursor = 1u << 6;
         private static int s_runtimeClaimed;
 
         [SerializeField] private bool autoGenerateEmergencyMockHurricane;
@@ -50,7 +43,6 @@ namespace Hecton8.Atmosphere
         private ITickDispatcher _tickDispatcher;
         private VaultGenerationHandle<WeatherStateDTO> _weatherHandle;
         private VaultGenerationHandle<StormPropagationDTO> _publishedStateHandle;
-        private VaultGenerationHandle<StormPropagationWriteSnapshotDTO> _writeStateHandle;
         private VaultGenerationHandle<StormPropagationTuningDTO> _tuningHandle;
         private VaultGenerationHandle<StormPropagationTelemetryEntry> _telemetryHandle;
         private VaultGenerationHandle<int> _telemetryCursorHandle;
@@ -64,6 +56,14 @@ namespace Hecton8.Atmosphere
         private VaultGenerationHandle<float4> _audioScalarHandle;
         private VaultGenerationHandle<float4> _biolumScalarHandle;
         private VaultGenerationHandle<float4> _fogScalarHandle;
+        private StormPropagationJobStagingBuffers _jobStagingBuffers;
+        private ref NativeArray<WeatherStateDTO> _jobWeatherSnapshot => ref _jobStagingBuffers.WeatherSnapshot;
+        private ref NativeArray<StormPropagationTuningDTO> _jobTuningSnapshot => ref _jobStagingBuffers.TuningSnapshot;
+        private ref NativeArray<StormDepthImpactProfileDTO> _jobProfileSnapshot => ref _jobStagingBuffers.ProfileSnapshot;
+        private ref NativeArray<MockHurricaneStateDTO> _jobMockWeather => ref _jobStagingBuffers.MockWeather;
+        private ref NativeArray<StormPropagationWriteSnapshotDTO> _jobWriteSnapshot => ref _jobStagingBuffers.WriteSnapshot;
+        private ref NativeArray<StormPropagationTelemetryEntry> _jobTelemetry => ref _jobStagingBuffers.Telemetry;
+        private ref NativeArray<int> _jobTelemetryCursor => ref _jobStagingBuffers.TelemetryCursor;
         private JobHandle _attenuationJobHandle;
         private JobHandle _mockHurricaneJobHandle;
         private double3 _lastOriginFallbackAup;
@@ -91,9 +91,72 @@ namespace Hecton8.Atmosphere
         private bool _disposed;
         private bool _impactProfilesLoaded;
         private long _jobScheduleTimestamp;
-        private uint _jobLockMask;
         private uint _pendingFaultDumpReasonFlags;
         private uint _pendingFaultDumpStateHash;
+
+        private struct StormPropagationJobStagingBuffers
+        {
+            public NativeArray<WeatherStateDTO> WeatherSnapshot;
+            public NativeArray<StormPropagationTuningDTO> TuningSnapshot;
+            public NativeArray<StormDepthImpactProfileDTO> ProfileSnapshot;
+            public NativeArray<MockHurricaneStateDTO> MockWeather;
+            public NativeArray<StormPropagationWriteSnapshotDTO> WriteSnapshot;
+            public NativeArray<StormPropagationTelemetryEntry> Telemetry;
+            public NativeArray<int> TelemetryCursor;
+
+            public bool IsReady =>
+                WeatherSnapshot.IsCreated && WeatherSnapshot.Length > 0 &&
+                TuningSnapshot.IsCreated && TuningSnapshot.Length > 0 &&
+                ProfileSnapshot.IsCreated && ProfileSnapshot.Length >= ShinobuStormPropagationConstants.ImpactProfileCapacity &&
+                MockWeather.IsCreated && MockWeather.Length > 0 &&
+                WriteSnapshot.IsCreated && WriteSnapshot.Length > 0 &&
+                Telemetry.IsCreated && Telemetry.Length > 0 &&
+                TelemetryCursor.IsCreated && TelemetryCursor.Length > 0;
+
+            public void Ensure()
+            {
+                EnsureNativeJobArray(ref WeatherSnapshot, 1, nameof(WeatherSnapshot));
+                EnsureNativeJobArray(ref TuningSnapshot, 1, nameof(TuningSnapshot));
+                EnsureNativeJobArray(ref ProfileSnapshot, ShinobuStormPropagationConstants.ImpactProfileCapacity, nameof(ProfileSnapshot));
+                EnsureNativeJobArray(ref MockWeather, 1, nameof(MockWeather));
+                EnsureNativeJobArray(ref WriteSnapshot, 1, nameof(WriteSnapshot));
+                EnsureNativeJobArray(ref Telemetry, 1, nameof(Telemetry));
+                EnsureNativeJobArray(ref TelemetryCursor, 1, nameof(TelemetryCursor));
+            }
+
+            public void Dispose()
+            {
+                DisposeNativeJobArray(ref TelemetryCursor);
+                DisposeNativeJobArray(ref Telemetry);
+                DisposeNativeJobArray(ref WriteSnapshot);
+                DisposeNativeJobArray(ref MockWeather);
+                DisposeNativeJobArray(ref ProfileSnapshot);
+                DisposeNativeJobArray(ref TuningSnapshot);
+                DisposeNativeJobArray(ref WeatherSnapshot);
+            }
+
+            private static void EnsureNativeJobArray<T>(ref NativeArray<T> array, int length, string label)
+                where T : struct
+            {
+                if (array.IsCreated && array.Length == length)
+                    return;
+
+                DisposeNativeJobArray(ref array);
+                array = new NativeArray<T>(length, Allocator.Persistent, NativeArrayOptions.ClearMemory);
+                NativeMemorySentinel.RegisterNativeArray(array, nameof(ShinobuStormPropagationRuntime), label, NativeAllocationLifetime.Session);
+            }
+
+            private static void DisposeNativeJobArray<T>(ref NativeArray<T> array)
+                where T : struct
+            {
+                if (!array.IsCreated)
+                    return;
+
+                NativeMemorySentinel.UnregisterNativeArray(array);
+                array.Dispose();
+                array = default;
+            }
+        }
 
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
         private static void ResetRuntimeClaim()
@@ -168,6 +231,7 @@ namespace Hecton8.Atmosphere
 
             _disposed = true;
             CompleteScheduledJobsForShutdown();
+            DisposeJobStagingCold();
             ReleaseVaultStateForLifecycle(_vault);
             _vault = null;
         }
@@ -208,7 +272,7 @@ namespace Hecton8.Atmosphere
             if (_attenuationScheduled)
                 return;
 
-            if (_weatherHandle.BufferID == 0u)
+            if (!IsHabitatAtmosphereHandle(in _weatherHandle, BufferID.ShinobuOceanWeatherState))
                 TryRefreshWeatherHandleCold();
 
             RefreshCachedTuningSnapshotCold();
@@ -395,7 +459,8 @@ namespace Hecton8.Atmosphere
                     }
                     break;
                 case GlobalRegistryServiceSlot.DataVault:
-                    RebindDataVaultForLifecycle(currentService as IDataVault);
+                    IDataVault nextVault = currentService is IDataVault dataVault ? dataVault : null;
+                    RebindDataVaultForLifecycle(nextVault);
                     break;
                 case GlobalRegistryServiceSlot.FloatingOriginRuntime:
                     RefreshCachedOriginFallbackAupCold();
@@ -423,46 +488,45 @@ namespace Hecton8.Atmosphere
                 return false;
 
             TryRefreshWeatherHandleCold();
-            if (_publishedStateHandle.BufferID == 0u)
+            if (!IsHabitatAtmosphereHandle(in _publishedStateHandle, BufferID.ShinobuStormPropagationState))
                 _publishedStateHandle = vault.EnsureGenerationHandle<StormPropagationDTO>(BufferID.ShinobuStormPropagationState, 1, OwnerSystem, NativeArrayOptions.ClearMemory);
-            if (_writeStateHandle.BufferID == 0u)
-                _writeStateHandle = vault.EnsureGenerationHandle<StormPropagationWriteSnapshotDTO>(BufferID.ShinobuStormPropagationWriteState, 1, OwnerSystem, NativeArrayOptions.ClearMemory);
-            if (_tuningHandle.BufferID == 0u)
+            if (!IsHabitatAtmosphereHandle(in _tuningHandle, BufferID.ShinobuStormPropagationTuning))
                 _tuningHandle = vault.EnsureGenerationHandle<StormPropagationTuningDTO>(BufferID.ShinobuStormPropagationTuning, 1, OwnerSystem, NativeArrayOptions.ClearMemory);
-            if (_telemetryHandle.BufferID == 0u)
+            if (!IsHabitatAtmosphereHandle(in _telemetryHandle, BufferID.ShinobuStormPropagationTelemetryRing))
                 _telemetryHandle = vault.EnsureGenerationHandle<StormPropagationTelemetryEntry>(BufferID.ShinobuStormPropagationTelemetryRing, ShinobuStormPropagationConstants.TelemetryFrameCount, OwnerSystem, NativeArrayOptions.ClearMemory);
-            if (_telemetryCursorHandle.BufferID == 0u)
+            if (!IsHabitatAtmosphereHandle(in _telemetryCursorHandle, BufferID.ShinobuStormPropagationTelemetryCursor))
                 _telemetryCursorHandle = vault.EnsureGenerationHandle<int>(BufferID.ShinobuStormPropagationTelemetryCursor, 1, OwnerSystem, NativeArrayOptions.ClearMemory);
-            if (_mockWeatherHandle.BufferID == 0u)
+            if (!IsHabitatAtmosphereHandle(in _mockWeatherHandle, BufferID.ShinobuStormPropagationMockWeather))
                 _mockWeatherHandle = vault.EnsureGenerationHandle<MockHurricaneStateDTO>(BufferID.ShinobuStormPropagationMockWeather, 1, OwnerSystem, NativeArrayOptions.ClearMemory);
-            if (_profilesHandle.BufferID == 0u)
+            if (!IsHabitatAtmosphereHandle(in _profilesHandle, BufferID.ShinobuStormPropagationImpactProfiles))
                 _profilesHandle = vault.EnsureGenerationHandle<StormDepthImpactProfileDTO>(BufferID.ShinobuStormPropagationImpactProfiles, ShinobuStormPropagationConstants.ImpactProfileCapacity, OwnerSystem, NativeArrayOptions.ClearMemory);
 #if UNITY_EDITOR
-            if (_csvScratchHandle.BufferID == 0u)
+            if (!IsHabitatAtmosphereHandle(in _csvScratchHandle, BufferID.ShinobuStormPropagationCsvScratch))
                 _csvScratchHandle = vault.EnsureGenerationHandle<byte>(BufferID.ShinobuStormPropagationCsvScratch, ShinobuStormPropagationConstants.CsvScratchBytes, OwnerSystem, NativeArrayOptions.ClearMemory);
 #endif
             EnsureDumpManagedScratchCold();
-            if (_flowScalarHandle.BufferID == 0u)
+            EnsureJobStagingCold();
+            if (!IsHabitatAtmosphereHandle(in _flowScalarHandle, BufferID.ShinobuStormPropagationFlowScalar))
                 _flowScalarHandle = vault.EnsureGenerationHandle<float4>(BufferID.ShinobuStormPropagationFlowScalar, 1, OwnerSystem, NativeArrayOptions.ClearMemory);
-            if (_audioScalarHandle.BufferID == 0u)
+            if (!IsHabitatAtmosphereHandle(in _audioScalarHandle, BufferID.ShinobuStormPropagationAudioScalar))
                 _audioScalarHandle = vault.EnsureGenerationHandle<float4>(BufferID.ShinobuStormPropagationAudioScalar, 1, OwnerSystem, NativeArrayOptions.ClearMemory);
-            if (_biolumScalarHandle.BufferID == 0u)
+            if (!IsHabitatAtmosphereHandle(in _biolumScalarHandle, BufferID.ShinobuStormPropagationBiolumScalar))
                 _biolumScalarHandle = vault.EnsureGenerationHandle<float4>(BufferID.ShinobuStormPropagationBiolumScalar, 1, OwnerSystem, NativeArrayOptions.ClearMemory);
-            if (_fogScalarHandle.BufferID == 0u)
+            if (!IsHabitatAtmosphereHandle(in _fogScalarHandle, BufferID.ShinobuStormPropagationFogScalar))
                 _fogScalarHandle = vault.EnsureGenerationHandle<float4>(BufferID.ShinobuStormPropagationFogScalar, 1, OwnerSystem, NativeArrayOptions.ClearMemory);
 
             _vaultReady =
-                Resolve(in _publishedStateHandle, out NativeArray<StormPropagationDTO> published) && published.Length > 0 &&
-                Resolve(in _writeStateHandle, out NativeArray<StormPropagationWriteSnapshotDTO> write) && write.Length > 0 &&
-                Resolve(in _tuningHandle, out NativeArray<StormPropagationTuningDTO> tuning) && tuning.Length > 0 &&
-                Resolve(in _telemetryHandle, out NativeArray<StormPropagationTelemetryEntry> telemetry) && telemetry.Length >= ShinobuStormPropagationConstants.TelemetryFrameCount &&
-                Resolve(in _telemetryCursorHandle, out NativeArray<int> telemetryCursor) && telemetryCursor.Length > 0 &&
-                Resolve(in _mockWeatherHandle, out NativeArray<MockHurricaneStateDTO> mock) && mock.Length > 0 &&
-                Resolve(in _profilesHandle, out NativeArray<StormDepthImpactProfileDTO> profiles) && profiles.Length > 0 &&
-                Resolve(in _flowScalarHandle, out NativeArray<float4> flowScalar) && flowScalar.Length > 0 &&
-                Resolve(in _audioScalarHandle, out NativeArray<float4> audioScalar) && audioScalar.Length > 0 &&
-                Resolve(in _biolumScalarHandle, out NativeArray<float4> biolumScalar) && biolumScalar.Length > 0 &&
-                Resolve(in _fogScalarHandle, out NativeArray<float4> fogScalar) && fogScalar.Length > 0;
+                Resolve(in _publishedStateHandle, BufferID.ShinobuStormPropagationState, out NativeArray<StormPropagationDTO> published) && published.Length > 0 &&
+                Resolve(in _tuningHandle, BufferID.ShinobuStormPropagationTuning, out NativeArray<StormPropagationTuningDTO> tuning) && tuning.Length > 0 &&
+                Resolve(in _telemetryHandle, BufferID.ShinobuStormPropagationTelemetryRing, out NativeArray<StormPropagationTelemetryEntry> telemetry) && telemetry.Length >= ShinobuStormPropagationConstants.TelemetryFrameCount &&
+                Resolve(in _telemetryCursorHandle, BufferID.ShinobuStormPropagationTelemetryCursor, out NativeArray<int> telemetryCursor) && telemetryCursor.Length > 0 &&
+                Resolve(in _mockWeatherHandle, BufferID.ShinobuStormPropagationMockWeather, out NativeArray<MockHurricaneStateDTO> mock) && mock.Length > 0 &&
+                Resolve(in _profilesHandle, BufferID.ShinobuStormPropagationImpactProfiles, out NativeArray<StormDepthImpactProfileDTO> profiles) && profiles.Length > 0 &&
+                Resolve(in _flowScalarHandle, BufferID.ShinobuStormPropagationFlowScalar, out NativeArray<float4> flowScalar) && flowScalar.Length > 0 &&
+                Resolve(in _audioScalarHandle, BufferID.ShinobuStormPropagationAudioScalar, out NativeArray<float4> audioScalar) && audioScalar.Length > 0 &&
+                Resolve(in _biolumScalarHandle, BufferID.ShinobuStormPropagationBiolumScalar, out NativeArray<float4> biolumScalar) && biolumScalar.Length > 0 &&
+                Resolve(in _fogScalarHandle, BufferID.ShinobuStormPropagationFogScalar, out NativeArray<float4> fogScalar) && fogScalar.Length > 0 &&
+                HasJobStagingReady();
 
             if (_vaultReady)
                 EnsureDefaultRowsCold();
@@ -475,10 +539,11 @@ namespace Hecton8.Atmosphere
             if (_vault == null || _vault.IsCompactionFenceActive)
                 return false;
 
-            if (_weatherHandle.BufferID != 0u)
+            if (IsHabitatAtmosphereHandle(in _weatherHandle, BufferID.ShinobuOceanWeatherState))
                 return true;
 
-            if (_vault.TryGetGenerationHandle(BufferID.ShinobuOceanWeatherState, out _weatherHandle))
+            if (_vault.TryGetGenerationHandle(BufferID.ShinobuOceanWeatherState, out _weatherHandle) &&
+                IsHabitatAtmosphereHandle(in _weatherHandle, BufferID.ShinobuOceanWeatherState))
                 return true;
 
             _weatherHandle = default;
@@ -489,7 +554,6 @@ namespace Hecton8.Atmosphere
         {
             _weatherHandle = default;
             _publishedStateHandle = default;
-            _writeStateHandle = default;
             _tuningHandle = default;
             _telemetryHandle = default;
             _telemetryCursorHandle = default;
@@ -510,7 +574,6 @@ namespace Hecton8.Atmosphere
         {
             _weatherHandle = default;
             ReleaseOwnedVaultHandle(vault, ref _publishedStateHandle, BufferID.ShinobuStormPropagationState);
-            ReleaseOwnedVaultHandle(vault, ref _writeStateHandle, BufferID.ShinobuStormPropagationWriteState);
             ReleaseOwnedVaultHandle(vault, ref _tuningHandle, BufferID.ShinobuStormPropagationTuning);
             ReleaseOwnedVaultHandle(vault, ref _telemetryHandle, BufferID.ShinobuStormPropagationTelemetryRing);
             ReleaseOwnedVaultHandle(vault, ref _telemetryCursorHandle, BufferID.ShinobuStormPropagationTelemetryCursor);
@@ -536,6 +599,21 @@ namespace Hecton8.Atmosphere
             }
         }
 
+        private void EnsureJobStagingCold()
+        {
+            _jobStagingBuffers.Ensure();
+        }
+
+        private bool HasJobStagingReady()
+        {
+            return _jobStagingBuffers.IsReady;
+        }
+
+        private void DisposeJobStagingCold()
+        {
+            _jobStagingBuffers.Dispose();
+        }
+
         private static void ReleaseOwnedVaultHandle<T>(
             IDataVault vault,
             ref VaultGenerationHandle<T> handle,
@@ -549,6 +627,14 @@ namespace Hecton8.Atmosphere
         }
 
         private static bool IsOwnedStormPropagationHandle<T>(
+            in VaultGenerationHandle<T> handle,
+            BufferID bufferId)
+            where T : unmanaged
+        {
+            return IsHabitatAtmosphereHandle(in handle, bufferId);
+        }
+
+        private static bool IsHabitatAtmosphereHandle<T>(
             in VaultGenerationHandle<T> handle,
             BufferID bufferId)
             where T : unmanaged
@@ -594,7 +680,7 @@ namespace Hecton8.Atmosphere
                 if (!tuningLocked)
                     return;
 
-                if (Resolve(in _tuningHandle, out NativeArray<StormPropagationTuningDTO> tuning) && tuning.Length > 0)
+                if (Resolve(in _tuningHandle, BufferID.ShinobuStormPropagationTuning, out NativeArray<StormPropagationTuningDTO> tuning) && tuning.Length > 0)
                 {
                     tuningRow = ShinobuStormPropagationNative.ReadElement(tuning, 0);
                     hasTuningRow = true;
@@ -615,7 +701,7 @@ namespace Hecton8.Atmosphere
                     if (!tuningLocked)
                         return;
 
-                    if (Resolve(in _tuningHandle, out NativeArray<StormPropagationTuningDTO> tuning) && tuning.Length > 0)
+                    if (Resolve(in _tuningHandle, BufferID.ShinobuStormPropagationTuning, out NativeArray<StormPropagationTuningDTO> tuning) && tuning.Length > 0)
                         ShinobuStormPropagationNative.ElementAt(tuning, 0) = tuningRow;
                 }
                 finally
@@ -636,7 +722,7 @@ namespace Hecton8.Atmosphere
                 if (!profilesLocked)
                     return;
 
-                if (Resolve(in _profilesHandle, out NativeArray<StormDepthImpactProfileDTO> profiles) && profiles.Length > 0)
+                if (Resolve(in _profilesHandle, BufferID.ShinobuStormPropagationImpactProfiles, out NativeArray<StormDepthImpactProfileDTO> profiles) && profiles.Length > 0)
                 {
                     profileRow = ShinobuStormPropagationNative.ReadElement(profiles, 0);
                     hasProfileRow = true;
@@ -657,7 +743,7 @@ namespace Hecton8.Atmosphere
                     if (!profilesLocked)
                         return;
 
-                    if (Resolve(in _profilesHandle, out NativeArray<StormDepthImpactProfileDTO> profiles) && profiles.Length > 0)
+                    if (Resolve(in _profilesHandle, BufferID.ShinobuStormPropagationImpactProfiles, out NativeArray<StormDepthImpactProfileDTO> profiles) && profiles.Length > 0)
                         ShinobuStormPropagationNative.ElementAt(profiles, 0) = profileRow;
                 }
                 finally
@@ -717,7 +803,7 @@ namespace Hecton8.Atmosphere
                 if (!profilesLocked)
                     return;
 
-                if (!Resolve(in _profilesHandle, out NativeArray<StormDepthImpactProfileDTO> profiles) || profiles.Length <= 0)
+                if (!Resolve(in _profilesHandle, BufferID.ShinobuStormPropagationImpactProfiles, out NativeArray<StormDepthImpactProfileDTO> profiles) || profiles.Length <= 0)
                 {
                     return;
                 }
@@ -741,7 +827,7 @@ namespace Hecton8.Atmosphere
                 if (!tuningLocked)
                     return;
 
-                if (Resolve(in _tuningHandle, out NativeArray<StormPropagationTuningDTO> tuning) && tuning.Length > 0)
+                if (Resolve(in _tuningHandle, BufferID.ShinobuStormPropagationTuning, out NativeArray<StormPropagationTuningDTO> tuning) && tuning.Length > 0)
                 {
                     ref StormPropagationTuningDTO row = ref ShinobuStormPropagationNative.ElementAt(tuning, 0);
                     if (row.ProfileHash == 0u)
@@ -762,41 +848,25 @@ namespace Hecton8.Atmosphere
             if (_vault == null || _vault.IsCompactionFenceActive)
                 return;
 
-            if (!TryLockOwnedJobBuffers())
+            if (!TrySnapshotPropagationJobInputs(out bool weatherAvailable))
             {
-                MarkVaultHandlesStaleAfterResolveFailure();
-                return;
-            }
-
-            NativeArray<WeatherStateDTO> weather = default;
-            bool weatherAvailable = Resolve(in _weatherHandle, out weather) && weather.Length > 0;
-            if (_weatherHandle.BufferID != 0u && !weatherAvailable)
-                _weatherHandle = default;
-
-            if (!Resolve(in _tuningHandle, out NativeArray<StormPropagationTuningDTO> tuning) ||
-                !Resolve(in _profilesHandle, out NativeArray<StormDepthImpactProfileDTO> profiles) ||
-                !Resolve(in _mockWeatherHandle, out NativeArray<MockHurricaneStateDTO> mockWeather) ||
-                !Resolve(in _writeStateHandle, out NativeArray<StormPropagationWriteSnapshotDTO> writeSnapshot) ||
-                !Resolve(in _telemetryHandle, out NativeArray<StormPropagationTelemetryEntry> telemetry) ||
-                !Resolve(in _telemetryCursorHandle, out NativeArray<int> telemetryCursor))
-            {
-                UnlockOwnedJobBuffers();
                 MarkVaultHandlesStaleAfterResolveFailure();
                 return;
             }
 
             _lastOriginFallbackAup = ResolveOriginFallbackAupDouble();
-            _lastSeaLevelAup = ResolveSeaLevelAupDouble(_lastOriginFallbackAup);
+            WeatherStateDTO weatherRow = ShinobuStormPropagationNative.ReadElement(_jobWeatherSnapshot, 0);
+            _lastSeaLevelAup = ResolveSeaLevelAupDouble(_lastOriginFallbackAup, in weatherRow, weatherAvailable);
             float time = ResolveTimeSeconds();
             JobHandle dependency = default;
             bool useMockHurricane = autoGenerateEmergencyMockHurricane &&
-                                    (!weatherAvailable || IsWeatherSourceInvalid(ShinobuStormPropagationNative.ReadElement(weather, 0)));
+                                    (!weatherAvailable || IsWeatherSourceInvalid(in weatherRow));
 
             if (useMockHurricane)
             {
                 GenerateMockHurricaneJob mockJob = new GenerateMockHurricaneJob
                 {
-                    MockState = mockWeather,
+                    MockState = _jobMockWeather,
                     TimeSeconds = time,
                     GlobalQualityWeight = quality,
                     Seed = ShinobuStormPropagationConstants.SourceHash
@@ -808,13 +878,13 @@ namespace Hecton8.Atmosphere
 
             CalculateStormAttenuationJob attenuationJob = new CalculateStormAttenuationJob
             {
-                WeatherState = weather,
-                Tuning = tuning,
-                Profiles = profiles,
-                MockWeather = mockWeather,
-                WriteSnapshot = writeSnapshot,
-                Telemetry = telemetry,
-                TelemetryCursor = telemetryCursor,
+                WeatherState = _jobWeatherSnapshot,
+                Tuning = _jobTuningSnapshot,
+                Profiles = _jobProfileSnapshot,
+                MockWeather = _jobMockWeather,
+                WriteSnapshot = _jobWriteSnapshot,
+                Telemetry = _jobTelemetry,
+                TelemetryCursor = _jobTelemetryCursor,
                 SampleAup = _lastOriginFallbackAup,
                 SeaLevelAup = _lastSeaLevelAup,
                 PreviousSurfaceIntensity01 = _previousSurfaceIntensity01,
@@ -840,6 +910,7 @@ namespace Hecton8.Atmosphere
             {
                 DispatcherJobFence.TryFinalizeCompleted(ref _mockHurricaneJobHandle);
                 _mockScheduled = false;
+                TryPublishMockWeatherSnapshot();
             }
 
             long completeTimestamp = Stopwatch.GetTimestamp();
@@ -847,14 +918,8 @@ namespace Hecton8.Atmosphere
                 ? (float)((completeTimestamp - _jobScheduleTimestamp) * 1000000.0 / Stopwatch.Frequency)
                 : 0f;
             _attenuationScheduled = false;
-            try
-            {
-                PublishCompletedState();
-            }
-            finally
-            {
-                UnlockOwnedJobBuffers();
-            }
+            uint publicationFlags = PublishCompletedState();
+            StampScheduleToPublishTelemetry(publicationFlags);
         }
 
         private void CompleteScheduledJobsForShutdown()
@@ -870,27 +935,17 @@ namespace Hecton8.Atmosphere
                 DispatcherJobFence.TryComplete(ref _mockHurricaneJobHandle, forceComplete: true);
                 _mockScheduled = false;
             }
-
-            UnlockOwnedJobBuffers();
         }
 
-        private void PublishCompletedState()
+        private uint PublishCompletedState()
         {
             uint publishedFlags = 0u;
-            try
+            if (!_jobWriteSnapshot.IsCreated || _jobWriteSnapshot.Length <= 0)
+                return 0u;
+
+            StormPropagationWriteSnapshotDTO snapshot = ShinobuStormPropagationNative.ReadElement(_jobWriteSnapshot, 0);
+            if (TryPublishCompletedStateRow(in snapshot.State))
             {
-                if (_vault == null ||
-                    _vault.IsCompactionFenceActive ||
-                    !Resolve(in _writeStateHandle, out NativeArray<StormPropagationWriteSnapshotDTO> writeSnapshot) ||
-                    writeSnapshot.Length <= 0)
-                {
-                    return;
-                }
-
-                StormPropagationWriteSnapshotDTO snapshot = ShinobuStormPropagationNative.ReadElement(writeSnapshot, 0);
-                if (!TryPublishCompletedStateRow(in snapshot.State))
-                    return;
-
                 if (TryPublishScalarRow(BufferID.ShinobuStormPropagationFlowScalar, in _flowScalarHandle, snapshot.FlowScalar))
                     publishedFlags |= ShinobuStormPropagationConstants.TelemetryFlagFlowPublished;
                 if (TryPublishScalarRow(BufferID.ShinobuStormPropagationAudioScalar, in _audioScalarHandle, snapshot.AudioScalar))
@@ -900,10 +955,8 @@ namespace Hecton8.Atmosphere
                 if (TryPublishScalarRow(BufferID.ShinobuStormPropagationFogScalar, in _fogScalarHandle, snapshot.FogScalar))
                     publishedFlags |= ShinobuStormPropagationConstants.TelemetryFlagFogPublished;
             }
-            finally
-            {
-                StampScheduleToPublishTelemetry(publishedFlags);
-            }
+
+            return publishedFlags;
         }
 
         private bool TryPublishCompletedStateRow(in StormPropagationDTO state)
@@ -913,7 +966,7 @@ namespace Hecton8.Atmosphere
 
             try
             {
-                if (!Resolve(in _publishedStateHandle, out NativeArray<StormPropagationDTO> readState) ||
+                if (!Resolve(in _publishedStateHandle, BufferID.ShinobuStormPropagationState, out NativeArray<StormPropagationDTO> readState) ||
                     readState.Length <= 0)
                 {
                     return false;
@@ -938,7 +991,7 @@ namespace Hecton8.Atmosphere
 
             try
             {
-                if (!Resolve(in handle, out NativeArray<float4> row) || row.Length <= 0)
+                if (!Resolve(in handle, bufferId, out NativeArray<float4> row) || row.Length <= 0)
                     return false;
 
                 ShinobuStormPropagationNative.ElementAt(row, 0) = value;
@@ -950,80 +1003,175 @@ namespace Hecton8.Atmosphere
             }
         }
 
-        private bool TryLockOwnedJobBuffers()
+        private bool TrySnapshotPropagationJobInputs(out bool weatherAvailable)
         {
-            if (_vault == null)
+            weatherAvailable = false;
+            if (_vault == null || _vault.IsCompactionFenceActive)
                 return false;
 
-            _jobLockMask = 0u;
-            return TryLockOptionalWeatherJobBuffer() &&
-                   TryLockJobBuffer(BufferID.ShinobuStormPropagationTuning, JobLockTuning) &&
-                   TryLockJobBuffer(BufferID.ShinobuStormPropagationImpactProfiles, JobLockProfiles) &&
-                   TryLockJobBuffer(BufferID.ShinobuStormPropagationMockWeather, JobLockMockWeather) &&
-                   TryLockJobBuffer(BufferID.ShinobuStormPropagationWriteState, JobLockWriteState) &&
-                   TryLockJobBuffer(BufferID.ShinobuStormPropagationTelemetryRing, JobLockTelemetry) &&
-                   TryLockJobBuffer(BufferID.ShinobuStormPropagationTelemetryCursor, JobLockTelemetryCursor);
-        }
+            if (!HasJobStagingReady())
+                return false;
 
-        private bool TryLockOptionalWeatherJobBuffer()
-        {
-            if (_weatherHandle.BufferID == 0u)
-                return true;
+            _jobWeatherSnapshot[0] = default;
+            _jobMockWeather[0] = default;
+            _jobWriteSnapshot[0] = default;
+            _jobTelemetry[0] = default;
+            _jobTelemetryCursor[0] = 0;
 
-            return TryLockJobBuffer(BufferID.ShinobuOceanWeatherState, JobLockWeather);
-        }
-
-        private bool TryLockJobBuffer(BufferID bufferId, uint bit)
-        {
-            if (_vault != null && _vault.TryLockBuffer(bufferId, OwnerSystem))
+            if (IsHabitatAtmosphereHandle(in _weatherHandle, BufferID.ShinobuOceanWeatherState))
             {
-                _jobLockMask |= bit;
-                return true;
+                if (!TryReadSingleVaultRow(BufferID.ShinobuOceanWeatherState, in _weatherHandle, out WeatherStateDTO weatherRow))
+                {
+                    _weatherHandle = default;
+                    return false;
+                }
+
+                _jobWeatherSnapshot[0] = weatherRow;
+                weatherAvailable = true;
             }
 
-            UnlockOwnedJobBuffers();
-            return false;
+            if (!TryReadSingleVaultRow(BufferID.ShinobuStormPropagationTuning, in _tuningHandle, out StormPropagationTuningDTO tuningRow))
+                return false;
+            _jobTuningSnapshot[0] = tuningRow;
+
+            if (!TryReadSingleVaultRow(BufferID.ShinobuStormPropagationMockWeather, in _mockWeatherHandle, out MockHurricaneStateDTO mockRow))
+                return false;
+            _jobMockWeather[0] = mockRow;
+
+            return TryCopyImpactProfilesToJobSnapshot();
         }
 
-        private void UnlockOwnedJobBuffers()
+        private bool TryReadSingleVaultRow<T>(BufferID bufferId, in VaultGenerationHandle<T> handle, out T value)
+            where T : unmanaged
         {
-            if (_vault == null)
-            {
-                _jobLockMask = 0u;
-                return;
-            }
+            value = default;
+            if (_vault == null || !_vault.TryLockBuffer(bufferId, OwnerSystem))
+                return false;
 
-            uint mask = _jobLockMask;
-            if ((mask & JobLockTelemetryCursor) != 0u) _vault.TryUnlockBuffer(BufferID.ShinobuStormPropagationTelemetryCursor, OwnerSystem);
-            if ((mask & JobLockTelemetry) != 0u) _vault.TryUnlockBuffer(BufferID.ShinobuStormPropagationTelemetryRing, OwnerSystem);
-            if ((mask & JobLockWriteState) != 0u) _vault.TryUnlockBuffer(BufferID.ShinobuStormPropagationWriteState, OwnerSystem);
-            if ((mask & JobLockMockWeather) != 0u) _vault.TryUnlockBuffer(BufferID.ShinobuStormPropagationMockWeather, OwnerSystem);
-            if ((mask & JobLockProfiles) != 0u) _vault.TryUnlockBuffer(BufferID.ShinobuStormPropagationImpactProfiles, OwnerSystem);
-            if ((mask & JobLockTuning) != 0u) _vault.TryUnlockBuffer(BufferID.ShinobuStormPropagationTuning, OwnerSystem);
-            if ((mask & JobLockWeather) != 0u) _vault.TryUnlockBuffer(BufferID.ShinobuOceanWeatherState, OwnerSystem);
-            _jobLockMask = 0u;
+            try
+            {
+                if (!Resolve(in handle, bufferId, out NativeArray<T> source) || source.Length <= 0)
+                    return false;
+
+                value = ShinobuStormPropagationNative.ReadElement(source, 0);
+                return true;
+            }
+            finally
+            {
+                _vault.TryUnlockBuffer(bufferId, OwnerSystem);
+            }
+        }
+
+        private bool TryWriteSingleVaultRow<T>(BufferID bufferId, in VaultGenerationHandle<T> handle, in T value)
+            where T : unmanaged
+        {
+            if (_vault == null || !_vault.TryLockBuffer(bufferId, OwnerSystem))
+                return false;
+
+            try
+            {
+                if (!Resolve(in handle, bufferId, out NativeArray<T> destination) || destination.Length <= 0)
+                    return false;
+
+                ShinobuStormPropagationNative.ElementAt(destination, 0) = value;
+                return true;
+            }
+            finally
+            {
+                _vault.TryUnlockBuffer(bufferId, OwnerSystem);
+            }
+        }
+
+        private bool TryCopyImpactProfilesToJobSnapshot()
+        {
+            if (_vault == null || !_vault.TryLockBuffer(BufferID.ShinobuStormPropagationImpactProfiles, OwnerSystem))
+                return false;
+
+            try
+            {
+                if (!Resolve(in _profilesHandle, BufferID.ShinobuStormPropagationImpactProfiles, out NativeArray<StormDepthImpactProfileDTO> profiles) ||
+                    profiles.Length <= 0 ||
+                    !_jobProfileSnapshot.IsCreated)
+                {
+                    return false;
+                }
+
+                int count = math.min(profiles.Length, _jobProfileSnapshot.Length);
+                for (int i = 0; i < count; i++)
+                    _jobProfileSnapshot[i] = ShinobuStormPropagationNative.ReadElement(profiles, i);
+                for (int i = count; i < _jobProfileSnapshot.Length; i++)
+                    _jobProfileSnapshot[i] = default;
+                return true;
+            }
+            finally
+            {
+                _vault.TryUnlockBuffer(BufferID.ShinobuStormPropagationImpactProfiles, OwnerSystem);
+            }
+        }
+
+        private bool TryPublishMockWeatherSnapshot()
+        {
+            if (!_jobMockWeather.IsCreated || _jobMockWeather.Length <= 0)
+                return false;
+
+            MockHurricaneStateDTO mock = ShinobuStormPropagationNative.ReadElement(_jobMockWeather, 0);
+            return TryWriteSingleVaultRow(BufferID.ShinobuStormPropagationMockWeather, in _mockWeatherHandle, in mock);
         }
 
         private void StampScheduleToPublishTelemetry(uint publicationFlags)
         {
-            if (_vault == null || _vault.IsCompactionFenceActive)
+            if (!_jobTelemetry.IsCreated || _jobTelemetry.Length <= 0)
                 return;
 
-            if (!Resolve(in _telemetryHandle, out NativeArray<StormPropagationTelemetryEntry> telemetry) ||
-                !Resolve(in _telemetryCursorHandle, out NativeArray<int> cursorArray) ||
-                telemetry.Length <= 0 ||
-                cursorArray.Length <= 0)
-            {
+            StormPropagationTelemetryEntry entry = ShinobuStormPropagationNative.ReadElement(_jobTelemetry, 0);
+            if (entry.Frame == 0u)
                 return;
-            }
 
-            int index = ShinobuStormPropagationMath.PreviousRingIndex(ShinobuStormPropagationNative.ReadElement(cursorArray, 0), telemetry.Length);
-            ref StormPropagationTelemetryEntry entry = ref ShinobuStormPropagationNative.ElementAt(telemetry, index);
             entry.Flags |= publicationFlags;
             entry.ScheduleToPublishMicroseconds = _lastScheduleToPublishMicroseconds;
             _previousSurfaceIntensity01 = ShinobuStormPropagationMath.Sanitize01(entry.SurfaceIntensity01);
             _lastTelemetryReasonFlags = entry.Flags;
             _lastTelemetryStateHash = entry.StateHash;
+            TryPublishTelemetryEntry(in entry);
+        }
+
+        private bool TryPublishTelemetryEntry(in StormPropagationTelemetryEntry entry)
+        {
+            if (_vault == null || _vault.IsCompactionFenceActive)
+                return false;
+
+            if (!TryReadSingleVaultRow(BufferID.ShinobuStormPropagationTelemetryCursor, in _telemetryCursorHandle, out int cursor))
+                return false;
+
+            int writeIndex = ShinobuStormPropagationMath.WrapRingIndex(cursor, ShinobuStormPropagationConstants.TelemetryFrameCount);
+            if (!TryWriteTelemetryEntryAt(writeIndex, in entry))
+                return false;
+
+            int nextCursor = ShinobuStormPropagationMath.AdvanceRingCursor(cursor, ShinobuStormPropagationConstants.TelemetryFrameCount);
+            return TryWriteSingleVaultRow(BufferID.ShinobuStormPropagationTelemetryCursor, in _telemetryCursorHandle, in nextCursor);
+        }
+
+        private bool TryWriteTelemetryEntryAt(int index, in StormPropagationTelemetryEntry entry)
+        {
+            if (_vault == null || !_vault.TryLockBuffer(BufferID.ShinobuStormPropagationTelemetryRing, OwnerSystem))
+                return false;
+
+            try
+            {
+                if (!Resolve(in _telemetryHandle, BufferID.ShinobuStormPropagationTelemetryRing, out NativeArray<StormPropagationTelemetryEntry> telemetry) ||
+                    telemetry.Length <= 0)
+                {
+                    return false;
+                }
+
+                int safeIndex = ShinobuStormPropagationMath.WrapRingIndex(index, telemetry.Length);
+                ShinobuStormPropagationNative.ElementAt(telemetry, safeIndex) = entry;
+                return true;
+            }
+            finally
+            {
+                _vault.TryUnlockBuffer(BufferID.ShinobuStormPropagationTelemetryRing, OwnerSystem);
+            }
         }
 
         private bool TryDumpTelemetryToDisk(uint reasonFlags, uint stateHash)
@@ -1056,7 +1204,7 @@ namespace Hecton8.Atmosphere
                     return false;
 
                 cursorLocked = true;
-                if (!Resolve(in _telemetryCursorHandle, out NativeArray<int> cursor) ||
+                if (!Resolve(in _telemetryCursorHandle, BufferID.ShinobuStormPropagationTelemetryCursor, out NativeArray<int> cursor) ||
                     cursor.Length <= 0 ||
                     scratch.Length < ShinobuStormPropagationConstants.DumpScratchBytes)
                 {
@@ -1074,7 +1222,7 @@ namespace Hecton8.Atmosphere
                         return false;
 
                     telemetryLocked = true;
-                    if (!Resolve(in _telemetryHandle, out NativeArray<StormPropagationTelemetryEntry> telemetry) ||
+                    if (!Resolve(in _telemetryHandle, BufferID.ShinobuStormPropagationTelemetryRing, out NativeArray<StormPropagationTelemetryEntry> telemetry) ||
                         telemetry.Length <= 0 ||
                         scratch.Length < ShinobuStormPropagationConstants.DumpScratchBytes)
                     {
@@ -1199,7 +1347,7 @@ namespace Hecton8.Atmosphere
 
             try
             {
-                if (Resolve(in _tuningHandle, out NativeArray<StormPropagationTuningDTO> tuning) && tuning.Length > 0)
+                if (Resolve(in _tuningHandle, BufferID.ShinobuStormPropagationTuning, out NativeArray<StormPropagationTuningDTO> tuning) && tuning.Length > 0)
                 {
                     StormPropagationTuningDTO row = ShinobuStormPropagationNative.ReadElement(tuning, 0);
                     if (math.isfinite(row.PublicationCadenceHz) && row.PublicationCadenceHz > 0.001f)
@@ -1223,15 +1371,13 @@ namespace Hecton8.Atmosphere
             return SanitizeAup(_cachedOriginFallbackAup);
         }
 
-        private double3 ResolveSeaLevelAupDouble(double3 sampleAup)
+        private double3 ResolveSeaLevelAupDouble(double3 sampleAup, in WeatherStateDTO weather, bool weatherAvailable)
         {
             float seaLevelLocal = (!double.IsNaN(seaLevelAupY) && !double.IsInfinity(seaLevelAupY)) ? (float)seaLevelAupY : 0f;
-            if (Resolve(in _weatherHandle, out NativeArray<WeatherStateDTO> weather) &&
-                weather.Length > 0)
+            if (weatherAvailable)
             {
-                WeatherStateDTO row = ShinobuStormPropagationNative.ReadElement(weather, 0);
-                if (math.isfinite(row.SurfaceScalars.x))
-                    seaLevelLocal = row.SurfaceScalars.x;
+                if (math.isfinite(weather.SurfaceScalars.x))
+                    seaLevelLocal = weather.SurfaceScalars.x;
             }
 
             return new double3(sampleAup.x, sampleAup.y + seaLevelLocal, sampleAup.z);
@@ -1256,11 +1402,14 @@ namespace Hecton8.Atmosphere
                    !math.isfinite(weather.MaxWaveAmplitude);
         }
 
-        private bool Resolve<T>(in VaultGenerationHandle<T> handle, out NativeArray<T> buffer)
+        private bool Resolve<T>(in VaultGenerationHandle<T> handle, BufferID expectedBufferId, out NativeArray<T> buffer)
             where T : unmanaged
         {
             buffer = default;
-            return _vault != null && handle.BufferID != 0u && _vault.TryResolveHandle(in handle, out buffer) && buffer.IsCreated;
+            return _vault != null &&
+                   IsHabitatAtmosphereHandle(in handle, expectedBufferId) &&
+                   _vault.TryResolveHandle(in handle, out buffer) &&
+                   buffer.IsCreated;
         }
 
         private static string BuildProjectRootPathCold()

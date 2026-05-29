@@ -963,6 +963,9 @@ namespace Hecton8.Gameplay
         private const NativeAllocationLifetime NativeMemoryLifetime = NativeAllocationLifetime.Scene;
         private const float MaxAcceptedOriginShiftMeters = 10000.0f;
         private const float MaxAcceptedOriginShiftMetersSq = MaxAcceptedOriginShiftMeters * MaxAcceptedOriginShiftMeters;
+        private static readonly float3 Float3Forward = new float3(0.0f, 0.0f, 1.0f);
+        private static readonly float3 Float3Right = new float3(1.0f, 0.0f, 0.0f);
+        private static readonly float3 Float3Up = new float3(0.0f, 1.0f, 0.0f);
         private static readonly float3 HeadToChestSocketLocalOffset = new float3(0.0f, -0.32f, -0.08f);
         private static readonly float3 HeadForwardReferenceLocalOffset = new float3(0.0f, 0.0f, 0.25f);
         private static readonly int MuscleBulgeShaderId = Shader.PropertyToID("_MuscleBulge");
@@ -1359,6 +1362,9 @@ namespace Hecton8.Gameplay
         private ref NativeArray<float> _muscleBulgeOutput => ref _nativeBuffers.MuscleBulgeOutput;
         private ref NativeArray<ContextualPhysicalIkTargetFrame>.ReadOnly _currentTargetFrames => ref _nativeBuffers.CurrentTargetFrames;
 
+        internal bool HasPendingAnimationInjection =>
+            _runtimeInitialized && !_animationInjected;
+
         private Transform[] _appendageTargetSources;
         private Transform[] _appendageFallbackTips;
         private HectonVoxelVolume[] _appendageVoxelVolumes;
@@ -1396,10 +1402,10 @@ namespace Hecton8.Gameplay
         private float _externalSqueezePoleBlend;
         private float _externalSqueezePoleHoldTimer;
         private float _upperArmCullTimer;
-        private Material _muscleBulgeMaterialInstance;
+        private MaterialPropertyBlock _muscleBulgePropertyBlock;
         private List<Material> _muscleBulgeSharedMaterials;
-        private Material _muscleBulgeOriginalMaterial;
         private float _muscleBulgeCurrent;
+        private bool _muscleBulgePresentationDirty;
         private float _cachedLeftLegReach;
         private float _cachedRightLegReach;
         private float _cachedLeftArmReach;
@@ -1425,6 +1431,8 @@ namespace Hecton8.Gameplay
         private bool _hasPreviousRightPredictiveControllerPose;
         private bool _terminalRightHandActive;
         private bool _upperArmRenderersVisible = true;
+        private bool _pendingUpperArmRenderersVisible = true;
+        private bool _upperArmVisibilityPresentationDirty;
 
         private void OnEnable()
         {
@@ -1576,10 +1584,12 @@ namespace Hecton8.Gameplay
             UpdateJobDataTargetFrames();
         }
 
-        internal void OnTargetBufferSwapped(NativeArray<ContextualPhysicalIkTargetFrame>.ReadOnly targetFrames)
+        internal void OnTargetBufferSwapped(NativeArray<ContextualPhysicalIkTargetFrame>.ReadOnly targetFrames, bool applyPresentation)
         {
             _currentTargetFrames = targetFrames;
             UpdateJobDataTargetFrames();
+            if (applyPresentation)
+                ApplyDeferredPresentationState();
         }
 
         internal void ApplyExternalWallHandTargets(in PlayerKinematicsHandTarget leftTarget, in PlayerKinematicsHandTarget rightTarget)
@@ -1630,10 +1640,7 @@ namespace Hecton8.Gameplay
             if (!isActiveAndEnabled)
                 return false;
 
-            if (!EnsureRuntimeInitialized())
-                return false;
-
-            if (!TryInitializeAnimationInjection())
+            if (!_runtimeInitialized || !_animationInjected)
                 return false;
 
             if (_entitySlot < 0)
@@ -1650,12 +1657,9 @@ namespace Hecton8.Gameplay
             TickBreathingState(safeDeltaTime, qualityWeight01);
             TickExternalSqueezePoleState(safeDeltaTime);
             ApplyExternalSqueezePoleBias();
-            CaptureSpineTargets(qualityWeight01);
-            CaptureAppendageTargets();
-            ApplyMuscleBulgeSignal(safeDeltaTime);
-            CapturePredictiveRepairLatch(safeDeltaTime, wallTouchQualityWeight01);
+            TickMuscleBulgeSignal(safeDeltaTime);
             TickToolHandTransientState(safeDeltaTime);
-            TickUpperArmFovCulling(safeDeltaTime);
+            TickUpperArmFovCullingState(safeDeltaTime);
 
             Vector3 rootPositionUnity = characterRoot.position;
             Quaternion rootRotationUnity = characterRoot.rotation;
@@ -1665,14 +1669,14 @@ namespace Hecton8.Gameplay
             float3 rootPosition = ContextualPhysicalIkMath.ToFloat3(rootPositionUnity);
             quaternion rootRotation = ContextualPhysicalIkMath.ToMathematicsQuaternion(rootRotationUnity);
             float3 rootForward = ContextualPhysicalIkMath.SafeNormalize(
-                math.mul(rootRotation, new float3(0.0f, 0.0f, 1.0f)),
-                new float3(0.0f, 0.0f, 1.0f));
+                math.mul(rootRotation, Float3Forward),
+                Float3Forward);
             float3 rootRight = ContextualPhysicalIkMath.SafeNormalize(
-                math.mul(rootRotation, new float3(1.0f, 0.0f, 0.0f)),
-                new float3(1.0f, 0.0f, 0.0f));
+                math.mul(rootRotation, Float3Right),
+                Float3Right);
             float3 rootUp = ContextualPhysicalIkMath.SafeNormalize(
-                math.mul(rootRotation, new float3(0.0f, 1.0f, 0.0f)),
-                new float3(0.0f, 1.0f, 0.0f));
+                math.mul(rootRotation, Float3Up),
+                Float3Up);
             ResolveColdShiverOffsets(rootRight, rootUp, out float3 leftColdShiverOffset, out float3 rightColdShiverOffset);
             float viewerDistanceSq = 0.0f;
             bool hasFiniteViewerPose = hasViewerPosition &&
@@ -1688,6 +1692,13 @@ namespace Hecton8.Gameplay
 
             float throttleDistanceSq = viewerDistanceSq * math.lerp(LowQualityThrottleDistanceBias, 1.0f, qualityWeight01);
             ResolveThrottleState(frameIndex, _entitySlot, throttleDistanceSq, ref _stableThrottleTier, out int updateThisFrame, out byte throttleTier, out uint updateBitfield);
+            if (updateThisFrame != 0)
+            {
+                CaptureSpineTargets(qualityWeight01);
+                CaptureAppendageTargets();
+                CapturePredictiveRepairLatch(safeDeltaTime, wallTouchQualityWeight01);
+            }
+
             entityState.IsActive = 1;
             entityState.EnableFootPlacement = lowerBodyIkEnabled ? 1 : 0;
             entityState.EnableHandBracing = enableHandBracing ? 1 : 0;
@@ -1705,8 +1716,8 @@ namespace Hecton8.Gameplay
             entityState.RightHandProbeOrigin = ReadPositionOrFallback(rightHandProbe, entityState.RootPosition);
             entityState.PredictiveLeftHandPosition = SanitizeFloat3Value(ContextualPhysicalIkMath.ToFloat3(_predictiveLeftHandPosition), rootPosition);
             entityState.PredictiveRightHandPosition = SanitizeFloat3Value(ContextualPhysicalIkMath.ToFloat3(_predictiveRightHandPosition), rootPosition);
-            entityState.PredictiveLeftHandNormal = ContextualPhysicalIkMath.SafeNormalize(SanitizeFloat3Value(ContextualPhysicalIkMath.ToFloat3(_predictiveLeftHandNormal), new float3(0.0f, 1.0f, 0.0f)), new float3(0.0f, 1.0f, 0.0f));
-            entityState.PredictiveRightHandNormal = ContextualPhysicalIkMath.SafeNormalize(SanitizeFloat3Value(ContextualPhysicalIkMath.ToFloat3(_predictiveRightHandNormal), new float3(0.0f, 1.0f, 0.0f)), new float3(0.0f, 1.0f, 0.0f));
+            entityState.PredictiveLeftHandNormal = ContextualPhysicalIkMath.SafeNormalize(SanitizeFloat3Value(ContextualPhysicalIkMath.ToFloat3(_predictiveLeftHandNormal), Float3Up), Float3Up);
+            entityState.PredictiveRightHandNormal = ContextualPhysicalIkMath.SafeNormalize(SanitizeFloat3Value(ContextualPhysicalIkMath.ToFloat3(_predictiveRightHandNormal), Float3Up), Float3Up);
             entityState.CameraPosition = hasFiniteViewerPose ? viewerPosition : rootPosition;
             entityState.CameraForward = hasFiniteViewerPose ? ContextualPhysicalIkMath.SafeNormalize(viewerForward, rootForward) : rootForward;
             entityState.CameraUp = hasFiniteViewerPose ? ContextualPhysicalIkMath.SafeNormalize(viewerUp, rootUp) : rootUp;
@@ -1716,7 +1727,7 @@ namespace Hecton8.Gameplay
             entityState.LeftColdShiverOffset = leftColdShiverOffset;
             entityState.RightColdShiverOffset = rightColdShiverOffset;
             entityState.DashboardRightHandPosition = SanitizeFloat3Value(ContextualPhysicalIkMath.ToFloat3(_terminalRightHandPosition), rootPosition);
-            entityState.DashboardRightHandNormal = ContextualPhysicalIkMath.SafeNormalize(SanitizeFloat3Value(ContextualPhysicalIkMath.ToFloat3(_terminalRightHandNormal), new float3(0.0f, 1.0f, 0.0f)), new float3(0.0f, 1.0f, 0.0f));
+            entityState.DashboardRightHandNormal = ContextualPhysicalIkMath.SafeNormalize(SanitizeFloat3Value(ContextualPhysicalIkMath.ToFloat3(_terminalRightHandNormal), Float3Up), Float3Up);
             entityState.LeftLegReach = SanitizeNonNegativeScalar(_cachedLeftLegReach);
             entityState.RightLegReach = SanitizeNonNegativeScalar(_cachedRightLegReach);
             entityState.LeftArmReach = SanitizeNonNegativeScalar(_cachedLeftArmReach);
@@ -2192,12 +2203,11 @@ namespace Hecton8.Gameplay
             return math.all(math.isfinite(velocity)) ? (Vector3)velocity : Vector3.zero;
         }
 
-        private void TickUpperArmFovCulling(float deltaTime)
+        private void TickUpperArmFovCullingState(float deltaTime)
         {
             if (!enableUpperArmFovCulling || upperArmRenderers == null || upperArmRenderers.Length == 0)
             {
-                if (!_upperArmRenderersVisible)
-                    SetUpperArmRenderersVisible(true);
+                QueueUpperArmVisibility(true);
                 _upperArmCullTimer = 0.0f;
                 return;
             }
@@ -2207,8 +2217,7 @@ namespace Hecton8.Gameplay
             Transform cameraTransform = playerCamera != null ? playerCamera.transform : null;
             if (cameraTransform == null)
             {
-                if (!_upperArmRenderersVisible)
-                    SetUpperArmRenderersVisible(true);
+                QueueUpperArmVisibility(true);
                 _upperArmCullTimer = 0.0f;
                 return;
             }
@@ -2217,14 +2226,13 @@ namespace Hecton8.Gameplay
             if (visible)
             {
                 _upperArmCullTimer = 0.0f;
-                if (!_upperArmRenderersVisible)
-                    SetUpperArmRenderersVisible(true);
+                QueueUpperArmVisibility(true);
                 return;
             }
 
             _upperArmCullTimer += SanitizeNonNegativeScalar(deltaTime);
-            if (_upperArmCullTimer >= math.max(0.01f, SanitizeNonNegativeScalar(upperArmCullHysteresisSeconds)) && _upperArmRenderersVisible)
-                SetUpperArmRenderersVisible(false);
+            if (_upperArmCullTimer >= math.max(0.01f, SanitizeNonNegativeScalar(upperArmCullHysteresisSeconds)))
+                QueueUpperArmVisibility(false);
         }
 
         private bool IsAnyUpperArmRendererInViewCone(Transform cameraTransform)
@@ -2263,17 +2271,25 @@ namespace Hecton8.Gameplay
 
         private void SetUpperArmRenderersVisible(bool visible)
         {
-            if (upperArmRenderers == null)
-                return;
-
-            for (int i = 0; i < upperArmRenderers.Length; i++)
+            if (upperArmRenderers != null)
             {
-                Renderer renderer = upperArmRenderers[i];
-                if (renderer != null)
-                    renderer.enabled = visible;
+                for (int i = 0; i < upperArmRenderers.Length; i++)
+                {
+                    Renderer renderer = upperArmRenderers[i];
+                    if (renderer != null)
+                        renderer.enabled = visible;
+                }
             }
 
             _upperArmRenderersVisible = visible;
+            _pendingUpperArmRenderersVisible = visible;
+            _upperArmVisibilityPresentationDirty = false;
+        }
+
+        private void QueueUpperArmVisibility(bool visible)
+        {
+            _pendingUpperArmRenderersVisible = visible;
+            _upperArmVisibilityPresentationDirty = _upperArmRenderersVisible != visible;
         }
 
         private bool EnsureRuntimeInitialized()
@@ -2568,6 +2584,17 @@ namespace Hecton8.Gameplay
             if (!EnsureRuntimeInitialized())
                 return false;
 
+            return TryInjectAnimationPlayable();
+        }
+
+        private bool TryInjectAnimationPlayable()
+        {
+            if (_animationInjected)
+                return true;
+
+            if (!_runtimeInitialized)
+                return false;
+
             if (animator == null)
                 return false;
 
@@ -2801,23 +2828,61 @@ namespace Hecton8.Gameplay
             }
         }
 
-        private void ApplyMuscleBulgeSignal(float deltaTime)
+        private void TickMuscleBulgeSignal(float deltaTime)
         {
             if (!_muscleBulgeOutput.IsCreated ||
-                _muscleBulgeOutput.Length <= 0 ||
-                !_muscleBulgeMaterialInitialized ||
-                _muscleBulgeMaterialInstance == null)
+                _muscleBulgeOutput.Length <= 0)
                 return;
 
             float safeDeltaTime = math.max(0.0001f, SanitizeNonNegativeScalar(deltaTime));
             float targetBulge = SanitizeUnitScalar(_muscleBulgeOutput[0] * muscleBulgeScale);
-            _muscleBulgeCurrent = SanitizeUnitScalar(ContextualPhysicalIkMath.SmoothScalar(_muscleBulgeCurrent, targetBulge, muscleBulgeSharpness, safeDeltaTime));
-            _muscleBulgeMaterialInstance.SetFloat(MuscleBulgeShaderId, _muscleBulgeCurrent);
+            float nextBulge = SanitizeUnitScalar(ContextualPhysicalIkMath.SmoothScalar(_muscleBulgeCurrent, targetBulge, muscleBulgeSharpness, safeDeltaTime));
+            if (math.abs(nextBulge - _muscleBulgeCurrent) <= 0.000001f)
+                return;
+
+            _muscleBulgeCurrent = nextBulge;
+            _muscleBulgePresentationDirty = true;
+        }
+
+        private void ApplyDeferredPresentationState()
+        {
+            if (_upperArmVisibilityPresentationDirty)
+                SetUpperArmRenderersVisible(_pendingUpperArmRenderersVisible);
+
+            if (_muscleBulgePresentationDirty)
+                ApplyMuscleBulgePresentation();
+        }
+
+        internal bool TryCompleteLateFrameAnimationInjection()
+        {
+            if (!_runtimeInitialized)
+                return false;
+
+            return TryInjectAnimationPlayable();
+        }
+
+        private void ApplyMuscleBulgePresentation()
+        {
+            if (!_muscleBulgeMaterialInitialized ||
+                _muscleBulgePropertyBlock == null ||
+                muscleBulgeRenderer == null)
+            {
+                _muscleBulgePresentationDirty = false;
+                return;
+            }
+
+            muscleBulgeRenderer.GetPropertyBlock(_muscleBulgePropertyBlock, muscleBulgeMaterialSlot);
+            _muscleBulgePropertyBlock.SetFloat(MuscleBulgeShaderId, _muscleBulgeCurrent);
+            muscleBulgeRenderer.SetPropertyBlock(_muscleBulgePropertyBlock, muscleBulgeMaterialSlot);
+            _muscleBulgePresentationDirty = false;
         }
 
         private void TryRegisterWithRuntime()
         {
             if (_registered)
+                return;
+
+            if (!_runtimeInitialized)
                 return;
 
             _runtime = ContextualPhysicalIkRuntime.EnsureRuntimeInstance();
@@ -2908,6 +2973,9 @@ namespace Hecton8.Gameplay
                 _playerStress01 = 0.0f;
                 _externalSqueezePoleBlend = 0.0f;
                 _externalSqueezePoleHoldTimer = 0.0f;
+                _muscleBulgePresentationDirty = false;
+                _pendingUpperArmRenderersVisible = true;
+                _upperArmVisibilityPresentationDirty = false;
                 _lastPlayerStressSignalSequence = 0;
                 _hasPreviousLeftPredictiveControllerPose = false;
                 _hasPreviousRightPredictiveControllerPose = false;
@@ -3305,7 +3373,7 @@ namespace Hecton8.Gameplay
         private bool TryInitializeMuscleBulgeMaterial()
         {
             if (_muscleBulgeMaterialInitialized)
-                return _muscleBulgeMaterialInstance != null;
+                return _muscleBulgePropertyBlock != null;
 
             if (muscleBulgeRenderer == null)
                 return false;
@@ -3322,15 +3390,18 @@ namespace Hecton8.Gameplay
                 return false;
             }
 
-            _muscleBulgeOriginalMaterial = _muscleBulgeSharedMaterials[muscleBulgeMaterialSlot];
-            if (_muscleBulgeOriginalMaterial == null || !_muscleBulgeOriginalMaterial.HasProperty(MuscleBulgeShaderId))
+            Material sharedMaterial = _muscleBulgeSharedMaterials[muscleBulgeMaterialSlot];
+            if (sharedMaterial == null || !sharedMaterial.HasProperty(MuscleBulgeShaderId))
                 return false;
 
-            _muscleBulgeMaterialInstance = new Material(_muscleBulgeOriginalMaterial); // COLD ALLOC: Material[1] - per-rig muscle bulge material instance - owner: ContextualPhysicalIkRig
-            _muscleBulgeMaterialInstance.SetFloat(MuscleBulgeShaderId, 0.0f);
-            _muscleBulgeSharedMaterials[muscleBulgeMaterialSlot] = _muscleBulgeMaterialInstance;
-            muscleBulgeRenderer.SetSharedMaterials(_muscleBulgeSharedMaterials);
+            if (_muscleBulgePropertyBlock == null)
+                _muscleBulgePropertyBlock = new MaterialPropertyBlock(); // COLD ALLOC: MaterialPropertyBlock[1] - per-rig renderer property override - owner: ContextualPhysicalIkRig
+
+            muscleBulgeRenderer.GetPropertyBlock(_muscleBulgePropertyBlock, muscleBulgeMaterialSlot);
+            _muscleBulgePropertyBlock.SetFloat(MuscleBulgeShaderId, 0.0f);
+            muscleBulgeRenderer.SetPropertyBlock(_muscleBulgePropertyBlock, muscleBulgeMaterialSlot);
             _muscleBulgeCurrent = 0.0f;
+            _muscleBulgePresentationDirty = false;
             _muscleBulgeMaterialInitialized = true;
             return true;
         }
@@ -3338,27 +3409,26 @@ namespace Hecton8.Gameplay
         private void ReleaseMuscleBulgeMaterial()
         {
             if (muscleBulgeRenderer != null &&
+                _muscleBulgePropertyBlock != null &&
                 _muscleBulgeSharedMaterials != null &&
                 muscleBulgeMaterialSlot >= 0 &&
-                muscleBulgeMaterialSlot < _muscleBulgeSharedMaterials.Count &&
-                _muscleBulgeOriginalMaterial != null)
+                _muscleBulgeMaterialInitialized)
             {
-                _muscleBulgeSharedMaterials[muscleBulgeMaterialSlot] = _muscleBulgeOriginalMaterial;
-                muscleBulgeRenderer.SetSharedMaterials(_muscleBulgeSharedMaterials);
+                _muscleBulgeSharedMaterials.Clear();
+                muscleBulgeRenderer.GetSharedMaterials(_muscleBulgeSharedMaterials);
+                if (muscleBulgeMaterialSlot < _muscleBulgeSharedMaterials.Count)
+                {
+                    muscleBulgeRenderer.GetPropertyBlock(_muscleBulgePropertyBlock, muscleBulgeMaterialSlot);
+                    _muscleBulgePropertyBlock.SetFloat(MuscleBulgeShaderId, 0.0f);
+                    muscleBulgeRenderer.SetPropertyBlock(_muscleBulgePropertyBlock, muscleBulgeMaterialSlot);
+                }
+
+                _muscleBulgePropertyBlock.Clear();
             }
 
-            if (_muscleBulgeMaterialInstance != null)
-            {
-                if (Application.isPlaying)
-                    Destroy(_muscleBulgeMaterialInstance);
-                else
-                    DestroyImmediate(_muscleBulgeMaterialInstance);
-            }
-
-            _muscleBulgeMaterialInstance = null;
             _muscleBulgeSharedMaterials?.Clear();
-            _muscleBulgeOriginalMaterial = null;
             _muscleBulgeCurrent = 0.0f;
+            _muscleBulgePresentationDirty = false;
             _muscleBulgeMaterialInitialized = false;
         }
 

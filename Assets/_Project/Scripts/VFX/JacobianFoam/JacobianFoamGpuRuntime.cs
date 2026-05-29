@@ -109,6 +109,8 @@ namespace Hecton8.VFX
         private bool _registeredHotSwap;
         private bool _vaultReady;
         private bool _hasPreparedPayload;
+        private bool _coldSupportsComputeShaders;
+        private GraphicsFormat _coldFoamTextureFormat = GraphicsFormat.None;
         private RenderTexture _activeFoamTexture;
         private FoamRenderGraphPayload _preparedPayload;
         private int _instanceId;
@@ -135,6 +137,7 @@ namespace Hecton8.VFX
             _instanceId = GetEntityId().GetHashCode();
             CacheDataVaultCold();
             CacheRenderContextCameraIfMissing();
+            CacheGraphicsCapabilitySnapshotCold();
             ResolveKernels();
             EnsureVaultState(true);
             EnsureGpuState(JacobianFoamContracts.ResolveFoamResolution(0.5f, _minResolution, _maxResolution));
@@ -185,7 +188,7 @@ namespace Hecton8.VFX
         {
             ConsumeRenderGraphAcknowledgement();
 
-            if (_computeShader == null || !HardwareTierDetector.AllowHighResourceComputeShaders)
+            if (_computeShader == null || !_coldSupportsComputeShaders)
             {
                 ClearPreparedPayload();
                 return;
@@ -218,95 +221,44 @@ namespace Hecton8.VFX
             CacheRenderContextCameraIfMissing();
             _currentScrollOffset = ResolveCameraScrollOffset(_primaryCamera, _textureWorldSizeMeters);
 
-            if (!TryAcquireWriteBuffer(
-                    in _paramsHandle,
-                    BufferID.JacobianFoamParams,
-                    1,
-                    out NativeArray<FoamComputeParamsDTO> paramsArray))
+            if (_generateMockStormState)
+            {
+                tuning = JacobianFoamContracts.ResolveMockStormTuning(in tuning, _qualityWeight);
+                if (!TryWriteTuning(in tuning))
+                {
+                    ClearPreparedPayload();
+                    return;
+                }
+            }
+
+            FoamComputeParamsDTO parameters = JacobianFoamContracts.BuildParams(
+                in tuning,
+                _qualityWeight,
+                _lastDeltaTime,
+                _currentScrollOffset);
+            if (!TryWriteAndUploadParams(in parameters))
             {
                 ClearPreparedPayload();
                 return;
             }
 
-            bool wakeReadPinned = false;
-            bool wakeWriteLocked = false;
-            bool tuningWriteLocked = false;
-            NativeArray<FoamWakeImpactDTO> wakeArray = default;
-            NativeArray<FoamTuningDTO> tuningArray = default;
-            try
+            if (_generateMockStormState)
             {
-                if (_generateMockStormState)
+                if (!TryWriteAndUploadMockWakes(in tuning, phaseTime))
                 {
-                    if (!TryAcquireWriteBuffer(
-                            in _tuningHandle,
-                            BufferID.JacobianFoamTuning,
-                            1,
-                            out tuningArray))
-                    {
-                        ClearPreparedPayload();
-                        return;
-                    }
-
-                    tuningWriteLocked = true;
-                    if (!TryAcquireWriteBuffer(
-                            in _wakeHandle,
-                            BufferID.JacobianFoamWakeImpacts,
-                            JacobianFoamContracts.WakeImpactCapacity,
-                            out wakeArray))
-                    {
-                        ClearPreparedPayload();
-                        return;
-                    }
-
-                    wakeWriteLocked = true;
-                    GenerateMockStormStateJob job = new GenerateMockStormStateJob
-                    {
-                        Params = paramsArray,
-                        Tuning = tuningArray,
-                        WakeImpacts = wakeArray,
-                        TimeSeconds = phaseTime,
-                        GlobalQualityWeight = _qualityWeight,
-                        DeltaTime = _lastDeltaTime,
-                        ScrollOffset = _currentScrollOffset
-                    };
-                    job.Run();
-                    if (tuningArray.IsCreated && tuningArray.Length > 0 && tuningArray[0].Version != 0u)
-                        tuning = tuningArray[0];
+                    ClearPreparedPayload();
+                    return;
                 }
-                else
-                {
-                    if (!TryAcquireReadPin(
-                            in _wakeHandle,
-                            BufferID.JacobianFoamWakeImpacts,
-                            JacobianFoamContracts.WakeImpactCapacity,
-                            out wakeArray))
-                    {
-                        ClearPreparedPayload();
-                        return;
-                    }
-
-                    wakeReadPinned = true;
-                    ref FoamComputeParamsDTO paramRef = ref JacobianFoamContracts.MutableParamsRef(paramsArray);
-                    paramRef = JacobianFoamContracts.BuildParams(in tuning, _qualityWeight, _lastDeltaTime, _currentScrollOffset);
-                }
-
-                _lastWakeCount = ResolveWakeCount(wakeArray, _qualityWeight);
-                UploadParams(paramsArray);
-                UploadWakes(wakeArray, _lastWakeCount);
-                RecordTelemetry(tuning);
-                PublishRenderGraphPayload();
-                _frame++;
             }
-            finally
+            else if (!TryUploadReadOnlyWakes())
             {
-                if (wakeReadPinned)
-                    ReleaseReadPin(BufferID.JacobianFoamWakeImpacts);
-                if (wakeWriteLocked)
-                    ReleaseWriteBuffer(in _wakeHandle, BufferID.JacobianFoamWakeImpacts);
-                if (tuningWriteLocked)
-                    ReleaseWriteBuffer(in _tuningHandle, BufferID.JacobianFoamTuning);
-                ReleaseWriteBuffer(in _paramsHandle, BufferID.JacobianFoamParams);
+                ClearPreparedPayload();
+                return;
             }
+
+            RecordTelemetry(tuning);
+            PublishRenderGraphPayload();
+            _frame++;
         }
 
         public bool TryReadRenderGraphPayload(out FoamRenderGraphPayload payload)
@@ -354,6 +306,12 @@ namespace Hecton8.VFX
             _deferredTelemetryDumpWritten = 0;
             _lastEstimatedGpuMicroseconds = 0f;
             _lastWakeCount = 0;
+        }
+
+        private void CacheGraphicsCapabilitySnapshotCold()
+        {
+            _coldSupportsComputeShaders = SystemInfo.supportsComputeShaders;
+            _coldFoamTextureFormat = ResolveFoamTextureFormatCold();
         }
 
         private static void ReleaseVaultHandles(IDataVault vault)
@@ -690,7 +648,7 @@ namespace Hecton8.VFX
                 _wakeBufferB = new GraphicsBuffer(GraphicsBuffer.Target.Structured, GraphicsBuffer.UsageFlags.LockBufferForWrite, JacobianFoamContracts.WakeImpactCapacity, JacobianFoamContracts.WakeImpactStrideBytes);
             }
 
-            GraphicsFormat targetFormat = ResolveFoamTextureFormat();
+            GraphicsFormat targetFormat = _coldFoamTextureFormat;
             if (targetFormat == GraphicsFormat.None)
             {
                 ReleaseTextures();
@@ -754,20 +712,20 @@ namespace Hecton8.VFX
                 name: name);
         }
 
-        private static GraphicsFormat ResolveFoamTextureFormat()
+        private static GraphicsFormat ResolveFoamTextureFormatCold()
         {
-            if (IsFoamTextureFormatSupported(GraphicsFormat.R16_SFloat))
+            if (IsFoamTextureFormatSupportedCold(GraphicsFormat.R16_SFloat))
                 return GraphicsFormat.R16_SFloat;
 
-            if (IsFoamTextureFormatSupported(GraphicsFormat.R32_SFloat))
+            if (IsFoamTextureFormatSupportedCold(GraphicsFormat.R32_SFloat))
                 return GraphicsFormat.R32_SFloat;
 
-            return IsFoamTextureFormatSupported(GraphicsFormat.R8_UNorm)
+            return IsFoamTextureFormatSupportedCold(GraphicsFormat.R8_UNorm)
                 ? GraphicsFormat.R8_UNorm
                 : GraphicsFormat.None;
         }
 
-        private static bool IsFoamTextureFormatSupported(GraphicsFormat format)
+        private static bool IsFoamTextureFormatSupportedCold(GraphicsFormat format)
         {
             return SystemInfo.IsFormatSupported(format, GraphicsFormatUsage.LoadStore) &&
                 SystemInfo.IsFormatSupported(format, GraphicsFormatUsage.Sample);
@@ -818,6 +776,117 @@ namespace Hecton8.VFX
             finally
             {
                 ReleaseReadPin(BufferID.JacobianFoamTuning);
+            }
+        }
+
+        private bool TryWriteTuning(in FoamTuningDTO tuning)
+        {
+            if (!TryAcquireWriteBuffer(
+                    in _tuningHandle,
+                    BufferID.JacobianFoamTuning,
+                    1,
+                    out NativeArray<FoamTuningDTO> tuningArray))
+            {
+                return false;
+            }
+
+            try
+            {
+                if (!tuningArray.IsCreated || tuningArray.Length <= 0)
+                    return false;
+
+                tuningArray[0] = tuning;
+                return true;
+            }
+            finally
+            {
+                ReleaseWriteBuffer(in _tuningHandle, BufferID.JacobianFoamTuning);
+            }
+        }
+
+        private bool TryWriteAndUploadParams(in FoamComputeParamsDTO parameters)
+        {
+            if (!TryAcquireWriteBuffer(
+                    in _paramsHandle,
+                    BufferID.JacobianFoamParams,
+                    1,
+                    out NativeArray<FoamComputeParamsDTO> paramsArray))
+            {
+                return false;
+            }
+
+            try
+            {
+                if (!paramsArray.IsCreated || paramsArray.Length <= 0)
+                    return false;
+
+                paramsArray[0] = parameters;
+                UploadParams(paramsArray);
+                return true;
+            }
+            finally
+            {
+                ReleaseWriteBuffer(in _paramsHandle, BufferID.JacobianFoamParams);
+            }
+        }
+
+        private bool TryWriteAndUploadMockWakes(in FoamTuningDTO tuning, float phaseTime)
+        {
+            if (!TryAcquireWriteBuffer(
+                    in _wakeHandle,
+                    BufferID.JacobianFoamWakeImpacts,
+                    JacobianFoamContracts.WakeImpactCapacity,
+                    out NativeArray<FoamWakeImpactDTO> wakeArray))
+            {
+                return false;
+            }
+
+            try
+            {
+                if (!wakeArray.IsCreated || wakeArray.Length <= 0)
+                    return false;
+
+                int count = math.min(wakeArray.Length, JacobianFoamContracts.WakeImpactCapacity);
+                for (int i = 0; i < count; i++)
+                {
+                    wakeArray[i] = JacobianFoamContracts.BuildMockWakeImpact(
+                        i,
+                        count,
+                        phaseTime,
+                        _qualityWeight,
+                        in tuning);
+                }
+
+                _lastWakeCount = ResolveWakeCount(wakeArray, _qualityWeight);
+                UploadWakes(wakeArray, _lastWakeCount);
+                return true;
+            }
+            finally
+            {
+                ReleaseWriteBuffer(in _wakeHandle, BufferID.JacobianFoamWakeImpacts);
+            }
+        }
+
+        private bool TryUploadReadOnlyWakes()
+        {
+            if (!TryAcquireReadPin(
+                    in _wakeHandle,
+                    BufferID.JacobianFoamWakeImpacts,
+                    JacobianFoamContracts.WakeImpactCapacity,
+                    out NativeArray<FoamWakeImpactDTO> wakeArray))
+            {
+                return false;
+            }
+
+            try
+            {
+                _lastWakeCount = ResolveWakeCount(wakeArray, _qualityWeight);
+                UploadWakes(wakeArray, _lastWakeCount);
+                return true;
+            }
+            finally
+            {
+                ReleaseReadPin(BufferID.JacobianFoamWakeImpacts);
             }
         }
 

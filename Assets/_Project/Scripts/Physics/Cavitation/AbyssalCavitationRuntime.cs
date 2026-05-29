@@ -27,6 +27,39 @@ namespace Hecton8.Physics
         private static readonly int _shockwavesShaderId = Shader.PropertyToID("_H8CavitationShockwaves");
         private static readonly int _shockwaveCountShaderId = Shader.PropertyToID("_H8CavitationShockwaveCount");
         private static readonly int _shockwaveParamsShaderId = Shader.PropertyToID("_H8CavitationShockwaveParams");
+        private const int LockShockwaves = 1 << 0;
+        private const int LockCounters = 1 << 1;
+        private const int LockEntities = 1 << 2;
+        private const int LockForcePackets = 1 << 3;
+        private const int LockForceTransport = 1 << 4;
+        private const int LockVisuals = 1 << 5;
+        private const int LockTelemetry = 1 << 6;
+        private const int LockTuning = 1 << 7;
+        private const int LockSdfDescriptor = 1 << 8;
+        private const int LockSdfVoxels = 1 << 9;
+        private static readonly ulong TelemetryMutationGuardMask =
+            VaultMutationGuardBit(AbyssalCavitationVaultBufferIds.TelemetryRing) |
+            VaultMutationGuardBit(AbyssalCavitationVaultBufferIds.ShockwaveCounters);
+        private static readonly ulong CounterMutationGuardMask =
+            VaultMutationGuardBit(AbyssalCavitationVaultBufferIds.ShockwaveCounters);
+        private static readonly ulong ColdInitMutationGuardMask =
+            VaultMutationGuardBit(AbyssalCavitationVaultBufferIds.ShockwaveEvents) |
+            VaultMutationGuardBit(AbyssalCavitationVaultBufferIds.ShockwaveCounters) |
+            VaultMutationGuardBit(AbyssalCavitationVaultBufferIds.EntitySnapshots) |
+            VaultMutationGuardBit(AbyssalCavitationVaultBufferIds.ForcePackets) |
+            VaultMutationGuardBit(AbyssalCavitationVaultBufferIds.ForceTransportPackets) |
+            VaultMutationGuardBit(AbyssalCavitationVaultBufferIds.VisualSpheres) |
+            VaultMutationGuardBit(AbyssalCavitationVaultBufferIds.TelemetryRing) |
+            VaultMutationGuardBit(AbyssalCavitationVaultBufferIds.OrdnanceProfiles) |
+            VaultMutationGuardBit(AbyssalCavitationVaultBufferIds.Tuning) |
+            VaultMutationGuardBit(AbyssalCavitationVaultBufferIds.SdfDescriptor) |
+            VaultMutationGuardBit(AbyssalCavitationVaultBufferIds.SdfVoxels);
+#if UNITY_EDITOR
+        private static readonly ulong CsvImportMutationGuardMask =
+            VaultMutationGuardBit(AbyssalCavitationVaultBufferIds.CsvScratch) |
+            VaultMutationGuardBit(AbyssalCavitationVaultBufferIds.OrdnanceProfiles) |
+            VaultMutationGuardBit(AbyssalCavitationVaultBufferIds.ShockwaveCounters);
+#endif
 
         private static IDataVault _vault;
         private static bool _initialized;
@@ -43,6 +76,7 @@ namespace Hecton8.Physics
         private static long _scheduleTimestamp;
         private static float _lastSolveMicroseconds;
         private static int _droppedSignalCount;
+        private static int _lockedBuffers;
         private static uint _frameIndex;
 
         private static VaultGenerationHandle<ShockwaveEventDTO> _shockwaveHandle;
@@ -99,6 +133,11 @@ namespace Hecton8.Physics
                     return true;
                 }
             }
+
+            if (_jobScheduled && !CompleteScheduledForTeardown())
+                return false;
+
+            UnlockSimulationBuffers();
 
             IDataVault vault = explicitVault;
             if (vault == null)
@@ -172,7 +211,8 @@ namespace Hecton8.Physics
                 OwnerSystem,
                 NativeArrayOptions.UninitializedMemory);
 
-            InitializeBuffersCold(vault);
+            if (!InitializeBuffersCold(vault))
+                return false;
             _droppedSignalCount = 0;
             _csvLoaded = false;
             _defaultCsvLoadAttempted = false;
@@ -291,6 +331,73 @@ namespace Hecton8.Physics
             }
 
             return buffer;
+        }
+
+        private static bool TryLockSimulationBuffers(IDataVault vault)
+        {
+            _lockedBuffers = 0;
+            return TryLockSimulationBuffer(vault, AbyssalCavitationVaultBufferIds.ShockwaveEvents, LockShockwaves) &&
+                   TryLockSimulationBuffer(vault, AbyssalCavitationVaultBufferIds.ShockwaveCounters, LockCounters) &&
+                   TryLockSimulationBuffer(vault, AbyssalCavitationVaultBufferIds.EntitySnapshots, LockEntities) &&
+                   TryLockSimulationBuffer(vault, AbyssalCavitationVaultBufferIds.ForcePackets, LockForcePackets) &&
+                   TryLockSimulationBuffer(vault, AbyssalCavitationVaultBufferIds.ForceTransportPackets, LockForceTransport) &&
+                   TryLockSimulationBuffer(vault, AbyssalCavitationVaultBufferIds.VisualSpheres, LockVisuals) &&
+                   TryLockSimulationBuffer(vault, AbyssalCavitationVaultBufferIds.TelemetryRing, LockTelemetry) &&
+                   TryLockSimulationBuffer(vault, AbyssalCavitationVaultBufferIds.Tuning, LockTuning) &&
+                   TryLockSimulationBuffer(vault, AbyssalCavitationVaultBufferIds.SdfDescriptor, LockSdfDescriptor) &&
+                   TryLockSimulationBuffer(vault, AbyssalCavitationVaultBufferIds.SdfVoxels, LockSdfVoxels);
+        }
+
+        private static bool TryLockSimulationBuffer(IDataVault vault, BufferID bufferId, int bit)
+        {
+            if (vault != null && vault.TryLockBuffer(bufferId, OwnerSystem))
+            {
+                _lockedBuffers |= bit;
+                return true;
+            }
+
+            UnlockSimulationBuffers();
+            return false;
+        }
+
+        private static void UnlockSimulationBuffers()
+        {
+            IDataVault vault = _vault;
+            if (vault != null && _lockedBuffers != 0)
+            {
+                UnlockSimulationBuffer(vault, AbyssalCavitationVaultBufferIds.SdfVoxels, LockSdfVoxels);
+                UnlockSimulationBuffer(vault, AbyssalCavitationVaultBufferIds.SdfDescriptor, LockSdfDescriptor);
+                UnlockSimulationBuffer(vault, AbyssalCavitationVaultBufferIds.Tuning, LockTuning);
+                UnlockSimulationBuffer(vault, AbyssalCavitationVaultBufferIds.TelemetryRing, LockTelemetry);
+                UnlockSimulationBuffer(vault, AbyssalCavitationVaultBufferIds.VisualSpheres, LockVisuals);
+                UnlockSimulationBuffer(vault, AbyssalCavitationVaultBufferIds.ForceTransportPackets, LockForceTransport);
+                UnlockSimulationBuffer(vault, AbyssalCavitationVaultBufferIds.ForcePackets, LockForcePackets);
+                UnlockSimulationBuffer(vault, AbyssalCavitationVaultBufferIds.EntitySnapshots, LockEntities);
+                UnlockSimulationBuffer(vault, AbyssalCavitationVaultBufferIds.ShockwaveCounters, LockCounters);
+                UnlockSimulationBuffer(vault, AbyssalCavitationVaultBufferIds.ShockwaveEvents, LockShockwaves);
+            }
+
+            _lockedBuffers = 0;
+        }
+
+        private static void UnlockSimulationBuffer(IDataVault vault, BufferID bufferId, int bit)
+        {
+            if ((_lockedBuffers & bit) != 0)
+                vault.TryUnlockBuffer(bufferId, OwnerSystem);
+        }
+
+        private static bool TryAcquireCavitationMutationGuard(IDataVault vault, ulong mask)
+        {
+            return vault != null &&
+                   mask != 0UL &&
+                   !vault.IsCompactionFenceActive &&
+                   vault.TryAcquireMutationGuard(mask);
+        }
+
+        private static ulong VaultMutationGuardBit(BufferID bufferId)
+        {
+            int bitIndex = unchecked((int)((uint)(int)bufferId & 63u));
+            return 1UL << bitIndex;
         }
 
         public static bool TryGetTuning(out AbyssalCavitationTuningDTO tuning)
@@ -595,6 +702,13 @@ namespace Hecton8.Physics
             if (!IsRuntimeReady || _jobScheduled)
                 return inputDependency;
 
+            IDataVault vault = _vault;
+            if (!TryLockSimulationBuffers(vault))
+                return inputDependency;
+
+            bool scheduled = false;
+            try
+            {
             NativeArray<ShockwaveEventDTO> shockwaves = OpenVaultView(in _shockwaveHandle);
             NativeArray<ShockwaveCounterBlock> counters = OpenVaultView(in _counterHandle);
             NativeArray<ShockwaveEntitySnapshotDTO> entities = OpenVaultView(in _entityHandle);
@@ -685,8 +799,15 @@ namespace Hecton8.Physics
                 CpuMicroseconds = _lastSolveMicroseconds
             }.Schedule(JobHandle.CombineDependencies(pressureHandle, visualHandle));
             _jobScheduled = true;
+            scheduled = true;
             H8Memory.RegisterActiveJob(OwnerSystem, _scheduledHandle);
             return _scheduledHandle;
+            }
+            finally
+            {
+                if (!scheduled)
+                    UnlockSimulationBuffers();
+            }
         }
 
         public static bool TryFinalizeScheduledNoWait()
@@ -719,6 +840,7 @@ namespace Hecton8.Physics
             _jobScheduled = false;
             long elapsed = System.Diagnostics.Stopwatch.GetTimestamp() - _scheduleTimestamp;
             _lastSolveMicroseconds = (float)math.max(0.0, elapsed * 1000000.0 / System.Diagnostics.Stopwatch.Frequency);
+            UnlockSimulationBuffers();
             PatchLatestTelemetryCpu(_lastSolveMicroseconds);
 
             if (TrySampleLatestTelemetry(out ShockwaveTelemetryEntry entry) &&
@@ -732,6 +854,12 @@ namespace Hecton8.Physics
 
         private static void PatchLatestTelemetryCpu(float microseconds)
         {
+            IDataVault vault = _vault;
+            if (!TryAcquireCavitationMutationGuard(vault, TelemetryMutationGuardMask))
+                return;
+
+            try
+            {
             NativeArray<ShockwaveTelemetryEntry> ring = OpenVaultView(in _telemetryHandle);
             NativeArray<ShockwaveCounterBlock> counters = OpenVaultView(in _counterHandle);
             if (!ring.IsCreated || !counters.IsCreated || ring.Length == 0)
@@ -744,6 +872,11 @@ namespace Hecton8.Physics
             ShockwaveTelemetryEntry entry = ring[index];
             entry.CpuMicroseconds = math.isfinite(microseconds) ? math.max(0f, microseconds) : 0f;
             ring[index] = entry;
+            }
+            finally
+            {
+                vault.ReleaseMutationGuard(TelemetryMutationGuardMask);
+            }
         }
 
         public static int FlushForcesToPhysics(double3 localOriginAUP, uint frameIndex = 0u, int maxPackets = 64)
@@ -964,9 +1097,15 @@ namespace Hecton8.Physics
             if (!EnsureInitialized() || _jobScheduled || string.IsNullOrEmpty(csvPath) || !File.Exists(csvPath))
                 return false;
 
-            NativeArray<byte> scratch = OpenVaultView(in _csvScratchHandle);
-            NativeArray<OrdnanceProfileDTO> profiles = OpenVaultView(in _profileHandle);
-            NativeArray<ShockwaveCounterBlock> counters = OpenVaultView(in _counterHandle);
+            IDataVault vault = _vault;
+            if (!TryAcquireCavitationMutationGuard(vault, CsvImportMutationGuardMask))
+                return false;
+
+            try
+            {
+            NativeArray<byte> scratch = OpenVaultView(vault, in _csvScratchHandle);
+            NativeArray<OrdnanceProfileDTO> profiles = OpenVaultView(vault, in _profileHandle);
+            NativeArray<ShockwaveCounterBlock> counters = OpenVaultView(vault, in _counterHandle);
             if (!scratch.IsCreated || !profiles.IsCreated || !counters.IsCreated)
                 return false;
 
@@ -1006,7 +1145,10 @@ namespace Hecton8.Physics
             unsafe
             {
                 byte* ptr = (byte*)NativeArrayUnsafeUtility.GetUnsafeReadOnlyPtr(scratch);
-                parsed = AbyssalCavitationOrdnanceCsv.Parse(new ReadOnlySpan<byte>(ptr, bytesRead), profiles);
+                ReadOnlySpan<byte> csvBytesView = System.Runtime.InteropServices.MemoryMarshal.CreateReadOnlySpan(
+                    ref UnsafeUtility.AsRef<byte>(ptr),
+                    bytesRead);
+                parsed = AbyssalCavitationOrdnanceCsv.Parse(csvBytesView, profiles);
             }
 
             ShockwaveCounterBlock block = counters[AbyssalCavitationCounterIndex.CsvProfileCount];
@@ -1014,6 +1156,11 @@ namespace Hecton8.Physics
             counters[AbyssalCavitationCounterIndex.CsvProfileCount] = block;
             _csvLoaded = parsed > 0;
             return _csvLoaded;
+            }
+            finally
+            {
+                vault.ReleaseMutationGuard(CsvImportMutationGuardMask);
+            }
         }
 #endif
 
@@ -1095,8 +1242,13 @@ namespace Hecton8.Physics
         }
 #endif
 
-        private static void InitializeBuffersCold(IDataVault vault)
+        private static bool InitializeBuffersCold(IDataVault vault)
         {
+            if (!TryAcquireCavitationMutationGuard(vault, ColdInitMutationGuardMask))
+                return false;
+
+            try
+            {
             NativeArray<ShockwaveEventDTO> shockwaves = OpenVaultView(vault, in _shockwaveHandle);
             NativeArray<ShockwaveCounterBlock> counters = OpenVaultView(vault, in _counterHandle);
             NativeArray<ShockwaveEntitySnapshotDTO> entities = OpenVaultView(vault, in _entityHandle);
@@ -1131,7 +1283,13 @@ namespace Hecton8.Physics
             };
             JobHandle handle = job.Schedule(count, 64);
             H8Memory.RegisterActiveJob(OwnerSystem, handle);
-            DispatcherJobFence.TryComplete(ref handle, forceComplete: true); // COLD SYNC JOB: required after UninitializedMemory vault acquisition.
+            bool completed = DispatcherJobFence.TryComplete(ref handle, forceComplete: true); // COLD SYNC JOB: required after UninitializedMemory vault acquisition.
+            return completed;
+            }
+            finally
+            {
+                vault.ReleaseMutationGuard(ColdInitMutationGuardMask);
+            }
         }
 
         private static void PublishImpulseSignals(in ShockwaveEventDTO wave)
@@ -1165,13 +1323,24 @@ namespace Hecton8.Physics
             if (_droppedSignalCount < 0x3FFFFFFF)
                 _droppedSignalCount++;
 
-            NativeArray<ShockwaveCounterBlock> counters = OpenVaultView(in _counterHandle);
+            IDataVault vault = _vault;
+            if (!TryAcquireCavitationMutationGuard(vault, CounterMutationGuardMask))
+                return;
+
+            try
+            {
+            NativeArray<ShockwaveCounterBlock> counters = OpenVaultView(vault, in _counterHandle);
             if (!counters.IsCreated || counters.Length <= AbyssalCavitationCounterIndex.FaultFlags)
                 return;
 
             ShockwaveCounterBlock block = counters[AbyssalCavitationCounterIndex.FaultFlags];
             block.Value |= (int)AbyssalCavitationTelemetryFlags.SignalDrop;
             counters[AbyssalCavitationCounterIndex.FaultFlags] = block;
+            }
+            finally
+            {
+                vault.ReleaseMutationGuard(CounterMutationGuardMask);
+            }
         }
 
         private static float ResolveGlobalQualityWeight()

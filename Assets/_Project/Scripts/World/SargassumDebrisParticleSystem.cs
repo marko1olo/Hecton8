@@ -429,7 +429,7 @@ namespace Hecton8.World
 
         private void CacheRegistryServicesCold()
         {
-            _sargassumDrag = SargassumGlobalDragManager.Instance;
+            _sargassumDrag = GlobalRegistry.SargassumDrag;
         }
 
         private void TryRegisterHotSwapListener()

@@ -2,7 +2,7 @@
     "agent":  "1405",
     "role":  "MOBILE_GPU_COMPUTE_SHADER_THREAD_GROUP_SIZER",
     "status":  "PENDING VERIFICATION",
-    "generatedUtc":  "2026-05-28T13:13:38.7112009Z",
+    "generatedUtc":  "2026-05-28T21:49:46.5937822Z",
     "taskCount":  20,
     "targetDirectories":  [
                               "Assets/Crest/Crest/Shaders",
@@ -1619,6 +1619,45 @@
                                                 "summaryPath":  "Docs/AgentLogs/Build_1405_Apex27.summary.json",
                                                 "summarySha256":  "a98be4d985cf8e9e5a053b247c237152375d98a5a30a9ba88d4a99faf135b22d",
                                                 "rule":  "Do not launch dotnet build if CPU \u003e 50 or dotnet/csc/VBCSCompiler is active."
+                                            },
+                        "apex29Preflight":  {
+                                                "timestampUtc":  "2026-05-28T21:19:42.0647756Z",
+                                                "status":  "BLOCKED_BY_CONTENTION",
+                                                "command":  "dotnet build Assembly-CSharp.csproj --no-restore -m:1 /v:minimal",
+                                                "cpuLoadSamplesPercent":  [
+                                                                              97,
+                                                                              99
+                                                                          ],
+                                                "cpuLoadMaxPercent":  99,
+                                                "compilerProcessCount":  0,
+                                                "compilerProcesses":  [
+
+                                                                      ],
+                                                "launched":  false,
+                                                "reason":  "CPU load samples 97 and 99 exceeded the 50 percent throttle limit.",
+                                                "summaryPath":  "Docs/AgentLogs/Build_1405_Apex29.summary.json",
+                                                "summarySha256":  "606e721d6c1b08ba067a96bfd3837477f4b565157194c6d7950e7f0d9893ba1f",
+                                                "rule":  "Do not launch dotnet build if CPU \u003e 50 or dotnet/csc/VBCSCompiler is active."
+                                            },
+                        "apex30Preflight":  {
+                                                "timestampUtc":  "2026-05-28T21:49:46.7279275Z",
+                                                "status":  "BLOCKED_BY_CONTENTION",
+                                                "command":  "dotnet build Assembly-CSharp.csproj --no-restore -m:1 /v:minimal",
+                                                "cpuLoadSamplesPercent":  [
+                                                                              99,
+                                                                              93
+                                                                          ],
+                                                "cpuLoadMaxPercent":  99,
+                                                "compilerProcessCount":  2,
+                                                "compilerProcesses":  [
+                                                                          "dotnet pid 39956 CPU 273.328125 StartTime 2026-05-29T01:42:50+04:00",
+                                                                          "VBCSCompiler pid 61228 CPU 7.59375 StartTime 2026-05-29T01:46:08+04:00"
+                                                                      ],
+                                                "launched":  false,
+                                                "reason":  "CPU \u003e 50 and compiler processes active",
+                                                "summaryPath":  "Docs/AgentLogs/Build_1405_Apex30.summary.json",
+                                                "summarySha256":  "b64e3f6c8e5c3dca3baac8970b73a0ba1ee1eded4ef7adc61a47f9f5a1be50f2",
+                                                "rule":  "Do not launch dotnet build if CPU \u003e 50 or dotnet/csc/VBCSCompiler is active."
                                             }
                     },
     "tests":  {
@@ -1637,15 +1676,15 @@
                                "APEX21 C# compile/EditMode tests not launched: CPU sample 63 and active dotnet pid 10444 violated the \u003e50/no-compiler throttle."
                            ],
     "fileHashesSha256":  {
-                             "Assets/Crest/Crest/Scripts/Collision/QueryBase.cs":  "2772955e66a8868aeb604c20746d55ecc22a49da3127922bf298184fcb58a51c",
-                             "Assets/Crest/Crest/Scripts/Underwater/UnderwaterRenderer.Mask.cs":  "4c8b9dd9c06c724210d0538e819d4d42902f8958573f2459006e26eb4b1d086a",
+                             "Assets/Crest/Crest/Scripts/Collision/QueryBase.cs":  "942f76bd20fdc245f6b86cfa8064899b81d261ee1fc4795afec0fd94a009341e",
+                             "Assets/Crest/Crest/Scripts/Underwater/UnderwaterRenderer.Mask.cs":  "dd77f303853ac16861a27108a460d346e2383e39d3c8ceb9e4e9cbb3a81be84d",
                              "Assets/Crest/Crest/Shaders/Resources/FFT/FFTCompute.compute":  "2c90669f8629118559fb79206444baa0b3b2e8eaca8a9bc290ce1b5cf50504e8",
                              "Assets/Crest/Crest/Shaders/Resources/QueryDisplacements.compute":  "8534d53e0d777430fc1bbcc5b452344f6965be6498afeb17ed49dd3c1ce9cf41",
                              "Assets/Crest/Crest/Shaders/Resources/QueryFlow.compute":  "253e539980a4275c595445208d1107b753bf5e3c87bf7e0d0f8b4964629516c6",
                              "Assets/Crest/Crest/Shaders/Underwater/Resources/CrestFillMaskArtefacts.compute":  "2f0f085cf81d3caa6f8743ce1f14aae5dc6e69e72dc66d3abc3b3231689fda94",
                              "Assets/GPUInstancer/Resources/Compute/CSBillboard.compute":  "caf79f964c481faf80a64e545503636045a568821b282856934e52fa7a25de2d",
                              "Assets/GPUInstancer/Resources/Compute/Include/PlatformDefines.hlsl":  "18754e645a39c6f8493853a801560eba356501bccb5f664bf8adeffc00caae55",
-                             "Assets/GPUInstancer/Scripts/Core/DataModel/GPUInstancerConstants.cs":  "21985f65d9080bb5b562455d23eb86a398fe019fe6a1fc9163535a4588aaeb31",
+                             "Assets/GPUInstancer/Scripts/Core/DataModel/GPUInstancerConstants.cs":  "5efbd800006678c725ef1016a452f2fb265929c8ccab90dfc658527ccd9ebb3a",
                              "Assets/GPUInstancer/Scripts/Core/DataModel/GPUInstancerSettings.cs":  "b3e1221cd96b89909bf9031b0b47697752a00f3e103bd99adf7ff02cacf92024",
                              "Assets/GPUInstancer/Scripts/GPUInstancerTreeManager.cs":  "d17af711837a182799bdb982daec9c910afcc52799a90c46a4912b711418f7cb",
                              "Assets/GPUInstancer/Resources/Compute/CSInstancedBufferToTexture.compute":  "fb720c995e8fc6fd3439eaf8e0f5e096792ca173f67cbad6ebc3cbe64d66a0a7",
@@ -1654,29 +1693,34 @@
                              "Assets/GPUInstancer/Resources/Compute/CSTreeInstantiationKernel.compute":  "feb8527f66217c636954c3c11e92d6c1845701cb3eec1957ecd7c6f5d6d125c7",
                              "Assets/GPUInstancer/Resources/Compute/CSInstancedRenderingGrassInstantiationKernel.compute":  "77ac86b9d8f19a937b19132f671962128d6f4cde80e767d636a1ee80ceeb4315",
                              "Assets/GPUInstancer/Resources/Compute/CSTextureUtils.compute":  "1cefca125b91e7e513aa377162c551a6e1d41d9de7c43a4b9bfa8aa3df4d760d",
-                             "Assets/GPUInstancer/Scripts/Core/Contract/GPUInstancerManager.cs":  "a7ca67d4ba7e6c4f89b698a2f550afd56e9f86de33db96c2182ebdb14f2e634a",
-                             "Assets/GPUInstancer/Scripts/Core/Static/GPUInstancerUtility.cs":  "eff409a10dd8998b4b1214e2ef7998f26ecaac3ce915dfa5938e28a63f0a7c5f",
-                             "Assets/GPUInstancer/Scripts/GPUInstancerDetailManager.cs":  "6da746313c9478e203c8f90d77dcf6f726f9f0d97c40f01638da7adc731ee514",
+                             "Assets/GPUInstancer/Scripts/Core/Contract/GPUInstancerManager.cs":  "1a50b8fdf020db60204b2715d944b1cea600420e9c95674e4eaaec7d9e4a3675",
+                             "Assets/GPUInstancer/Scripts/Core/Static/GPUInstancerUtility.cs":  "4458f4200105c552f011a3c764a194ca4d3cbf6b3ca8efb8f06271f9222f25ff",
+                             "Assets/GPUInstancer/Scripts/GPUInstancerDetailManager.cs":  "9a6f863d2516c34222f547080b45594a1927126d365f5d3e812e47414bcc3443",
                              "Assets/Crest/Crest/Shaders/Resources/ClearToBlack.compute":  "3110d2b4402d1b8f0e587639765ad09dc4248429c7c52629ecec4825112acf84",
-                             "Assets/Crest/Crest/Scripts/Helpers/TextureArrayHelpers.cs":  "8d1fd2e7bc0937db9572d8f0fdfc3e847530a9172dd3746fd8c9e9649d507b25",
+                             "Assets/Crest/Crest/Scripts/Helpers/TextureArrayHelpers.cs":  "0a41b6486f9b66d72b76501eaed8ff37d35e138e97dcf422993a7aeefe166558",
                              "Docs/AgentLogs/Build_1405_Apex23.summary.json":  "f5a2785d5ab5345507275dbd9343d7727eca56f7de2b74ca4e63ed4da45e9976",
-                             "Assets/Crest/Crest/Scripts/Shapes/ShapeGerstner.cs":  "5d34bdec6a50118693dce21a8d298ba621ef30d818f71724248e845d819a643b",
-                             "Assets/Crest/Crest/Scripts/LodData/LodDataMgrAnimWaves.cs":  "b90e6fb6c072f6773cca26bcf86fa178c338bd855b13ff34ef4d27f968bc0106",
-                             "Assets/Crest/Crest/Scripts/LodData/LodDataMgrPersistent.cs":  "02ce6f2b0d5888d53637f7b977d9560044c98bc032e66dd9ffb159dc1e77719f",
+                             "Assets/Crest/Crest/Scripts/Shapes/ShapeGerstner.cs":  "36832823530862f7fe0d51fe66c5adc132a41b98a6fbc422a003d2f7b766f502",
+                             "Assets/Crest/Crest/Scripts/LodData/LodDataMgrAnimWaves.cs":  "87f9bdf0524e228799b6258cd2b56520631deabd46a1d9c5c1a4cf3ca7591c44",
+                             "Assets/Crest/Crest/Scripts/LodData/LodDataMgrPersistent.cs":  "2e223e2a26b3b465ab90e44098e400e4cf65944b72a053782ba01d5e2ee50a1a",
                              "Assets/Crest/Crest/Shaders/Resources/ShapeCombine.compute":  "3acb671d6ab6bc9f0298661a2315d572cafe585c79cb8f962fd99c9ba9ffb360",
                              "Assets/Crest/Crest/Shaders/Resources/UpdateDynWaves.compute":  "df5350bc49f410886e36dcd5f8b6f96df657b9022d039bc2cdc38daf85180a08",
                              "Assets/Crest/Crest/Shaders/Resources/UpdateFoam.compute":  "0b95ca2ccc790e1d6c6c0a53ca852f4f49106f0f6a1a2c808fafaff6acb3215f",
                              "Assets/Crest/Crest/Shaders/Resources/Gerstner.compute":  "cd38b2b67a47ba8ef7a925d5d9e720f89e437b32fad887d4af98f5fbf56ab88c",
                              "Docs/AgentLogs/Build_1405_Apex24.summary.json":  "2d9391117e0756e6ef551f1a02bdcfd9120a089a9027ae45f5d25bb5d512bfdb",
                              "Assets/Crest/Crest/Shaders/Resources/FFT/FFTBake.compute":  "29ec79821615ecd39600741b6f0d30293ff772abeaf5f4d802b2b289e6260152",
-                            "Assets/Crest/Crest/Scripts/Shapes/FFT/FFTBaker.cs":  "179378f83e8e68c243d9f29c86657a486dbcfdc2461882e7dc5d6284586081e1",
-                             "Assets/_Project/Tests/Editor/ComputeDispatchSizingEditTests.cs":  "956f3c5f13988ac82c809780d3484c2efa129c2df1a26ae76cb78fe5246c8ab8",
+                             "Assets/Crest/Crest/Scripts/Shapes/FFT/FFTBaker.cs":  "406d9c828921302f5840648565e9bb6c6e92a7f86d20638ec852378a01fa9197",
+                             "Assets/_Project/Tests/Editor/ComputeDispatchSizingEditTests.cs":  "0a423bddeb58e6e630730fa09074f23ee9895ee935cf4c2c60d6b2d66758ed86",
                              "Docs/AgentLogs/Build_1405_Apex25.summary.json":  "7242471c9c6ded94feeadbd62742d04bd3ec45e984abcb10d268504f7172bb47",
-                             "Assets/Crest/Crest/Scripts/Shapes/FFT/FFTCompute.cs":  "aa17d3cb1223f11e909d96c48891de6c95331512f6fd2b333a61a2513830e8be",
+                             "Assets/Crest/Crest/Scripts/Shapes/FFT/FFTCompute.cs":  "626d797c94679e3540393522549ecaaae067b74e74795d8255fc17982a4b743f",
                              "Assets/Crest/Crest/Shaders/Resources/FFT/FFTSpectrum.compute":  "9930527ec4ae93721ea113ff988493ed68bed9e83ae8bc3f3ee8366db4511fd0",
                              "Docs/AgentLogs/Build_1405_Apex26.summary.json":  "932c6bc8f9bf010896b023a48678d9b26d407d58eb70b362f6daad1a33c5c825",
                              "Assets/Crest/Crest/Scripts/Shapes/FFT/ShapeFFT.cs":  "92adcd4e04b2b7321d46c3ae1fc1c8c1b7a0cc2463dffbd0e3aae8133443b42e",
-                            "Docs/AgentLogs/Build_1405_Apex27.summary.json":  "a98be4d985cf8e9e5a053b247c237152375d98a5a30a9ba88d4a99faf135b22d"
+                             "Docs/AgentLogs/Build_1405_Apex27.summary.json":  "a98be4d985cf8e9e5a053b247c237152375d98a5a30a9ba88d4a99faf135b22d",
+                             "Docs/AgentLogs/Build_1405_Apex28.summary.json":  "36f83f6296029da80cc600859d78bb247f9a26a45acff38a33098b3b40aed310",
+                             "Docs/AgentLogs/Build_1405_Apex29.summary.json":  "606e721d6c1b08ba067a96bfd3837477f4b565157194c6d7950e7f0d9893ba1f",
+                             "Assets/Crest/Crest/Scripts/LodData/LodDataMgrDynWaves.cs":  "35ff71ce069c3c896a4e029d5a75b1ce4828d74ea3dbf333e78be2b1bd133874",
+                             "Assets/Crest/Crest/Scripts/LodData/LodDataMgrFoam.cs":  "2bae13518eacf28ad297b402cbd811339ddb159a138da238fe27fb6c4f780915",
+                             "Docs/AgentLogs/Build_1405_Apex30.summary.json":  "b64e3f6c8e5c3dca3baac8970b73a0ba1ee1eded4ef7adc61a47f9f5a1be50f2"
                          },
     "apex6PolishFindings":  {
                                 "grassHeightMapBounds":  "FIXED: CSInstancedRenderingGrassInstantiationKernel.compute no longer contains raw heightMapData[heightIndex + 1]; base/right/top/rightTop height-map reads are fail-closed via FixBounds after dimension casts.",
@@ -1821,7 +1865,15 @@
                                                             "staleFftSpectrumFloorDispatch":  "NO_MATCH for executable _resolution / 8 dispatch in FFTCompute spectrum paths; only ShapeFFT comment and static test negative assertions remain.",
                                                             "dataSovereigntyAndQualityTokens":  "NO_MATCH in APEX27 touched files for GlobalDataVault, BufferID, TryAcquireWriteLock, ReleaseWriteLock, HomeostasisBrain, GlobalQualityWeight, isLowEnd/LowEnd",
                                                             "diffCheck":  "git diff --check returned exit 0 with LF-\u003eCRLF warnings only"
-                                                        }
+                                                        },
+                       "apex30KernelResolutionScan":  {
+                                                          "oversizedThreadGroups":  "NO_MATCH",
+                                                          "staleHardcodedTextureKernelIndices":  "NO_MATCH for SetTexture(1/2 and Dispatch(1/2 in GPUInstancerUtility.cs",
+                                                          "findKernelGuardScan":  "0 unguarded FindKernel windows after HasKernel/HasAllKernels/TryFindCombineKernel proof",
+                                                          "dataSovereigntyAndQualityTokens":  "NO_MATCH",
+                                                          "syntaxBalance":  "15 touched files balanced",
+                                                          "diffCheck":  "exit 0 with LF-\u003eCRLF warnings only"
+                                                      }
                    },
     "apex13PolishFindings":  {
                                  "appendBufferCapacity":  "FIXED: visibility dispatch count is clamped by every target LOD append buffer count before AppendStructuredBuffer writes are issued.",
@@ -2058,5 +2110,144 @@
                                                "rule":  "Do not launch dotnet build if CPU \u003e 50 or dotnet/csc/VBCSCompiler is active."
                                            },
                                  "residualRisk":  "C# compile after APEX27 is blocked by CPU/compiler contention; Unity shader import, Unity EditMode execution, PlayMode/profiler/GCMonitor, RenderDoc/GPU capture, and target-device validation remain PENDING VERIFICATION."
+                             },
+    "apex28PolishFindings":  {
+                                 "status":  "PENDING VERIFICATION",
+                                 "whatWasWrong":  "APEX28 self-audit found two remaining GPUInstancer compute-boundary defects: compute shader static setup did not track matrixHandlingType, so a previous MatrixAppend setup could leave COMPUTE_MAX_LOD_BUFFER at 2 or keep the wrong visibility shader when later managers use CopyToTexture/default; billboard compute/atlas routes also used RenderTexture.GetTemporary without guaranteed ReleaseTemporary/finally cleanup and billboard dilation called FindKernel without proving the compute shader loaded.",
+                                 "whatWasDone":  [
+                                                     "GPUInstancerManager now stores _computeShaderMatrixHandlingType, sets DETAIL_STORE_INSTANCE_DATA and COMPUTE_MAX_LOD_BUFFER directly from matrixHandlingType before static shader-cache reuse, and reloads compute shader bindings when the handling mode changes.",
+                                                     "GPUInstancerManager now guards _bufferToTextureComputeShader, _visibilityComputeShader, _cameraComputeShader/_cameraComputeShaderVR, and _argsBufferComputeShader before FindKernel, disabling the manager instead of throwing NullReferenceException on missing compute resources.",
+                                                     "GPUInstancerUtility.GeneratePrototypeBillboard now keeps frameTarget outside the try block, restores RenderTexture.active, restores QualitySettings texture limit, releases frameTarget through RenderTexture.ReleaseTemporary, destroys temporary GameObjects in finally, and preserves exception stack with throw.",
+                                                     "GPUInstancerUtility.DilateBillboardTexture now fails closed for null/invalid textures or missing dilation compute shader and releases its temporary RenderTexture in finally through RenderTexture.ReleaseTemporary.",
+                                                     "ComputeDispatchSizingEditTests gained static contract tests for compute setup rebinding/fail-closed resource guards and billboard temporary RT cleanup."
+                                                 ],
+                                 "zeroGcEvidence":  "APEX28 production hot-path claim: no runtime dispatch hot path was modified. Added production lines scan: GPUInstancerManager.cs addedLines=30, newReference=0, string.Format=0, .ToString=0, foreach=0, LINQ=0; GPUInstancerUtility.cs addedLines include cold authoring/billboard routes only. Cold disclosure: GeneratePrototypeBillboard still contains required authoring allocations (Texture2D/GameObject/Bounds/Rect) and DilateBillboardTexture contains Texture2D/Rect allocations; these are not claimed Zero-GC runtime hot paths.",
+                                 "dataSovereignty":  "No GlobalDataVault migration. BufferID constants=0. TryAcquireWriteLock=0. ReleaseWriteLock=0. finally lock release=N/A because no lock is acquired. APEX28 touched-file token scan returned 0 hits for GlobalDataVault/BufferID/TryAcquireWriteLock/ReleaseWriteLock.",
+                                 "scalability":  "No binary quality switch and no GlobalQualityWeight misuse. APEX28 only fixes compute setup/static cache correctness and authoring-time resource cleanup; it does not change runtime visual truth, gameplay authority, or quality-route ownership.",
+                                 "cinematicCheat":  "No new physical simulation was introduced. The billboard path remains a cheap atlas/dilation visual fake rather than an expanded runtime simulation.",
+                                 "evidence":  [
+                                                  "Prompt extraction: Found=true; TaskCount=20; FirstLine=\u003cAGENT_PROMPT id=\"1405\" role=\"MOBILE_GPU_COMPUTE_SHADER_THREAD_GROUP_SIZER\" chat_name=\"1405\"\u003e",
+                                                  "Line proof GPUInstancerManager.cs:49/123-125/136-140/149/162/175/185.",
+                                                  "Line proof GPUInstancerUtility.cs:2092-2093/2126/2297/2304/2306/2314/2323/2328/2332/2356/2360.",
+                                                  "Line proof ComputeDispatchSizingEditTests.cs:166/208/228.",
+                                                  "Static contract JSON check: MatrixHandlingTracker=true, ContinuousReset=true, RebindOnModeChange=true, CopyTextureNullGuardBeforeFindKernel=true, VisibilityNullGuardBeforeFindKernel=true, CameraNullGuardBeforeFindKernel=true, ArgsNullGuardBeforeFindKernel=true.",
+                                                  "Billboard dilation check: hasNullTextureGuard=true, hasNullShaderGuard=true, hasFinally=true, releasesTemporary=true, staleRelease=false.",
+                                                  "Billboard atlas check: HasFrameTargetTemp=true, HasFinally=true, HasReleaseTemporary=true, HasActiveRestore=true, HasThrowE=false, CatchDestroysSample=false.",
+                                                  "git diff --check for APEX28 touched files: exit 0 with LF-\u003eCRLF warnings only.",
+                                                  "Oversized thread scan: 0 hits for numthreads(512|1024), TX/TY/GPUI_THREADS 512/1024, or COMPUTE_SHADER_THREAD_COUNT 512/1024 in Crest/GPUInstancer domain.",
+                                                  "DataVault/quality-token scan over APEX28 touched files: no matches."
+                                              ],
+                                 "build":  {
+                                               "timestampUtc":  "2026-05-28T21:08:00.0514471Z",
+                                               "status":  "BLOCKED_BY_CONTENTION",
+                                               "command":  "dotnet build Assembly-CSharp.csproj --no-restore -m:1 /v:minimal",
+                                               "cpuLoadSamplesPercent":  [
+                                                                             71
+                                                                         ],
+                                               "cpuLoadMaxPercent":  71,
+                                               "compilerProcessCount":  2,
+                                               "compilerProcesses":  [
+                                                                         "dotnet pid 55948 CPU 196.71875 StartTime 2026-05-29T01:02:59+04:00",
+                                                                         "VBCSCompiler pid 44636 CPU 14.265625 StartTime 2026-05-29T01:04:29+04:00"
+                                                                     ],
+                                               "launched":  false,
+                                               "summaryPath":  "Docs/AgentLogs/Build_1405_Apex28.summary.json",
+                                               "summarySha256":  "36f83f6296029da80cc600859d78bb247f9a26a45acff38a33098b3b40aed310",
+                                               "rule":  "Do not launch dotnet build if CPU \u003e 50 or dotnet/csc/VBCSCompiler is active."
+                                           },
+                                 "residualRisk":  "C# compile after APEX28 is blocked by CPU/compiler contention; Unity shader import, Unity EditMode execution, PlayMode/profiler/GCMonitor, RenderDoc/GPU capture, and target-device validation remain PENDING VERIFICATION."
+                             },
+    "apex29PolishFindings":  {
+                                 "status":  "PENDING VERIFICATION",
+                                 "whatWasWrong":  "APEX29 self-audit found that GPUInstancer GeneratePrototypeBillboard still divided atlasResolution by frameCount and rotated by frameCount without proving positive billboard metadata. The same cold billboard bake route also nulled render pipeline globals outside a finally restoration path and destroyed temporary GameObjects without an explicit Unity-null guard.",
+                                 "whatWasDone":  [
+                                                     "GPUInstancerUtility.GeneratePrototypeBillboard now fails closed before atlas binding or RenderTexture allocation when prototype/prefab is null, atlasResolution \u003c= 0, frameCount \u003c= 0, or atlasResolution \u003c frameCount.",
+                                                     "Render pipeline globals are stashed before the SRP override, a renderPipelineOverridden flag is set before mutation, normal restoration clears the flag, and finally restores GraphicsSettings.defaultRenderPipeline and QualitySettings.renderPipeline if an exception interrupts the bake.",
+                                                     "The temporary frameTarget is still returned through RenderTexture.ReleaseTemporary in finally, RenderTexture.active is restored, and sample/billboardCameraPivot destruction is guarded by Unity-null checks.",
+                                                     "The billboard atlas static test now asserts metadata fail-closed guards, render pipeline restoration, temporary RT release, and guarded GameObject cleanup."
+                                                 ],
+                                 "zeroGcEvidence":  "APEX29 modified cold authoring route only; no production runtime dispatch hot path was modified. Added-line scan after excluding two disclosed cold Texture2D/Rect allocation lines: HotRelevantAddedLines=168, new=0, string.Format=0, .ToString()=0, foreach=0, LINQ=0. Full cold GeneratePrototypeBillboard method truth: lines=278, newTokens=9, string.Format=0, .ToString()=0, foreach=0, LINQ=0; cold Texture2D/GameObject/Bounds/Rect allocations remain required authoring work and are not claimed Zero-GC runtime hot path.",
+                                 "dataSovereignty":  "No GlobalDataVault migration. BufferID constants=0. TryAcquireWriteLock=0. ReleaseWriteLock=0. finally lock release=N/A because no lock is acquired. APEX29 touched-file token scan returned 0 hits for GlobalDataVault/BufferID/TryAcquireWriteLock/ReleaseWriteLock.",
+                                 "scalability":  "No binary quality switch and no GlobalQualityWeight misuse. APEX29 is fail-closed authoring resource correctness; it does not change gameplay truth, runtime fidelity ownership, or quality route selection.",
+                                 "cinematicCheat":  "No new physical simulation was introduced. The billboard path remains a cheap atlas/dilation visual fake rather than runtime geometric or lighting simulation.",
+                                 "evidence":  [
+                                                  "Line proof GPUInstancerUtility.cs:2055-2070 prototype/prefab and billboard metadata fail-closed guards.",
+                                                  "Line proof GPUInstancerUtility.cs:2097-2103 active RT, temporary RT, render pipeline, and override flag state.",
+                                                  "Line proof GPUInstancerUtility.cs:2218-2225 render pipeline override with flag set before mutation.",
+                                                  "Line proof GPUInstancerUtility.cs:2239-2243 normal render pipeline restore and flag clear.",
+                                                  "Line proof GPUInstancerUtility.cs:2308-2326 finally restores active RT, releases temporary RT, restores render pipeline on interrupted bake, and guards temporary GameObject destruction.",
+                                                  "Line proof ComputeDispatchSizingEditTests.cs:237-258 static contract assertions.",
+                                                  "Static contract check: HasPrototypeNullGuard=true, HasMetadataGuard=true, HasRenderPipelineStash=true, HasPipelineFlagTrue=true, HasPipelineFlagFalse=true, RestoresRenderPipeline=true, ReleasesTemporary=true, RestoresActive=true, GuardedSampleDestroy=true, GuardedPivotDestroy=true, UnguardedSampleDestroy=false, HasCatchExceptionE=false, ThrowE=false.",
+                                                  "git diff --check for APEX29 touched files: exit 0 with LF-\u003eCRLF warnings only.",
+                                                  "Oversized thread scan: 0 hits for numthreads(512|1024), TX/TY/GPUI_THREADS 512/1024, or COMPUTE_SHADER_THREAD_COUNT 512/1024 in Crest/GPUInstancer domain.",
+                                                  "DataVault/quality-token scan over APEX29 touched files: no matches."
+                                              ],
+                                 "build":  {
+                                               "timestampUtc":  "2026-05-28T21:19:42.0647756Z",
+                                               "status":  "BLOCKED_BY_CONTENTION",
+                                               "command":  "dotnet build Assembly-CSharp.csproj --no-restore -m:1 /v:minimal",
+                                               "cpuLoadSamplesPercent":  [
+                                                                             97,
+                                                                             99
+                                                                         ],
+                                               "cpuLoadMaxPercent":  99,
+                                               "compilerProcessCount":  0,
+                                               "compilerProcesses":  [
+
+                                                                     ],
+                                               "launched":  false,
+                                               "summaryPath":  "Docs/AgentLogs/Build_1405_Apex29.summary.json",
+                                               "summarySha256":  "606e721d6c1b08ba067a96bfd3837477f4b565157194c6d7950e7f0d9893ba1f",
+                                               "rule":  "Do not launch dotnet build if CPU \u003e 50 or dotnet/csc/VBCSCompiler is active."
+                                           },
+                                 "residualRisk":  "C# compile after APEX29 is blocked by CPU contention samples [97,99]; Unity shader import, Unity EditMode execution, PlayMode/profiler/GCMonitor, RenderDoc/GPU capture, and target-device validation remain PENDING VERIFICATION."
+                             },
+    "apex30PolishFindings":  {
+                                 "status":  "PENDING VERIFICATION",
+                                 "whatWasWrong":  "Residual APEX30 audit found remaining vendor compute kernel-resolution hazards after APEX29: Crest runtime helpers and GPUInstancer setup/utility/detail paths still had FindKernel routes that proved only shader object presence or used hardcoded texture utility kernel indices. A stripped/mismatched compute asset could throw before dispatch containment.",
+                                 "whatWasDone":  [
+                                                     "Crest LodData persistent sim now caches _krnlShaderSim after HasKernel and DynWaves/Foam reuse the cached kernel handle instead of per-frame FindKernel.",
+                                                     "Crest AnimWaves combine setup resolves all eight ShapeCombine variants through TryFindCombineKernel and falls back to ping-pong combine when compute combine resources are absent.",
+                                                     "Crest Gerstner, FFT bake/spectrum, underwater mask, legacy clear, and query compute setup now fail closed before FindKernel and dispatch when required kernels or resources are absent.",
+                                                     "GPUInstancer manager setup now validates buffer-to-texture, visibility, camera, VR camera, and args kernels before FindKernel; invalid setup disables the manager before dispatch.",
+                                                     "GPUInstancer constants setup now validates SetDataPartial, TextureUtils, and RuntimeModification kernels before caching IDs; TextureUtils uses FindKernel-derived IDs for copy/reduce/copy-array instead of hardcoded indices 1/2.",
+                                                     "GPUInstancer billboard dilation and grass detail compute setup now fail closed before FindKernel on missing kernels.",
+                                                     "ComputeDispatchSizingEditTests static contracts were extended for Crest fail-closed kernel resolution and GPUInstancer static setup/texture utility kernel proof."
+                                                 ],
+                                 "zeroGcEvidence":  "APEX30 hot-only scan over runtime guard/dispatch snippets: lines=149, new=0, string.Format=0, .ToString()=0, foreach=0, LINQ=0. Full production added-line scan disclosed one cold authoring Texture2D allocation in DilateBillboardTexture from the existing billboard bake path; broader setup snippets disclose cold setup allocations for PropertyWrapperCompute and kernel-ID arrays. These are not claimed Zero-GC hot paths.",
+                                 "dataSovereignty":  "No GlobalDataVault migration. BufferID constants=0. TryAcquireWriteLock=0. ReleaseWriteLock=0. finally lock release=N/A because no lock is acquired. APEX30 touched-file token scan returned NO_MATCH for GlobalDataVault/BufferID/TryAcquireWriteLock/ReleaseWriteLock.",
+                                 "scalability":  "No binary quality switch and no GlobalQualityWeight misuse. APEX30 is static vendor compute resource/dispatch correctness; continuous quality routing remains first-party owner work and must not desynchronize C# dispatch math from HLSL numthreads.",
+                                 "cinematicCheat":  "No physical simulation was added. Billboard remains a cheap atlas/dilation visual fake; invalid compute resources now skip/fallback instead of attempting CPU readback, physical repair, or heavier simulation.",
+                                 "evidence":  [
+                                                  "git diff --check on 15 APEX30 touched files: exit 0 with LF-\u003eCRLF warnings only.",
+                                                  "Brace/paren/bracket scan on 15 touched files: all balanced.",
+                                                  "FindKernel guard scan on Crest/GPUInstancer touched files: 0 unguarded FindKernel windows after HasKernel/HasAllKernels/TryFindCombineKernel proof.",
+                                                  "Oversized thread scan: NO_MATCH for [numthreads(512|1024), TX=512, TY=512, GPUI_THREADS 512/1024 in Crest/GPUInstancer shader domain.",
+                                                  "DataVault/quality-token scan over APEX30 touched production files: NO_MATCH.",
+                                                  "Stale hardcoded TextureUtils kernel index scan: NO_MATCH for SetTexture(1/2, Dispatch(1/2, in GPUInstancerUtility.cs.",
+                                                  "Line proof: QueryBase.cs:237/244/472; LodDataMgrPersistent.cs:24/65/73/110; LodDataMgrDynWaves.cs:19; LodDataMgrFoam.cs:18; LodDataMgrAnimWaves.cs:142-166/295; ShapeGerstner.cs:117/129/174/372; UnderwaterRenderer.Mask.cs:148/156/354/358; FFTBaker.cs:85/91; FFTCompute.cs:133-143.",
+                                                  "Line proof: GPUInstancerConstants.cs:196-200/240-256/352-364; GPUInstancerManager.cs:150-204/226-237; GPUInstancerUtility.cs:2342/3583/3642/4085/4098-4116/4129-4138; GPUInstancerDetailManager.cs:627/633/671/679."
+                                              ],
+                                 "build":  {
+                                               "timestampUtc":  "2026-05-28T21:49:46.7221529Z",
+                                               "status":  "BLOCKED_BY_CONTENTION",
+                                               "command":  "dotnet build Assembly-CSharp.csproj --no-restore -m:1 /v:minimal",
+                                               "cpuLoadSamplesPercent":  [
+                                                                             99,
+                                                                             93
+                                                                         ],
+                                               "cpuLoadMaxPercent":  99,
+                                               "compilerProcessCount":  2,
+                                               "compilerProcesses":  [
+                                                                         "dotnet pid 39956 CPU 273.328125 StartTime 2026-05-29T01:42:50+04:00",
+                                                                         "VBCSCompiler pid 61228 CPU 7.59375 StartTime 2026-05-29T01:46:08+04:00"
+                                                                     ],
+                                               "launched":  false,
+                                               "reason":  "CPU samples 99/93 exceeded the 50 percent throttle and compiler processes were active.",
+                                               "summaryPath":  "Docs/AgentLogs/Build_1405_Apex30.summary.json",
+                                               "summarySha256":  "b64e3f6c8e5c3dca3baac8970b73a0ba1ee1eded4ef7adc61a47f9f5a1be50f2",
+                                               "rule":  "Do not launch dotnet build if CPU \u003e 50 or dotnet/csc/VBCSCompiler is active."
+                                           },
+                                 "residualRisk":  "C# compile after APEX30 was not launched because build throttle blocked it. Last successful CLI compile remains APEX26. Unity shader import, Unity EditMode tests, PlayMode/profiler/GCMonitor, RenderDoc/GPU capture, and target-device validation remain PENDING VERIFICATION."
                              }
 }

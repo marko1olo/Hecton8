@@ -101,8 +101,7 @@ namespace Hecton8.World.Terrain
         public float3 TerrainSize;
         public float GlobalQualityWeight;
         public byte GlobalQualityWeightValid;
-        // Legacy ABI field retained for stale generated csproj callers; runtime source math uses GlobalQualityWeight only.
-        public byte LowTierVisualOnly;
+        public byte VisualSamplingSuppressed;
 
         public void Execute(int index)
         {

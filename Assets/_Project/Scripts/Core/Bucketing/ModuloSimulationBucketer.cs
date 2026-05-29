@@ -613,7 +613,26 @@ namespace Hecton8.Core.Bucketing
                 return false;
             }
 
-            return vault.TryAcquireWriteLock(in handle, SystemID.SimulationBucketer, out buffer) && buffer.IsCreated;
+            if (!vault.TryAcquireWriteLock(in handle, SystemID.SimulationBucketer, out buffer))
+                return false;
+
+            bool handedOff = false;
+            try
+            {
+                if (buffer.IsCreated)
+                {
+                    handedOff = true;
+                    return true;
+                }
+
+                buffer = default;
+                return false;
+            }
+            finally
+            {
+                if (!handedOff)
+                    vault.ReleaseWriteLock(in handle, SystemID.SimulationBucketer);
+            }
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -888,7 +907,15 @@ namespace Hecton8.Core.Bucketing
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         private static void CompleteRebalanceHandle(ref JobHandle handle)
         {
-            DispatcherJobFence.TryComplete(ref handle, forceComplete: true);
+            DispatcherJobFence.BeginPostSimulationSwapWindow();
+            try
+            {
+                DispatcherJobFence.TryComplete(ref handle, forceComplete: true);
+            }
+            finally
+            {
+                DispatcherJobFence.EndPostSimulationSwapWindow();
+            }
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]

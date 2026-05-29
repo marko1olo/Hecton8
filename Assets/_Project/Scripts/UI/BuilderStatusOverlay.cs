@@ -454,9 +454,6 @@ namespace Hecton8.UI
 
         private void RefreshState()
         {
-            AutoResolve();
-            EnsureBuilt();
-
             if (_self == null || playerBuilder == null)
                 return;
 
@@ -571,7 +568,9 @@ namespace Hecton8.UI
 
         private bool ShouldKeepTicking(float deltaTime = 0f)
         {
-            AutoResolve(deltaTime);
+            if (deltaTime > 0f && _autoResolveRetryTimer > 0f)
+                _autoResolveRetryTimer = math.max(0f, _autoResolveRetryTimer - deltaTime);
+
             return RequiresRuntimeResolve() || _toolLoadoutSignalSourceId != 0u || IsBuilderOverlayVisible();
         }
 

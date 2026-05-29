@@ -1903,6 +1903,7 @@ namespace Hecton8.Physics
         private bool _postFixedRegistered;
         private bool _lateFrameRegistered;
         private bool _hotSwapRegistered;
+        private bool _coldSupportsComputeShaders;
         private IPlayerRuntimeContext _playerRuntime;
         private ISubmarineRuntimeContext _submarineRuntime;
         private IThermodynamicsService _thermalRuntime;
@@ -1928,6 +1929,7 @@ namespace Hecton8.Physics
             PrewarmBuoyancyNativeCapacity();
             CacheFluidRuntimeServicesCold();
             RefreshRuntimeActorContextsIfMissing();
+            _coldSupportsComputeShaders = SystemInfo.supportsComputeShaders;
 
             // Initial observer resolution. If player/camera appears later,
             // FixedTick retries on a cooldown instead of staying in full-cost mode forever.
@@ -1953,7 +1955,7 @@ namespace Hecton8.Physics
                     gpuBuoyancyCompute,
                     _gpuBuoyancyKernel);
             }
-            if (HardwareTierDetector.AllowHighResourceComputeShaders && abyssalFlowFieldCompute != null)
+            if (_coldSupportsComputeShaders && abyssalFlowFieldCompute != null)
             {
                 _gpuAbyssalUpdateKernel = ResolveKernel(abyssalFlowFieldCompute, "UpdateAbyssalFlowField");
                 _gpuAbyssalTextureUpdateKernel = ResolveKernel(abyssalFlowFieldCompute, "UpdateAbyssalFlowTexture");
@@ -1982,7 +1984,7 @@ namespace Hecton8.Physics
                     out _gpuAbyssalVortexThreadGroupSizeZ);
             }
 
-            if (HardwareTierDetector.AllowHighResourceComputeShaders && fluidAdvectionCompute != null)
+            if (_coldSupportsComputeShaders && fluidAdvectionCompute != null)
             {
                 _fluidAdvectionKernel = ResolveKernel(fluidAdvectionCompute, "AdvectFluidParticles");
                 _fluidAdvectionThreadGroupSizeX = ResolveKernelThreadGroupSizeX(
@@ -3117,26 +3119,49 @@ namespace Hecton8.Physics
             float activeFlowRate)
         {
             IDataVault vault = _dataVault;
-            if (vault == null || !_fluidSovereigntyTelemetry.TryAcquireWriteLock(out NativeArray<FluidTelemetryEntry> ring))
+            if (vault == null)
             {
                 _fluidSovereigntyConsecutiveFaults++;
                 return;
             }
 
-            bool cursorLocked = false;
+            int cursor = _fluidSovereigntyTelemetryCursorMirror;
+            bool cursorPersisted = false;
+            if (_fluidSovereigntyTelemetryCursor.TryAcquireWriteLock(out NativeArray<int> cursorBuffer))
+            {
+                try
+                {
+                    if (cursorBuffer.IsCreated && cursorBuffer.Length > 0)
+                    {
+                        cursor = cursorBuffer[0];
+                        if ((uint)cursor >= FluidSovereigntyTelemetryCapacity)
+                            cursor = 0;
+
+                        int nextCursor = cursor + 1;
+                        if (nextCursor >= FluidSovereigntyTelemetryCapacity)
+                            nextCursor = 0;
+
+                        cursorBuffer[0] = nextCursor;
+                        _fluidSovereigntyTelemetryCursorMirror = nextCursor;
+                        cursorPersisted = true;
+                    }
+                }
+                finally
+                {
+                    _fluidSovereigntyTelemetryCursor.ReleaseWriteLock();
+                }
+            }
+
+            if (!_fluidSovereigntyTelemetry.TryAcquireWriteLock(out NativeArray<FluidTelemetryEntry> ring))
+            {
+                _fluidSovereigntyConsecutiveFaults++;
+                return;
+            }
+
             try
             {
                 if (!ring.IsCreated || ring.Length == 0)
                     return;
-
-                int cursor = _fluidSovereigntyTelemetryCursorMirror;
-                NativeArray<int> cursorBuffer = default;
-                if (_fluidSovereigntyTelemetryCursor.TryAcquireWriteLock(out cursorBuffer))
-                {
-                    cursorLocked = true;
-                    if (cursorBuffer.IsCreated && cursorBuffer.Length > 0)
-                        cursor = cursorBuffer[0];
-                }
 
                 if ((uint)cursor >= (uint)ring.Length)
                     cursor = 0;
@@ -3165,19 +3190,18 @@ namespace Hecton8.Physics
                     entry.ActualLength);
                 ring[cursor] = entry;
 
-                cursor++;
-                if (cursor >= ring.Length)
-                    cursor = 0;
+                if (!cursorPersisted)
+                {
+                    cursor++;
+                    if (cursor >= ring.Length)
+                        cursor = 0;
+                    _fluidSovereigntyTelemetryCursorMirror = cursor;
+                }
 
-                _fluidSovereigntyTelemetryCursorMirror = cursor;
-                if (cursorLocked && cursorBuffer.IsCreated && cursorBuffer.Length > 0)
-                    cursorBuffer[0] = cursor;
                 _fluidSovereigntyConsecutiveFaults = 0;
             }
             finally
             {
-                if (cursorLocked)
-                    _fluidSovereigntyTelemetryCursor.ReleaseWriteLock();
                 _fluidSovereigntyTelemetry.ReleaseWriteLock();
             }
         }
@@ -7649,7 +7673,7 @@ namespace Hecton8.Physics
             float fixedDeltaTime)
         {
             if (!enableGpuAbyssalFlowField ||
-                !HardwareTierDetector.AllowHighResourceComputeShaders ||
+                !_coldSupportsComputeShaders ||
                 abyssalFlowFieldCompute == null ||
                 _gpuAbyssalUpdateKernel < 0 ||
                 _gpuAbyssalTextureUpdateKernel < 0 ||

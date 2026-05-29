@@ -79,7 +79,6 @@ namespace Hecton8.AI.Ecosystem
         private bool _registeredLateFrame;
         private bool _registeredHotSwap;
         private bool _jobScheduled;
-        private bool _jobLocksHeld;
         private bool _dumpedFault;
         private uint _runtimeFlags;
 
@@ -103,7 +102,6 @@ namespace Hecton8.AI.Ecosystem
             TryUnregisterTicks();
             TryUnregisterHotSwapListener();
             _jobScheduled = false;
-            UnlockJobBuffers();
             ClearCachedDependencies();
         }
 
@@ -182,7 +180,6 @@ namespace Hecton8.AI.Ecosystem
 
             _jobScheduled = false;
             PublishCompletedCullSignals();
-            UnlockJobBuffers();
         }
 
         private bool EnsureVaultState()
@@ -563,7 +560,7 @@ namespace Hecton8.AI.Ecosystem
 
         private void ScheduleBalancerJob(IDataVault vault, uint frame, int entityCount, int totalActiveEntities)
         {
-            if (!TryLockJobBuffers(vault))
+            if (vault == null || vault.IsCompactionFenceActive)
                 return;
 
             if (!TryOpenOwnedVaultView(vault, in _coefficientHandle, BufferID.EcosystemPopulationCoefficients, 1, out NativeArray<EcosystemPopulationCoefficient> coefficients) ||
@@ -575,9 +572,11 @@ namespace Hecton8.AI.Ecosystem
                 !TryOpenExternalVaultView(vault, in _entityAupHandle, BufferID.EntityAUPs, 1, out NativeArray<AbsoluteUniversePosition> entityAups) ||
                 !TryOpenExternalVaultView(vault, in _entityFlagHandle, BufferID.EntityFlags, 1, out NativeArray<uint> entityFlags))
             {
-                UnlockJobBuffers();
                 return;
             }
+
+            if (vault.IsCompactionFenceActive)
+                return;
 
             int telemetryIndex = ReserveTelemetryIndex(telemetry.Length);
             var job = new EcosystemBalancerJob
@@ -610,14 +609,12 @@ namespace Hecton8.AI.Ecosystem
             }
             catch (InvalidOperationException)
             {
-                UnlockJobBuffers();
                 _balancerHandle = default;
                 GlobalTelemetryBus.PublishPerformanceWarning(0x45504A53u, EcologySourceHash, 0f);
                 return;
             }
             catch (ArgumentException)
             {
-                UnlockJobBuffers();
                 _balancerHandle = default;
                 GlobalTelemetryBus.PublishPerformanceWarning(0x45504A53u, EcologySourceHash, 0f);
                 return;
@@ -729,118 +726,13 @@ namespace Hecton8.AI.Ecosystem
         private void CompleteScheduledJobForTeardown()
         {
             if (!_jobScheduled)
-            {
-                UnlockJobBuffers();
                 return;
-            }
 
             if (!DispatcherJobFence.TryComplete(ref _balancerHandle, forceComplete: true))
                 return;
 
             _jobScheduled = false;
             PublishCompletedCullSignals();
-            UnlockJobBuffers();
-        }
-
-        private bool TryLockJobBuffers(IDataVault vault)
-        {
-            if (vault == null || _jobLocksHeld)
-                return false;
-
-            bool lockedCoefficients = false;
-            bool lockedSectorState = false;
-            bool lockedCullEvents = false;
-            bool lockedTelemetry = false;
-            bool lockedFreeRing = false;
-            bool lockedCounters = false;
-            bool lockedEntityAups = false;
-            bool lockedEntityFlags = false;
-            bool ownershipTransferred = false;
-
-            try
-            {
-                lockedCoefficients = vault.TryLockBuffer(BufferID.EcosystemPopulationCoefficients, SystemID.AIEcology);
-                if (!lockedCoefficients)
-                    return false;
-                lockedSectorState = vault.TryLockBuffer(BufferID.EcosystemPopulationSectorState, SystemID.AIEcology);
-                if (!lockedSectorState)
-                    return false;
-                lockedCullEvents = vault.TryLockBuffer(BufferID.EcosystemPopulationCullEvents, SystemID.AIEcology);
-                if (!lockedCullEvents)
-                    return false;
-                lockedTelemetry = vault.TryLockBuffer(BufferID.EcosystemPopulationTelemetryRing, SystemID.AIEcology);
-                if (!lockedTelemetry)
-                    return false;
-                lockedFreeRing = vault.TryLockBuffer(BufferID.EcosystemPopulationFreeRing, SystemID.AIEcology);
-                if (!lockedFreeRing)
-                    return false;
-                lockedCounters = vault.TryLockBuffer(BufferID.EcosystemPopulationCounters, SystemID.AIEcology);
-                if (!lockedCounters)
-                    return false;
-                lockedEntityAups = vault.TryLockBuffer(BufferID.EntityAUPs, SystemID.AIEcology);
-                if (!lockedEntityAups)
-                    return false;
-                lockedEntityFlags = vault.TryLockBuffer(BufferID.EntityFlags, SystemID.AIEcology);
-                if (!lockedEntityFlags)
-                    return false;
-
-                _jobLocksHeld = true;
-                ownershipTransferred = true;
-                return true;
-            }
-            finally
-            {
-                if (!ownershipTransferred)
-                    UnlockJobBuffersNoState(vault, lockedEntityFlags, lockedEntityAups, lockedCounters, lockedFreeRing, lockedTelemetry, lockedCullEvents, lockedSectorState, lockedCoefficients);
-            }
-        }
-
-        private void UnlockJobBuffers()
-        {
-            if (!_jobLocksHeld)
-                return;
-
-            IDataVault vault = _dataVault;
-            try
-            {
-                UnlockJobBuffersNoState(vault, true, true, true, true, true, true, true, true);
-            }
-            finally
-            {
-                _jobLocksHeld = false;
-            }
-        }
-
-        private static void UnlockJobBuffersNoState(
-            IDataVault vault,
-            bool unlockEntityFlags,
-            bool unlockEntityAups,
-            bool unlockCounters,
-            bool unlockFreeRing,
-            bool unlockTelemetry,
-            bool unlockCullEvents,
-            bool unlockSectorState,
-            bool unlockCoefficients)
-        {
-            if (vault == null)
-                return;
-
-            if (unlockEntityFlags)
-                vault.TryUnlockBuffer(BufferID.EntityFlags, SystemID.AIEcology);
-            if (unlockEntityAups)
-                vault.TryUnlockBuffer(BufferID.EntityAUPs, SystemID.AIEcology);
-            if (unlockCounters)
-                vault.TryUnlockBuffer(BufferID.EcosystemPopulationCounters, SystemID.AIEcology);
-            if (unlockFreeRing)
-                vault.TryUnlockBuffer(BufferID.EcosystemPopulationFreeRing, SystemID.AIEcology);
-            if (unlockTelemetry)
-                vault.TryUnlockBuffer(BufferID.EcosystemPopulationTelemetryRing, SystemID.AIEcology);
-            if (unlockCullEvents)
-                vault.TryUnlockBuffer(BufferID.EcosystemPopulationCullEvents, SystemID.AIEcology);
-            if (unlockSectorState)
-                vault.TryUnlockBuffer(BufferID.EcosystemPopulationSectorState, SystemID.AIEcology);
-            if (unlockCoefficients)
-                vault.TryUnlockBuffer(BufferID.EcosystemPopulationCoefficients, SystemID.AIEcology);
         }
 
         private void TryRegisterTicks()
@@ -901,7 +793,6 @@ namespace Hecton8.AI.Ecosystem
             }
 
             CompleteScheduledJobForTeardown();
-            UnlockJobBuffers();
             ReleaseOwnedVaultHandles(_dataVault);
             _dataVault = currentVault;
             ResetVaultRuntimeState();
@@ -1041,6 +932,7 @@ namespace Hecton8.AI.Ecosystem
         {
             buffer = default;
             return vault != null &&
+                   !vault.IsCompactionFenceActive &&
                    requiredLength >= 0 &&
                    vault.TryResolveHandle(in handle, out buffer) &&
                    buffer.IsCreated &&

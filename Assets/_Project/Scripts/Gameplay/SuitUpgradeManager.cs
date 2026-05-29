@@ -60,12 +60,10 @@ namespace Hecton8.Gameplay
         [SerializeField] private SuitUpgradeData[] allUpgrades = new SuitUpgradeData[0];
 
         // ----------------------------------------------------------
-        //  SINGLETON
+        //  STATIC LIFECYCLE MIRROR
         // ----------------------------------------------------------
 
         private static SuitUpgradeManager s_activeRuntimeInstance;
-
-        public static SuitUpgradeManager Instance => s_activeRuntimeInstance;
 
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
         private static void ResetStaticState()

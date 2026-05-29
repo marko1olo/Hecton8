@@ -166,6 +166,7 @@ namespace Hecton8.VFX.PlasmaBeam
         private const uint DumpVersion = 1u;
         private const int CsvScratchBytes = 4096;
         private const int CsvPollCadenceFrames = 64;
+        private const ulong PlasmaBeamJobMutationGuardMask = 0x0000000000FF0000UL;
         private const string CsvRelativePath = "Assets/_Project/Data/VFX/Beam/beam_visuals.csv";
         private const string DumpRelativePath = "Docs/AgentLogs/Dump_LASER_SURGEON.bin";
         private const string ShaderName = "Hecton8/VFX/PlasmaBeamIndirect";
@@ -223,7 +224,7 @@ namespace Hecton8.VFX.PlasmaBeam
         private long _csvLastWriteTicks;
         private long _jobScheduleTimestamp;
         private JobHandle _simulationHandle;
-        private int _lockedBufferMask;
+        private ulong _activeJobMutationGuardMask;
         private int _vertexGpuUploadBufferIndex;
         private int _indirectArgsGpuUploadBufferIndex;
         private int _lastVertexCount;
@@ -413,7 +414,7 @@ namespace Hecton8.VFX.PlasmaBeam
             _shutdown = true;
             Application.quitting -= ShutdownActive;
             CompleteSimulationForLifecycle();
-            UnlockJobBuffers();
+            ReleasePlasmaBeamJobMutationGuard();
             TryUnregisterHotSwapListener();
             UnregisterDispatcherPhases();
             ReleaseVaultHandles(_vault);
@@ -486,7 +487,7 @@ namespace Hecton8.VFX.PlasmaBeam
                 return;
 
             CompleteSimulationForLifecycle();
-            UnlockJobBuffers();
+            ReleasePlasmaBeamJobMutationGuard();
             ReleaseVaultHandles(_vault);
             _vault = vault;
             ResetVaultEpochState();
@@ -500,7 +501,7 @@ namespace Hecton8.VFX.PlasmaBeam
             _layoutValid = false;
             _simulationScheduled = false;
             _dumpedNonFinite = false;
-            _lockedBufferMask = 0;
+            _activeJobMutationGuardMask = 0UL;
             _lastVertexCount = 0;
             _lastActiveBeamCount = 0;
         }
@@ -568,7 +569,7 @@ namespace Hecton8.VFX.PlasmaBeam
                     return JobHandle.CombineDependencies(dependsOn, _simulationHandle);
 
                 _simulationScheduled = false;
-                UnlockJobBuffers();
+                ReleasePlasmaBeamJobMutationGuard();
             }
 
             IDataVault vault = ResolveVault();
@@ -577,23 +578,24 @@ namespace Hecton8.VFX.PlasmaBeam
 
             _lastDispatcherFrame = context.Frame;
 
-            if (!TryResolveVaultBuffer(vault, in _statesHandle, BufferID.ShinobuPlasmaBeamStates, MaxBeamCount, out NativeArray<BeamStateDTO> states) ||
-                !TryResolveVaultBuffer(vault, in _verticesHandle, BufferID.ShinobuPlasmaBeamVertices, MaxVertexCount, out NativeArray<BeamVertexDTO> vertices) ||
-                !TryResolveVaultBuffer(vault, in _trigHandle, BufferID.ShinobuPlasmaBeamTrigLut, TrigLutCount, out NativeArray<BeamTrigLutEntry> trig) ||
-                !TryResolveVaultBuffer(vault, in _scalarsHandle, BufferID.ShinobuPlasmaBeamRuntimeScalars, 1, out NativeArray<PlasmaBeamRuntimeScalarsDTO> scalars) ||
-                !TryResolveVaultBuffer(vault, in _argsHandle, BufferID.ShinobuPlasmaBeamIndirectArgs, 1, out NativeArray<PlasmaBeamIndirectArgsDTO> args) ||
-                !TryResolveVaultBuffer(vault, in _telemetryHandle, BufferID.ShinobuPlasmaBeamTelemetryRing, TelemetryFrameCount, out NativeArray<PlasmaBeamTelemetryEntry> telemetry) ||
-                !TryResolveVaultBuffer(vault, in _mockSignalsHandle, BufferID.ShinobuPlasmaBeamMockSignals, MaxBeamCount, out NativeArray<MockLaserFireSignal> mockSignals) ||
-                !TryResolveVaultBuffer(vault, in _acousticTapsHandle, BufferID.ShinobuPlasmaBeamAcousticTaps, MaxBeamCount, out NativeArray<PlasmaBeamAcousticEchoTap> acousticTaps))
-            {
-                return dependsOn;
-            }
-
-            if (!TryLockJobBuffers(vault))
+            if (!TryAcquirePlasmaBeamJobMutationGuard(vault))
                 return dependsOn;
 
+            bool scheduled = false;
             try
             {
+                if (!TryResolveVaultBuffer(vault, in _statesHandle, BufferID.ShinobuPlasmaBeamStates, MaxBeamCount, out NativeArray<BeamStateDTO> states) ||
+                    !TryResolveVaultBuffer(vault, in _verticesHandle, BufferID.ShinobuPlasmaBeamVertices, MaxVertexCount, out NativeArray<BeamVertexDTO> vertices) ||
+                    !TryResolveVaultBuffer(vault, in _trigHandle, BufferID.ShinobuPlasmaBeamTrigLut, TrigLutCount, out NativeArray<BeamTrigLutEntry> trig) ||
+                    !TryResolveVaultBuffer(vault, in _scalarsHandle, BufferID.ShinobuPlasmaBeamRuntimeScalars, 1, out NativeArray<PlasmaBeamRuntimeScalarsDTO> scalars) ||
+                    !TryResolveVaultBuffer(vault, in _argsHandle, BufferID.ShinobuPlasmaBeamIndirectArgs, 1, out NativeArray<PlasmaBeamIndirectArgsDTO> args) ||
+                    !TryResolveVaultBuffer(vault, in _telemetryHandle, BufferID.ShinobuPlasmaBeamTelemetryRing, TelemetryFrameCount, out NativeArray<PlasmaBeamTelemetryEntry> telemetry) ||
+                    !TryResolveVaultBuffer(vault, in _mockSignalsHandle, BufferID.ShinobuPlasmaBeamMockSignals, MaxBeamCount, out NativeArray<MockLaserFireSignal> mockSignals) ||
+                    !TryResolveVaultBuffer(vault, in _acousticTapsHandle, BufferID.ShinobuPlasmaBeamAcousticTaps, MaxBeamCount, out NativeArray<PlasmaBeamAcousticEchoTap> acousticTaps))
+                {
+                    return dependsOn;
+                }
+
                 float tickDelta = ResolveSimulationTickDelta(in timing);
                 float timeSeconds = (float)((double)context.Frame * (double)tickDelta);
                 _lastDeterministicTimeSeconds = timeSeconds;
@@ -634,13 +636,13 @@ namespace Hecton8.VFX.PlasmaBeam
                 _simulationHandle = handle;
                 _jobScheduleTimestamp = System.Diagnostics.Stopwatch.GetTimestamp();
                 H8Memory.RegisterActiveJob(OwnerSystemId, handle);
+                scheduled = true;
                 return handle;
             }
-            catch
+            finally
             {
-                UnlockJobBuffers();
-                _simulationScheduled = false;
-                throw;
+                if (!scheduled)
+                    ReleasePlasmaBeamJobMutationGuard();
             }
         }
 
@@ -649,7 +651,7 @@ namespace Hecton8.VFX.PlasmaBeam
             IDataVault vault = ResolveVault();
             if (vault == null || !_simulationScheduled)
             {
-                UnlockJobBuffers();
+                ReleasePlasmaBeamJobMutationGuard();
                 return;
             }
 
@@ -658,39 +660,44 @@ namespace Hecton8.VFX.PlasmaBeam
 
             _simulationScheduled = false;
 
-            TryResolveVaultBuffer(vault, in _argsHandle, BufferID.ShinobuPlasmaBeamIndirectArgs, 1, out NativeArray<PlasmaBeamIndirectArgsDTO> args);
-            TryResolveVaultBuffer(vault, in _telemetryHandle, BufferID.ShinobuPlasmaBeamTelemetryRing, TelemetryFrameCount, out NativeArray<PlasmaBeamTelemetryEntry> telemetry);
-            TryResolveVaultBuffer(vault, in _acousticTapsHandle, BufferID.ShinobuPlasmaBeamAcousticTaps, MaxBeamCount, out NativeArray<PlasmaBeamAcousticEchoTap> taps);
-            if (args.IsCreated && args.Length > 0)
-                _lastVertexCount = (int)math.min(args[0].VertexCountPerInstance, (uint)MaxVertexCount);
-
-            int telemetryIndex = (int)(_lastDispatcherFrame % TelemetryFrameCount);
-            if (telemetry.IsCreated && telemetry.Length > telemetryIndex)
+            try
             {
-                PlasmaBeamTelemetryEntry entry = telemetry[telemetryIndex];
-                entry.MeshingComputeTimeMs = ElapsedMilliseconds(_jobScheduleTimestamp);
-                telemetry[telemetryIndex] = entry;
-                _lastActiveBeamCount = (int)math.min(entry.ActiveBeams, (uint)MaxBeamCount);
+                TryResolveVaultBuffer(vault, in _argsHandle, BufferID.ShinobuPlasmaBeamIndirectArgs, 1, out NativeArray<PlasmaBeamIndirectArgsDTO> args);
+                TryResolveVaultBuffer(vault, in _telemetryHandle, BufferID.ShinobuPlasmaBeamTelemetryRing, TelemetryFrameCount, out NativeArray<PlasmaBeamTelemetryEntry> telemetry);
+                TryResolveVaultBuffer(vault, in _acousticTapsHandle, BufferID.ShinobuPlasmaBeamAcousticTaps, MaxBeamCount, out NativeArray<PlasmaBeamAcousticEchoTap> taps);
+                if (args.IsCreated && args.Length > 0)
+                    _lastVertexCount = (int)math.min(args[0].VertexCountPerInstance, (uint)MaxVertexCount);
 
-                if (entry.NonFiniteCount > 0u && !_dumpedNonFinite)
+                int telemetryIndex = (int)(_lastDispatcherFrame % TelemetryFrameCount);
+                if (telemetry.IsCreated && telemetry.Length > telemetryIndex)
                 {
-                    DumpTelemetry(vault, telemetry);
-                    _dumpedNonFinite = true;
+                    PlasmaBeamTelemetryEntry entry = telemetry[telemetryIndex];
+                    entry.MeshingComputeTimeMs = ElapsedMilliseconds(_jobScheduleTimestamp);
+                    telemetry[telemetryIndex] = entry;
+                    _lastActiveBeamCount = (int)math.min(entry.ActiveBeams, (uint)MaxBeamCount);
+
+                    if (entry.NonFiniteCount > 0u && !_dumpedNonFinite)
+                    {
+                        DumpTelemetry(vault, telemetry);
+                        _dumpedNonFinite = true;
+                    }
+                }
+
+                if (taps.IsCreated)
+                {
+                    int tapCount = math.min(_lastActiveBeamCount, taps.Length);
+                    for (int i = 0; i < tapCount; i++)
+                    {
+                        PlasmaBeamAcousticEchoTap tap = taps[i];
+                        if (tap.Intensity01 > 0.001f)
+                            SignalBus<PlasmaBeamAcousticEchoTap>.TryPushTracked(in tap, ref s_x001ShinobuPlasmaBeamRuntimeSignalPushDropCount);
+                    }
                 }
             }
-
-            if (taps.IsCreated)
+            finally
             {
-                int tapCount = math.min(_lastActiveBeamCount, taps.Length);
-                for (int i = 0; i < tapCount; i++)
-                {
-                    PlasmaBeamAcousticEchoTap tap = taps[i];
-                    if (tap.Intensity01 > 0.001f)
-                        SignalBus<PlasmaBeamAcousticEchoTap>.TryPushTracked(in tap, ref s_x001ShinobuPlasmaBeamRuntimeSignalPushDropCount);
-                }
+                ReleasePlasmaBeamJobMutationGuard();
             }
-
-            UnlockJobBuffers();
         }
 
         private void CompleteSimulationForLifecycle()
@@ -698,9 +705,15 @@ namespace Hecton8.VFX.PlasmaBeam
             if (!_simulationScheduled)
                 return;
 
-            DispatcherJobFence.TryComplete(ref _simulationHandle, forceComplete: true);
-            _simulationScheduled = false;
-            UnlockJobBuffers();
+            try
+            {
+                DispatcherJobFence.TryComplete(ref _simulationHandle, forceComplete: true);
+                _simulationScheduled = false;
+            }
+            finally
+            {
+                ReleasePlasmaBeamJobMutationGuard();
+            }
         }
 
         private void VisualSyncTick(in DispatcherTimingDTO timing)
@@ -1060,50 +1073,24 @@ namespace Hecton8.VFX.PlasmaBeam
             buffer = null;
         }
 
-        private bool TryLockJobBuffers(IDataVault vault)
+        private bool TryAcquirePlasmaBeamJobMutationGuard(IDataVault vault)
         {
-            UnlockJobBuffers();
-            if (!TryLock(vault, BufferID.ShinobuPlasmaBeamStates, 1 << 0)) return false;
-            if (!TryLock(vault, BufferID.ShinobuPlasmaBeamVertices, 1 << 1)) return false;
-            if (!TryLock(vault, BufferID.ShinobuPlasmaBeamTrigLut, 1 << 2)) return false;
-            if (!TryLock(vault, BufferID.ShinobuPlasmaBeamRuntimeScalars, 1 << 3)) return false;
-            if (!TryLock(vault, BufferID.ShinobuPlasmaBeamIndirectArgs, 1 << 4)) return false;
-            if (!TryLock(vault, BufferID.ShinobuPlasmaBeamTelemetryRing, 1 << 5)) return false;
-            if (!TryLock(vault, BufferID.ShinobuPlasmaBeamMockSignals, 1 << 6)) return false;
-            if (!TryLock(vault, BufferID.ShinobuPlasmaBeamAcousticTaps, 1 << 7)) return false;
-            return true;
-        }
+            if (_activeJobMutationGuardMask != 0UL)
+                return true;
 
-        private bool TryLock(IDataVault vault, BufferID bufferId, int bit)
-        {
-            if (!vault.TryLockBuffer(bufferId, OwnerSystemId))
-            {
-                UnlockJobBuffers();
+            if (vault == null || !vault.TryAcquireMutationGuard(PlasmaBeamJobMutationGuardMask))
                 return false;
-            }
 
-            _lockedBufferMask |= bit;
+            _activeJobMutationGuardMask = PlasmaBeamJobMutationGuardMask;
             return true;
         }
 
-        private void UnlockJobBuffers()
+        private void ReleasePlasmaBeamJobMutationGuard()
         {
-            IDataVault vault = _vault;
-            if (vault == null || _lockedBufferMask == 0)
-            {
-                _lockedBufferMask = 0;
-                return;
-            }
-
-            if ((_lockedBufferMask & (1 << 7)) != 0) vault.TryUnlockBuffer(BufferID.ShinobuPlasmaBeamAcousticTaps, OwnerSystemId);
-            if ((_lockedBufferMask & (1 << 6)) != 0) vault.TryUnlockBuffer(BufferID.ShinobuPlasmaBeamMockSignals, OwnerSystemId);
-            if ((_lockedBufferMask & (1 << 5)) != 0) vault.TryUnlockBuffer(BufferID.ShinobuPlasmaBeamTelemetryRing, OwnerSystemId);
-            if ((_lockedBufferMask & (1 << 4)) != 0) vault.TryUnlockBuffer(BufferID.ShinobuPlasmaBeamIndirectArgs, OwnerSystemId);
-            if ((_lockedBufferMask & (1 << 3)) != 0) vault.TryUnlockBuffer(BufferID.ShinobuPlasmaBeamRuntimeScalars, OwnerSystemId);
-            if ((_lockedBufferMask & (1 << 2)) != 0) vault.TryUnlockBuffer(BufferID.ShinobuPlasmaBeamTrigLut, OwnerSystemId);
-            if ((_lockedBufferMask & (1 << 1)) != 0) vault.TryUnlockBuffer(BufferID.ShinobuPlasmaBeamVertices, OwnerSystemId);
-            if ((_lockedBufferMask & 1) != 0) vault.TryUnlockBuffer(BufferID.ShinobuPlasmaBeamStates, OwnerSystemId);
-            _lockedBufferMask = 0;
+            ulong guardMask = _activeJobMutationGuardMask;
+            if (guardMask != 0UL)
+                _vault?.ReleaseMutationGuard(guardMask);
+            _activeJobMutationGuardMask = 0UL;
         }
 
 #if UNITY_EDITOR

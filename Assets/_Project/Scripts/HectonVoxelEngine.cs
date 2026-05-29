@@ -44,6 +44,9 @@ public static class MCTables
     const SystemID TableOwnerSystemId = SystemID.TerrainSeams;
     const int EdgeTableLength = 256;
     const int TriTableLength = 4096;
+    static readonly ulong JobTableMutationGuardMask =
+        TableMutationGuardBit(EdgeTableBufferId) |
+        TableMutationGuardBit(TriTableBufferId);
 
     static IDataVault _vault;
     static VaultGenerationHandle<int> _edgeTableHandle;
@@ -57,8 +60,7 @@ public static class MCTables
         readonly IDataVault _vault;
         readonly VaultGenerationHandle<int> _edgeTableHandle;
         readonly VaultGenerationHandle<int> _triTableHandle;
-        readonly bool _edgeLocked;
-        readonly bool _triLocked;
+        readonly ulong _mutationGuardMask;
 
         public NativeArray<int>.ReadOnly EdgeTable
         {
@@ -88,24 +90,19 @@ public static class MCTables
             IDataVault vault,
             in VaultGenerationHandle<int> edgeTableHandle,
             in VaultGenerationHandle<int> triTableHandle,
-            bool edgeLocked,
-            bool triLocked)
+            ulong mutationGuardMask)
         {
             _vault = vault;
             _edgeTableHandle = edgeTableHandle;
             _triTableHandle = triTableHandle;
-            _edgeLocked = edgeLocked;
-            _triLocked = triLocked;
+            _mutationGuardMask = mutationGuardMask;
         }
 
         public void Dispose()
         {
             if (_vault == null)
                 return;
-            if (_triLocked)
-                _vault.TryUnlockBuffer(TriTableBufferId, TableOwnerSystemId);
-            if (_edgeLocked)
-                _vault.TryUnlockBuffer(EdgeTableBufferId, TableOwnerSystemId);
+            _vault.ReleaseMutationGuard(_mutationGuardMask);
         }
     }
 
@@ -604,18 +601,12 @@ public static class MCTables
             return false;
         }
 
-        bool edgeLocked = false;
-        bool triLocked = false;
-        bool success = false;
+        bool mutationGuardAcquired = false;
         try
         {
-            if (vault.IsCompactionFenceActive || !vault.TryLockBuffer(EdgeTableBufferId, TableOwnerSystemId))
+            if (vault.IsCompactionFenceActive || !vault.TryAcquireMutationGuard(JobTableMutationGuardMask))
                 return false;
-            edgeLocked = true;
-
-            if (vault.IsCompactionFenceActive || !vault.TryLockBuffer(TriTableBufferId, TableOwnerSystemId))
-                return false;
-            triLocked = true;
+            mutationGuardAcquired = true;
 
             if (vault.IsCompactionFenceActive ||
                 !vault.TryReadOnlyHandle(in _edgeTableHandle, out NativeArray<int>.ReadOnly edgeTable) ||
@@ -626,20 +617,20 @@ public static class MCTables
                 return false;
             }
 
-            lease = new JobTableLease(vault, in _edgeTableHandle, in _triTableHandle, edgeLocked: true, triLocked: true);
-            success = true;
+            lease = new JobTableLease(vault, in _edgeTableHandle, in _triTableHandle, JobTableMutationGuardMask);
+            mutationGuardAcquired = false;
             return true;
         }
         finally
         {
-            if (!success)
-            {
-                if (triLocked)
-                    vault.TryUnlockBuffer(TriTableBufferId, TableOwnerSystemId);
-                if (edgeLocked)
-                    vault.TryUnlockBuffer(EdgeTableBufferId, TableOwnerSystemId);
-            }
+            if (mutationGuardAcquired)
+                vault.ReleaseMutationGuard(JobTableMutationGuardMask);
         }
+    }
+
+    static ulong TableMutationGuardBit(BufferID bufferId)
+    {
+        return 1UL << (unchecked((int)(uint)(int)bufferId) & 31);
     }
 
     static void EnterInitGate()
@@ -4026,7 +4017,7 @@ public class HectonVoxelEngine : MonoBehaviour, Hecton8.Core.Contracts.IVoxelSon
     {
         internal HectonVoxelEngine _owner;
         internal int _slotIndex;
-        internal FixedList512Bytes<BufferID> _lockedScratchBuffers;
+        internal ulong _lockedScratchMutationGuardMask;
         internal IDataVault _lockedScratchVault;
         internal byte _scratchBuffersLocked;
 
@@ -4036,7 +4027,7 @@ public class HectonVoxelEngine : MonoBehaviour, Hecton8.Core.Contracts.IVoxelSon
         {
             _owner = owner;
             _slotIndex = slotIndex;
-            _lockedScratchBuffers = default;
+            _lockedScratchMutationGuardMask = 0UL;
             _lockedScratchVault = null;
             _scratchBuffersLocked = 0;
         }
@@ -4121,7 +4112,8 @@ public class HectonVoxelEngine : MonoBehaviour, Hecton8.Core.Contracts.IVoxelSon
             if (_scratchBuffersLocked != 0)
             {
                 IDataVault vault = _lockedScratchVault != null ? _lockedScratchVault : _owner._streamingScratchVault;
-                HectonVoxelEngine.UnlockStreamingScratchBuffers(vault, ref _lockedScratchBuffers);
+                HectonVoxelEngine.ReleaseStreamingScratchMutationGuard(vault, _lockedScratchMutationGuardMask);
+                _lockedScratchMutationGuardMask = 0UL;
                 _lockedScratchVault = null;
                 _scratchBuffersLocked = 0;
             }
@@ -4129,7 +4121,7 @@ public class HectonVoxelEngine : MonoBehaviour, Hecton8.Core.Contracts.IVoxelSon
             _owner.ReleaseStreamingScratchLease(_slotIndex);
             _owner = null;
             _slotIndex = -1;
-            _lockedScratchBuffers = default;
+            _lockedScratchMutationGuardMask = 0UL;
             _lockedScratchVault = null;
             _scratchBuffersLocked = 0;
         }
@@ -10010,35 +10002,34 @@ public class HectonVoxelEngine : MonoBehaviour, Hecton8.Core.Contracts.IVoxelSon
         if (bufferIds.Length <= 0 || vault.IsCompactionFenceActive)
             return false;
 
-        FixedList512Bytes<BufferID> lockedBuffers = default;
+        ulong mutationGuardMask = 0UL;
         for (int i = 0; i < bufferIds.Length; i++)
+            mutationGuardMask |= StreamingScratchMutationGuardBit(bufferIds[i]);
+
+        if (mutationGuardMask == 0UL || vault.IsCompactionFenceActive)
+            return false;
+
+        bool mutationGuardAcquired = false;
+        try
         {
-            BufferID bufferId = bufferIds[i];
-            if (vault.IsCompactionFenceActive || !vault.TryLockBuffer(bufferId, SystemID.WorldStreaming))
-            {
-                UnlockStreamingScratchBuffers(vault, ref lockedBuffers);
+            if (!vault.TryAcquireMutationGuard(mutationGuardMask))
                 return false;
-            }
 
-            if (lockedBuffers.Length >= lockedBuffers.Capacity)
-            {
-                vault.TryUnlockBuffer(bufferId, SystemID.WorldStreaming);
-                UnlockStreamingScratchBuffers(vault, ref lockedBuffers);
-                return false;
-            }
-
-            lockedBuffers.Add(bufferId);
+            mutationGuardAcquired = true;
             if (vault.IsCompactionFenceActive)
-            {
-                UnlockStreamingScratchBuffers(vault, ref lockedBuffers);
                 return false;
-            }
-        }
 
-        lease._lockedScratchBuffers = lockedBuffers;
-        lease._lockedScratchVault = vault;
-        lease._scratchBuffersLocked = 1;
-        return true;
+            lease._lockedScratchMutationGuardMask = mutationGuardMask;
+            lease._lockedScratchVault = vault;
+            lease._scratchBuffersLocked = 1;
+            mutationGuardAcquired = false;
+            return true;
+        }
+        finally
+        {
+            if (mutationGuardAcquired)
+                vault.ReleaseMutationGuard(mutationGuardMask);
+        }
     }
 
     void UnlockStreamingScratchJobLifetime(ref VoxelStreamingScratchLease lease)
@@ -10049,31 +10040,31 @@ public class HectonVoxelEngine : MonoBehaviour, Hecton8.Core.Contracts.IVoxelSon
         IDataVault vault = lease._lockedScratchVault != null ? lease._lockedScratchVault : _streamingScratchVault;
         if (vault == null)
         {
-            lease._lockedScratchBuffers = default;
+            lease._lockedScratchMutationGuardMask = 0UL;
             lease._lockedScratchVault = null;
             lease._scratchBuffersLocked = 0;
             return;
         }
 
-        UnlockStreamingScratchBuffers(vault, ref lease._lockedScratchBuffers);
+        ReleaseStreamingScratchMutationGuard(vault, lease._lockedScratchMutationGuardMask);
+        lease._lockedScratchMutationGuardMask = 0UL;
         lease._lockedScratchVault = null;
         lease._scratchBuffersLocked = 0;
     }
 
-    static void UnlockStreamingScratchBuffers(
+    static void ReleaseStreamingScratchMutationGuard(
         IDataVault vault,
-        ref FixedList512Bytes<BufferID> lockedBuffers)
+        ulong mutationGuardMask)
     {
-        if (vault == null)
-        {
-            lockedBuffers = default;
+        if (vault == null || mutationGuardMask == 0UL)
             return;
-        }
 
-        for (int i = lockedBuffers.Length - 1; i >= 0; i--)
-            vault.TryUnlockBuffer(lockedBuffers[i], SystemID.WorldStreaming);
+        vault.ReleaseMutationGuard(mutationGuardMask);
+    }
 
-        lockedBuffers = default;
+    static ulong StreamingScratchMutationGuardBit(BufferID bufferId)
+    {
+        return 1UL << (unchecked((int)(uint)(int)bufferId) & 31);
     }
 
     static void ReleaseStreamingScratchHandle<T>(
@@ -10832,7 +10823,7 @@ public class HectonVoxelEngine : MonoBehaviour, Hecton8.Core.Contracts.IVoxelSon
             return;
 
         _voxelRebuildOverBudgetConsecutive = 0;
-        LODSystemManager lodSystem = LODSystemManager.Instance;
+        LODSystemManager lodSystem = GlobalRegistry.LODSystem;
         if (lodSystem != null)
             lodSystem.ApplyEmergencyLODBiasStrike();
 

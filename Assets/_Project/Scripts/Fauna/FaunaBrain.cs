@@ -731,6 +731,8 @@ namespace Hecton8.AI
         private HectonVoxelEngine _voxelEngine;
         private ISimulationBucketer _simulationBucketerRuntime;
         private SystemDispatcher _dispatcherRuntime;
+        private IFaunaSpatialContact _apexRivalContact;
+        private CreatureDamageManager _creatureDamageManager;
 
         // ══════════════════════════════════════════════════════════
         //  SERIALIZATION MIGRATION (Option B Data Preservation)
@@ -1604,9 +1606,11 @@ namespace Hecton8.AI
             bool hasApexRivalTarget = false;
             Vector3 apexRivalPosition = default;
             _apexRivalTarget = null;
+            _apexRivalContact = null;
             if (isApexPredator &&
                 TryResolveNearestRivalApex(selfPosition, apexTerritoryRadius, out IFaunaSpatialContact rivalContact, out Vector3 rivalPosition))
             {
+                _apexRivalContact = rivalContact;
                 _apexRivalTarget = rivalContact != null ? rivalContact.ContactTransform : null;
                 if (_apexRivalTarget != null)
                 {
@@ -3755,28 +3759,12 @@ namespace Hecton8.AI
             if (target == null)
                 return;
 
-            Collider targetCollider = null;
-            target.TryGetComponent(out targetCollider);
-            if (targetCollider == null)
-                targetCollider = target.GetComponentInChildren<Collider>(true);
-
-            Bounds bounds = targetCollider != null
-                ? targetCollider.bounds
-                : new Bounds(fallbackPosition, Vector3.one * (PredatorLungeTargetFallbackExtent * 2f));
-            if (!IsFiniteBounds(bounds) || bounds.extents.sqrMagnitude <= 0.000001f)
-                bounds = new Bounds(fallbackPosition, Vector3.one * (PredatorLungeTargetFallbackExtent * 2f));
-
-            _lungeContactTargetCenter = bounds.center;
-            _lungeContactTargetExtents = new Vector3(
-                math.max(0.05f, math.abs(bounds.extents.x)),
-                math.max(0.05f, math.abs(bounds.extents.y)),
-                math.max(0.05f, math.abs(bounds.extents.z)));
-            _lungeContactTargetHash = targetCollider != null
-                ? Hecton8.Core.RuntimeOriginRoute.FoldEntityIdToSourceId(EntityId.ToULong(targetCollider.GetEntityId()))
-                : Hecton8.Core.RuntimeOriginRoute.FoldEntityIdToSourceId(EntityId.ToULong(target.GetEntityId()));
+            Vector3 safeCenter = IsFiniteVector(fallbackPosition) ? fallbackPosition : Vector3.zero;
+            _lungeContactTargetCenter = safeCenter;
+            _lungeContactTargetExtents = Vector3.one * PredatorLungeTargetFallbackExtent;
+            _lungeContactTargetHash = Hecton8.Core.RuntimeOriginRoute.FoldEntityIdToSourceId(EntityId.ToULong(target.GetEntityId()));
             if (_lungeContactTargetHash == 0u)
                 _lungeContactTargetHash = 1u;
-            _lungeContactTargetMaterialId = ResolveHighSpeedImpactTargetMaterialId(targetCollider, HighSpeedImpactSignal.MaterialMetal);
             _lungeContactTargetActive = true;
         }
 
@@ -3882,18 +3870,6 @@ namespace Hecton8.AI
             if (distanceToFace.y <= distanceToFace.z)
                 return new float3(0f, math.select(1f, -1f, localPoint.y < 0f), 0f);
             return new float3(0f, 0f, math.select(1f, -1f, localPoint.z < 0f));
-        }
-
-        private static byte ResolveHighSpeedImpactTargetMaterialId(Collider hitCollider, byte fallbackMaterialId)
-        {
-            if (hitCollider == null)
-                return fallbackMaterialId;
-
-            if (hitCollider.TryGetComponent(out IImpactMaterialProvider directProvider))
-                return directProvider.ImpactAudioMaterialId;
-
-            IImpactMaterialProvider parentProvider = hitCollider.GetComponentInParent<IImpactMaterialProvider>();
-            return parentProvider != null ? parentProvider.ImpactAudioMaterialId : fallbackMaterialId;
         }
 
         private void EmitPredatorLungeCcdImpact(
@@ -5167,17 +5143,26 @@ namespace Hecton8.AI
                 return;
 
             if (_faunaKinematicsRuntime == null)
-                TryGetComponent(out _faunaKinematicsRuntime);
-
-            if (_faunaKinematicsRuntime == null)
                 _faunaKinematicsRuntime = gameObject.AddComponent<FaunaKinematicsRuntime>();
 
             _faunaKinematicsRuntime.BindFromFauna(this, _rb);
 
-            if (!TryGetComponent(out Hecton8.AI.CreatureDamageManager creatureDamageManager))
-                creatureDamageManager = gameObject.AddComponent<Hecton8.AI.CreatureDamageManager>();
+            CreatureDamageManager creatureDamageManager = _creatureDamageManager;
+            if (creatureDamageManager == null)
+            {
+                creatureDamageManager = gameObject.AddComponent<CreatureDamageManager>();
+                _creatureDamageManager = creatureDamageManager;
+            }
 
             creatureDamageManager.BindFromFauna(this);
+        }
+
+        internal void BindCreatureDamageManagerOwner(CreatureDamageManager creatureDamageManager)
+        {
+            if (creatureDamageManager == null)
+                return;
+
+            _creatureDamageManager = creatureDamageManager;
         }
 
         private void UpdateProceduralStrikeIntent(AIState resolvedState, Transform strikeTarget)
@@ -5698,16 +5683,46 @@ namespace Hecton8.AI
                 : Vector3.zero;
         }
 
-        private static bool TryResolveFaunaPredationTarget(Transform target, out IFaunaPredationTarget predationTarget)
+        private bool TryResolveFaunaPredationTarget(Transform target, out IFaunaPredationTarget predationTarget)
         {
             predationTarget = null;
-            for (Transform current = target; current != null; current = current.parent)
-            {
-                if (current.TryGetComponent(out predationTarget) && predationTarget != null)
-                    return true;
-            }
+            if (target == null)
+                return false;
+
+            if (TryResolveKnownPredationTarget(_sensorSuite.currentPreyOwner, target, out predationTarget) ||
+                TryResolveKnownPredationTarget(_sensorSuite.currentScavengeTargetOwner, target, out predationTarget) ||
+                TryResolveKnownPredationTarget(_sensorSuite.currentDistractorOwner, target, out predationTarget) ||
+                TryResolveKnownPredationTarget(_apexRivalContact, target, out predationTarget))
+                return true;
 
             return false;
+        }
+
+        private static bool TryResolveKnownPredationTarget(
+            Component owner,
+            Transform target,
+            out IFaunaPredationTarget predationTarget)
+        {
+            predationTarget = owner as IFaunaPredationTarget;
+            return predationTarget != null &&
+                   IsTargetTransformForContact(target, predationTarget.ContactTransform);
+        }
+
+        private static bool TryResolveKnownPredationTarget(
+            IFaunaSpatialContact contact,
+            Transform target,
+            out IFaunaPredationTarget predationTarget)
+        {
+            predationTarget = contact as IFaunaPredationTarget;
+            return predationTarget != null &&
+                   IsTargetTransformForContact(target, predationTarget.ContactTransform);
+        }
+
+        private static bool IsTargetTransformForContact(Transform target, Transform contactTransform)
+        {
+            return target != null &&
+                   contactTransform != null &&
+                   (ReferenceEquals(target, contactTransform) || target.IsChildOf(contactTransform));
         }
 
         private bool TryResolveAttackTargetLogicPosition(Transform target, out Vector3 targetPosition)
@@ -5752,13 +5767,8 @@ namespace Hecton8.AI
                 return true;
             }
 
-            if (target.TryGetComponent(out Rigidbody targetBody))
-            {
-                targetPosition = targetBody.position;
-                return true;
-            }
-
-            return false;
+            targetPosition = target.position;
+            return IsFiniteVector(targetPosition);
         }
 
         private bool TryResolveAttackTargetLogicAup(Transform target, Vector3 fallbackPosition, out AbsoluteUniversePosition targetAup)
@@ -5781,10 +5791,8 @@ namespace Hecton8.AI
                 return true;
             }
 
-            if (target.TryGetComponent(out Rigidbody targetBody))
-                return TryResolveAupFromRuntimeOrigin(targetBody.position, out targetAup);
-
-            return TryResolveAupFromRuntimeOrigin(fallbackPosition, out targetAup);
+            return TryResolveAupFromRuntimeOrigin(target.position, out targetAup) ||
+                   TryResolveAupFromRuntimeOrigin(fallbackPosition, out targetAup);
         }
 
         private Vector3 ResolveSelfLogicForward()
@@ -6119,8 +6127,7 @@ namespace Hecton8.AI
                 Vector3 impactPoint = hasTargetLogicPosition ? targetLogicPosition : target.position;
                 Vector3 impactDir = ResolveDominantAxisDirection(impactPoint - selfPosition);
 
-                if (!TryQueuePredatorBiteDamage(target, damage, impactPoint, impactDir))
-                    ApplyPredatorBiteOwnerFallbackDamage(target, damage, impactPoint);
+                TryQueuePredatorBiteDamage(target, damage, impactPoint, impactDir);
 
                 // 3. JUICE (User REQ: Camera Shake + Physical Force)
                 if (_speciesProfile != null && _speciesProfile.attackShakeProfile != null)
@@ -6216,43 +6223,6 @@ namespace Hecton8.AI
             return true;
         }
 
-        private void ApplyPredatorBiteOwnerFallbackDamage(Transform target, float damage, Vector3 impactPoint)
-        {
-            if (target == null || damage <= 0f || !math.isfinite(damage))
-                return;
-
-            IDamageReceiver damageReceiver = target.GetComponentInParent<IDamageReceiver>();
-            if (damageReceiver == null)
-                return;
-
-            Transform targetTransform = target;
-            Vector3 targetPosition = targetTransform.position;
-            float3 fallbackImpactPoint = IsFiniteVector(targetPosition)
-                ? new float3(targetPosition.x, targetPosition.y, targetPosition.z)
-                : float3.zero;
-            float3 safeImpactPoint3 = SanitizeFiniteInputFloat3(
-                new float3(impactPoint.x, impactPoint.y, impactPoint.z),
-                fallbackImpactPoint);
-            Vector3 safeImpactPoint = new Vector3(safeImpactPoint3.x, safeImpactPoint3.y, safeImpactPoint3.z);
-            Vector3 localPoint = targetTransform.InverseTransformPoint(safeImpactPoint);
-            float3 localPoint3 = SanitizeFiniteInputFloat3(new float3(localPoint.x, localPoint.y, localPoint.z), float3.zero);
-
-            DamagePacket packet = new DamagePacket
-            {
-                Channel = DamageChannel.Integrity,
-                PreviousValue = 0f,
-                NextValue = 0f,
-                Magnitude = damage,
-                LocalPoint = localPoint3,
-                DamageType = CombatDamageTypes.Impact,
-                IntegrityDelta = 0,
-                Depth = 0f,
-                SourceId = IsApexPredator() ? DamageSourceIds.FaunaLeviathanBite : DamageSourceIds.FaunaBite,
-                TraumaLevel = 0
-            };
-            damageReceiver.ReceiveDamage(in packet);
-        }
-
         private void QueueProceduralAudioPing(
             Vector3 sourcePosition,
             float intensity,
@@ -6321,9 +6291,6 @@ namespace Hecton8.AI
             if (playerContext != null && ReferenceEquals(playerContext.PlayerTransform, target))
                 playerForceSink = playerContext.PlayerMovement as IPlayerMovementForceSink;
 
-            if (playerForceSink == null && target.TryGetComponent(out IPlayerMovementForceSink movementSink))
-                playerForceSink = movementSink;
-
             if (playerForceSink == null)
                 return;
 
@@ -6371,9 +6338,6 @@ namespace Hecton8.AI
             IPlayerRuntimeContext playerContext = _playerRuntimeContext;
             if (playerContext != null && ReferenceEquals(playerContext.PlayerTransform, target))
                 movement = playerContext.PlayerMovement as IPlayerMovementTraumaSink;
-
-            if (movement == null)
-                target.TryGetComponent(out movement);
 
             if (movement == null)
                 return;
@@ -6437,8 +6401,8 @@ namespace Hecton8.AI
 
             TakeDamageFromSource(damage, hitPoint);
             ApplyFaunaInteraction(FaunaInteractionKind.Cut, hitPoint, damage);
-            if (TryGetComponent(out CreatureDamageManager damageManager))
-                damageManager.RegisterWoundWS(hitPoint, damage);
+            if (_creatureDamageManager != null)
+                _creatureDamageManager.RegisterWoundWS(hitPoint, damage);
         }
 
         /// <summary>
@@ -6710,9 +6674,6 @@ namespace Hecton8.AI
         private void ApplySimplifiedRagdollHandoff()
         {
             if (_simplifiedRagdollHandoff == null)
-                TryGetComponent(out _simplifiedRagdollHandoff);
-
-            if (_simplifiedRagdollHandoff == null)
                 return;
 
             Vector3 lastVertexVelocity = _rb != null ? _rb.linearVelocity : Vector3.zero;
@@ -6938,8 +6899,8 @@ namespace Hecton8.AI
             input = default;
             output = default;
             return vault != null &&
-                   IsVaultHandleCreated(in inputHandle) &&
-                   IsVaultHandleCreated(in outputHandle) &&
+                   IsCorpseSinkVaultHandle(in inputHandle, BufferID.FaunaCorpseSinkKinematicInput) &&
+                   IsCorpseSinkVaultHandle(in outputHandle, BufferID.FaunaCorpseSinkKinematicOutput) &&
                    vault.TryResolveHandle(in inputHandle, out input) &&
                    input.IsCreated &&
                    input.Length >= 1 &&
@@ -6951,8 +6912,8 @@ namespace Hecton8.AI
         private void ReleaseCorpseSinkingKinematicsBuffers()
         {
             bool hasNativeState =
-                IsVaultHandleCreated(in _corpseSinkInputHandle) ||
-                IsVaultHandleCreated(in _corpseSinkOutputHandle) ||
+                IsCorpseSinkVaultHandle(in _corpseSinkInputHandle, BufferID.FaunaCorpseSinkKinematicInput) ||
+                IsCorpseSinkVaultHandle(in _corpseSinkOutputHandle, BufferID.FaunaCorpseSinkKinematicOutput) ||
                 _corpseSinkJobScheduled;
             TryUnregisterCorpseSinkLateFrame();
             if (!hasNativeState)
@@ -6987,9 +6948,14 @@ namespace Hecton8.AI
             _corpseSinkOutputHandle = default;
         }
 
-        private static bool IsVaultHandleCreated<T>(in VaultGenerationHandle<T> handle) where T : struct
+        private static bool IsCorpseSinkVaultHandle<T>(
+            in VaultGenerationHandle<T> handle,
+            BufferID expectedBufferId)
+            where T : struct
         {
-            return handle.BufferID != 0u && handle.Generation != 0u;
+            return handle.BufferID == unchecked((uint)(int)expectedBufferId) &&
+                   handle.Generation != 0u &&
+                   handle.SystemID == (uint)SystemID.AnimationFauna;
         }
 
         private void TryRegisterCorpseSinkLateFrame()
@@ -7501,6 +7467,7 @@ namespace Hecton8.AI
             _currentPackRole = PredatorPackRole.None;
             _flankingManeuverDetected = false;
             _apexRivalTarget = null;
+            _apexRivalContact = null;
             _baitFeedingTarget = null;
             _forcedMigrationTarget = default;
             _forcedMigrationTargetAup = default;

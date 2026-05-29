@@ -144,7 +144,7 @@ namespace Hecton8.Core
 
         private void OnDisable()
         {
-            CompleteValidationJob(forceComplete: true);
+            ForceCompleteValidationJobInPostSimulationWindow();
             UnlockTargetBuffers();
             TryUnregisterHotSwapListener();
             UnregisterDispatcherPhases();
@@ -428,7 +428,7 @@ namespace Hecton8.Core
                 return;
             }
 
-            CompleteValidationJob(forceComplete: true);
+            ForceCompleteValidationJobInPostSimulationWindow();
             UnlockTargetBuffers();
             ReleaseVaultHandles(_dataVault);
             _dataVault = nextVault;
@@ -1179,7 +1179,15 @@ namespace Hecton8.Core
 
             if (forceComplete)
             {
-                DispatcherJobFence.TryComplete(ref _validationHandle, forceComplete: true);
+                DispatcherJobFence.BeginPostSimulationSwapWindow();
+                try
+                {
+                    DispatcherJobFence.TryComplete(ref _validationHandle, forceComplete: true);
+                }
+                finally
+                {
+                    DispatcherJobFence.EndPostSimulationSwapWindow();
+                }
             }
             else if (!DispatcherJobFence.TryFinalizeCompleted(ref _validationHandle))
             {
@@ -1206,6 +1214,19 @@ namespace Hecton8.Core
             }
 
             return true;
+        }
+
+        private bool ForceCompleteValidationJobInPostSimulationWindow()
+        {
+            DispatcherJobFence.BeginPostSimulationSwapWindow();
+            try
+            {
+                return CompleteValidationJob(forceComplete: true);
+            }
+            finally
+            {
+                DispatcherJobFence.EndPostSimulationSwapWindow();
+            }
         }
 
         private void ConsumeResults(IDataVault vault, float elapsedMs)
@@ -1670,7 +1691,7 @@ namespace Hecton8.Core
             if (vault == null || !EnsureVaultBuffers(vault))
                 return false;
 
-            CompleteValidationJob(forceComplete: true);
+            ForceCompleteValidationJobInPostSimulationWindow();
             if (!TryResolveRequired(vault, in _mockInventoryHandle, MockInventoryCount, out NativeArray<MockInventorySpan> mock))
                 return false;
 

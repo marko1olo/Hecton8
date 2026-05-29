@@ -2,7 +2,7 @@
   "agentId": "1403",
   "role": "MONOBEHAVIOUR_RESIDUAL_NATIVE_FIELD_PURGER",
   "domain": "ECHELON 1 CORE MEMORY AND LIFECYCLE",
-  "generatedAt": "2026-05-28T14:42:00+04:00",
+  "generatedAt": "2026-05-29T01:26:37+04:00",
   "status": "PENDING_VERIFICATION",
   "reasonStatusIsPending": "No successful full project build, Unity Test Runner pass, or profiler capture exists. One gated full solution build exited 1 after 99.9 seconds with no diagnostic lines and left a child dotnet process that was stopped. A gated targeted Hecton8.Core.csproj build failed on out-of-domain XRPass errors in HectonVRBrownoutFeature.cs lines 441 and 480.",
   "promptExtraction": {
@@ -19,16 +19,17 @@
     "Assets/_Project/Scripts/SaveSystem/H8BinaryWorldPager.cs",
     "Assets/_Project/Scripts/Gameplay/ContextualPhysicalIkRig.cs",
     "Assets/_Project/Scripts/Gameplay/ContextualPhysicalIkRuntime.cs",
+    "Assets/_Project/Scripts/Animation/VRPhysicalHandPresenceIkJobs.cs",
     "Assets/_Project/Tests/Editor/MonoBehaviourResidualNativePurge1403EditTests.cs"
   ],
   "sourceSha256": [
     {
       "path": "Assets/_Project/Scripts/SaveManager.cs",
-      "hash": "7FF1ECB26F65F7EF9BC171229896F232586772DAA4D8128F3236618B96134184"
+      "hash": "EA53CE5A3B61DFFCA6899914A97EDBAA5918F1175DEE01D9C881A8C47C4BFC30"
     },
     {
       "path": "Assets/_Project/Scripts/SaveBinaryStorage.cs",
-      "hash": "8FB23C9EE62C7A45AEA2C2B5A2A49403B6D691DF393C6D3EEFBA3F184B07AC6B"
+      "hash": "C2F5FE36213A6B0752D95E18D603A04909DB8655C440E902F8916AC7A09C1819"
     },
     {
       "path": "Assets/_Project/Scripts/SaveSystem/H8BinaryWorldPager.cs",
@@ -41,6 +42,10 @@
     {
       "path": "Assets/_Project/Scripts/Gameplay/ContextualPhysicalIkRig.cs",
       "hash": "C297F867FBDF55845581C6067856A1128B931CC4E374A9587BEB9353EB7CB29A"
+    },
+    {
+      "path": "Assets/_Project/Scripts/Animation/VRPhysicalHandPresenceIkJobs.cs",
+      "hash": "655A3247D325E57F886CBA7674B16B41CD461DC470FED8F07C6DE2E36B596BE8"
     },
     {
       "path": "Assets/_Project/Tests/Editor/MonoBehaviourResidualNativePurge1403EditTests.cs",
@@ -69,6 +74,21 @@
       "change": "AsyncWriteManager write, flush, Unix/Windows native IO, and read-range helper routes"
     },
     {
+      "file": "Assets/_Project/Scripts/SaveBinaryStorage.cs",
+      "lines": "66-69, 92, 1053-1058, 1154-1158, 1242-1247, 1383-1388, 1418-1469, 1576-1581",
+      "change": "Unix native path encoding scratch is now a fixed unmanaged static buffer and pointer-based encoder instead of static managed byte[]"
+    },
+    {
+      "file": "Assets/_Project/Scripts/SaveBinaryStorage.cs",
+      "lines": "1859, 9855-9859",
+      "change": "managed Deflate fallback stream copy scratch now uses stackalloc Span<byte> instead of static managed byte[]"
+    },
+    {
+      "file": "Assets/_Project/Scripts/SaveBinaryStorage.cs",
+      "lines": "9660-9691, 9742-9748, 9760-9800",
+      "change": "write-side block compression is native LZ4 only and cannot emit ManagedDeflateBlockLengthFlag; managed Deflate remains read-only legacy decompression"
+    },
+    {
       "file": "Assets/_Project/Scripts/SaveManager.cs",
       "lines": "74-75",
       "change": "1403-owned WFC and async persistence dump paths"
@@ -90,8 +110,18 @@
     },
     {
       "file": "Assets/_Project/Scripts/SaveManager.cs",
-      "lines": "1474, 2265-2268",
-      "change": "WFC GlobalDataVault handle readiness validation now uses TryReadOnlyHandle and a NativeArray<byte>.ReadOnly grid validator instead of mutable TryResolveHandle"
+      "line": 108,
+      "change": "IsInitialized no longer hot-polls GlobalRegistry.Save; it reflects the service registration field owned by SaveManager lifecycle"
+    },
+    {
+      "file": "Assets/_Project/Scripts/SaveManager.cs",
+      "lines": "1461, 1474-1482",
+      "change": "WFC GlobalDataVault handle readiness validation now rejects active compaction fences and uses TryReadOnlyHandle plus a NativeArray<byte>.ReadOnly grid validator instead of mutable TryResolveHandle"
+    },
+    {
+      "file": "Assets/_Project/Scripts/SaveManager.cs",
+      "lines": "1494-1533, 1729-1767, 1797-1834, 1924-1942, 2108-2119",
+      "change": "WFC writer routes capture the exact IDataVault and VaultGenerationHandle acquired, then release the same handle from finally blocks"
     },
     {
       "file": "Assets/_Project/Scripts/SaveManager.cs",
@@ -117,6 +147,16 @@
       "file": "Assets/_Project/Scripts/Gameplay/ContextualPhysicalIkRuntime.cs",
       "lines": "2670-2773",
       "change": "IK dump writer stages sanitized telemetry bytes with BinaryPrimitives and NativeArray<byte>"
+    },
+    {
+      "file": "Assets/_Project/Scripts/Animation/VRPhysicalHandPresenceIkJobs.cs",
+      "lines": "242-310, 348-395",
+      "change": "VR hand IK black-box dump writer no longer creates FileStream/BinaryWriter; it stages a 24-byte header plus 128-byte fixed telemetry entries into NativeArray<byte> and writes through AsyncWriteManager.WriteAll"
+    },
+    {
+      "file": "Assets/_Project/Scripts/Animation/VRPhysicalHandPresenceIkJobs.cs",
+      "line": 227,
+      "change": "unused private VRPhysicalHandPresenceVault TryResolveBuffers/TryResolveLane mutable TryResolveHandle route removed"
     }
   ],
   "monoBehaviourNativeFieldAudit": {
@@ -129,9 +169,10 @@
       "Assets/_Project/Scripts/Gameplay/ContextualPhysicalIkRuntime.cs::ContextualPhysicalIkRuntime forbiddenNativeFieldDeclarations=0"
     ],
     "braceBalance": [
-      "Assets/_Project/Scripts/SaveBinaryStorage.cs open=1117 close=1117 balanced=True",
-      "Assets/_Project/Scripts/SaveManager.cs open=631 close=631 balanced=True",
+      "Assets/_Project/Scripts/SaveBinaryStorage.cs open=1164 close=1164 balanced=True",
+      "Assets/_Project/Scripts/SaveManager.cs open=701 close=701 balanced=True",
       "Assets/_Project/Scripts/SaveSystem/H8BinaryWorldPager.cs open=387 close=387 balanced=True",
+      "Assets/_Project/Scripts/Animation/VRPhysicalHandPresenceIkJobs.cs open=95 close=95 balanced=True",
       "Assets/_Project/Scripts/Gameplay/ContextualPhysicalIkRuntime.cs open=225 close=225 balanced=True",
       "Assets/_Project/Scripts/Gameplay/ContextualPhysicalIkRig.cs open=267 close=267 balanced=True"
     ]
@@ -139,8 +180,8 @@
   "zeroGcTextAudit": {
     "evidenceClass": "STATIC_SOURCE",
     "broadIoAndPoolScan": {
-      "command": "rg -n \"ArrayPool|using System\\.Buffers;|byte\\[\\] Bytes|FileStream|BinaryWriter|Marshal\\.Copy|\\.WriteAsync\\(|File\\.Open\\(|new FileInfo|\\bFileInfo\\b\" Assets/_Project/Scripts/SaveBinaryStorage.cs Assets/_Project/Scripts/SaveManager.cs Assets/_Project/Scripts/Gameplay/ContextualPhysicalIkRuntime.cs Assets/_Project/Scripts/Gameplay/ContextualPhysicalIkRig.cs",
-      "result": "NO_HITS"
+      "command": "rg -n \"FileStream|BinaryWriter|ArrayPool|Marshal\\.Copy|\\.WriteAsync|File\\.Open|FileInfo|new byte\\[|new FileStream|new BinaryWriter\" Assets/_Project/Scripts/SaveManager.cs Assets/_Project/Scripts/SaveBinaryStorage.cs Assets/_Project/Scripts/Gameplay/ContextualPhysicalIkRig.cs Assets/_Project/Scripts/Gameplay/ContextualPhysicalIkRuntime.cs Assets/_Project/Scripts/Animation/VRPhysicalHandPresenceIkJobs.cs Assets/_Project/Scripts/SaveSystem/H8BinaryWorldPager.cs",
+      "result": "SaveManager, SaveBinaryStorage, ContextualPhysicalIkRig, ContextualPhysicalIkRuntime, and VRPhysicalHandPresenceIkJobs have zero FileStream/BinaryWriter/ArrayPool/Marshal.Copy/.WriteAsync/File.Open/FileInfo/new byte[]/TryResolveHandle/DeflateBlockCompressManaged/usedManagedFallback hits. Residual hits are H8BinaryWorldPager cold persistent page/WAL FileStream routes and internal pager mutable TryResolveHandle routes."
     },
     "storageDependencyMethodScan": {
       "methods": [
@@ -161,7 +202,12 @@
         "TryFlushPathNative",
         "TryWriteAllNativeUnix",
         "TryWriteUnixSegment",
+        "TryEncodePathUtf8",
+        "TryReadAbsoluteFileToNativeBuffer",
         "TryReadAbsoluteFileRangeToNativeBuffer",
+        "CopyStreamWithManagedCompressionScratch",
+        "TryCompressBlock",
+        "EncodeCompressedBlockLength",
         "TryCorruptFirstIndexedSectorBlockForSmoke"
       ],
       "newReferenceTypeCandidates": 0,
@@ -211,6 +257,8 @@
     },
     "hotPathResult": "TOTAL_HOT_PATH_FORBIDDEN_PATTERN_HITS=0 for Tick/FastTick/LateFrameTick/FixedUpdate/Update in modified target files",
     "wfcVaultValidationScan": "TryEnsureWfcOutpostGridHandle/TryAcquireWfcOutpostGridWrite/ReleaseWfcOutpostGridWrite allNew=0 newRefCandidate=0 stringFormat=0 toString=0 linq=0 foreach=0 interpolated=0",
+    "vrHandIkBlackBoxScan": "TryDumpTelemetry line 242 allNew=1 NativeArray<byte> Temp only, newRefCandidate=0 stringFormat=0 toString=0 linq=0 foreach=0 fileStreamOrBinaryWriter=0 interpolated=0; TryDumpTelemetryOnFault line 322 allNew=0 and all forbidden pattern counts 0; WriteEntry/WriteFloat3/WriteFloat/WriteUInt16LittleEndian/WriteUInt32LittleEndian/WriteByte have newRefCandidate=0 and fileStreamOrBinaryWriter=0. Removed unused private VRPhysicalHandPresenceVault mutable TryResolveHandle resolver; broad scan for TryResolveHandle in VRPhysicalHandPresenceIkJobs returns zero.",
+    "managedDeflateWriteScan": "DeflateBlockCompressManaged=0, usedManagedFallback=0. TryCompressBlock line 9660 allNew=0 newRefCandidate=0 managedIoCompressionHits=0. EncodeCompressedBlockLength line 9742 allNew=0 newRefCandidate=0 and cannot set ManagedDeflateBlockLengthFlag. DeflateBlockDecompressManaged line 9760 still has managed stream hits and is classified as legacy read-only compatibility.",
     "notClaimed": "This is a source scan, not a runtime GC allocation profiler capture."
   },
   "dataSovereignty": {
@@ -229,22 +277,23 @@
       "H8BinaryWorldPager._telemetryRingHandle"
     ],
     "tryAcquireWriteLockLines": [
-      "Assets/_Project/Scripts/SaveManager.cs:1501",
+      "Assets/_Project/Scripts/SaveManager.cs:1522",
       "Assets/_Project/Scripts/SaveSystem/H8BinaryWorldPager.cs:1153"
     ],
     "readOnlyValidationLines": [
-      "Assets/_Project/Scripts/SaveManager.cs:1474",
-      "Assets/_Project/Scripts/SaveManager.cs:2265-2268",
+      "Assets/_Project/Scripts/SaveManager.cs:1488",
+      "Assets/_Project/Scripts/SaveManager.cs:2313-2318",
       "Assets/_Project/Scripts/SaveSystem/H8BinaryWorldPager.cs:1134-1136",
       "Assets/_Project/Scripts/SaveSystem/H8BinaryWorldPager.cs:3032"
     ],
-    "releaseInvalidBufferLine": "Assets/_Project/Scripts/SaveSystem/H8BinaryWorldPager.cs:1164 and Assets/_Project/Scripts/SaveManager.cs:1509",
-    "releaseHelperLines": "Assets/_Project/Scripts/SaveManager.cs:1514-1523 and Assets/_Project/Scripts/SaveSystem/H8BinaryWorldPager.cs:1168-1175",
+    "releaseInvalidBufferLine": "Assets/_Project/Scripts/SaveSystem/H8BinaryWorldPager.cs:1164 and Assets/_Project/Scripts/SaveManager.cs:1544",
+    "releaseHelperLines": "Assets/_Project/Scripts/SaveManager.cs:1550-1558 and Assets/_Project/Scripts/SaveSystem/H8BinaryWorldPager.cs:1168-1175",
     "finallyReleaseProof": [
       "dirty signal route: acquire line 1713, finally line 1748, release line 1751",
       "storm route: acquire line 1779, finally line 1813, release line 1816",
       "hydration route: acquire line 1904, finally line 1919, release line 1922",
       "cache reset route: acquire line 2087, finally line 2093, release line 2095",
+      "post-compaction-capture route: acquire line 1753, finally line 1788, release line 1791; storm route line 1821/1855/1858; hydration route line 1948/1963/1966; cache reset line 2132/2140/2143",
       "world pager telemetry route: acquire line 2950, finally line 2986, release line 2988"
     ],
     "knownResidualDataVaultDebt": [
@@ -280,13 +329,14 @@
       "Docs/AgentLogs/Dump_1403_WFC_PERSISTENCE_SYNC.bin",
       "Docs/AgentLogs/Dump_1403_ASYNC_PERSISTENCE.bin",
       "Docs/AgentLogs/Dump_1403_CONTEXTUAL_PHYSICAL_IK.bin",
+      "Docs/AgentLogs/Dump_GRAB_IK_PROJECTION.bin",
       "Docs/AgentLogs/Dump_1312_VoxelPaging.bin",
       "Docs/AgentLogs/Dump_CRASH.bin",
       "Docs/AgentLogs/Dump_SAVE_SURGEON.h8dump",
       "Docs/AgentLogs/Dump_CRASH.h8dump"
     ],
     "callsiteManagedWriterDebtRemoved": true,
-    "storageManagedStreamPatternHits": 0,
+    "storageManagedStreamPatternHits": "0 for SaveManager, ContextualPhysicalIkRuntime, ContextualPhysicalIkRig, and VRPhysicalHandPresenceIkJobs black-box callsites; residual FileStream hits remain in H8BinaryWorldPager core page/WAL IO only.",
     "runtimeDumpArtifactsExisting": false,
     "dumpArtifactReason": "No crash, NaN detector, Unity test, or compiler-owned failure dump occurred."
   },
@@ -368,6 +418,47 @@
       "buildLaunched": false,
       "reason": "CPU exceeded 50% and dotnet/csc processes were active."
     },
+    "finalGateAfterVrHandIkBlackBoxPatch": {
+      "cpuLoadPercent": 100,
+      "dotnetProcesses": 0,
+      "cscProcesses": 0,
+      "vbcsCompilerProcesses": 0,
+      "buildLaunched": false,
+      "reason": "CPU exceeded 50%; build throttling rule blocks dotnet build even though no compiler process was listed."
+    },
+    "finalGateAfterStaticScratchPatch": {
+      "cpuLoadPercent": 88,
+      "dotnetProcesses": 1,
+      "activeDotnetProcess": "PID 67624: dotnet build Hecton8.slnx -nologo -clp:ErrorsOnly -maxcpucount:1",
+      "cscProcesses": 0,
+      "vbcsCompilerProcesses": 0,
+      "buildLaunched": false,
+      "reason": "CPU exceeded 50% and an active dotnet build process already existed."
+    },
+    "finalGateAfterThrottleResample": {
+      "cpuLoadPercent": 94,
+      "dotnetProcesses": 0,
+      "cscProcesses": 0,
+      "vbcsCompilerProcesses": 0,
+      "buildLaunched": false,
+      "reason": "CPU exceeded 50%; build throttling rule blocks dotnet build even though no compiler process was listed."
+    },
+    "finalGateAfterManagedDeflateWritePatch": {
+      "cpuLoadPercent": 54,
+      "dotnetProcesses": 0,
+      "cscProcesses": 0,
+      "vbcsCompilerProcesses": 0,
+      "buildLaunched": false,
+      "reason": "CPU exceeded 50%; build throttling rule blocks dotnet build."
+    },
+    "finalGateAfterFinalValidation": {
+      "cpuLoadPercent": 84,
+      "dotnetProcesses": 0,
+      "cscProcesses": 0,
+      "vbcsCompilerProcesses": 0,
+      "buildLaunched": false,
+      "reason": "CPU exceeded 50%; build throttling rule blocks dotnet build."
+    },
     "dotnetBuildSpam": false
   },
   "tests": [
@@ -392,6 +483,7 @@
     "Native OS IO routes are source-clean but not platform-runtime measured on Windows/Linux/macOS/Android players.",
     "H8BinaryWorldPager core page/WAL IO still uses cold persistent FileStream handles; only the black-box dump FileStream was removed.",
     "H8BinaryWorldPager write/read command queues, arenas, compression scratch, hot-state arena, and direct read staging still have mutable TryResolveHandle routes that need a wider pager worker locking redesign.",
+    "SaveBinaryStorage legacy managed-Deflate decompression still creates managed UnmanagedMemoryStream/DeflateStream objects when an existing old block carries ManagedDeflateBlockLengthFlag. New writes no longer emit that flag.",
     "No Docs/AgentLogs/Dump_1403*.bin artifact exists because no crash, NaN detector, Unity test, or compiler-owned failure dump occurred."
   ]
 }

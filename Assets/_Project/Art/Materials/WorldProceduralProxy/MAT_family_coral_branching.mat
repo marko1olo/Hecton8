@@ -24,8 +24,7 @@ Material:
   m_Shader: {fileID: 4800000, guid: b162c13e398ef054cbaab6dc14c8661f, type: 3}
   m_Parent: {fileID: 0}
   m_ModifiedSerializedProperties: 0
-  m_ValidKeywords:
-  - _QUALITY_MX350
+  m_ValidKeywords: []
   m_InvalidKeywords:
   - _ENVIRONMENTREFLECTIONS_OFF
   - _RECEIVE_SHADOWS_OFF

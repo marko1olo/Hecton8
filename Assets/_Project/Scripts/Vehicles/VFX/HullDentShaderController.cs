@@ -26,6 +26,7 @@ namespace Hecton8.Vehicles.VFX
         private const float RepairMatchPaddingMeters = 0.35f;
         private const float LocalTransformEpsilon = 0.000001f;
         private const uint HullDentTelemetryHash = 0x48444E54u; // HDNT
+        private static readonly ulong HullDentsMutationGuardMask = HullDentMutationGuardBit(BufferID.HullDents);
 
         private static readonly ProfilerMarker _lateFrameProfilerMarker = new ProfilerMarker("H8.VehicleVFX.HullDents.LateFrame");
         private static readonly int _HullDentsId = Shader.PropertyToID("_HectonHullDents");
@@ -470,7 +471,7 @@ namespace Hecton8.Vehicles.VFX
             if (vault == null)
                 return false;
 
-            if (!EnsureHullDentsHandle(vault) || !vault.TryLockBuffer(BufferID.HullDents, SystemID.Vfx))
+            if (!EnsureHullDentsHandle(vault) || !vault.TryAcquireMutationGuard(HullDentsMutationGuardMask))
                 return false;
 
             try
@@ -508,7 +509,7 @@ namespace Hecton8.Vehicles.VFX
             }
             finally
             {
-                vault.TryUnlockBuffer(BufferID.HullDents, SystemID.Vfx);
+                vault.ReleaseMutationGuard(HullDentsMutationGuardMask);
             }
         }
 
@@ -518,7 +519,7 @@ namespace Hecton8.Vehicles.VFX
             if (vault == null)
                 return false;
 
-            if (!EnsureHullDentsHandle(vault) || !vault.TryLockBuffer(BufferID.HullDents, SystemID.Vfx))
+            if (!EnsureHullDentsHandle(vault) || !vault.TryAcquireMutationGuard(HullDentsMutationGuardMask))
                 return false;
 
             try
@@ -539,7 +540,7 @@ namespace Hecton8.Vehicles.VFX
             }
             finally
             {
-                vault.TryUnlockBuffer(BufferID.HullDents, SystemID.Vfx);
+                vault.ReleaseMutationGuard(HullDentsMutationGuardMask);
             }
         }
 
@@ -552,7 +553,7 @@ namespace Hecton8.Vehicles.VFX
             if (vault == null)
                 return false;
 
-            if (!EnsureHullDentsHandle(vault) || !vault.TryLockBuffer(BufferID.HullDents, SystemID.Vfx))
+            if (!EnsureHullDentsHandle(vault) || !vault.TryAcquireMutationGuard(HullDentsMutationGuardMask))
                 return false;
 
             try
@@ -568,7 +569,7 @@ namespace Hecton8.Vehicles.VFX
             }
             finally
             {
-                vault.TryUnlockBuffer(BufferID.HullDents, SystemID.Vfx);
+                vault.ReleaseMutationGuard(HullDentsMutationGuardMask);
             }
         }
 
@@ -667,6 +668,11 @@ namespace Hecton8.Vehicles.VFX
             return handle.BufferID == unchecked((uint)(int)BufferID.HullDents) &&
                    handle.SystemID == (uint)SystemID.Vfx &&
                    handle.Generation != 0u;
+        }
+
+        private static ulong HullDentMutationGuardBit(BufferID bufferId)
+        {
+            return 1UL << ((int)bufferId & 63);
         }
 
         private static void ReleaseVaultBuffer<T>(

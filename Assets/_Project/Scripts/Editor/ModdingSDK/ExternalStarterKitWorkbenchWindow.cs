@@ -27,6 +27,7 @@ namespace Hecton8.Editor.ModdingSDK
         private const int MaxAuthoringDataPreviewBytes = 1048576;
         private const int MaxSettingsPreviewRows = 128;
         private const int MaxLocalePreviewStrings = 512;
+        private const int MaxAssetPreviewEntries = 512;
         private static readonly string[] RequiredStarterFiles =
         {
             "README.md",
@@ -35,6 +36,7 @@ namespace Hecton8.Editor.ModdingSDK
             "mod.h8manifest.json",
             "mod.json",
             "Content/README.md",
+            "Content/Assets/README.md",
             "Content/assets.h8manifest.json",
             "Graphs/main.h8graph.json",
             "Tables/settings.h8table.json",
@@ -51,11 +53,14 @@ namespace Hecton8.Editor.ModdingSDK
             "Schemas/runtime.mod.schema.json",
             "Schemas/settings_table.schema.json",
             "Tools/README.md",
+            "Tools/apply_asset_entry_snippet.ps1",
             "Tools/apply_graph_node_snippet.ps1",
             "Tools/apply_locale_entry_snippet.ps1",
             "Tools/apply_settings_row_snippet.ps1",
             "Tools/build_review_manifest.ps1",
             "Tools/build_submission_package.ps1",
+            "Tools/configure_manifest_contract.ps1",
+            "Tools/create_asset_entry_snippet.ps1",
             "Tools/create_locale_entry_snippet.ps1",
             "Tools/create_graph_node_snippet.ps1",
             "Tools/create_settings_row_snippet.ps1",
@@ -63,7 +68,8 @@ namespace Hecton8.Editor.ModdingSDK
             "Tools/prepare_mod.ps1",
             "Tools/set_mod_identity.ps1",
             "Tools/validate_structure.ps1",
-            ".vscode/settings.json"
+            ".vscode/settings.json",
+            ".vscode/tasks.json"
         };
 
         private Vector2 _scrollPosition;
@@ -81,11 +87,68 @@ namespace Hecton8.Editor.ModdingSDK
         private string _authoringDataPreviewDetails = string.Empty;
         private string _graphNodeSnippetId = "node.spawn_item";
         private string _graphNodeSnippetOpcode = "SpawnItem";
+        private string[] _graphOpcodePopupLabels = { "SpawnItem (0x3A3DA9C4)" };
+        private string[] _graphOpcodePopupValues = { "SpawnItem" };
+        private int _graphOpcodePopupIndex;
+        private string _graphNodeParametersJson = "{\n}";
+        private bool _graphNodeDisabled;
+        private bool _graphNodeReplaceExisting;
         private string _settingsRowSnippetId = "setting.example_toggle";
         private string _settingsRowSnippetKind = "bool";
         private string _settingsRowSnippetDefault = "false";
         private string _localeEntrySnippetKey = "text.example_line";
         private string _localeEntrySnippetValue = "Your localized text";
+        private string _assetEntrySnippetId = "asset.example_blob";
+        private string _assetEntrySnippetKind = "data_blob";
+        private string _assetEntrySnippetPath = "Content/Assets/example.bytes";
+        private string _assetEntrySnippetCrc32 = "00000000";
+        private long _assetEntrySnippetBytes;
+        private bool _assetEntryReplaceExisting;
+        private int _manifestCapabilityPopupIndex;
+        private int _manifestCapabilityActionPopupIndex;
+        private int _manifestMaxEnvelopesPerFrame = -1;
+        private long _manifestMaxAssetBytes = -1L;
+        private static readonly string[] ManifestCapabilityLabels =
+        {
+            "Command Graph Draft",
+            "Settings Table",
+            "English Locale",
+            "Content Asset Manifest",
+            "Review Submission Package"
+        };
+        private static readonly string[] ManifestCapabilityValues =
+        {
+            "cap.graph.command_draft",
+            "cap.settings.table",
+            "cap.locale.en",
+            "cap.content.asset_manifest",
+            "cap.review.submission_package"
+        };
+        private static readonly string[] ManifestCapabilityActionLabels =
+        {
+            "Enable",
+            "Disable",
+            "No Change"
+        };
+        private static readonly string[] ManifestCapabilityActionValues =
+        {
+            "enable",
+            "disable",
+            "unchanged"
+        };
+        private static readonly string[] AssetKindLabels =
+        {
+            "Data Blob (.json/.bytes/.bin)",
+            "Raw Texture (.png/.jpg/.jpeg/.webp)",
+            "Audio Clip (.wav/.ogg)"
+        };
+        private static readonly string[] AssetKindValues =
+        {
+            "data_blob",
+            "raw_texture",
+            "audio_clip"
+        };
+        private int _assetKindPopupIndex;
         private string _reviewSummary = "Review manifest not loaded.";
         private string _reviewFreshnessSummary = "Review freshness not loaded.";
         private string _submissionSummary = "Submission package not loaded.";
@@ -158,7 +221,11 @@ namespace Hecton8.Editor.ModdingSDK
             EditorGUILayout.Space(10f);
             DrawAuthoringDataPreview();
             EditorGUILayout.Space(10f);
+            DrawManifestContract();
+            EditorGUILayout.Space(10f);
             DrawAuthoringSnippets();
+            EditorGUILayout.Space(10f);
+            DrawContentAssetSnippet();
             EditorGUILayout.Space(10f);
             DrawGraphNodeSnippet();
             EditorGUILayout.Space(10f);
@@ -248,15 +315,53 @@ namespace Hecton8.Editor.ModdingSDK
                 EditorGUILayout.TextArea(_authoringDataPreviewDetails, GUILayout.MinHeight(72f));
         }
 
+        private void DrawManifestContract()
+        {
+            EditorGUILayout.LabelField("Manifest Contract", EditorStyles.boldLabel);
+            EditorGUILayout.HelpBox(
+                "Configures mod.h8manifest.json Capabilities and Budgets through a bounded offline tool. Capabilities are review metadata from a public allowlist, not runtime rights; budgets are capped and cannot be lowered below the current graph or asset manifest requirements.",
+                MessageType.Info);
+
+            _manifestCapabilityPopupIndex = EditorGUILayout.Popup(
+                "Capability",
+                Mathf.Clamp(_manifestCapabilityPopupIndex, 0, ManifestCapabilityLabels.Length - 1),
+                ManifestCapabilityLabels);
+            _manifestCapabilityActionPopupIndex = EditorGUILayout.Popup(
+                "Capability Action",
+                Mathf.Clamp(_manifestCapabilityActionPopupIndex, 0, ManifestCapabilityActionLabels.Length - 1),
+                ManifestCapabilityActionLabels);
+            _manifestMaxEnvelopesPerFrame = EditorGUILayout.IntField("Max Envelopes Per Frame", _manifestMaxEnvelopesPerFrame);
+            _manifestMaxAssetBytes = EditorGUILayout.LongField("Max Asset Bytes", _manifestMaxAssetBytes);
+
+            EditorGUI.BeginDisabledGroup(IsToolRunning);
+            using (EditorGUILayout.HorizontalScope _ = new EditorGUILayout.HorizontalScope())
+            {
+                if (GUILayout.Button("Apply Manifest Contract + Validate", GUILayout.Height(28f)))
+                    ConfigureManifestContract();
+
+                if (GUILayout.Button("Open Manifest Contract Tool", GUILayout.Height(28f)))
+                    OpenRelativePath("ModdingSDK/ExternalStarterKit/Tools/configure_manifest_contract.ps1");
+
+                if (GUILayout.Button("Open Authoring Manifest", GUILayout.Height(28f)))
+                    OpenRelativePath("ModdingSDK/ExternalStarterKit/mod.h8manifest.json");
+            }
+            EditorGUI.EndDisabledGroup();
+        }
+
         private void DrawGraphNodeSnippet()
         {
             EditorGUILayout.LabelField("Graph Node Snippet", EditorStyles.boldLabel);
             EditorGUILayout.HelpBox(
-                "Generates Generated/graph_node_snippet.json from Reference/allowed_opcodes.csv, then applies it through a bounded offline tool. Apply rejects duplicates unless the CLI -Replace switch is explicit, raises the starter graph/manifest budget to one envelope if needed, validates after write, and restores the previous files on failure.",
+                "Graph Opcode Picker loads Reference/allowed_opcodes.csv, Parameters JSON is validated by the snippet tool, and Apply inserts the node through a bounded offline tool. Apply rejects duplicates unless Replace Existing is enabled, raises the starter graph/manifest budget to one envelope if needed, validates after write, and restores the previous files on failure.",
                 MessageType.Info);
 
+            DrawGraphOpcodePicker();
             _graphNodeSnippetId = EditorGUILayout.TextField("Node Id", _graphNodeSnippetId);
-            _graphNodeSnippetOpcode = EditorGUILayout.TextField("Opcode", _graphNodeSnippetOpcode);
+            _graphNodeSnippetOpcode = EditorGUILayout.TextField("Opcode Alias/Hex", _graphNodeSnippetOpcode);
+            _graphNodeDisabled = EditorGUILayout.Toggle("Create Disabled Node", _graphNodeDisabled);
+            _graphNodeReplaceExisting = EditorGUILayout.Toggle("Replace Existing On Apply", _graphNodeReplaceExisting);
+            EditorGUILayout.LabelField("Parameters JSON", EditorStyles.miniBoldLabel);
+            _graphNodeParametersJson = EditorGUILayout.TextArea(_graphNodeParametersJson, GUILayout.MinHeight(54f));
 
             EditorGUI.BeginDisabledGroup(IsToolRunning);
             using (EditorGUILayout.HorizontalScope _ = new EditorGUILayout.HorizontalScope())
@@ -285,6 +390,25 @@ namespace Hecton8.Editor.ModdingSDK
                     OpenRelativePath("ModdingSDK/ExternalStarterKit/Tools/apply_graph_node_snippet.ps1");
             }
             EditorGUI.EndDisabledGroup();
+        }
+
+        private void DrawGraphOpcodePicker()
+        {
+            EditorGUILayout.LabelField("Graph Opcode Picker", EditorStyles.miniBoldLabel);
+            if (_graphOpcodePopupLabels == null || _graphOpcodePopupLabels.Length == 0)
+            {
+                EditorGUILayout.HelpBox("Opcode picker unavailable. Open Reference/allowed_opcodes.csv or run List Graph Opcodes.", MessageType.Warning);
+                return;
+            }
+
+            int safeIndex = Mathf.Clamp(_graphOpcodePopupIndex, 0, _graphOpcodePopupLabels.Length - 1);
+            EditorGUI.BeginChangeCheck();
+            safeIndex = EditorGUILayout.Popup("Allowed Opcode", safeIndex, _graphOpcodePopupLabels);
+            if (EditorGUI.EndChangeCheck())
+            {
+                _graphOpcodePopupIndex = safeIndex;
+                _graphNodeSnippetOpcode = _graphOpcodePopupValues[safeIndex];
+            }
         }
 
         private void DrawAuthoringSnippets()
@@ -359,6 +483,65 @@ namespace Hecton8.Editor.ModdingSDK
                     OpenRelativePath("ModdingSDK/ExternalStarterKit/Tools/apply_locale_entry_snippet.ps1");
             }
             EditorGUI.EndDisabledGroup();
+        }
+
+        private void DrawContentAssetSnippet()
+        {
+            EditorGUILayout.LabelField("Content Asset Snippet", EditorStyles.boldLabel);
+            EditorGUILayout.HelpBox(
+                "Generates Generated/asset_entry_snippet.json from a file under Content/Assets/, then applies it through a bounded offline tool. Apply computes and verifies Crc32/Bytes against the file, rejects duplicate asset ids unless Replace Existing is enabled, raises MaxAssetBytes when needed, validates after write, and restores previous files on failure. Runtime loading remains review/bake only.",
+                MessageType.Info);
+
+            DrawAssetKindPicker();
+            _assetEntrySnippetId = EditorGUILayout.TextField("Asset Id", _assetEntrySnippetId);
+            _assetEntrySnippetKind = EditorGUILayout.TextField("Kind", _assetEntrySnippetKind);
+            _assetEntrySnippetPath = EditorGUILayout.TextField("Path", _assetEntrySnippetPath);
+            _assetEntrySnippetCrc32 = EditorGUILayout.TextField("Crc32", _assetEntrySnippetCrc32);
+            _assetEntrySnippetBytes = EditorGUILayout.LongField("Bytes (-1 auto)", _assetEntrySnippetBytes);
+            _assetEntryReplaceExisting = EditorGUILayout.Toggle("Replace Existing On Apply", _assetEntryReplaceExisting);
+
+            EditorGUI.BeginDisabledGroup(IsToolRunning);
+            using (EditorGUILayout.HorizontalScope _ = new EditorGUILayout.HorizontalScope())
+            {
+                if (GUILayout.Button("Generate Asset Snippet", GUILayout.Height(28f)))
+                    GenerateAssetEntrySnippet();
+
+                if (GUILayout.Button("Open Asset Snippet", GUILayout.Height(28f)))
+                    OpenRelativePath("ModdingSDK/ExternalStarterKit/Generated/asset_entry_snippet.json");
+
+                if (GUILayout.Button("Open Asset Snippet Tool", GUILayout.Height(28f)))
+                    OpenRelativePath("ModdingSDK/ExternalStarterKit/Tools/create_asset_entry_snippet.ps1");
+            }
+            EditorGUI.EndDisabledGroup();
+
+            EditorGUI.BeginDisabledGroup(IsToolRunning);
+            using (EditorGUILayout.HorizontalScope _ = new EditorGUILayout.HorizontalScope())
+            {
+                if (GUILayout.Button("Apply Asset Snippet", GUILayout.Height(28f)))
+                    ApplyAssetEntrySnippet();
+
+                if (GUILayout.Button("Open Asset Manifest", GUILayout.Height(28f)))
+                    OpenRelativePath("ModdingSDK/ExternalStarterKit/Content/assets.h8manifest.json");
+
+                if (GUILayout.Button("Open Assets Folder", GUILayout.Height(28f)))
+                    RevealRelativePath("ModdingSDK/ExternalStarterKit/Content/Assets");
+
+                if (GUILayout.Button("Open Asset Apply Tool", GUILayout.Height(28f)))
+                    OpenRelativePath("ModdingSDK/ExternalStarterKit/Tools/apply_asset_entry_snippet.ps1");
+            }
+            EditorGUI.EndDisabledGroup();
+        }
+
+        private void DrawAssetKindPicker()
+        {
+            int safeIndex = Mathf.Clamp(_assetKindPopupIndex, 0, AssetKindLabels.Length - 1);
+            EditorGUI.BeginChangeCheck();
+            safeIndex = EditorGUILayout.Popup("Asset Kind", safeIndex, AssetKindLabels);
+            if (EditorGUI.EndChangeCheck())
+            {
+                _assetKindPopupIndex = safeIndex;
+                _assetEntrySnippetKind = AssetKindValues[safeIndex];
+            }
         }
 
         private void DrawIdentityEditor()
@@ -452,6 +635,15 @@ namespace Hecton8.Editor.ModdingSDK
                     RevealRelativePath("ModdingSDK/ExternalStarterKit/Generated");
             }
 
+            using (EditorGUILayout.HorizontalScope _ = new EditorGUILayout.HorizontalScope())
+            {
+                if (GUILayout.Button("VS Code Settings"))
+                    OpenRelativePath("ModdingSDK/ExternalStarterKit/.vscode/settings.json");
+
+                if (GUILayout.Button("VS Code Tasks"))
+                    OpenRelativePath("ModdingSDK/ExternalStarterKit/.vscode/tasks.json");
+            }
+
             EditorGUILayout.Space(6f);
             EditorGUILayout.LabelField("Docs And Contracts", EditorStyles.boldLabel);
 
@@ -506,13 +698,18 @@ namespace Hecton8.Editor.ModdingSDK
         {
             string arguments =
                 " -Id " + QuoteArgument(_graphNodeSnippetId) +
-                " -Opcode " + QuoteArgument(_graphNodeSnippetOpcode);
+                " -Opcode " + QuoteArgument(_graphNodeSnippetOpcode) +
+                " -ParametersJson " + QuoteArgument(_graphNodeParametersJson);
+            if (_graphNodeDisabled)
+                arguments += " -Disabled";
+
             RunStarterTool("Tools/create_graph_node_snippet.ps1", arguments, false);
         }
 
         private void ApplyGraphNodeSnippet()
         {
-            RunStarterTool("Tools/apply_graph_node_snippet.ps1", string.Empty, true);
+            string arguments = _graphNodeReplaceExisting ? " -Replace" : string.Empty;
+            RunStarterTool("Tools/apply_graph_node_snippet.ps1", arguments, true);
         }
 
         private void GenerateSettingsRowSnippet()
@@ -542,6 +739,35 @@ namespace Hecton8.Editor.ModdingSDK
             RunStarterTool("Tools/apply_locale_entry_snippet.ps1", string.Empty, true);
         }
 
+        private void GenerateAssetEntrySnippet()
+        {
+            string arguments =
+                " -Id " + QuoteArgument(_assetEntrySnippetId) +
+                " -Kind " + QuoteArgument(_assetEntrySnippetKind) +
+                " -Path " + QuoteArgument(_assetEntrySnippetPath) +
+                " -Crc32 " + QuoteArgument(_assetEntrySnippetCrc32) +
+                " -Bytes " + _assetEntrySnippetBytes.ToString(global::System.Globalization.CultureInfo.InvariantCulture);
+            RunStarterTool("Tools/create_asset_entry_snippet.ps1", arguments, false);
+        }
+
+        private void ApplyAssetEntrySnippet()
+        {
+            string arguments = _assetEntryReplaceExisting ? " -Replace" : string.Empty;
+            RunStarterTool("Tools/apply_asset_entry_snippet.ps1", arguments, true);
+        }
+
+        private void ConfigureManifestContract()
+        {
+            int capabilityIndex = Mathf.Clamp(_manifestCapabilityPopupIndex, 0, ManifestCapabilityValues.Length - 1);
+            int actionIndex = Mathf.Clamp(_manifestCapabilityActionPopupIndex, 0, ManifestCapabilityActionValues.Length - 1);
+            string arguments =
+                " -Capability " + QuoteArgument(ManifestCapabilityValues[capabilityIndex]) +
+                " -CapabilityState " + QuoteArgument(ManifestCapabilityActionValues[actionIndex]) +
+                " -MaxEnvelopesPerFrame " + _manifestMaxEnvelopesPerFrame.ToString(global::System.Globalization.CultureInfo.InvariantCulture) +
+                " -MaxAssetBytes " + _manifestMaxAssetBytes.ToString(global::System.Globalization.CultureInfo.InvariantCulture);
+            RunStarterTool("Tools/configure_manifest_contract.ps1", arguments, true);
+        }
+
         private void CreateOrRefreshStarterKit()
         {
             ModdingSdkHubWindow.CreateExternalStarterKit();
@@ -554,10 +780,61 @@ namespace Hecton8.Editor.ModdingSDK
             LoadIdentity();
             LoadCapabilityMatrix();
             LoadGraphContractPreview();
+            LoadGraphOpcodePicker();
             LoadAuthoringDataPreview();
             LoadReviewSummary();
             LoadSubmissionSummary();
             Repaint();
+        }
+
+        private void LoadGraphOpcodePicker()
+        {
+            string allowedOpcodesPath = ResolveProjectPath("ModdingSDK/ExternalStarterKit/Reference/allowed_opcodes.csv");
+            if (!File.Exists(allowedOpcodesPath))
+            {
+                SetDefaultGraphOpcodePicker();
+                return;
+            }
+
+            try
+            {
+                AllowedGraphOpcodeSet allowedOpcodes = LoadAllowedGraphOpcodes(allowedOpcodesPath);
+                if (allowedOpcodes.Choices.Count == 0)
+                {
+                    SetDefaultGraphOpcodePicker();
+                    return;
+                }
+
+                string[] labels = new string[allowedOpcodes.Choices.Count];
+                string[] values = new string[allowedOpcodes.Choices.Count];
+                int selectedIndex = 0;
+                for (int i = 0; i < allowedOpcodes.Choices.Count; i++)
+                {
+                    AllowedGraphOpcodeChoice choice = allowedOpcodes.Choices[i];
+                    labels[i] = choice.Label;
+                    values[i] = choice.Value;
+                    if (string.Equals(choice.Value, _graphNodeSnippetOpcode, StringComparison.Ordinal) ||
+                        string.Equals(choice.Hex, _graphNodeSnippetOpcode, StringComparison.OrdinalIgnoreCase))
+                    {
+                        selectedIndex = i;
+                    }
+                }
+
+                _graphOpcodePopupLabels = labels;
+                _graphOpcodePopupValues = values;
+                _graphOpcodePopupIndex = selectedIndex;
+            }
+            catch
+            {
+                SetDefaultGraphOpcodePicker();
+            }
+        }
+
+        private void SetDefaultGraphOpcodePicker()
+        {
+            _graphOpcodePopupLabels = new[] { "SpawnItem (0x3A3DA9C4)" };
+            _graphOpcodePopupValues = new[] { "SpawnItem" };
+            _graphOpcodePopupIndex = 0;
         }
 
         private void LoadStarterHealth()
@@ -667,7 +944,7 @@ namespace Hecton8.Editor.ModdingSDK
                 details.AppendLine("- Command graph draft: Graphs/main.h8graph.json, bounded by Reference/allowed_opcodes.csv and MaxEnvelopesPerFrame.");
                 details.AppendLine("- Settings table draft: Tables/settings.h8table.json, validated before review handoff.");
                 details.AppendLine("- Locale draft: Locales/en.h8loc.json, validated before review handoff.");
-                details.AppendLine("- Content manifest draft: Content/assets.h8manifest.json, review/approval only before runtime use.");
+                details.AppendLine("- Content manifest draft: Content/assets.h8manifest.json plus Content/Assets/, generated/applied by asset entry tools; review/approval only before runtime use.");
                 details.AppendLine("- Review and submission artifacts: Reports/review_manifest.json and Generated/<mod-id>_submission.zip.");
                 details.AppendLine();
                 details.AppendLine("NOT PUBLIC RIGHTS");
@@ -919,6 +1196,7 @@ namespace Hecton8.Editor.ModdingSDK
             string rootPath = ResolveProjectPath(ExternalStarterKitRoot);
             string settingsPath = Path.Combine(rootPath, "Tables", "settings.h8table.json");
             string localePath = Path.Combine(rootPath, "Locales", "en.h8loc.json");
+            string assetsPath = Path.Combine(rootPath, "Content", "assets.h8manifest.json");
             StringBuilder details = new StringBuilder(512);
             int invalidCount = 0;
 
@@ -933,6 +1211,14 @@ namespace Hecton8.Editor.ModdingSDK
             if (!File.Exists(localePath))
             {
                 _authoringDataPreviewSummary = "Authoring Data Preview unavailable: missing Locales/en.h8loc.json.";
+                _authoringDataPreviewDetails = string.Empty;
+                _authoringDataPreviewWarning = true;
+                return;
+            }
+
+            if (!File.Exists(assetsPath))
+            {
+                _authoringDataPreviewSummary = "Authoring Data Preview unavailable: missing Content/assets.h8manifest.json.";
                 _authoringDataPreviewDetails = string.Empty;
                 _authoringDataPreviewWarning = true;
                 return;
@@ -956,13 +1242,28 @@ namespace Hecton8.Editor.ModdingSDK
                     return;
                 }
 
+                if (new FileInfo(assetsPath).Length > MaxAuthoringDataPreviewBytes)
+                {
+                    _authoringDataPreviewSummary = "Authoring Data Preview unavailable: Content/assets.h8manifest.json exceeds preview byte cap.";
+                    _authoringDataPreviewDetails = string.Empty;
+                    _authoringDataPreviewWarning = true;
+                    return;
+                }
+
                 SettingsTableDocument settings = JsonUtility.FromJson<SettingsTableDocument>(File.ReadAllText(settingsPath));
                 LocaleDocument locale = JsonUtility.FromJson<LocaleDocument>(File.ReadAllText(localePath));
+                AssetManifestDocument assets = JsonUtility.FromJson<AssetManifestDocument>(File.ReadAllText(assetsPath));
                 SettingsRow[] rows = settings != null && settings.Rows != null ? settings.Rows : new SettingsRow[0];
+                AssetEntry[] assetEntries = assets != null && assets.Assets != null ? assets.Assets : new AssetEntry[0];
                 HashSet<string> settingIds = new HashSet<string>(StringComparer.Ordinal);
                 int duplicateSettings = 0;
                 int invalidSettingRows = 0;
                 int invalidSettingKinds = 0;
+                int invalidAssetEntries = 0;
+                int duplicateAssets = 0;
+                int missingAssetFiles = 0;
+                long contentBytes = 0L;
+                HashSet<string> assetIds = new HashSet<string>(StringComparer.Ordinal);
 
                 if (settings == null || !string.Equals(settings.Schema, "hecton8.settings_table.draft.v1", StringComparison.Ordinal))
                 {
@@ -1004,6 +1305,71 @@ namespace Hecton8.Editor.ModdingSDK
                 if (settingsScanCapped)
                     details.Append("Settings preview capped at ").Append(MaxSettingsPreviewRows).Append(" rows. Run Validate Structure Only.").AppendLine();
 
+                if (assets == null || !string.Equals(assets.Schema, "hecton8.assets.draft.v1", StringComparison.Ordinal))
+                {
+                    details.Append("INVALID asset manifest Schema must be hecton8.assets.draft.v1.").AppendLine();
+                    invalidCount++;
+                }
+
+                for (int i = 0; i < assetEntries.Length && i < MaxAssetPreviewEntries; i++)
+                {
+                    AssetEntry asset = assetEntries[i];
+                    if (asset == null)
+                    {
+                        details.Append("INVALID null asset entry at index ").Append(i).AppendLine();
+                        invalidAssetEntries++;
+                        continue;
+                    }
+
+                    string assetId = asset.Id ?? string.Empty;
+                    if (!IsCanonicalAuthoringKey(assetId))
+                    {
+                        details.Append("INVALID asset Id at index ").Append(i).Append(": ").Append(assetId).AppendLine();
+                        invalidAssetEntries++;
+                    }
+                    else if (!assetIds.Add(assetId))
+                    {
+                        details.Append("INVALID duplicate asset Id: ").Append(assetId).AppendLine();
+                        duplicateAssets++;
+                    }
+
+                    string kind = asset.Kind ?? string.Empty;
+                    string path = asset.Path ?? string.Empty;
+                    if (!IsSupportedAssetKind(kind))
+                    {
+                        details.Append("INVALID asset Kind for ").Append(string.IsNullOrWhiteSpace(assetId) ? "<missing-id>" : assetId).Append(": ").Append(kind).AppendLine();
+                        invalidAssetEntries++;
+                        continue;
+                    }
+
+                    if (!IsSafeAssetPath(path, kind))
+                    {
+                        details.Append("INVALID asset Path for ").Append(string.IsNullOrWhiteSpace(assetId) ? "<missing-id>" : assetId).Append(": ").Append(path).AppendLine();
+                        invalidAssetEntries++;
+                        continue;
+                    }
+
+                    string fullAssetPath = Path.Combine(rootPath, path.Replace('/', Path.DirectorySeparatorChar));
+                    if (!File.Exists(fullAssetPath))
+                    {
+                        details.Append("MISSING asset file for ").Append(assetId).Append(": ").Append(path).AppendLine();
+                        missingAssetFiles++;
+                        continue;
+                    }
+
+                    long fileBytes = new FileInfo(fullAssetPath).Length;
+                    contentBytes += fileBytes;
+                    if (asset.Bytes != fileBytes)
+                    {
+                        details.Append("INVALID asset Bytes for ").Append(assetId).Append(": manifest ").Append(asset.Bytes).Append(", file ").Append(fileBytes).AppendLine();
+                        invalidAssetEntries++;
+                    }
+                }
+
+                bool assetsScanCapped = assetEntries.Length > MaxAssetPreviewEntries;
+                if (assetsScanCapped)
+                    details.Append("Asset preview capped at ").Append(MaxAssetPreviewEntries).Append(" entries. Run Validate Structure Only.").AppendLine();
+
                 int localeStringCount = 0;
                 int invalidLocaleKeys = 0;
                 int invalidLocaleValues = 0;
@@ -1029,21 +1395,25 @@ namespace Hecton8.Editor.ModdingSDK
                     out invalidLocaleValues,
                     out localeScanCapped);
 
-                invalidCount += invalidSettingRows + duplicateSettings + invalidSettingKinds + invalidLocaleKeys + invalidLocaleValues;
+                invalidCount += invalidSettingRows + duplicateSettings + invalidSettingKinds + invalidAssetEntries + duplicateAssets + missingAssetFiles + invalidLocaleKeys + invalidLocaleValues;
                 StringBuilder summary = new StringBuilder(256);
                 summary.Append("Settings rows: ").Append(rows.Length).Append("/").Append(MaxSettingsPreviewRows);
                 summary.AppendLine().Append("Invalid settings rows: ").Append(invalidSettingRows);
                 summary.AppendLine().Append("Duplicate settings IDs: ").Append(duplicateSettings);
                 summary.AppendLine().Append("Invalid settings kinds: ").Append(invalidSettingKinds);
+                summary.AppendLine().Append("Content assets: ").Append(assetEntries.Length).Append("/").Append(MaxAssetPreviewEntries);
+                summary.AppendLine().Append("Missing content files: ").Append(missingAssetFiles);
+                summary.AppendLine().Append("Invalid content entries: ").Append(invalidAssetEntries + duplicateAssets);
+                summary.AppendLine().Append("Content bytes: ").Append(contentBytes);
                 summary.AppendLine().Append("Locale: ").Append(localeId);
                 summary.AppendLine().Append("Locale strings: ").Append(localeStringCount).Append("/").Append(MaxLocalePreviewStrings);
                 summary.AppendLine().Append("Invalid locale keys: ").Append(invalidLocaleKeys);
                 summary.AppendLine().Append("Invalid locale values: ").Append(invalidLocaleValues);
 
                 if (details.Length == 0)
-                    details.Append("Settings/locale preview found no visible contract issues. Run Validate Structure Only for Default type proof.").AppendLine();
+                    details.Append("Settings/content/locale preview found no visible contract issues. Run Validate Structure Only for CRC/default type proof.").AppendLine();
 
-                _authoringDataPreviewWarning = invalidCount > 0 || settingsScanCapped || localeScanCapped;
+                _authoringDataPreviewWarning = invalidCount > 0 || settingsScanCapped || assetsScanCapped || localeScanCapped;
                 _authoringDataPreviewSummary = summary.ToString();
                 _authoringDataPreviewDetails = details.ToString();
             }
@@ -1099,17 +1469,26 @@ namespace Hecton8.Editor.ModdingSDK
                     throw new InvalidDataException("Reference/allowed_opcodes.csv contains duplicate opcode token: " + hexToken);
 
                 result.HexCount++;
-                if (string.IsNullOrWhiteSpace(comment))
-                    continue;
+                string alias = string.Empty;
 
-                string[] commentParts = comment.Split(new[] { ' ', '\t' }, StringSplitOptions.RemoveEmptyEntries);
-                if (commentParts.Length == 0 || !IsGraphOpcodeAlias(commentParts[0]))
-                    continue;
+                if (!string.IsNullOrWhiteSpace(comment))
+                {
+                    string[] commentParts = comment.Split(new[] { ' ', '\t' }, StringSplitOptions.RemoveEmptyEntries);
+                    if (commentParts.Length > 0 && IsGraphOpcodeAlias(commentParts[0]))
+                    {
+                        alias = commentParts[0];
+                        if (!result.Tokens.Add(alias))
+                            throw new InvalidDataException("Reference/allowed_opcodes.csv contains duplicate opcode alias: " + alias);
 
-                if (!result.Tokens.Add(commentParts[0]))
-                    throw new InvalidDataException("Reference/allowed_opcodes.csv contains duplicate opcode alias: " + commentParts[0]);
+                        result.AliasCount++;
+                    }
+                }
 
-                result.AliasCount++;
+                AllowedGraphOpcodeChoice choice = new AllowedGraphOpcodeChoice();
+                choice.Hex = hexToken;
+                choice.Value = string.IsNullOrWhiteSpace(alias) ? hexToken : alias;
+                choice.Label = string.IsNullOrWhiteSpace(alias) ? hexToken : alias + " (" + hexToken + ")";
+                result.Choices.Add(choice);
             }
 
             if (result.HexCount == 0)
@@ -1186,6 +1565,46 @@ namespace Hecton8.Editor.ModdingSDK
                 case "string":
                 case "enum":
                     return true;
+                default:
+                    return false;
+            }
+        }
+
+        private static bool IsSupportedAssetKind(string value)
+        {
+            switch (value)
+            {
+                case "data_blob":
+                case "raw_texture":
+                case "audio_clip":
+                    return true;
+                default:
+                    return false;
+            }
+        }
+
+        private static bool IsSafeAssetPath(string value, string kind)
+        {
+            if (string.IsNullOrWhiteSpace(value) ||
+                value != value.Trim() ||
+                Path.IsPathRooted(value) ||
+                value.StartsWith("../", StringComparison.Ordinal) ||
+                value.Contains("/../") ||
+                value.Contains("..") ||
+                !value.StartsWith("Content/Assets/", StringComparison.Ordinal))
+            {
+                return false;
+            }
+
+            string extension = Path.GetExtension(value).ToLowerInvariant();
+            switch (kind)
+            {
+                case "data_blob":
+                    return extension == ".json" || extension == ".bytes" || extension == ".bin";
+                case "raw_texture":
+                    return extension == ".png" || extension == ".jpg" || extension == ".jpeg" || extension == ".webp";
+                case "audio_clip":
+                    return extension == ".wav" || extension == ".ogg";
                 default:
                     return false;
             }
@@ -1405,6 +1824,11 @@ namespace Hecton8.Editor.ModdingSDK
                 _displayName = manifest.DisplayName ?? string.Empty;
                 _author = manifest.Author ?? string.Empty;
                 _version = manifest.Version ?? string.Empty;
+                if (manifest.Budgets != null)
+                {
+                    _manifestMaxEnvelopesPerFrame = manifest.Budgets.MaxEnvelopesPerFrame;
+                    _manifestMaxAssetBytes = manifest.Budgets.MaxAssetBytes;
+                }
             }
             catch (Exception exception)
             {
@@ -1817,6 +2241,23 @@ namespace Hecton8.Editor.ModdingSDK
         }
 
         [Serializable]
+        private sealed class AssetManifestDocument
+        {
+            public string Schema = string.Empty;
+            public AssetEntry[] Assets = new AssetEntry[0];
+        }
+
+        [Serializable]
+        private sealed class AssetEntry
+        {
+            public string Id = string.Empty;
+            public string Kind = string.Empty;
+            public string Path = string.Empty;
+            public string Crc32 = string.Empty;
+            public long Bytes = 0L;
+        }
+
+        [Serializable]
         private sealed class LocaleDocument
         {
             public string Schema = string.Empty;
@@ -1826,8 +2267,16 @@ namespace Hecton8.Editor.ModdingSDK
         private sealed class AllowedGraphOpcodeSet
         {
             public readonly HashSet<string> Tokens = new HashSet<string>(StringComparer.Ordinal);
+            public readonly List<AllowedGraphOpcodeChoice> Choices = new List<AllowedGraphOpcodeChoice>();
             public int HexCount;
             public int AliasCount;
+        }
+
+        private sealed class AllowedGraphOpcodeChoice
+        {
+            public string Label = string.Empty;
+            public string Value = string.Empty;
+            public string Hex = string.Empty;
         }
 
         [Serializable]

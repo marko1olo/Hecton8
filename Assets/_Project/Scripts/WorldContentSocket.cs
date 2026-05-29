@@ -93,6 +93,7 @@ namespace Hecton8.World
 
         private void OnEnable()
         {
+            RefreshZoneAnchorCold();
             RegisterActiveSocket(this);
         }
 
@@ -131,13 +132,13 @@ namespace Hecton8.World
 
         public WorldZoneAnchor GetZoneAnchor()
         {
-            if (_cachedZoneAnchor == null)
-            {
-                if (!TryGetComponent(out _cachedZoneAnchor))
-                    _cachedZoneAnchor = GetComponentInParent<WorldZoneAnchor>();
-            }
-
             return _cachedZoneAnchor;
+        }
+
+        public void RefreshZoneAnchorCold()
+        {
+            if (!TryGetComponent(out _cachedZoneAnchor))
+                _cachedZoneAnchor = GetComponentInParent<WorldZoneAnchor>();
         }
 
         public float GetFlatDistance(Vector3 position)

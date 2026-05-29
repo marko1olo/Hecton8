@@ -518,7 +518,7 @@ namespace GPUInstancer
             float sizeDetailXScale = terrainSize.x / detailResolution;
             float sizeDetailZScale = terrainSize.z / detailResolution;
             float normalScale = heightResolution / (terrainSize.x / terrainSize.y);
-            float detailUniqueValue = detailPrototype.GetInstanceID();
+            float detailUniqueValue = GPUInstancerUtility.GetUnityObjectIdAsFloat(detailPrototype);
             float detailDensity = detailPrototype.detailDensity;
 
             float px, py, leftBottomH, leftTopH, rightBottomH, rightTopH;
@@ -624,7 +624,7 @@ namespace GPUInstancer
                 return Array.Empty<Matrix4x4>();
 
             Matrix4x4[] result = new Matrix4x4[instanceCount];
-            if (detailPrototype == null || grassInstantiationComputeShader == null || counterBuffer == null || counterData == null || detailMap == null || heightMapData == null || detailMap.Length <= 0 || heightMapData.Length <= 0)
+            if (detailPrototype == null || grassInstantiationComputeShader == null || !grassInstantiationComputeShader.HasKernel(GPUInstancerConstants.GRASS_INSTANTIATION_KERNEL) || counterBuffer == null || counterData == null || detailMap == null || heightMapData == null || detailMap.Length <= 0 || heightMapData.Length <= 0)
                 return result;
 
             ComputeBuffer visibilityBuffer;
@@ -647,7 +647,7 @@ namespace GPUInstancer
             DispatchDetailComputeShader(grassInstantiationComputeShader, grassInstantiationComputeKernelId,
                 visibilityBuffer, detailMapBuffer, heightMapBuffer,
                 new Vector4(detailMapSize, detailMapSize, heightMapSize, heightMapSize), startPosition, terrainSize, detailResolution, heightResolution, detailPrototype.detailScale,
-                healthyDryNoiseTexture, detailPrototype.noiseSpread, detailPrototype.GetInstanceID(), detailPrototype.detailDensity, counterBuffer, detailPrototype.terrainNormalEffect);
+                healthyDryNoiseTexture, detailPrototype.noiseSpread, GPUInstancerUtility.GetUnityObjectId(detailPrototype), detailPrototype.detailDensity, counterBuffer, detailPrototype.terrainNormalEffect);
 
             detailMapBuffer.Release();
 
@@ -668,7 +668,7 @@ namespace GPUInstancer
                                                                 ComputeShader grassInstantiationComputeShader, GPUInstancerTerrainSettings terrainSettings,
                                                                 ComputeBuffer heightMapBuffer, ComputeBuffer detailMapBuffer, ComputeBuffer counterBuffer, int[] counterData)
         {
-            if (detailPrototype == null || instanceCount <= 0 || grassInstantiationComputeShader == null || heightMapBuffer == null || detailMapBuffer == null || counterBuffer == null || counterData == null)
+            if (detailPrototype == null || instanceCount <= 0 || grassInstantiationComputeShader == null || !grassInstantiationComputeShader.HasKernel(GPUInstancerConstants.GRASS_INSTANTIATION_KERNEL) || heightMapBuffer == null || detailMapBuffer == null || counterBuffer == null || counterData == null)
                 return null;
             if (heightMapBuffer.count <= 0 || detailMapBuffer.count <= 0)
                 return null;
@@ -687,7 +687,7 @@ namespace GPUInstancer
             DispatchDetailComputeShader(grassInstantiationComputeShader, grassInstantiationComputeKernelId,
                 visibilityBuffer, detailMapBuffer, heightMapBuffer,
                 new Vector4(detailMapSize, detailMapSize, heightMapSize, heightMapSize), startPosition, terrainSize, detailResolution, heightResolution, detailPrototype.detailScale,
-                healthyDryNoiseTexture, detailPrototype.noiseSpread, detailPrototype.GetInstanceID(), detailPrototype.detailDensity, counterBuffer, detailPrototype.terrainNormalEffect);
+                healthyDryNoiseTexture, detailPrototype.noiseSpread, GPUInstancerUtility.GetUnityObjectId(detailPrototype), detailPrototype.detailDensity, counterBuffer, detailPrototype.terrainNormalEffect);
 
             return visibilityBuffer;
         }

@@ -43,6 +43,7 @@ namespace Hecton8.Core.Hardware
         private const byte ThermalStatusEmergency = 5;
         private const int AndroidThermalFeatureHeadroom = 1 << 0;
         private const int AndroidThermalFeatureStatus = 1 << 1;
+        private const uint Lane4VfxKillSwitchMask = 1u << 4;
         private const float HeadroomWarmPressure01 = 0.85f;
         private const float HeadroomSeverePressure01 = 1.00f;
         private const int RecoverySamplesToClear = 2;
@@ -533,7 +534,7 @@ namespace Hecton8.Core.Hardware
 
             if (!_policyInitialized || throttling != _throttlingPolicyApplied)
             {
-                GlobalRegistry.SetSystemKillSwitchBits(GlobalRegistry.SystemKillSwitchLane4VfxMask, throttling);
+                SignalBusRegistry.SetSystemKillSwitchBits(Lane4VfxKillSwitchMask, throttling, SourceHash);
 
                 IFoveatedSimulationDirector foveated = _foveatedDirector;
                 if (foveated != null)
@@ -582,7 +583,7 @@ namespace Hecton8.Core.Hardware
             if (!_policyInitialized)
                 return;
 
-            GlobalRegistry.SetSystemKillSwitchBits(GlobalRegistry.SystemKillSwitchLane4VfxMask, false);
+            SignalBusRegistry.SetSystemKillSwitchBits(Lane4VfxKillSwitchMask, false, SourceHash);
             IFoveatedSimulationDirector foveated = _foveatedDirector;
             if (foveated != null)
                 foveated.SetThermalFreezeDistanceOverride(false, ThermalFreezeDistanceMeters);
@@ -664,34 +665,27 @@ namespace Hecton8.Core.Hardware
 
         private void WriteBlackBox(uint frame)
         {
-            if (!TryAcquireThermalBlackBoxWriteView(out NativeArray<HardwareThermalTelemetryEntry> blackBox))
+            if (!TryResolveThermalBlackBoxWriteViewCurrentPhase(out NativeArray<HardwareThermalTelemetryEntry> blackBox))
                 return;
 
-            try
+            int index = _blackBoxCursor;
+            blackBox[index] = new HardwareThermalTelemetryEntry
             {
-                int index = _blackBoxCursor;
-                blackBox[index] = new HardwareThermalTelemetryEntry
-                {
-                    Frame = frame,
-                    Sequence = _sequence,
-                    ActionMask = _lastActionMask,
-                    TemperatureTenthsCelsius = _temperatureTenthsCelsius,
-                    Severity = _severity,
-                    BatteryPercent = _batteryPercent,
-                    BatteryStatus = _batteryStatus,
-                    ThermalStatus = _thermalStatus,
-                    Flags = (byte)(_hapticMuteApplied ? 1 : 0)
-                };
+                Frame = frame,
+                Sequence = _sequence,
+                ActionMask = _lastActionMask,
+                TemperatureTenthsCelsius = _temperatureTenthsCelsius,
+                Severity = _severity,
+                BatteryPercent = _batteryPercent,
+                BatteryStatus = _batteryStatus,
+                ThermalStatus = _thermalStatus,
+                Flags = (byte)(_hapticMuteApplied ? 1 : 0)
+            };
 
-                index++;
-                if (index >= BlackBoxFrameCount)
-                    index = 0;
-                _blackBoxCursor = index;
-            }
-            finally
-            {
-                ReleaseThermalBlackBoxWriteView();
-            }
+            index++;
+            if (index >= BlackBoxFrameCount)
+                index = 0;
+            _blackBoxCursor = index;
         }
 
         private void DumpBlackBoxCold()
@@ -753,10 +747,26 @@ namespace Hecton8.Core.Hardware
         private void EnsureNativeState()
         {
             if (OpenOrAcquireThermalSeverityWriteViewForOwnerRoute(out _))
-                ReleaseThermalSeverityWriteView();
+            {
+                try
+                {
+                }
+                finally
+                {
+                    ReleaseThermalSeverityWriteView();
+                }
+            }
 
             if (OpenOrAcquireThermalBlackBoxWriteViewForOwnerRoute(out _))
-                ReleaseThermalBlackBoxWriteView();
+            {
+                try
+                {
+                }
+                finally
+                {
+                    ReleaseThermalBlackBoxWriteView();
+                }
+            }
         }
 
         private void DisposeNativeState()
@@ -797,12 +807,23 @@ namespace Hecton8.Core.Hardware
             if (!vault.TryAcquireWriteLock(in _thermalSeverityHandle, SystemID.HardwareHomeostasis, out severity))
                 return false;
 
-            if (severity.IsCreated && severity.Length >= 1)
-                return true;
+            bool handedOff = false;
+            try
+            {
+                if (severity.IsCreated && severity.Length >= 1)
+                {
+                    handedOff = true;
+                    return true;
+                }
 
-            vault.ReleaseWriteLock(in _thermalSeverityHandle, SystemID.HardwareHomeostasis);
-            severity = default;
-            return false;
+                severity = default;
+                return false;
+            }
+            finally
+            {
+                if (!handedOff)
+                    vault.ReleaseWriteLock(in _thermalSeverityHandle, SystemID.HardwareHomeostasis);
+            }
         }
 
         private bool OpenOrAcquireThermalSeverityWriteViewForOwnerRoute(out NativeArray<byte> severity)
@@ -833,12 +854,23 @@ namespace Hecton8.Core.Hardware
                 return false;
             }
 
-            if (severity.IsCreated && severity.Length >= 1)
-                return true;
+            bool handedOff = false;
+            try
+            {
+                if (severity.IsCreated && severity.Length >= 1)
+                {
+                    handedOff = true;
+                    return true;
+                }
 
-            vault.ReleaseWriteLock(in _thermalSeverityHandle, SystemID.HardwareHomeostasis);
-            severity = default;
-            return false;
+                severity = default;
+                return false;
+            }
+            finally
+            {
+                if (!handedOff)
+                    vault.ReleaseWriteLock(in _thermalSeverityHandle, SystemID.HardwareHomeostasis);
+            }
         }
 
         private bool ReleaseThermalSeverityWriteView()
@@ -873,6 +905,18 @@ namespace Hecton8.Core.Hardware
                    blackBox.Length >= BlackBoxFrameCount;
         }
 
+        private bool TryResolveThermalBlackBoxWriteViewCurrentPhase(out NativeArray<HardwareThermalTelemetryEntry> blackBox)
+        {
+            blackBox = default;
+            IDataVault vault = _dataVault;
+            if (vault == null || _blackBoxHandle.BufferID == 0u)
+                return false;
+
+            return vault.TryResolveHandle(in _blackBoxHandle, out blackBox) &&
+                   blackBox.IsCreated &&
+                   blackBox.Length >= BlackBoxFrameCount;
+        }
+
         private bool TryAcquireThermalBlackBoxWriteView(out NativeArray<HardwareThermalTelemetryEntry> blackBox)
         {
             blackBox = default;
@@ -883,12 +927,23 @@ namespace Hecton8.Core.Hardware
             if (!vault.TryAcquireWriteLock(in _blackBoxHandle, SystemID.HardwareHomeostasis, out blackBox))
                 return false;
 
-            if (blackBox.IsCreated && blackBox.Length >= BlackBoxFrameCount)
-                return true;
+            bool handedOff = false;
+            try
+            {
+                if (blackBox.IsCreated && blackBox.Length >= BlackBoxFrameCount)
+                {
+                    handedOff = true;
+                    return true;
+                }
 
-            vault.ReleaseWriteLock(in _blackBoxHandle, SystemID.HardwareHomeostasis);
-            blackBox = default;
-            return false;
+                blackBox = default;
+                return false;
+            }
+            finally
+            {
+                if (!handedOff)
+                    vault.ReleaseWriteLock(in _blackBoxHandle, SystemID.HardwareHomeostasis);
+            }
         }
 
         private bool OpenOrAcquireThermalBlackBoxWriteViewForOwnerRoute(out NativeArray<HardwareThermalTelemetryEntry> blackBox)
@@ -919,12 +974,23 @@ namespace Hecton8.Core.Hardware
                 return false;
             }
 
-            if (blackBox.IsCreated && blackBox.Length >= BlackBoxFrameCount)
-                return true;
+            bool handedOff = false;
+            try
+            {
+                if (blackBox.IsCreated && blackBox.Length >= BlackBoxFrameCount)
+                {
+                    handedOff = true;
+                    return true;
+                }
 
-            vault.ReleaseWriteLock(in _blackBoxHandle, SystemID.HardwareHomeostasis);
-            blackBox = default;
-            return false;
+                blackBox = default;
+                return false;
+            }
+            finally
+            {
+                if (!handedOff)
+                    vault.ReleaseWriteLock(in _blackBoxHandle, SystemID.HardwareHomeostasis);
+            }
         }
 
         private bool ReleaseThermalBlackBoxWriteView()

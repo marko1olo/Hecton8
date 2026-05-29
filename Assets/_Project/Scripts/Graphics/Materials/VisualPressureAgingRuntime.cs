@@ -155,6 +155,34 @@ namespace Hecton8.Graphics.Materials
         private static readonly int DegradationBufferId = Shader.PropertyToID("_GlobalUberNoirDegradation");
         private static readonly int DegradationRuntimeId = Shader.PropertyToID("_GlobalUberNoirDegradationRuntime");
 
+        private static readonly ulong JobMutationGuardMask =
+            VisualAgingMutationGuardBit(BufferID.VisualPressureAgingParams) |
+            VisualAgingMutationGuardBit(BufferID.VisualPressureAgingRuntime) |
+            VisualAgingMutationGuardBit(BufferID.VisualPressureAgingTelemetryRing) |
+            VisualAgingMutationGuardBit(BufferID.VisualPressureAgingTelemetryCursor) |
+            VisualAgingMutationGuardBit(BufferID.VisualPressureAgingTuning) |
+            VisualAgingMutationGuardBit(BufferID.VisualPressureAgingMockTemperature) |
+            VisualAgingMutationGuardBit(BufferID.UberNoirInstanceDegradation) |
+            VisualAgingMutationGuardBit(BufferID.UberNoirDegradationTelemetryRing) |
+            VisualAgingMutationGuardBit(BufferID.UberNoirDegradationTelemetryCursor);
+
+        private static readonly ulong DefaultsMutationGuardMask =
+            VisualAgingMutationGuardBit(BufferID.VisualPressureAgingParams) |
+            VisualAgingMutationGuardBit(BufferID.VisualPressureAgingRuntime) |
+            VisualAgingMutationGuardBit(BufferID.VisualPressureAgingTuning) |
+            VisualAgingMutationGuardBit(BufferID.VisualPressureAgingMockTemperature) |
+            VisualAgingMutationGuardBit(BufferID.UberNoirInstanceDegradation);
+
+        private static readonly ulong ThermalInputMutationGuardMask =
+            VisualAgingMutationGuardBit(BufferID.ThermodynamicsTemperatureFrontMirror);
+
+        private static readonly ulong StructuralInputMutationGuardMask =
+            VisualAgingMutationGuardBit(BufferID.StructuralIntegrityStates) |
+            VisualAgingMutationGuardBit(BufferID.StructuralIntegrityNodeAups);
+
+        private static readonly ulong StructuralTuningMutationGuardMask =
+            VisualAgingMutationGuardBit(BufferID.StructuralIntegrityTuning);
+
         private static VisualPressureAgingRuntime s_active;
         private static bool s_hasPendingEditorTuning;
         private static VisualAgingTuningDTO s_pendingEditorTuning = DefaultTuning(1u);
@@ -195,7 +223,9 @@ namespace Hecton8.Graphics.Materials
 #endif
         private long _csvLastWriteTicks;
         private long _degradationCsvLastWriteTicks;
-        private int _lockedBufferMask;
+        private IDataVault _jobGuardVault;
+        private ulong _jobGuardMask;
+        private bool _jobBuffersPinned;
         private int _activeCount;
         private int _uploadedCount;
         private int _readBufferIndex;
@@ -661,19 +691,11 @@ namespace Hecton8.Graphics.Materials
                 return dependsOn;
 
             UnlockJobBuffers();
-            NativeArray<float> temperatures = default;
             _runtimeFlags &= ~FlagThermalSource;
-            bool hasThermalInput = AcquireThermalInputForSchedule(vault, out temperatures);
-
-            NativeArray<IntegrityStateDTO> states = default;
-            NativeArray<double3> nodeAups = default;
-            bool hasStructural = AcquireStructuralInputsForSchedule(vault, out states, out nodeAups);
-
-            NativeArray<StructuralTuningDTO> structuralTuning = default;
-            if (hasStructural)
-                AcquireStructuralTuningForSchedule(vault, out structuralTuning);
-
-            if (!TryLockJobBuffers(vault, !hasThermalInput, out bool mockTemperatureLocked))
+            bool requestThermalInput = HasThermalInputForSchedule(vault);
+            bool requestStructuralInputs = HasStructuralInputsForSchedule(vault);
+            bool requestStructuralTuning = requestStructuralInputs && HasStructuralTuningForSchedule(vault);
+            if (!TryLockJobBuffers(vault, requestThermalInput, requestStructuralInputs, requestStructuralTuning))
                 return dependsOn;
 
             _frame = context.Frame;
@@ -692,13 +714,27 @@ namespace Hecton8.Graphics.Materials
                 return dependsOn;
             }
 
+            NativeArray<float> temperatures = default;
+            bool hasThermalInput = HasJobGuard(ThermalInputMutationGuardMask) &&
+                AcquireThermalInputForSchedule(vault, out temperatures);
+            if (!hasThermalInput &&
+                !IsCurrentOwnedBuffer(vault, in _mockTemperatureHandle, BufferID.VisualPressureAgingMockTemperature, 1, out temperatures))
+            {
+                temperatures = default;
+            }
+
+            NativeArray<IntegrityStateDTO> states = default;
+            NativeArray<double3> nodeAups = default;
+            bool hasStructural = HasJobGuard(StructuralInputMutationGuardMask) &&
+                AcquireStructuralInputsForSchedule(vault, out states, out nodeAups);
+
+            NativeArray<StructuralTuningDTO> structuralTuning = default;
+            if (hasStructural && HasJobGuard(StructuralTuningMutationGuardMask))
+                AcquireStructuralTuningForSchedule(vault, out structuralTuning);
+
             bool keepLocksForScheduledJob = false;
             try
             {
-                if (!hasThermalInput && mockTemperatureLocked &&
-                    !IsCurrentOwnedBuffer(vault, in _mockTemperatureHandle, BufferID.VisualPressureAgingMockTemperature, 1, out temperatures))
-                    temperatures = default;
-
                 VisualAgingTuningDTO localTuning = tuning[0];
                 int count = ResolveActiveCount(hasStructural, states, structuralTuning, localTuning, output.Length, quality);
                 _activeCount = count;
@@ -1020,92 +1056,24 @@ namespace Hecton8.Graphics.Materials
             if (vault == null)
                 return false;
 
-            bool locked = false;
+            if (!vault.TryAcquireMutationGuard(DefaultsMutationGuardMask))
+                return false;
+
             try
             {
-                locked = vault.TryLockBuffer(BufferID.VisualPressureAgingParams, OwnerSystemId);
-                if (!locked)
+                if (!IsCurrentOwnedBuffer(vault, in _paramsHandle, BufferID.VisualPressureAgingParams, Capacity, out NativeArray<VisualAgingParamsDTO> output) ||
+                    !IsCurrentOwnedBuffer(vault, in _degradationHandle, BufferID.UberNoirInstanceDegradation, Capacity, out NativeArray<InstanceDegradationDTO> degradation) ||
+                    !IsCurrentOwnedBuffer(vault, in _tuningHandle, BufferID.VisualPressureAgingTuning, 1, out NativeArray<VisualAgingTuningDTO> tuning) ||
+                    !IsCurrentOwnedBuffer(vault, in _mockTemperatureHandle, BufferID.VisualPressureAgingMockTemperature, 1, out NativeArray<float> mockTemperature) ||
+                    !IsCurrentOwnedBuffer(vault, in _runtimeHandle, BufferID.VisualPressureAgingRuntime, 1, out NativeArray<VisualAgingRuntimeDTO> runtime))
+                {
                     return false;
-
-                vault.TryResolveHandle(in _paramsHandle, out NativeArray<VisualAgingParamsDTO> output);
-                if (!output.IsCreated || output.Length == 0)
-                    return false;
+                }
 
                 output[0] = default;
-            }
-            finally
-            {
-                if (locked)
-                    vault.TryUnlockBuffer(BufferID.VisualPressureAgingParams, OwnerSystemId);
-            }
-
-            locked = false;
-            try
-            {
-                locked = vault.TryLockBuffer(BufferID.UberNoirInstanceDegradation, OwnerSystemId);
-                if (!locked)
-                    return false;
-
-                vault.TryResolveHandle(in _degradationHandle, out NativeArray<InstanceDegradationDTO> degradation);
-                if (!degradation.IsCreated || degradation.Length == 0)
-                    return false;
-
                 degradation[0] = default;
-            }
-            finally
-            {
-                if (locked)
-                    vault.TryUnlockBuffer(BufferID.UberNoirInstanceDegradation, OwnerSystemId);
-            }
-
-            locked = false;
-            try
-            {
-                locked = vault.TryLockBuffer(BufferID.VisualPressureAgingTuning, OwnerSystemId);
-                if (!locked)
-                    return false;
-
-                vault.TryResolveHandle(in _tuningHandle, out NativeArray<VisualAgingTuningDTO> tuning);
-                if (!tuning.IsCreated || tuning.Length == 0)
-                    return false;
-
                 tuning[0] = s_pendingEditorTuning = DefaultTuning(_csvGeneration);
-            }
-            finally
-            {
-                if (locked)
-                    vault.TryUnlockBuffer(BufferID.VisualPressureAgingTuning, OwnerSystemId);
-            }
-
-            locked = false;
-            try
-            {
-                locked = vault.TryLockBuffer(BufferID.VisualPressureAgingMockTemperature, OwnerSystemId);
-                if (!locked)
-                    return false;
-
-                vault.TryResolveHandle(in _mockTemperatureHandle, out NativeArray<float> mockTemperature);
-                if (!mockTemperature.IsCreated || mockTemperature.Length == 0)
-                    return false;
-
                 mockTemperature[0] = 42.0f;
-            }
-            finally
-            {
-                if (locked)
-                    vault.TryUnlockBuffer(BufferID.VisualPressureAgingMockTemperature, OwnerSystemId);
-            }
-
-            locked = false;
-            try
-            {
-                locked = vault.TryLockBuffer(BufferID.VisualPressureAgingRuntime, OwnerSystemId);
-                if (!locked)
-                    return false;
-
-                vault.TryResolveHandle(in _runtimeHandle, out NativeArray<VisualAgingRuntimeDTO> runtime);
-                if (!runtime.IsCreated || runtime.Length == 0)
-                    return false;
 
                 VisualAgingRuntimeDTO runtimeDefault = default;
                 runtimeDefault.Flags = FlagMockSource | FlagNoRollbackState;
@@ -1116,8 +1084,7 @@ namespace Hecton8.Graphics.Materials
             }
             finally
             {
-                if (locked)
-                    vault.TryUnlockBuffer(BufferID.VisualPressureAgingRuntime, OwnerSystemId);
+                vault.ReleaseMutationGuard(DefaultsMutationGuardMask);
             }
 
             _runtimeFlags = FlagMockSource | FlagNoRollbackState;
@@ -1154,30 +1121,30 @@ namespace Hecton8.Graphics.Materials
             degradationTelemetry = default;
             degradationTelemetryCursor = default;
             return vault != null &&
-                vault.TryResolveHandle(in _paramsHandle, out output) &&
-                vault.TryResolveHandle(in _degradationHandle, out degradation) &&
-                vault.TryResolveHandle(in _runtimeHandle, out runtime) &&
-                vault.TryResolveHandle(in _tuningHandle, out tuning) &&
-                vault.TryResolveHandle(in _telemetryHandle, out telemetry) &&
-                vault.TryResolveHandle(in _telemetryCursorHandle, out telemetryCursor) &&
-                vault.TryResolveHandle(in _degradationTelemetryHandle, out degradationTelemetry) &&
-                vault.TryResolveHandle(in _degradationTelemetryCursorHandle, out degradationTelemetryCursor) &&
-                output.IsCreated &&
-                degradation.IsCreated &&
-                runtime.IsCreated &&
-                tuning.IsCreated &&
-                telemetry.IsCreated &&
-                telemetryCursor.IsCreated &&
-                degradationTelemetry.IsCreated &&
-                degradationTelemetryCursor.IsCreated &&
-                output.Length > 0 &&
-                degradation.Length > 0 &&
-                runtime.Length > 0 &&
-                tuning.Length > 0 &&
-                telemetry.Length > 0 &&
-                telemetryCursor.Length > 0 &&
-                degradationTelemetry.Length > 0 &&
-                degradationTelemetryCursor.Length > 0;
+                IsCurrentOwnedBuffer(vault, in _paramsHandle, BufferID.VisualPressureAgingParams, Capacity, out output) &&
+                IsCurrentOwnedBuffer(vault, in _degradationHandle, BufferID.UberNoirInstanceDegradation, Capacity, out degradation) &&
+                IsCurrentOwnedBuffer(vault, in _runtimeHandle, BufferID.VisualPressureAgingRuntime, 1, out runtime) &&
+                IsCurrentOwnedBuffer(vault, in _tuningHandle, BufferID.VisualPressureAgingTuning, 1, out tuning) &&
+                IsCurrentOwnedBuffer(vault, in _telemetryHandle, BufferID.VisualPressureAgingTelemetryRing, TelemetryFrameCount, out telemetry) &&
+                IsCurrentOwnedBuffer(vault, in _telemetryCursorHandle, BufferID.VisualPressureAgingTelemetryCursor, 1, out telemetryCursor) &&
+                IsCurrentOwnedBuffer(vault, in _degradationTelemetryHandle, BufferID.UberNoirDegradationTelemetryRing, TelemetryFrameCount, out degradationTelemetry) &&
+                IsCurrentOwnedBuffer(vault, in _degradationTelemetryCursorHandle, BufferID.UberNoirDegradationTelemetryCursor, 1, out degradationTelemetryCursor);
+        }
+
+        private bool HasThermalInputForSchedule(IDataVault vault)
+        {
+            return IsCurrentExternalBuffer(vault, in _thermalFrontMirrorHandle, BufferID.ThermodynamicsTemperatureFrontMirror, 1, out NativeArray<float> _);
+        }
+
+        private bool HasStructuralInputsForSchedule(IDataVault vault)
+        {
+            return IsCurrentExternalBuffer(vault, in _structuralStatesHandle, BufferID.StructuralIntegrityStates, 1, out NativeArray<IntegrityStateDTO> _) &&
+                IsCurrentExternalBuffer(vault, in _structuralNodeAupsHandle, BufferID.StructuralIntegrityNodeAups, 1, out NativeArray<double3> _);
+        }
+
+        private bool HasStructuralTuningForSchedule(IDataVault vault)
+        {
+            return IsCurrentExternalBuffer(vault, in _structuralTuningHandle, BufferID.StructuralIntegrityTuning, 1, out NativeArray<StructuralTuningDTO> _);
         }
 
         private bool AcquireStructuralInputsForSchedule(
@@ -1187,36 +1154,14 @@ namespace Hecton8.Graphics.Materials
         {
             states = default;
             nodeAups = default;
-            if (!TryLockStructuralInputs(vault))
-            {
-                return false;
-            }
-
-            bool resolved =
-                IsCurrentExternalBuffer(vault, in _structuralStatesHandle, BufferID.StructuralIntegrityStates, 1, out states) &&
+            return IsCurrentExternalBuffer(vault, in _structuralStatesHandle, BufferID.StructuralIntegrityStates, 1, out states) &&
                 IsCurrentExternalBuffer(vault, in _structuralNodeAupsHandle, BufferID.StructuralIntegrityNodeAups, 1, out nodeAups);
-            if (!resolved)
-            {
-                UnlockOptional(vault, BufferID.StructuralIntegrityNodeAups, 1 << 9);
-                UnlockOptional(vault, BufferID.StructuralIntegrityStates, 1 << 8);
-            }
-
-            return resolved;
         }
 
         private bool AcquireStructuralTuningForSchedule(IDataVault vault, out NativeArray<StructuralTuningDTO> structuralTuning)
         {
             structuralTuning = default;
-            if (!TryLockOptional(vault, BufferID.StructuralIntegrityTuning, 1 << 10))
-            {
-                return false;
-            }
-
-            bool resolved = IsCurrentExternalBuffer(vault, in _structuralTuningHandle, BufferID.StructuralIntegrityTuning, 1, out structuralTuning);
-            if (!resolved)
-                UnlockOptional(vault, BufferID.StructuralIntegrityTuning, 1 << 10);
-
-            return resolved;
+            return IsCurrentExternalBuffer(vault, in _structuralTuningHandle, BufferID.StructuralIntegrityTuning, 1, out structuralTuning);
         }
 
         private bool ApplyPendingEditorTuningImmediate()
@@ -1254,109 +1199,73 @@ namespace Hecton8.Graphics.Materials
         private bool AcquireThermalInputForSchedule(IDataVault vault, out NativeArray<float> temperatures)
         {
             temperatures = default;
-            if (!TryLockOptional(vault, BufferID.ThermodynamicsTemperatureFrontMirror, 1 << 7))
+            if (!IsCurrentExternalBuffer(vault, in _thermalFrontMirrorHandle, BufferID.ThermodynamicsTemperatureFrontMirror, 1, out temperatures))
                 return false;
-
-            bool resolved = IsCurrentExternalBuffer(vault, in _thermalFrontMirrorHandle, BufferID.ThermodynamicsTemperatureFrontMirror, 1, out temperatures);
-            if (!resolved)
-            {
-                UnlockOptional(vault, BufferID.ThermodynamicsTemperatureFrontMirror, 1 << 7);
-                return false;
-            }
 
             _runtimeFlags |= FlagThermalSource;
             return true;
         }
 
-        private bool TryLockJobBuffers(IDataVault vault, bool tryLockMockTemperature, out bool mockTemperatureLocked)
+        private bool TryLockJobBuffers(
+            IDataVault vault,
+            bool includeThermalInput,
+            bool includeStructuralInputs,
+            bool includeStructuralTuning)
         {
-            mockTemperatureLocked = false;
-            if (!TryLock(vault, BufferID.VisualPressureAgingParams, 1 << 0)) return false;
-            if (!TryLock(vault, BufferID.VisualPressureAgingRuntime, 1 << 1)) return false;
-            if (!TryLock(vault, BufferID.VisualPressureAgingTelemetryRing, 1 << 2)) return false;
-            if (!TryLock(vault, BufferID.VisualPressureAgingTelemetryCursor, 1 << 3)) return false;
-            if (!TryLock(vault, BufferID.VisualPressureAgingTuning, 1 << 4)) return false;
-            if (tryLockMockTemperature)
-                mockTemperatureLocked = TryLockOptional(vault, BufferID.VisualPressureAgingMockTemperature, 1 << 5);
-            if (!TryLock(vault, BufferID.UberNoirInstanceDegradation, 1 << 6)) return false;
-            if (!TryLock(vault, BufferID.UberNoirDegradationTelemetryRing, 1 << 11)) return false;
-            if (!TryLock(vault, BufferID.UberNoirDegradationTelemetryCursor, 1 << 12)) return false;
-            return true;
-        }
+            if (vault == null || _jobBuffersPinned)
+                return false;
 
-        private bool TryLockStructuralInputs(IDataVault vault)
-        {
-            bool statesLocked = TryLockOptional(vault, BufferID.StructuralIntegrityStates, 1 << 8);
-            bool aupsLocked = TryLockOptional(vault, BufferID.StructuralIntegrityNodeAups, 1 << 9);
-            if (statesLocked && aupsLocked)
+            ulong guardMask = JobMutationGuardMask;
+            if (includeThermalInput)
+                guardMask |= ThermalInputMutationGuardMask;
+            if (includeStructuralInputs)
+                guardMask |= StructuralInputMutationGuardMask;
+            if (includeStructuralTuning)
+                guardMask |= StructuralTuningMutationGuardMask;
+
+            if (TryAcquireJobMutationGuard(vault, guardMask))
                 return true;
 
-            if (statesLocked)
-            {
-                vault.TryUnlockBuffer(BufferID.StructuralIntegrityStates, OwnerSystemId);
-                _lockedBufferMask &= ~(1 << 8);
-            }
-            if (aupsLocked)
-            {
-                vault.TryUnlockBuffer(BufferID.StructuralIntegrityNodeAups, OwnerSystemId);
-                _lockedBufferMask &= ~(1 << 9);
-            }
-            return false;
+            ulong noOptionalInputsMask = guardMask & ~(ThermalInputMutationGuardMask | StructuralTuningMutationGuardMask);
+            if (noOptionalInputsMask != guardMask && TryAcquireJobMutationGuard(vault, noOptionalInputsMask))
+                return true;
+
+            return includeStructuralInputs && TryAcquireJobMutationGuard(vault, JobMutationGuardMask);
         }
 
-        private bool TryLock(IDataVault vault, BufferID bufferId, int bit)
+        private bool TryAcquireJobMutationGuard(IDataVault vault, ulong guardMask)
         {
-            if (!vault.TryLockBuffer(bufferId, OwnerSystemId))
-            {
-                UnlockJobBuffers();
+            if (guardMask == 0UL || !vault.TryAcquireMutationGuard(guardMask))
                 return false;
-            }
 
-            _lockedBufferMask |= bit;
+            _jobGuardVault = vault;
+            _jobGuardMask = guardMask;
+            _jobBuffersPinned = true;
             return true;
         }
 
-        private bool TryLockOptional(IDataVault vault, BufferID bufferId, int bit)
+        private bool HasJobGuard(ulong guardMask)
         {
-            if (!vault.TryLockBuffer(bufferId, OwnerSystemId))
-                return false;
-
-            _lockedBufferMask |= bit;
-            return true;
-        }
-
-        private void UnlockOptional(IDataVault vault, BufferID bufferId, int bit)
-        {
-            if ((_lockedBufferMask & bit) == 0)
-                return;
-
-            vault.TryUnlockBuffer(bufferId, OwnerSystemId);
-            _lockedBufferMask &= ~bit;
+            return (_jobGuardMask & guardMask) == guardMask;
         }
 
         private void UnlockJobBuffers()
         {
-            IDataVault vault = _vault;
-            if (vault == null || _lockedBufferMask == 0)
+            if (!_jobBuffersPinned)
             {
-                _lockedBufferMask = 0;
+                _jobGuardVault = null;
+                _jobGuardMask = 0UL;
                 return;
             }
 
-            if ((_lockedBufferMask & (1 << 12)) != 0) vault.TryUnlockBuffer(BufferID.UberNoirDegradationTelemetryCursor, OwnerSystemId);
-            if ((_lockedBufferMask & (1 << 11)) != 0) vault.TryUnlockBuffer(BufferID.UberNoirDegradationTelemetryRing, OwnerSystemId);
-            if ((_lockedBufferMask & (1 << 6)) != 0) vault.TryUnlockBuffer(BufferID.UberNoirInstanceDegradation, OwnerSystemId);
-            if ((_lockedBufferMask & (1 << 5)) != 0) vault.TryUnlockBuffer(BufferID.VisualPressureAgingMockTemperature, OwnerSystemId);
-            if ((_lockedBufferMask & (1 << 4)) != 0) vault.TryUnlockBuffer(BufferID.VisualPressureAgingTuning, OwnerSystemId);
-            if ((_lockedBufferMask & (1 << 3)) != 0) vault.TryUnlockBuffer(BufferID.VisualPressureAgingTelemetryCursor, OwnerSystemId);
-            if ((_lockedBufferMask & (1 << 2)) != 0) vault.TryUnlockBuffer(BufferID.VisualPressureAgingTelemetryRing, OwnerSystemId);
-            if ((_lockedBufferMask & (1 << 1)) != 0) vault.TryUnlockBuffer(BufferID.VisualPressureAgingRuntime, OwnerSystemId);
-            if ((_lockedBufferMask & (1 << 0)) != 0) vault.TryUnlockBuffer(BufferID.VisualPressureAgingParams, OwnerSystemId);
-            if ((_lockedBufferMask & (1 << 10)) != 0) vault.TryUnlockBuffer(BufferID.StructuralIntegrityTuning, OwnerSystemId);
-            if ((_lockedBufferMask & (1 << 9)) != 0) vault.TryUnlockBuffer(BufferID.StructuralIntegrityNodeAups, OwnerSystemId);
-            if ((_lockedBufferMask & (1 << 8)) != 0) vault.TryUnlockBuffer(BufferID.StructuralIntegrityStates, OwnerSystemId);
-            if ((_lockedBufferMask & (1 << 7)) != 0) vault.TryUnlockBuffer(BufferID.ThermodynamicsTemperatureFrontMirror, OwnerSystemId);
-            _lockedBufferMask = 0;
+            IDataVault vault = _jobGuardVault ?? _vault;
+            ulong guardMask = _jobGuardMask;
+            _jobGuardVault = null;
+            _jobGuardMask = 0UL;
+            _jobBuffersPinned = false;
+
+            if (vault != null && guardMask != 0UL)
+                vault.ReleaseMutationGuard(guardMask);
         }
 
         private void ReleaseVaultHandles(IDataVault vault)
@@ -1410,11 +1319,31 @@ namespace Hecton8.Graphics.Materials
             return handle.BufferID == (uint)bufferId && IsHandleValid(in handle);
         }
 
+        private static ulong VisualAgingMutationGuardBit(BufferID bufferId)
+        {
+            return 1UL << ((int)bufferId & 63);
+        }
+
         private static bool IsExternalHandleValid<T>(in VaultGenerationHandle<T> handle, BufferID bufferId) where T : struct
         {
             return handle.BufferID == (uint)bufferId &&
-                handle.SystemID != 0u &&
+                IsExpectedExternalOwner(bufferId, handle.SystemID) &&
                 handle.Generation != 0u;
+        }
+
+        private static bool IsExpectedExternalOwner(BufferID bufferId, uint systemId)
+        {
+            switch (bufferId)
+            {
+                case BufferID.StructuralIntegrityStates:
+                case BufferID.StructuralIntegrityNodeAups:
+                case BufferID.StructuralIntegrityTuning:
+                    return systemId == (uint)SystemID.HullIntegrity;
+                case BufferID.ThermodynamicsTemperatureFrontMirror:
+                    return systemId == (uint)SystemID.Thermodynamics;
+                default:
+                    return systemId != 0u;
+            }
         }
 
         private static bool IsCurrentExternalBuffer<T>(

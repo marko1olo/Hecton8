@@ -120,11 +120,14 @@ namespace Hecton8.Physics
         private float _shinobu143LastMockElapsedUs;
         private JobHandle _shinobu132CableMockHandle;
         private bool _shinobu132CableMockScheduled;
+        private ICablePhysics132Service _shinobu132CableMockLeaseService;
+        private IDataVault _shinobu132CableMockLeaseVault;
         private long _shinobu132CableMockScheduleTicks;
         private float _shinobu132LastMockElapsedUs;
         private bool _shinobu132CableBootstrapRequested;
         private JobHandle _shinobu328TensionMockHandle;
         private bool _shinobu328TensionMockScheduled;
+        private IDataVault _shinobu328TensionMockLeaseVault;
         private long _shinobu328TensionMockScheduleTicks;
         private float _shinobu328LastMockElapsedUs;
         private bool _shinobu328TensionBootstrapRequested;
@@ -942,6 +945,8 @@ namespace Hecton8.Physics
             }
 
             _shinobu132CableMockScheduled = true;
+            _shinobu132CableMockLeaseService = cableService;
+            _shinobu132CableMockLeaseVault = _dataVault;
             H8Memory.RegisterActiveJob(SystemID.Physics, _shinobu132CableMockHandle);
         }
 
@@ -969,13 +974,24 @@ namespace Hecton8.Physics
 
         private void FinishShinobu132CableMockCompletion()
         {
+            ICablePhysics132Service cableService = _shinobu132CableMockLeaseService ?? _cablePhysics132Service;
+            IDataVault cableVault = _shinobu132CableMockLeaseVault ?? _dataVault;
             _shinobu132CableMockScheduled = false;
-            long elapsedTicks = System.Diagnostics.Stopwatch.GetTimestamp() - _shinobu132CableMockScheduleTicks;
-            _shinobu132LastMockElapsedUs = (float)math.max(
-                0.0d,
-                elapsedTicks * 1000000.0d / System.Diagnostics.Stopwatch.Frequency);
+            _shinobu132CableMockLeaseService = null;
+            _shinobu132CableMockLeaseVault = null;
+            try
+            {
+                long elapsedTicks = System.Diagnostics.Stopwatch.GetTimestamp() - _shinobu132CableMockScheduleTicks;
+                _shinobu132LastMockElapsedUs = (float)math.max(
+                    0.0d,
+                    elapsedTicks * 1000000.0d / System.Diagnostics.Stopwatch.Frequency);
+            }
+            finally
+            {
+                cableService?.ReleaseMockScheduleBufferPins(cableVault);
+            }
 
-            _cablePhysics132Service?.TryDumpLatestFault(_dataVault);
+            cableService?.TryDumpLatestFault(cableVault);
         }
 
         private void EnsureShinobu328TensionBootstrap()
@@ -1036,6 +1052,7 @@ namespace Hecton8.Physics
             }
 
             _shinobu328TensionMockHandle = schedule.Handle;
+            _shinobu328TensionMockLeaseVault = _dataVault;
             _shinobu328LastActiveTetherCount = schedule.ActiveTetherCount;
             _shinobu328LastNodesPerTether = HarpoonTensionSolver328Constants.MockNodesPerTether;
             _shinobu328LastFrameIndex = frameIndex;
@@ -1067,24 +1084,33 @@ namespace Hecton8.Physics
 
         private void FinishShinobu328TensionMockCompletion()
         {
+            IDataVault tensionVault = _shinobu328TensionMockLeaseVault ?? _dataVault;
             _shinobu328TensionMockScheduled = false;
-            long elapsedTicks = System.Diagnostics.Stopwatch.GetTimestamp() - _shinobu328TensionMockScheduleTicks;
-            _shinobu328LastMockElapsedUs = (float)math.max(
-                0.0d,
-                elapsedTicks * 1000000.0d / System.Diagnostics.Stopwatch.Frequency);
+            _shinobu328TensionMockLeaseVault = null;
+            try
+            {
+                long elapsedTicks = System.Diagnostics.Stopwatch.GetTimestamp() - _shinobu328TensionMockScheduleTicks;
+                _shinobu328LastMockElapsedUs = (float)math.max(
+                    0.0d,
+                    elapsedTicks * 1000000.0d / System.Diagnostics.Stopwatch.Frequency);
+            }
+            finally
+            {
+                HarpoonTensionSolver328.ReleaseMockScheduleBufferPins(tensionVault);
+            }
 
             float qualityWeight = HomeostasisBrain.GlobalQualityWeight;
             if (!math.isfinite(qualityWeight))
                 qualityWeight = 1f;
 
             HarpoonTensionSolver328.TryPublishCompletedSignalsFromVault(
-                _dataVault,
+                tensionVault,
                 _shinobu328LastActiveTetherCount,
                 _shinobu328LastNodesPerTether,
                 _shinobu328LastFrameIndex,
                 math.saturate(qualityWeight),
                 1);
-            HarpoonTensionSolver328.TryDumpTelemetryIfFault(_dataVault, string.Empty, 1);
+            HarpoonTensionSolver328.TryDumpTelemetryIfFault(tensionVault, string.Empty, 1);
         }
 
         private bool ResolveShinobu132CameraContext(out Vector3 cameraPosition, out double3 cameraAup)
@@ -1351,17 +1377,17 @@ namespace Hecton8.Physics
 
         private static HectonQualityTier ResolveQualityTierFromGlobalWeight(float qualityWeight)
         {
-            qualityWeight = math.saturate(qualityWeight);
-            if (qualityWeight < 0.18f)
-                return HectonQualityTier.Low;
-            if (qualityWeight < 0.36f)
-                return HectonQualityTier.Mx350;
-            if (qualityWeight < 0.62f)
-                return HectonQualityTier.Mid;
-            if (qualityWeight < 0.86f)
-                return HectonQualityTier.High;
+            return SanitizeQualityTier((HectonQualityTier)ResolveCompatibilityQualityTierOrdinal(qualityWeight));
+        }
 
-            return HectonQualityTier.Ultra;
+        private static int ResolveCompatibilityQualityTierOrdinal(float qualityWeight)
+        {
+            float q = Smooth01(math.isfinite(qualityWeight) ? qualityWeight : 1f);
+            float tierOrdinal = math.lerp((int)HectonQualityTier.Low, (int)HectonQualityTier.Ultra, q);
+            return math.clamp(
+                (int)math.round(tierOrdinal),
+                (int)HectonQualityTier.Low,
+                (int)HectonQualityTier.Ultra);
         }
 
         private static float Smooth01(float value)

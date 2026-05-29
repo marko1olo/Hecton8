@@ -21,6 +21,7 @@ namespace Crest
         readonly int sp_LD_TexArray_Target = Shader.PropertyToID("_LD_TexArray_Target");
 
         protected ComputeShader _shader;
+        protected int _krnlShaderSim = -1;
 
         protected abstract string ShaderSim { get; }
         protected abstract int krnl_ShaderSim { get; }
@@ -61,11 +62,15 @@ namespace Crest
         void CreateProperties()
         {
             _shader = ComputeShaderHelpers.LoadShader(ShaderSim);
-            if (_shader == null)
+            if (_shader == null || !_shader.HasKernel(ShaderSim))
             {
+                _shader = null;
+                _krnlShaderSim = -1;
+                _renderSimProperties = null;
                 enabled = false;
                 return;
             }
+            _krnlShaderSim = _shader.FindKernel(ShaderSim);
             _renderSimProperties = new PropertyWrapperCompute();
             _needsPrewarmingThisStep = true;
         }
@@ -102,6 +107,11 @@ namespace Crest
 
         public override void BuildCommandBuffer(OceanRenderer ocean, CommandBuffer buf)
         {
+            if (_shader == null || _krnlShaderSim < 0)
+            {
+                return;
+            }
+
             base.BuildCommandBuffer(ocean, buf);
 
             var lodCount = ocean.CurrentLodCount;

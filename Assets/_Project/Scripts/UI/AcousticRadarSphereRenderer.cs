@@ -113,7 +113,7 @@ namespace Hecton8.UI
         private void RefreshMatricesForLateFrame()
         {
             RefreshQualityPolicy();
-            EnsureResources();
+            ApplyMaterialPropertiesIfNeeded();
             _matrixCount = 0;
             if (_runtimeMaterial == null || _runtimeVoxelMesh == null)
                 return;

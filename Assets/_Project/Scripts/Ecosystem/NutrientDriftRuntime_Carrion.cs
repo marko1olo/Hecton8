@@ -223,7 +223,15 @@ namespace Hecton8.Ecosystem
                     Seed = seed == 0u ? 0xC314C314u : seed
                 };
                 JobHandle handle = job.Schedule(CarrionCapacity, CarrionJobBatchSize);
-                DispatcherJobFence.TryComplete(ref handle, forceComplete: true); // COLD_EDITOR_STRESS: explicit designer-triggered mass extinction harness.
+                DispatcherJobFence.BeginPostSimulationSwapWindow();
+                try
+                {
+                    DispatcherJobFence.TryComplete(ref handle, forceComplete: true); // COLD_EDITOR_STRESS: explicit designer-triggered mass extinction harness.
+                }
+                finally
+                {
+                    DispatcherJobFence.EndPostSimulationSwapWindow();
+                }
                 return true;
             }
             finally
@@ -308,7 +316,15 @@ namespace Hecton8.Ecosystem
                         FaultFlags = (uint*)NativeArrayUnsafeUtility.GetUnsafePtr(faultFlags)
                     };
                     JobHandle initHandle = initJob.Schedule(CarrionCapacity, CarrionJobBatchSize);
-                    DispatcherJobFence.TryComplete(ref initHandle, forceComplete: true); // COLD_BOOTSTRAP_SYNC: Vault memory must be initialized before public editor reads.
+                    DispatcherJobFence.BeginPostSimulationSwapWindow();
+                    try
+                    {
+                        DispatcherJobFence.TryComplete(ref initHandle, forceComplete: true); // COLD_BOOTSTRAP_SYNC: Vault memory must be initialized before public editor reads.
+                    }
+                    finally
+                    {
+                        DispatcherJobFence.EndPostSimulationSwapWindow();
+                    }
 
                     _carrionInitialized = true;
                     carrionReady = true;
@@ -513,25 +529,11 @@ namespace Hecton8.Ecosystem
 
         private bool TryLockCarrionJobBuffers(IDataVault vault)
         {
-            int locked = 0;
-            if (!vault.TryLockBuffer(BufferID.ShinobuCarrionStates, SystemID.AIEcology)) return false;
-            locked++;
-            if (!vault.TryLockBuffer(BufferID.ShinobuCarrionDeathIngress, SystemID.AIEcology)) { UnlockCarrionLockedJobBuffers(vault, locked); return false; }
-            locked++;
-            if (!vault.TryLockBuffer(BufferID.ShinobuCarrionRuntimeCounters, SystemID.AIEcology)) { UnlockCarrionLockedJobBuffers(vault, locked); return false; }
-            locked++;
-            if (!vault.TryLockBuffer(BufferID.ShinobuCarrionTuning, SystemID.AIEcology)) { UnlockCarrionLockedJobBuffers(vault, locked); return false; }
-            locked++;
-            if (!vault.TryLockBuffer(BufferID.ShinobuCarrionTelemetryRing, SystemID.AIEcology)) { UnlockCarrionLockedJobBuffers(vault, locked); return false; }
-            locked++;
-            if (!vault.TryLockBuffer(BufferID.ShinobuCarrionAttractionRecords, SystemID.AIEcology)) { UnlockCarrionLockedJobBuffers(vault, locked); return false; }
-            locked++;
-            if (!vault.TryLockBuffer(BufferID.ShinobuCarrionProfiles, SystemID.AIEcology)) { UnlockCarrionLockedJobBuffers(vault, locked); return false; }
-            locked++;
-            if (!vault.TryLockBuffer(BufferID.ShinobuCarrionFaunaStates, SystemID.AIEcology)) { UnlockCarrionLockedJobBuffers(vault, locked); return false; }
-            locked++;
-            if (!vault.TryLockBuffer(BufferID.ShinobuCarrionFaultFlags, SystemID.AIEcology)) { UnlockCarrionLockedJobBuffers(vault, locked); return false; }
-            locked++;
+            if (vault == null || _carrionJobLocksHeld || _jobLocksHeld)
+                return false;
+            if (!vault.TryAcquireMutationGuard(CarrionJobMutationGuardMask))
+                return false;
+
             _carrionJobLocksHeld = true;
             return true;
         }
@@ -541,23 +543,10 @@ namespace Hecton8.Ecosystem
             if (!_carrionJobLocksHeld)
                 return;
 
+            _carrionJobLocksHeld = false;
             IDataVault vault = _vault;
             if (vault != null)
-                UnlockCarrionLockedJobBuffers(vault, 9);
-            _carrionJobLocksHeld = false;
-        }
-
-        private static void UnlockCarrionLockedJobBuffers(IDataVault vault, int locked)
-        {
-            if (locked >= 9) vault.TryUnlockBuffer(BufferID.ShinobuCarrionFaultFlags, SystemID.AIEcology);
-            if (locked >= 8) vault.TryUnlockBuffer(BufferID.ShinobuCarrionFaunaStates, SystemID.AIEcology);
-            if (locked >= 7) vault.TryUnlockBuffer(BufferID.ShinobuCarrionProfiles, SystemID.AIEcology);
-            if (locked >= 6) vault.TryUnlockBuffer(BufferID.ShinobuCarrionAttractionRecords, SystemID.AIEcology);
-            if (locked >= 5) vault.TryUnlockBuffer(BufferID.ShinobuCarrionTelemetryRing, SystemID.AIEcology);
-            if (locked >= 4) vault.TryUnlockBuffer(BufferID.ShinobuCarrionTuning, SystemID.AIEcology);
-            if (locked >= 3) vault.TryUnlockBuffer(BufferID.ShinobuCarrionRuntimeCounters, SystemID.AIEcology);
-            if (locked >= 2) vault.TryUnlockBuffer(BufferID.ShinobuCarrionDeathIngress, SystemID.AIEcology);
-            if (locked >= 1) vault.TryUnlockBuffer(BufferID.ShinobuCarrionStates, SystemID.AIEcology);
+                vault.ReleaseMutationGuard(CarrionJobMutationGuardMask);
         }
 
         private JobHandle ScheduleCarrionDecayJobs(

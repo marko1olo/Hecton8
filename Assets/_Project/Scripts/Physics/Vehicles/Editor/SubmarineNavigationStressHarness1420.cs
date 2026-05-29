@@ -14,6 +14,12 @@ namespace Hecton8.Physics.Vehicles.Editor
     {
         private const int Attempts = 1000;
         private const SystemID Owner = SystemID.VehiclesPhysics;
+        private static readonly ulong SolverMutationGuardMask =
+            MutationGuardBit(SubmarineBallastBufferIds.Tanks) |
+            MutationGuardBit(SubmarineBallastBufferIds.Commands) |
+            MutationGuardBit(SubmarineBallastBufferIds.FluidSamples) |
+            MutationGuardBit(SubmarineBallastBufferIds.ForcePackets) |
+            MutationGuardBit(SubmarineBallastBufferIds.TelemetryRing);
 
         private struct HarnessHandles
         {
@@ -22,6 +28,12 @@ namespace Hecton8.Physics.Vehicles.Editor
             public VaultGenerationHandle<SubmarineBallastFluidSampleDTO> Samples;
             public VaultGenerationHandle<SubmarineBallastForcePacketDTO> ForcePackets;
             public VaultGenerationHandle<SubmarineBallastTelemetryEntry> Telemetry;
+        }
+
+        private static ulong MutationGuardBit(BufferID bufferId)
+        {
+            int bitIndex = unchecked((int)((uint)(int)bufferId & 63u));
+            return 1UL << bitIndex;
         }
 
         [Test]
@@ -156,11 +168,7 @@ namespace Hecton8.Physics.Vehicles.Editor
             in HarnessHandles handles,
             uint frame)
         {
-            bool tanksLocked = false;
-            bool commandsLocked = false;
-            bool samplesLocked = false;
-            bool forceLocked = false;
-            bool telemetryLocked = false;
+            bool guardAcquired = false;
             NativeArray<BallastTankDTO> tanks = default;
             NativeArray<BallastTankCommandDTO> commands = default;
             NativeArray<SubmarineBallastFluidSampleDTO> samples = default;
@@ -168,13 +176,17 @@ namespace Hecton8.Physics.Vehicles.Editor
             NativeArray<SubmarineBallastTelemetryEntry> telemetry = default;
             try
             {
-                tanksLocked = vault.TryAcquireWriteLock(in handles.Tanks, Owner, out tanks);
-                commandsLocked = vault.TryAcquireWriteLock(in handles.Commands, Owner, out commands);
-                samplesLocked = vault.TryAcquireWriteLock(in handles.Samples, Owner, out samples);
-                forceLocked = vault.TryAcquireWriteLock(in handles.ForcePackets, Owner, out forcePackets);
-                telemetryLocked = vault.TryAcquireWriteLock(in handles.Telemetry, Owner, out telemetry);
-                if (!(tanksLocked && commandsLocked && samplesLocked && forceLocked && telemetryLocked))
-                    throw new InvalidOperationException("Ballast stress harness failed to acquire Vault write locks.");
+                guardAcquired = vault.TryAcquireMutationGuard(SolverMutationGuardMask);
+                if (!guardAcquired ||
+                    !vault.TryResolveHandle(in handles.Tanks, out tanks) ||
+                    !vault.TryResolveHandle(in handles.Commands, out commands) ||
+                    !vault.TryResolveHandle(in handles.Samples, out samples) ||
+                    !vault.TryResolveHandle(in handles.ForcePackets, out forcePackets) ||
+                    !vault.TryResolveHandle(in handles.Telemetry, out telemetry))
+                {
+                    Assert.Fail("Ballast stress harness failed to acquire Vault mutation guard.");
+                    return default;
+                }
 
                 WriteExtremeCommands(commands, samples, frame);
                 new EvaluateBallastTanksJob
@@ -201,11 +213,8 @@ namespace Hecton8.Physics.Vehicles.Editor
             }
             finally
             {
-                if (telemetryLocked) vault.ReleaseWriteLock(in handles.Telemetry, Owner);
-                if (forceLocked) vault.ReleaseWriteLock(in handles.ForcePackets, Owner);
-                if (samplesLocked) vault.ReleaseWriteLock(in handles.Samples, Owner);
-                if (commandsLocked) vault.ReleaseWriteLock(in handles.Commands, Owner);
-                if (tanksLocked) vault.ReleaseWriteLock(in handles.Tanks, Owner);
+                if (guardAcquired)
+                    vault.ReleaseMutationGuard(SolverMutationGuardMask);
             }
         }
 

@@ -56,21 +56,6 @@ namespace Hecton8.World
         }
 
         /// <summary>
-        /// Global world-state manager instance.
-        /// </summary>
-        public static WorldStateManager Instance
-        {
-            get
-            {
-#if UNITY_EDITOR
-                if (!Application.isPlaying)
-                    return null;
-#endif
-                return GlobalRegistry.WorldState;
-            }
-        }
-
-        /// <summary>
         /// Total persisted depleted resource node count.
         /// </summary>
         public int DepletedCount => _depletedNodeIds != null ? _depletedNodeIds.Count : 0;

@@ -68,7 +68,7 @@ namespace Hecton.Localization
         /// </summary>
         public string Resolve()
         {
-            return ResolveOrFallback(GlobalRegistry.LocalizationText, fallbackText);
+            return ResolveOrFallback((ILocalizationTextReadModel)null, fallbackText);
         }
 
         /// <summary>
@@ -84,8 +84,7 @@ namespace Hecton.Localization
         /// </summary>
         public string Resolve(GameLanguage language)
         {
-            LocalizationManager manager = Hecton8.Core.GlobalRegistry.Localization;
-            return Resolve(language, manager);
+            return Resolve(language, null);
         }
 
         /// <summary>
@@ -107,7 +106,7 @@ namespace Hecton.Localization
         /// </summary>
         public string ResolveOrFallback(string legacyFallback)
         {
-            return ResolveOrFallback(GlobalRegistry.LocalizationText, legacyFallback);
+            return ResolveOrFallback((ILocalizationTextReadModel)null, legacyFallback);
         }
 
         /// <summary>

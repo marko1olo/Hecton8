@@ -10,8 +10,8 @@
                      "RequiredAPIVersion":  2,
                      "ModPriority":  0
                  },
-    "FileCount":  33,
-    "TotalBytes":  130643,
+    "FileCount":  38,
+    "TotalBytes":  206817,
     "Limits":  {
                    "MaxFiles":  256,
                    "MaxFileBytes":  4194304,
@@ -20,8 +20,13 @@
     "Files":  [
                   {
                       "Path":  ".vscode/settings.json",
-                      "Bytes":  662,
-                      "Sha256":  "8cd163fa3744749bdc5e63bebec003f9af9fd0cde86f52b2b578ae50347fdd7d"
+                      "Bytes":  710,
+                      "Sha256":  "de4a558ba0cb44e3f28abf7423a79bd4deaa71598f9ad622c271ed6dd9cc5b33"
+                  },
+                  {
+                      "Path":  ".vscode/tasks.json",
+                      "Bytes":  10462,
+                      "Sha256":  "0e55b82913f7ad3b016663b90a63d88c82d5c9aaaa5ba090365c3b45a2d4e0e7"
                   },
                   {
                       "Path":  "Content/assets.h8manifest.json",
@@ -29,14 +34,19 @@
                       "Sha256":  "612bc2476835ccc41edbd0dd74b97d7eaac3d578a87763c55c6162085df75b81"
                   },
                   {
+                      "Path":  "Content/Assets/README.md",
+                      "Bytes":  412,
+                      "Sha256":  "c075e817a2e047989b8804c107ba9b486b7002b5593fe9bcb22f3ed3cb590640"
+                  },
+                  {
                       "Path":  "Content/README.md",
-                      "Bytes":  213,
-                      "Sha256":  "b8d3655db98835a70aa14db6e5ea57e139b0fffd71698e45efb759f9b3c800c9"
+                      "Bytes":  388,
+                      "Sha256":  "3528540020eb752e28862fd4f0f9711ebe7e6a3ed5be206610a17450e4ffd660"
                   },
                   {
                       "Path":  "Docs/capabilities.md",
-                      "Bytes":  3932,
-                      "Sha256":  "cc5cadb64b822db3b3aa123b4dad461b518bbea1163dfaa684b823edce086dc5"
+                      "Bytes":  5680,
+                      "Sha256":  "4c87171a7606b14599b6473da4da13c5101fa6a132219c46bb651e5822fd3e07"
                   },
                   {
                       "Path":  "Graphs/main.h8graph.json",
@@ -45,8 +55,8 @@
                   },
                   {
                       "Path":  "h8mod.ps1",
-                      "Bytes":  11430,
-                      "Sha256":  "60b031a9f94fcadd199951053e00fb732527c7aefb8edd78c3038d1f1edee3a7"
+                      "Bytes":  16851,
+                      "Sha256":  "42f3f30c4fb355edf83ee8112e9c1cd63b8b9fc0fd0c4a6bbf5d029a4f3f0899"
                   },
                   {
                       "Path":  "Locales/en.h8loc.json",
@@ -55,8 +65,8 @@
                   },
                   {
                       "Path":  "mod.h8manifest.json",
-                      "Bytes":  858,
-                      "Sha256":  "27beb037ec5ec8886312e127de9d4f2608c1fde9e45235e6c133a7d5b109f51f"
+                      "Bytes":  860,
+                      "Sha256":  "cc711f17a49aec7e70bf0a7fe1a04f701ed2a40c12f6b040ca00acfec2108c75"
                   },
                   {
                       "Path":  "mod.json",
@@ -65,8 +75,8 @@
                   },
                   {
                       "Path":  "README.md",
-                      "Bytes":  6987,
-                      "Sha256":  "4c9bdcaaaf10665009b5e41ab9c5f3efb0b4ddcaa3ce1994b12a7653e5e2cbb2"
+                      "Bytes":  9130,
+                      "Sha256":  "c5892fe54dd23a589dcbb87819d2c6cf4de811c6da537017546272cf5cb20b70"
                   },
                   {
                       "Path":  "Reference/allowed_opcodes.csv",
@@ -85,8 +95,8 @@
                   },
                   {
                       "Path":  "Schemas/assets.schema.json",
-                      "Bytes":  738,
-                      "Sha256":  "f60698bfe2b3b10f5f2306923ea979cb324d047ee9638e2199b7f425da31055d"
+                      "Bytes":  990,
+                      "Sha256":  "7149b1240c8ba56f819900a0ca6ce1fcfd0b4718356c519a8aadb886763e6d85"
                   },
                   {
                       "Path":  "Schemas/h8graph.schema.json",
@@ -95,8 +105,8 @@
                   },
                   {
                       "Path":  "Schemas/h8mod.authoring.schema.json",
-                      "Bytes":  1898,
-                      "Sha256":  "551c086da88fa7afce2d90a71703d4830b9647a0fd5f3b761393c7f56524d3fe"
+                      "Bytes":  2221,
+                      "Sha256":  "d62b62e21a1b15e36a79ed3ebaec7690cb3118479d99df438cf02aba6638c184"
                   },
                   {
                       "Path":  "Schemas/locale.schema.json",
@@ -119,9 +129,14 @@
                       "Sha256":  "069e7de8160b3a5c206404c3fa3d59aa31cb802db382be33999243a37923c473"
                   },
                   {
+                      "Path":  "Tools/apply_asset_entry_snippet.ps1",
+                      "Bytes":  15360,
+                      "Sha256":  "8bb3a7fb4f4e59dbec239e186e0d4cbdf329bc9584c35a86d2e6cfedaf267c8b"
+                  },
+                  {
                       "Path":  "Tools/apply_graph_node_snippet.ps1",
-                      "Bytes":  14133,
-                      "Sha256":  "77e3a114b11077a74313ea27165432289c085a1f20046b066f87b45a06cfe66b"
+                      "Bytes":  14216,
+                      "Sha256":  "f7ada57e032a4c5e8ddebaecf212c91895ebb603c97911652512f3374770f3a7"
                   },
                   {
                       "Path":  "Tools/apply_locale_entry_snippet.ps1",
@@ -140,13 +155,23 @@
                   },
                   {
                       "Path":  "Tools/build_submission_package.ps1",
-                      "Bytes":  7000,
-                      "Sha256":  "c312c6050ef79073222c267748d3b641c7f616f5f95dbc1330dac804b9762ad4"
+                      "Bytes":  7128,
+                      "Sha256":  "6beed2bd9f566919d0fe9e5b26de67d4a794e64c56d86b7e9f7d82f8cc6ff9dd"
+                  },
+                  {
+                      "Path":  "Tools/configure_manifest_contract.ps1",
+                      "Bytes":  12296,
+                      "Sha256":  "707def086c9bd92cac0acca4b7c3603e0d8e3e04e583d3537f02a6f96b854d87"
+                  },
+                  {
+                      "Path":  "Tools/create_asset_entry_snippet.ps1",
+                      "Bytes":  9189,
+                      "Sha256":  "6ba9982edf9485c42bc1dbde7d00378b0621682585f3dd3e954de52c94fa0b00"
                   },
                   {
                       "Path":  "Tools/create_graph_node_snippet.ps1",
-                      "Bytes":  6143,
-                      "Sha256":  "0ee476c519dbdf57584ccceba3940c7b4d95f0d089ce1466a037bf731db1b209"
+                      "Bytes":  9412,
+                      "Sha256":  "c48b1a349bebca2ad7b7d6c1f21ac50cc76373e047f769fc3d74b71d43cee526"
                   },
                   {
                       "Path":  "Tools/create_locale_entry_snippet.ps1",
@@ -170,8 +195,8 @@
                   },
                   {
                       "Path":  "Tools/README.md",
-                      "Bytes":  7549,
-                      "Sha256":  "41c46abbd21669f113a13bdc0f3061e45d718503a9aa87054ad8387a640e2242"
+                      "Bytes":  10559,
+                      "Sha256":  "bec6bb878c40ea836172f84af129be2d34cfc1e8a1937bee9b3eee04c584ffee"
                   },
                   {
                       "Path":  "Tools/set_mod_identity.ps1",
@@ -180,8 +205,8 @@
                   },
                   {
                       "Path":  "Tools/validate_structure.ps1",
-                      "Bytes":  16363,
-                      "Sha256":  "4548a8937db97e32e86d104c71759f85fcf6ebfa6616601e7e5cce9b6a8b6a2f"
+                      "Bytes":  28216,
+                      "Sha256":  "bb4737a9a6969b34e519d1cd56b7166524ad9f47852f28f316829de3e4ef0dbf"
                   }
               ]
 }

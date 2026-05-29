@@ -192,7 +192,7 @@ namespace Hecton8.UI
         /// <inheritdoc />
         public void LateFrameTick()
         {
-            if (!EnsureUiBuilt(allowCreate: false))
+            if (_root == null)
                 return;
 
             if (!_typingActive)

@@ -204,7 +204,7 @@ namespace Hecton8.Dev
                 return;
 
             ResolveDriveCommand();
-            _lodSystem = LODSystemManager.Instance;
+            _lodSystem = GlobalRegistry.LODSystem;
             if (!TryResolvePlayerRuntimePosition(out _startPosition))
                 return;
 
@@ -360,7 +360,13 @@ namespace Hecton8.Dev
             }
 
             if (serviceSlot == GlobalRegistryServiceSlot.Physics)
+            {
                 _physicsService = currentService as IPhysicsService;
+                return;
+            }
+
+            if (serviceSlot == GlobalRegistryServiceSlot.LODSystemRuntime)
+                _lodSystem = currentService as LODSystemManager;
         }
 
         private void RecordCsvSample(float sampleSeconds, int sampleFrames)

@@ -78,7 +78,6 @@ namespace Hecton8.Environment
         private const float MockAcousticPulseSpeed = 24f;
         private const float CsvProfilePollIntervalSeconds = 0.5f;
         private const int CsvProfilePollSliceMilliseconds = 50;
-        private const int CameraResolveRetryFrames = 30;
         private const float InvTau = 0.15915494f;
         private const float ActiveDensityEpsilon = 0.0001f;
         private const float ShaderVectorPublishEpsilon = 0.0001f;
@@ -564,7 +563,6 @@ namespace Hecton8.Environment
         private GraphicsBuffer _propwashEventBuffer;
         private GraphicsBuffer _boundAbyssalFlowBuffer;
         private Camera _targetCameraComponent;
-        private Transform _lastCameraResolveTarget;
         private Mesh _quadMesh;
         private Bounds _drawBounds;
         private int _kernelIndex = -1;
@@ -585,7 +583,6 @@ namespace Hecton8.Environment
         private int _sonarGlowClearTileSizeY = DefaultClearKernelTileSize;
         private int _fogDensityClearTileSizeX = DefaultClearKernelTileSize;
         private int _fogDensityClearTileSizeY = DefaultClearKernelTileSize;
-        private int _nextCameraResolveFrame;
         private int _frameParity;
         private int _flowFieldResolution;
         private int _flowFieldBufferCapacity;
@@ -772,6 +769,9 @@ namespace Hecton8.Environment
         private bool _externalGpuBindingsDirty = true;
         private bool _sonarGlowGlobalsDirty = true;
         private bool _fogDensityGlobalsDirty = true;
+        private bool _coldSupportsComputeShaders;
+        private TextureFormat _coldEmptyCaveSdfTextureFormat = TextureFormat.Alpha8;
+        private TextureFormat _coldEmptyAbyssalFlowTextureFormat = TextureFormat.RGBA32;
         [SerializeField] private int _debugActiveParticleCount;
         [SerializeField] private int _debugAllocatedParticleCapacity;
         [SerializeField] private int _debugScalabilityParticleCapacity = MinimumMarineSnowParticleCapacity;
@@ -802,10 +802,22 @@ namespace Hecton8.Environment
         /// </summary>
         public bool IsOperational => _buffersReady && marineSnowCompute != null && marineSnowMaterial != null && _kernelIndex >= 0;
 
+        private void CacheGraphicsCapabilitySnapshotCold()
+        {
+            _coldSupportsComputeShaders = SystemInfo.supportsComputeShaders;
+            _coldEmptyCaveSdfTextureFormat = SystemInfo.SupportsTextureFormat(TextureFormat.R8)
+                ? TextureFormat.R8
+                : TextureFormat.Alpha8;
+            _coldEmptyAbyssalFlowTextureFormat = SystemInfo.SupportsTextureFormat(TextureFormat.RGBAHalf)
+                ? TextureFormat.RGBAHalf
+                : TextureFormat.RGBA32;
+        }
+
         private void OnEnable()
         {
             RefreshSpeedLineCache();
-            ResolveTargetCamera();
+            CacheGraphicsCapabilitySnapshotCold();
+            ResolveTargetCameraCold();
             TryRegisterHotSwapListener();
             RefreshFluidBinding(force: true);
             RefreshDataVaultBinding(force: true);
@@ -866,8 +878,17 @@ namespace Hecton8.Environment
         {
             targetCamera = cameraTransform;
             _targetCameraComponent = ResolveComponentOnTransform<Camera>(cameraTransform);
-            _lastCameraResolveTarget = cameraTransform;
-            _nextCameraResolveFrame = 0;
+            ResetSpeedLineHistory();
+        }
+
+        /// <summary>
+        /// Binds the camera that owns the marine-snow shell without a component lookup.
+        /// </summary>
+        /// <param name="cameraComponent">Runtime main-camera component.</param>
+        public void BindTargetCamera(Camera cameraComponent)
+        {
+            targetCamera = cameraComponent != null ? cameraComponent.transform : null;
+            _targetCameraComponent = cameraComponent;
             ResetSpeedLineHistory();
         }
 
@@ -1105,8 +1126,7 @@ namespace Hecton8.Environment
             if (!enabled || marineSnowCompute == null || marineSnowMaterial == null)
                 return;
 
-            ResolveTargetCamera();
-            if (targetCamera == null || _targetCameraComponent == null)
+            if (!HasCachedTargetCamera())
                 return;
 
             float effectiveDensityScale = ResolveEffectiveDensityScale();
@@ -2455,30 +2475,31 @@ namespace Hecton8.Environment
             _debugBiolumeSurgeBlend = ResolveBiolumeSurgeBlend();
         }
 
-        private void ResolveTargetCamera()
+        private void ResolveTargetCameraCold()
         {
-            int frame = SystemDispatcher.CurrentFrameIndex;
             if (targetCamera == null)
             {
-                if (_targetCameraComponent == null && frame < _nextCameraResolveFrame)
-                    return;
-
                 _targetCameraComponent = ResolveComponentInParents<Camera>(transform);
                 targetCamera = _targetCameraComponent != null ? _targetCameraComponent.transform : null;
-                _lastCameraResolveTarget = targetCamera;
-                _nextCameraResolveFrame = targetCamera == null ? frame + CameraResolveRetryFrames : 0;
             }
             else if (_targetCameraComponent == null || _targetCameraComponent.transform != targetCamera)
             {
-                if (_targetCameraComponent == null &&
-                    targetCamera == _lastCameraResolveTarget &&
-                    frame < _nextCameraResolveFrame)
-                    return;
-
                 _targetCameraComponent = ResolveComponentOnTransform<Camera>(targetCamera);
-                _lastCameraResolveTarget = targetCamera;
-                _nextCameraResolveFrame = _targetCameraComponent == null ? frame + CameraResolveRetryFrames : 0;
             }
+        }
+
+        private bool HasCachedTargetCamera()
+        {
+            Camera cameraComponent = _targetCameraComponent;
+            Transform cameraTransform = targetCamera;
+            if (cameraComponent == null || cameraTransform == null)
+                return false;
+
+            if (cameraComponent.transform == cameraTransform)
+                return true;
+
+            _targetCameraComponent = null;
+            return false;
         }
 
         private void TryRegisterLateFrame()
@@ -2499,7 +2520,7 @@ namespace Hecton8.Environment
             int clampedParticleCount = RefreshAndResolveConfiguredCapacity();
             if (marineSnowCompute == null ||
                 marineSnowMaterial == null ||
-                !HardwareTierDetector.AllowHighResourceComputeShaders)
+                !_coldSupportsComputeShaders)
                 return;
 
             if (!TryResolveKernel("CSMain", out _kernelIndex))
@@ -2684,7 +2705,7 @@ namespace Hecton8.Environment
         private bool TryResolveKernel(string kernelName, out int kernelIndex)
         {
             kernelIndex = -1;
-            if (marineSnowCompute == null || !HardwareTierDetector.AllowHighResourceComputeShaders)
+            if (marineSnowCompute == null || !_coldSupportsComputeShaders)
                 return false;
             if (!marineSnowCompute.HasKernel(kernelName))
                 return false;
@@ -2772,7 +2793,7 @@ namespace Hecton8.Environment
             sizeZ = 0u;
             if (marineSnowCompute == null ||
                 kernelIndex < 0 ||
-                !HardwareTierDetector.AllowHighResourceComputeShaders ||
+                !_coldSupportsComputeShaders ||
                 !marineSnowCompute.IsSupported(kernelIndex))
                 return false;
 
@@ -4015,9 +4036,7 @@ namespace Hecton8.Environment
             if (_emptyCaveSdfTexture != null)
                 return;
 
-            TextureFormat textureFormat = SystemInfo.SupportsTextureFormat(TextureFormat.R8)
-                ? TextureFormat.R8
-                : TextureFormat.Alpha8;
+            TextureFormat textureFormat = _coldEmptyCaveSdfTextureFormat;
             _emptyCaveSdfTexture = new Texture3D(1, 1, 1, textureFormat, false)
             {
                 name = "__HectonMarineSnowEmptySdf",
@@ -4034,9 +4053,7 @@ namespace Hecton8.Environment
             if (_emptyAbyssalFlowTexture != null)
                 return;
 
-            TextureFormat textureFormat = SystemInfo.SupportsTextureFormat(TextureFormat.RGBAHalf)
-                ? TextureFormat.RGBAHalf
-                : TextureFormat.RGBA32;
+            TextureFormat textureFormat = _coldEmptyAbyssalFlowTextureFormat;
             _emptyAbyssalFlowTexture = new Texture3D(1, 1, 1, textureFormat, false)
             {
                 name = "__HectonMarineSnowEmptyAbyssalFlow",

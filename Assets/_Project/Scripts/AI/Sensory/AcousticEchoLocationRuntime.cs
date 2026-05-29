@@ -200,6 +200,15 @@ namespace Hecton8.AI.Sensory
         private const string DumpRelativePath = "Docs/AgentLogs/Dump_13AI.bin";
         private const float MovementVelocityToVolume = 0.025f;
         private const int MaxQueuedEchoTaps = MaxEchoTapsPerFrame;
+        private static readonly ulong TrackingMutationGuardMask =
+            AcousticMutationGuardBit(BufferID.AcousticEchoFrameTaps) |
+            AcousticMutationGuardBit(BufferID.AcousticEchoPendingTaps) |
+            AcousticMutationGuardBit(BufferID.AcousticEchoTrailState) |
+            AcousticMutationGuardBit(BufferID.AcousticEchoBlackBox);
+        private static readonly ulong PendingTapMutationGuardMask =
+            AcousticMutationGuardBit(BufferID.AcousticEchoPendingTaps);
+        private static readonly ulong BlackBoxMutationGuardMask =
+            AcousticMutationGuardBit(BufferID.AcousticEchoBlackBox);
 
         private static readonly AcousticEchoHotSwapBridge s_hotSwapBridge = new AcousticEchoHotSwapBridge(); // COLD ALLOC: AcousticEchoHotSwapBridge[1] - static acoustic echo DataVault rebind listener - owner: AcousticEchoLocationRuntime
         private static IDataVault _dataVault;
@@ -215,9 +224,12 @@ namespace Hecton8.AI.Sensory
         private static int _lastBlackBoxFrame = int.MinValue;
         private static int _blackBoxCursor;
         private static int _blackBoxDumped;
+        private static int _initializationAttempted;
         private static int _queuedEchoTapCount;
         private static int _pendingProducerFault;
         private static AbsoluteUniversePosition _pendingProducerFaultAup;
+        private static IDataVault _trackingMutationGuardVault;
+        private static ulong _trackingMutationGuardMask;
         private static int _hotSwapRegistered;
         private static uint _sequence;
         private static byte _cachedQualityWeightByte;
@@ -228,14 +240,15 @@ namespace Hecton8.AI.Sensory
         {
             TryRegisterHotSwapListener();
             if (_initialized != 0)
-            {
-                EnsureVaultBuffers();
                 return;
-            }
 
+            if (_initializationAttempted != 0)
+                return;
+
+            _initializationAttempted = 1;
             _cachedQualityWeightByte = ResolveQualityWeightByte();
-            EnsureVaultBuffers();
-            _initialized = 1;
+            if (OpenOrAcquireVaultBuffersForOwnerRoute())
+                _initialized = 1;
         }
 
         public static void Dispose()
@@ -258,6 +271,7 @@ namespace Hecton8.AI.Sensory
             _lastBlackBoxFrame = int.MinValue;
             _blackBoxCursor = 0;
             _blackBoxDumped = 0;
+            _initializationAttempted = 0;
             _queuedEchoTapCount = 0;
             _pendingProducerFault = 0;
             _pendingProducerFaultAup = default;
@@ -276,18 +290,30 @@ namespace Hecton8.AI.Sensory
             if (_initialized == 0 || _queuedEchoTapCount >= MaxQueuedEchoTaps)
                 return false;
 
-            if (!TryResolvePendingTapsNoAcquire(out NativeArray<EchoTap> pendingTaps))
+            IDataVault guardVault;
+            if (!TryAcquireAcousticMutationGuard(_dataVault, PendingTapMutationGuardMask, out guardVault))
                 return false;
 
-            if (!pendingTaps.IsCreated || _queuedEchoTapCount >= pendingTaps.Length)
-                return false;
+            try
+            {
+                if (!TryResolvePendingTapsNoAcquire(out NativeArray<EchoTap> pendingTaps) ||
+                    !pendingTaps.IsCreated ||
+                    _queuedEchoTapCount >= pendingTaps.Length)
+                {
+                    return false;
+                }
 
-            pendingTaps[_queuedEchoTapCount] = tap;
-            _queuedEchoTapCount++;
-            return true;
+                pendingTaps[_queuedEchoTapCount] = tap;
+                _queuedEchoTapCount++;
+                return true;
+            }
+            finally
+            {
+                ReleaseAcousticMutationGuard(guardVault, PendingTapMutationGuardMask);
+            }
         }
 
-        private static bool EnsureVaultBuffers()
+        private static bool OpenOrAcquireVaultBuffersForOwnerRoute()
         {
             IDataVault vault = _dataVault;
             if (vault == null ||
@@ -342,7 +368,8 @@ namespace Hecton8.AI.Sensory
         {
             if (ReferenceEquals(_dataVault, nextVault))
             {
-                EnsureVaultBuffers();
+                if (_initializationAttempted != 0 && OpenOrAcquireVaultBuffersForOwnerRoute())
+                    _initialized = 1;
                 return;
             }
 
@@ -355,13 +382,14 @@ namespace Hecton8.AI.Sensory
             _lastBlackBoxFrame = int.MinValue;
             _blackBoxCursor = 0;
             _blackBoxDumped = 0;
+            _initialized = 0;
             _queuedEchoTapCount = 0;
             _pendingProducerFault = 0;
             _pendingProducerFaultAup = default;
             _sequence = 0u;
 
-            if (_initialized != 0 && _dataVault != null)
-                EnsureVaultBuffers();
+            if (_initializationAttempted != 0 && _dataVault != null && OpenOrAcquireVaultBuffersForOwnerRoute())
+                _initialized = 1;
         }
 
         private static void TryRegisterHotSwapListener()
@@ -406,8 +434,69 @@ namespace Hecton8.AI.Sensory
             if (_trackingScheduled == 0)
                 return;
 
-            DispatcherJobFence.TryComplete(ref _trackingHandle, forceComplete: true);
-            _trackingScheduled = 0;
+            try
+            {
+                DispatcherJobFence.TryComplete(ref _trackingHandle, forceComplete: true);
+            }
+            finally
+            {
+                _trackingScheduled = 0;
+                ReleaseTrackingMutationGuard();
+            }
+        }
+
+        private static bool TryAcquireTrackingMutationGuard()
+        {
+            if (_trackingMutationGuardVault != null)
+                return false;
+
+            IDataVault vault = _dataVault;
+            if (!TryAcquireAcousticMutationGuard(vault, TrackingMutationGuardMask, out IDataVault guardVault))
+                return false;
+
+            _trackingMutationGuardVault = guardVault;
+            _trackingMutationGuardMask = TrackingMutationGuardMask;
+            return true;
+        }
+
+        private static void ReleaseTrackingMutationGuard()
+        {
+            IDataVault vault = _trackingMutationGuardVault;
+            ulong mask = _trackingMutationGuardMask;
+            if (vault == null)
+                return;
+
+            _trackingMutationGuardVault = null;
+            _trackingMutationGuardMask = 0UL;
+            ReleaseAcousticMutationGuard(vault, mask);
+        }
+
+        private static bool TryAcquireAcousticMutationGuard(
+            IDataVault vault,
+            ulong mask,
+            out IDataVault guardVault)
+        {
+            guardVault = null;
+            if (vault == null ||
+                mask == 0UL ||
+                vault.IsCompactionFenceActive ||
+                !vault.TryAcquireMutationGuard(mask))
+            {
+                return false;
+            }
+
+            guardVault = vault;
+            return true;
+        }
+
+        private static void ReleaseAcousticMutationGuard(IDataVault vault, ulong mask)
+        {
+            vault?.ReleaseMutationGuard(mask);
+        }
+
+        private static ulong AcousticMutationGuardBit(BufferID bufferId)
+        {
+            return 1UL << ((int)bufferId & 31);
         }
 
         private static bool TryResolveVaultBuffer<T>(
@@ -493,28 +582,12 @@ namespace Hecton8.AI.Sensory
                    handle.Generation != 0u;
         }
 
-        private static bool EnsureFrameViews(
+        private static bool TryResolveFrameViewsNoAcquire(
             out NativeArray<EchoTap> frameTaps,
             out NativeArray<AcousticEchoTrailState> jobResult)
         {
             frameTaps = default;
             jobResult = default;
-
-            if (!EnsureVaultBuffers())
-                return false;
-
-            IDataVault vault = _dataVault;
-            if (TryResolveVaultBuffer(in _frameTapsHandle, BufferID.AcousticEchoFrameTaps, MaxEchoTapsPerFrame, out frameTaps) &&
-                TryResolveVaultBuffer(in _jobResultHandle, BufferID.AcousticEchoTrailState, 1, out jobResult))
-            {
-                return true;
-            }
-
-            CompleteTrackingFenceForVaultRelease();
-            ReleaseVaultHandles(_dataVault);
-            ClearVaultHandles();
-            if (!EnsureVaultBuffers())
-                return false;
 
             return TryResolveVaultBuffer(in _frameTapsHandle, BufferID.AcousticEchoFrameTaps, MaxEchoTapsPerFrame, out frameTaps) &&
                    TryResolveVaultBuffer(in _jobResultHandle, BufferID.AcousticEchoTrailState, 1, out jobResult);
@@ -523,7 +596,7 @@ namespace Hecton8.AI.Sensory
         private static bool EnsureBlackBox(out NativeArray<AcousticEchoBlackBoxEntry> blackBox)
         {
             blackBox = default;
-            if (!EnsureVaultBuffers())
+            if (!OpenOrAcquireVaultBuffersForOwnerRoute())
                 return false;
 
             if (TryResolveVaultBuffer(in _blackBoxHandle, BufferID.AcousticEchoBlackBox, BlackBoxFrameCount, out blackBox))
@@ -532,17 +605,16 @@ namespace Hecton8.AI.Sensory
             CompleteTrackingFenceForVaultRelease();
             ReleaseVaultHandles(_dataVault);
             ClearVaultHandles();
-            if (!EnsureVaultBuffers())
+            if (!OpenOrAcquireVaultBuffersForOwnerRoute())
                 return false;
 
             return TryResolveVaultBuffer(in _blackBoxHandle, BufferID.AcousticEchoBlackBox, BlackBoxFrameCount, out blackBox);
         }
 
-        private static bool EnsurePendingTaps(out NativeArray<EchoTap> pendingTaps)
+        private static bool TryResolveBlackBoxNoAcquire(out NativeArray<AcousticEchoBlackBoxEntry> blackBox)
         {
-            pendingTaps = default;
-            return EnsureVaultBuffers() &&
-                   TryResolveVaultBuffer(in _pendingTapsHandle, BufferID.AcousticEchoPendingTaps, MaxQueuedEchoTaps, out pendingTaps);
+            blackBox = default;
+            return TryResolveVaultBuffer(in _blackBoxHandle, BufferID.AcousticEchoBlackBox, BlackBoxFrameCount, out blackBox);
         }
 
         private static bool TryResolvePendingTapsNoAcquire(out NativeArray<EchoTap> pendingTaps)
@@ -727,12 +799,6 @@ namespace Hecton8.AI.Sensory
             currentTime = math.max(0f, currentTime);
             DrainPendingProducerFault(frame);
 
-            if (!EnsureFrameViews(out NativeArray<EchoTap> frameTaps, out NativeArray<AcousticEchoTrailState> jobResult))
-            {
-                DropEchoTapQueue();
-                return;
-            }
-
             if (_trackingScheduled != 0)
             {
                 if (_trackingHandle.IsCompleted)
@@ -740,10 +806,24 @@ namespace Hecton8.AI.Sensory
                     if (!DispatcherJobFence.TryFinalizeCompleted(ref _trackingHandle))
                         return;
 
-                    _trailState = jobResult[0];
-                    if ((_trailState.Flags & FlagActiveTrail) != 0 && !IsFiniteAup(in _trailState.InvestigateAup))
-                        WriteFaultBlackBox(frame, in _trailState.InvestigateAup);
-                    _trackingScheduled = 0;
+                    try
+                    {
+                        if (TryResolveVaultBuffer(
+                                in _jobResultHandle,
+                                BufferID.AcousticEchoTrailState,
+                                1,
+                                out NativeArray<AcousticEchoTrailState> jobResult))
+                        {
+                            _trailState = jobResult[0];
+                            if ((_trailState.Flags & FlagActiveTrail) != 0 && !IsFiniteAup(in _trailState.InvestigateAup))
+                                WriteFaultBlackBox(frame, in _trailState.InvestigateAup);
+                        }
+                    }
+                    finally
+                    {
+                        _trackingScheduled = 0;
+                        ReleaseTrackingMutationGuard();
+                    }
                 }
                 else
                 {
@@ -753,31 +833,50 @@ namespace Hecton8.AI.Sensory
                 }
             }
 
-            _cachedQualityWeightByte = ResolveQualityWeightByte();
-            int tapCount = DrainEchoTapQueue(frameTaps, frame, currentTime);
-            tapCount = AppendMovementSignals(frameTaps, tapCount, frame, currentTime);
-            tapCount = AppendAcousticPingSignals(frameTaps, tapCount, frame, currentTime);
+            if (!TryAcquireTrackingMutationGuard())
+                return;
 
-            jobResult[0] = _trailState;
-            _trackingHandle = new EchoTrackingJob
+            bool scheduled = false;
+            try
             {
-                Taps = frameTaps,
-                Result = jobResult,
-                Previous = _trailState,
-                CurrentTime = currentTime,
-                TapCount = tapCount,
-                SilenceTimeoutSeconds = SilenceTimeoutSeconds
-            }.Schedule();
-            _trackingScheduled = 1;
-            _lastRefreshFrame = frame;
-            WriteHeartbeatBlackBox(frame, currentTime);
+                if (!TryResolveFrameViewsNoAcquire(out NativeArray<EchoTap> frameTaps, out NativeArray<AcousticEchoTrailState> jobResult))
+                {
+                    DropEchoTapQueueUnderAcquiredGuard();
+                    return;
+                }
+
+                _cachedQualityWeightByte = ResolveQualityWeightByte();
+                int tapCount = DrainEchoTapQueue(frameTaps, frame, currentTime);
+                tapCount = AppendMovementSignals(frameTaps, tapCount, frame, currentTime);
+                tapCount = AppendAcousticPingSignals(frameTaps, tapCount, frame, currentTime);
+
+                jobResult[0] = _trailState;
+                _trackingHandle = new EchoTrackingJob
+                {
+                    Taps = frameTaps,
+                    Result = jobResult,
+                    Previous = _trailState,
+                    CurrentTime = currentTime,
+                    TapCount = tapCount,
+                    SilenceTimeoutSeconds = SilenceTimeoutSeconds
+                }.Schedule();
+                _trackingScheduled = 1;
+                scheduled = true;
+                _lastRefreshFrame = frame;
+                WriteHeartbeatBlackBox(frame, currentTime);
+            }
+            finally
+            {
+                if (!scheduled)
+                    ReleaseTrackingMutationGuard();
+            }
         }
 
         private static int DrainEchoTapQueue(NativeArray<EchoTap> frameTaps, int frame, float currentTime)
         {
             int count = 0;
             int limit = math.min(MaxEchoTapsPerFrame, frameTaps.IsCreated ? frameTaps.Length : 0);
-            if (!EnsurePendingTaps(out NativeArray<EchoTap> pendingTaps))
+            if (!TryResolvePendingTapsNoAcquire(out NativeArray<EchoTap> pendingTaps))
             {
                 _queuedEchoTapCount = 0;
                 return count;
@@ -913,7 +1012,25 @@ namespace Hecton8.AI.Sensory
 
         private static void DropEchoTapQueue()
         {
-            if (!EnsurePendingTaps(out NativeArray<EchoTap> pendingTaps))
+            if (!TryAcquireAcousticMutationGuard(_dataVault, PendingTapMutationGuardMask, out IDataVault guardVault))
+            {
+                _queuedEchoTapCount = 0;
+                return;
+            }
+
+            try
+            {
+                DropEchoTapQueueUnderAcquiredGuard();
+            }
+            finally
+            {
+                ReleaseAcousticMutationGuard(guardVault, PendingTapMutationGuardMask);
+            }
+        }
+
+        private static void DropEchoTapQueueUnderAcquiredGuard()
+        {
+            if (!TryResolvePendingTapsNoAcquire(out NativeArray<EchoTap> pendingTaps))
             {
                 _queuedEchoTapCount = 0;
                 return;
@@ -1049,27 +1166,45 @@ namespace Hecton8.AI.Sensory
 
         private static void WriteBlackBox(int frame, in AcousticEchoTrailState state, float silenceSeconds)
         {
-            if (!EnsureBlackBox(out NativeArray<AcousticEchoBlackBoxEntry> blackBox))
-                return;
-
-            int index = _blackBoxCursor % blackBox.Length;
-            blackBox[index] = new AcousticEchoBlackBoxEntry
+            IDataVault guardVault = null;
+            bool releaseGuard = false;
+            if (_trackingMutationGuardVault == null)
             {
-                Frame = frame,
-                AcousticHuntsTriggered = state.AcousticHuntsTriggered,
-                SourceId = state.SourceId,
-                Sequence = state.Sequence,
-                Intensity01 = state.Intensity01,
-                LastHeardTime = state.LastHeardTime,
-                SilenceSeconds = silenceSeconds,
-                Flags = state.Flags,
-                PortalGridX = state.InvestigateAup.GridX,
-                PortalGridY = state.InvestigateAup.GridY,
-                PortalGridZ = state.InvestigateAup.GridZ,
-                PortalLocal = new float3(state.InvestigateAup.LocalX, state.InvestigateAup.LocalY, state.InvestigateAup.LocalZ),
-                StateHash = HashState(in state)
-            };
-            _blackBoxCursor = (index + 1) % blackBox.Length;
+                if (!TryAcquireAcousticMutationGuard(_dataVault, BlackBoxMutationGuardMask, out guardVault))
+                    return;
+
+                releaseGuard = true;
+            }
+
+            try
+            {
+                if (!TryResolveBlackBoxNoAcquire(out NativeArray<AcousticEchoBlackBoxEntry> blackBox))
+                    return;
+
+                int index = _blackBoxCursor % blackBox.Length;
+                blackBox[index] = new AcousticEchoBlackBoxEntry
+                {
+                    Frame = frame,
+                    AcousticHuntsTriggered = state.AcousticHuntsTriggered,
+                    SourceId = state.SourceId,
+                    Sequence = state.Sequence,
+                    Intensity01 = state.Intensity01,
+                    LastHeardTime = state.LastHeardTime,
+                    SilenceSeconds = silenceSeconds,
+                    Flags = state.Flags,
+                    PortalGridX = state.InvestigateAup.GridX,
+                    PortalGridY = state.InvestigateAup.GridY,
+                    PortalGridZ = state.InvestigateAup.GridZ,
+                    PortalLocal = new float3(state.InvestigateAup.LocalX, state.InvestigateAup.LocalY, state.InvestigateAup.LocalZ),
+                    StateHash = HashState(in state)
+                };
+                _blackBoxCursor = (index + 1) % blackBox.Length;
+            }
+            finally
+            {
+                if (releaseGuard)
+                    ReleaseAcousticMutationGuard(guardVault, BlackBoxMutationGuardMask);
+            }
         }
 
         private static void WriteFaultBlackBox(int frame, in AbsoluteUniversePosition faultAup)

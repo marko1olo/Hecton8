@@ -262,7 +262,6 @@ namespace Hecton8.World
                 MaxCullDistanceMeters = Mathf.Max(1000f, _lastBoundsRadius * 64f),
                 VramUsedMb = VRAMBudgetTracker.EstimatedVRAMBytes * GlobalTelemetryBus.BytesToMegabytes,
                 GlobalQualityWeight = globalQualityWeight,
-                QualityTier = ResolveCullingQualityTier(globalQualityWeight),
                 Flags = InstanceCullingDispatchFlags.None,
                 IndirectArgs = new InstanceCullingIndirectArgs
                 {
@@ -480,18 +479,6 @@ namespace Hecton8.World
         private void CacheInstanceCullingServiceCold()
         {
             _instanceCullingService = GlobalRegistry.InstanceCulling;
-        }
-
-        private static InstanceCullingQualityTier ResolveCullingQualityTier(float globalQualityWeight)
-        {
-            float q = math.saturate(math.select(1f, globalQualityWeight, math.isfinite(globalQualityWeight)));
-            if (q < 0.25f)
-                return InstanceCullingQualityTier.Low;
-            if (q >= 0.82f)
-                return InstanceCullingQualityTier.Ultra;
-            if (q >= 0.58f)
-                return InstanceCullingQualityTier.High;
-            return InstanceCullingQualityTier.Middle;
         }
 
         public void ClearBinding()

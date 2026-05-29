@@ -1518,6 +1518,8 @@ namespace Hecton8.Physics
         private const double FlushBudgetWarningMilliseconds = 0.2d;
         private const int FlushBudgetWarningCooldownFrames = 30;
         private const int ForcePacketWarningCooldownFrames = 30;
+        private const uint ValidationPacketsPin = 1u << 0;
+        private const uint ValidationMaskPin = 1u << 1;
         private static readonly uint ForcePacketClipWarningHash = unchecked((uint)LocHash.Compute("PhysicsApplySystem.ForcePacketClip"));
         private static readonly uint ForcePacketQueueHash = unchecked((uint)LocHash.Compute("PhysicsApplySystem.ForcePacketQueue"));
         private static readonly uint PhysicsFlushBudgetWarningHash = unchecked((uint)LocHash.Compute("PhysicsApplySystem.FlushBudget"));
@@ -1592,6 +1594,7 @@ namespace Hecton8.Physics
         private bool _frontBufferValidationReady;
         private bool _packetValidationScheduled;
         private JobHandle _packetValidationHandle;
+        private uint _validationSchedulePinMask;
         private bool _contactModifySubscribed;
         private bool _submarineModifiableContactsArmed;
         private ulong _submarineHullEntityId;
@@ -2552,26 +2555,11 @@ namespace Hecton8.Physics
             if (!_frontBufferValidationReady)
                 return;
 
-            bool frontLocked = TryAcquireForcePacketBufferWriteLock(
-                in _frontPacketBufferHandle,
-                BufferID.PhysicsForceCommandFront,
-                out NativeArray<ForcePacket> frontPackets);
-            bool validationMaskLocked = false;
-            NativeArray<byte> validationMask = default;
-            if (frontLocked)
-            {
-                validationMaskLocked = TryAcquireByteBufferWriteLock(
+            if (!TryAcquireByteBufferWriteLock(
                     in _validationMaskBufferHandle,
                     BufferID.PhysicsForceValidationMask,
-                    out validationMask);
-            }
-
-            if (!frontLocked || !validationMaskLocked)
+                    out NativeArray<byte> validationMask))
             {
-                if (validationMaskLocked)
-                    ReleaseByteBufferWriteLock(in _validationMaskBufferHandle);
-                if (frontLocked)
-                    ReleaseForcePacketBufferWriteLock(in _frontPacketBufferHandle);
                 _frontBufferValidationReady = false;
                 _frontCount = 0;
                 return;
@@ -2587,22 +2575,51 @@ namespace Hecton8.Physics
             try
             {
                 for (int i = 0; i < applyCount; i++)
-                {
-                    _forcePacketApplyScratch[i] = frontPackets[i];
                     _forcePacketApplyValidityScratch[i] = validationMask[i];
-                }
+            }
+            finally
+            {
+                ReleaseByteBufferWriteLock(in _validationMaskBufferHandle);
+            }
+
+            if (!TryAcquireForcePacketBufferWriteLock(
+                    in _frontPacketBufferHandle,
+                    BufferID.PhysicsForceCommandFront,
+                    out NativeArray<ForcePacket> frontPackets))
+            {
+                ClearForcePacketApplyScratch(applyCount);
+                _frontBufferValidationReady = false;
+                _frontCount = 0;
+                return;
+            }
+
+            try
+            {
+                for (int i = 0; i < applyCount; i++)
+                    _forcePacketApplyScratch[i] = frontPackets[i];
 
                 ClearForcePacketRange(frontPackets, sourceCount);
-                ClearByteRange(validationMask, sourceCount);
                 _frontCount = 0;
                 _frontBufferValidationReady = false;
             }
             finally
             {
-                if (validationMaskLocked)
+                ReleaseForcePacketBufferWriteLock(in _frontPacketBufferHandle);
+            }
+
+            if (TryAcquireByteBufferWriteLock(
+                    in _validationMaskBufferHandle,
+                    BufferID.PhysicsForceValidationMask,
+                    out validationMask))
+            {
+                try
+                {
+                    ClearByteRange(validationMask, sourceCount);
+                }
+                finally
+                {
                     ReleaseByteBufferWriteLock(in _validationMaskBufferHandle);
-                if (frontLocked)
-                    ReleaseForcePacketBufferWriteLock(in _frontPacketBufferHandle);
+                }
             }
 
             if (clipped)
@@ -3455,6 +3472,106 @@ namespace Hecton8.Physics
             _dataVault?.ReleaseWriteLock(in handle, OwnerSystemId);
         }
 
+        private bool TryLockValidationScheduleBuffers(
+            out NativeArray<ForcePacket> validationPackets,
+            out NativeArray<byte> validationMask)
+        {
+            validationPackets = default;
+            validationMask = default;
+            if (_validationSchedulePinMask != 0u)
+                return false;
+
+            bool success = false;
+            try
+            {
+                if (!TryPinValidationScheduleBuffer(
+                        in _validationPacketBufferHandle,
+                        BufferID.PhysicsForceValidationPackets,
+                        MaxQueuedPackets,
+                        ValidationPacketsPin,
+                        out validationPackets))
+                    return false;
+
+                if (!TryPinValidationScheduleBuffer(
+                        in _validationMaskBufferHandle,
+                        BufferID.PhysicsForceValidationMask,
+                        MaxQueuedPackets,
+                        ValidationMaskPin,
+                        out validationMask))
+                    return false;
+
+                success = true;
+                return true;
+            }
+            finally
+            {
+                if (!success)
+                    ReleaseValidationScheduleBufferPins();
+            }
+        }
+
+        private bool TryPinValidationScheduleBuffer<T>(
+            in VaultGenerationHandle<T> handle,
+            BufferID bufferId,
+            int requiredLength,
+            uint pinBit,
+            out NativeArray<T> buffer)
+            where T : struct
+        {
+            buffer = default;
+            IDataVault dataVault = _dataVault;
+            if (dataVault == null ||
+                dataVault.IsCompactionFenceActive ||
+                requiredLength <= 0 ||
+                !IsPhysicsVaultHandle(in handle, bufferId) ||
+                !dataVault.TryLockBuffer(bufferId, OwnerSystemId))
+            {
+                return false;
+            }
+
+            bool pinAcquired = true;
+            try
+            {
+                if (!dataVault.TryResolveHandle(in handle, out buffer) ||
+                    !buffer.IsCreated ||
+                    buffer.Length < requiredLength)
+                {
+                    buffer = default;
+                    return false;
+                }
+
+                _validationSchedulePinMask |= pinBit;
+                pinAcquired = false;
+                return true;
+            }
+            finally
+            {
+                if (pinAcquired)
+                {
+                    dataVault.TryUnlockBuffer(bufferId, OwnerSystemId);
+                    buffer = default;
+                }
+            }
+        }
+
+        private void ReleaseValidationScheduleBufferPins()
+        {
+            uint pinMask = _validationSchedulePinMask;
+            if (pinMask == 0u)
+                return;
+
+            IDataVault dataVault = _dataVault;
+            if (dataVault != null)
+            {
+                if ((pinMask & ValidationMaskPin) != 0u)
+                    dataVault.TryUnlockBuffer(BufferID.PhysicsForceValidationMask, OwnerSystemId);
+                if ((pinMask & ValidationPacketsPin) != 0u)
+                    dataVault.TryUnlockBuffer(BufferID.PhysicsForceValidationPackets, OwnerSystemId);
+            }
+
+            _validationSchedulePinMask = 0u;
+        }
+
         private static void ClearForcePacketRange(NativeArray<ForcePacket> buffer, int count, int startIndex = 0)
         {
             if (!buffer.IsCreated || count <= 0 || startIndex >= buffer.Length)
@@ -3473,6 +3590,16 @@ namespace Hecton8.Physics
             int clampedCount = math.min(count, buffer.Length - startIndex);
             for (int i = 0; i < clampedCount; i++)
                 buffer[startIndex + i] = 0;
+        }
+
+        private void ClearForcePacketApplyScratch(int count)
+        {
+            int clampedCount = math.clamp(count, 0, MaxForcePacketsAppliedPerFixedTick);
+            for (int i = 0; i < clampedCount; i++)
+            {
+                _forcePacketApplyScratch[i] = default;
+                _forcePacketApplyValidityScratch[i] = 0;
+            }
         }
 
         private void EnsureValidationBuffers()
@@ -3722,43 +3849,28 @@ namespace Hecton8.Physics
 
             int validationCount = math.min(queuedCount, MaxQueuedPackets);
             bool clipped = queuedCount > validationCount;
-            bool frontLocked = TryAcquireForcePacketBufferWriteLock(
-                in _frontPacketBufferHandle,
-                BufferID.PhysicsForceCommandFront,
-                out NativeArray<ForcePacket> frontPackets);
-            bool validationPacketsLocked = false;
-            bool validationMaskLocked = false;
-            NativeArray<ForcePacket> validationPackets = default;
-            NativeArray<byte> validationMask = default;
-            if (frontLocked)
+            if (!TryLockValidationScheduleBuffers(
+                    out NativeArray<ForcePacket> validationPackets,
+                    out NativeArray<byte> validationMask))
             {
-                validationPacketsLocked = TryAcquireForcePacketBufferWriteLock(
-                    in _validationPacketBufferHandle,
-                    BufferID.PhysicsForceValidationPackets,
-                    out validationPackets);
-            }
-
-            if (validationPacketsLocked)
-            {
-                validationMaskLocked = TryAcquireByteBufferWriteLock(
-                    in _validationMaskBufferHandle,
-                    BufferID.PhysicsForceValidationMask,
-                    out validationMask);
-            }
-
-            if (!frontLocked || !validationPacketsLocked || !validationMaskLocked)
-            {
-                if (validationMaskLocked)
-                    ReleaseByteBufferWriteLock(in _validationMaskBufferHandle);
-                if (validationPacketsLocked)
-                    ReleaseForcePacketBufferWriteLock(in _validationPacketBufferHandle);
-                if (frontLocked)
-                    ReleaseForcePacketBufferWriteLock(in _frontPacketBufferHandle);
                 _frontBufferValidationReady = false;
                 _frontCount = 0;
                 return;
             }
 
+            bool frontLocked = TryAcquireForcePacketBufferWriteLock(
+                in _frontPacketBufferHandle,
+                BufferID.PhysicsForceCommandFront,
+                out NativeArray<ForcePacket> frontPackets);
+            if (!frontLocked)
+            {
+                ReleaseValidationScheduleBufferPins();
+                _frontBufferValidationReady = false;
+                _frontCount = 0;
+                return;
+            }
+
+            bool scheduled = false;
             try
             {
                 for (int i = 0; i < validationCount; i++)
@@ -3777,17 +3889,15 @@ namespace Hecton8.Physics
 
                 _packetValidationHandle = validateJob.Schedule(validationCount, 32);
                 _packetValidationScheduled = true;
+                scheduled = true;
                 H8Memory.RegisterActiveJob(OwnerSystemId, _packetValidationHandle);
                 _frontBufferValidationReady = false;
             }
             finally
             {
-                if (validationMaskLocked)
-                    ReleaseByteBufferWriteLock(in _validationMaskBufferHandle);
-                if (validationPacketsLocked)
-                    ReleaseForcePacketBufferWriteLock(in _validationPacketBufferHandle);
-                if (frontLocked)
-                    ReleaseForcePacketBufferWriteLock(in _frontPacketBufferHandle);
+                ReleaseForcePacketBufferWriteLock(in _frontPacketBufferHandle);
+                if (!scheduled)
+                    ReleaseValidationScheduleBufferPins();
             }
 
             if (clipped)
@@ -3805,6 +3915,7 @@ namespace Hecton8.Physics
                     return;
 
                 _packetValidationScheduled = false;
+                ReleaseValidationScheduleBufferPins();
                 _frontBufferValidationReady = _frontCount > 0;
                 H8Memory.RegisterActiveJob(OwnerSystemId, default);
             }
@@ -4237,10 +4348,14 @@ namespace Hecton8.Physics
         {
             if (_packetValidationScheduled)
             {
-                DispatcherJobSwap.TryComplete(ref _packetValidationHandle, forceComplete: true);
+                if (!DispatcherJobSwap.TryComplete(ref _packetValidationHandle, forceComplete: true))
+                    return;
+
+                _packetValidationScheduled = false;
                 H8Memory.RegisterActiveJob(OwnerSystemId, default);
             }
 
+            ReleaseValidationScheduleBufferPins();
             ReleaseVaultBufferView(ref _validationPacketBufferHandle);
             ReleaseVaultBufferView(ref _validationMaskBufferHandle);
             _validationPacketBufferHandle = default;

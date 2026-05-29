@@ -134,6 +134,7 @@ namespace Hecton8.UI
         private void OnEnable()
         {
             CacheLocalizationCold();
+            CaptureDefaults();
             TryRegisterHotSwapListener();
             LocalizationEvents.RegisterLanguageListener(this);
             QueueApplyMirroring();
@@ -233,8 +234,6 @@ namespace Hecton8.UI
             if (_isApplyingMirroring)
                 return;
 
-            CaptureDefaults();
-
             GameLanguage language = ResolveCurrentLanguage();
             bool rtl = LocalizedMeasurementFormatter.IsRightToLeft(language);
             if (_isAppliedRtl == rtl && Application.isPlaying)
@@ -297,7 +296,6 @@ namespace Hecton8.UI
 
         private static GameLanguage ResolveCurrentLanguage()
         {
-            CacheLocalizationCold();
             ILocalizationTextReadModel manager = s_cachedLocalization;
             return manager != null ? (GameLanguage)manager.ActiveLanguageId : GameLanguage.English;
         }
@@ -373,7 +371,6 @@ namespace Hecton8.UI
             if (!mirrorIconScaleX)
                 return;
 
-            ResolveIconRoots();
             for (int i = 0; i < _resolvedIconRootCount; i++)
             {
                 RectTransform iconRoot = GetResolvedIconRoot(i);

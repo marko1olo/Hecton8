@@ -408,13 +408,15 @@ namespace Hecton8.Narrative.Prologue
                     return true;
                 }
 
-                bool survivalProxyAllowed = _runtime.IsLowTier;
+                float survivalProxyPressure01 = math.saturate(_runtime.SurvivalProxyPressure01);
+                bool survivalProxyAllowed = survivalProxyPressure01 >=
+                                            PrologueSequenceQualityPolicy.SurvivalProxyActivationThreshold01;
                 bool handoffProxyAllowed = _runtime.IsStandaloneOrbitHandoffProxyAllowed;
                 bool allowProxy = survivalProxyAllowed || handoffProxyAllowed;
                 byte hydrationMode = handoffProxyAllowed
                     ? (byte)PrologueHydrationMode.StandaloneOrbitHandoffProxy
                     : survivalProxyAllowed
-                        ? (byte)PrologueHydrationMode.LowTierProxySurface
+                        ? (byte)PrologueHydrationMode.SurvivalProxySurface
                         : (byte)PrologueHydrationMode.HighResolutionSurface;
 
                 if (allowProxy && _runtime.IsOceanSurfaceReady(allowProxy: true))

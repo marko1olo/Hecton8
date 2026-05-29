@@ -1,3 +1,4 @@
+using Hecton8.Core;
 using UnityEngine;
 
 namespace Hecton8.Gameplay
@@ -11,8 +12,10 @@ namespace Hecton8.Gameplay
     /// </remarks>
     [DisallowMultipleComponent]
     [AddComponentMenu("Hecton8/Gameplay/Player Transport Feel Contract")]
-    public sealed class PlayerTransportFeelContract : MonoBehaviour
+    public sealed class PlayerTransportFeelContract : MonoBehaviour, IPoolable
     {
+        private static PlayerTransportFeelContract s_lastSpawnedContract;
+
         [Header("-- Preset ---------------------------")]
         [Tooltip("Optional shared transport preset. When assigned, feel values resolve from the preset instead of local inspector overrides.")]
         [SerializeField] private PlayerTransportPreset preset;
@@ -71,6 +74,29 @@ namespace Hecton8.Gameplay
 
         /// <summary>Optional shared preset driving this transport feel contract.</summary>
         public PlayerTransportPreset Preset => preset;
+
+        internal static bool TryResolveLastSpawned(GameObject instance, out PlayerTransportFeelContract contract)
+        {
+            contract = s_lastSpawnedContract;
+            return contract != null && ReferenceEquals(contract.gameObject, instance);
+        }
+
+        public void OnSpawn()
+        {
+            s_lastSpawnedContract = this;
+        }
+
+        public void OnDespawn()
+        {
+            if (ReferenceEquals(s_lastSpawnedContract, this))
+                s_lastSpawnedContract = null;
+        }
+
+        private void OnDestroy()
+        {
+            if (ReferenceEquals(s_lastSpawnedContract, this))
+                s_lastSpawnedContract = null;
+        }
 
         /// <summary>Propulsion force treated as full transport output for feel normalization.</summary>
         public float PropulsionForceReference => preset != null ? preset.PropulsionForceReference : propulsionForceReference;

@@ -13,6 +13,11 @@ namespace Hecton8.Core.Contracts
         public const int CompleteSnapshotStrideBytes = 16;
     }
 
+    public static class PrologueSequenceQualityPolicy
+    {
+        public const float SurvivalProxyActivationThreshold01 = 0.65f;
+    }
+
     /// <summary>
     /// Deterministic prologue pacing states. Values are persisted in black-box telemetry.
     /// </summary>
@@ -44,7 +49,7 @@ namespace Hecton8.Core.Contracts
     public enum PrologueHydrationMode : byte
     {
         HighResolutionSurface = 0,
-        LowTierProxySurface = 1,
+        SurvivalProxySurface = 1,
         DevForcedShallowWater = 2,
         StandaloneOrbitHandoffProxy = 3
     }
@@ -143,6 +148,7 @@ namespace Hecton8.Core.Contracts
     public interface IPrologueSequenceRuntime
     {
         bool IsDevelopmentBuild { get; }
+        float SurvivalProxyPressure01 { get; }
         bool IsLowTier { get; }
         bool IsStandaloneOrbitHandoffProxyAllowed { get; }
         uint CurrentFrame { get; }

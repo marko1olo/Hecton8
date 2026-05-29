@@ -405,7 +405,6 @@ namespace Hecton8.World
         private Vector3 _cachedCullCameraForward = Vector3.forward;
         private IPlayerRuntimeContext _cachedPlayerContext;
         private PlayerToolManager _playerToolManager;
-        private float _nextToolManagerResolveTime;
         private BatchRendererGroup _batchRendererGroup;
         private GraphicsBuffer _batchHandleBuffer;
         private BatchID _batchId;
@@ -534,6 +533,7 @@ namespace Hecton8.World
         private bool _scatterCullTelemetryReadbackPending;
         private bool _scatterCullTelemetryDumped;
         private bool _lastCullOverdrawWarning;
+        private bool _supportsComputeShadersCold;
         private const byte BindingFlagFalse = 0;
         private const byte BindingFlagTrue = 1;
 
@@ -1633,6 +1633,7 @@ namespace Hecton8.World
             _cachedSystemStress01 = 0f;
             _resolvedDensityDecimationStep = ResolveDensityDecimationStep();
             TryAutoAssignAssets();
+            CacheGraphicsCapabilitiesCold();
             if (_cullingCompute != null)
             {
                 _cullFloraKernel = ResolveKernel(_cullingCompute, "CullFloraInstances");
@@ -1714,6 +1715,7 @@ namespace Hecton8.World
 
         private void OnEnable()
         {
+            CacheGraphicsCapabilitiesCold();
             CachePlayerContextCold();
             CacheRuntimeServicesCold();
             RefreshCullCameraCacheCold();
@@ -1797,7 +1799,6 @@ namespace Hecton8.World
 
             _cachedPlayerContext = currentService as IPlayerRuntimeContext;
             _playerToolManager = _cachedPlayerContext != null ? _cachedPlayerContext.ToolManager : null;
-            _nextToolManagerResolveTime = 0f;
         }
 
         /// <summary>
@@ -2036,97 +2037,75 @@ namespace Hecton8.World
                 return fullUploadSucceeded;
             }
 
-            if (!TryAcquireUploadedDirtyPagesForWrite(
-                    out IDataVault dirtyVault,
-                    out NativeArray<byte> matrixDirtyPagesA,
-                    out NativeArray<byte> matrixDirtyPagesB,
-                    out NativeArray<byte> dataDirtyPagesA,
-                    out NativeArray<byte> dataDirtyPagesB))
+            if ((sourceMatrixDirty || sourceDataDirty) &&
+                !HasAbsorbedNativeSourceDirtyPages(in readBuffer))
+            {
+                if (sourceMatrixDirty &&
+                    (!TryMarkUploadedDirtyPages(readBuffer.MatrixDirtyPages, ref _uploadedMatrixDirtyPagesAHandle, NativeUploadMatrixDirtyPagesAId, instanceCount) ||
+                     !TryMarkUploadedDirtyPages(readBuffer.MatrixDirtyPages, ref _uploadedMatrixDirtyPagesBHandle, NativeUploadMatrixDirtyPagesBId, instanceCount)))
+                {
+                    return false;
+                }
+
+                if (sourceDataDirty &&
+                    (!TryMarkUploadedDirtyPages(readBuffer.InstanceDataDirtyPages, ref _uploadedDataDirtyPagesAHandle, NativeUploadDataDirtyPagesAId, instanceCount) ||
+                     !TryMarkUploadedDirtyPages(readBuffer.InstanceDataDirtyPages, ref _uploadedDataDirtyPagesBHandle, NativeUploadDataDirtyPagesBId, instanceCount)))
+                {
+                    return false;
+                }
+
+                RecordNativeSourceDirtyPagesAbsorbed(in readBuffer);
+            }
+
+            int uploadBudgetBytes = ResolveNativeUploadBudgetBytes();
+            GraphicsBufferUploadUtility.PageUploadStats matrixStats = default;
+            if (!TryUploadMatrixDirtyPages(matrixWriteBuffer, readBuffer.InstanceMatrices, instanceCount, uploadBudgetBytes, out bool matrixDirty, out matrixStats))
+                return false;
+
+            long consumedMatrixBudget = matrixStats.UploadedBytes > uploadBudgetBytes ? uploadBudgetBytes : matrixStats.UploadedBytes;
+            long remainingBudgetBytes = (long)uploadBudgetBytes - consumedMatrixBudget;
+            int dataFirstDirtyPageBytes;
+            if (!TryResolveDataDirtyPageUploadState(instanceCount, out bool dataDirty, out dataFirstDirtyPageBytes))
+                return false;
+
+            if (!matrixDirty && !dataDirty)
+            {
+                RecordNativeUpload(in readBuffer, 0L);
+                return true;
+            }
+
+            bool canUploadDataThisFrame =
+                dataDirty &&
+                dataFirstDirtyPageBytes > 0 &&
+                (remainingBudgetBytes >= dataFirstDirtyPageBytes || matrixStats.UploadedBytes <= 0L);
+            long dataBudgetLong = remainingBudgetBytes > 1L ? remainingBudgetBytes : 1L;
+            int dataBudgetBytes = dataBudgetLong > int.MaxValue ? int.MaxValue : (int)dataBudgetLong;
+            GraphicsBufferUploadUtility.PageUploadStats dataStats = default;
+            if (canUploadDataThisFrame &&
+                !TryUploadDataDirtyPages(dataWriteBuffer, readBuffer.InstanceData, instanceCount, dataBudgetBytes, out dataStats))
             {
                 return false;
             }
 
-            try
-            {
-                if ((sourceMatrixDirty || sourceDataDirty) &&
-                    !HasAbsorbedNativeSourceDirtyPages(in readBuffer))
-                {
-                    MarkUploadedBufferDirtyPages(readBuffer.MatrixDirtyPages, matrixDirtyPagesA, matrixDirtyPagesB, instanceCount);
-                    MarkUploadedBufferDirtyPages(readBuffer.InstanceDataDirtyPages, dataDirtyPagesA, dataDirtyPagesB, instanceCount);
-                    RecordNativeSourceDirtyPagesAbsorbed(in readBuffer);
-                }
-
-                NativeArray<byte> matrixWriteDirtyPages = _uploadedInstanceWriteBufferIndex == 0 ? matrixDirtyPagesA : matrixDirtyPagesB;
-                NativeArray<byte> dataWriteDirtyPages = _uploadedInstanceWriteBufferIndex == 0 ? dataDirtyPagesA : dataDirtyPagesB;
-                bool matrixDirty = GraphicsBufferUploadUtility.HasAnyDirtyPage(matrixWriteDirtyPages, instanceCount, NativeUploadDirtyPageSize);
-                bool dataDirty = GraphicsBufferUploadUtility.HasAnyDirtyPage(dataWriteDirtyPages, instanceCount, NativeUploadDirtyPageSize);
-
-                if (!matrixDirty && !dataDirty)
-                {
-                    RecordNativeUpload(in readBuffer, 0L);
-                    return true;
-                }
-
-                int uploadBudgetBytes = ResolveNativeUploadBudgetBytes();
-                GraphicsBufferUploadUtility.PageUploadStats matrixStats = matrixDirty
-                    ? GraphicsBufferUploadUtility.UploadNativeArrayDirtyPages(
-                        matrixWriteBuffer,
-                        readBuffer.InstanceMatrices,
-                        matrixWriteDirtyPages,
-                        instanceCount,
-                        NativeUploadDirtyPageSize,
-                        uploadBudgetBytes,
-                        clearUploadedPages: true)
-                    : default;
-                long consumedMatrixBudget = matrixStats.UploadedBytes > uploadBudgetBytes ? uploadBudgetBytes : matrixStats.UploadedBytes;
-                long remainingBudgetBytes = (long)uploadBudgetBytes - consumedMatrixBudget;
-                int dataFirstDirtyPageBytes = dataDirty
-                    ? GraphicsBufferUploadUtility.ResolveFirstDirtyPageBytes<HectonVegetationInstanceData>(
-                        dataWriteDirtyPages,
-                        instanceCount,
-                        NativeUploadDirtyPageSize)
-                    : 0;
-                bool canUploadDataThisFrame =
-                    dataDirty &&
-                    dataFirstDirtyPageBytes > 0 &&
-                    (remainingBudgetBytes >= dataFirstDirtyPageBytes || matrixStats.UploadedBytes <= 0L);
-                long dataBudgetLong = remainingBudgetBytes > 1L ? remainingBudgetBytes : 1L;
-                int dataBudgetBytes = dataBudgetLong > int.MaxValue ? int.MaxValue : (int)dataBudgetLong;
-                GraphicsBufferUploadUtility.PageUploadStats dataStats = canUploadDataThisFrame
-                    ? GraphicsBufferUploadUtility.UploadNativeArrayDirtyPages(
-                        dataWriteBuffer,
-                        readBuffer.InstanceData,
-                        dataWriteDirtyPages,
-                        instanceCount,
-                        NativeUploadDirtyPageSize,
-                        dataBudgetBytes,
-                        clearUploadedPages: true)
-                    : default;
-                bool dataDeferredByBudget = dataDirty && !canUploadDataThisFrame;
-
-                long uploadedBytes = matrixStats.UploadedBytes + dataStats.UploadedBytes;
-                _lastNativeUploadBytes = uploadedBytes;
-                long avoidedBytes = EstimateNativeUploadBytes(instanceCount) - uploadedBytes;
-                _lastNativeUploadAvoidedBytes = avoidedBytes > 0L ? avoidedBytes : 0L;
-                if (matrixStats.DeferredPages > 0 || dataStats.DeferredPages > 0 || dataDeferredByBudget)
-                    return true;
-
-                InvalidateRenderStateForBufferIdentityChange(matrixWriteBuffer, dataWriteBuffer, _floraPhaseSeedBuffer);
-                _uploadedInstanceMatrixBuffer = matrixWriteBuffer;
-                _uploadedInstanceDataBuffer = dataWriteBuffer;
-                _instanceMatrixBuffer = matrixWriteBuffer;
-                _instanceDataBuffer = dataWriteBuffer;
-                _legacyDataDirty = false;
-                CopyCpuCullingPayload(readBuffer.InstanceMatrices, readBuffer.InstanceData, instanceCount);
-                SetInstanceCount(instanceCount);
-                AdvanceUploadedWriteBuffer();
-                RecordNativeUpload(in readBuffer, uploadedBytes);
+            bool dataDeferredByBudget = dataDirty && !canUploadDataThisFrame;
+            long uploadedBytes = matrixStats.UploadedBytes + dataStats.UploadedBytes;
+            _lastNativeUploadBytes = uploadedBytes;
+            long avoidedBytes = EstimateNativeUploadBytes(instanceCount) - uploadedBytes;
+            _lastNativeUploadAvoidedBytes = avoidedBytes > 0L ? avoidedBytes : 0L;
+            if (matrixStats.DeferredPages > 0 || dataStats.DeferredPages > 0 || dataDeferredByBudget)
                 return true;
-            }
-            finally
-            {
-                ReleaseUploadedDirtyPageWriteLocks(dirtyVault);
-            }
+
+            InvalidateRenderStateForBufferIdentityChange(matrixWriteBuffer, dataWriteBuffer, _floraPhaseSeedBuffer);
+            _uploadedInstanceMatrixBuffer = matrixWriteBuffer;
+            _uploadedInstanceDataBuffer = dataWriteBuffer;
+            _instanceMatrixBuffer = matrixWriteBuffer;
+            _instanceDataBuffer = dataWriteBuffer;
+            _legacyDataDirty = false;
+            CopyCpuCullingPayload(readBuffer.InstanceMatrices, readBuffer.InstanceData, instanceCount);
+            SetInstanceCount(instanceCount);
+            AdvanceUploadedWriteBuffer();
+            RecordNativeUpload(in readBuffer, uploadedBytes);
+            return true;
         }
 
         private bool CanUseDirtyPageUpload(in HectonIndirectVegetationNativeReadBuffer readBuffer)
@@ -2761,7 +2740,7 @@ namespace Hecton8.World
             Bounds drawBounds)
         {
             if (!_preferGpuIndirectRendering ||
-                !HardwareTierDetector.AllowHighResourceComputeShaders ||
+                !_supportsComputeShadersCold ||
                 cullCamera == null ||
                 nearMesh == null ||
                 _cullingCompute == null ||
@@ -3072,7 +3051,7 @@ namespace Hecton8.World
 
         private void EnsureAndDispatchFloraSnapFlags(GraphicsBuffer activeInstanceDataBuffer, Vector4 globalFloatingOffset)
         {
-            if (!HardwareTierDetector.AllowHighResourceComputeShaders ||
+            if (!_supportsComputeShadersCold ||
                 _abyssalFlowFieldCompute == null ||
                 _clearFloraSnapFlagsKernel < 0 ||
                 _flagSnappedFloraKernel < 0 ||
@@ -3188,20 +3167,20 @@ namespace Hecton8.World
             return count;
         }
 
-        private static int ResolveKernel(ComputeShader computeShader, string kernelName)
+        private int ResolveKernel(ComputeShader computeShader, string kernelName)
         {
-            if (computeShader == null || !HardwareTierDetector.AllowHighResourceComputeShaders || !computeShader.HasKernel(kernelName))
+            if (computeShader == null || !_supportsComputeShadersCold || !computeShader.HasKernel(kernelName))
                 return -1;
 
             int kernel = computeShader.FindKernel(kernelName);
             return kernel >= 0 && computeShader.IsSupported(kernel) ? kernel : -1;
         }
 
-        private static int ResolveKernelThreadGroupSizeX(ComputeShader computeShader, int kernel)
+        private int ResolveKernelThreadGroupSizeX(ComputeShader computeShader, int kernel)
         {
             if (computeShader == null ||
                 kernel < 0 ||
-                !HardwareTierDetector.AllowHighResourceComputeShaders ||
+                !_supportsComputeShadersCold ||
                 !computeShader.IsSupported(kernel))
                 return 0;
 
@@ -3213,7 +3192,7 @@ namespace Hecton8.World
             return totalThreads <= PortableMaxComputeThreadsPerGroup ? (int)queryX : 0;
         }
 
-        private static void ResolveKernelThreadGroupSizes(
+        private void ResolveKernelThreadGroupSizes(
             ComputeShader computeShader,
             int kernel,
             out int threadGroupSizeX,
@@ -3223,7 +3202,7 @@ namespace Hecton8.World
             threadGroupSizeY = 0;
             if (computeShader == null ||
                 kernel < 0 ||
-                !HardwareTierDetector.AllowHighResourceComputeShaders ||
+                !_supportsComputeShadersCold ||
                 !computeShader.IsSupported(kernel))
                 return;
 
@@ -3846,7 +3825,7 @@ namespace Hecton8.World
             int length)
             where T : struct
         {
-            IDataVault vault = CacheDataVaultCold();
+            IDataVault vault = _dataVault;
             if (vault == null || vault.IsCompactionFenceActive)
                 return false;
 
@@ -3869,7 +3848,7 @@ namespace Hecton8.World
             NativeArrayOptions options)
             where T : struct
         {
-            IDataVault vault = CacheDataVaultCold();
+            IDataVault vault = _dataVault;
             if (vault == null || vault.IsCompactionFenceActive || length <= 0)
                 return false;
 
@@ -3935,25 +3914,31 @@ namespace Hecton8.World
                 return false;
             }
 
-            bool lockAcquired = vault.TryAcquireWriteLock(in _floraAges01Handle, VaultOwnerSystemId, out floraAges);
-            if (!lockAcquired)
+            bool lockAcquired = false;
+            bool success = false;
+            try
             {
-                floraAges = default;
-                vault = null;
-                return false;
-            }
+                if (!vault.TryAcquireWriteLock(in _floraAges01Handle, VaultOwnerSystemId, out floraAges))
+                    return false;
 
-            if (vault.IsCompactionFenceActive ||
-                !floraAges.IsCreated ||
-                floraAges.Length < requiredCount)
+                lockAcquired = true;
+                success =
+                    !vault.IsCompactionFenceActive &&
+                    floraAges.IsCreated &&
+                    floraAges.Length >= requiredCount;
+                return success;
+            }
+            finally
             {
-                vault.ReleaseWriteLock(in _floraAges01Handle, VaultOwnerSystemId);
-                floraAges = default;
-                vault = null;
-                return false;
-            }
+                if (!success && lockAcquired && vault != null)
+                    vault.ReleaseWriteLock(in _floraAges01Handle, VaultOwnerSystemId);
 
-            return true;
+                if (!success)
+                {
+                    floraAges = default;
+                    vault = null;
+                }
+            }
         }
 
         private bool TryReadCpuCullingData(
@@ -3978,57 +3963,82 @@ namespace Hecton8.World
                    !vault.IsCompactionFenceActive;
         }
 
-        private bool TryAcquireCpuCullingDataForWrite(
+        private bool TryAcquireCpuCullingMatricesForWrite(
             int requiredCount,
             out IDataVault vault,
-            out NativeArray<Matrix4x4> matrices,
+            out NativeArray<Matrix4x4> matrices)
+        {
+            return TryAcquireVaultStorageForWrite(
+                ref _cpuCullingMatricesHandle,
+                CpuCullingMatricesBufferId,
+                requiredCount,
+                NativeArrayOptions.UninitializedMemory,
+                out vault,
+                out matrices);
+        }
+
+        private bool TryAcquireCpuCullingInstanceDataForWrite(
+            int requiredCount,
+            out IDataVault vault,
             out NativeArray<HectonVegetationInstanceData> instanceData)
         {
+            return TryAcquireVaultStorageForWrite(
+                ref _cpuCullingDataHandle,
+                CpuCullingDataBufferId,
+                requiredCount,
+                NativeArrayOptions.UninitializedMemory,
+                out vault,
+                out instanceData);
+        }
+
+        private bool TryAcquireVaultStorageForWrite<T>(
+            ref VaultGenerationHandle<T> handle,
+            BufferID bufferId,
+            int requiredCount,
+            NativeArrayOptions clearOptions,
+            out IDataVault vault,
+            out NativeArray<T> buffer)
+            where T : struct
+        {
             vault = null;
-            matrices = default;
-            instanceData = default;
+            buffer = default;
             int safeCount = math.max(1, requiredCount);
-            if (!EnsureVaultStorage(ref _cpuCullingMatricesHandle, CpuCullingMatricesBufferId, safeCount, NativeArrayOptions.UninitializedMemory) ||
-                !EnsureVaultStorage(ref _cpuCullingDataHandle, CpuCullingDataBufferId, safeCount, NativeArrayOptions.UninitializedMemory))
-            {
+            if (!EnsureVaultStorage(ref handle, bufferId, safeCount, clearOptions))
                 return false;
-            }
 
             vault = _dataVault;
+            bool lockAcquired = false;
+            bool success = false;
             if (vault == null ||
-                vault.IsCompactionFenceActive ||
-                !vault.TryAcquireWriteLock(in _cpuCullingMatricesHandle, VaultOwnerSystemId, out matrices))
+                vault.IsCompactionFenceActive)
             {
                 vault = null;
-                matrices = default;
                 return false;
             }
 
-            if (vault.IsCompactionFenceActive ||
-                !vault.TryAcquireWriteLock(in _cpuCullingDataHandle, VaultOwnerSystemId, out instanceData))
+            try
             {
-                vault.ReleaseWriteLock(in _cpuCullingMatricesHandle, VaultOwnerSystemId);
-                vault = null;
-                matrices = default;
-                instanceData = default;
-                return false;
-            }
+                if (!vault.TryAcquireWriteLock(in handle, VaultOwnerSystemId, out buffer))
+                    return false;
 
-            if (vault.IsCompactionFenceActive ||
-                !matrices.IsCreated ||
-                !instanceData.IsCreated ||
-                matrices.Length < requiredCount ||
-                instanceData.Length < requiredCount)
+                lockAcquired = true;
+                success =
+                    !vault.IsCompactionFenceActive &&
+                    buffer.IsCreated &&
+                    buffer.Length >= requiredCount;
+                return success;
+            }
+            finally
             {
-                vault.ReleaseWriteLock(in _cpuCullingDataHandle, VaultOwnerSystemId);
-                vault.ReleaseWriteLock(in _cpuCullingMatricesHandle, VaultOwnerSystemId);
-                vault = null;
-                matrices = default;
-                instanceData = default;
-                return false;
-            }
+                if (!success && lockAcquired && vault != null)
+                    vault.ReleaseWriteLock(in handle, VaultOwnerSystemId);
 
-            return true;
+                if (!success)
+                {
+                    vault = null;
+                    buffer = default;
+                }
+            }
         }
 
         private bool TryAcquireTelemetryBuffer<T>(
@@ -4045,20 +4055,39 @@ namespace Hecton8.World
                 return false;
 
             vault = _dataVault;
+            bool lockAcquired = false;
+            bool success = false;
             if (vault == null ||
-                vault.IsCompactionFenceActive ||
-                !vault.TryAcquireWriteLock(in handle, VaultOwnerSystemId, out buffer))
+                vault.IsCompactionFenceActive)
             {
                 buffer = default;
+                vault = null;
                 return false;
             }
 
-            if (!vault.IsCompactionFenceActive && buffer.IsCreated && buffer.Length >= length)
-                return true;
+            try
+            {
+                if (!vault.TryAcquireWriteLock(in handle, VaultOwnerSystemId, out buffer))
+                    return false;
 
-            vault.ReleaseWriteLock(in handle, VaultOwnerSystemId);
-            buffer = default;
-            return false;
+                lockAcquired = true;
+                success =
+                    !vault.IsCompactionFenceActive &&
+                    buffer.IsCreated &&
+                    buffer.Length >= length;
+                return success;
+            }
+            finally
+            {
+                if (!success && lockAcquired && vault != null)
+                    vault.ReleaseWriteLock(in handle, VaultOwnerSystemId);
+
+                if (!success)
+                {
+                    buffer = default;
+                    vault = null;
+                }
+            }
         }
 
         private bool TryReadTelemetryBuffer<T>(
@@ -4466,6 +4495,13 @@ namespace Hecton8.World
             _hasCpuCullingData = false;
         }
 
+        private void MarkCpuCullingPayloadUnavailable()
+        {
+            _hasCpuCullingData = false;
+            _floraAgesAuthoredExternally = false;
+            _floraAgeBufferDirty = true;
+        }
+
         private void CopyCpuCullingPayload(
             Matrix4x4[] instanceMatrices,
             HectonVegetationInstanceData[] instanceData,
@@ -4473,56 +4509,83 @@ namespace Hecton8.World
         {
             if (instanceMatrices == null || instanceCount <= 0 || instanceMatrices.Length < instanceCount)
             {
-                _hasCpuCullingData = false;
-                _floraAgesAuthoredExternally = false;
-                _floraAgeBufferDirty = true;
+                MarkCpuCullingPayloadUnavailable();
                 return;
             }
 
             EnsureCpuCullingCapacity(instanceCount);
             EnsureFloraAgeCapacity(instanceCount);
-            if (!TryAcquireCpuCullingDataForWrite(instanceCount, out IDataVault cpuVault, out NativeArray<Matrix4x4> cpuMatrices, out NativeArray<HectonVegetationInstanceData> cpuData))
+            MarkCpuCullingPayloadUnavailable();
+
+            if (!TryAcquireCpuCullingMatricesForWrite(instanceCount, out IDataVault matrixVault, out NativeArray<Matrix4x4> cpuMatrices))
             {
-                _hasCpuCullingData = false;
-                _floraAgesAuthoredExternally = false;
-                _floraAgeBufferDirty = true;
+                MarkCpuCullingPayloadUnavailable();
                 return;
             }
 
-            if (!TryAcquireFloraAgesForWrite(instanceCount, out IDataVault floraVault, out NativeArray<float> floraAges))
+            int matrixCount = 0;
+            try
             {
-                cpuVault.ReleaseWriteLock(in _cpuCullingDataHandle, VaultOwnerSystemId);
-                cpuVault.ReleaseWriteLock(in _cpuCullingMatricesHandle, VaultOwnerSystemId);
-                _hasCpuCullingData = false;
-                _floraAgesAuthoredExternally = false;
-                _floraAgeBufferDirty = true;
+                matrixCount = math.min(instanceCount, cpuMatrices.Length);
+                for (int instanceIndex = 0; instanceIndex < matrixCount; instanceIndex++)
+                    cpuMatrices[instanceIndex] = instanceMatrices[instanceIndex];
+            }
+            finally
+            {
+                matrixVault.ReleaseWriteLock(in _cpuCullingMatricesHandle, VaultOwnerSystemId);
+            }
+
+            if (matrixCount != instanceCount ||
+                !TryAcquireCpuCullingInstanceDataForWrite(instanceCount, out IDataVault dataVault, out NativeArray<HectonVegetationInstanceData> cpuData))
+            {
+                MarkCpuCullingPayloadUnavailable();
                 return;
             }
 
             HectonVegetationInstanceData fallbackPayload = CreateLegacyDefaultPayload();
+            int dataCount = 0;
             try
             {
-                int safeCount = math.min(instanceCount, math.min(cpuMatrices.Length, math.min(cpuData.Length, floraAges.Length)));
-                for (int instanceIndex = 0; instanceIndex < safeCount; instanceIndex++)
+                dataCount = math.min(instanceCount, cpuData.Length);
+                for (int instanceIndex = 0; instanceIndex < dataCount; instanceIndex++)
                 {
-                    cpuMatrices[instanceIndex] = instanceMatrices[instanceIndex];
+                    cpuData[instanceIndex] = instanceData != null && instanceData.Length > instanceIndex
+                        ? instanceData[instanceIndex]
+                        : fallbackPayload;
+                }
+            }
+            finally
+            {
+                dataVault.ReleaseWriteLock(in _cpuCullingDataHandle, VaultOwnerSystemId);
+            }
+
+            if (dataCount != instanceCount ||
+                !TryAcquireFloraAgesForWrite(instanceCount, out IDataVault floraVault, out NativeArray<float> floraAges))
+            {
+                MarkCpuCullingPayloadUnavailable();
+                return;
+            }
+
+            int floraCount = 0;
+            try
+            {
+                floraCount = math.min(instanceCount, floraAges.Length);
+                for (int instanceIndex = 0; instanceIndex < floraCount; instanceIndex++)
+                {
                     HectonVegetationInstanceData metadata = instanceData != null && instanceData.Length > instanceIndex
                         ? instanceData[instanceIndex]
                         : fallbackPayload;
-                    cpuData[instanceIndex] = metadata;
                     floraAges[instanceIndex] = ResolveFloraAgeFromMetadata(metadata);
                 }
-
-                _hasCpuCullingData = safeCount == instanceCount;
-                _floraAgesAuthoredExternally = false;
-                _floraAgeBufferDirty = true;
             }
             finally
             {
                 floraVault.ReleaseWriteLock(in _floraAges01Handle, VaultOwnerSystemId);
-                cpuVault.ReleaseWriteLock(in _cpuCullingDataHandle, VaultOwnerSystemId);
-                cpuVault.ReleaseWriteLock(in _cpuCullingMatricesHandle, VaultOwnerSystemId);
             }
+
+            _hasCpuCullingData = floraCount == instanceCount;
+            _floraAgesAuthoredExternally = false;
+            _floraAgeBufferDirty = true;
         }
 
         private void CopyCpuCullingPayload(
@@ -4532,49 +4595,71 @@ namespace Hecton8.World
         {
             if (!instanceMatrices.IsCreated || !instanceData.IsCreated || instanceCount <= 0)
             {
-                _hasCpuCullingData = false;
-                _floraAgesAuthoredExternally = false;
-                _floraAgeBufferDirty = true;
+                MarkCpuCullingPayloadUnavailable();
                 return;
             }
 
             EnsureCpuCullingCapacity(instanceCount);
             EnsureFloraAgeCapacity(instanceCount);
-            if (!TryAcquireCpuCullingDataForWrite(instanceCount, out IDataVault cpuVault, out NativeArray<Matrix4x4> cpuMatrices, out NativeArray<HectonVegetationInstanceData> cpuData))
+            MarkCpuCullingPayloadUnavailable();
+
+            if (!TryAcquireCpuCullingMatricesForWrite(instanceCount, out IDataVault matrixVault, out NativeArray<Matrix4x4> cpuMatrices))
             {
-                _hasCpuCullingData = false;
-                _floraAgesAuthoredExternally = false;
-                _floraAgeBufferDirty = true;
+                MarkCpuCullingPayloadUnavailable();
                 return;
             }
 
-            if (!TryAcquireFloraAgesForWrite(instanceCount, out IDataVault floraVault, out NativeArray<float> floraAges))
-            {
-                cpuVault.ReleaseWriteLock(in _cpuCullingDataHandle, VaultOwnerSystemId);
-                cpuVault.ReleaseWriteLock(in _cpuCullingMatricesHandle, VaultOwnerSystemId);
-                _hasCpuCullingData = false;
-                _floraAgesAuthoredExternally = false;
-                _floraAgeBufferDirty = true;
-                return;
-            }
-
+            int matrixCount = 0;
             try
             {
-                int safeCount = math.min(instanceCount, math.min(cpuMatrices.Length, math.min(cpuData.Length, floraAges.Length)));
-                NativeArray<Matrix4x4>.Copy(instanceMatrices, cpuMatrices, safeCount);
-                NativeArray<HectonVegetationInstanceData>.Copy(instanceData, cpuData, safeCount);
-                for (int instanceIndex = 0; instanceIndex < safeCount; instanceIndex++)
+                matrixCount = math.min(instanceCount, math.min(instanceMatrices.Length, cpuMatrices.Length));
+                NativeArray<Matrix4x4>.Copy(instanceMatrices, cpuMatrices, matrixCount);
+            }
+            finally
+            {
+                matrixVault.ReleaseWriteLock(in _cpuCullingMatricesHandle, VaultOwnerSystemId);
+            }
+
+            if (matrixCount != instanceCount ||
+                !TryAcquireCpuCullingInstanceDataForWrite(instanceCount, out IDataVault dataVault, out NativeArray<HectonVegetationInstanceData> cpuData))
+            {
+                MarkCpuCullingPayloadUnavailable();
+                return;
+            }
+
+            int dataCount = 0;
+            try
+            {
+                dataCount = math.min(instanceCount, math.min(instanceData.Length, cpuData.Length));
+                NativeArray<HectonVegetationInstanceData>.Copy(instanceData, cpuData, dataCount);
+            }
+            finally
+            {
+                dataVault.ReleaseWriteLock(in _cpuCullingDataHandle, VaultOwnerSystemId);
+            }
+
+            if (dataCount != instanceCount ||
+                !TryAcquireFloraAgesForWrite(instanceCount, out IDataVault floraVault, out NativeArray<float> floraAges))
+            {
+                MarkCpuCullingPayloadUnavailable();
+                return;
+            }
+
+            int floraCount = 0;
+            try
+            {
+                floraCount = math.min(instanceCount, math.min(instanceData.Length, floraAges.Length));
+                for (int instanceIndex = 0; instanceIndex < floraCount; instanceIndex++)
                     floraAges[instanceIndex] = ResolveFloraAgeFromMetadata(instanceData[instanceIndex]);
-                _hasCpuCullingData = safeCount == instanceCount;
-                _floraAgesAuthoredExternally = false;
-                _floraAgeBufferDirty = true;
             }
             finally
             {
                 floraVault.ReleaseWriteLock(in _floraAges01Handle, VaultOwnerSystemId);
-                cpuVault.ReleaseWriteLock(in _cpuCullingDataHandle, VaultOwnerSystemId);
-                cpuVault.ReleaseWriteLock(in _cpuCullingMatricesHandle, VaultOwnerSystemId);
             }
+
+            _hasCpuCullingData = floraCount == instanceCount;
+            _floraAgesAuthoredExternally = false;
+            _floraAgeBufferDirty = true;
         }
 
         private static void ResolveInstanceShape(
@@ -5303,7 +5388,7 @@ namespace Hecton8.World
                 return 0;
 
             if (_playerToolManager == null)
-                ResolvePlayerToolManager();
+                ResolvePlayerToolManagerFromCachedContext();
 
             if (_playerToolManager == null || _playerToolManager.IsSwapping)
                 return 0;
@@ -5318,27 +5403,14 @@ namespace Hecton8.World
                 _scooterHeadlightConeData);
         }
 
-        private void ResolvePlayerToolManager()
+        private void ResolvePlayerToolManagerFromCachedContext()
         {
             if (_playerToolManager != null)
                 return;
 
-            float currentTime = Time.unscaledTime;
-            if (currentTime < _nextToolManagerResolveTime)
-                return;
-
-            _nextToolManagerResolveTime = currentTime + 2f;
-            if (!BootstrapState.TryGetCurrentPlayerTransform(out Transform playerTransform) || playerTransform == null)
-                return;
-
-            IPlayerRuntimeContext playerContext = CachePlayerContextCold();
+            IPlayerRuntimeContext playerContext = _cachedPlayerContext;
             if (playerContext != null && playerContext.ToolManager != null)
-            {
                 _playerToolManager = playerContext.ToolManager;
-                return;
-            }
-
-            playerTransform.TryGetComponent(out _playerToolManager);
         }
 
         private static Vector4 ResolveVegetationFloatingOffset()
@@ -5577,28 +5649,13 @@ namespace Hecton8.World
         private void ClearUploadedDirtyPages(int instanceCount)
         {
             int requiredPages = GraphicsBufferUploadUtility.ResolveDirtyPageCount(instanceCount, NativeUploadDirtyPageSize);
-            if (!HasUploadedDirtyPageStorage(requiredPages) ||
-                !TryAcquireUploadedDirtyPagesForWrite(
-                    out IDataVault dirtyVault,
-                    out NativeArray<byte> matrixDirtyPagesA,
-                    out NativeArray<byte> matrixDirtyPagesB,
-                    out NativeArray<byte> dataDirtyPagesA,
-                    out NativeArray<byte> dataDirtyPagesB))
-            {
+            if (!HasUploadedDirtyPageStorage(requiredPages))
                 return;
-            }
 
-            try
-            {
-                GraphicsBufferUploadUtility.ClearDirtyPages(matrixDirtyPagesA, instanceCount, NativeUploadDirtyPageSize);
-                GraphicsBufferUploadUtility.ClearDirtyPages(matrixDirtyPagesB, instanceCount, NativeUploadDirtyPageSize);
-                GraphicsBufferUploadUtility.ClearDirtyPages(dataDirtyPagesA, instanceCount, NativeUploadDirtyPageSize);
-                GraphicsBufferUploadUtility.ClearDirtyPages(dataDirtyPagesB, instanceCount, NativeUploadDirtyPageSize);
-            }
-            finally
-            {
-                ReleaseUploadedDirtyPageWriteLocks(dirtyVault);
-            }
+            TryClearUploadedDirtyPages(ref _uploadedMatrixDirtyPagesAHandle, NativeUploadMatrixDirtyPagesAId, instanceCount);
+            TryClearUploadedDirtyPages(ref _uploadedMatrixDirtyPagesBHandle, NativeUploadMatrixDirtyPagesBId, instanceCount);
+            TryClearUploadedDirtyPages(ref _uploadedDataDirtyPagesAHandle, NativeUploadDataDirtyPagesAId, instanceCount);
+            TryClearUploadedDirtyPages(ref _uploadedDataDirtyPagesBHandle, NativeUploadDataDirtyPagesBId, instanceCount);
         }
 
         private bool HasUploadedDirtyPageStorage(int requiredPages)
@@ -5651,120 +5708,183 @@ namespace Hecton8.World
             return false;
         }
 
-        private bool TryAcquireUploadedDirtyPagesForWrite(
+        private bool TryAcquireUploadedDirtyPageForWrite(
+            ref VaultGenerationHandle<byte> handle,
+            BufferID bufferId,
             out IDataVault vault,
-            out NativeArray<byte> matrixDirtyPagesA,
-            out NativeArray<byte> matrixDirtyPagesB,
-            out NativeArray<byte> dataDirtyPagesA,
-            out NativeArray<byte> dataDirtyPagesB)
+            out NativeArray<byte> dirtyPages)
         {
-            vault = _dataVault;
-            matrixDirtyPagesA = default;
-            matrixDirtyPagesB = default;
-            dataDirtyPagesA = default;
-            dataDirtyPagesB = default;
-            if (vault == null ||
-                vault.IsCompactionFenceActive ||
-                !HasUploadedDirtyPageStorage(_uploadedDirtyPageCapacity))
-            {
-                vault = null;
-                return false;
-            }
+            vault = null;
+            dirtyPages = default;
+            return HasUploadedDirtyPageStorage(_uploadedDirtyPageCapacity) &&
+                   TryAcquireVaultStorageForWrite(
+                       ref handle,
+                       bufferId,
+                       _uploadedDirtyPageCapacity,
+                       NativeArrayOptions.ClearMemory,
+                       out vault,
+                       out dirtyPages);
+        }
 
-            bool matrixALocked = false;
-            bool matrixBLocked = false;
-            bool dataALocked = false;
-            bool dataBLocked = false;
-            bool success = false;
+        private bool TryClearUploadedDirtyPages(
+            ref VaultGenerationHandle<byte> handle,
+            BufferID bufferId,
+            int instanceCount)
+        {
+            if (!TryAcquireUploadedDirtyPageForWrite(ref handle, bufferId, out IDataVault vault, out NativeArray<byte> dirtyPages))
+                return false;
+
             try
             {
-                if (!vault.TryAcquireWriteLock(in _uploadedMatrixDirtyPagesAHandle, VaultOwnerSystemId, out matrixDirtyPagesA))
-                    return false;
-                matrixALocked = true;
-                if (!vault.TryAcquireWriteLock(in _uploadedMatrixDirtyPagesBHandle, VaultOwnerSystemId, out matrixDirtyPagesB))
-                    return false;
-                matrixBLocked = true;
-                if (!vault.TryAcquireWriteLock(in _uploadedDataDirtyPagesAHandle, VaultOwnerSystemId, out dataDirtyPagesA))
-                    return false;
-                dataALocked = true;
-                if (!vault.TryAcquireWriteLock(in _uploadedDataDirtyPagesBHandle, VaultOwnerSystemId, out dataDirtyPagesB))
-                    return false;
-                dataBLocked = true;
-
-                success =
-                    !vault.IsCompactionFenceActive &&
-                    matrixDirtyPagesA.IsCreated &&
-                    matrixDirtyPagesB.IsCreated &&
-                    dataDirtyPagesA.IsCreated &&
-                    dataDirtyPagesB.IsCreated &&
-                    matrixDirtyPagesA.Length >= _uploadedDirtyPageCapacity &&
-                    matrixDirtyPagesB.Length >= _uploadedDirtyPageCapacity &&
-                    dataDirtyPagesA.Length >= _uploadedDirtyPageCapacity &&
-                    dataDirtyPagesB.Length >= _uploadedDirtyPageCapacity;
-                return success;
+                GraphicsBufferUploadUtility.ClearDirtyPages(dirtyPages, instanceCount, NativeUploadDirtyPageSize);
+                return true;
             }
             finally
             {
-                if (!success)
-                {
-                    ReleaseUploadedDirtyPageWriteLocks(
-                        vault,
-                        matrixALocked,
-                        matrixBLocked,
-                        dataALocked,
-                        dataBLocked);
-                }
+                vault.ReleaseWriteLock(in handle, VaultOwnerSystemId);
             }
         }
 
-        private void ReleaseUploadedDirtyPageWriteLocks(IDataVault vault)
+        private bool TryMarkUploadedDirtyPages(
+            NativeArray<byte> sourceDirtyPages,
+            ref VaultGenerationHandle<byte> targetHandle,
+            BufferID targetBufferId,
+            int instanceCount)
         {
-            ReleaseUploadedDirtyPageWriteLocks(vault, true, true, true, true);
+            if (!TryAcquireUploadedDirtyPageForWrite(ref targetHandle, targetBufferId, out IDataVault vault, out NativeArray<byte> targetDirtyPages))
+                return false;
+
+            try
+            {
+                MarkUploadedBufferDirtyPages(sourceDirtyPages, targetDirtyPages, instanceCount);
+                return true;
+            }
+            finally
+            {
+                vault.ReleaseWriteLock(in targetHandle, VaultOwnerSystemId);
+            }
         }
 
-        private void ReleaseUploadedDirtyPageWriteLocks(
-            IDataVault vault,
-            bool matrixALocked,
-            bool matrixBLocked,
-            bool dataALocked,
-            bool dataBLocked)
+        private bool TryUploadMatrixDirtyPages(
+            GraphicsBuffer matrixWriteBuffer,
+            NativeArray<Matrix4x4> sourceMatrices,
+            int instanceCount,
+            int uploadBudgetBytes,
+            out bool dirty,
+            out GraphicsBufferUploadUtility.PageUploadStats stats)
         {
-            if (vault == null)
-                return;
+            return _uploadedInstanceWriteBufferIndex == 0
+                ? TryUploadDirtyPages(matrixWriteBuffer, sourceMatrices, ref _uploadedMatrixDirtyPagesAHandle, NativeUploadMatrixDirtyPagesAId, instanceCount, uploadBudgetBytes, out dirty, out stats)
+                : TryUploadDirtyPages(matrixWriteBuffer, sourceMatrices, ref _uploadedMatrixDirtyPagesBHandle, NativeUploadMatrixDirtyPagesBId, instanceCount, uploadBudgetBytes, out dirty, out stats);
+        }
 
-            if (dataBLocked)
-                vault.ReleaseWriteLock(in _uploadedDataDirtyPagesBHandle, VaultOwnerSystemId);
-            if (dataALocked)
-                vault.ReleaseWriteLock(in _uploadedDataDirtyPagesAHandle, VaultOwnerSystemId);
-            if (matrixBLocked)
-                vault.ReleaseWriteLock(in _uploadedMatrixDirtyPagesBHandle, VaultOwnerSystemId);
-            if (matrixALocked)
-                vault.ReleaseWriteLock(in _uploadedMatrixDirtyPagesAHandle, VaultOwnerSystemId);
+        private bool TryResolveDataDirtyPageUploadState(
+            int instanceCount,
+            out bool dirty,
+            out int firstDirtyPageBytes)
+        {
+            return _uploadedInstanceWriteBufferIndex == 0
+                ? TryResolveDirtyPageUploadState<HectonVegetationInstanceData>(ref _uploadedDataDirtyPagesAHandle, NativeUploadDataDirtyPagesAId, instanceCount, out dirty, out firstDirtyPageBytes)
+                : TryResolveDirtyPageUploadState<HectonVegetationInstanceData>(ref _uploadedDataDirtyPagesBHandle, NativeUploadDataDirtyPagesBId, instanceCount, out dirty, out firstDirtyPageBytes);
+        }
+
+        private bool TryUploadDataDirtyPages(
+            GraphicsBuffer dataWriteBuffer,
+            NativeArray<HectonVegetationInstanceData> sourceData,
+            int instanceCount,
+            int uploadBudgetBytes,
+            out GraphicsBufferUploadUtility.PageUploadStats stats)
+        {
+            bool ignoredDirty;
+            return _uploadedInstanceWriteBufferIndex == 0
+                ? TryUploadDirtyPages(dataWriteBuffer, sourceData, ref _uploadedDataDirtyPagesAHandle, NativeUploadDataDirtyPagesAId, instanceCount, uploadBudgetBytes, out ignoredDirty, out stats)
+                : TryUploadDirtyPages(dataWriteBuffer, sourceData, ref _uploadedDataDirtyPagesBHandle, NativeUploadDataDirtyPagesBId, instanceCount, uploadBudgetBytes, out ignoredDirty, out stats);
+        }
+
+        private bool TryResolveDirtyPageUploadState<T>(
+            ref VaultGenerationHandle<byte> dirtyHandle,
+            BufferID dirtyBufferId,
+            int instanceCount,
+            out bool dirty,
+            out int firstDirtyPageBytes)
+            where T : struct
+        {
+            dirty = false;
+            firstDirtyPageBytes = 0;
+            if (!TryAcquireUploadedDirtyPageForWrite(ref dirtyHandle, dirtyBufferId, out IDataVault vault, out NativeArray<byte> dirtyPages))
+                return false;
+
+            try
+            {
+                dirty = GraphicsBufferUploadUtility.HasAnyDirtyPage(dirtyPages, instanceCount, NativeUploadDirtyPageSize);
+                firstDirtyPageBytes = dirty
+                    ? GraphicsBufferUploadUtility.ResolveFirstDirtyPageBytes<T>(dirtyPages, instanceCount, NativeUploadDirtyPageSize)
+                    : 0;
+                return true;
+            }
+            finally
+            {
+                vault.ReleaseWriteLock(in dirtyHandle, VaultOwnerSystemId);
+            }
+        }
+
+        private bool TryUploadDirtyPages<T>(
+            GraphicsBuffer targetBuffer,
+            NativeArray<T> sourceData,
+            ref VaultGenerationHandle<byte> dirtyHandle,
+            BufferID dirtyBufferId,
+            int instanceCount,
+            int uploadBudgetBytes,
+            out bool dirty,
+            out GraphicsBufferUploadUtility.PageUploadStats stats)
+            where T : struct
+        {
+            dirty = false;
+            stats = default;
+            if (!TryAcquireUploadedDirtyPageForWrite(ref dirtyHandle, dirtyBufferId, out IDataVault vault, out NativeArray<byte> dirtyPages))
+                return false;
+
+            try
+            {
+                dirty = GraphicsBufferUploadUtility.HasAnyDirtyPage(dirtyPages, instanceCount, NativeUploadDirtyPageSize);
+                if (!dirty)
+                    return true;
+
+                stats = GraphicsBufferUploadUtility.UploadNativeArrayDirtyPages(
+                    targetBuffer,
+                    sourceData,
+                    dirtyPages,
+                    instanceCount,
+                    NativeUploadDirtyPageSize,
+                    uploadBudgetBytes,
+                    clearUploadedPages: true);
+                return true;
+            }
+            finally
+            {
+                vault.ReleaseWriteLock(in dirtyHandle, VaultOwnerSystemId);
+            }
         }
 
         private static void MarkUploadedBufferDirtyPages(
             NativeArray<byte> sourceDirtyPages,
-            NativeArray<byte> targetDirtyPagesA,
-            NativeArray<byte> targetDirtyPagesB,
+            NativeArray<byte> targetDirtyPages,
             int instanceCount)
         {
-            if (!sourceDirtyPages.IsCreated || !targetDirtyPagesA.IsCreated || !targetDirtyPagesB.IsCreated || instanceCount <= 0)
+            if (!sourceDirtyPages.IsCreated || !targetDirtyPages.IsCreated || instanceCount <= 0)
                 return;
 
             int pageCount = math.min(
                 sourceDirtyPages.Length,
                 math.min(
-                    targetDirtyPagesA.Length,
-                    math.min(
-                        targetDirtyPagesB.Length,
-                        GraphicsBufferUploadUtility.ResolveDirtyPageCount(instanceCount, NativeUploadDirtyPageSize))));
+                    targetDirtyPages.Length,
+                    GraphicsBufferUploadUtility.ResolveDirtyPageCount(instanceCount, NativeUploadDirtyPageSize)));
             for (int i = 0; i < pageCount; i++)
             {
                 if (sourceDirtyPages[i] == 0)
                     continue;
 
-                targetDirtyPagesA[i] = 1;
-                targetDirtyPagesB[i] = 1;
+                targetDirtyPages[i] = 1;
             }
         }
 
@@ -6000,6 +6120,11 @@ namespace Hecton8.World
                 _vramPressure = GlobalRegistry.VRAMPressureReadModel;
 
             CacheDataVaultCold();
+        }
+
+        private void CacheGraphicsCapabilitiesCold()
+        {
+            _supportsComputeShadersCold = SystemInfo.supportsComputeShaders;
         }
 
         private IDataVault CacheDataVaultCold()

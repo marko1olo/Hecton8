@@ -1,26 +1,18 @@
 ﻿{
     "agentId":  "1407",
-    "sampledAt":  "2026-05-28T12:55:35.6511160+04:00",
-    "cpuLoadPercent":  63,
+    "sampledAt":  "2026-05-29T01:04:55.7020188+04:00",
+    "cpuLoadPercent":  76,
     "compilerProcesses":  [
                               {
-                                  "Id":  52688,
-                                  "ProcessName":  "csc",
-                                  "CPU":  82.65625,
-                                  "StartTimeIso":  "2026-05-28T12:55:12.6574862+04:00"
-                              },
-                              {
-                                  "Id":  52900,
+                                  "Id":  55948,
                                   "ProcessName":  "dotnet",
-                                  "CPU":  28.0625,
-                                  "StartTimeIso":  "2026-05-28T12:54:51.3507151+04:00"
+                                  "CPU":  107.78125,
+                                  "StartTimeIso":  "2026-05-29T01:02:59+04:00"
                               }
                           ],
-    "dotnetBuildInvoked":  true,
-    "buildAllowedByGate":  null,
-    "gateSampleBeforeInvocationCaptured":  false,
-    "preDelayCpuLoadPercent":  76,
-    "commandTimeoutMs":  904009,
+    "dotnetBuildInvoked":  false,
+    "buildAllowedByGate":  false,
+    "gateSampleBeforeInvocationCaptured":  true,
     "solutionProbe":  {
                           "hecton8SlnxExists":  true,
                           "hecton8SlnExists":  false,
@@ -28,7 +20,14 @@
                       },
     "buildExitCode":  null,
     "buildDurationMs":  null,
-    "dumpPath":  "Docs/AgentLogs/Dump_1407_BuildTimeout.txt",
-    "dumpSha256":  "BE6C250391D651A83EDC4931EF28036AD596215ECE4123D3A086BAE28C498BAE",
-    "reason":  "One delayed build-gate command exceeded the 904009 ms shell timeout after a dotnet process was observed. Exit code and exact gate CPU sample before invocation are not captured; no second build was launched."
+    "reason":  "Latest final gate sample captured CPU 76 percent (\u003e50) and active dotnet PID 55948; dotnet build was not invoked per resource throttling rule.",
+    "previousTimedOutBuild":  {
+                                  "dotnetBuildMayHaveStarted":  true,
+                                  "commandTimeoutMs":  904009,
+                                  "buildExitCode":  null,
+                                  "gateSampleBeforeInvocationCaptured":  false,
+                                  "dumpPath":  "Docs/AgentLogs/Dump_1407_BuildTimeout.txt",
+                                  "dumpSha256":  "DE192D0649B70DC7D784ED238524A67074723137E3AD707F6C939CD053DEAB6D",
+                                  "reason":  "Previous delayed build-gate command timed out before persisting exact pre-invocation CPU sample or build exit code."
+                              }
 }

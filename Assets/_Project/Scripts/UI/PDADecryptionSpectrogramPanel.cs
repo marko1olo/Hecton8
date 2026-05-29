@@ -138,9 +138,11 @@ namespace Hecton8.UI
         private bool _nativeResourcesDirty;
         private bool _graphicsResourcesDirty;
         private float _cachedQualityWeight01 = 1f;
+        private float _cachedVideoMemoryQualityClamp01 = 1f;
 
         private void Awake()
         {
+            CacheGraphicsCapabilitiesCold();
             if (surfaceAnchor == null)
                 surfaceAnchor = transform;
 
@@ -153,6 +155,7 @@ namespace Hecton8.UI
         private void OnEnable()
         {
             _disposed = false;
+            CacheGraphicsCapabilitiesCold();
             RefreshCachedRegistryServices();
             TryRegisterHotSwapListener();
             EnsureNativeResources();
@@ -188,7 +191,7 @@ namespace Hecton8.UI
 
         private void AdvanceDecryptionPresentationState(float deltaTime)
         {
-            RefreshCachedQualityPolicy(rebuildResourcesOnPointChange: true);
+            RefreshCachedQualityPolicy(rebuildResourcesOnPointChange: false);
 
             if (!_nativeReady)
             {
@@ -224,7 +227,7 @@ namespace Hecton8.UI
             if (_nativeResourcesDirty || !_nativeReady)
             {
                 _nativeResourcesDirty = false;
-                EnsureNativeResources();
+                return;
             }
 
             if (!_nativeReady)
@@ -233,7 +236,7 @@ namespace Hecton8.UI
             if (_graphicsResourcesDirty || !_graphicsReady)
             {
                 _graphicsResourcesDirty = false;
-                EnsureGraphicsResources();
+                return;
             }
 
             if (!_graphicsReady)
@@ -270,27 +273,32 @@ namespace Hecton8.UI
             _gpuSegmentCapacity = _waveSegmentCount * 2;
 
             if (!TryAcquireStageTargetsWrite(out NativeArray<FrequencyTuningStageTarget> stageTargets))
-            {
                 return;
-            }
 
-            bool telemetryLocked = false;
             try
             {
-                if (!TryAcquireTelemetryRingWrite(out NativeArray<FrequencyTuningTelemetryEntry> telemetryRing))
-                    return;
+                ClearStageTargets(stageTargets);
+            }
+            finally
+            {
+                IDataVault vault = _cachedDataVault;
+                if (vault != null && IsExactVaultHandle(in _stageTargetsHandle, BufferID.PdaFrequencyStageTargets))
+                    vault.ReleaseWriteLock(in _stageTargetsHandle, VaultOwnerSystemId);
+            }
 
-                telemetryLocked = true;
-                ClearNativeState(stageTargets, telemetryRing);
+            if (!TryAcquireTelemetryRingWrite(out NativeArray<FrequencyTuningTelemetryEntry> telemetryRing))
+                return;
+
+            try
+            {
+                ClearTelemetryRing(telemetryRing);
                 _nativeReady = true;
             }
             finally
             {
                 IDataVault vault = _cachedDataVault;
-                if (telemetryLocked && vault != null && IsExactVaultHandle(in _telemetryRingHandle, BufferID.PdaFrequencyTelemetryRing))
+                if (vault != null && IsExactVaultHandle(in _telemetryRingHandle, BufferID.PdaFrequencyTelemetryRing))
                     vault.ReleaseWriteLock(in _telemetryRingHandle, VaultOwnerSystemId);
-                if (vault != null && IsExactVaultHandle(in _stageTargetsHandle, BufferID.PdaFrequencyStageTargets))
-                    vault.ReleaseWriteLock(in _stageTargetsHandle, VaultOwnerSystemId);
             }
         }
 
@@ -364,16 +372,27 @@ namespace Hecton8.UI
                 return false;
             }
 
-            if (!vault.IsCompactionFenceActive &&
-                buffer.IsCreated &&
-                buffer.Length >= requiredLength)
+            bool releaseOnExit = true;
+            try
             {
-                return true;
-            }
+                if (!vault.IsCompactionFenceActive &&
+                    buffer.IsCreated &&
+                    buffer.Length >= requiredLength)
+                {
+                    releaseOnExit = false;
+                    return true;
+                }
 
-            vault.ReleaseWriteLock(in handle, VaultOwnerSystemId);
-            buffer = default;
-            return false;
+                return false;
+            }
+            finally
+            {
+                if (releaseOnExit)
+                {
+                    vault.ReleaseWriteLock(in handle, VaultOwnerSystemId);
+                    buffer = default;
+                }
+            }
         }
 
         private bool TryReadStageTarget(int index, out FrequencyTuningStageTarget target)
@@ -434,12 +453,14 @@ namespace Hecton8.UI
             handle = default;
         }
 
-        private static void ClearNativeState(
-            NativeArray<FrequencyTuningStageTarget> stageTargets,
-            NativeArray<FrequencyTuningTelemetryEntry> telemetryRing)
+        private static void ClearStageTargets(NativeArray<FrequencyTuningStageTarget> stageTargets)
         {
             for (int i = 0; i < stageTargets.Length; i++)
                 stageTargets[i] = default;
+        }
+
+        private static void ClearTelemetryRing(NativeArray<FrequencyTuningTelemetryEntry> telemetryRing)
+        {
             for (int i = 0; i < telemetryRing.Length; i++)
                 telemetryRing[i] = default;
         }
@@ -649,7 +670,6 @@ namespace Hecton8.UI
 
         private void RenderWaveMesh()
         {
-            ResolveRuntimeMaterial();
             if (_runtimeMaterial == null || _resolvedMesh == null || _argsBuffer == null)
                 return;
 
@@ -941,7 +961,7 @@ namespace Hecton8.UI
 
         private int ResolvePointCount()
         {
-            float quality01 = math.min(_cachedQualityWeight01, ResolveVideoMemoryQualityClamp01());
+            float quality01 = math.min(_cachedQualityWeight01, _cachedVideoMemoryQualityClamp01);
             float curve = SmoothStep01(quality01);
             int count = (int)math.round(math.lerp(LowPointCount, HighPointCount, curve));
             return math.clamp(count, LowPointCount, HighPointCount);
@@ -963,7 +983,12 @@ namespace Hecton8.UI
             _graphicsResourcesDirty = true;
         }
 
-        private float ResolveVideoMemoryQualityClamp01()
+        private void CacheGraphicsCapabilitiesCold()
+        {
+            _cachedVideoMemoryQualityClamp01 = ResolveVideoMemoryQualityClamp01Cold();
+        }
+
+        private float ResolveVideoMemoryQualityClamp01Cold()
         {
             int memoryMb = SystemInfo.graphicsMemorySize;
             if (memoryMb <= 0)
@@ -986,7 +1011,8 @@ namespace Hecton8.UI
                     IDataVault nextVault = currentService is IDataVault currentVault ? currentVault : null;
                     BindDataVaultForLifecycle(nextVault, previousVault);
                     _nativeReady = false;
-                    _nativeResourcesDirty = true;
+                    _nativeResourcesDirty = false;
+                    EnsureNativeResources();
                     break;
                 case GlobalRegistryServiceSlot.Input:
                     _cachedInputService = currentService as IInputService;

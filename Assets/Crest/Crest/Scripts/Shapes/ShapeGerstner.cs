@@ -113,6 +113,21 @@ namespace Crest
 
         void InitData()
         {
+            _shaderGerstner = ComputeShaderHelpers.LoadShader("Gerstner");
+            if (_shaderGerstner == null || !_shaderGerstner.HasKernel("Gerstner"))
+            {
+                _shaderGerstner = null;
+                _krnlGerstner = -1;
+                _waveBuffers?.Release();
+                _bufCascadeParams?.Release();
+                _bufCascadeParams = null;
+                _bufWaveData?.Release();
+                _bufWaveData = null;
+                enabled = false;
+                return;
+            }
+            _krnlGerstner = _shaderGerstner.FindKernel("Gerstner");
+
             if (_waveBuffers == null)
             {
                 _waveBuffers = new RenderTexture(_resolution, _resolution, 0, GraphicsFormat.R16G16B16A16_SFloat);
@@ -141,9 +156,6 @@ namespace Crest
 
             _bufCascadeParams = new ComputeBuffer(CASCADE_COUNT + 1, UnsafeUtility.SizeOf<GerstnerCascadeParams>());
             _bufWaveData = new ComputeBuffer(MAX_WAVE_COMPONENTS / 4, UnsafeUtility.SizeOf<GerstnerWaveComponent4>());
-
-            _shaderGerstner = ComputeShaderHelpers.LoadShader("Gerstner");
-            _krnlGerstner = _shaderGerstner.FindKernel("Gerstner");
         }
 
         public override float MinWavelength(int cascadeIdx)
@@ -159,6 +171,10 @@ namespace Crest
             if (_waveBuffers == null || _resolution != _waveBuffers.width || _bufCascadeParams == null || _bufWaveData == null)
             {
                 InitData();
+            }
+            if (_shaderGerstner == null || _krnlGerstner < 0)
+            {
+                return;
             }
 
             var windSpeed = WindSpeed;
@@ -354,7 +370,7 @@ namespace Crest
 
         void UpdateGenerateWaves(CommandBuffer buf)
         {
-            if (_waveBuffers == null)
+            if (_shaderGerstner == null || _krnlGerstner < 0 || _waveBuffers == null)
             {
                 return;
             }

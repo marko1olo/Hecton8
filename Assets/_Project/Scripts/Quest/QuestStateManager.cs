@@ -1,6 +1,5 @@
 using System;
 using System.Collections.Generic;
-using System.IO;
 using Conditional = System.Diagnostics.ConditionalAttribute;
 using Hecton.Localization;
 using Hecton8.Core;
@@ -41,7 +40,7 @@ namespace Hecton8.Quest
         private const uint EclipseFlagHash = 0xE011C1E5u;
         private const uint EntityDestroyFlagSalt = 0xD357F1A6u;
         private const uint DeadlockFlagSalt = 0xDEAD10CCu;
-        private const string QuestAuditLogFileName = "quest_transition_audit.log";
+        private const int QuestTransitionAuditCapacity = 128;
         private const string NativeMemoryOwner = nameof(QuestStateManager);
         private const NativeAllocationLifetime NativeMemoryLifetime = NativeAllocationLifetime.Scene;
         private const Allocator DataVaultExemptQuestStateAllocator = Allocator.Persistent;
@@ -50,6 +49,7 @@ namespace Hecton8.Quest
 
         // COLD ALLOC: List<QuestRuntimeResult>[32] - transition handoff from packed runtime to facade - owner: QuestStateManager
         private readonly List<QuestRuntimeResult> _runtimeResults = new List<QuestRuntimeResult>(32);
+        private readonly QuestTransitionAuditEntry[] _transitionAuditRing = new QuestTransitionAuditEntry[QuestTransitionAuditCapacity]; // COLD ALLOC: QuestTransitionAuditEntry[128] - fixed dev transition ring, no file I/O in signal drain - owner: QuestStateManager
 
         private NativeArray<uint> _globalPrerequisites;
         private NativeArray<uint> _checksumResult;
@@ -82,7 +82,22 @@ namespace Hecton8.Quest
         private int _compileErrorCount;
         private uint _stateVersion;
         private uint _stateChecksum;
+        private int _transitionAuditWriteIndex;
+        private int _transitionAuditCount;
         private bool _isInitialized;
+        private ILocalizationTextReadModel _localizationManager;
+
+        private struct QuestTransitionAuditEntry
+        {
+            public double Timestamp;
+            public uint QuestHash;
+            public uint EntityHash;
+            public uint ItemId;
+            public float NumericValue;
+            public ushort SignalEventType;
+            public byte TransitionType;
+            public byte Completed;
+        }
 
         public bool HasCompileErrors => _compileErrorCount > 0;
 
@@ -179,12 +194,14 @@ namespace Hecton8.Quest
             _compileErrorCount = 0;
             _stateVersion = 0u;
             _stateChecksum = 0u;
+            _localizationManager = null;
             _isInitialized = false;
         }
 
-        public bool Initialize(QuestData[] allQuests)
+        public bool Initialize(QuestData[] allQuests, ILocalizationTextReadModel localizationManager)
         {
             Dispose();
+            _localizationManager = localizationManager;
 
             _authoredQuestCount = allQuests != null ? allQuests.Length : 0;
             int questArrayLength = _authoredQuestCount + ProceduralQuestCapacity;
@@ -249,8 +266,8 @@ namespace Hecton8.Quest
                 _phaseGateMasksByQuestIndex[questIndex] = ResolvePhaseGateMask(questData.phaseGate);
                 CopyAuthoredQuestPresentation(questData, questIndex);
                 _markerTargetHashesByQuestIndex[questIndex] = QuestFlagHashKernel.ComputeStableHash(questData.markerTargetId);
-                _markerWorldPositionsByQuestIndex[questIndex] = questData.markerWorldPosition;
-                _markerHeightOffsetsByQuestIndex[questIndex] = math.max(0f, questData.markerHeightOffset);
+                _markerWorldPositionsByQuestIndex[questIndex] = questData.RuntimeMarkerWorldPosition;
+                _markerHeightOffsetsByQuestIndex[questIndex] = questData.RuntimeMarkerHeightOffset;
                 _activeAddressesByQuestIndex[questIndex] = RegisterStateBit(
                     MixHash(questHash, ActiveFlagSalt),
                     QuestStateBand.Quest,
@@ -275,8 +292,10 @@ namespace Hecton8.Quest
                 if (questHash == 0u)
                     continue;
 
-                RegisterTriggerStateBit(questData.triggerType, questData.triggerId, questData.triggerValue, hashLabels, bandBitUsage, depthFlags);
-                RegisterCompletionStateBit(questData.completionType, questData.completionId, questData.completionValue, hashLabels, bandBitUsage, depthFlags);
+                float triggerValue = questData.RuntimeTriggerValue;
+                float completionValue = questData.RuntimeCompletionValue;
+                RegisterTriggerStateBit(questData.triggerType, questData.triggerId, triggerValue, hashLabels, bandBitUsage, depthFlags);
+                RegisterCompletionStateBit(questData.completionType, questData.completionId, completionValue, hashLabels, bandBitUsage, depthFlags);
 
                 QuestSignalKind activationSignalKind = MapTriggerSignalKind(questData.triggerType);
                 if (activationSignalKind != QuestSignalKind.None)
@@ -292,7 +311,7 @@ namespace Hecton8.Quest
                     nodeBuilder.Add(new QuestNodeDescriptor
                     {
                         QuestHash = questHash,
-                        PayloadHash = ResolveSignalPayloadHash(activationSignalKind, questData.triggerId, questData.triggerValue),
+                        PayloadHash = ResolveSignalPayloadHash(activationSignalKind, questData.triggerId, triggerValue),
                         PrereqMask = prereqMask,
                         CompletionFlagID = _completedAddressesByQuestIndex[questIndex].FlagId,
                         PhaseGate = phaseGateAddress.FlagId,
@@ -300,7 +319,7 @@ namespace Hecton8.Quest
                         CriticalItemHash = ResolveCriticalItemHash(questData),
                         PrereqStartIndex = activationPrereqStart,
                         PrereqWordIndex = prereqWordIndex,
-                        RequiredValue = questData.triggerValue,
+                        RequiredValue = triggerValue,
                         ActiveMask = _activeAddressesByQuestIndex[questIndex].BitMask,
                         CompletedMask = _completedAddressesByQuestIndex[questIndex].BitMask,
                         SetMask = _activeAddressesByQuestIndex[questIndex].BitMask,
@@ -330,7 +349,7 @@ namespace Hecton8.Quest
                     nodeBuilder.Add(new QuestNodeDescriptor
                     {
                         QuestHash = questHash,
-                        PayloadHash = ResolveSignalPayloadHash(completionSignalKind, questData.completionId, questData.completionValue),
+                        PayloadHash = ResolveSignalPayloadHash(completionSignalKind, questData.completionId, completionValue),
                         PrereqMask = prereqMask,
                         CompletionFlagID = _completedAddressesByQuestIndex[questIndex].FlagId,
                         PhaseGate = ResolvePhaseGateFlagId(questData.phaseGate),
@@ -338,7 +357,7 @@ namespace Hecton8.Quest
                         CriticalItemHash = ResolveCriticalItemHash(questData),
                         PrereqStartIndex = completionPrereqStart,
                         PrereqWordIndex = prereqWordIndex,
-                        RequiredValue = questData.completionValue,
+                        RequiredValue = completionValue,
                         ActiveMask = _activeAddressesByQuestIndex[questIndex].BitMask,
                         CompletedMask = _completedAddressesByQuestIndex[questIndex].BitMask,
                         SetMask = _completedAddressesByQuestIndex[questIndex].BitMask,
@@ -428,6 +447,17 @@ namespace Hecton8.Quest
             _isInitialized = true;
             RefreshStateMetadata(resetVersion: true);
             return !HasCompileErrors;
+        }
+
+        public void RebindLocalization(ILocalizationTextReadModel localizationManager, QuestData[] allQuests)
+        {
+            _localizationManager = localizationManager;
+            if (!_isInitialized)
+                return;
+
+            int authoredCount = math.min(_authoredQuestCount, allQuests != null ? allQuests.Length : 0);
+            for (int i = 0; i < authoredCount; i++)
+                CopyAuthoredQuestPresentation(allQuests[i], i);
         }
 
         public bool TryUpsertProceduralDirective(
@@ -553,15 +583,14 @@ namespace Hecton8.Quest
             if (questData == null || !IsQuestTextIndexValid(questIndex))
                 return;
 
-            ILocalizationTextReadModel manager = GlobalRegistry.LocalizationText;
             char[] titleBuffer = _questTitleBuffersByQuestIndex[questIndex];
-            if (questData.TryWriteDisplayTitleOrFallback(manager, titleBuffer, out int titleLength))
+            if (questData.TryWriteDisplayTitleOrFallback(_localizationManager, titleBuffer, out int titleLength))
                 _questTitleLengthsByQuestIndex[questIndex] = math.min(titleLength, titleBuffer.Length);
             else
                 _questTitleLengthsByQuestIndex[questIndex] = CopySpanToBuffer("UNKNOWN OBJECTIVE".AsSpan(), titleBuffer);
 
             char[] descriptionBuffer = _questDescriptionBuffersByQuestIndex[questIndex];
-            if (questData.TryWriteDescriptionOrFallback(manager, descriptionBuffer, out int descriptionLength))
+            if (questData.TryWriteDescriptionOrFallback(_localizationManager, descriptionBuffer, out int descriptionLength))
                 _questDescriptionLengthsByQuestIndex[questIndex] = math.min(descriptionLength, descriptionBuffer.Length);
             else
                 _questDescriptionLengthsByQuestIndex[questIndex] = 0;
@@ -1347,11 +1376,6 @@ namespace Hecton8.Quest
             return "Quest state band capacity exceeded.";
         }
 
-        private static string BuildQuestAuditLine(double timestamp, uint questHash, string state)
-        {
-            return "quest-transition\n";
-        }
-
         private static string ResolveQuestSignalKindLabel(QuestSignalKind signalKind)
         {
             switch (signalKind)
@@ -1513,38 +1537,22 @@ namespace Hecton8.Quest
                 return;
             }
 
-            string state;
-            switch (transitionType)
+            int writeIndex = _transitionAuditWriteIndex;
+            _transitionAuditRing[writeIndex] = new QuestTransitionAuditEntry
             {
-                case QuestTransitionType.Activate:
-                    state = completed ? "Complete" : "Active";
-                    break;
+                Timestamp = signal.Timestamp > 0d ? signal.Timestamp : Time.timeAsDouble,
+                QuestHash = _questHashesByQuestIndex[questIndex],
+                EntityHash = signal.EntityHash,
+                ItemId = signal.ItemId,
+                NumericValue = signal.NumericValue,
+                SignalEventType = signal.EventType,
+                TransitionType = (byte)transitionType,
+                Completed = completed ? (byte)1 : (byte)0
+            };
 
-                case QuestTransitionType.Complete:
-                    state = "Complete";
-                    break;
-
-                case QuestTransitionType.Revert:
-                    state = "Revert";
-                    break;
-
-                default:
-                    state = completed ? "Complete" : "Active";
-                    break;
-            }
-
-            try
-            {
-                double timestamp = signal.Timestamp > 0d ? signal.Timestamp : Time.timeAsDouble;
-                string path = HectonPersistentPathPolicy.CombineFile(QuestAuditLogFileName);
-                File.AppendAllText(
-                    path,
-                    BuildQuestAuditLine(timestamp, _questHashesByQuestIndex[questIndex], state));
-            }
-            catch (Exception)
-            {
-                Hecton8.Core.H8Debug.LogWarning("[QuestStateManager] Quest audit append failed.");
-            }
+            _transitionAuditWriteIndex = writeIndex + 1 < QuestTransitionAuditCapacity ? writeIndex + 1 : 0;
+            if (_transitionAuditCount < QuestTransitionAuditCapacity)
+                _transitionAuditCount++;
 #endif
         }
 

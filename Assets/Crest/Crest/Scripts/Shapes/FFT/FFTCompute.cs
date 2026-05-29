@@ -129,8 +129,12 @@ namespace Crest
 
             _shaderSpectrum = Resources.Load<ComputeShader>("FFT/FFTSpectrum");
             _shaderFFT = Resources.Load<ComputeShader>("FFT/FFTCompute");
-            if (_shaderSpectrum == null || _shaderFFT == null)
+            if (_shaderSpectrum == null || _shaderFFT == null ||
+                !_shaderSpectrum.HasKernel("SpectrumInitalize") ||
+                !_shaderSpectrum.HasKernel("SpectrumUpdate"))
             {
+                _shaderSpectrum = null;
+                _shaderFFT = null;
                 _isInitialised = false;
                 return;
             }

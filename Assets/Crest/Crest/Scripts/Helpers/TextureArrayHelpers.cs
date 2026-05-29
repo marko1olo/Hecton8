@@ -142,9 +142,14 @@ namespace Crest
             {
                 s_clearToBlackShader = ComputeShaderHelpers.LoadShader(CLEAR_TO_BLACK_SHADER_NAME);
             }
-            if (s_clearToBlackShader != null)
+            if (s_clearToBlackShader != null && s_clearToBlackShader.HasKernel(CLEAR_TO_BLACK_SHADER_NAME))
             {
                 krnl_ClearToBlack = s_clearToBlackShader.FindKernel(CLEAR_TO_BLACK_SHADER_NAME);
+            }
+            else
+            {
+                s_clearToBlackShader = null;
+                krnl_ClearToBlack = -1;
             }
         }
 

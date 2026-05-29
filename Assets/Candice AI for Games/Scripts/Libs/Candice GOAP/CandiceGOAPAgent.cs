@@ -1,6 +1,5 @@
 using System;
 using System.Collections.Generic;
-using System.Linq;
 using UnityEngine;
 /*
  * ToDo: Create Apply function in GOAPAgent to handle the Plan calulation. Refactor Apply function in GOAPAction to Evaluate, as it must evaluate a behavior tree. 
@@ -30,38 +29,45 @@ namespace CandiceAIforGames.AI
             new CandiceGOAPAction(aiController, "AcquireAxe", 1, new Dictionary<string, int>(), new Dictionary<string, int> { {"axe", 1} }),
             new CandiceGOAPAction(aiController, "DropAxe", 1, new Dictionary<string, int>(), new Dictionary<string, int> { {"axe", -1} })
         };*/
-        static Queue<CandiceGOAPAction> planQueue = new Queue<CandiceGOAPAction>();
-        static CandiceGOAPAction currentAction = null;
+        // COLD ALLOC: Queue<CandiceGOAPAction>[16] - per-agent GOAP plan queue - owner: CandiceGOAPAgent
+        private readonly Queue<CandiceGOAPAction> planQueue = new Queue<CandiceGOAPAction>(16);
+        private CandiceGOAPAction currentAction = null;
 
         // Start is called before the first frame update
         void Start()
         {
-            aiController.AddRegistrationListener(onAgentReady);
+            if (aiController != null)
+            {
+                aiController.AddRegistrationListener(onAgentReady);
+            }
             
         }
 
         public void onAgentReady(bool isRegistered, int agentID)
         {
-            
+            planQueue.Clear();
+            currentAction = null;
+            if (!isRegistered)
+            {
+                return;
+            }
 
             availableActions.Clear();
-            foreach (CandiceGOAPActionS actionS in availableActionsS)
+            for (int i = 0; i < availableActionsS.Count; i++)
             {
+                CandiceGOAPActionS actionS = availableActionsS[i];
                 CandiceGOAPAction action = actionS.ConvertToGOAPAction(aiController);
                 availableActions.Add(action);
-                Debug.Log(action.name);
             }
             List<CandiceGOAPAction> plan = Plan(availableActions, gameState, goalState);
             if (plan == null)
             {
-                Debug.Log("No plan found.");
                 return;
             }
 
-            Debug.Log("Plan found:");
-            foreach (CandiceGOAPAction action in plan)
+            for (int i = 0; i < plan.Count; i++)
             {
-                Console.WriteLine("- " + action.name);
+                CandiceGOAPAction action = plan[i];
                 planQueue.Enqueue(action);
 
             }
@@ -100,7 +106,8 @@ namespace CandiceAIforGames.AI
         static List<CandiceGOAPAction> Plan(List<CandiceGOAPAction> availableActions, CandiceGOAPState initialState, CandiceGOAPState goalState)
         {
             // Initialize the frontier with the initial state of the problem.
-            List<CandiceGOAPNode> frontier = new List<CandiceGOAPNode> { new CandiceGOAPNode(null, 0, initialState, null) };
+            List<CandiceGOAPNode> frontier = new List<CandiceGOAPNode>(availableActions.Count + 1);
+            frontier.Add(new CandiceGOAPNode(null, 0, initialState, null));
 
             // Keep track of the explored states to avoid cycles and improve efficiency.
             HashSet<Dictionary<string, int>> explored = new HashSet<Dictionary<string, int>>(new DictionaryComparer());
@@ -113,11 +120,10 @@ namespace CandiceAIforGames.AI
 
             while (frontier.Count > 0)
             {
-                // Sort the frontier in ascending order of f-score to explore the most promising nodes first.
-                frontier = frontier.OrderBy(node => fScore.ContainsKey(node) ? fScore[node] : int.MaxValue).ToList();
+                int bestFrontierIndex = FindBestFrontierIndex(frontier, fScore);
 
                 // Select the node with the lowest f-score to expand next.
-                CandiceGOAPNode currentNode = frontier[0];
+                CandiceGOAPNode currentNode = frontier[bestFrontierIndex];
 
                 // If the goal state has been reached, return the optimal plan.
                 if (currentNode.Satisfies(goalState.state))
@@ -132,24 +138,27 @@ namespace CandiceAIforGames.AI
                 }
 
                 // Remove the current node from the frontier and add it to the explored set.
-                frontier.RemoveAt(0);
-                explored.Add(CandiceGOAPState.ConvertToNormalDictionary(currentNode.state.state));
+                frontier.RemoveAt(bestFrontierIndex);
+                Dictionary<string, int> currentNormalState = CandiceGOAPState.ConvertToNormalDictionary(currentNode.state.state);
+                explored.Add(currentNormalState);
 
                 // Generate all possible actions that can be applied to the current state.
-                foreach (CandiceGOAPAction action in availableActions)
+                for (int i = 0; i < availableActions.Count; i++)
                 {
+                    CandiceGOAPAction action = availableActions[i];
                     // If the action is not applicable to the current state, skip it.
-                    if (!action.IsAchievable(CandiceGOAPState.ConvertToNormalDictionary(currentNode.state.state)))
+                    if (!action.IsAchievable(currentNormalState))
                     {
                         continue;
                     }
 
                     // Apply the action to the current state to generate a new child state.
-                    CandiceGOAPState childState = new CandiceGOAPState(new Dictionary<string, int>(CandiceGOAPState.ConvertToNormalDictionary(currentNode.state.state)));
-                    action.ApplySimulated(CandiceGOAPState.ConvertToNormalDictionary(childState.state));
+                    Dictionary<string, int> childNormalState = new Dictionary<string, int>(currentNormalState);
+                    action.ApplySimulated(childNormalState);
+                    CandiceGOAPState childState = new CandiceGOAPState(childNormalState);
 
                     // If the child state has already been explored, skip it.
-                    if (explored.Contains(CandiceGOAPState.ConvertToNormalDictionary(childState.state)))
+                    if (explored.Contains(childNormalState))
                     {
                         continue;
                     }
@@ -173,6 +182,24 @@ namespace CandiceAIforGames.AI
             return null;
         }
 
+        private static int FindBestFrontierIndex(List<CandiceGOAPNode> frontier, CandiceDictionary<CandiceGOAPNode, int> fScore)
+        {
+            int bestIndex = 0;
+            int bestScore = int.MaxValue;
+            for (int i = 0; i < frontier.Count; i++)
+            {
+                CandiceGOAPNode node = frontier[i];
+                int score = fScore.ContainsKey(node) ? fScore[node] : int.MaxValue;
+                if (score < bestScore)
+                {
+                    bestScore = score;
+                    bestIndex = i;
+                }
+            }
+
+            return bestIndex;
+        }
+
         private static int GetValueOrDefault(Dictionary<CandiceGOAPNode, int> dictionary, CandiceGOAPNode key, int defaultValue)
         {
             int val = 0;
@@ -191,13 +218,45 @@ namespace CandiceAIforGames.AI
     {
         public bool Equals(Dictionary<string, int> x, Dictionary<string, int> y)
         {
-            return x.SequenceEqual(y);
+            if (ReferenceEquals(x, y))
+            {
+                return true;
+            }
+
+            if (x == null || y == null || x.Count != y.Count)
+            {
+                return false;
+            }
+
+            Dictionary<string, int>.Enumerator enumerator = x.GetEnumerator();
+            while (enumerator.MoveNext())
+            {
+                KeyValuePair<string, int> pair = enumerator.Current;
+                if (!y.TryGetValue(pair.Key, out int value) || value != pair.Value)
+                {
+                    return false;
+                }
+            }
+
+            return true;
         }
 
         public int GetHashCode(Dictionary<string, int> obj)
         {
-            return obj.Aggregate(0, (hash, pair) => hash ^ (pair.Key.GetHashCode() + pair.Value.GetHashCode()));
+            if (obj == null)
+            {
+                return 0;
+            }
+
+            int hash = 0;
+            Dictionary<string, int>.Enumerator enumerator = obj.GetEnumerator();
+            while (enumerator.MoveNext())
+            {
+                KeyValuePair<string, int> pair = enumerator.Current;
+                hash ^= pair.Key.GetHashCode() + pair.Value.GetHashCode();
+            }
+
+            return hash;
         }
     }
 }
-   

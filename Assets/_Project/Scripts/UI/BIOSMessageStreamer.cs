@@ -86,7 +86,6 @@ namespace Hecton8.UI
             if (!_typingActive)
             {
                 TryStartNextEntry();
-                RefreshTickRegistration();
                 return;
             }
 
@@ -107,7 +106,6 @@ namespace Hecton8.UI
                 _typingRenderBaseLength = 0;
                 RefreshTerminal();
                 TryStartNextEntry();
-                RefreshTickRegistration();
             }
         }
 

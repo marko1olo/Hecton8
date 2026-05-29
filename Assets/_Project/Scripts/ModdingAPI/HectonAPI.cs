@@ -602,13 +602,14 @@ namespace Hecton8.Modding
             public static void ShowInfo(string message)
             {
                 ThrowIfNoActiveMod("UI.ShowInfo");
+                ReadOnlySpan<char> messageSpan = string.IsNullOrEmpty(message) ? ReadOnlySpan<char>.Empty : message.AsSpan();
                 if (HUDNotification.TryGetActive(out HUDNotification notification))
                 {
-                    notification.ShowInfo(message ?? string.Empty);
+                    notification.ShowInfo(messageSpan);
                     return;
                 }
 
-                NotificationEvents.TryPushInfo(message ?? string.Empty);
+                NotificationEvents.TryPushInfo(messageSpan);
             }
 
             /// <summary>
@@ -618,13 +619,14 @@ namespace Hecton8.Modding
             public static void ShowWarning(string message)
             {
                 ThrowIfNoActiveMod("UI.ShowWarning");
+                ReadOnlySpan<char> messageSpan = string.IsNullOrEmpty(message) ? ReadOnlySpan<char>.Empty : message.AsSpan();
                 if (HUDNotification.TryGetActive(out HUDNotification notification))
                 {
-                    notification.ShowWarning(message ?? string.Empty);
+                    notification.ShowWarning(messageSpan);
                     return;
                 }
 
-                NotificationEvents.TryPushWarning(message ?? string.Empty);
+                NotificationEvents.TryPushWarning(messageSpan);
             }
 
             /// <summary>
@@ -634,13 +636,14 @@ namespace Hecton8.Modding
             public static void ShowCritical(string message)
             {
                 ThrowIfNoActiveMod("UI.ShowCritical");
+                ReadOnlySpan<char> messageSpan = string.IsNullOrEmpty(message) ? ReadOnlySpan<char>.Empty : message.AsSpan();
                 if (HUDNotification.TryGetActive(out HUDNotification notification))
                 {
-                    notification.ShowCritical(message ?? string.Empty);
+                    notification.ShowCritical(messageSpan);
                     return;
                 }
 
-                NotificationEvents.TryPushCritical(message ?? string.Empty);
+                NotificationEvents.TryPushCritical(messageSpan);
             }
 
             /// <summary>

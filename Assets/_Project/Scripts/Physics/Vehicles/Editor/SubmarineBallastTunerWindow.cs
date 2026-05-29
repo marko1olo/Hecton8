@@ -154,16 +154,19 @@ namespace Hecton8.Physics.Vehicles.Editor
         {
             IDataVault vault = GlobalRegistry.DataVault;
             if (vault == null ||
-                !vault.TryGetGenerationHandle(SubmarineBallastBufferIds.Tuning, out VaultGenerationHandle<SubmarineBallastTuningDTO> handle) ||
-                !vault.TryAcquireWriteLock(in handle, SystemID.VehiclesPhysics, out NativeArray<SubmarineBallastTuningDTO> tuning) ||
-                !tuning.IsCreated ||
-                tuning.Length == 0)
+                !vault.TryGetGenerationHandle(SubmarineBallastBufferIds.Tuning, out VaultGenerationHandle<SubmarineBallastTuningDTO> handle))
             {
                 return;
             }
 
+            if (!vault.TryAcquireWriteLock(in handle, SystemID.VehiclesPhysics, out NativeArray<SubmarineBallastTuningDTO> tuning))
+                return;
+
             try
             {
+                if (!tuning.IsCreated || tuning.Length == 0)
+                    return;
+
                 SubmarineBallastTuningDTO dto = tuning[0];
                 dto.HullVolumeCubicMeters = math.max(0.1f, _hullVolume.value);
                 dto.HullHeightMeters = math.max(0.1f, _hullHeight.value);

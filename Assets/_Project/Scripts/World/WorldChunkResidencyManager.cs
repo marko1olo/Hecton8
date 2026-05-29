@@ -604,7 +604,7 @@ namespace Hecton8.World
         private const int MaxPredictiveBiomePrefabs = 5;
         private const int HabitatTransitionPauseFrames = 180;
         private const int TeleportImmediateLoadDispatchBudget = 4;
-        private const int LowTierLoadDispatchBudget = 1;
+        private const int SurvivalLoadDispatchBudget = 1;
         private const int VisualOverkillLoadDispatchBudget = 4;
         private const int AssetLifecycleFarBehindDrainBudget = 8;
         private const int PagerReadTicketCapacity = 16;
@@ -619,10 +619,8 @@ namespace Hecton8.World
         private const int ActiveImpostorFadeOutFlag = 1 << 10;
         private const int ActiveImpostorBaseType = 1;
         private const int ActiveImpostorWreckType = 2;
-        private const float LowTierUnloadRadiusMeters = 400f;
-        private const float MiddleTierUnloadRadiusMeters = 650f;
-        private const float HighTierUnloadRadiusMeters = 800f;
-        private const float UltraTierUnloadRadiusMeters = 1000f;
+        private const float SurvivalUnloadRadiusMeters = 400f;
+        private const float VisualOverkillUnloadRadiusMeters = 1000f;
         private const float ActiveImpostorFadeOutSeconds = 1.5f;
 
         private static double RuntimeNowSeconds()
@@ -3054,7 +3052,7 @@ namespace Hecton8.World
         private int ConsumeLoadDispatchBudget()
         {
             if (_predictiveVramAborted)
-                return LowTierLoadDispatchBudget;
+                return SurvivalLoadDispatchBudget;
 
             int frame = Hecton8.Core.SystemDispatcher.CurrentFrameIndex;
             if (_loadDispatchFrame != frame)
@@ -3072,7 +3070,7 @@ namespace Hecton8.World
 
         private static float ResolveLoadDispatchBudgetPerFrame()
         {
-            return math.lerp(LowTierLoadDispatchBudget, VisualOverkillLoadDispatchBudget, ResolveSmoothGlobalQualityWeight01());
+            return math.lerp(SurvivalLoadDispatchBudget, VisualOverkillLoadDispatchBudget, ResolveSmoothGlobalQualityWeight01());
         }
 
         private static int ResolveQualityScaledConcurrentLoadCap(int serializedCap)
@@ -5143,8 +5141,8 @@ namespace Hecton8.World
         private float ResolveEffectiveUnloadRadiusMeters()
         {
             float radius = math.lerp(
-                LowTierUnloadRadiusMeters,
-                math.max(unloadRadiusMeters, UltraTierUnloadRadiusMeters),
+                SurvivalUnloadRadiusMeters,
+                math.max(unloadRadiusMeters, VisualOverkillUnloadRadiusMeters),
                 ResolveSmoothGlobalQualityWeight01());
 
             return math.max(2f, radius * ResolveHealthRadiusScale());

@@ -165,6 +165,7 @@ namespace Hecton8.Rendering.WaterOptics
         private bool _dumped;
         private bool _telemetryDumpPending;
         private bool _hasUploadedDto;
+        private bool _supportsConstantBuffers;
         private WaterOpticsDTO _lastUploadedDto;
 
         private static readonly int GlobalWaterOpticsCBufferId = Shader.PropertyToID("_GlobalWaterOptics");
@@ -192,6 +193,7 @@ namespace Hecton8.Rendering.WaterOptics
             }
 
             s_instance = this;
+            CacheGraphicsCapabilitiesCold();
             TryColdBootstrapVault(clearExisting: true);
             TryColdBootstrapShaderParamsBuffers();
             RefreshPlayerCameraBindingCold();
@@ -206,6 +208,7 @@ namespace Hecton8.Rendering.WaterOptics
             }
 
             s_instance = this;
+            CacheGraphicsCapabilitiesCold();
             TryColdBootstrapVault(clearExisting: !_vaultBootstrapped);
             TryColdBootstrapShaderParamsBuffers();
             RefreshPlayerCameraBindingCold();
@@ -218,6 +221,7 @@ namespace Hecton8.Rendering.WaterOptics
 
         private void Start()
         {
+            CacheGraphicsCapabilitiesCold();
             TryColdBootstrapVault(clearExisting: !_vaultBootstrapped);
             TryColdBootstrapShaderParamsBuffers();
         }
@@ -352,7 +356,7 @@ namespace Hecton8.Rendering.WaterOptics
                 return;
             }
 
-            if (!SystemInfo.supportsSetConstantBuffer)
+            if (!_supportsConstantBuffers)
             {
                 WaterOpticsDTO unsupportedDto = ReadFirstWaterOpticsDto(parameters);
                 RecordTelemetry(frameIndex, TelemetryFlagConstantBufferUnsupported, in unsupportedDto);
@@ -1135,7 +1139,7 @@ namespace Hecton8.Rendering.WaterOptics
 
         private bool TryColdBootstrapShaderParamsBuffers()
         {
-            if (!SystemInfo.supportsSetConstantBuffer)
+            if (!_supportsConstantBuffers)
                 return false;
 
             if (HasValidShaderParamsBuffers())
@@ -1160,6 +1164,11 @@ namespace Hecton8.Rendering.WaterOptics
             }
 
             return valid;
+        }
+
+        private void CacheGraphicsCapabilitiesCold()
+        {
+            _supportsConstantBuffers = SystemInfo.supportsSetConstantBuffer;
         }
 
         private bool HasValidShaderParamsBuffers()

@@ -205,8 +205,6 @@ namespace Hecton8.UI
                 float safeDeltaTime = math.isfinite(deltaTime) ? math.max(0f, deltaTime) : 0f;
                 RefreshQualityPolicy();
                 AdvanceThermalNoiseClock(safeDeltaTime);
-                ResolvePlayerTransform();
-                ResolveProjectionCamera();
 
                 if (_projectionCamera == null ||
                     _radarBlipMesh == null ||

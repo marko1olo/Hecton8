@@ -38,6 +38,16 @@ namespace Hecton8.Ecosystem
         private const string DumpRelativePath = "Docs/AgentLogs/Dump_SHINOBU_300.bin";
         private const ulong DumpMagic = 0x4D4143524F45434FUL; // MACROECO
         private const uint RouteHash = 0x53483136u; // SH16
+        private static readonly ulong JobMutationGuardMask =
+            MutationGuardBit(BufferID.ShinobuMacroEcosystemSectorFront) |
+            MutationGuardBit(BufferID.ShinobuMacroEcosystemSectorBack) |
+            MutationGuardBit(BufferID.ShinobuMacroEcosystemRemainders) |
+            MutationGuardBit(BufferID.ShinobuMacroEcosystemSectorCoords) |
+            MutationGuardBit(BufferID.ShinobuMacroEcosystemBiomeSpecs) |
+            MutationGuardBit(BufferID.ShinobuMacroEcosystemTuning) |
+            MutationGuardBit(BufferID.ShinobuMacroEcosystemCounters) |
+            MutationGuardBit(BufferID.ShinobuMacroEcosystemFaultFlags) |
+            MutationGuardBit(BufferID.ShinobuMacroEcosystemTelemetryRing);
 
         private static MacroEcosystemMathematicianRuntime s_runtime;
 
@@ -66,8 +76,9 @@ namespace Hecton8.Ecosystem
         private bool _registeredLateFrame;
         private bool _registeredHotSwap;
         private bool _jobScheduled;
-        private bool _jobLocksHeld;
+        private bool _jobGuardHeld;
         private bool _dumpedFault;
+        private IDataVault _jobGuardVault;
 
         private MacroEcosystemMathematicianRuntime()
         {
@@ -191,124 +202,131 @@ namespace Hecton8.Ecosystem
             if (vault == null || !TryLockJobBuffers(vault))
                 return;
 
-            if (!TryOpenVaultBuffer(vault, ref _frontHandle, BufferID.ShinobuMacroEcosystemSectorFront, SectorCapacity, out NativeArray<EcosystemSectorDTO> front) ||
-                !TryOpenVaultBuffer(vault, ref _backHandle, BufferID.ShinobuMacroEcosystemSectorBack, SectorCapacity, out NativeArray<EcosystemSectorDTO> back) ||
-                !TryOpenVaultBuffer(vault, ref _remainderHandle, BufferID.ShinobuMacroEcosystemRemainders, SectorCapacity, out NativeArray<EcosystemSectorRemainderDTO> remainders) ||
-                !TryOpenVaultBuffer(vault, ref _coordHandle, BufferID.ShinobuMacroEcosystemSectorCoords, SectorCapacity, out NativeArray<EcosystemSectorCoordDTO> coords) ||
-                !TryOpenVaultBuffer(vault, ref _biomeSpecHandle, BufferID.ShinobuMacroEcosystemBiomeSpecs, 1, out NativeArray<BiomeEcosystemSpecDTO> biomeSpecs) ||
-                !TryOpenVaultBuffer(vault, ref _tuningHandle, BufferID.ShinobuMacroEcosystemTuning, 1, out NativeArray<MacroEcosystemTuningDTO> tuningArray) ||
-                !TryOpenVaultBuffer(vault, ref _counterHandle, BufferID.ShinobuMacroEcosystemCounters, CounterCapacity, out NativeArray<MacroEcosystemCounterDTO> counters) ||
-                !TryOpenVaultBuffer(vault, ref _telemetryHandle, BufferID.ShinobuMacroEcosystemTelemetryRing, TelemetryCapacity, out NativeArray<MacroEcosystemTelemetryEntry> telemetry) ||
-                !TryOpenVaultBuffer(vault, ref _faultFlagHandle, BufferID.ShinobuMacroEcosystemFaultFlags, SectorCapacity, out NativeArray<uint> faultFlags))
+            bool keepJobGuard = false;
+            try
             {
-                UnlockJobBuffers();
-                return;
-            }
-            int sectorCount = math.min(SectorCapacity, front.Length);
-            sectorCount = math.min(sectorCount, back.Length);
-            sectorCount = math.min(sectorCount, remainders.Length);
-            sectorCount = math.min(sectorCount, coords.Length);
-            sectorCount = math.min(sectorCount, faultFlags.Length);
-            if (sectorCount <= 0)
-            {
-                UnlockJobBuffers();
-                return;
-            }
-
-            MacroEcosystemTuningDTO tuning = MacroEcosystemTuningDTO.Sanitize(tuningArray[0]);
-            tuning.GlobalQualityWeight = ResolveGlobalQualityWeight();
-            tuning.FrostDeltaSeconds = FrostDeltaSeconds;
-            tuning.Flags |= MacroEcosystemMath.TuningFlagSnapshotWriteInFlight;
-            tuning.StateHash = MacroEcosystemMath.Mix32(tuning.StateHash, math.asuint(tuning.GlobalQualityWeight));
-            tuningArray[0] = tuning;
-
-            int diffusionSteps = MacroEcosystemMath.ResolveDiffusionSteps(tuning.GlobalQualityWeight);
-            int integrationSubsteps = MacroEcosystemMath.ResolveIntegrationSubsteps(tuning.GlobalQualityWeight);
-            float qualityFlowWeight = MacroEcosystemMath.ResolveQualityFlowWeight(tuning.GlobalQualityWeight);
-            _lastDiffusionSteps = diffusionSteps;
-            int telemetrySlot = _telemetryCursor % telemetry.Length;
-            _lastTelemetrySlot = telemetrySlot;
-
-            EcosystemSectorDTO* frontPtr = (EcosystemSectorDTO*)NativeArrayUnsafeUtility.GetUnsafePtr(front);
-            EcosystemSectorDTO* backPtr = (EcosystemSectorDTO*)NativeArrayUnsafeUtility.GetUnsafePtr(back);
-            EcosystemSectorRemainderDTO* remainderPtr = (EcosystemSectorRemainderDTO*)NativeArrayUnsafeUtility.GetUnsafePtr(remainders);
-            EcosystemSectorCoordDTO* coordPtr = (EcosystemSectorCoordDTO*)NativeArrayUnsafeUtility.GetUnsafePtr(coords);
-            BiomeEcosystemSpecDTO* biomeSpecPtr = (BiomeEcosystemSpecDTO*)NativeArrayUnsafeUtility.GetUnsafePtr(biomeSpecs);
-            uint* faultFlagPtr = (uint*)NativeArrayUnsafeUtility.GetUnsafePtr(faultFlags);
-
-            var populationJob = new EcosystemPopulationJob
-            {
-                Front = frontPtr,
-                Back = backPtr,
-                Remainders = remainderPtr,
-                Coords = coordPtr,
-                BiomeSpecs = biomeSpecPtr,
-                FaultFlags = faultFlagPtr,
-                Tuning = tuning,
-                IntegrationSubsteps = integrationSubsteps,
-                SectorCount = sectorCount,
-                BiomeSpecCapacity = biomeSpecs.Length
-            };
-
-            JobHandle handle = populationJob.Schedule(populationJob.SectorCount, JobBatchSize);
-            EcosystemSectorDTO* source = backPtr;
-            EcosystemSectorDTO* destination = frontPtr;
-            for (int step = 0; step < diffusionSteps; step++)
-            {
-                var diffusionJob = new BiomassDiffusionJob
+                if (!TryOpenVaultBuffer(vault, ref _frontHandle, BufferID.ShinobuMacroEcosystemSectorFront, SectorCapacity, out NativeArray<EcosystemSectorDTO> front) ||
+                    !TryOpenVaultBuffer(vault, ref _backHandle, BufferID.ShinobuMacroEcosystemSectorBack, SectorCapacity, out NativeArray<EcosystemSectorDTO> back) ||
+                    !TryOpenVaultBuffer(vault, ref _remainderHandle, BufferID.ShinobuMacroEcosystemRemainders, SectorCapacity, out NativeArray<EcosystemSectorRemainderDTO> remainders) ||
+                    !TryOpenVaultBuffer(vault, ref _coordHandle, BufferID.ShinobuMacroEcosystemSectorCoords, SectorCapacity, out NativeArray<EcosystemSectorCoordDTO> coords) ||
+                    !TryOpenVaultBuffer(vault, ref _biomeSpecHandle, BufferID.ShinobuMacroEcosystemBiomeSpecs, 1, out NativeArray<BiomeEcosystemSpecDTO> biomeSpecs) ||
+                    !TryOpenVaultBuffer(vault, ref _tuningHandle, BufferID.ShinobuMacroEcosystemTuning, 1, out NativeArray<MacroEcosystemTuningDTO> tuningArray) ||
+                    !TryOpenVaultBuffer(vault, ref _counterHandle, BufferID.ShinobuMacroEcosystemCounters, CounterCapacity, out NativeArray<MacroEcosystemCounterDTO> counters) ||
+                    !TryOpenVaultBuffer(vault, ref _telemetryHandle, BufferID.ShinobuMacroEcosystemTelemetryRing, TelemetryCapacity, out NativeArray<MacroEcosystemTelemetryEntry> telemetry) ||
+                    !TryOpenVaultBuffer(vault, ref _faultFlagHandle, BufferID.ShinobuMacroEcosystemFaultFlags, SectorCapacity, out NativeArray<uint> faultFlags))
                 {
-                    Source = source,
-                    Destination = destination,
+                    return;
+                }
+
+                int sectorCount = math.min(SectorCapacity, front.Length);
+                sectorCount = math.min(sectorCount, back.Length);
+                sectorCount = math.min(sectorCount, remainders.Length);
+                sectorCount = math.min(sectorCount, coords.Length);
+                sectorCount = math.min(sectorCount, faultFlags.Length);
+                if (sectorCount <= 0)
+                    return;
+
+                MacroEcosystemTuningDTO tuning = MacroEcosystemTuningDTO.Sanitize(tuningArray[0]);
+                tuning.GlobalQualityWeight = ResolveGlobalQualityWeight();
+                tuning.FrostDeltaSeconds = FrostDeltaSeconds;
+                tuning.Flags |= MacroEcosystemMath.TuningFlagSnapshotWriteInFlight;
+                tuning.StateHash = MacroEcosystemMath.Mix32(tuning.StateHash, math.asuint(tuning.GlobalQualityWeight));
+                tuningArray[0] = tuning;
+
+                int diffusionSteps = MacroEcosystemMath.ResolveDiffusionSteps(tuning.GlobalQualityWeight);
+                int integrationSubsteps = MacroEcosystemMath.ResolveIntegrationSubsteps(tuning.GlobalQualityWeight);
+                float qualityFlowWeight = MacroEcosystemMath.ResolveQualityFlowWeight(tuning.GlobalQualityWeight);
+                _lastDiffusionSteps = diffusionSteps;
+                int telemetrySlot = _telemetryCursor % telemetry.Length;
+                _lastTelemetrySlot = telemetrySlot;
+
+                EcosystemSectorDTO* frontPtr = (EcosystemSectorDTO*)NativeArrayUnsafeUtility.GetUnsafePtr(front);
+                EcosystemSectorDTO* backPtr = (EcosystemSectorDTO*)NativeArrayUnsafeUtility.GetUnsafePtr(back);
+                EcosystemSectorRemainderDTO* remainderPtr = (EcosystemSectorRemainderDTO*)NativeArrayUnsafeUtility.GetUnsafePtr(remainders);
+                EcosystemSectorCoordDTO* coordPtr = (EcosystemSectorCoordDTO*)NativeArrayUnsafeUtility.GetUnsafePtr(coords);
+                BiomeEcosystemSpecDTO* biomeSpecPtr = (BiomeEcosystemSpecDTO*)NativeArrayUnsafeUtility.GetUnsafePtr(biomeSpecs);
+                uint* faultFlagPtr = (uint*)NativeArrayUnsafeUtility.GetUnsafePtr(faultFlags);
+
+                var populationJob = new EcosystemPopulationJob
+                {
+                    Front = frontPtr,
+                    Back = backPtr,
                     Remainders = remainderPtr,
                     Coords = coordPtr,
                     BiomeSpecs = biomeSpecPtr,
-                    SectorCount = populationJob.SectorCount,
-                    BiomeSpecCapacity = biomeSpecs.Length,
-                    Width = GridWidth,
-                    Height = GridHeight,
-                    SectorSizeMeters = SectorSizeMeters,
-                    MigrationRate = tuning.MigrationRate,
-                    QualityFlowWeight = qualityFlowWeight,
-                    CarryingCapacityPrey = tuning.CarryingCapacityPrey,
-                    CarryingCapacityPredator = tuning.CarryingCapacityPredator,
-                    TemperatureOptimum = tuning.TemperatureOptimum,
-                    TemperatureHalfRange = tuning.TemperatureHalfRange
+                    FaultFlags = faultFlagPtr,
+                    Tuning = tuning,
+                    IntegrationSubsteps = integrationSubsteps,
+                    SectorCount = sectorCount,
+                    BiomeSpecCapacity = biomeSpecs.Length
                 };
-                handle = diffusionJob.Schedule(populationJob.SectorCount, JobBatchSize, handle);
-                EcosystemSectorDTO* swap = source;
-                source = destination;
-                destination = swap;
-            }
 
-            if (source != frontPtr)
-            {
-                var copyJob = new CopySectorBufferJob
+                JobHandle handle = populationJob.Schedule(populationJob.SectorCount, JobBatchSize);
+                EcosystemSectorDTO* source = backPtr;
+                EcosystemSectorDTO* destination = frontPtr;
+                for (int step = 0; step < diffusionSteps; step++)
                 {
-                    Source = source,
-                    Destination = frontPtr,
-                    SectorCount = populationJob.SectorCount
-                };
-                handle = copyJob.Schedule(populationJob.SectorCount, JobBatchSize, handle);
-            }
+                    var diffusionJob = new BiomassDiffusionJob
+                    {
+                        Source = source,
+                        Destination = destination,
+                        Remainders = remainderPtr,
+                        Coords = coordPtr,
+                        BiomeSpecs = biomeSpecPtr,
+                        SectorCount = populationJob.SectorCount,
+                        BiomeSpecCapacity = biomeSpecs.Length,
+                        Width = GridWidth,
+                        Height = GridHeight,
+                        SectorSizeMeters = SectorSizeMeters,
+                        MigrationRate = tuning.MigrationRate,
+                        QualityFlowWeight = qualityFlowWeight,
+                        CarryingCapacityPrey = tuning.CarryingCapacityPrey,
+                        CarryingCapacityPredator = tuning.CarryingCapacityPredator,
+                        TemperatureOptimum = tuning.TemperatureOptimum,
+                        TemperatureHalfRange = tuning.TemperatureHalfRange
+                    };
+                    handle = diffusionJob.Schedule(populationJob.SectorCount, JobBatchSize, handle);
+                    EcosystemSectorDTO* swap = source;
+                    source = destination;
+                    destination = swap;
+                }
 
-            var telemetryJob = new EcosystemTelemetryReductionJob
+                if (source != frontPtr)
+                {
+                    var copyJob = new CopySectorBufferJob
+                    {
+                        Source = source,
+                        Destination = frontPtr,
+                        SectorCount = populationJob.SectorCount
+                    };
+                    handle = copyJob.Schedule(populationJob.SectorCount, JobBatchSize, handle);
+                }
+
+                var telemetryJob = new EcosystemTelemetryReductionJob
+                {
+                    Sectors = frontPtr,
+                    Remainders = remainderPtr,
+                    Telemetry = telemetry,
+                    Counters = counters,
+                    FaultFlags = faultFlagPtr,
+                    SectorCount = populationJob.SectorCount,
+                    TelemetryIndex = telemetrySlot,
+                    FrameIndex = _simulationTick++,
+                    DiffusionSteps = unchecked((uint)diffusionSteps),
+                    IntegrationSubsteps = unchecked((uint)integrationSubsteps),
+                    GlobalQualityWeight = tuning.GlobalQualityWeight
+                };
+                _activeJobHandle = telemetryJob.Schedule(handle);
+                _scheduleTicks = Stopwatch.GetTimestamp();
+                _jobScheduled = true;
+                _telemetryCursor++;
+                keepJobGuard = true;
+            }
+            finally
             {
-                Sectors = frontPtr,
-                Remainders = remainderPtr,
-                Telemetry = telemetry,
-                Counters = counters,
-                FaultFlags = faultFlagPtr,
-                SectorCount = populationJob.SectorCount,
-                TelemetryIndex = telemetrySlot,
-                FrameIndex = _simulationTick++,
-                DiffusionSteps = unchecked((uint)diffusionSteps),
-                IntegrationSubsteps = unchecked((uint)integrationSubsteps),
-                GlobalQualityWeight = tuning.GlobalQualityWeight
-            };
-            _activeJobHandle = telemetryJob.Schedule(handle);
-            _scheduleTicks = Stopwatch.GetTimestamp();
-            _jobScheduled = true;
-            _telemetryCursor++;
+                if (!keepJobGuard)
+                    UnlockJobBuffers();
+            }
         }
 
         /// <inheritdoc />
@@ -478,7 +496,7 @@ namespace Hecton8.Ecosystem
             JobHandle clearHandle = clearJob.Schedule();
             JobHandle mockHandle = mockJob.Schedule(SectorCapacity, JobBatchSize, clearHandle);
             JobHandle indexHandle = indexJob.Schedule(mockHandle);
-            DispatcherJobFence.TryComplete(ref indexHandle, forceComplete: true);
+            ForceCompleteColdBootstrapInPostSimulationWindow(ref indexHandle);
             _initialized = true;
         }
 
@@ -647,51 +665,24 @@ namespace Hecton8.Ecosystem
 
         private bool TryLockJobBuffers(IDataVault vault)
         {
-            int locked = 0;
-            if (!vault.TryLockBuffer(BufferID.ShinobuMacroEcosystemSectorFront, SystemID.AIEcology)) return false;
-            locked++;
-            if (!vault.TryLockBuffer(BufferID.ShinobuMacroEcosystemSectorBack, SystemID.AIEcology)) { UnlockLockedJobBuffers(vault, locked); return false; }
-            locked++;
-            if (!vault.TryLockBuffer(BufferID.ShinobuMacroEcosystemRemainders, SystemID.AIEcology)) { UnlockLockedJobBuffers(vault, locked); return false; }
-            locked++;
-            if (!vault.TryLockBuffer(BufferID.ShinobuMacroEcosystemSectorCoords, SystemID.AIEcology)) { UnlockLockedJobBuffers(vault, locked); return false; }
-            locked++;
-            if (!vault.TryLockBuffer(BufferID.ShinobuMacroEcosystemBiomeSpecs, SystemID.AIEcology)) { UnlockLockedJobBuffers(vault, locked); return false; }
-            locked++;
-            if (!vault.TryLockBuffer(BufferID.ShinobuMacroEcosystemTuning, SystemID.AIEcology)) { UnlockLockedJobBuffers(vault, locked); return false; }
-            locked++;
-            if (!vault.TryLockBuffer(BufferID.ShinobuMacroEcosystemCounters, SystemID.AIEcology)) { UnlockLockedJobBuffers(vault, locked); return false; }
-            locked++;
-            if (!vault.TryLockBuffer(BufferID.ShinobuMacroEcosystemFaultFlags, SystemID.AIEcology)) { UnlockLockedJobBuffers(vault, locked); return false; }
-            locked++;
-            if (!vault.TryLockBuffer(BufferID.ShinobuMacroEcosystemTelemetryRing, SystemID.AIEcology)) { UnlockLockedJobBuffers(vault, locked); return false; }
-            locked++;
-            _jobLocksHeld = true;
+            if (_jobGuardHeld || vault == null || !vault.TryAcquireMutationGuard(JobMutationGuardMask))
+                return false;
+
+            _jobGuardVault = vault;
+            _jobGuardHeld = true;
             return true;
         }
 
         private void UnlockJobBuffers()
         {
-            if (!_jobLocksHeld)
+            if (!_jobGuardHeld)
                 return;
 
-            IDataVault vault = _vault;
+            IDataVault vault = _jobGuardVault ?? _vault;
+            _jobGuardVault = null;
+            _jobGuardHeld = false;
             if (vault != null)
-                UnlockLockedJobBuffers(vault, 9);
-            _jobLocksHeld = false;
-        }
-
-        private static void UnlockLockedJobBuffers(IDataVault vault, int locked)
-        {
-            if (locked >= 9) vault.TryUnlockBuffer(BufferID.ShinobuMacroEcosystemTelemetryRing, SystemID.AIEcology);
-            if (locked >= 8) vault.TryUnlockBuffer(BufferID.ShinobuMacroEcosystemFaultFlags, SystemID.AIEcology);
-            if (locked >= 7) vault.TryUnlockBuffer(BufferID.ShinobuMacroEcosystemCounters, SystemID.AIEcology);
-            if (locked >= 6) vault.TryUnlockBuffer(BufferID.ShinobuMacroEcosystemTuning, SystemID.AIEcology);
-            if (locked >= 5) vault.TryUnlockBuffer(BufferID.ShinobuMacroEcosystemBiomeSpecs, SystemID.AIEcology);
-            if (locked >= 4) vault.TryUnlockBuffer(BufferID.ShinobuMacroEcosystemSectorCoords, SystemID.AIEcology);
-            if (locked >= 3) vault.TryUnlockBuffer(BufferID.ShinobuMacroEcosystemRemainders, SystemID.AIEcology);
-            if (locked >= 2) vault.TryUnlockBuffer(BufferID.ShinobuMacroEcosystemSectorBack, SystemID.AIEcology);
-            if (locked >= 1) vault.TryUnlockBuffer(BufferID.ShinobuMacroEcosystemSectorFront, SystemID.AIEcology);
+                vault.ReleaseMutationGuard(JobMutationGuardMask);
         }
 
         private void TryFinalizeScheduledJobNoWait()
@@ -725,7 +716,7 @@ namespace Hecton8.Ecosystem
             if (!_jobScheduled)
                 return;
 
-            if (!DispatcherJobFence.TryComplete(ref _activeJobHandle, forceComplete: true))
+            if (!ForceCompleteScheduledJobInPostSimulationWindow())
                 return;
 
             FinishCompletedScheduledJob();
@@ -736,15 +727,46 @@ namespace Hecton8.Ecosystem
             long now = Stopwatch.GetTimestamp();
             float micros = ResolveElapsedMicroseconds(_scheduleTicks, now);
 
-            IDataVault vault = _vault;
-            if (vault != null)
+            try
             {
-                ClearSnapshotWriteInFlight(vault);
-                PatchCompletedTelemetry(vault, micros);
+                IDataVault vault = _vault;
+                if (vault != null)
+                {
+                    ClearSnapshotWriteInFlight(vault);
+                    PatchCompletedTelemetry(vault, micros);
+                }
             }
+            finally
+            {
+                _jobScheduled = false;
+                UnlockJobBuffers();
+            }
+        }
 
-            _jobScheduled = false;
-            UnlockJobBuffers();
+        private bool ForceCompleteScheduledJobInPostSimulationWindow()
+        {
+            DispatcherJobFence.BeginPostSimulationSwapWindow();
+            try
+            {
+                return DispatcherJobFence.TryComplete(ref _activeJobHandle, forceComplete: true);
+            }
+            finally
+            {
+                DispatcherJobFence.EndPostSimulationSwapWindow();
+            }
+        }
+
+        private static bool ForceCompleteColdBootstrapInPostSimulationWindow(ref JobHandle handle)
+        {
+            DispatcherJobFence.BeginPostSimulationSwapWindow();
+            try
+            {
+                return DispatcherJobFence.TryComplete(ref handle, forceComplete: true);
+            }
+            finally
+            {
+                DispatcherJobFence.EndPostSimulationSwapWindow();
+            }
         }
 
         private static float ResolveElapsedMicroseconds(long startTicks, long finishTicks)
@@ -760,6 +782,11 @@ namespace Hecton8.Ecosystem
             if (elapsed <= 0.0d)
                 return 0f;
             return elapsed > float.MaxValue ? float.MaxValue : (float)elapsed;
+        }
+
+        private static ulong MutationGuardBit(BufferID bufferId)
+        {
+            return 1UL << ((int)bufferId & 31);
         }
 
         private void ClearSnapshotWriteInFlight(IDataVault vault)

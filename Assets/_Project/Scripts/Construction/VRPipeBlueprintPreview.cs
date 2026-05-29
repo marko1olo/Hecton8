@@ -27,6 +27,10 @@ namespace Hecton8.Construction
         private const BufferID PipeStateBufferId = (BufferID)70946;
         private const BufferID PipeVisualBufferId = (BufferID)70947;
         private const BufferID PipeIndirectArgsBufferId = (BufferID)70948;
+        private const ulong PreviewBuildMutationGuardMask =
+            (1UL << ((int)PipeStateBufferId & 31)) |
+            (1UL << ((int)PipeVisualBufferId & 31)) |
+            (1UL << ((int)PipeIndirectArgsBufferId & 31));
 
         [Header("Preview")]
         [SerializeField] private Material previewMaterial;
@@ -629,44 +633,39 @@ namespace Hecton8.Construction
             if (vault == null)
                 return false;
 
-            int acquiredCount = 0;
-            if (!IsPipeVaultHandle(in _stateHandle, PipeStateBufferId) ||
-                !vault.TryAcquireWriteLock(in _stateHandle, SystemID.Construction, out states))
+            if (!vault.TryAcquireMutationGuard(PreviewBuildMutationGuardMask))
                 return false;
-            acquiredCount = 1;
-            if (!states.IsCreated || states.Length < MaxPreviewInstances)
-            {
-                ReleasePreviewWriteLocks(vault, acquiredCount);
-                return false;
-            }
 
-            if (!IsPipeVaultHandle(in _visualHandle, PipeVisualBufferId) ||
-                !vault.TryAcquireWriteLock(in _visualHandle, SystemID.Construction, out visuals))
+            bool guardTransferred = false;
+            try
             {
-                ReleasePreviewWriteLocks(vault, acquiredCount);
-                return false;
-            }
-            acquiredCount = 2;
-            if (!visuals.IsCreated || visuals.Length < MaxPreviewInstances)
-            {
-                ReleasePreviewWriteLocks(vault, acquiredCount);
-                return false;
-            }
+                if (!IsPipeVaultHandle(in _stateHandle, PipeStateBufferId) ||
+                    !IsPipeVaultHandle(in _visualHandle, PipeVisualBufferId) ||
+                    !IsPipeVaultHandle(in _argsHandle, PipeIndirectArgsBufferId) ||
+                    !vault.TryResolveHandle(in _stateHandle, out states) ||
+                    !vault.TryResolveHandle(in _visualHandle, out visuals) ||
+                    !vault.TryResolveHandle(in _argsHandle, out args) ||
+                    !states.IsCreated ||
+                    states.Length < MaxPreviewInstances ||
+                    !visuals.IsCreated ||
+                    visuals.Length < MaxPreviewInstances ||
+                    !args.IsCreated ||
+                    args.Length < 1)
+                {
+                    states = default;
+                    visuals = default;
+                    args = default;
+                    return false;
+                }
 
-            if (!IsPipeVaultHandle(in _argsHandle, PipeIndirectArgsBufferId) ||
-                !vault.TryAcquireWriteLock(in _argsHandle, SystemID.Construction, out args))
-            {
-                ReleasePreviewWriteLocks(vault, acquiredCount);
-                return false;
+                guardTransferred = true;
+                return true;
             }
-            acquiredCount = 3;
-            if (!args.IsCreated || args.Length < 1)
+            finally
             {
-                ReleasePreviewWriteLocks(vault, acquiredCount);
-                return false;
+                if (!guardTransferred)
+                    vault.ReleaseMutationGuard(PreviewBuildMutationGuardMask);
             }
-
-            return true;
         }
 
         private bool TryReadLockedPreviewBuffers(
@@ -709,12 +708,7 @@ namespace Hecton8.Construction
             if (vault == null || acquiredCount <= 0)
                 return;
 
-            if (acquiredCount >= 3)
-                vault.ReleaseWriteLock(in _argsHandle, SystemID.Construction);
-            if (acquiredCount >= 2)
-                vault.ReleaseWriteLock(in _visualHandle, SystemID.Construction);
-            if (acquiredCount >= 1)
-                vault.ReleaseWriteLock(in _stateHandle, SystemID.Construction);
+            vault.ReleaseMutationGuard(PreviewBuildMutationGuardMask);
         }
 
         private bool TryResolveVaultCold(out IDataVault vault)

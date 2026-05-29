@@ -2,7 +2,9 @@ param(
     [string]$Root = (Split-Path -Parent $PSScriptRoot),
     [string]$Id = 'node.spawn_item',
     [string]$Opcode = 'SpawnItem',
+    [string]$ParametersJson = '{}',
     [string]$Output = 'Generated/graph_node_snippet.json',
+    [switch]$Disabled,
     [switch]$Json
 )
 
@@ -103,6 +105,68 @@ function Read-AllowedGraphOpcodes() {
     return $tokens
 }
 
+function Read-RelaxedParameterScalar([string]$Value) {
+    $text = $Value.Trim()
+    if ($text.Length -ge 2) {
+        if (($text.StartsWith('"') -and $text.EndsWith('"')) -or ($text.StartsWith("'") -and $text.EndsWith("'"))) {
+            return $text.Substring(1, $text.Length - 2)
+        }
+    }
+
+    if ($text -match '^(?i:true|false)$') {
+        return [bool]::Parse($text)
+    }
+    if ($text -match '^(?i:null)$') {
+        return $null
+    }
+
+    $intValue = 0L
+    if ([long]::TryParse($text, [System.Globalization.NumberStyles]::Integer, [System.Globalization.CultureInfo]::InvariantCulture, [ref]$intValue)) {
+        return $intValue
+    }
+
+    $doubleValue = 0.0
+    if ([double]::TryParse($text, [System.Globalization.NumberStyles]::Float, [System.Globalization.CultureInfo]::InvariantCulture, [ref]$doubleValue)) {
+        return $doubleValue
+    }
+
+    return $text
+}
+
+function Read-RelaxedParametersObject([string]$Value, [string]$JsonErrorMessage) {
+    $text = $Value.Trim()
+    if (-not ($text.StartsWith('{') -and $text.EndsWith('}'))) {
+        Fail ('ParametersJson is invalid JSON: ' + $JsonErrorMessage)
+    }
+
+    $inner = $text.Substring(1, $text.Length - 2).Trim()
+    $parameterMap = [ordered]@{}
+    if ([string]::IsNullOrWhiteSpace($inner)) {
+        return [pscustomobject]$parameterMap
+    }
+
+    $entries = @($inner -split ',')
+    if ($entries.Count -gt 64) {
+        Fail 'ParametersJson must not exceed 64 entries.'
+    }
+
+    foreach ($entry in $entries) {
+        $parts = @($entry -split ':', 2)
+        if ($parts.Count -ne 2) {
+            Fail ('ParametersJson is invalid JSON: ' + $JsonErrorMessage)
+        }
+
+        $key = $parts[0].Trim().Trim('"').Trim("'")
+        if ([string]::IsNullOrWhiteSpace($key) -or $key -notmatch '^[A-Za-z0-9][A-Za-z0-9_.-]*$') {
+            Fail ('ParametersJson contains invalid key: ' + $key)
+        }
+
+        $parameterMap[$key] = Read-RelaxedParameterScalar $parts[1]
+    }
+
+    return [pscustomobject]$parameterMap
+}
+
 function Resolve-Opcode([string]$Value, [hashtable]$AllowedOpcodes) {
     if ([string]::IsNullOrWhiteSpace($Value)) {
         Fail 'Opcode is required.'
@@ -119,6 +183,38 @@ function Resolve-Opcode([string]$Value, [hashtable]$AllowedOpcodes) {
     }
 
     return [string]$AllowedOpcodes[$candidate]
+}
+
+function Read-ParametersJson([string]$Value) {
+    $source = $Value
+    if ([string]::IsNullOrWhiteSpace($source)) {
+        $source = '{}'
+    }
+
+    try {
+        $parsed = $source | ConvertFrom-Json
+    } catch {
+        $parsed = Read-RelaxedParametersObject $source $_.Exception.Message
+    }
+
+    if ($null -eq $parsed -or $parsed -isnot [System.Management.Automation.PSCustomObject]) {
+        Fail 'ParametersJson must be a JSON object.'
+    }
+
+    $entries = @($parsed.PSObject.Properties)
+    if ($entries.Count -gt 64) {
+        Fail 'ParametersJson must not exceed 64 entries.'
+    }
+
+    $parameterMap = [ordered]@{}
+    foreach ($entry in $entries) {
+        if ([string]::IsNullOrWhiteSpace([string]$entry.Name) -or [string]$entry.Name -notmatch '^[A-Za-z0-9][A-Za-z0-9_.-]*$') {
+            Fail ('ParametersJson contains invalid key: ' + [string]$entry.Name)
+        }
+        $parameterMap[$entry.Name] = $entry.Value
+    }
+
+    return [pscustomobject]$parameterMap
 }
 
 function Resolve-GeneratedOutputPath([string]$RelativePath) {
@@ -156,15 +252,17 @@ $Root = (Resolve-Path -LiteralPath $Root).Path
 $nodeId = Validate-NodeId $Id
 $allowedOpcodes = Read-AllowedGraphOpcodes
 $opcodeToken = Resolve-Opcode $Opcode $allowedOpcodes
+$parameters = Read-ParametersJson $ParametersJson
 $outputPath = Resolve-GeneratedOutputPath $Output
 
 $node = [pscustomobject][ordered]@{
     Id = $nodeId
     Opcode = $opcodeToken
-    Enabled = $true
-    Parameters = [pscustomobject][ordered]@{}
+    Enabled = (-not $Disabled)
+    Parameters = $parameters
     Notes = 'Apply with h8mod.ps1 -Action apply-node-snippet, or copy this object into Graphs/main.h8graph.json Nodes[] and run h8mod.ps1 -Action validate.'
 }
+$parameterCount = @($parameters.PSObject.Properties).Count
 
 $utf8NoBom = New-Object System.Text.UTF8Encoding $false
 $nodeJson = ($node | ConvertTo-Json -Depth 8)
@@ -185,4 +283,6 @@ Write-Output 'PASS HECTON-8 graph node snippet written'
 Write-Output ('Output: ' + $outputPath.Relative)
 Write-Output ('Node Id: ' + $nodeId)
 Write-Output ('Opcode: ' + $opcodeToken)
+Write-Output ('Enabled: ' + [string](-not $Disabled))
+Write-Output ('Parameter Count: ' + [string]$parameterCount)
 Write-Output 'Next: h8mod.ps1 -Action apply-node-snippet. Manual fallback: copy the JSON object into Graphs/main.h8graph.json Nodes[], then run h8mod.ps1 -Action validate.'

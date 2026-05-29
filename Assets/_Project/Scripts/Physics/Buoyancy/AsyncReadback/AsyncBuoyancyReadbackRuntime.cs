@@ -158,6 +158,7 @@ namespace Hecton8.Physics
         private int _lastLatencyFrames;
         private int _droppedRequests;
         private int _failedRequests;
+        private bool _coldSupportsComputeShaders;
         private bool _coldBootCompleted;
         private bool _registeredDispatcher;
         private bool _mockPathThisFrame;
@@ -315,6 +316,7 @@ namespace Hecton8.Physics
             _activeRuntimeInstance = this;
             TryAutoAssignComputeShaderInEditor();
 #endif
+            CacheGraphicsCapabilitySnapshotCold();
             _dataVault = GlobalRegistry.DataVault;
             TryRegisterHotSwapListener();
             TryRegisterOriginShiftListener();
@@ -328,6 +330,11 @@ namespace Hecton8.Physics
 #endif
             }
             TryRegisterDispatcherSystems();
+        }
+
+        private void CacheGraphicsCapabilitySnapshotCold()
+        {
+            _coldSupportsComputeShaders = SystemInfo.supportsComputeShaders;
         }
 
         private void OnDisable()
@@ -996,7 +1003,7 @@ namespace Hecton8.Physics
             _kernelResolved = true;
             _kernelIndex = -1;
             _threadGroupSize = 0;
-            if (waveHeightSamplerCompute == null || !HardwareTierDetector.AllowHighResourceComputeShaders)
+            if (waveHeightSamplerCompute == null || !_coldSupportsComputeShaders)
                 return false;
 
             if (!waveHeightSamplerCompute.HasKernel(WaveHeightSamplerKernelName))

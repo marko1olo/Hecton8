@@ -11,11 +11,12 @@ namespace Hecton8.Optimization
     {
         public const int BenchmarkCapsuleCount = 1000;
         public const int BenchmarkStepCount = 10;
-        public const double LowTierMillisecondsPerStep = 5.0d;
         public const double MaxBenchmarkWallMilliseconds = 500.0d;
-        public const int LowTierGraphicsMemoryMegabytes = 3000;
-        public const int LowTierProcessorCount = 6;
+        public const int SurvivalGraphicsMemoryMegabytes = 3000;
+        public const int SurvivalProcessorCount = 6;
 
+        private const double FullPhysicsQualityMillisecondsPerStep = 2.0d;
+        private const double SurvivalPhysicsQualityMillisecondsPerStep = 8.0d;
         private const float FixedStepSeconds = 0.02f;
         private const int GridColumns = 40;
         private const float GridSpacingMeters = 1.75f;
@@ -32,13 +33,13 @@ namespace Hecton8.Optimization
                 int systemMemoryMegabytes,
                 int processorCount,
                 int hardwareScore,
-                bool forceLowTier)
+                float startupSurvivalPressure01)
             {
                 GraphicsMemoryMegabytes = graphicsMemoryMegabytes;
                 SystemMemoryMegabytes = systemMemoryMegabytes;
                 ProcessorCount = processorCount;
                 HardwareScore = hardwareScore;
-                ForceLowTier = forceLowTier ? (byte)1 : (byte)0;
+                StartupSurvivalPressureByte = (byte)(Clamp01(startupSurvivalPressure01) * 255.0f + 0.5f);
             }
 
             /// <summary>Detected graphics memory in megabytes.</summary>
@@ -53,8 +54,8 @@ namespace Hecton8.Optimization
             /// <summary>Deterministic 0-100 BIOS hardware score.</summary>
             public readonly int HardwareScore;
 
-            /// <summary>1 when the BIOS benchmark requests a conservative startup tier.</summary>
-            public readonly byte ForceLowTier;
+            /// <summary>0-255 continuous survival pressure from immutable BIOS hardware facts.</summary>
+            public readonly byte StartupSurvivalPressureByte;
         }
 
         /// <summary>
@@ -66,16 +67,14 @@ namespace Hecton8.Optimization
             int systemMemoryMb = SystemInfo.systemMemorySize > 0 ? SystemInfo.systemMemorySize : 0;
             int processorCount = SystemInfo.processorCount > 0 ? SystemInfo.processorCount : 1;
             int hardwareScore = ResolveHardwareScore(graphicsMemoryMb, systemMemoryMb, processorCount);
-            bool forceLowTier =
-                (graphicsMemoryMb > 0 && graphicsMemoryMb < LowTierGraphicsMemoryMegabytes) ||
-                processorCount < LowTierProcessorCount;
+            float startupSurvivalPressure01 = ResolveSystemInfoSurvivalPressure01(graphicsMemoryMb, processorCount);
 
             return new HardwareProfilerSnapshot(
                 graphicsMemoryMb,
                 systemMemoryMb,
                 processorCount,
                 hardwareScore,
-                forceLowTier);
+                startupSurvivalPressure01);
         }
 
         /// <summary>
@@ -180,12 +179,18 @@ namespace Hecton8.Optimization
         }
 
         /// <summary>
-        /// Returns the benchmark-forced scalability tier before higher-tier expansion.
+        /// Returns the continuous BIOS startup quality weight after hardware facts and benchmark pressure.
+        /// The legacy tier label is derived from this scalar by bootstrap code only.
         /// </summary>
-        public static bool ShouldForceLowTier(double millisecondsPerStep, int graphicsMemoryMegabytes)
+        public static float ResolveStartupQualityWeight01(
+            in HardwareProfilerSnapshot snapshot,
+            double millisecondsPerStep)
         {
-            return (graphicsMemoryMegabytes > 0 & graphicsMemoryMegabytes < LowTierGraphicsMemoryMegabytes) |
-                (millisecondsPerStep > LowTierMillisecondsPerStep);
+            float scoreWeight01 = Clamp01(snapshot.HardwareScore * 0.01f);
+            float physicsWeight01 = ResolvePhysicsBenchmarkQualityWeight01(millisecondsPerStep);
+            float systemInfoWeight01 = 1.0f - (snapshot.StartupSurvivalPressureByte * (1.0f / 255.0f));
+            float hardwareWeight01 = scoreWeight01 < systemInfoWeight01 ? scoreWeight01 : systemInfoWeight01;
+            return Clamp01(hardwareWeight01 < physicsWeight01 ? hardwareWeight01 : physicsWeight01);
         }
 
         private static int ResolveHardwareScore(int graphicsMemoryMegabytes, int systemMemoryMegabytes, int processorCount)
@@ -196,7 +201,7 @@ namespace Hecton8.Optimization
                 score += 50;
             else if (graphicsMemoryMegabytes >= 4200)
                 score += 35;
-            else if (graphicsMemoryMegabytes >= LowTierGraphicsMemoryMegabytes)
+            else if (graphicsMemoryMegabytes >= SurvivalGraphicsMemoryMegabytes)
                 score += 25;
             else if (graphicsMemoryMegabytes >= 1800)
                 score += 15;
@@ -207,7 +212,7 @@ namespace Hecton8.Optimization
                 score += 30;
             else if (processorCount >= 8)
                 score += 22;
-            else if (processorCount >= LowTierProcessorCount)
+            else if (processorCount >= SurvivalProcessorCount)
                 score += 16;
             else
                 score += 8;
@@ -224,12 +229,48 @@ namespace Hecton8.Optimization
             return score > 100 ? 100 : score;
         }
 
+        private static float ResolveSystemInfoSurvivalPressure01(int graphicsMemoryMegabytes, int processorCount)
+        {
+            float graphicsPressure01 = graphicsMemoryMegabytes <= 0
+                ? 0.0f
+                : 1.0f - Clamp01(graphicsMemoryMegabytes / (double)SurvivalGraphicsMemoryMegabytes);
+            float processorPressure01 = 1.0f - Clamp01(processorCount / (double)SurvivalProcessorCount);
+            return graphicsPressure01 > processorPressure01 ? graphicsPressure01 : processorPressure01;
+        }
+
         private static void DestroyBenchmarkObject(Object target)
         {
             if (Application.isPlaying)
                 Object.Destroy(target);
             else
                 Object.DestroyImmediate(target);
+        }
+
+        private static float ResolvePhysicsBenchmarkQualityWeight01(double millisecondsPerStep)
+        {
+            if (double.IsNaN(millisecondsPerStep) ||
+                double.IsInfinity(millisecondsPerStep) ||
+                millisecondsPerStep <= 0.0d)
+            {
+                return 1.0f;
+            }
+
+            double t = (millisecondsPerStep - FullPhysicsQualityMillisecondsPerStep) /
+                       (SurvivalPhysicsQualityMillisecondsPerStep - FullPhysicsQualityMillisecondsPerStep);
+            t = Clamp01(t);
+            double smooth = t * t * (3.0d - (2.0d * t));
+            return Clamp01((float)(1.0d - smooth));
+        }
+
+        private static float Clamp01(double value)
+        {
+            if (double.IsNaN(value) || double.IsInfinity(value))
+                return 0.0f;
+
+            if (value <= 0.0d)
+                return 0.0f;
+
+            return value >= 1.0d ? 1.0f : (float)value;
         }
 
         private static double ResolveStepReciprocal(int executedSteps)

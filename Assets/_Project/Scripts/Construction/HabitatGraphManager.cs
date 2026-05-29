@@ -354,8 +354,6 @@ namespace Hecton8.Construction
         private VaultGenerationHandle<byte> _roomFlagsHandle;
         private JobHandle _floodPropagationHandle;
         private bool _floodPropagationPending;
-        private bool _floodPropagationSummaryWriteLockHeld;
-        private IDataVault _floodPropagationSummaryWriteLockVault;
         private bool _floodPropagationRoomWriteLockHeld;
         private IDataVault _floodPropagationRoomWriteLockVault;
         private bool _floodPropagationGraphWriteLockHeld;
@@ -421,6 +419,7 @@ namespace Hecton8.Construction
         private int _pendingModuleStressCount;
         private float _pendingModuleStressPeak01;
         private float _pendingModuleStressQualityWeight;
+        private bool _pendingHatchMeshVisualSyncDirty;
         private IAtmosphereReadModel _atmosphereReadModel;
         private IAmbientCurrentReadModel _ambientCurrentReadModel;
         private IAudioService _audioService;
@@ -735,7 +734,6 @@ namespace Hecton8.Construction
                 PublishEmergencyLockdownState(ref graphViews);
                 SyncFloodRoomStateSnapshot();
                 PublishDegradationState(ref graphViews);
-                PublishSiegeTargetSnapshot(ref graphViews);
                 PublishGraphKernel(ref graphViews);
             }
             finally
@@ -743,6 +741,7 @@ namespace Hecton8.Construction
                 ReleaseGraphWriteLocks(graphVault);
             }
 
+            PublishSiegeTargetSnapshot();
             PublishVisualLinks();
             BaseDegradationSystem.EndRuptureSync();
         }
@@ -785,10 +784,32 @@ namespace Hecton8.Construction
 
         internal void FlushVisualSync()
         {
+            FlushHatchMeshStateVisualSync();
             FlushHabitatVibrationShader();
             FlushBaseEmergencyShader();
             FlushAnalyticalStressShader();
             FlushModuleStressShader();
+        }
+
+        private void FlushHatchMeshStateVisualSync()
+        {
+            if (!_pendingHatchMeshVisualSyncDirty)
+                return;
+
+            _pendingHatchMeshVisualSyncDirty = false;
+            int moduleCount = _moduleBuffer.Count;
+            for (int moduleIndex = 0; moduleIndex < moduleCount; moduleIndex++)
+            {
+                ModuleRecord module = _moduleBuffer[moduleIndex];
+                if (!module.PendingHatchAdjacentFlagsDirty)
+                    continue;
+
+                module.PendingHatchAdjacentFlagsDirty = false;
+                _moduleBuffer[moduleIndex] = module;
+                TransitionHatchMeshState hatchMeshState = module.HatchMeshState;
+                if (hatchMeshState != null)
+                    hatchMeshState.ApplyAdjacentFlags(module.PendingHatchAdjacentFlags);
+            }
         }
 
         internal float AnalyticalStress => _analyticalStress;
@@ -2357,8 +2378,6 @@ namespace Hecton8.Construction
                 _floodPropagationPending = true;
                 _floodPropagationGuardHeld = true;
                 _floodPropagationGuardVault = floodPropagationVault;
-                _floodPropagationSummaryWriteLockHeld = false;
-                _floodPropagationSummaryWriteLockVault = null;
                 _floodPropagationRoomWriteLockHeld = false;
                 _floodPropagationRoomWriteLockVault = null;
                 _floodPropagationGraphWriteLockHeld = false;
@@ -5141,15 +5160,14 @@ namespace Hecton8.Construction
                 }
 
                 baseModule.SetEmergencyBulkheadLockdown(shouldLock, blockManualOverride);
-                TransitionHatchMeshState hatchMeshState = module.HatchMeshState;
-                if (hatchMeshState != null)
-                {
-                    hatchMeshState.ApplyAdjacentFlags(TransitionHatchMeshState.BuildAdjacentFlags(
+                QueueHatchMeshStateVisualSync(
+                    nodeIndex,
+                    ref module,
+                    TransitionHatchMeshState.BuildAdjacentFlags(
                         hasAdjacent,
                         adjacentFloodedForHatch,
                         adjacentRupturedForHatch,
                         shouldLock));
-                }
 
                 LogisticsNetworkGraph.LogisticsNode node = graph.Nodes[nodeIndex];
                 bool anchorReachable = graph.AnchorReachability.IsCreated &&
@@ -5275,11 +5293,11 @@ namespace Hecton8.Construction
 
         private void PublishSiegeTargetSnapshot()
         {
-            if (!TryAcquireGraphWriteBuffers(
-                    _nodeCount,
-                    math.max(1, _edgeCount),
-                    out HabitatGraphWriteViews graph,
-                    out IDataVault graphVault))
+            if (!TryReadHabitatVaultBuffer(
+                    HabitatGraphNodesBufferId,
+                    math.max(1, _nodeCount),
+                    in _nodesHandle,
+                    out NativeArray<LogisticsNetworkGraph.LogisticsNode>.ReadOnly nodes))
             {
                 _siegeTargetCount = 0;
                 if (ReferenceEquals(s_latestSiegeTargetOwner, this))
@@ -5291,17 +5309,10 @@ namespace Hecton8.Construction
                 return;
             }
 
-            try
-            {
-                PublishSiegeTargetSnapshot(ref graph);
-            }
-            finally
-            {
-                ReleaseGraphWriteLocks(graphVault);
-            }
+            PublishSiegeTargetSnapshot(nodes);
         }
 
-        private void PublishSiegeTargetSnapshot(ref HabitatGraphWriteViews graph)
+        private void PublishSiegeTargetSnapshot(NativeArray<LogisticsNetworkGraph.LogisticsNode>.ReadOnly nodes)
         {
             if (!EnsureSiegeTargetsHandle() ||
                 !TryAcquireHabitatVaultWriteBuffer(
@@ -5332,8 +5343,8 @@ namespace Hecton8.Construction
                     if (baseModule == null || !baseModule.isActiveAndEnabled)
                         continue;
 
-                    LogisticsNodeFlags nodeFlags = graph.Nodes.IsCreated && nodeIndex < graph.Nodes.Length
-                        ? graph.Nodes[nodeIndex].Flags
+                    LogisticsNodeFlags nodeFlags = nodes.IsCreated && nodeIndex < nodes.Length
+                        ? nodes[nodeIndex].Flags
                         : LogisticsNodeFlags.None;
                     float integrity01 = math.saturate(baseModule.IntegrityStateNormalized);
                     HabitatSiegeTargetFlags siegeFlags = ResolveSiegeTargetFlags(module, baseModule, nodeFlags, integrity01);
@@ -5465,7 +5476,6 @@ namespace Hecton8.Construction
                 PublishComponentPowerState(ref graph);
                 PublishEmergencyLockdownState(ref graph);
                 PublishDegradationState(ref graph);
-                PublishSiegeTargetSnapshot(ref graph);
                 PublishGraphKernel(ref graph);
             }
             finally
@@ -5473,6 +5483,7 @@ namespace Hecton8.Construction
                 ReleaseGraphWriteLocks(vault);
             }
 
+            PublishSiegeTargetSnapshot();
             ClearVisualLinks();
             PublishVisualLinks();
         }
@@ -5964,7 +5975,6 @@ namespace Hecton8.Construction
             ReleaseHabitatVaultHandle(ref _anchorTraversalQueueHandle);
             ReleaseHabitatVaultHandle(ref _edgeFlagsHandle);
             ReleaseHabitatVaultHandle(ref _floodBlackBoxHandle);
-            ReleaseFloodPropagationSummaryWriteLock();
             ReleaseFloodPropagationRoomWriteLocks();
             ReleaseHabitatVaultHandle(ref _floodPropagationSummaryHandle);
             ReleaseHabitatVaultHandle(ref _siegeTargetsHandle);
@@ -6152,6 +6162,23 @@ namespace Hecton8.Construction
                     vault = null;
                 }
             }
+        }
+
+        private void QueueHatchMeshStateVisualSync(int moduleIndex, ref ModuleRecord module, byte adjacentFlags)
+        {
+            if (module.HatchMeshState == null)
+                return;
+
+            if (module.PendingHatchAdjacentFlagsDirty &&
+                module.PendingHatchAdjacentFlags == adjacentFlags)
+            {
+                return;
+            }
+
+            module.PendingHatchAdjacentFlags = adjacentFlags;
+            module.PendingHatchAdjacentFlagsDirty = true;
+            _moduleBuffer[moduleIndex] = module;
+            _pendingHatchMeshVisualSyncDirty = true;
         }
 
         private bool TryAcquireFloodGraphJobBuffers(
@@ -6445,19 +6472,6 @@ namespace Hecton8.Construction
                 vault.ReleaseMutationGuard(HabitatModuleStressMutationGuardMask);
         }
 
-        private void ReleaseFloodPropagationSummaryWriteLock()
-        {
-            if (!_floodPropagationSummaryWriteLockHeld)
-                return;
-
-            IDataVault vault = _floodPropagationSummaryWriteLockVault;
-            if (vault != null)
-                vault.ReleaseWriteLock(in _floodPropagationSummaryHandle, SystemID.Construction);
-
-            _floodPropagationSummaryWriteLockHeld = false;
-            _floodPropagationSummaryWriteLockVault = null;
-        }
-
         private IDataVault ResolveHabitatDataVaultForColdPath()
         {
             return _dataVault;
@@ -6496,17 +6510,23 @@ namespace Hecton8.Construction
                 return false;
 
             bool locked = vault.TryAcquireWriteLock(in handle, SystemID.Construction, out buffer);
-            if (!locked ||
-                !buffer.IsCreated ||
-                buffer.Length < requiredLength)
+            bool acquired = false;
+            try
             {
-                if (locked)
-                    vault.ReleaseWriteLock(in handle, SystemID.Construction);
-                buffer = default;
-                return false;
+                acquired = locked &&
+                           buffer.IsCreated &&
+                           buffer.Length >= requiredLength;
+                return acquired;
             }
-
-            return true;
+            finally
+            {
+                if (!acquired)
+                {
+                    if (locked)
+                        vault.ReleaseWriteLock(in handle, SystemID.Construction);
+                    buffer = default;
+                }
+            }
         }
 
         private static bool TryOpenHabitatVaultBuffer<T>(
@@ -6686,6 +6706,8 @@ namespace Hecton8.Construction
             public uint NodeId;
             public bool IsAnchorNode;
             public bool IsEmergencyAirlock;
+            public byte PendingHatchAdjacentFlags;
+            public bool PendingHatchAdjacentFlagsDirty;
         }
 
         private struct EdgeRecord

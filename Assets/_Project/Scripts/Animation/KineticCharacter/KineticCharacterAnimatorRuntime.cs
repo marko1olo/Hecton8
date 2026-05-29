@@ -17,25 +17,29 @@ namespace Hecton8.Animation.KineticCharacter
     [AddComponentMenu("Hecton8/Animation/Kinetic Character Matrix Runtime")]
     public sealed class KineticCharacterAnimatorRuntime : MonoBehaviour, IUpdatable, ILateFrameTickable, IGlobalRegistryHotSwapListener, IKineticCharacterPresentationSink, IDisposable
     {
-        private const int LockRigs = 1 << 0;
-        private const int LockInputs = 1 << 1;
-        private const int LockParents = 1 << 2;
-        private const int LockBindPoses = 1 << 3;
-        private const int LockBoneOutputs = 1 << 4;
-        private const int LockMatrices = 1 << 5;
-        private const int LockIkTargets = 1 << 6;
-        private const int LockStats = 1 << 7;
-        private const int LockTelemetry = 1 << 8;
-        private const int LockCursor = 1 << 9;
-        private const int LockTuning = 1 << 10;
-        private const int LockSdf = 1 << 11;
-        private const int LockPlayerHandIkStates = 1 << 12;
-
         private static readonly int KineticBoneMatricesId = Shader.PropertyToID("_H8KineticCharacterBoneMatrices");
         private static readonly int KineticBoneMatrixCountId = Shader.PropertyToID("_H8KineticCharacterBoneMatrixCount");
         private static readonly int KineticActiveCharactersId = Shader.PropertyToID("_H8KineticCharacterActiveCharacters");
         private static readonly int KineticQualityId = Shader.PropertyToID("_H8KineticCharacterQuality");
         private static readonly int KineticGpuSkinningId = Shader.PropertyToID("_H8KineticCharacterGpuSkinning");
+        private static readonly ulong SolverMutationGuardRequiredMask =
+            KineticMutationGuardBit(KineticCharacterAnimatorBufferIds.Rigs) |
+            KineticMutationGuardBit(KineticCharacterAnimatorBufferIds.FrameInputs) |
+            KineticMutationGuardBit(KineticCharacterAnimatorBufferIds.ParentIndices) |
+            KineticMutationGuardBit(KineticCharacterAnimatorBufferIds.BindPoses) |
+            KineticMutationGuardBit(KineticCharacterAnimatorBufferIds.BoneOutputs) |
+            KineticMutationGuardBit(KineticCharacterAnimatorBufferIds.BoneMatrices) |
+            KineticMutationGuardBit(KineticCharacterAnimatorBufferIds.IkTargets) |
+            KineticMutationGuardBit(KineticCharacterAnimatorBufferIds.FrameStats) |
+            KineticMutationGuardBit(KineticCharacterAnimatorBufferIds.TelemetryRing) |
+            KineticMutationGuardBit(KineticCharacterAnimatorBufferIds.TelemetryCursor) |
+            KineticMutationGuardBit(KineticCharacterAnimatorBufferIds.Tuning);
+        private static readonly ulong SolverSdfMutationGuardMask =
+            KineticMutationGuardBit(BufferID.VoxelSdfTexture3D);
+        private static readonly ulong SolverPlayerHandIkMutationGuardMask =
+            KineticMutationGuardBit(BufferID.PlayerHandIkPublishedStates);
+        private static readonly ulong SolverPlayerStateReadGuardMask =
+            KineticMutationGuardBit(BufferID.PlayerKinematicState);
 
         [SerializeField, Range(KineticCharacterAnimatorConstants.EmergencyMockBoneCount, KineticCharacterAnimatorConstants.DefaultBoneCapacity)]
         private int _boneCapacity = KineticCharacterAnimatorConstants.DefaultBoneCapacity;
@@ -89,7 +93,8 @@ namespace Hecton8.Animation.KineticCharacter
         private int _uploadedMatrixCount;
         private int _activeCharacterCount;
         private int _uploadedCharacterCount;
-        private int _lockedBuffers;
+        private IDataVault _solverMutationGuardVault;
+        private ulong _solverMutationGuardMask;
         private float _lastQuality = 1f;
         private float _uploadedQuality = -1f;
         private bool _solverScheduled;
@@ -132,8 +137,17 @@ namespace Hecton8.Animation.KineticCharacter
         public bool TryResolveTuningForEditor(out NativeArray<KineticCharacterTuningDTO>.ReadOnly tuning)
         {
             tuning = default;
-            if (!TryResolveTuningMutable(out NativeArray<KineticCharacterTuningDTO> mutableTuning))
+            IDataVault vault = CacheDataVaultCold();
+            if (vault == null ||
+                !TryResolveOwnedVaultBuffer(
+                    vault,
+                    KineticCharacterAnimatorBufferIds.Tuning,
+                    in _tuningHandle,
+                    KineticCharacterAnimatorConstants.TuningCapacity,
+                    out NativeArray<KineticCharacterTuningDTO> mutableTuning))
+            {
                 return false;
+            }
 
             tuning = mutableTuning.AsReadOnly();
             return true;
@@ -141,14 +155,14 @@ namespace Hecton8.Animation.KineticCharacter
 
         public bool TryApplyEditorTuning(in KineticCharacterTuningDTO tuning)
         {
-            if (!TryResolveTuningMutable(out NativeArray<KineticCharacterTuningDTO> mutableTuning))
+            if (!OpenOrAcquireTuningMutableForOwnerRoute(out NativeArray<KineticCharacterTuningDTO> mutableTuning))
                 return false;
 
             mutableTuning[0] = KineticCharacterSanitizer.SanitizeTuning(tuning);
             return true;
         }
 
-        private bool TryResolveTuningMutable(out NativeArray<KineticCharacterTuningDTO> tuning)
+        private bool OpenOrAcquireTuningMutableForOwnerRoute(out NativeArray<KineticCharacterTuningDTO> tuning)
         {
             tuning = default;
             IDataVault vault = CacheDataVaultCold();
@@ -156,7 +170,7 @@ namespace Hecton8.Animation.KineticCharacter
                 return false;
 
             if (!IsOwnedVaultHandle(in _tuningHandle, KineticCharacterAnimatorBufferIds.Tuning))
-                EnsureVaultBuffers();
+                OpenOrAcquireVaultBuffersForOwnerRoute();
 
             return TryResolveOwnedVaultBuffer(
                 vault,
@@ -193,7 +207,7 @@ namespace Hecton8.Animation.KineticCharacter
 #if UNITY_EDITOR
         public bool TryApplyCsvProfile(string csvText)
         {
-            if (string.IsNullOrEmpty(csvText) || !TryResolveTuningMutable(out NativeArray<KineticCharacterTuningDTO> tuning))
+            if (string.IsNullOrEmpty(csvText) || !OpenOrAcquireTuningMutableForOwnerRoute(out NativeArray<KineticCharacterTuningDTO> tuning))
                 return false;
 
             IDataVault vault = CacheDataVaultCold();
@@ -219,7 +233,7 @@ namespace Hecton8.Animation.KineticCharacter
 
         public bool TryApplyCsvProfileBytes(ReadOnlySpan<byte> csvBytes)
         {
-            if (csvBytes.Length <= 0 || !TryResolveTuningMutable(out NativeArray<KineticCharacterTuningDTO> tuning))
+            if (csvBytes.Length <= 0 || !OpenOrAcquireTuningMutableForOwnerRoute(out NativeArray<KineticCharacterTuningDTO> tuning))
                 return false;
 
             IDataVault vault = CacheDataVaultCold();
@@ -246,7 +260,7 @@ namespace Hecton8.Animation.KineticCharacter
         public bool TryApplyCsvProfileFromVaultScratch(int byteCount)
         {
             IDataVault vault = CacheDataVaultCold();
-            if (vault == null || !EnsureVaultBuffers())
+            if (vault == null || !OpenOrAcquireVaultBuffersForOwnerRoute())
                 return false;
 
             if (!TryResolveOwnedVaultBuffer(vault, KineticCharacterAnimatorBufferIds.CsvScratch, in _csvScratchHandle, 1, out NativeArray<byte> scratch) || byteCount <= 0)
@@ -314,7 +328,7 @@ namespace Hecton8.Animation.KineticCharacter
                 _activeRuntimeInstance = this;
 
             RefreshColdDependencies();
-            if (EnsureVaultBuffers())
+            if (OpenOrAcquireVaultBuffersForOwnerRoute())
                 EnsureGraphicsBuffers();
             if (_seedEmergencyMockRig)
                 GenerateEmergencyMockRig();
@@ -327,7 +341,7 @@ namespace Hecton8.Animation.KineticCharacter
 
             CompletePendingSolverForTeardown();
             RefreshColdDependencies();
-            if (EnsureVaultBuffers())
+            if (OpenOrAcquireVaultBuffersForOwnerRoute())
                 EnsureGraphicsBuffers();
             if (_seedEmergencyMockRig)
                 GenerateEmergencyMockRig();
@@ -358,7 +372,7 @@ namespace Hecton8.Animation.KineticCharacter
 
             TryUnregister();
             CompletePendingSolverForTeardown();
-            UnlockJobBuffers();
+            ReleaseSolverMutationGuard();
             ClearGpuSkinningBinding();
             ReleaseVaultHandles();
             ReleaseGraphicsBuffers();
@@ -377,7 +391,7 @@ namespace Hecton8.Animation.KineticCharacter
                 return;
 
             IDataVault vault = _dataVault;
-            if (vault == null || !EnsureVaultBuffers())
+            if (vault == null)
                 return;
 
             _dataVault = vault;
@@ -386,112 +400,140 @@ namespace Hecton8.Animation.KineticCharacter
             float quality = ResolveGlobalQualityWeight(vault);
             _lastQuality = quality;
 
-            if (!TryResolveRuntimeBuffers(
-                    vault,
-                    out NativeArray<KineticCharacterRigDTO> rigs,
-                    out NativeArray<KineticCharacterFrameInputDTO> inputs,
-                    out NativeArray<int> parents,
-                    out NativeArray<float4x4> bindPoses,
-                    out NativeArray<ProceduralBoneDTO> boneOutputs,
-                    out NativeArray<float4x4> matrices,
-                    out NativeArray<ProceduralIKTargetDTO> ikTargets,
-                    out NativeArray<KineticCharacterFrameStatsDTO> stats,
-                    out NativeArray<KineticAnimationTelemetryEntry> telemetry,
-                    out NativeArray<int> cursor,
-                    out NativeArray<KineticCharacterTuningDTO> tuning))
-            {
-                return;
-            }
-
-            bool hasPlayerState = WriteFrameInput(vault, inputs, dt, quality);
-            bool includeSdf = TryResolveExternalVaultBuffer(vault, BufferID.VoxelSdfTexture3D, 1, out NativeArray<byte> sdf);
+            bool includePlayerState = TryResolveExternalVaultBuffer(
+                vault,
+                BufferID.PlayerKinematicState,
+                1,
+                out NativeArray<LockstepPlayerKinematicState> _);
+            bool includeSdf = TryResolveExternalVaultBuffer(vault, BufferID.VoxelSdfTexture3D, 1, out NativeArray<byte> _);
             bool includePlayerHandIk = TryResolveExternalVaultBuffer(
                 vault,
                 BufferID.PlayerHandIkPublishedStates,
                 PlayerHandIkContract.HandCount,
-                out NativeArray<IkHandStateDTO> playerHandIkStates);
-            if (!TryLockJobBuffers(vault, ref includeSdf, ref includePlayerHandIk))
+                out NativeArray<IkHandStateDTO> _);
+            if (!TryAcquireSolverMutationGuard(vault, ref includePlayerState, ref includeSdf, ref includePlayerHandIk))
                 return;
 
-            if (!includeSdf)
-                sdf = default;
-            if (!includePlayerHandIk)
-                playerHandIkStates = default;
-
-            JobHandle dependency = default;
-            if (!hasPlayerState)
+            bool scheduled = false;
+            try
             {
-                dependency = new MockCharacterKinematicsJob
+                if (!TryResolveRuntimeBuffers(
+                        vault,
+                        out NativeArray<KineticCharacterRigDTO> rigs,
+                        out NativeArray<KineticCharacterFrameInputDTO> inputs,
+                        out NativeArray<int> parents,
+                        out NativeArray<float4x4> bindPoses,
+                        out NativeArray<ProceduralBoneDTO> boneOutputs,
+                        out NativeArray<float4x4> matrices,
+                        out NativeArray<ProceduralIKTargetDTO> ikTargets,
+                        out NativeArray<KineticCharacterFrameStatsDTO> stats,
+                        out NativeArray<KineticAnimationTelemetryEntry> telemetry,
+                        out NativeArray<int> cursor,
+                        out NativeArray<KineticCharacterTuningDTO> tuning))
+                {
+                    return;
+                }
+
+                bool hasPlayerState = WriteFrameInput(vault, inputs, includePlayerState, dt, quality);
+                NativeArray<byte> sdf = default;
+                NativeArray<IkHandStateDTO> playerHandIkStates = default;
+                if (includeSdf &&
+                    !TryResolveExternalVaultBuffer(vault, BufferID.VoxelSdfTexture3D, 1, out sdf))
+                {
+                    includeSdf = false;
+                }
+
+                if (includePlayerHandIk &&
+                    !TryResolveExternalVaultBuffer(
+                        vault,
+                        BufferID.PlayerHandIkPublishedStates,
+                        PlayerHandIkContract.HandCount,
+                        out playerHandIkStates))
+                {
+                    includePlayerHandIk = false;
+                }
+
+                JobHandle dependency = default;
+                if (!hasPlayerState)
+                {
+                    dependency = new MockCharacterKinematicsJob
+                    {
+                        Inputs = inputs,
+                        Frame = _frameCounter,
+                        DeltaTime = dt,
+                        SimulationTime = _simulationTime,
+                        GlobalQualityWeight = quality
+                    }.Schedule(KineticCharacterAnimatorConstants.CharacterCapacity, 1, dependency);
+                }
+
+                JobHandle ikHandle = new EvaluateWallProximityJob
                 {
                     Inputs = inputs,
-                    Frame = _frameCounter,
-                    DeltaTime = dt,
-                    SimulationTime = _simulationTime,
-                    GlobalQualityWeight = quality
+                    Targets = ikTargets,
+                    VoxelSdfTexture3D = sdf,
+                    SdfDimensions = new int3(math.max(0, _sdfDimensions.x), math.max(0, _sdfDimensions.y), math.max(0, _sdfDimensions.z)),
+                    SdfOrigin = new float3(_sdfOrigin.x, _sdfOrigin.y, _sdfOrigin.z),
+                    SdfCellSize = new float3(math.max(0.0001f, _sdfCellSize.x), math.max(0.0001f, _sdfCellSize.y), math.max(0.0001f, _sdfCellSize.z)),
+                    SdfRangeMeters = math.max(0.01f, _sdfRangeMeters),
+                    WallBraceDistanceMeters = tuning.IsCreated && tuning.Length > 0 ? KineticCharacterSanitizer.SanitizeTuning(tuning[0]).WallBraceDistanceMeters : 0.72f,
+                    AupSectorSizeMeters = HectonPhysicsContract.AupSectorSizeMetersDouble
                 }.Schedule(KineticCharacterAnimatorConstants.CharacterCapacity, 1, dependency);
-            }
 
-            JobHandle ikHandle = new EvaluateWallProximityJob
-            {
-                Inputs = inputs,
-                Targets = ikTargets,
-                VoxelSdfTexture3D = sdf,
-                SdfDimensions = new int3(math.max(0, _sdfDimensions.x), math.max(0, _sdfDimensions.y), math.max(0, _sdfDimensions.z)),
-                SdfOrigin = new float3(_sdfOrigin.x, _sdfOrigin.y, _sdfOrigin.z),
-                SdfCellSize = new float3(math.max(0.0001f, _sdfCellSize.x), math.max(0.0001f, _sdfCellSize.y), math.max(0.0001f, _sdfCellSize.z)),
-                SdfRangeMeters = math.max(0.01f, _sdfRangeMeters),
-                WallBraceDistanceMeters = tuning.IsCreated && tuning.Length > 0 ? KineticCharacterSanitizer.SanitizeTuning(tuning[0]).WallBraceDistanceMeters : 0.72f,
-                AupSectorSizeMeters = HectonPhysicsContract.AupSectorSizeMetersDouble
-            }.Schedule(KineticCharacterAnimatorConstants.CharacterCapacity, 1, dependency);
-
-            JobHandle solveHandle = new ProceduralLocomotionPhaseJob
-            {
-                Rigs = rigs,
-                Inputs = inputs,
-                ParentIndices = parents,
-                BindPoses = bindPoses,
-                BoneOutputs = boneOutputs,
-                Stats = stats,
-                IkTargets = ikTargets,
-                Tuning = tuning,
-                GlobalQualityWeight = quality,
-                DeltaTime = dt,
-                SimulationTime = _simulationTime,
-                Frame = _frameCounter,
-                AupSectorSizeMeters = HectonPhysicsContract.AupSectorSizeMetersDouble
-            }.Schedule(KineticCharacterAnimatorConstants.CharacterCapacity, 1, ikHandle);
-
-            JobHandle boneOutputHandle = solveHandle;
-            if (includePlayerHandIk)
-            {
-                boneOutputHandle = new ApplyPlayerHandIkToKineticBonesJob
+                JobHandle solveHandle = new ProceduralLocomotionPhaseJob
                 {
                     Rigs = rigs,
                     Inputs = inputs,
-                    PlayerHandIkStates = playerHandIkStates,
+                    ParentIndices = parents,
+                    BindPoses = bindPoses,
                     BoneOutputs = boneOutputs,
                     Stats = stats,
+                    IkTargets = ikTargets,
+                    Tuning = tuning,
+                    GlobalQualityWeight = quality,
+                    DeltaTime = dt,
+                    SimulationTime = _simulationTime,
+                    Frame = _frameCounter,
                     AupSectorSizeMeters = HectonPhysicsContract.AupSectorSizeMetersDouble
-                }.Schedule(KineticCharacterAnimatorConstants.CharacterCapacity, 1, solveHandle);
+                }.Schedule(KineticCharacterAnimatorConstants.CharacterCapacity, 1, ikHandle);
+
+                JobHandle boneOutputHandle = solveHandle;
+                if (includePlayerHandIk)
+                {
+                    boneOutputHandle = new ApplyPlayerHandIkToKineticBonesJob
+                    {
+                        Rigs = rigs,
+                        Inputs = inputs,
+                        PlayerHandIkStates = playerHandIkStates,
+                        BoneOutputs = boneOutputs,
+                        Stats = stats,
+                        AupSectorSizeMeters = HectonPhysicsContract.AupSectorSizeMetersDouble
+                    }.Schedule(KineticCharacterAnimatorConstants.CharacterCapacity, 1, solveHandle);
+                }
+
+                JobHandle matrixHandle = new ComputeFinalBoneMatricesJob
+                {
+                    BoneOutputs = boneOutputs,
+                    Matrices = matrices
+                }.Schedule(math.min(_boneCapacity, matrices.Length), 32, boneOutputHandle);
+
+                _pendingHandle = new KineticAnimationTelemetryJob
+                {
+                    Stats = stats,
+                    Inputs = inputs,
+                    Telemetry = telemetry,
+                    Cursor = cursor,
+                    Frame = _frameCounter
+                }.Schedule(matrixHandle);
+
+                H8Memory.RegisterActiveJob(SystemID.AnimationLocomotion, _pendingHandle);
+                _solverScheduled = true;
+                scheduled = true;
             }
-
-            JobHandle matrixHandle = new ComputeFinalBoneMatricesJob
+            finally
             {
-                BoneOutputs = boneOutputs,
-                Matrices = matrices
-            }.Schedule(math.min(_boneCapacity, matrices.Length), 32, boneOutputHandle);
-
-            _pendingHandle = new KineticAnimationTelemetryJob
-            {
-                Stats = stats,
-                Inputs = inputs,
-                Telemetry = telemetry,
-                Cursor = cursor,
-                Frame = _frameCounter
-            }.Schedule(matrixHandle);
-
-            H8Memory.RegisterActiveJob(SystemID.AnimationLocomotion, _pendingHandle);
-            _solverScheduled = true;
+                if (!scheduled)
+                    ReleaseSolverMutationGuard();
+            }
         }
 
         public void LateFrameTick()
@@ -517,7 +559,7 @@ namespace Hecton8.Animation.KineticCharacter
             ClearGpuSkinningBinding();
             if (_dataVault != null)
             {
-                EnsureVaultBuffers();
+                OpenOrAcquireVaultBuffersForOwnerRoute();
                 if (_seedEmergencyMockRig)
                     GenerateEmergencyMockRig();
             }
@@ -526,7 +568,7 @@ namespace Hecton8.Animation.KineticCharacter
         public void GenerateEmergencyMockRig()
         {
             IDataVault vault = CacheDataVaultCold();
-            if (vault == null || !EnsureVaultBuffers())
+            if (vault == null || !OpenOrAcquireVaultBuffersForOwnerRoute())
                 return;
 
             int boneCapacity = math.clamp(_boneCapacity, KineticCharacterAnimatorConstants.EmergencyMockBoneCount, KineticCharacterAnimatorConstants.DefaultBoneCapacity);
@@ -635,7 +677,7 @@ namespace Hecton8.Animation.KineticCharacter
             }
         }
 
-        private bool EnsureVaultBuffers()
+        private bool OpenOrAcquireVaultBuffersForOwnerRoute()
         {
             IDataVault vault = _dataVault;
             if (vault == null || !KineticCharacterAnimatorLayout.Validate())
@@ -643,70 +685,70 @@ namespace Hecton8.Animation.KineticCharacter
 
             _dataVault = vault;
             int boneCapacity = math.clamp(_boneCapacity, KineticCharacterAnimatorConstants.EmergencyMockBoneCount, KineticCharacterAnimatorConstants.DefaultBoneCapacity);
-            bool resolved = TryResolveOrAcquireVaultBuffer(
+            bool resolved = OpenOrAcquireVaultBufferForOwnerRoute(
                 vault,
                 KineticCharacterAnimatorBufferIds.Rigs,
                 KineticCharacterAnimatorConstants.CharacterCapacity,
                 ref _rigsHandle,
                 out _) &&
-            TryResolveOrAcquireVaultBuffer(
+            OpenOrAcquireVaultBufferForOwnerRoute(
                 vault,
                 KineticCharacterAnimatorBufferIds.FrameInputs,
                 KineticCharacterAnimatorConstants.CharacterCapacity,
                 ref _inputsHandle,
                 out _) &&
-            TryResolveOrAcquireVaultBuffer(
+            OpenOrAcquireVaultBufferForOwnerRoute(
                 vault,
                 KineticCharacterAnimatorBufferIds.ParentIndices,
                 boneCapacity,
                 ref _parentIndicesHandle,
                 out _) &&
-            TryResolveOrAcquireVaultBuffer(
+            OpenOrAcquireVaultBufferForOwnerRoute(
                 vault,
                 KineticCharacterAnimatorBufferIds.BindPoses,
                 boneCapacity,
                 ref _bindPosesHandle,
                 out _) &&
-            TryResolveOrAcquireVaultBuffer(
+            OpenOrAcquireVaultBufferForOwnerRoute(
                 vault,
                 KineticCharacterAnimatorBufferIds.BoneOutputs,
                 boneCapacity,
                 ref _boneOutputsHandle,
                 out _) &&
-            TryResolveOrAcquireVaultBuffer(
+            OpenOrAcquireVaultBufferForOwnerRoute(
                 vault,
                 KineticCharacterAnimatorBufferIds.BoneMatrices,
                 boneCapacity,
                 ref _matricesHandle,
                 out _) &&
-            TryResolveOrAcquireVaultBuffer(
+            OpenOrAcquireVaultBufferForOwnerRoute(
                 vault,
                 KineticCharacterAnimatorBufferIds.IkTargets,
                 KineticCharacterAnimatorConstants.CharacterCapacity * KineticCharacterAnimatorConstants.IkTargetCount,
                 ref _ikTargetsHandle,
                 out _) &&
-            TryResolveOrAcquireVaultBuffer(
+            OpenOrAcquireVaultBufferForOwnerRoute(
                 vault,
                 KineticCharacterAnimatorBufferIds.FrameStats,
                 KineticCharacterAnimatorConstants.CharacterCapacity,
                 ref _statsHandle,
                 out _,
                 NativeArrayOptions.ClearMemory) &&
-            TryResolveOrAcquireVaultBuffer(
+            OpenOrAcquireVaultBufferForOwnerRoute(
                 vault,
                 KineticCharacterAnimatorBufferIds.TelemetryRing,
                 KineticCharacterAnimatorConstants.TelemetryCapacity,
                 ref _telemetryHandle,
                 out _,
                 NativeArrayOptions.ClearMemory) &&
-            TryResolveOrAcquireVaultBuffer(
+            OpenOrAcquireVaultBufferForOwnerRoute(
                 vault,
                 KineticCharacterAnimatorBufferIds.TelemetryCursor,
                 1,
                 ref _telemetryCursorHandle,
                 out _,
                 NativeArrayOptions.ClearMemory) &&
-            TryResolveOrAcquireVaultBuffer(
+            OpenOrAcquireVaultBufferForOwnerRoute(
                 vault,
                 KineticCharacterAnimatorBufferIds.Tuning,
                 KineticCharacterAnimatorConstants.TuningCapacity,
@@ -715,7 +757,7 @@ namespace Hecton8.Animation.KineticCharacter
                 NativeArrayOptions.ClearMemory);
 #if UNITY_EDITOR
             resolved = resolved &&
-            TryResolveOrAcquireVaultBuffer(
+            OpenOrAcquireVaultBufferForOwnerRoute(
                 vault,
                 KineticCharacterAnimatorBufferIds.CsvScratch,
                 KineticCharacterAnimatorConstants.CsvScratchBytes,
@@ -775,7 +817,7 @@ namespace Hecton8.Animation.KineticCharacter
                    buffer.Length >= requiredLength;
         }
 
-        private static bool TryResolveOrAcquireVaultBuffer<T>(
+        private static bool OpenOrAcquireVaultBufferForOwnerRoute<T>(
             IDataVault vault,
             BufferID bufferId,
             int requiredLength,
@@ -853,9 +895,17 @@ namespace Hecton8.Animation.KineticCharacter
                    TryResolveOwnedVaultBuffer(vault, KineticCharacterAnimatorBufferIds.Tuning, in _tuningHandle, KineticCharacterAnimatorConstants.TuningCapacity, out tuning);
         }
 
-        private bool WriteFrameInput(IDataVault vault, NativeArray<KineticCharacterFrameInputDTO> inputs, float dt, float quality)
+        private bool WriteFrameInput(
+            IDataVault vault,
+            NativeArray<KineticCharacterFrameInputDTO> inputs,
+            bool includePlayerState,
+            float dt,
+            float quality)
         {
-            if (!TryResolveExternalVaultBuffer(
+            if (!includePlayerState ||
+                !inputs.IsCreated ||
+                inputs.Length <= 0 ||
+                !TryResolveExternalVaultBuffer(
                     vault,
                     BufferID.PlayerKinematicState,
                     1,
@@ -968,46 +1018,73 @@ namespace Hecton8.Animation.KineticCharacter
         private bool FinishPendingSolverCompletion()
         {
             _solverScheduled = false;
-            UnlockJobBuffers();
-            _frameCounter++;
-            ReadLatestTelemetry();
-            _gpuUploadDirty = ShouldUploadMatrices();
-            if (!_dumpedFault && LatestTelemetryHasInvalidFlag())
+            bool shouldDumpFault = false;
+            try
+            {
+                _frameCounter++;
+                ReadLatestTelemetry();
+                _gpuUploadDirty = ShouldUploadMatrices();
+                shouldDumpFault = !_dumpedFault && LatestTelemetryHasInvalidFlag();
+            }
+            finally
+            {
+                ReleaseSolverMutationGuard();
+            }
+
+            if (shouldDumpFault)
                 DumpBlackBoxOnce();
             return true;
         }
 
-        private bool TryLockJobBuffers(IDataVault vault, ref bool includeSdf, ref bool includePlayerHandIk)
+        private bool TryAcquireSolverMutationGuard(
+            IDataVault vault,
+            ref bool includePlayerState,
+            ref bool includeSdf,
+            ref bool includePlayerHandIk)
         {
-            _lockedBuffers = 0;
-            if (!TryLockRequired(vault, KineticCharacterAnimatorBufferIds.Rigs, LockRigs) ||
-                !TryLockRequired(vault, KineticCharacterAnimatorBufferIds.FrameInputs, LockInputs) ||
-                !TryLockRequired(vault, KineticCharacterAnimatorBufferIds.ParentIndices, LockParents) ||
-                !TryLockRequired(vault, KineticCharacterAnimatorBufferIds.BindPoses, LockBindPoses) ||
-                !TryLockRequired(vault, KineticCharacterAnimatorBufferIds.BoneOutputs, LockBoneOutputs) ||
-                !TryLockRequired(vault, KineticCharacterAnimatorBufferIds.BoneMatrices, LockMatrices) ||
-                !TryLockRequired(vault, KineticCharacterAnimatorBufferIds.IkTargets, LockIkTargets) ||
-                !TryLockRequired(vault, KineticCharacterAnimatorBufferIds.FrameStats, LockStats) ||
-                !TryLockRequired(vault, KineticCharacterAnimatorBufferIds.TelemetryRing, LockTelemetry) ||
-                !TryLockRequired(vault, KineticCharacterAnimatorBufferIds.TelemetryCursor, LockCursor) ||
-                !TryLockRequired(vault, KineticCharacterAnimatorBufferIds.Tuning, LockTuning))
-            {
-                UnlockJobBuffers();
-                includeSdf = false;
+            if (vault == null || vault.IsCompactionFenceActive || _solverMutationGuardVault != null)
                 return false;
+
+            ulong requiredMask = SolverMutationGuardRequiredMask;
+            if (includePlayerState)
+                requiredMask |= SolverPlayerStateReadGuardMask;
+
+            ulong desiredMask = requiredMask;
+            if (includeSdf)
+                desiredMask |= SolverSdfMutationGuardMask;
+            if (includePlayerHandIk)
+                desiredMask |= SolverPlayerHandIkMutationGuardMask;
+
+            if (TryAcquireSolverMutationGuard(vault, desiredMask))
+                return true;
+
+            if (includeSdf && includePlayerHandIk)
+            {
+                ulong sdfOnlyMask = requiredMask | SolverSdfMutationGuardMask;
+                if (TryAcquireSolverMutationGuard(vault, sdfOnlyMask))
+                {
+                    includePlayerHandIk = false;
+                    return true;
+                }
+
+                ulong handOnlyMask = requiredMask | SolverPlayerHandIkMutationGuardMask;
+                if (TryAcquireSolverMutationGuard(vault, handOnlyMask))
+                {
+                    includeSdf = false;
+                    return true;
+                }
             }
 
-            if (includeSdf && vault.TryLockBuffer(BufferID.VoxelSdfTexture3D, SystemID.AnimationLocomotion))
-                _lockedBuffers |= LockSdf;
-            else
-                includeSdf = false;
+            includeSdf = false;
+            includePlayerHandIk = false;
+            if (TryAcquireSolverMutationGuard(vault, requiredMask))
+                return true;
 
-            if (includePlayerHandIk && vault.TryLockBuffer(BufferID.PlayerHandIkPublishedStates, SystemID.AnimationLocomotion))
-                _lockedBuffers |= LockPlayerHandIkStates;
-            else
-                includePlayerHandIk = false;
+            if (!includePlayerState)
+                return false;
 
-            return true;
+            includePlayerState = false;
+            return TryAcquireSolverMutationGuard(vault, SolverMutationGuardRequiredMask);
         }
 
         private IDataVault CacheDataVaultCold()
@@ -1022,7 +1099,7 @@ namespace Hecton8.Animation.KineticCharacter
                 return;
 
             CompletePendingSolverForTeardown();
-            UnlockJobBuffers();
+            ReleaseSolverMutationGuard();
             ReleaseVaultHandles(_dataVault ?? releaseVaultOverride);
             ClearHandles();
             _dataVault = currentVault;
@@ -1040,46 +1117,35 @@ namespace Hecton8.Animation.KineticCharacter
             _gpuBufferDataValid = false;
         }
 
-        private bool TryLockRequired(IDataVault vault, BufferID bufferId, int bit)
+        private bool TryAcquireSolverMutationGuard(IDataVault vault, ulong mask)
         {
-            if (vault.TryLockBuffer(bufferId, SystemID.AnimationLocomotion))
-            {
-                _lockedBuffers |= bit;
-                return true;
-            }
+            if (!vault.TryAcquireMutationGuard(mask))
+                return false;
 
-            return false;
+            _solverMutationGuardVault = vault;
+            _solverMutationGuardMask = mask;
+            return true;
         }
 
-        private void UnlockJobBuffers()
+        private void ReleaseSolverMutationGuard()
         {
-            IDataVault vault = _dataVault;
-            if (vault == null || _lockedBuffers == 0)
+            IDataVault vault = _solverMutationGuardVault;
+            ulong mask = _solverMutationGuardMask;
+            if (vault == null || mask == 0UL)
             {
-                _lockedBuffers = 0;
+                _solverMutationGuardVault = null;
+                _solverMutationGuardMask = 0UL;
                 return;
             }
 
-            Unlock(vault, KineticCharacterAnimatorBufferIds.Rigs, LockRigs);
-            Unlock(vault, KineticCharacterAnimatorBufferIds.FrameInputs, LockInputs);
-            Unlock(vault, KineticCharacterAnimatorBufferIds.ParentIndices, LockParents);
-            Unlock(vault, KineticCharacterAnimatorBufferIds.BindPoses, LockBindPoses);
-            Unlock(vault, KineticCharacterAnimatorBufferIds.BoneOutputs, LockBoneOutputs);
-            Unlock(vault, KineticCharacterAnimatorBufferIds.BoneMatrices, LockMatrices);
-            Unlock(vault, KineticCharacterAnimatorBufferIds.IkTargets, LockIkTargets);
-            Unlock(vault, KineticCharacterAnimatorBufferIds.FrameStats, LockStats);
-            Unlock(vault, KineticCharacterAnimatorBufferIds.TelemetryRing, LockTelemetry);
-            Unlock(vault, KineticCharacterAnimatorBufferIds.TelemetryCursor, LockCursor);
-            Unlock(vault, KineticCharacterAnimatorBufferIds.Tuning, LockTuning);
-            Unlock(vault, BufferID.VoxelSdfTexture3D, LockSdf);
-            Unlock(vault, BufferID.PlayerHandIkPublishedStates, LockPlayerHandIkStates);
-            _lockedBuffers = 0;
+            _solverMutationGuardVault = null;
+            _solverMutationGuardMask = 0UL;
+            vault.ReleaseMutationGuard(mask);
         }
 
-        private void Unlock(IDataVault vault, BufferID bufferId, int bit)
+        private static ulong KineticMutationGuardBit(BufferID bufferId)
         {
-            if ((_lockedBuffers & bit) != 0)
-                vault.TryUnlockBuffer(bufferId, SystemID.AnimationLocomotion);
+            return 1UL << ((int)bufferId & 31);
         }
 
         private float ResolveGlobalQualityWeight(IDataVault vault)

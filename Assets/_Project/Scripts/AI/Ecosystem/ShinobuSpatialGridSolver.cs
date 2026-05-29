@@ -644,43 +644,50 @@ namespace Hecton8.AI.Ecosystem
         private void RecordQueryFailure(IDataVault vault, uint failureHash)
         {
             if (vault == null ||
+                vault.IsCompactionFenceActive ||
                 !ValidateVaultHandle(in TelemetryHandle, BufferID.ShinobuSpatialGridTelemetryRing) ||
                 !ValidateVaultHandle(in TelemetryCursorHandle, BufferID.ShinobuSpatialGridTelemetryCursor))
                 return;
 
             int slotCursor = 0;
-            bool cursorLocked = false;
+            if (!vault.TryLockBuffer(BufferID.ShinobuSpatialGridTelemetryCursor, SystemID.AIEcology))
+                return;
 
             try
             {
-                cursorLocked = vault.TryAcquireWriteLock(in TelemetryCursorHandle, SystemID.AIEcology, out NativeArray<int> telemetryCursor);
-                if (!cursorLocked ||
+                if (!vault.TryResolveHandle(in TelemetryCursorHandle, out NativeArray<int> telemetryCursor) ||
                     !telemetryCursor.IsCreated ||
                     telemetryCursor.Length <= 0)
+                {
                     return;
+                }
 
                 int cursor = telemetryCursor[0];
                 if (cursor < 0 ||
                     cursor >= int.MaxValue - ShinobuSpatialGridConstants.TelemetryCapacity)
+                {
                     cursor = 0;
+                }
 
                 slotCursor = cursor;
                 telemetryCursor[0] = cursor + 1;
             }
             finally
             {
-                if (cursorLocked)
-                    vault.ReleaseWriteLock(in TelemetryCursorHandle, SystemID.AIEcology);
+                vault.TryUnlockBuffer(BufferID.ShinobuSpatialGridTelemetryCursor, SystemID.AIEcology);
             }
 
-            bool telemetryLocked = false;
+            if (!vault.TryLockBuffer(BufferID.ShinobuSpatialGridTelemetryRing, SystemID.AIEcology))
+                return;
+
             try
             {
-                telemetryLocked = vault.TryAcquireWriteLock(in TelemetryHandle, SystemID.AIEcology, out NativeArray<SpatialGridTelemetryEntry> telemetry);
-                if (!telemetryLocked ||
+                if (!vault.TryResolveHandle(in TelemetryHandle, out NativeArray<SpatialGridTelemetryEntry> telemetry) ||
                     !telemetry.IsCreated ||
                     telemetry.Length <= 0)
+                {
                     return;
+                }
 
                 int slot = slotCursor % telemetry.Length;
 
@@ -707,8 +714,7 @@ namespace Hecton8.AI.Ecosystem
             }
             finally
             {
-                if (telemetryLocked)
-                    vault.ReleaseWriteLock(in TelemetryHandle, SystemID.AIEcology);
+                vault.TryUnlockBuffer(BufferID.ShinobuSpatialGridTelemetryRing, SystemID.AIEcology);
             }
         }
     }
@@ -903,8 +909,7 @@ namespace Hecton8.AI.Ecosystem
         [ReadOnly, NoAlias] public NativeArray<AmbientEntityAupDTO> AupSnapshot;
         [NoAlias] public NativeArray<SpatialGridBucketRangeDTO> BucketRanges;
         [NoAlias] public NativeArray<int> Counters;
-        [NoAlias] public NativeArray<SpatialGridTelemetryEntry> TelemetryRing;
-        [NoAlias] public NativeArray<int> TelemetryCursor;
+        [WriteOnly, NoAlias] public NativeArray<SpatialGridTelemetryEntry> TelemetryOutput;
         public uint Frame;
         public float CellSizeMeters;
         public float GlobalQualityWeight;
@@ -962,35 +967,28 @@ namespace Hecton8.AI.Ecosystem
             if (invalidInputCount != 0 && Counters.IsCreated && (uint)CounterInvalidIndex < (uint)Counters.Length)
                 Counters[CounterInvalidIndex] += invalidInputCount;
 
-            if (TelemetryRing.IsCreated && TelemetryCursor.IsCreated && TelemetryRing.Length > 0 && TelemetryCursor.Length > 0)
+            if (TelemetryOutput.IsCreated && TelemetryOutput.Length > 0)
             {
-                int cursor = TelemetryCursor[0];
-                if (cursor < 0 || cursor >= int.MaxValue - TelemetryRing.Length)
-                    cursor = 0;
-
-                int slot = cursor % TelemetryRing.Length;
-                TelemetryCursor[0] = cursor + 1;
-                TelemetryRing[slot] = new SpatialGridTelemetryEntry
-                {
-                    Frame = Frame,
-                    EntityCount = safeCount,
-                    MaxBucketOccupancy = maxOccupancy,
-                    QueryCount = 0,
-                    QuantizeMicroseconds = ShinobuSpatialGridConstants.TelemetryTimingUnavailableMicroseconds,
-                    SortMicroseconds = ShinobuSpatialGridConstants.TelemetryTimingUnavailableMicroseconds,
-                    GlobalQualityWeight = math.saturate(GlobalQualityWeight),
-                    CellSizeMeters = math.max(0.25f, CellSizeMeters),
-                    OverflowCount = (uint)overflow,
-                    Flags = (overflow != 0 ? ShinobuSpatialGridConstants.TelemetryFlagOverflow : 0u) |
-                            ShinobuSpatialGridConstants.TelemetryFlagTimingUnavailable |
-                            (invalidInputCount != 0 ? ShinobuSpatialGridConstants.TelemetryFlagInvalidInput : 0u),
-                    StateHash = stateHash,
-                    MaxProbeCount = maxProbe,
-                    MaxQueryResults = MaxQueryResults,
-                    BucketRangeCount = rangeCount,
-                    InvalidInputCount = invalidInputCount,
-                    Pad1 = 0u
-                };
+                SpatialGridTelemetryEntry entry = default;
+                entry.Frame = Frame;
+                entry.EntityCount = safeCount;
+                entry.MaxBucketOccupancy = maxOccupancy;
+                entry.QueryCount = 0;
+                entry.QuantizeMicroseconds = ShinobuSpatialGridConstants.TelemetryTimingUnavailableMicroseconds;
+                entry.SortMicroseconds = ShinobuSpatialGridConstants.TelemetryTimingUnavailableMicroseconds;
+                entry.GlobalQualityWeight = math.saturate(GlobalQualityWeight);
+                entry.CellSizeMeters = math.max(0.25f, CellSizeMeters);
+                entry.OverflowCount = (uint)overflow;
+                entry.Flags = (overflow != 0 ? ShinobuSpatialGridConstants.TelemetryFlagOverflow : 0u) |
+                              ShinobuSpatialGridConstants.TelemetryFlagTimingUnavailable |
+                              (invalidInputCount != 0 ? ShinobuSpatialGridConstants.TelemetryFlagInvalidInput : 0u);
+                entry.StateHash = stateHash;
+                entry.MaxProbeCount = maxProbe;
+                entry.MaxQueryResults = MaxQueryResults;
+                entry.BucketRangeCount = rangeCount;
+                entry.InvalidInputCount = invalidInputCount;
+                entry.Pad1 = 0u;
+                TelemetryOutput[0] = entry;
             }
         }
 
@@ -1153,6 +1151,53 @@ namespace Hecton8.AI.Ecosystem
                 }
 
                 lineStart = i + 1;
+            }
+
+            for (int i = row; i < profiles.Length; i++)
+                profiles[i] = default;
+            return row;
+        }
+
+        public static int Parse(
+            ReadOnlySpan<byte> bytes,
+            Span<SpatialGridProfileDTO> profiles,
+            out SpatialGridTuningDTO tuning)
+        {
+            tuning = default;
+            if (profiles.Length <= 0 || bytes.Length <= 0)
+                return 0;
+
+            int row = 0;
+            int lineStart = 0;
+            fixed (byte* data = bytes)
+            {
+                int limit = bytes.Length;
+                for (int i = 0; i <= limit && row < profiles.Length; i++)
+                {
+                    bool end = i == limit || data[i] == (byte)'\n';
+                    if (!end)
+                        continue;
+
+                    int lineEnd = i;
+                    if (lineEnd > lineStart && data[lineEnd - 1] == (byte)'\r')
+                        lineEnd--;
+
+                    if (TryParseLine(data, lineStart, lineEnd - lineStart, out SpatialGridProfileDTO profile))
+                    {
+                        profiles[row++] = profile;
+                        if (row == 1)
+                        {
+                            SpatialGridTuningDTO next = ShinobuSpatialGridMath.CreateDefaultTuning();
+                            next.BaseGridCellSize = profile.BaseGridCellSize;
+                            next.MinGridCellSize = profile.MinGridCellSize;
+                            next.MaxGridCellSize = profile.MaxGridCellSize;
+                            next.MaxQueryResultsLimit = profile.MaxQueryResultsLimit;
+                            tuning = ShinobuSpatialGridMath.Sanitize(next);
+                        }
+                    }
+
+                    lineStart = i + 1;
+                }
             }
 
             for (int i = row; i < profiles.Length; i++)
@@ -1374,6 +1419,7 @@ namespace Hecton8.AI.Ecosystem
         private static VaultGenerationHandle<byte> s_dumpSnapshotHandle;
         private static Thread s_dumpWorker;
         private static AutoResetEvent s_dumpSignal;
+        private static NativeArray<byte> s_snapshotBuffer;
         private static string s_ownerDumpPath;
         private static string s_agentDumpPath;
         private static string s_agent1419DumpPath;
@@ -1479,6 +1525,7 @@ namespace Hecton8.AI.Ecosystem
                 string agent1419Directory = Path.GetDirectoryName(s_agent1419DumpPath);
                 if (agent1419Directory != null && agent1419Directory.Length != 0)
                     Directory.CreateDirectory(agent1419Directory);
+                EnsureSnapshotBuffer();
 
                 Volatile.Write(ref s_stopRequested, 0);
                 if (s_dumpSignal == null)
@@ -1552,6 +1599,9 @@ namespace Hecton8.AI.Ecosystem
             s_dumpSignal = null;
             s_dumpVault = null;
             s_dumpSnapshotHandle = default;
+            if (s_snapshotBuffer.IsCreated)
+                s_snapshotBuffer.Dispose();
+            s_snapshotBuffer = default;
             Volatile.Write(ref s_pendingByteCount, 0);
             Volatile.Write(ref s_dumpState, DumpStateIdle);
             Volatile.Write(ref s_stopRequested, 0);
@@ -1575,65 +1625,54 @@ namespace Hecton8.AI.Ecosystem
             if (Interlocked.CompareExchange(ref s_dumpState, DumpStateSnapshotting, DumpStateIdle) != DumpStateIdle)
                 return false;
 
-            NativeArray<byte> snapshot = default;
-            bool snapshotLocked = false;
-            try
+            if (!TryResolveSnapshotBuffer(out NativeArray<byte> snapshot))
             {
-                snapshotLocked = vault.TryAcquireWriteLock(in snapshotHandle, SystemID.AIEcology, out snapshot);
-                if (!snapshotLocked || !snapshot.IsCreated || snapshot.Length < DumpSnapshotBytes)
-                {
-                    Volatile.Write(ref s_dumpState, DumpStateIdle);
-                    return false;
-                }
-
-                int capacity = telemetry.Length;
-                int count = math.min(capacity, ShinobuSpatialGridConstants.TelemetryCapacity);
-                int safeCursor = cursor;
-                if (safeCursor < 0 || safeCursor >= int.MaxValue - capacity)
-                    safeCursor = 0;
-
-                long start = (long)safeCursor - count;
-                if (start < 0L)
-                    start = 0L;
-
-                int entrySize = UnsafeUtility.SizeOf<SpatialGridTelemetryEntry>();
-                int byteCount = DumpHeaderBytes + (count * entrySize);
-                if (entrySize != 64 ||
-                    byteCount <= DumpHeaderBytes ||
-                    byteCount > DumpSnapshotBytes)
-                {
-                    Volatile.Write(ref s_dumpState, DumpStateIdle);
-                    return false;
-                }
-
-                Span<byte> bytes = AsSpan(snapshot, DumpSnapshotBytes);
-                BinaryPrimitives.WriteUInt64LittleEndian(bytes.Slice(0, 8), DumpMagic);
-                BinaryPrimitives.WriteInt32LittleEndian(bytes.Slice(8, 4), DumpVersion);
-                BinaryPrimitives.WriteInt32LittleEndian(bytes.Slice(12, 4), count);
-                BinaryPrimitives.WriteInt32LittleEndian(bytes.Slice(16, 4), safeCursor);
-                BinaryPrimitives.WriteInt32LittleEndian(bytes.Slice(20, 4), entrySize);
-
-                int offset = DumpHeaderBytes;
-                for (int i = 0; i < count; i++)
-                {
-                    int slot = (int)((start + i) % capacity);
-                    SpatialGridTelemetryEntry entry = telemetry[slot];
-                    ReadOnlySpan<SpatialGridTelemetryEntry> entrySpan =
-                        MemoryMarshal.CreateReadOnlySpan(ref entry, 1);
-                    MemoryMarshal.AsBytes(entrySpan).CopyTo(bytes.Slice(offset, entrySize));
-                    offset += entrySize;
-                }
-
-                if (byteCount < DumpSnapshotBytes)
-                    bytes.Slice(byteCount).Clear();
-
-                Volatile.Write(ref s_pendingByteCount, byteCount);
+                Volatile.Write(ref s_dumpState, DumpStateIdle);
+                return false;
             }
-            finally
+
+            int capacity = telemetry.Length;
+            int count = math.min(capacity, ShinobuSpatialGridConstants.TelemetryCapacity);
+            int safeCursor = cursor;
+            if (safeCursor < 0 || safeCursor >= int.MaxValue - capacity)
+                safeCursor = 0;
+
+            long start = (long)safeCursor - count;
+            if (start < 0L)
+                start = 0L;
+
+            int entrySize = UnsafeUtility.SizeOf<SpatialGridTelemetryEntry>();
+            int byteCount = DumpHeaderBytes + (count * entrySize);
+            if (entrySize != 64 ||
+                byteCount <= DumpHeaderBytes ||
+                byteCount > DumpSnapshotBytes)
             {
-                if (snapshotLocked)
-                    vault.ReleaseWriteLock(in snapshotHandle, SystemID.AIEcology);
+                Volatile.Write(ref s_dumpState, DumpStateIdle);
+                return false;
             }
+
+            Span<byte> bytes = AsSpan(snapshot, DumpSnapshotBytes);
+            BinaryPrimitives.WriteUInt64LittleEndian(bytes.Slice(0, 8), DumpMagic);
+            BinaryPrimitives.WriteInt32LittleEndian(bytes.Slice(8, 4), DumpVersion);
+            BinaryPrimitives.WriteInt32LittleEndian(bytes.Slice(12, 4), count);
+            BinaryPrimitives.WriteInt32LittleEndian(bytes.Slice(16, 4), safeCursor);
+            BinaryPrimitives.WriteInt32LittleEndian(bytes.Slice(20, 4), entrySize);
+
+            int offset = DumpHeaderBytes;
+            for (int i = 0; i < count; i++)
+            {
+                int slot = (int)((start + i) % capacity);
+                SpatialGridTelemetryEntry entry = telemetry[slot];
+                ReadOnlySpan<SpatialGridTelemetryEntry> entrySpan =
+                    MemoryMarshal.CreateReadOnlySpan(ref entry, 1);
+                MemoryMarshal.AsBytes(entrySpan).CopyTo(bytes.Slice(offset, entrySize));
+                offset += entrySize;
+            }
+
+            if (byteCount < DumpSnapshotBytes)
+                bytes.Slice(byteCount).Clear();
+
+            Volatile.Write(ref s_pendingByteCount, byteCount);
 
             Thread.MemoryBarrier();
             Volatile.Write(ref s_dumpState, DumpStatePending);
@@ -1715,8 +1754,6 @@ namespace Hecton8.AI.Ecosystem
         private static bool TryWriteQueuedDumpFile(string path)
         {
             int byteCount = Volatile.Read(ref s_pendingByteCount);
-            NativeArray<byte> snapshot = default;
-            bool snapshotLocked = false;
             if (path == null ||
                 path.Length == 0 ||
                 byteCount <= DumpHeaderBytes ||
@@ -1727,9 +1764,11 @@ namespace Hecton8.AI.Ecosystem
 
             try
             {
-                snapshotLocked = TryLockSnapshotForRead(out snapshot);
-                if (!snapshotLocked || !snapshot.IsCreated || snapshot.Length < byteCount)
+                if (!TryResolveSnapshotBuffer(out NativeArray<byte> snapshot) ||
+                    snapshot.Length < byteCount)
+                {
                     return false;
+                }
 
                 using (FileStream stream = new FileStream(path, FileMode.Create, FileAccess.Write, FileShare.Read, 4096, FileOptions.WriteThrough))
                 {
@@ -1754,34 +1793,23 @@ namespace Hecton8.AI.Ecosystem
             {
                 return false;
             }
-            finally
-            {
-                if (snapshotLocked)
-                    UnlockSnapshotRead();
-            }
         }
 
-        private static bool TryLockSnapshotForRead(out NativeArray<byte> snapshot)
+        private static void EnsureSnapshotBuffer()
         {
-            snapshot = default;
-            IDataVault vault = s_dumpVault;
-            if (vault == null ||
-                !ValidateSnapshotHandle(in s_dumpSnapshotHandle) ||
-                !vault.TryLockBuffer(BufferID.ShinobuSpatialGridDumpSnapshot, SystemID.AIEcology))
-            {
-                return false;
-            }
+            if (s_snapshotBuffer.IsCreated && s_snapshotBuffer.Length >= DumpSnapshotBytes)
+                return;
 
-            if (!vault.TryResolveHandle(in s_dumpSnapshotHandle, out NativeArray<byte> resolved) ||
-                !resolved.IsCreated ||
-                resolved.Length < DumpSnapshotBytes)
-            {
-                vault.TryUnlockBuffer(BufferID.ShinobuSpatialGridDumpSnapshot, SystemID.AIEcology);
-                return false;
-            }
+            if (s_snapshotBuffer.IsCreated)
+                s_snapshotBuffer.Dispose();
 
-            snapshot = resolved;
-            return true;
+            s_snapshotBuffer = new NativeArray<byte>(DumpSnapshotBytes, Allocator.Persistent, NativeArrayOptions.UninitializedMemory);
+        }
+
+        private static bool TryResolveSnapshotBuffer(out NativeArray<byte> snapshot)
+        {
+            snapshot = s_snapshotBuffer;
+            return snapshot.IsCreated && snapshot.Length >= DumpSnapshotBytes;
         }
 
         private static bool IsDumpWorkerPrepared(
@@ -1793,16 +1821,11 @@ namespace Hecton8.AI.Ecosystem
             return signal != null &&
                    worker != null &&
                    worker.IsAlive &&
+                   s_snapshotBuffer.IsCreated &&
+                   s_snapshotBuffer.Length >= DumpSnapshotBytes &&
                    Volatile.Read(ref s_stopRequested) == 0 &&
                    s_dumpVault == vault &&
                    SameSnapshotHandle(in snapshotHandle);
-        }
-
-        private static void UnlockSnapshotRead()
-        {
-            IDataVault vault = s_dumpVault;
-            if (vault != null)
-                vault.TryUnlockBuffer(BufferID.ShinobuSpatialGridDumpSnapshot, SystemID.AIEcology);
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]

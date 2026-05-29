@@ -61,6 +61,7 @@ namespace Hecton8.Rendering
             private const string UpscaleArrayKernelName = "BilateralUpscaleArray";
             private const string DebugKernelName = "EdgeMaskDebugComposite";
             private const string DebugArrayKernelName = "EdgeMaskDebugCompositeArray";
+            private const float MinimumEdgeMaskQualityGate = 0.03125f;
 
             private sealed class ClearPassData
             {
@@ -350,7 +351,7 @@ namespace Hecton8.Rendering
                 }
 
                 if (_computeShader == null ||
-                    !Hecton8.Core.HardwareTierDetector.AllowHighResourceComputeShaders ||
+                    !SystemInfo.supportsComputeShaders ||
                     _clearKernel < 0)
                 {
                     TryPublishClearedEdgeMask(renderGraph);
@@ -446,10 +447,10 @@ namespace Hecton8.Rendering
                 }
 
                 float qualityGate = ResolveQualityGate(activeParameters.FilterParams.w);
-                bool skipSobel = qualityGate == 0f;
+                float edgeMaskQualityGate = ResolveEdgeMaskQualityGate(qualityGate);
                 BufferHandle constantBufferHandle = renderGraph.ImportBuffer(constantBuffer);
-                int edgeWidth = skipSobel ? 1 : ResolveEdgeMaskDimension(fullWidth, qualityGate);
-                int edgeHeight = skipSobel ? 1 : ResolveEdgeMaskDimension(fullHeight, qualityGate);
+                int edgeWidth = ResolveEdgeMaskDimension(fullWidth, edgeMaskQualityGate);
+                int edgeHeight = ResolveEdgeMaskDimension(fullHeight, edgeMaskQualityGate);
                 int dispatchZ = useTextureArray ? ResolveDispatchDepth(sliceCount) : 1;
                 if (dispatchZ <= 0)
                     return;
@@ -470,7 +471,7 @@ namespace Hecton8.Rendering
                 uint upscaleGroupSizeX = useTextureArray ? _upscaleArrayThreadGroupSizeX : _upscaleThreadGroupSizeX;
                 uint upscaleGroupSizeY = useTextureArray ? _upscaleArrayThreadGroupSizeY : _upscaleThreadGroupSizeY;
 
-                TextureDesc edgeDesc = CreateEdgeMaskDesc(edgeWidth, edgeHeight, edgeMaskFormat, skipSobel, useTextureArray, sliceCount, outputVrUsage);
+                TextureDesc edgeDesc = CreateEdgeMaskDesc(edgeWidth, edgeHeight, edgeMaskFormat, false, useTextureArray, sliceCount, outputVrUsage);
                 edgeDesc.name = "_HectonBilateralDrsEdgeMask";
                 TextureHandle edgeMask = renderGraph.CreateTexture(edgeDesc);
 
@@ -494,44 +495,36 @@ namespace Hecton8.Rendering
 
                 int dispatchX = CeilByThreadGroup(edgeWidth, sobelGroupSizeX);
                 int dispatchY = CeilByThreadGroup(edgeHeight, sobelGroupSizeY);
-                if (!skipSobel && (dispatchX <= 0 || dispatchY <= 0))
+                if (dispatchX <= 0 || dispatchY <= 0)
                     return;
 
-                if (skipSobel)
+                using (var builder = renderGraph.AddComputePass("Hecton Bilateral DRS Sobel Edge Mask", out SobelPassData passData, _profilingSampler))
                 {
-                    if (!RecordClearEdgeMaskPass(renderGraph, edgeMask, true, useTextureArray, sliceCount))
-                        return;
-                }
-                else
-                {
-                    using (var builder = renderGraph.AddComputePass("Hecton Bilateral DRS Sobel Edge Mask", out SobelPassData passData, _profilingSampler))
-                    {
-                        passData.ComputeShader = _computeShader;
-                        passData.KernelIndex = sobelKernel;
-                        passData.ThreadGroupSizeX = sobelGroupSizeX;
-                        passData.ThreadGroupSizeY = sobelGroupSizeY;
-                        passData.Depth = depthTexture;
-                        passData.EdgeMask = edgeMask;
-                        passData.ConstantBuffer = constantBuffer;
-                        passData.DepthId = depthId;
-                        passData.EdgeMaskId = edgeMaskWriteId;
-                        passData.DispatchX = dispatchX;
-                        passData.DispatchY = dispatchY;
-                        passData.DispatchZ = dispatchZ;
+                    passData.ComputeShader = _computeShader;
+                    passData.KernelIndex = sobelKernel;
+                    passData.ThreadGroupSizeX = sobelGroupSizeX;
+                    passData.ThreadGroupSizeY = sobelGroupSizeY;
+                    passData.Depth = depthTexture;
+                    passData.EdgeMask = edgeMask;
+                    passData.ConstantBuffer = constantBuffer;
+                    passData.DepthId = depthId;
+                    passData.EdgeMaskId = edgeMaskWriteId;
+                    passData.DispatchX = dispatchX;
+                    passData.DispatchY = dispatchY;
+                    passData.DispatchZ = dispatchZ;
 
-                        builder.UseTexture(depthTexture, AccessFlags.Read);
-                        builder.UseTexture(edgeMask, AccessFlags.Write);
-                        builder.UseBuffer(constantBufferHandle, AccessFlags.Read);
-                        builder.SetGlobalTextureAfterPass(edgeMask, BilateralDrsShaderIds.EdgeMaskGlobalId);
-                        builder.SetRenderFunc(static (SobelPassData data, ComputeGraphContext context) =>
-                        {
-                            var cmd = context.cmd;
-                            cmd.SetComputeTextureParam(data.ComputeShader, data.KernelIndex, data.DepthId, data.Depth);
-                            cmd.SetComputeTextureParam(data.ComputeShader, data.KernelIndex, data.EdgeMaskId, data.EdgeMask);
-                            cmd.SetComputeConstantBufferParam(data.ComputeShader, BilateralDrsShaderIds.ConstantBufferId, data.ConstantBuffer, 0, BilateralDrsUpscalerConstants.CBufferBytes);
-                            cmd.DispatchCompute(data.ComputeShader, data.KernelIndex, data.DispatchX, data.DispatchY, data.DispatchZ);
-                        });
-                    }
+                    builder.UseTexture(depthTexture, AccessFlags.Read);
+                    builder.UseTexture(edgeMask, AccessFlags.Write);
+                    builder.UseBuffer(constantBufferHandle, AccessFlags.Read);
+                    builder.SetGlobalTextureAfterPass(edgeMask, BilateralDrsShaderIds.EdgeMaskGlobalId);
+                    builder.SetRenderFunc(static (SobelPassData data, ComputeGraphContext context) =>
+                    {
+                        var cmd = context.cmd;
+                        cmd.SetComputeTextureParam(data.ComputeShader, data.KernelIndex, data.DepthId, data.Depth);
+                        cmd.SetComputeTextureParam(data.ComputeShader, data.KernelIndex, data.EdgeMaskId, data.EdgeMask);
+                        cmd.SetComputeConstantBufferParam(data.ComputeShader, BilateralDrsShaderIds.ConstantBufferId, data.ConstantBuffer, 0, BilateralDrsUpscalerConstants.CBufferBytes);
+                        cmd.DispatchCompute(data.ComputeShader, data.KernelIndex, data.DispatchX, data.DispatchY, data.DispatchZ);
+                    });
                 }
 
                 if (HectonBilateralDrsUpscalerRuntime.IsEdgeMaskDebugEnabled())
@@ -676,7 +669,7 @@ namespace Hecton8.Rendering
 
             private bool TryPublishClearedEdgeMask(RenderGraph renderGraph)
             {
-                if (Hecton8.Core.HardwareTierDetector.AllowHighResourceComputeShaders &&
+                if (SystemInfo.supportsComputeShaders &&
                     _computeShader != null &&
                     _clearKernel >= 0 &&
                     TryResolveEdgeMaskFormat(out GraphicsFormat edgeMaskFormat))
@@ -861,9 +854,14 @@ namespace Hecton8.Rendering
                 return t * t * (3f - 2f * t);
             }
 
+            private static float ResolveEdgeMaskQualityGate(float qualityGate)
+            {
+                return Mathf.Lerp(MinimumEdgeMaskQualityGate, 1f, Mathf.Clamp01(qualityGate));
+            }
+
             private static int ResolveEdgeMaskDimension(int fullDimension, float qualityGate)
             {
-                float scale = Mathf.Lerp(0.375f, 1f, Mathf.Clamp01(qualityGate));
+                float scale = Mathf.Clamp01(qualityGate);
                 return Math.Max(1, Mathf.CeilToInt(Math.Max(1, fullDimension) * scale));
             }
 
@@ -955,7 +953,7 @@ namespace Hecton8.Rendering
                 return;
 
             if (settings.computeShader == null ||
-                !Hecton8.Core.HardwareTierDetector.AllowHighResourceComputeShaders)
+                !SystemInfo.supportsComputeShaders)
             {
                 _pass.Setup(settings, settings.computeShader, true);
                 renderer.EnqueuePass(_pass);

@@ -84,14 +84,22 @@ namespace Crest
         internal override void OnDisable()
         {
             base.OnDisable();
-            _waveBuffers.Release();
+            _waveBuffers?.Release();
             Helpers.Destroy(_waveBuffers);
-            _combineBuffer.Release();
+            _combineBuffer?.Release();
             Helpers.Destroy(_combineBuffer);
+
+            if (_combineMaterial == null)
+            {
+                return;
+            }
 
             for (int index = 0; index < _combineMaterial.Length; index++)
             {
-                Helpers.Destroy(_combineMaterial[index].material);
+                if (_combineMaterial[index] != null)
+                {
+                    Helpers.Destroy(_combineMaterial[index].material);
+                }
             }
         }
 
@@ -130,20 +138,33 @@ namespace Crest
 
             // Combine compute shader - modern hardware
             _combineShader = ComputeShaderHelpers.LoadShader(ShaderName);
-            if (_combineShader == null)
+            if (_combineShader == null ||
+                !TryFindCombineKernel(_combineShader, "ShapeCombine", out krnl_ShapeCombine) ||
+                !TryFindCombineKernel(_combineShader, "ShapeCombine_DISABLE_COMBINE", out krnl_ShapeCombine_DISABLE_COMBINE) ||
+                !TryFindCombineKernel(_combineShader, "ShapeCombine_FLOW_ON", out krnl_ShapeCombine_FLOW_ON) ||
+                !TryFindCombineKernel(_combineShader, "ShapeCombine_FLOW_ON_DISABLE_COMBINE", out krnl_ShapeCombine_FLOW_ON_DISABLE_COMBINE) ||
+                !TryFindCombineKernel(_combineShader, "ShapeCombine_DYNAMIC_WAVE_SIM_ON", out krnl_ShapeCombine_DYNAMIC_WAVE_SIM_ON) ||
+                !TryFindCombineKernel(_combineShader, "ShapeCombine_DYNAMIC_WAVE_SIM_ON_DISABLE_COMBINE", out krnl_ShapeCombine_DYNAMIC_WAVE_SIM_ON_DISABLE_COMBINE) ||
+                !TryFindCombineKernel(_combineShader, "ShapeCombine_FLOW_ON_DYNAMIC_WAVE_SIM_ON", out krnl_ShapeCombine_FLOW_ON_DYNAMIC_WAVE_SIM_ON) ||
+                !TryFindCombineKernel(_combineShader, "ShapeCombine_FLOW_ON_DYNAMIC_WAVE_SIM_ON_DISABLE_COMBINE", out krnl_ShapeCombine_FLOW_ON_DYNAMIC_WAVE_SIM_ON_DISABLE_COMBINE))
             {
-                enabled = false;
+                _combineShader = null;
+                _combineProperties = null;
                 return;
             }
-            krnl_ShapeCombine = _combineShader.FindKernel("ShapeCombine");
-            krnl_ShapeCombine_DISABLE_COMBINE = _combineShader.FindKernel("ShapeCombine_DISABLE_COMBINE");
-            krnl_ShapeCombine_FLOW_ON = _combineShader.FindKernel("ShapeCombine_FLOW_ON");
-            krnl_ShapeCombine_FLOW_ON_DISABLE_COMBINE = _combineShader.FindKernel("ShapeCombine_FLOW_ON_DISABLE_COMBINE");
-            krnl_ShapeCombine_DYNAMIC_WAVE_SIM_ON = _combineShader.FindKernel("ShapeCombine_DYNAMIC_WAVE_SIM_ON");
-            krnl_ShapeCombine_DYNAMIC_WAVE_SIM_ON_DISABLE_COMBINE = _combineShader.FindKernel("ShapeCombine_DYNAMIC_WAVE_SIM_ON_DISABLE_COMBINE");
-            krnl_ShapeCombine_FLOW_ON_DYNAMIC_WAVE_SIM_ON = _combineShader.FindKernel("ShapeCombine_FLOW_ON_DYNAMIC_WAVE_SIM_ON");
-            krnl_ShapeCombine_FLOW_ON_DYNAMIC_WAVE_SIM_ON_DISABLE_COMBINE = _combineShader.FindKernel("ShapeCombine_FLOW_ON_DYNAMIC_WAVE_SIM_ON_DISABLE_COMBINE");
             _combineProperties = new PropertyWrapperCompute();
+        }
+
+        static bool TryFindCombineKernel(ComputeShader shader, string kernelName, out int kernel)
+        {
+            kernel = -1;
+            if (shader == null || !shader.HasKernel(kernelName))
+            {
+                return false;
+            }
+
+            kernel = shader.FindKernel(kernelName);
+            return kernel >= 0;
         }
 
         RenderTexture CreateCombineBuffer(RenderTextureDescriptor desc)
@@ -269,6 +290,10 @@ namespace Crest
 
             // Combine the LODs - copy results from biggest LOD down to LOD 0
             if (Settings.PingPongCombinePass)
+            {
+                CombinePassPingPong(buf);
+            }
+            else if (_combineShader == null || _combineProperties == null)
             {
                 CombinePassPingPong(buf);
             }

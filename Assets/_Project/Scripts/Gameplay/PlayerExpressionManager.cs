@@ -548,8 +548,6 @@ namespace Hecton8.Gameplay
         /// <summary>Registry-owned instance for the active scene/runtime.</summary>
         private static PlayerExpressionManager s_activeRuntimeInstance;
 
-        public static PlayerExpressionManager Instance => s_activeRuntimeInstance;
-
         /// <summary>The currently active expression profile.</summary>
         public static PlayerExpressionProfile ActiveProfile => _activeProfile;
 

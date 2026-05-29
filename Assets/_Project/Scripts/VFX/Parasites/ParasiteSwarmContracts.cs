@@ -218,70 +218,86 @@ namespace Hecton8.VFX.Parasites
         }
 
 #if UNITY_EDITOR
+        private static readonly ulong ProfileImportMutationGuardMask =
+            MutationGuardBit(BufferID.ShinobuParasiteProfiles) |
+            MutationGuardBit(BufferID.ShinobuParasiteProfileCount);
+
+        private static ulong MutationGuardBit(BufferID bufferId)
+        {
+            return 1UL << (unchecked((int)(uint)(int)bufferId) & 31);
+        }
+
         public static int LoadProfilesFromCsv(IDataVault vault, ReadOnlySpan<byte> bytes)
         {
             if (vault == null || bytes.Length <= 0)
                 return 0;
 
             EnsureVaultBuffers(vault);
+            if (!vault.TryAcquireMutationGuard(ProfileImportMutationGuardMask))
+                return 0;
+
+            try
+            {
+                return LoadProfilesFromCsvWithMutationGuardHeld(vault, bytes);
+            }
+            finally
+            {
+                vault.ReleaseMutationGuard(ProfileImportMutationGuardMask);
+            }
+        }
+
+        internal static int LoadProfilesFromCsvWithMutationGuardHeld(IDataVault vault, ReadOnlySpan<byte> bytes)
+        {
+            if (vault == null || bytes.Length <= 0)
+                return 0;
+
             if (!vault.TryGetGenerationHandle(BufferID.ShinobuParasiteProfiles, out VaultGenerationHandle<ParasiteBehaviorProfileDTO> profileHandle) ||
                 !vault.TryGetGenerationHandle(BufferID.ShinobuParasiteProfileCount, out VaultGenerationHandle<int> countHandle))
             {
                 return 0;
             }
 
-            bool profileLocked = vault.TryAcquireWriteLock(in profileHandle, SystemID.Vfx, out NativeArray<ParasiteBehaviorProfileDTO> profiles);
-            bool countLocked = vault.TryAcquireWriteLock(in countHandle, SystemID.Vfx, out NativeArray<int> profileCount);
-            if (!profileLocked || !countLocked)
+            if (!vault.TryResolveHandle(in profileHandle, out NativeArray<ParasiteBehaviorProfileDTO> profiles) ||
+                !vault.TryResolveHandle(in countHandle, out NativeArray<int> profileCount) ||
+                !profiles.IsCreated ||
+                !profileCount.IsCreated)
             {
-                if (countLocked)
-                    vault.ReleaseWriteLock(in countHandle, SystemID.Vfx);
-                if (profileLocked)
-                    vault.ReleaseWriteLock(in profileHandle, SystemID.Vfx);
                 return 0;
             }
 
             int written = 0;
-            try
+            int lineStart = 0;
+            bool skippedHeader = false;
+            for (int i = 0; i <= bytes.Length && written < math.min(ProfileCapacity, profiles.Length); i++)
             {
-                int lineStart = 0;
-                bool skippedHeader = false;
-                for (int i = 0; i <= bytes.Length && written < math.min(ProfileCapacity, profiles.Length); i++)
+                bool atEnd = i == bytes.Length;
+                if (!atEnd && bytes[i] != (byte)'\n')
+                    continue;
+
+                int lineEnd = i;
+                if (lineEnd > lineStart && bytes[lineEnd - 1] == (byte)'\r')
+                    lineEnd--;
+
+                ReadOnlySpan<byte> line = bytes.Slice(lineStart, math.max(0, lineEnd - lineStart));
+                lineStart = i + 1;
+                if (line.Length <= 0 || line[0] == (byte)'#')
+                    continue;
+
+                if (!skippedHeader && IsProfileHeader(line))
                 {
-                    bool atEnd = i == bytes.Length;
-                    if (!atEnd && bytes[i] != (byte)'\n')
-                        continue;
-
-                    int lineEnd = i;
-                    if (lineEnd > lineStart && bytes[lineEnd - 1] == (byte)'\r')
-                        lineEnd--;
-
-                    ReadOnlySpan<byte> line = bytes.Slice(lineStart, math.max(0, lineEnd - lineStart));
-                    lineStart = i + 1;
-                    if (line.Length <= 0 || line[0] == (byte)'#')
-                        continue;
-
-                    if (!skippedHeader && IsProfileHeader(line))
-                    {
-                        skippedHeader = true;
-                        continue;
-                    }
-
-                    if (TryParseProfileLine(line, out ParasiteBehaviorProfileDTO dto))
-                    {
-                        profiles[written] = dto;
-                        written++;
-                    }
+                    skippedHeader = true;
+                    continue;
                 }
 
-                if (profileCount.Length > 0)
-                    profileCount[0] = written;
+                if (TryParseProfileLine(line, out ParasiteBehaviorProfileDTO dto))
+                {
+                    profiles[written] = dto;
+                    written++;
+                }
             }
-            finally
-            {
-                vault.ReleaseWriteLock(in countHandle, SystemID.Vfx);
-                vault.ReleaseWriteLock(in profileHandle, SystemID.Vfx);
-            }
+
+            if (profileCount.Length > 0)
+                profileCount[0] = written;
 
             return written;
         }

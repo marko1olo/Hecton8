@@ -505,18 +505,45 @@ namespace Hecton8.Audio
         private const BufferID SpatialAudioVirtualVoiceSortPoolBufferId = BufferID.SpatialAudioVirtualVoiceSortPool;
         private const BufferID SpatialAudioVirtualVoiceDtoPoolBufferId = BufferID.SpatialAudioVirtualVoiceDtoPool;
         private const BufferID SpatialAudioVirtualVoiceSortKeyPoolBufferId = BufferID.SpatialAudioVirtualVoiceSortKeyPool;
+        private static readonly ulong VirtualVoiceSortMutationGuardMask =
+            AudioVaultMutationGuardBit(SpatialAudioVirtualVoiceSortPoolBufferId) |
+            AudioVaultMutationGuardBit(SpatialAudioVirtualVoiceSortKeyPoolBufferId) |
+            AudioVaultMutationGuardBit(BufferID.SpatialAudioVirtualVoiceSelections) |
+            AudioVaultMutationGuardBit(BufferID.SpatialAudioVirtualVoiceStatistics);
         private const BufferID SpatialAudioAcousticSourceWritePoolBufferId = BufferID.SpatialAudioAcousticSourceWritePool;
         private const BufferID SpatialAudioAcousticSourceSortPoolBufferId = BufferID.SpatialAudioAcousticSourceSortPool;
         private const BufferID SpatialAudioAcousticPreviousAupWritePoolBufferId = BufferID.SpatialAudioAcousticPreviousAupWritePool;
         private const BufferID SpatialAudioAcousticPreviousAupSortPoolBufferId = BufferID.SpatialAudioAcousticPreviousAupSortPool;
         private const BufferID SpatialAudioAcousticDspOutputPoolBufferId = BufferID.SpatialAudioAcousticDspOutputPool;
+        private static readonly ulong VirtualVoiceAppendMutationGuardMask =
+            AudioVaultMutationGuardBit(SpatialAudioVirtualVoiceWritePoolBufferId) |
+            AudioVaultMutationGuardBit(SpatialAudioVirtualVoiceDtoPoolBufferId) |
+            AudioVaultMutationGuardBit(SpatialAudioAcousticSourceWritePoolBufferId) |
+            AudioVaultMutationGuardBit(SpatialAudioAcousticPreviousAupWritePoolBufferId);
         private const BufferID SpatialAudioAcousticMaterialRowsBufferId = BufferID.SpatialAudioAcousticMaterialRows;
         private const BufferID SpatialAudioAcousticSelectedSourcePoolBufferId = BufferID.SpatialAudioAcousticSelectedSourcePool;
         private const BufferID SpatialAudioAcousticSelectedPreviousAupPoolBufferId = BufferID.SpatialAudioAcousticSelectedPreviousAupPool;
+        private static readonly ulong AcousticOcclusionMutationGuardMask =
+            AudioVaultMutationGuardBit(SpatialAudioAcousticSelectedSourcePoolBufferId) |
+            AudioVaultMutationGuardBit(SpatialAudioAcousticSelectedPreviousAupPoolBufferId) |
+            AudioVaultMutationGuardBit(SpatialAudioAcousticDspOutputPoolBufferId);
         private const BufferID SpatialAudioPortalOpenSetBufferId = BufferID.SpatialAudioPortalOpenSet;
         private const BufferID SpatialAudioPortalClosedSetBufferId = BufferID.SpatialAudioPortalClosedSet;
+        private static readonly ulong AcousticPortalWorkMutationGuardMask =
+            AudioVaultMutationGuardBit(BufferID.SpatialAudioPortalNodes) |
+            AudioVaultMutationGuardBit(BufferID.SpatialAudioPortalEdges) |
+            AudioVaultMutationGuardBit(BufferID.SpatialAudioPortalResult) |
+            AudioVaultMutationGuardBit(BufferID.SpatialAudioPortalCosts) |
+            AudioVaultMutationGuardBit(BufferID.SpatialAudioPortalCameFrom) |
+            AudioVaultMutationGuardBit(BufferID.SpatialAudioPortalStates);
+        private static readonly ulong AcousticPortalScratchMutationGuardMask =
+            AudioVaultMutationGuardBit(SpatialAudioPortalOpenSetBufferId) |
+            AudioVaultMutationGuardBit(SpatialAudioPortalClosedSetBufferId);
         private const BufferID SpatialAudioPreviousVelocityAupsBufferId = BufferID.SpatialAudioPreviousVelocityAups;
         private const BufferID SpatialAudioPreviousVelocityAupFramesBufferId = BufferID.SpatialAudioPreviousVelocityAupFrames;
+        private static readonly ulong PreviousVelocityAupMutationGuardMask =
+            AudioVaultMutationGuardBit(SpatialAudioPreviousVelocityAupsBufferId) |
+            AudioVaultMutationGuardBit(SpatialAudioPreviousVelocityAupFramesBufferId);
         private const BufferID SpatialAudioAcousticVoxelSdfTexture3DBufferId = (BufferID)72447;
         private const int AcousticSdfDefaultWidth = 64;
         private const int AcousticSdfDefaultHeight = 40;
@@ -1347,7 +1374,6 @@ namespace Hecton8.Audio
         private float _virtualVoiceQualityWeight = 1f;
         private int _acousticOcclusionOutputCount;
         private IDataVault _acousticMaterialRowsLockVault;
-        private IDataVault _virtualVoiceStatisticsLockVault;
         private IDataVault _virtualVoiceSortBuffersLockVault;
         private IDataVault _acousticOcclusionBuffersLockVault;
         private bool _virtualVoiceSortScheduled;
@@ -2044,62 +2070,74 @@ namespace Hecton8.Audio
             int tunedPhysicalLimit = math.min(
                 math.min(_virtualPhysicalVoiceLimit, VirtualVoiceUtility.ResolveContinuousVoiceBudget(globalQualityWeight)),
                 math.clamp(_virtualVoiceTuning.MaxHydratedVoices, 1, MaxVirtualPhysicalVoices));
-            if (!TryAcquireAudioVaultWriteBuffer(
-                    in _virtualVoiceSortPoolHandle,
-                    SpatialAudioVirtualVoiceSortPoolBufferId,
-                    MaxVirtualVoiceCapacity,
-                    out NativeArray<VirtualVoice> virtualVoiceSortPool))
+            IDataVault sortVault = _dataVault;
+            if (sortVault == null || !sortVault.TryAcquireMutationGuard(VirtualVoiceSortMutationGuardMask))
             {
                 DropVirtualVoiceSortBatchForVaultLockFailure();
                 return;
             }
 
-            if (!TryAcquireAudioVaultWriteBuffer(
-                    in _virtualVoiceSortKeyPoolHandle,
-                    SpatialAudioVirtualVoiceSortKeyPoolBufferId,
-                    MaxVirtualVoiceCapacity,
-                    out NativeArray<VirtualVoiceSortKey> virtualVoiceSortKeys))
+            bool sortGuardHeld = true;
+            NativeArray<VirtualVoice> virtualVoiceSortPool;
+            NativeArray<VirtualVoiceSortKey> virtualVoiceSortKeys;
+            NativeArray<VirtualVoiceSelection> virtualVoiceSelections;
+            NativeArray<VirtualVoiceStatistics> virtualVoiceStatistics;
+            try
             {
-                ReleaseAudioVaultWriteBuffer(
-                    in _virtualVoiceSortPoolHandle,
-                    SpatialAudioVirtualVoiceSortPoolBufferId);
-                DropVirtualVoiceSortBatchForVaultLockFailure();
-                return;
-            }
+                if (!TryOpenAudioVaultBuffer(
+                        sortVault,
+                        ref _virtualVoiceSortPoolHandle,
+                        SpatialAudioVirtualVoiceSortPoolBufferId,
+                        SystemID.Audio,
+                        MaxVirtualVoiceCapacity,
+                        out virtualVoiceSortPool))
+                {
+                    DropVirtualVoiceSortBatchForVaultLockFailure();
+                    return;
+                }
 
-            if (!TryAcquireAudioVaultWriteBuffer(
-                    in _virtualVoiceSelectionsHandle,
-                    BufferID.SpatialAudioVirtualVoiceSelections,
-                    MaxVirtualPhysicalVoices,
-                    out NativeArray<VirtualVoiceSelection> virtualVoiceSelections))
-            {
-                ReleaseAudioVaultWriteBuffer(
-                    in _virtualVoiceSortKeyPoolHandle,
-                    SpatialAudioVirtualVoiceSortKeyPoolBufferId);
-                ReleaseAudioVaultWriteBuffer(
-                    in _virtualVoiceSortPoolHandle,
-                    SpatialAudioVirtualVoiceSortPoolBufferId);
-                DropVirtualVoiceSortBatchForVaultLockFailure();
-                return;
-            }
+                if (!TryOpenAudioVaultBuffer(
+                        sortVault,
+                        ref _virtualVoiceSortKeyPoolHandle,
+                        SpatialAudioVirtualVoiceSortKeyPoolBufferId,
+                        SystemID.Audio,
+                        MaxVirtualVoiceCapacity,
+                        out virtualVoiceSortKeys))
+                {
+                    DropVirtualVoiceSortBatchForVaultLockFailure();
+                    return;
+                }
 
-            if (!TryAcquireAudioVaultWriteBuffer(
-                    in _virtualVoiceStatisticsHandle,
-                    BufferID.SpatialAudioVirtualVoiceStatistics,
-                    1,
-                    out NativeArray<VirtualVoiceStatistics> virtualVoiceStatistics))
+                if (!TryOpenAudioVaultBuffer(
+                        sortVault,
+                        ref _virtualVoiceSelectionsHandle,
+                        BufferID.SpatialAudioVirtualVoiceSelections,
+                        SystemID.Audio,
+                        MaxVirtualPhysicalVoices,
+                        out virtualVoiceSelections))
+                {
+                    DropVirtualVoiceSortBatchForVaultLockFailure();
+                    return;
+                }
+
+                if (!TryOpenAudioVaultBuffer(
+                        sortVault,
+                        ref _virtualVoiceStatisticsHandle,
+                        BufferID.SpatialAudioVirtualVoiceStatistics,
+                        SystemID.Audio,
+                        1,
+                        out virtualVoiceStatistics))
+                {
+                    DropVirtualVoiceSortBatchForVaultLockFailure();
+                    return;
+                }
+
+                sortGuardHeld = false;
+            }
+            finally
             {
-                ReleaseAudioVaultWriteBuffer(
-                    in _virtualVoiceSelectionsHandle,
-                    BufferID.SpatialAudioVirtualVoiceSelections);
-                ReleaseAudioVaultWriteBuffer(
-                    in _virtualVoiceSortKeyPoolHandle,
-                    SpatialAudioVirtualVoiceSortKeyPoolBufferId);
-                ReleaseAudioVaultWriteBuffer(
-                    in _virtualVoiceSortPoolHandle,
-                    SpatialAudioVirtualVoiceSortPoolBufferId);
-                DropVirtualVoiceSortBatchForVaultLockFailure();
-                return;
+                if (sortGuardHeld)
+                    sortVault.ReleaseMutationGuard(VirtualVoiceSortMutationGuardMask);
             }
 
             var sortJob = new VirtualVoiceSortJob
@@ -2133,9 +2171,8 @@ namespace Hecton8.Audio
             _virtualVoiceSortPoolLockedForSort = true;
             _virtualVoiceSortKeyPoolLockedForSort = true;
             _virtualVoiceSelectionsLockedForSort = true;
-            _virtualVoiceSortBuffersLockVault = _dataVault;
             _virtualVoiceStatisticsLockedForSort = true;
-            _virtualVoiceStatisticsLockVault = _dataVault;
+            _virtualVoiceSortBuffersLockVault = sortVault;
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
             try
             {
@@ -2145,7 +2182,6 @@ namespace Hecton8.Audio
             catch
             {
                 ReleaseVirtualVoiceSortBufferLocks();
-                ReleaseVirtualVoiceStatisticsSortLock();
                 _virtualVoiceSortScheduled = false;
                 GlobalTelemetryBus.PublishMathGuardInvalidNumber(unchecked((int)SpatialAudioFailureVirtualVoiceSortSchedule));
             }
@@ -3045,66 +3081,63 @@ namespace Hecton8.Audio
                 : float3.zero;
             int writeIndex = _virtualVoiceWriteCount;
             double3 acousticMeters = ToAbsoluteAcousticMeters(in request.SourceAup);
-            if (!TryAcquireAudioVaultWriteBuffer(
-                    in _virtualVoiceWritePoolHandle,
-                    SpatialAudioVirtualVoiceWritePoolBufferId,
-                    MaxVirtualVoiceCapacity,
-                    out NativeArray<VirtualVoice> virtualVoiceWritePool))
+            IDataVault vault = _dataVault;
+            if (vault == null || !vault.TryAcquireMutationGuard(VirtualVoiceAppendMutationGuardMask))
             {
-                _virtualVoiceDroppedCount++;
-                return;
-            }
-
-            if (!TryAcquireAudioVaultWriteBuffer(
-                    in _virtualVoiceDtoPoolHandle,
-                    SpatialAudioVirtualVoiceDtoPoolBufferId,
-                    MaxVirtualVoiceCapacity,
-                    out NativeArray<VirtualVoiceDTO> virtualVoiceDtoPool))
-            {
-                ReleaseAudioVaultWriteBuffer(
-                    in _virtualVoiceWritePoolHandle,
-                    SpatialAudioVirtualVoiceWritePoolBufferId);
-                _virtualVoiceDroppedCount++;
-                return;
-            }
-
-            if (!TryAcquireAudioVaultWriteBuffer(
-                    in _acousticSourceWritePoolHandle,
-                    SpatialAudioAcousticSourceWritePoolBufferId,
-                    MaxVirtualVoiceCapacity,
-                    out NativeArray<AcousticSourceDTO> acousticSourceWritePool))
-            {
-                ReleaseAudioVaultWriteBuffer(
-                    in _virtualVoiceDtoPoolHandle,
-                    SpatialAudioVirtualVoiceDtoPoolBufferId);
-                ReleaseAudioVaultWriteBuffer(
-                    in _virtualVoiceWritePoolHandle,
-                    SpatialAudioVirtualVoiceWritePoolBufferId);
-                _virtualVoiceDroppedCount++;
-                return;
-            }
-
-            if (!TryAcquireAudioVaultWriteBuffer(
-                    in _acousticPreviousAupWritePoolHandle,
-                    SpatialAudioAcousticPreviousAupWritePoolBufferId,
-                    MaxVirtualVoiceCapacity,
-                    out NativeArray<double3> acousticPreviousAupWritePool))
-            {
-                ReleaseAudioVaultWriteBuffer(
-                    in _acousticSourceWritePoolHandle,
-                    SpatialAudioAcousticSourceWritePoolBufferId);
-                ReleaseAudioVaultWriteBuffer(
-                    in _virtualVoiceDtoPoolHandle,
-                    SpatialAudioVirtualVoiceDtoPoolBufferId);
-                ReleaseAudioVaultWriteBuffer(
-                    in _virtualVoiceWritePoolHandle,
-                    SpatialAudioVirtualVoiceWritePoolBufferId);
                 _virtualVoiceDroppedCount++;
                 return;
             }
 
             try
             {
+                if (!TryOpenAudioVaultBuffer(
+                        vault,
+                        ref _virtualVoiceWritePoolHandle,
+                        SpatialAudioVirtualVoiceWritePoolBufferId,
+                        SystemID.Audio,
+                        MaxVirtualVoiceCapacity,
+                        out NativeArray<VirtualVoice> virtualVoiceWritePool))
+                {
+                    _virtualVoiceDroppedCount++;
+                    return;
+                }
+
+                if (!TryOpenAudioVaultBuffer(
+                        vault,
+                        ref _virtualVoiceDtoPoolHandle,
+                        SpatialAudioVirtualVoiceDtoPoolBufferId,
+                        SystemID.Audio,
+                        MaxVirtualVoiceCapacity,
+                        out NativeArray<VirtualVoiceDTO> virtualVoiceDtoPool))
+                {
+                    _virtualVoiceDroppedCount++;
+                    return;
+                }
+
+                if (!TryOpenAudioVaultBuffer(
+                        vault,
+                        ref _acousticSourceWritePoolHandle,
+                        SpatialAudioAcousticSourceWritePoolBufferId,
+                        SystemID.Audio,
+                        MaxVirtualVoiceCapacity,
+                        out NativeArray<AcousticSourceDTO> acousticSourceWritePool))
+                {
+                    _virtualVoiceDroppedCount++;
+                    return;
+                }
+
+                if (!TryOpenAudioVaultBuffer(
+                        vault,
+                        ref _acousticPreviousAupWritePoolHandle,
+                        SpatialAudioAcousticPreviousAupWritePoolBufferId,
+                        SystemID.Audio,
+                        MaxVirtualVoiceCapacity,
+                        out NativeArray<double3> acousticPreviousAupWritePool))
+                {
+                    _virtualVoiceDroppedCount++;
+                    return;
+                }
+
                 virtualVoiceWritePool[writeIndex] = new VirtualVoice
                 {
                     EventID = request.EventID,
@@ -3168,18 +3201,7 @@ namespace Hecton8.Audio
             }
             finally
             {
-                ReleaseAudioVaultWriteBuffer(
-                    in _acousticPreviousAupWritePoolHandle,
-                    SpatialAudioAcousticPreviousAupWritePoolBufferId);
-                ReleaseAudioVaultWriteBuffer(
-                    in _acousticSourceWritePoolHandle,
-                    SpatialAudioAcousticSourceWritePoolBufferId);
-                ReleaseAudioVaultWriteBuffer(
-                    in _virtualVoiceDtoPoolHandle,
-                    SpatialAudioVirtualVoiceDtoPoolBufferId);
-                ReleaseAudioVaultWriteBuffer(
-                    in _virtualVoiceWritePoolHandle,
-                    SpatialAudioVirtualVoiceWritePoolBufferId);
+                vault.ReleaseMutationGuard(VirtualVoiceAppendMutationGuardMask);
             }
         }
 
@@ -3363,45 +3385,54 @@ namespace Hecton8.Audio
                 return;
             }
 
-            if (!TryAcquireAudioVaultWriteBuffer(
-                    in _acousticSelectedSourcePoolHandle,
+            IDataVault vault = _dataVault;
+            if (vault == null || !vault.TryAcquireMutationGuard(AcousticOcclusionMutationGuardMask))
+            {
+                _acousticOcclusionOutputCount = 0;
+                _acousticOcclusionStartTicks = 0L;
+                _lastAcousticOcclusionTimeMs = 0f;
+                return;
+            }
+
+            if (!TryOpenAudioVaultBuffer(
+                    vault,
+                    ref _acousticSelectedSourcePoolHandle,
                     SpatialAudioAcousticSelectedSourcePoolBufferId,
+                    SystemID.Audio,
                     MaxVirtualPhysicalVoices,
                     out NativeArray<AcousticSourceDTO> selectedSourcePool))
             {
+                vault.ReleaseMutationGuard(AcousticOcclusionMutationGuardMask);
                 _acousticOcclusionOutputCount = 0;
                 _acousticOcclusionStartTicks = 0L;
                 _lastAcousticOcclusionTimeMs = 0f;
                 return;
             }
 
-            if (!TryAcquireAudioVaultWriteBuffer(
-                    in _acousticSelectedPreviousAupPoolHandle,
+            if (!TryOpenAudioVaultBuffer(
+                    vault,
+                    ref _acousticSelectedPreviousAupPoolHandle,
                     SpatialAudioAcousticSelectedPreviousAupPoolBufferId,
+                    SystemID.Audio,
                     MaxVirtualPhysicalVoices,
                     out NativeArray<double3> selectedPreviousAupPool))
             {
-                ReleaseAudioVaultWriteBuffer(
-                    in _acousticSelectedSourcePoolHandle,
-                    SpatialAudioAcousticSelectedSourcePoolBufferId);
+                vault.ReleaseMutationGuard(AcousticOcclusionMutationGuardMask);
                 _acousticOcclusionOutputCount = 0;
                 _acousticOcclusionStartTicks = 0L;
                 _lastAcousticOcclusionTimeMs = 0f;
                 return;
             }
 
-            if (!TryAcquireAudioVaultWriteBuffer(
-                    in _acousticDspOutputPoolHandle,
+            if (!TryOpenAudioVaultBuffer(
+                    vault,
+                    ref _acousticDspOutputPoolHandle,
                     SpatialAudioAcousticDspOutputPoolBufferId,
+                    SystemID.Audio,
                     MaxVirtualVoiceCapacity,
                     out NativeArray<AcousticDspOutputDTO> dspOutputPool))
             {
-                ReleaseAudioVaultWriteBuffer(
-                    in _acousticSelectedPreviousAupPoolHandle,
-                    SpatialAudioAcousticSelectedPreviousAupPoolBufferId);
-                ReleaseAudioVaultWriteBuffer(
-                    in _acousticSelectedSourcePoolHandle,
-                    SpatialAudioAcousticSelectedSourcePoolBufferId);
+                vault.ReleaseMutationGuard(AcousticOcclusionMutationGuardMask);
                 _acousticOcclusionOutputCount = 0;
                 _acousticOcclusionStartTicks = 0L;
                 _lastAcousticOcclusionTimeMs = 0f;
@@ -3411,15 +3442,7 @@ namespace Hecton8.Audio
             int count = PopulateSelectedAcousticSources(sourceCount, selections, selectedSourcePool, selectedPreviousAupPool);
             if (count <= 0)
             {
-                ReleaseAudioVaultWriteBuffer(
-                    in _acousticDspOutputPoolHandle,
-                    SpatialAudioAcousticDspOutputPoolBufferId);
-                ReleaseAudioVaultWriteBuffer(
-                    in _acousticSelectedPreviousAupPoolHandle,
-                    SpatialAudioAcousticSelectedPreviousAupPoolBufferId);
-                ReleaseAudioVaultWriteBuffer(
-                    in _acousticSelectedSourcePoolHandle,
-                    SpatialAudioAcousticSelectedSourcePoolBufferId);
+                vault.ReleaseMutationGuard(AcousticOcclusionMutationGuardMask);
                 _acousticOcclusionOutputCount = 0;
                 _acousticOcclusionStartTicks = 0L;
                 _lastAcousticOcclusionTimeMs = 0f;
@@ -3480,7 +3503,7 @@ namespace Hecton8.Audio
             _acousticSelectedSourcePoolLockedForOcclusion = true;
             _acousticSelectedPreviousAupPoolLockedForOcclusion = true;
             _acousticDspOutputPoolLockedForOcclusion = true;
-            _acousticOcclusionBuffersLockVault = _dataVault;
+            _acousticOcclusionBuffersLockVault = vault;
             _acousticMaterialRowsLockedForOcclusion = materialRowsLocked;
             _acousticMaterialRowsLockVault = materialRowsLocked ? _dataVault : null;
             if (hasVoxelSdf)
@@ -3824,7 +3847,6 @@ namespace Hecton8.Audio
             long sortWaitTicks = System.Diagnostics.Stopwatch.GetTimestamp() - sortWaitStartTicks;
             _virtualVoiceSortScheduled = false;
             ReleaseVirtualVoiceSortBufferLocks();
-            ReleaseVirtualVoiceStatisticsSortLock();
             if (!TryReadVirtualVoiceStatisticsSnapshot(out VirtualVoiceStatistics completedStatistics))
             {
                 _lastVirtualVoiceStatistics = default;
@@ -4571,33 +4593,38 @@ namespace Hecton8.Audio
             long gridDeltaY,
             long gridDeltaZ)
         {
-            if (!TryAcquireAudioVaultWriteBuffer(
-                    in sourceHandle,
-                    sourceBufferId,
-                    MaxVirtualVoiceCapacity,
-                    out NativeArray<AcousticSourceDTO> sources))
-            {
+            IDataVault vault = _dataVault;
+            ulong guardMask = AudioVaultMutationGuardBit(sourceBufferId) | AudioVaultMutationGuardBit(previousAupBufferId);
+            if (vault == null || !vault.TryAcquireMutationGuard(guardMask))
                 return;
-            }
-
-            if (!TryAcquireAudioVaultWriteBuffer(
-                    in previousAupHandle,
-                    previousAupBufferId,
-                    MaxVirtualVoiceCapacity,
-                    out NativeArray<double3> previousAup))
-            {
-                ReleaseAudioVaultWriteBuffer(in sourceHandle, sourceBufferId);
-                return;
-            }
 
             try
             {
+                VaultGenerationHandle<AcousticSourceDTO> sourceResolveHandle = sourceHandle;
+                VaultGenerationHandle<double3> previousAupResolveHandle = previousAupHandle;
+                if (!TryOpenAudioVaultBuffer(
+                        vault,
+                        ref sourceResolveHandle,
+                        sourceBufferId,
+                        SystemID.Audio,
+                        MaxVirtualVoiceCapacity,
+                        out NativeArray<AcousticSourceDTO> sources) ||
+                    !TryOpenAudioVaultBuffer(
+                        vault,
+                        ref previousAupResolveHandle,
+                        previousAupBufferId,
+                        SystemID.Audio,
+                        MaxVirtualVoiceCapacity,
+                        out NativeArray<double3> previousAup))
+                {
+                    return;
+                }
+
                 RebaseAcousticSourcePool(sources, previousAup, count, gridDeltaX, gridDeltaY, gridDeltaZ);
             }
             finally
             {
-                ReleaseAudioVaultWriteBuffer(in previousAupHandle, previousAupBufferId);
-                ReleaseAudioVaultWriteBuffer(in sourceHandle, sourceBufferId);
+                vault.ReleaseMutationGuard(guardMask);
             }
         }
 
@@ -8205,14 +8232,12 @@ namespace Hecton8.Audio
             NativeArray<AcousticPortalTelemetryEntry> blackBox = default;
             try
             {
-                if (!vault.TryAcquireWriteLock(in _acousticPortalBlackBoxHandle, SystemID.Audio, out blackBox) ||
-                    !blackBox.IsCreated ||
-                    blackBox.Length <= 0)
-                {
+                if (!vault.TryAcquireWriteLock(in _acousticPortalBlackBoxHandle, SystemID.Audio, out blackBox))
                     return;
-                }
 
                 blackBoxLocked = true;
+                if (!blackBox.IsCreated || blackBox.Length <= 0)
+                    return;
 
                 uint flags = 0u;
                 if (result.UsedPortalPath != 0)
@@ -8537,39 +8562,51 @@ namespace Hecton8.Audio
             if (_poolSize <= 0)
                 return false;
 
-            if (!TryAcquireAudioVaultWriteBuffer(
-                    in _previousVelocityAupsHandle,
-                    SpatialAudioPreviousVelocityAupsBufferId,
-                    _poolSize,
-                    out previousVelocityAups))
+            IDataVault vault = _dataVault;
+            if (vault == null || !vault.TryAcquireMutationGuard(PreviousVelocityAupMutationGuardMask))
             {
                 return false;
             }
 
-            if (!TryAcquireAudioVaultWriteBuffer(
-                    in _previousVelocityAupFramesHandle,
-                    SpatialAudioPreviousVelocityAupFramesBufferId,
-                    _poolSize,
-                    out previousVelocityAupFrames))
+            bool guardHeld = true;
+            try
             {
-                ReleaseAudioVaultWriteBuffer(
-                    in _previousVelocityAupsHandle,
-                    SpatialAudioPreviousVelocityAupsBufferId);
-                previousVelocityAups = default;
-                return false;
-            }
+                if (!TryOpenAudioVaultBuffer(
+                        vault,
+                        ref _previousVelocityAupsHandle,
+                        SpatialAudioPreviousVelocityAupsBufferId,
+                        SystemID.Audio,
+                        _poolSize,
+                        out previousVelocityAups))
+                {
+                    return false;
+                }
 
-            return true;
+                if (!TryOpenAudioVaultBuffer(
+                        vault,
+                        ref _previousVelocityAupFramesHandle,
+                        SpatialAudioPreviousVelocityAupFramesBufferId,
+                        SystemID.Audio,
+                        _poolSize,
+                        out previousVelocityAupFrames))
+                {
+                    previousVelocityAups = default;
+                    return false;
+                }
+
+                guardHeld = false;
+                return true;
+            }
+            finally
+            {
+                if (guardHeld)
+                    vault.ReleaseMutationGuard(PreviousVelocityAupMutationGuardMask);
+            }
         }
 
         private void ReleasePreviousVelocityAupBuffers()
         {
-            ReleaseAudioVaultWriteBuffer(
-                in _previousVelocityAupFramesHandle,
-                SpatialAudioPreviousVelocityAupFramesBufferId);
-            ReleaseAudioVaultWriteBuffer(
-                in _previousVelocityAupsHandle,
-                SpatialAudioPreviousVelocityAupsBufferId);
+            _dataVault?.ReleaseMutationGuard(PreviousVelocityAupMutationGuardMask);
         }
 
         private void ResetPreviousVelocityAupState()
@@ -8647,32 +8684,25 @@ namespace Hecton8.Audio
         private void ReleaseVirtualVoiceSortBufferLocks()
         {
             IDataVault vault = _virtualVoiceSortBuffersLockVault ?? _dataVault;
+            bool releaseSortGuard =
+                _virtualVoiceSelectionsLockedForSort ||
+                _virtualVoiceSortKeyPoolLockedForSort ||
+                _virtualVoiceSortPoolLockedForSort ||
+                _virtualVoiceStatisticsLockedForSort;
             if (_virtualVoiceSelectionsLockedForSort)
-            {
-                ReleaseAudioVaultWriteBuffer(
-                    vault,
-                    in _virtualVoiceSelectionsHandle,
-                    BufferID.SpatialAudioVirtualVoiceSelections);
                 _virtualVoiceSelectionsLockedForSort = false;
-            }
 
             if (_virtualVoiceSortKeyPoolLockedForSort)
-            {
-                ReleaseAudioVaultWriteBuffer(
-                    vault,
-                    in _virtualVoiceSortKeyPoolHandle,
-                    SpatialAudioVirtualVoiceSortKeyPoolBufferId);
                 _virtualVoiceSortKeyPoolLockedForSort = false;
-            }
 
             if (_virtualVoiceSortPoolLockedForSort)
-            {
-                ReleaseAudioVaultWriteBuffer(
-                    vault,
-                    in _virtualVoiceSortPoolHandle,
-                    SpatialAudioVirtualVoiceSortPoolBufferId);
                 _virtualVoiceSortPoolLockedForSort = false;
-            }
+
+            if (_virtualVoiceStatisticsLockedForSort)
+                _virtualVoiceStatisticsLockedForSort = false;
+
+            if (releaseSortGuard && vault != null)
+                vault.ReleaseMutationGuard(VirtualVoiceSortMutationGuardMask);
 
             _virtualVoiceSortBuffersLockVault = null;
         }
@@ -8682,32 +8712,21 @@ namespace Hecton8.Audio
             ReleaseAcousticOcclusionSdfSnapshotLock();
 
             IDataVault vault = _acousticOcclusionBuffersLockVault ?? _dataVault;
+            bool releaseOcclusionGuard =
+                _acousticDspOutputPoolLockedForOcclusion ||
+                _acousticSelectedPreviousAupPoolLockedForOcclusion ||
+                _acousticSelectedSourcePoolLockedForOcclusion;
             if (_acousticDspOutputPoolLockedForOcclusion)
-            {
-                ReleaseAudioVaultWriteBuffer(
-                    vault,
-                    in _acousticDspOutputPoolHandle,
-                    SpatialAudioAcousticDspOutputPoolBufferId);
                 _acousticDspOutputPoolLockedForOcclusion = false;
-            }
 
             if (_acousticSelectedPreviousAupPoolLockedForOcclusion)
-            {
-                ReleaseAudioVaultWriteBuffer(
-                    vault,
-                    in _acousticSelectedPreviousAupPoolHandle,
-                    SpatialAudioAcousticSelectedPreviousAupPoolBufferId);
                 _acousticSelectedPreviousAupPoolLockedForOcclusion = false;
-            }
 
             if (_acousticSelectedSourcePoolLockedForOcclusion)
-            {
-                ReleaseAudioVaultWriteBuffer(
-                    vault,
-                    in _acousticSelectedSourcePoolHandle,
-                    SpatialAudioAcousticSelectedSourcePoolBufferId);
                 _acousticSelectedSourcePoolLockedForOcclusion = false;
-            }
+
+            if (releaseOcclusionGuard && vault != null)
+                vault.ReleaseMutationGuard(AcousticOcclusionMutationGuardMask);
 
             _acousticOcclusionBuffersLockVault = null;
         }
@@ -8760,18 +8779,7 @@ namespace Hecton8.Audio
             if (!_virtualVoiceStatisticsLockedForSort)
                 return;
 
-            IDataVault vault = _virtualVoiceStatisticsLockVault ?? _dataVault;
-            if (vault != null &&
-                IsAudioVaultHandle(
-                    in _virtualVoiceStatisticsHandle,
-                    BufferID.SpatialAudioVirtualVoiceStatistics,
-                    SystemID.Audio))
-            {
-                vault.ReleaseWriteLock(in _virtualVoiceStatisticsHandle, SystemID.Audio);
-            }
-
-            _virtualVoiceStatisticsLockedForSort = false;
-            _virtualVoiceStatisticsLockVault = null;
+            ReleaseVirtualVoiceSortBufferLocks();
         }
 
         private bool HasAudioVaultReadBuffer<T>(
@@ -8909,11 +8917,8 @@ namespace Hecton8.Audio
             cameFrom = default;
             states = default;
 
-            if (!TryAcquireAudioVaultWriteBuffer(
-                    in _acousticPortalNodesHandle,
-                    BufferID.SpatialAudioPortalNodes,
-                    AcousticPortalMaxNodes,
-                    out nodes))
+            IDataVault vault = _dataVault;
+            if (vault == null || !vault.TryAcquireMutationGuard(AcousticPortalWorkMutationGuardMask))
             {
                 WriteAcousticPortalFailureBlackBox(
                     BufferID.SpatialAudioPortalNodes,
@@ -8922,112 +8927,127 @@ namespace Hecton8.Audio
                 return false;
             }
 
-            if (!TryAcquireAudioVaultWriteBuffer(
-                    in _acousticPortalEdgesHandle,
-                    BufferID.SpatialAudioPortalEdges,
-                    AcousticPortalMaxEdges,
-                    out edges))
+            bool guardHeld = true;
+            try
             {
-                ReleaseAudioVaultWriteBuffer(in _acousticPortalNodesHandle, BufferID.SpatialAudioPortalNodes);
-                nodes = default;
-                WriteAcousticPortalFailureBlackBox(
-                    BufferID.SpatialAudioPortalEdges,
-                    _acousticPortalEdgesHandle.Generation,
-                    AcousticPortalFailureLockOrCapacity);
-                return false;
-            }
+                if (!TryOpenAudioVaultBuffer(
+                        vault,
+                        ref _acousticPortalNodesHandle,
+                        BufferID.SpatialAudioPortalNodes,
+                        SystemID.Audio,
+                        AcousticPortalMaxNodes,
+                        out nodes))
+                {
+                    WriteAcousticPortalFailureBlackBox(
+                        BufferID.SpatialAudioPortalNodes,
+                        _acousticPortalNodesHandle.Generation,
+                        AcousticPortalFailureLockOrCapacity);
+                    return false;
+                }
 
-            if (!TryAcquireAudioVaultWriteBuffer(
-                    in _acousticPortalResultHandle,
-                    BufferID.SpatialAudioPortalResult,
-                    1,
-                    out result))
+                if (!TryOpenAudioVaultBuffer(
+                        vault,
+                        ref _acousticPortalEdgesHandle,
+                        BufferID.SpatialAudioPortalEdges,
+                        SystemID.Audio,
+                        AcousticPortalMaxEdges,
+                        out edges))
+                {
+                    nodes = default;
+                    WriteAcousticPortalFailureBlackBox(
+                        BufferID.SpatialAudioPortalEdges,
+                        _acousticPortalEdgesHandle.Generation,
+                        AcousticPortalFailureLockOrCapacity);
+                    return false;
+                }
+
+                if (!TryOpenAudioVaultBuffer(
+                        vault,
+                        ref _acousticPortalResultHandle,
+                        BufferID.SpatialAudioPortalResult,
+                        SystemID.Audio,
+                        1,
+                        out result))
+                {
+                    nodes = default;
+                    edges = default;
+                    WriteAcousticPortalFailureBlackBox(
+                        BufferID.SpatialAudioPortalResult,
+                        _acousticPortalResultHandle.Generation,
+                        AcousticPortalFailureLockOrCapacity);
+                    return false;
+                }
+
+                if (!TryOpenAudioVaultBuffer(
+                        vault,
+                        ref _acousticPortalCostsHandle,
+                        BufferID.SpatialAudioPortalCosts,
+                        SystemID.Audio,
+                        AcousticPortalMaxNodes,
+                        out costs))
+                {
+                    nodes = default;
+                    edges = default;
+                    result = default;
+                    WriteAcousticPortalFailureBlackBox(
+                        BufferID.SpatialAudioPortalCosts,
+                        _acousticPortalCostsHandle.Generation,
+                        AcousticPortalFailureLockOrCapacity);
+                    return false;
+                }
+
+                if (!TryOpenAudioVaultBuffer(
+                        vault,
+                        ref _acousticPortalCameFromHandle,
+                        BufferID.SpatialAudioPortalCameFrom,
+                        SystemID.Audio,
+                        AcousticPortalMaxNodes,
+                        out cameFrom))
+                {
+                    nodes = default;
+                    edges = default;
+                    result = default;
+                    costs = default;
+                    WriteAcousticPortalFailureBlackBox(
+                        BufferID.SpatialAudioPortalCameFrom,
+                        _acousticPortalCameFromHandle.Generation,
+                        AcousticPortalFailureLockOrCapacity);
+                    return false;
+                }
+
+                if (!TryOpenAudioVaultBuffer(
+                        vault,
+                        ref _acousticPortalStatesHandle,
+                        BufferID.SpatialAudioPortalStates,
+                        SystemID.Audio,
+                        AcousticPortalMaxNodes,
+                        out states))
+                {
+                    nodes = default;
+                    edges = default;
+                    result = default;
+                    costs = default;
+                    cameFrom = default;
+                    WriteAcousticPortalFailureBlackBox(
+                        BufferID.SpatialAudioPortalStates,
+                        _acousticPortalStatesHandle.Generation,
+                        AcousticPortalFailureLockOrCapacity);
+                    return false;
+                }
+
+                guardHeld = false;
+                return true;
+            }
+            finally
             {
-                ReleaseAudioVaultWriteBuffer(in _acousticPortalEdgesHandle, BufferID.SpatialAudioPortalEdges);
-                ReleaseAudioVaultWriteBuffer(in _acousticPortalNodesHandle, BufferID.SpatialAudioPortalNodes);
-                nodes = default;
-                edges = default;
-                WriteAcousticPortalFailureBlackBox(
-                    BufferID.SpatialAudioPortalResult,
-                    _acousticPortalResultHandle.Generation,
-                    AcousticPortalFailureLockOrCapacity);
-                return false;
+                if (guardHeld)
+                    vault.ReleaseMutationGuard(AcousticPortalWorkMutationGuardMask);
             }
-
-            if (!TryAcquireAudioVaultWriteBuffer(
-                    in _acousticPortalCostsHandle,
-                    BufferID.SpatialAudioPortalCosts,
-                    AcousticPortalMaxNodes,
-                    out costs))
-            {
-                ReleaseAudioVaultWriteBuffer(in _acousticPortalResultHandle, BufferID.SpatialAudioPortalResult);
-                ReleaseAudioVaultWriteBuffer(in _acousticPortalEdgesHandle, BufferID.SpatialAudioPortalEdges);
-                ReleaseAudioVaultWriteBuffer(in _acousticPortalNodesHandle, BufferID.SpatialAudioPortalNodes);
-                nodes = default;
-                edges = default;
-                result = default;
-                WriteAcousticPortalFailureBlackBox(
-                    BufferID.SpatialAudioPortalCosts,
-                    _acousticPortalCostsHandle.Generation,
-                    AcousticPortalFailureLockOrCapacity);
-                return false;
-            }
-
-            if (!TryAcquireAudioVaultWriteBuffer(
-                    in _acousticPortalCameFromHandle,
-                    BufferID.SpatialAudioPortalCameFrom,
-                    AcousticPortalMaxNodes,
-                    out cameFrom))
-            {
-                ReleaseAudioVaultWriteBuffer(in _acousticPortalCostsHandle, BufferID.SpatialAudioPortalCosts);
-                ReleaseAudioVaultWriteBuffer(in _acousticPortalResultHandle, BufferID.SpatialAudioPortalResult);
-                ReleaseAudioVaultWriteBuffer(in _acousticPortalEdgesHandle, BufferID.SpatialAudioPortalEdges);
-                ReleaseAudioVaultWriteBuffer(in _acousticPortalNodesHandle, BufferID.SpatialAudioPortalNodes);
-                nodes = default;
-                edges = default;
-                result = default;
-                costs = default;
-                WriteAcousticPortalFailureBlackBox(
-                    BufferID.SpatialAudioPortalCameFrom,
-                    _acousticPortalCameFromHandle.Generation,
-                    AcousticPortalFailureLockOrCapacity);
-                return false;
-            }
-
-            if (!TryAcquireAudioVaultWriteBuffer(
-                    in _acousticPortalStatesHandle,
-                    BufferID.SpatialAudioPortalStates,
-                    AcousticPortalMaxNodes,
-                    out states))
-            {
-                ReleaseAudioVaultWriteBuffer(in _acousticPortalCameFromHandle, BufferID.SpatialAudioPortalCameFrom);
-                ReleaseAudioVaultWriteBuffer(in _acousticPortalCostsHandle, BufferID.SpatialAudioPortalCosts);
-                ReleaseAudioVaultWriteBuffer(in _acousticPortalResultHandle, BufferID.SpatialAudioPortalResult);
-                ReleaseAudioVaultWriteBuffer(in _acousticPortalEdgesHandle, BufferID.SpatialAudioPortalEdges);
-                ReleaseAudioVaultWriteBuffer(in _acousticPortalNodesHandle, BufferID.SpatialAudioPortalNodes);
-                nodes = default;
-                edges = default;
-                result = default;
-                costs = default;
-                cameFrom = default;
-                WriteAcousticPortalFailureBlackBox(
-                    BufferID.SpatialAudioPortalStates,
-                    _acousticPortalStatesHandle.Generation,
-                    AcousticPortalFailureLockOrCapacity);
-                return false;
-            }
-
-            return true;
         }
 
         private void ReleaseAcousticPortalWorkBuffers()
         {
-            ReleaseAudioVaultWriteBuffer(in _acousticPortalStatesHandle, BufferID.SpatialAudioPortalStates);
-            ReleaseAudioVaultWriteBuffer(in _acousticPortalCameFromHandle, BufferID.SpatialAudioPortalCameFrom);
-            ReleaseAudioVaultWriteBuffer(in _acousticPortalCostsHandle, BufferID.SpatialAudioPortalCosts);
-            ReleaseAudioVaultWriteBuffer(in _acousticPortalResultHandle, BufferID.SpatialAudioPortalResult);
-            ReleaseAudioVaultWriteBuffer(in _acousticPortalEdgesHandle, BufferID.SpatialAudioPortalEdges);
-            ReleaseAudioVaultWriteBuffer(in _acousticPortalNodesHandle, BufferID.SpatialAudioPortalNodes);
+            _dataVault?.ReleaseMutationGuard(AcousticPortalWorkMutationGuardMask);
         }
 
         private bool TryAcquireAcousticPortalScratchSets(
@@ -9061,14 +9081,8 @@ namespace Hecton8.Audio
                 return false;
             }
 
-            bool openLocked = vault.TryAcquireWriteLock(in _acousticPortalOpenSetHandle, SystemID.Audio, out openSet);
-            if (!openLocked ||
-                !openSet.IsCreated ||
-                openSet.Length < AcousticPortalMaxNodes)
+            if (!vault.TryAcquireMutationGuard(AcousticPortalScratchMutationGuardMask))
             {
-                if (openLocked)
-                    vault.ReleaseWriteLock(in _acousticPortalOpenSetHandle, SystemID.Audio);
-                openSet = default;
                 WriteAcousticPortalFailureBlackBox(
                     SpatialAudioPortalOpenSetBufferId,
                     _acousticPortalOpenSetHandle.Generation,
@@ -9076,36 +9090,53 @@ namespace Hecton8.Audio
                 return false;
             }
 
-            bool closedLocked = vault.TryAcquireWriteLock(in _acousticPortalClosedSetHandle, SystemID.Audio, out closedSet);
-            if (!closedLocked ||
-                !closedSet.IsCreated ||
-                closedSet.Length < AcousticPortalMaxNodes)
+            bool guardHeld = true;
+            try
             {
-                vault.ReleaseWriteLock(in _acousticPortalOpenSetHandle, SystemID.Audio);
-                if (closedLocked)
-                    vault.ReleaseWriteLock(in _acousticPortalClosedSetHandle, SystemID.Audio);
-                openSet = default;
-                closedSet = default;
-                WriteAcousticPortalFailureBlackBox(
-                    SpatialAudioPortalClosedSetBufferId,
-                    _acousticPortalClosedSetHandle.Generation,
-                    AcousticPortalFailureLockOrCapacity);
-                return false;
-            }
+                if (!TryOpenAudioVaultBuffer(
+                        vault,
+                        ref _acousticPortalOpenSetHandle,
+                        SpatialAudioPortalOpenSetBufferId,
+                        SystemID.Audio,
+                        AcousticPortalMaxNodes,
+                        out openSet))
+                {
+                    WriteAcousticPortalFailureBlackBox(
+                        SpatialAudioPortalOpenSetBufferId,
+                        _acousticPortalOpenSetHandle.Generation,
+                        AcousticPortalFailureLockOrCapacity);
+                    return false;
+                }
 
-            return true;
+                if (!TryOpenAudioVaultBuffer(
+                        vault,
+                        ref _acousticPortalClosedSetHandle,
+                        SpatialAudioPortalClosedSetBufferId,
+                        SystemID.Audio,
+                        AcousticPortalMaxNodes,
+                        out closedSet))
+                {
+                    openSet = default;
+                    WriteAcousticPortalFailureBlackBox(
+                        SpatialAudioPortalClosedSetBufferId,
+                        _acousticPortalClosedSetHandle.Generation,
+                        AcousticPortalFailureLockOrCapacity);
+                    return false;
+                }
+
+                guardHeld = false;
+                return true;
+            }
+            finally
+            {
+                if (guardHeld)
+                    vault.ReleaseMutationGuard(AcousticPortalScratchMutationGuardMask);
+            }
         }
 
         private void ReleaseAcousticPortalScratchSets()
         {
-            IDataVault vault = _dataVault;
-            if (vault == null)
-                return;
-
-            if (IsAudioVaultHandle(in _acousticPortalClosedSetHandle, SpatialAudioPortalClosedSetBufferId, SystemID.Audio))
-                vault.ReleaseWriteLock(in _acousticPortalClosedSetHandle, SystemID.Audio);
-            if (IsAudioVaultHandle(in _acousticPortalOpenSetHandle, SpatialAudioPortalOpenSetBufferId, SystemID.Audio))
-                vault.ReleaseWriteLock(in _acousticPortalOpenSetHandle, SystemID.Audio);
+            _dataVault?.ReleaseMutationGuard(AcousticPortalScratchMutationGuardMask);
         }
 
         private static int GenerateEmergencyMockAcoustics(NativeArray<AcousticMaterialCoefficientDTO> rows)
@@ -9255,6 +9286,11 @@ namespace Hecton8.Audio
                    handle.Generation != 0u;
         }
 
+        private static ulong AudioVaultMutationGuardBit(BufferID bufferId)
+        {
+            return 1UL << (unchecked((int)(uint)(int)bufferId) & 31);
+        }
+
         private void ClearVaultBackedTelemetryAliases()
         {
             if (_virtualVoiceSortScheduled)
@@ -9313,7 +9349,6 @@ namespace Hecton8.Audio
             _acousticMaterialRowsLockedForOcclusion = false;
             _acousticMaterialRowsLockVault = null;
             _virtualVoiceStatisticsLockedForSort = false;
-            _virtualVoiceStatisticsLockVault = null;
             _virtualVoiceSortPoolLockedForSort = false;
             _virtualVoiceSortKeyPoolLockedForSort = false;
             _virtualVoiceSelectionsLockedForSort = false;

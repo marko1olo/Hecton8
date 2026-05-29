@@ -193,7 +193,7 @@ namespace Hecton8.World
                 return matrixBiome.extractionFocus;
 
             if (biomeFamily != null && biomeFamily.resourcePlanProfile != null)
-                return biomeFamily.resourcePlanProfile.extractionStyle;
+                return biomeFamily.resourcePlanProfile.RuntimeExtractionStyle;
 
             return "Mixed field extraction.";
         }

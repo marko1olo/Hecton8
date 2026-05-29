@@ -215,6 +215,10 @@ namespace Hecton8.Core
         private static readonly Dictionary<int, GameObject> _targetsByToken = new Dictionary<int, GameObject>(256);
         // COLD ALLOC: Dictionary<ulong, int>[256] - GameObject entity-id to structural command token map - owner: ThreadSafeCommandQueue
         private static readonly Dictionary<ulong, int> _tokensByInstanceId = new Dictionary<ulong, int>(256);
+        // COLD ALLOC: Dictionary<int, HectonVoxelVolume>[64] - optional voxel command target cache keyed by queue token - owner: ThreadSafeCommandQueue
+        private static readonly Dictionary<int, HectonVoxelVolume> _voxelVolumesByToken = new Dictionary<int, HectonVoxelVolume>(64);
+        // COLD ALLOC: Dictionary<int, IStorageReservationCommitTarget>[64] - optional storage command target cache keyed by queue token - owner: ThreadSafeCommandQueue
+        private static readonly Dictionary<int, IStorageReservationCommitTarget> _storageCommitTargetsByToken = new Dictionary<int, IStorageReservationCommitTarget>(64);
         // COLD ALLOC: List<int>[64] - recycled structural command target tokens - owner: ThreadSafeCommandQueue
         private static readonly List<int> _freeTokens = new List<int>(64);
         // COLD ALLOC: object[8] - storage reservation acknowledgement listeners drained after command queue, object-backed to avoid interface arrays - owner: ThreadSafeCommandQueue
@@ -339,6 +343,7 @@ namespace Hecton8.Core
             int token = AllocateToken();
             _targetsByToken[token] = instance;
             _tokensByInstanceId[instanceId] = token;
+            CacheCommandTargetInterfacesCold(token, instance);
             return token;
         }
 
@@ -378,6 +383,8 @@ namespace Hecton8.Core
 
             _targetsByToken.Clear();
             _tokensByInstanceId.Clear();
+            _voxelVolumesByToken.Clear();
+            _storageCommitTargetsByToken.Clear();
             _freeTokens.Clear();
             _nextToken = 1;
             _pendingCommandCount = 0;
@@ -471,6 +478,8 @@ namespace Hecton8.Core
 
             _targetsByToken.Clear();
             _tokensByInstanceId.Clear();
+            _voxelVolumesByToken.Clear();
+            _storageCommitTargetsByToken.Clear();
             _freeTokens.Clear();
             System.Array.Clear(_storageReservationCommitListeners, 0, _storageReservationCommitListenerCount);
             _storageReservationCommitListenerCount = 0;
@@ -555,7 +564,7 @@ namespace Hecton8.Core
 
                 case EntityCommandType.ModifyVoxel:
                 {
-                    if (!instance.TryGetComponent(out HectonVoxelVolume volume))
+                    if (!_voxelVolumesByToken.TryGetValue(command.TargetToken, out HectonVoxelVolume volume) || volume == null)
                         break;
 
                     HectonVoxelEngine engine = HectonVoxelEngine.ActiveRuntimeInstance;
@@ -573,7 +582,9 @@ namespace Hecton8.Core
 
                 case EntityCommandType.CommitStorageReservation:
                 {
-                    if (command.IntValue <= 0 || !instance.TryGetComponent(out IStorageReservationCommitTarget target))
+                    if (command.IntValue <= 0 ||
+                        !_storageCommitTargetsByToken.TryGetValue(command.TargetToken, out IStorageReservationCommitTarget target) ||
+                        target == null)
                     {
                         RaiseStorageReservationCommitResolved(command.SecondaryToken, command.IntValue, false);
                         break;
@@ -725,13 +736,31 @@ namespace Hecton8.Core
 
             instance = null;
             if (_targetsByToken.ContainsKey(token))
+            {
                 _targetsByToken.Remove(token);
+                _voxelVolumesByToken.Remove(token);
+                _storageCommitTargetsByToken.Remove(token);
+            }
             return false;
+        }
+
+        private static void CacheCommandTargetInterfacesCold(int token, GameObject instance)
+        {
+            if (instance == null)
+                return;
+
+            if (instance.TryGetComponent(out HectonVoxelVolume volume))
+                _voxelVolumesByToken[token] = volume;
+
+            if (instance.TryGetComponent(out IStorageReservationCommitTarget storageTarget))
+                _storageCommitTargetsByToken[token] = storageTarget;
         }
 
         private static void UnregisterToken(int token, GameObject instance)
         {
             _targetsByToken.Remove(token);
+            _voxelVolumesByToken.Remove(token);
+            _storageCommitTargetsByToken.Remove(token);
             if (instance != null)
                 _tokensByInstanceId.Remove(EntityId.ToULong(instance.GetEntityId()));
             _freeTokens.Add(token);

@@ -286,6 +286,8 @@ namespace Hecton8.World
         private Vector3 _damageVolumeWorldSize;
         private int _lastDamageVolumeDispatchFrame = -1;
         private float _damageVolumeEnergy;
+        private bool _supportsComputeShadersCold;
+        private bool _supportsR8RandomWriteCutMaskCold;
         // COLD ALLOC: RecentCutStamp[16] - CPU mirror of the newest cut stamps for zero-readback gameplay queries - owner: SargassumCutManager
         private readonly RecentCutStamp[] _recentCutStamps = new RecentCutStamp[RecentStampCapacity];
         // COLD ALLOC: RecentCutHeatStamp[16] - timestamped cut heat stamps for voxel rock thermal scarring - owner: SargassumCutManager
@@ -489,6 +491,7 @@ namespace Hecton8.World
             damageVolumeHeight = Mathf.Max(8f, damageVolumeHeight);
             damageVolumeRecoveryPerSecond = Mathf.Clamp01(damageVolumeRecoveryPerSecond);
             InitializeRuntimeResourceBudgets(force: true);
+            CacheGraphicsCapabilitiesCold();
             CacheRegistryServicesCold();
             CreateResources();
             PublishGlobals();
@@ -497,6 +500,7 @@ namespace Hecton8.World
         private void OnEnable()
         {
             TryRegisterHotSwapListener();
+            CacheGraphicsCapabilitiesCold();
             CacheRegistryServicesCold();
             CreateResources();
             PublishGlobals();
@@ -528,8 +532,6 @@ namespace Hecton8.World
         /// <param name="deltaTime">Gameplay frame delta time.</param>
         public void Tick(float deltaTime)
         {
-            ResolveDependencies();
-
             DecayRecentCutStamps(deltaTime);
 
             RefreshMaskWorldRect();
@@ -624,7 +626,6 @@ namespace Hecton8.World
             ProcessQueuedMaskUpdate();
             ProcessQueuedDamageVolumeUpdate(_pendingDamageVolumeDeltaTime);
             _pendingDamageVolumeDeltaTime = 0f;
-            ResolveVisualDependencies();
             FlushDebrisBursts();
 
             if (_globalsDirty)
@@ -667,8 +668,17 @@ namespace Hecton8.World
         {
             _playerContext = GlobalRegistry.Player;
             _inputService = GlobalRegistry.Input;
+            CacheDataVaultCold();
             ResolveDependencies();
             ResolveVisualDependencies();
+        }
+
+        private void CacheGraphicsCapabilitiesCold()
+        {
+            _supportsComputeShadersCold = SystemInfo.supportsComputeShaders;
+            _supportsR8RandomWriteCutMaskCold =
+                SystemInfo.SupportsRenderTextureFormat(RenderTextureFormat.R8) &&
+                SystemInfo.SupportsRandomWriteOnRenderTextureFormat(RenderTextureFormat.R8);
         }
 
         public void OnGlobalRegistryServiceReplaced(
@@ -687,7 +697,18 @@ namespace Hecton8.World
             }
 
             if (serviceSlot == GlobalRegistryServiceSlot.Input)
+            {
                 _inputService = currentService as IInputService;
+                return;
+            }
+
+            if (serviceSlot == GlobalRegistryServiceSlot.DataVault)
+            {
+                IDataVault previousVault = previousService is IDataVault oldVault ? oldVault : _dataVault;
+                IDataVault nextVault = currentService as IDataVault;
+                BindDataVaultForLifecycle(nextVault, previousVault);
+                _qualityResourceRefreshRequested = isActiveAndEnabled;
+            }
         }
 
         private void CreateResources()
@@ -696,7 +717,7 @@ namespace Hecton8.World
             TryAutoAssignAssets();
 #endif
 
-            if (!SystemInfo.supportsComputeShaders)
+            if (!_supportsComputeShadersCold)
             {
                 enabled = false;
                 return;
@@ -918,9 +939,18 @@ namespace Hecton8.World
         private IDataVault CacheDataVaultCold()
         {
             if (_dataVault == null)
-                _dataVault = GlobalRegistry.DataVault;
+                BindDataVaultForLifecycle(GlobalRegistry.DataVault);
 
             return _dataVault;
+        }
+
+        private void BindDataVaultForLifecycle(IDataVault nextVault, IDataVault previousVault = null)
+        {
+            IDataVault releaseVault = previousVault ?? _dataVault;
+            if (!ReferenceEquals(_dataVault, nextVault))
+                ReleaseVaultBuffers(releaseVault);
+
+            _dataVault = nextVault;
         }
 
         private bool EnsureVaultBuffer<T>(
@@ -928,7 +958,7 @@ namespace Hecton8.World
             BufferID bufferId,
             int requiredLength) where T : struct
         {
-            IDataVault vault = CacheDataVaultCold();
+            IDataVault vault = _dataVault;
             if (vault == null || requiredLength <= 0)
                 return false;
 
@@ -984,11 +1014,21 @@ namespace Hecton8.World
 
         private void ReleaseVaultBuffer<T>(ref VaultGenerationHandle<T> handle) where T : struct
         {
-            IDataVault vault = _dataVault;
+            ReleaseVaultBuffer(_dataVault, ref handle);
+        }
+
+        private static void ReleaseVaultBuffer<T>(IDataVault vault, ref VaultGenerationHandle<T> handle) where T : struct
+        {
             if (vault != null && IsVaultHandleCreated(in handle))
                 vault.ReleaseBuffer(in handle);
 
             handle = default;
+        }
+
+        private void ReleaseVaultBuffers(IDataVault vault)
+        {
+            ReleaseVaultBuffer(vault, ref _queuedStampCommandsHandle);
+            ReleaseVaultBuffer(vault, ref _queuedDamageVolumeStampCommandsHandle);
         }
 
         private static bool IsVaultHandleCreated<T>(in VaultGenerationHandle<T> handle) where T : struct
@@ -1048,7 +1088,7 @@ namespace Hecton8.World
             return buffer != null && buffer.IsValid();
         }
 
-        private static void ResolveKernelThreadGroupSizes(
+        private void ResolveKernelThreadGroupSizes(
             ComputeShader compute,
             int kernel,
             out int sizeX,
@@ -1058,7 +1098,7 @@ namespace Hecton8.World
             sizeX = 0;
             sizeY = 0;
             sizeZ = 0;
-            if (compute == null || kernel < 0 || !SystemInfo.supportsComputeShaders || !compute.IsSupported(kernel))
+            if (compute == null || kernel < 0 || !_supportsComputeShadersCold || !compute.IsSupported(kernel))
                 return;
 
             compute.GetKernelThreadGroupSizes(kernel, out uint queryX, out uint queryY, out uint queryZ);
@@ -2062,9 +2102,7 @@ namespace Hecton8.World
 
         private RenderTexture CreateMaskTexture(string textureName)
         {
-            bool supportsR8RandomWrite = SystemInfo.SupportsRenderTextureFormat(RenderTextureFormat.R8) &&
-                                         SystemInfo.SupportsRandomWriteOnRenderTextureFormat(RenderTextureFormat.R8);
-            RenderTextureFormat format = supportsR8RandomWrite
+            RenderTextureFormat format = _supportsR8RandomWriteCutMaskCold
                 ? RenderTextureFormat.R8
                 : RenderTextureFormat.ARGB32;
             RenderTexture texture = new RenderTexture(_maskRuntimeResolution, _maskRuntimeResolution, 0, format, RenderTextureReadWrite.Linear)

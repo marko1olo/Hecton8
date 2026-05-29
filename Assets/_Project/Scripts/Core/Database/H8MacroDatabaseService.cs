@@ -29,6 +29,14 @@ namespace Hecton8.Core.Database
         private const byte VaultSlotFree = 0;
         private const byte VaultSlotOccupied = 1;
         private const byte VaultSlotDeleted = 2;
+        private static readonly ulong NativeStateMutationGuardMask =
+            MutationGuardBit(BufferID.SaveMacroDatabaseDirtyPayloadSlots) |
+            MutationGuardBit(BufferID.SaveMacroDatabaseDirtyPayloadKeys) |
+            MutationGuardBit(BufferID.SaveMacroDatabaseSectorCoordSlots) |
+            MutationGuardBit(BufferID.SaveMacroDatabaseSectorWindowScratch) |
+            MutationGuardBit(BufferID.SaveMacroDatabaseSectorCoordScratch) |
+            MutationGuardBit(BufferID.SaveMacroDatabaseHydrationScratch) |
+            MutationGuardBit(BufferID.SaveMacroDatabasePayloadCopyScratch);
 
         private readonly object _fileGate = new object(); // COLD ALLOC: Object[1] — guards MMF pointer remaps against background hydration — owner: H8MacroDatabaseService
 #if HECTON8_MMF_AVAILABLE
@@ -77,6 +85,8 @@ namespace Hecton8.Core.Database
         private MacroDatabaseTier _compactionTier;
         private byte _compactionFlags;
         private double _sectorSizeRcp = 1.0d / 512.0d;
+        private int _nativeStateMutationGuardDepth;
+        private IDataVault _nativeStateMutationGuardVault;
 
         [StructLayout(LayoutKind.Explicit, Size = 24)]
         private struct SectorCoord64
@@ -411,51 +421,61 @@ namespace Hecton8.Core.Database
         {
             if (!IsOpen ||
                 _cacheOwner == null ||
-                !TryResolveSectorWindowScratch(out NativeArray<ulong> sectorWindow))
+                !TryAcquireNativeStateMutationGuard())
             {
                 return 0;
             }
 
-            int hydratedThisCall = 0;
-            TryResolveSectorCoordWindowScratch(out NativeArray<SectorCoord64> sectorCoordWindow);
-            int hashCount = BuildSectorHashWindowLocked(in playerAup, tier, sectorWindow, sectorCoordWindow);
-            for (int i = 0; i < hashCount; i++)
+            try
             {
-                ulong sectorHash = sectorWindow[i];
-                if (_cacheOwner.TryOpenMacroDatabasePayload(sectorHash, out _))
+                if (!TryResolveSectorWindowScratch(out NativeArray<ulong> sectorWindow))
+                    return 0;
+
+                int hydratedThisCall = 0;
+                TryResolveSectorCoordWindowScratch(out NativeArray<SectorCoord64> sectorCoordWindow);
+                int hashCount = BuildSectorHashWindowLocked(in playerAup, tier, sectorWindow, sectorCoordWindow);
+                for (int i = 0; i < hashCount; i++)
                 {
-                    if (sectorCoordWindow.IsCreated && i < sectorCoordWindow.Length)
-                        CacheSectorCoord(sectorHash, sectorCoordWindow[i]);
-                    continue;
+                    ulong sectorHash = sectorWindow[i];
+                    if (_cacheOwner.TryOpenMacroDatabasePayload(sectorHash, out _))
+                    {
+                        if (sectorCoordWindow.IsCreated && i < sectorCoordWindow.Length)
+                            CacheSectorCoord(sectorHash, sectorCoordWindow[i]);
+                        continue;
+                    }
+
+                    if (!TryFindPayloadOffset(sectorHash, out long payloadOffset) ||
+                        !TryReadPayloadPointer(payloadOffset, sectorHash, out byte* payloadPointer, out int payloadBytes, out byte flags))
+                    {
+                        continue;
+                    }
+
+                    RecordPageFaultLocked(tier);
+                    NativeArray<byte> payloadView = H8Memory.CreateNativeArrayView<byte>(payloadPointer, payloadBytes);
+                    if (_cacheOwner.TryStoreMacroDatabasePayload(
+                            sectorHash,
+                            payloadView,
+                            payloadBytes,
+                            payloadOffset,
+                            flags,
+                            out _))
+                    {
+                        hydratedThisCall++;
+                        _hydratedSectors++;
+                        if (sectorCoordWindow.IsCreated && i < sectorCoordWindow.Length)
+                            CacheSectorCoord(sectorHash, sectorCoordWindow[i]);
+                        PublishHydrated(sectorHash, payloadOffset, payloadBytes, tier, flags);
+                    }
                 }
 
-                if (!TryFindPayloadOffset(sectorHash, out long payloadOffset) ||
-                    !TryReadPayloadPointer(payloadOffset, sectorHash, out byte* payloadPointer, out int payloadBytes, out byte flags))
-                {
-                    continue;
-                }
-
-                RecordPageFaultLocked(tier);
-                NativeArray<byte> payloadView = H8Memory.CreateNativeArrayView<byte>(payloadPointer, payloadBytes);
-                if (_cacheOwner.TryStoreMacroDatabasePayload(
-                        sectorHash,
-                        payloadView,
-                        payloadBytes,
-                        payloadOffset,
-                        flags,
-                        out _))
-                {
-                    hydratedThisCall++;
-                    _hydratedSectors++;
-                    if (sectorCoordWindow.IsCreated && i < sectorCoordWindow.Length)
-                        CacheSectorCoord(sectorHash, sectorCoordWindow[i]);
-                    PublishHydrated(sectorHash, payloadOffset, payloadBytes, tier, flags);
-                }
+                _frameIndex++;
+                RecordBlackBox(hashCount > 0 ? sectorWindow[0] : 0UL, tier, hydratedThisCall);
+                return hydratedThisCall;
             }
-
-            _frameIndex++;
-            RecordBlackBox(hashCount > 0 ? sectorWindow[0] : 0UL, tier, hydratedThisCall);
-            return hydratedThisCall;
+            finally
+            {
+                ReleaseNativeStateMutationGuard();
+            }
         }
 
         public bool EnsurePayload(ulong sectorHash, out MacroDatabasePayloadHandle handle)
@@ -531,42 +551,51 @@ namespace Hecton8.Core.Database
             lock (_fileGate)
             {
                 EnsureNativeState();
-                if (!TryResolveDirtyPayloadSlots(out NativeArray<MacroDatabaseDirtyPayloadSlot> dirtySlots) ||
-                    !TryResolveDirtyPayloadKeys(out NativeArray<ulong> dirtyKeys))
+                if (!TryAcquireNativeStateMutationGuard())
                 {
                     return false;
                 }
 
-                bool hadDirty = TryFindDirtyPayloadSlot(dirtySlots, sectorHash, out int dirtySlotIndex);
-                if (!hadDirty && _dirtyPayloadCount >= dirtyKeys.Length)
-                    return false;
-
-                if (_cacheOwner == null ||
-                    !_cacheOwner.TryStoreMacroDatabasePayload(
-                        sectorHash,
-                        payload,
-                        byteLength,
-                        0L,
-                        (byte)(flags | MacroDatabasePayloadFlags.Dirty),
-                        out MacroDatabasePayloadHandle handle))
+                try
                 {
-                    return false;
-                }
+                    if (!TryResolveDirtyPayloadSlots(out NativeArray<MacroDatabaseDirtyPayloadSlot> dirtySlots) ||
+                        !TryResolveDirtyPayloadKeys(out NativeArray<ulong> dirtyKeys))
+                    {
+                        return false;
+                    }
 
-                handle.Flags = (byte)(handle.Flags | MacroDatabasePayloadFlags.Dirty);
-                if (hadDirty)
+                    bool hadDirty = TryFindDirtyPayloadSlot(dirtySlots, sectorHash, out int dirtySlotIndex);
+                    if (!hadDirty && _dirtyPayloadCount >= dirtyKeys.Length)
+                        return false;
+
+                    if (_cacheOwner == null ||
+                        !_cacheOwner.TryStoreMacroDatabasePayload(
+                            sectorHash,
+                            payload,
+                            byteLength,
+                            0L,
+                            (byte)(flags | MacroDatabasePayloadFlags.Dirty),
+                            out MacroDatabasePayloadHandle handle))
+                    {
+                        return false;
+                    }
+
+                    handle.Flags = (byte)(handle.Flags | MacroDatabasePayloadFlags.Dirty);
+                    if (hadDirty)
+                    {
+                        MacroDatabaseDirtyPayloadSlot slot = dirtySlots[dirtySlotIndex];
+                        slot.Handle = handle;
+                        slot.Version++;
+                        dirtySlots[dirtySlotIndex] = slot;
+                        return true;
+                    }
+
+                    return TryAddDirtyPayloadSlot(dirtySlots, dirtyKeys, sectorHash, in handle);
+                }
+                finally
                 {
-                    MacroDatabaseDirtyPayloadSlot slot = dirtySlots[dirtySlotIndex];
-                    slot.Handle = handle;
-                    slot.Version++;
-                    dirtySlots[dirtySlotIndex] = slot;
-                    return true;
+                    ReleaseNativeStateMutationGuard();
                 }
-
-                if (!TryAddDirtyPayloadSlot(dirtySlots, dirtyKeys, sectorHash, in handle))
-                    return false;
-
-                return true;
             }
         }
 
@@ -585,52 +614,62 @@ namespace Hecton8.Core.Database
                 if (_cacheOwner == null ||
                     !evictionScratch.IsCreated ||
                     evictionScratch.Length == 0 ||
-                    !TryResolveSectorWindowScratch(out NativeArray<ulong> sectorWindow))
+                    !TryAcquireNativeStateMutationGuard())
                 {
                     return 0;
                 }
 
-                int cachedCount = _cacheOwner.CopyMacroDatabasePayloadKeys(sectorWindow);
-                if (cachedCount <= 0)
-                    return 0;
-
-                SectorCoord64 center = ResolveSectorCoord(in playerAup);
-                int sectorSize = math.max(1, _config.SectorSizeMeters);
-                long dehydrateRadius = math.max(_config.DehydrateRadiusMeters, ResolveRadiusMeters(tier));
-                long dehydrateRadiusSq = dehydrateRadius * dehydrateRadius;
-                int evictionCount = 0;
-                for (int i = 0; i < cachedCount && evictionCount < evictionScratch.Length; i++)
+                try
                 {
-                    ulong sectorHash = sectorWindow[i];
-                    if (!TryGetSectorCoord(sectorHash, out SectorCoord64 sector))
-                        continue;
+                    if (!TryResolveSectorWindowScratch(out NativeArray<ulong> sectorWindow))
+                        return 0;
 
-                    long dx = (sector.X - center.X) * sectorSize;
-                    long dy = (sector.Y - center.Y) * sectorSize;
-                    long dz = (sector.Z - center.Z) * sectorSize;
-                    if ((dx * dx) + (dy * dy) + (dz * dz) <= dehydrateRadiusSq)
-                        continue;
+                    int cachedCount = _cacheOwner.CopyMacroDatabasePayloadKeys(sectorWindow);
+                    if (cachedCount <= 0)
+                        return 0;
 
-                    if (DirtyPayloadExists(sectorHash) &&
-                        !TryAppendDirtyPayloadLocked(sectorHash))
+                    SectorCoord64 center = ResolveSectorCoord(in playerAup);
+                    int sectorSize = math.max(1, _config.SectorSizeMeters);
+                    long dehydrateRadius = math.max(_config.DehydrateRadiusMeters, ResolveRadiusMeters(tier));
+                    long dehydrateRadiusSq = dehydrateRadius * dehydrateRadius;
+                    int evictionCount = 0;
+                    for (int i = 0; i < cachedCount && evictionCount < evictionScratch.Length; i++)
                     {
-                        continue;
+                        ulong sectorHash = sectorWindow[i];
+                        if (!TryGetSectorCoord(sectorHash, out SectorCoord64 sector))
+                            continue;
+
+                        long dx = (sector.X - center.X) * sectorSize;
+                        long dy = (sector.Y - center.Y) * sectorSize;
+                        long dz = (sector.Z - center.Z) * sectorSize;
+                        if ((dx * dx) + (dy * dy) + (dz * dz) <= dehydrateRadiusSq)
+                            continue;
+
+                        if (DirtyPayloadExists(sectorHash) &&
+                            !TryAppendDirtyPayloadLocked(sectorHash))
+                        {
+                            continue;
+                        }
+
+                        evictionScratch[evictionCount++] = sectorHash;
                     }
 
-                    evictionScratch[evictionCount++] = sectorHash;
-                }
+                    int evicted = _cacheOwner.EvictMacroDatabasePayloads(evictionScratch, evictionCount);
+                    for (int i = 0; i < evictionCount; i++)
+                    {
+                        if (!_cacheOwner.TryOpenMacroDatabasePayload(evictionScratch[i], out _))
+                            RemoveSectorCoord(evictionScratch[i]);
+                    }
 
-                int evicted = _cacheOwner.EvictMacroDatabasePayloads(evictionScratch, evictionCount);
-                for (int i = 0; i < evictionCount; i++)
+                    _evictedSectors += evicted;
+                    _frameIndex++;
+                    RecordBlackBox(ComputeSectorHash(center, sectorSize), tier, 0);
+                    return evicted;
+                }
+                finally
                 {
-                    if (!_cacheOwner.TryOpenMacroDatabasePayload(evictionScratch[i], out _))
-                        RemoveSectorCoord(evictionScratch[i]);
+                    ReleaseNativeStateMutationGuard();
                 }
-
-                _evictedSectors += evicted;
-                _frameIndex++;
-                RecordBlackBox(ComputeSectorHash(center, sectorSize), tier, 0);
-                return evicted;
             }
         }
 
@@ -638,20 +677,32 @@ namespace Hecton8.Core.Database
         {
             lock (_fileGate)
             {
-                if (DirtyPayloadExists(sectorHash) &&
-                    IsCompactionWriteLocked())
+                if (!TryAcquireNativeStateMutationGuard())
                 {
                     return false;
                 }
 
-                if (!DirtyPayloadExists(sectorHash))
+                try
                 {
-                    return IsOpen &&
-                           TryFindPayloadOffset(sectorHash, out long committedOffset) &&
-                           TryReadPayloadPointer(committedOffset, sectorHash, out _, out _, out _);
-                }
+                    if (DirtyPayloadExists(sectorHash) &&
+                        IsCompactionWriteLocked())
+                    {
+                        return false;
+                    }
 
-                return TryAppendDirtyPayloadLocked(sectorHash);
+                    if (!DirtyPayloadExists(sectorHash))
+                    {
+                        return IsOpen &&
+                               TryFindPayloadOffset(sectorHash, out long committedOffset) &&
+                               TryReadPayloadPointer(committedOffset, sectorHash, out _, out _, out _);
+                    }
+
+                    return TryAppendDirtyPayloadLocked(sectorHash);
+                }
+                finally
+                {
+                    ReleaseNativeStateMutationGuard();
+                }
             }
         }
 
@@ -798,10 +849,23 @@ namespace Hecton8.Core.Database
                         return false;
                     }
 
-                    if (!FlushDirtyPayloadsIntoTargetLocked(target, out flushedDirtyPayloads))
+                    if (!TryAcquireNativeStateMutationGuard())
                     {
                         MarkCompactionFaultLocked();
                         return false;
+                    }
+
+                    try
+                    {
+                        if (!FlushDirtyPayloadsIntoTargetLocked(target, out flushedDirtyPayloads))
+                        {
+                            MarkCompactionFaultLocked();
+                            return false;
+                        }
+                    }
+                    finally
+                    {
+                        ReleaseNativeStateMutationGuard();
                     }
 
                     target.WriteDeadBytes(0L);
@@ -827,8 +891,22 @@ namespace Hecton8.Core.Database
 
                     _deadBytes = 0L;
                     WriteDeadBytes(0L);
-                    MarkDirtyPayloadCacheCleanAfterSwapLocked();
-                    ClearDirtyPayloadQueueLocked();
+                    if (!TryAcquireNativeStateMutationGuard())
+                    {
+                        MarkCompactionFaultLocked();
+                        return false;
+                    }
+
+                    try
+                    {
+                        MarkDirtyPayloadCacheCleanAfterSwapLocked();
+                        ClearDirtyPayloadQueueLocked();
+                    }
+                    finally
+                    {
+                        ReleaseNativeStateMutationGuard();
+                    }
+
                     _dirtyAppendCount += flushedDirtyPayloads;
                     _compactionTempBytes = 0L;
                     _compactionTempPath = null;
@@ -936,12 +1014,34 @@ namespace Hecton8.Core.Database
             lock (_fileGate)
             {
                 _compactionState = (int)MacroDatabaseCompactionState.Idle;
-                FlushDirtyPayloadsLocked();
+                if (TryAcquireNativeStateMutationGuard())
+                {
+                    try
+                    {
+                        FlushDirtyPayloadsLocked();
+                    }
+                    finally
+                    {
+                        ReleaseNativeStateMutationGuard();
+                    }
+                }
+
                 CloseFileHandles();
                 CleanupCompactionTempCold(_path);
                 ClearBlackBoxLocked();
-                ClearDirtyPayloadQueueLocked();
-                ClearSectorCoordCacheLocked();
+                if (TryAcquireNativeStateMutationGuard())
+                {
+                    try
+                    {
+                        ClearDirtyPayloadQueueLocked();
+                        ClearSectorCoordCacheLocked();
+                    }
+                    finally
+                    {
+                        ReleaseNativeStateMutationGuard();
+                    }
+                }
+
                 ReleaseVaultHandlesLocked(_dataVault);
 
                 _cacheOwner = null;
@@ -969,6 +1069,8 @@ namespace Hecton8.Core.Database
                 _dirtyAppendCount = 0;
                 _asyncHydrationActive = 0;
                 _compactionCopyActive = 0;
+                _nativeStateMutationGuardDepth = 0;
+                _nativeStateMutationGuardVault = null;
                 _frameIndex = 0u;
                 _deadBytes = 0L;
                 ResetCompactionStateLocked();
@@ -1513,13 +1615,26 @@ namespace Hecton8.Core.Database
         {
             lock (_fileGate)
             {
-                if (!IsOpen || !TryResolveAsyncHydrateScratch(out _))
+                if (!IsOpen || !TryAcquireNativeStateMutationGuard())
                 {
                     firstHash = 0UL;
                     return 0;
                 }
 
-                return StageHydrationCandidatesLocked(in playerAup, tier, out firstHash);
+                try
+                {
+                    if (!TryResolveAsyncHydrateScratch(out _))
+                    {
+                        firstHash = 0UL;
+                        return 0;
+                    }
+
+                    return StageHydrationCandidatesLocked(in playerAup, tier, out firstHash);
+                }
+                finally
+                {
+                    ReleaseNativeStateMutationGuard();
+                }
             }
         }
 
@@ -1529,25 +1644,35 @@ namespace Hecton8.Core.Database
             {
                 if (!IsOpen ||
                     _cacheOwner == null ||
-                    !TryResolveAsyncHydrateScratch(out NativeArray<HydrationCandidate> asyncHydrateScratch))
+                    !TryAcquireNativeStateMutationGuard())
                 {
                     return 0;
                 }
 
-                int limit = candidateCount < asyncHydrateScratch.Length
-                    ? candidateCount
-                    : asyncHydrateScratch.Length;
-                int hydrated = 0;
-                for (int i = 0; i < limit; i++)
+                try
                 {
-                    HydrationCandidate candidate = asyncHydrateScratch[i];
-                    if (StoreHydrationCandidateLocked(in candidate, tier))
-                        hydrated++;
-                }
+                    if (!TryResolveAsyncHydrateScratch(out NativeArray<HydrationCandidate> asyncHydrateScratch))
+                        return 0;
 
-                _frameIndex++;
-                RecordBlackBox(firstHash, tier, hydrated);
-                return hydrated;
+                    int limit = candidateCount < asyncHydrateScratch.Length
+                        ? candidateCount
+                        : asyncHydrateScratch.Length;
+                    int hydrated = 0;
+                    for (int i = 0; i < limit; i++)
+                    {
+                        HydrationCandidate candidate = asyncHydrateScratch[i];
+                        if (StoreHydrationCandidateLocked(in candidate, tier))
+                            hydrated++;
+                    }
+
+                    _frameIndex++;
+                    RecordBlackBox(firstHash, tier, hydrated);
+                    return hydrated;
+                }
+                finally
+                {
+                    ReleaseNativeStateMutationGuard();
+                }
             }
         }
 
@@ -2297,6 +2422,51 @@ namespace Hecton8.Core.Database
             return hash;
         }
 
+        private static ulong MutationGuardBit(BufferID bufferId)
+        {
+            int bitIndex = unchecked((int)((uint)(int)bufferId & 63u));
+            return 1UL << bitIndex;
+        }
+
+        private bool TryAcquireNativeStateMutationGuard()
+        {
+            if (_nativeStateMutationGuardDepth > 0)
+            {
+                _nativeStateMutationGuardDepth++;
+                return true;
+            }
+
+            IDataVault vault = _dataVault;
+            if (vault == null)
+            {
+                _nativeStateMutationGuardVault = null;
+                _nativeStateMutationGuardDepth = 1;
+                return true;
+            }
+
+            if (!vault.TryAcquireMutationGuard(NativeStateMutationGuardMask))
+                return false;
+
+            _nativeStateMutationGuardVault = vault;
+            _nativeStateMutationGuardDepth = 1;
+            return true;
+        }
+
+        private void ReleaseNativeStateMutationGuard()
+        {
+            if (_nativeStateMutationGuardDepth <= 0)
+                return;
+
+            _nativeStateMutationGuardDepth--;
+            if (_nativeStateMutationGuardDepth > 0)
+                return;
+
+            IDataVault vault = _nativeStateMutationGuardVault;
+            _nativeStateMutationGuardVault = null;
+            if (vault != null)
+                vault.ReleaseMutationGuard(NativeStateMutationGuardMask);
+        }
+
         private void EnsureNativeState()
         {
             _config = NormalizeConfig(_config);
@@ -2461,7 +2631,21 @@ namespace Hecton8.Core.Database
                     _dirtyPayloadSlotsHandle = dirtySlots;
                     _dirtyPayloadKeysHandle = dirtyKeys;
                     _dirtyPayloadSlotCapacity = dirtyCapacity;
-                    ClearDirtyPayloadQueueLocked();
+                    if (TryAcquireNativeStateMutationGuard())
+                    {
+                        try
+                        {
+                            ClearDirtyPayloadQueueLocked();
+                        }
+                        finally
+                        {
+                            ReleaseNativeStateMutationGuard();
+                        }
+                    }
+                    else
+                    {
+                        _dirtyPayloadCount = 0;
+                    }
                 }
             }
 
@@ -2481,7 +2665,17 @@ namespace Hecton8.Core.Database
                 {
                     _sectorCoordSlotsHandle = sectorSlots;
                     _sectorCoordSlotCapacity = sectorCapacity;
-                    ClearSectorCoordCacheLocked();
+                    if (TryAcquireNativeStateMutationGuard())
+                    {
+                        try
+                        {
+                            ClearSectorCoordCacheLocked();
+                        }
+                        finally
+                        {
+                            ReleaseNativeStateMutationGuard();
+                        }
+                    }
                 }
             }
         }

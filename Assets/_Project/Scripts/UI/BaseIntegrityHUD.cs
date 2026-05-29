@@ -913,7 +913,7 @@ namespace Hecton8.UI
 
         public void SlowTick()
         {
-            if (_playerTransform == null && !ResolvePlayerTransform())
+            if (_playerTransform == null)
                 return;
 
             if (!TryResolvePlayerAup(out AbsoluteUniversePosition playerAup))
@@ -1172,12 +1172,6 @@ namespace Hecton8.UI
         {
             playerAup = default;
             HectonPlayerMovement playerMovement = _playerMovement;
-            if (playerMovement == null)
-            {
-                playerMovement = ResolvePlayerMovement(_playerTransform);
-                _playerMovement = playerMovement;
-            }
-
             if (playerMovement == null)
                 return false;
 

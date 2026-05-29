@@ -234,7 +234,6 @@ namespace Hecton8.World
         private const int MacroSwarmSignalScratchCapacity = 64;
         private const int MacroSwarmBlackBoxCapacity = 300;
         private const int MacroSwarmVisualBoidsPerBiomassUnit = 64;
-        private const int MacroSwarmTravelJobBufferLockCount = 15;
         private const int FaunaMutationBlackBoxCapacity = 300;
         private const int FaunaGeneticsTelemetryCapacity = 300;
         private const int FaunaGeneticsProfileCapacity = 64;
@@ -328,6 +327,63 @@ namespace Hecton8.World
         private const string FaunaGeneticsTelemetryDumpRelativePath = "Docs/AgentLogs/Dump_SHINOBU_306.bin";
         private const string FaunaGeneticsProfilesCsvPrimaryRelativePath = "Assets/_SourceData/Biota/fauna_genetic_profiles.csv";
         private const string FaunaGeneticsProfilesCsvFallbackRelativePath = "Data/Precomputed/fauna_genetic_profiles.csv";
+        private static readonly ulong SectorSolveMutationGuardMask =
+            EcosystemVaultMutationGuardBit(BufferID.EcosystemSectorFrontStates) |
+            EcosystemVaultMutationGuardBit(BufferID.EcosystemPreyFrontCounts) |
+            EcosystemVaultMutationGuardBit(BufferID.EcosystemPredatorFrontCounts) |
+            EcosystemVaultMutationGuardBit(BufferID.EcosystemSectorFoodHeatmapR8) |
+            EcosystemVaultMutationGuardBit(BufferID.EcosystemSectorBackStates) |
+            EcosystemVaultMutationGuardBit(BufferID.EcosystemPreyBackCounts) |
+            EcosystemVaultMutationGuardBit(BufferID.EcosystemPredatorBackCounts) |
+            EcosystemVaultMutationGuardBit(BufferID.EcosystemSectorIndexEntries) |
+            EcosystemVaultMutationGuardBit(BufferID.EcosystemHeadlessPositions) |
+            EcosystemVaultMutationGuardBit(BufferID.EcosystemHeadlessSpeciesId) |
+            EcosystemVaultMutationGuardBit(BufferID.EcosystemHeadlessHunger) |
+            EcosystemVaultMutationGuardBit(BufferID.EcosystemHeadlessSectorCoord) |
+            EcosystemVaultMutationGuardBit(BufferID.EcosystemHeadlessSectorId) |
+            EcosystemVaultMutationGuardBit(BufferID.EcosystemHeadlessFaunaGenomes) |
+            EcosystemVaultMutationGuardBit(BufferID.EcosystemHeadlessMutationStableHashes) |
+            EcosystemVaultMutationGuardBit(BufferID.EcosystemPreyBiomassFront) |
+            EcosystemVaultMutationGuardBit(BufferID.EcosystemPredatorBiomassFront) |
+            EcosystemVaultMutationGuardBit(BufferID.EcosystemBiomassCarryingCapacity) |
+            EcosystemVaultMutationGuardBit(BufferID.EcosystemBiomassMacroCellCoords) |
+            EcosystemVaultMutationGuardBit(BufferID.EcosystemBiomassIndexEntries) |
+            EcosystemVaultMutationGuardBit(BufferID.EcosystemPreyBiomassBack) |
+            EcosystemVaultMutationGuardBit(BufferID.EcosystemPredatorBiomassBack) |
+            EcosystemVaultMutationGuardBit(BufferID.EcosystemBiomassSumScratch) |
+            EcosystemVaultMutationGuardBit(BufferID.EcosystemBiomassCellFlags) |
+            EcosystemVaultMutationGuardBit(BufferID.EcosystemBiomassBlackBox);
+        private static readonly ulong GenomeMutationGuardMask =
+            EcosystemVaultMutationGuardBit(BufferID.EcosystemHeadlessFaunaGenomes) |
+            EcosystemVaultMutationGuardBit(BufferID.EcosystemHeadlessMutationRadiation) |
+            EcosystemVaultMutationGuardBit(BufferID.EcosystemHeadlessMutationToxicity) |
+            EcosystemVaultMutationGuardBit(BufferID.EcosystemHeadlessMutationBrine) |
+            EcosystemVaultMutationGuardBit(BufferID.EcosystemHeadlessMutationStableHashes) |
+            EcosystemVaultMutationGuardBit(BufferID.EcosystemHeadlessMutationResults) |
+            EcosystemVaultMutationGuardBit(BufferID.EcosystemMacroSwarms) |
+            EcosystemVaultMutationGuardBit(BufferID.EcosystemMacroSwarmMutationRadiation) |
+            EcosystemVaultMutationGuardBit(BufferID.EcosystemMacroSwarmMutationToxicity) |
+            EcosystemVaultMutationGuardBit(BufferID.EcosystemMacroSwarmMutationBrine) |
+            EcosystemVaultMutationGuardBit(BufferID.EcosystemMacroSwarmMutationResults);
+        private static readonly ulong MacroSwarmTravelMutationGuardMask =
+            EcosystemVaultMutationGuardBit(BufferID.EcosystemMacroSwarms) |
+            EcosystemVaultMutationGuardBit(BufferID.EcosystemMacroSwarmArrivals) |
+            EcosystemVaultMutationGuardBit(BufferID.EcosystemMacroSwarmCounters) |
+            EcosystemVaultMutationGuardBit(BufferID.EcosystemMacroSwarmBlackBox) |
+            EcosystemVaultMutationGuardBit(BufferID.EcosystemMacroHydrationScratch) |
+            EcosystemVaultMutationGuardBit(BufferID.EcosystemMacroDehydrationScratch) |
+            EcosystemVaultMutationGuardBit(BufferID.EcosystemPreyBiomassFront) |
+            EcosystemVaultMutationGuardBit(BufferID.EcosystemPreyBiomassBack) |
+            EcosystemVaultMutationGuardBit(BufferID.EcosystemPredatorBiomassFront) |
+            EcosystemVaultMutationGuardBit(BufferID.EcosystemPredatorBiomassBack) |
+            EcosystemVaultMutationGuardBit(BufferID.EcosystemBiomassCarryingCapacity) |
+            EcosystemVaultMutationGuardBit(BufferID.EcosystemBiomassSumScratch) |
+            EcosystemVaultMutationGuardBit(BufferID.EcosystemBiomassMacroCellCoords) |
+            EcosystemVaultMutationGuardBit(BufferID.EcosystemBiomassIndexEntries) |
+            EcosystemVaultMutationGuardBit(BufferID.EcosystemBiomassCellFlags);
+        private static readonly ulong ApexTerritoryOverlapMutationGuardMask =
+            EcosystemVaultMutationGuardBit(BufferID.EcosystemApexTerritorySamples) |
+            EcosystemVaultMutationGuardBit(BufferID.EcosystemApexTerritoryOverlapResults);
         private static readonly string[] ThermalSpawnTokens = { "lava", "thermal", "brine", "heat", "volcanic", "smoker" };
         private static readonly string[] SharkSpawnTokens = { "shark", "hunter", "stalker" };
         private static readonly string[] ScavengerSpawnTokens = { "scavenger", "crab", "eel", "carrion", "cleaner" };
@@ -408,6 +464,14 @@ namespace Hecton8.World
 
             public int Length => TryResolve(out NativeArray<T> array) ? array.Length : 0;
 
+            public bool IsOwnedHandle(SystemID systemID, BufferID bufferId)
+            {
+                return _vault != null &&
+                       _handle.BufferID == (uint)bufferId &&
+                       _handle.Generation != 0u &&
+                       _handle.SystemID == (uint)systemID;
+            }
+
             public T this[int index]
             {
                 get
@@ -450,7 +514,10 @@ namespace Hecton8.World
 
             public bool TryAcquireWriteLock(SystemID systemID, out NativeArray<T> array)
             {
-                if (_vault == null || _handle.BufferID == 0u)
+                if (_vault == null ||
+                    _handle.BufferID == 0u ||
+                    _handle.Generation == 0u ||
+                    _handle.SystemID != (uint)systemID)
                 {
                     array = default;
                     return false;
@@ -462,18 +529,31 @@ namespace Hecton8.World
                     return false;
                 }
 
-                if (array.IsCreated)
-                    return true;
+                bool ownershipTransferred = false;
+                try
+                {
+                    if (array.IsCreated)
+                    {
+                        ownershipTransferred = true;
+                        return true;
+                    }
 
-                _vault.ReleaseWriteLock(in _handle, systemID);
-                array = default;
-                return false;
+                    array = default;
+                    return false;
+                }
+                finally
+                {
+                    if (!ownershipTransferred)
+                        _vault.ReleaseWriteLock(in _handle, systemID);
+                }
             }
 
             public bool ReleaseWriteLock(SystemID systemID)
             {
                 return _vault != null &&
                        _handle.BufferID != 0u &&
+                       _handle.Generation != 0u &&
+                       _handle.SystemID == (uint)systemID &&
                        _vault.ReleaseWriteLock(in _handle, systemID);
             }
 
@@ -1363,6 +1443,10 @@ namespace Hecton8.World
         private bool _genomeMutationJobLocksHeld;
         private bool _macroSwarmTravelJobLocksHeld;
         private bool _apexTerritoryOverlapJobLocksHeld;
+        private IDataVault _solveJobGuardVault;
+        private IDataVault _genomeMutationJobGuardVault;
+        private IDataVault _macroSwarmTravelJobGuardVault;
+        private IDataVault _apexTerritoryOverlapJobGuardVault;
         private bool _populationSolvePendingHibernationSync;
         private float _biomeHostility01;
         private float _biomeGradientBlend01;
@@ -4810,50 +4894,31 @@ namespace Hecton8.World
                    _apexTerritoryOverlapScheduled;
         }
 
-        private static bool TryLockAIEcologyBuffer(IDataVault vault, BufferID bufferId, ref int lockedCount)
-        {
-            if (!vault.TryLockBuffer(bufferId, SystemID.AIEcology))
-                return false;
-
-            lockedCount++;
-            return true;
-        }
-
         private bool TryLockSectorSolveJobBuffers()
         {
             IDataVault vault = _dataVault;
             if (vault == null || _solveJobLocksHeld)
                 return false;
 
-            int lockedCount = 0;
-            if (!TryLockAIEcologyBuffer(vault, BufferID.EcosystemSectorFrontStates, ref lockedCount)) { UnlockSectorSolveJobBuffers(vault, lockedCount); return false; }
-            if (!TryLockAIEcologyBuffer(vault, BufferID.EcosystemPreyFrontCounts, ref lockedCount)) { UnlockSectorSolveJobBuffers(vault, lockedCount); return false; }
-            if (!TryLockAIEcologyBuffer(vault, BufferID.EcosystemPredatorFrontCounts, ref lockedCount)) { UnlockSectorSolveJobBuffers(vault, lockedCount); return false; }
-            if (!TryLockAIEcologyBuffer(vault, BufferID.EcosystemSectorFoodHeatmapR8, ref lockedCount)) { UnlockSectorSolveJobBuffers(vault, lockedCount); return false; }
-            if (!TryLockAIEcologyBuffer(vault, BufferID.EcosystemSectorBackStates, ref lockedCount)) { UnlockSectorSolveJobBuffers(vault, lockedCount); return false; }
-            if (!TryLockAIEcologyBuffer(vault, BufferID.EcosystemPreyBackCounts, ref lockedCount)) { UnlockSectorSolveJobBuffers(vault, lockedCount); return false; }
-            if (!TryLockAIEcologyBuffer(vault, BufferID.EcosystemPredatorBackCounts, ref lockedCount)) { UnlockSectorSolveJobBuffers(vault, lockedCount); return false; }
-            if (!TryLockAIEcologyBuffer(vault, BufferID.EcosystemSectorIndexEntries, ref lockedCount)) { UnlockSectorSolveJobBuffers(vault, lockedCount); return false; }
-            if (!TryLockAIEcologyBuffer(vault, BufferID.EcosystemHeadlessPositions, ref lockedCount)) { UnlockSectorSolveJobBuffers(vault, lockedCount); return false; }
-            if (!TryLockAIEcologyBuffer(vault, BufferID.EcosystemHeadlessSpeciesId, ref lockedCount)) { UnlockSectorSolveJobBuffers(vault, lockedCount); return false; }
-            if (!TryLockAIEcologyBuffer(vault, BufferID.EcosystemHeadlessHunger, ref lockedCount)) { UnlockSectorSolveJobBuffers(vault, lockedCount); return false; }
-            if (!TryLockAIEcologyBuffer(vault, BufferID.EcosystemHeadlessSectorCoord, ref lockedCount)) { UnlockSectorSolveJobBuffers(vault, lockedCount); return false; }
-            if (!TryLockAIEcologyBuffer(vault, BufferID.EcosystemHeadlessSectorId, ref lockedCount)) { UnlockSectorSolveJobBuffers(vault, lockedCount); return false; }
-            if (!TryLockAIEcologyBuffer(vault, BufferID.EcosystemHeadlessFaunaGenomes, ref lockedCount)) { UnlockSectorSolveJobBuffers(vault, lockedCount); return false; }
-            if (!TryLockAIEcologyBuffer(vault, BufferID.EcosystemHeadlessMutationStableHashes, ref lockedCount)) { UnlockSectorSolveJobBuffers(vault, lockedCount); return false; }
-            if (!TryLockAIEcologyBuffer(vault, BufferID.EcosystemPreyBiomassFront, ref lockedCount)) { UnlockSectorSolveJobBuffers(vault, lockedCount); return false; }
-            if (!TryLockAIEcologyBuffer(vault, BufferID.EcosystemPredatorBiomassFront, ref lockedCount)) { UnlockSectorSolveJobBuffers(vault, lockedCount); return false; }
-            if (!TryLockAIEcologyBuffer(vault, BufferID.EcosystemBiomassCarryingCapacity, ref lockedCount)) { UnlockSectorSolveJobBuffers(vault, lockedCount); return false; }
-            if (!TryLockAIEcologyBuffer(vault, BufferID.EcosystemBiomassMacroCellCoords, ref lockedCount)) { UnlockSectorSolveJobBuffers(vault, lockedCount); return false; }
-            if (!TryLockAIEcologyBuffer(vault, BufferID.EcosystemBiomassIndexEntries, ref lockedCount)) { UnlockSectorSolveJobBuffers(vault, lockedCount); return false; }
-            if (!TryLockAIEcologyBuffer(vault, BufferID.EcosystemPreyBiomassBack, ref lockedCount)) { UnlockSectorSolveJobBuffers(vault, lockedCount); return false; }
-            if (!TryLockAIEcologyBuffer(vault, BufferID.EcosystemPredatorBiomassBack, ref lockedCount)) { UnlockSectorSolveJobBuffers(vault, lockedCount); return false; }
-            if (!TryLockAIEcologyBuffer(vault, BufferID.EcosystemBiomassSumScratch, ref lockedCount)) { UnlockSectorSolveJobBuffers(vault, lockedCount); return false; }
-            if (!TryLockAIEcologyBuffer(vault, BufferID.EcosystemBiomassCellFlags, ref lockedCount)) { UnlockSectorSolveJobBuffers(vault, lockedCount); return false; }
-            if (!TryLockAIEcologyBuffer(vault, BufferID.EcosystemBiomassBlackBox, ref lockedCount)) { UnlockSectorSolveJobBuffers(vault, lockedCount); return false; }
+            if (!vault.TryAcquireMutationGuard(SectorSolveMutationGuardMask))
+                return false;
 
-            _solveJobLocksHeld = true;
-            return true;
+            bool keepGuard = false;
+            try
+            {
+                if (!HasSectorSolveJobViews())
+                    return false;
+
+                _solveJobLocksHeld = true;
+                _solveJobGuardVault = vault;
+                keepGuard = true;
+                return true;
+            }
+            finally
+            {
+                if (!keepGuard)
+                    vault.ReleaseMutationGuard(SectorSolveMutationGuardMask);
+            }
         }
 
         private void UnlockSectorSolveJobBuffers()
@@ -4861,39 +4926,40 @@ namespace Hecton8.World
             if (!_solveJobLocksHeld)
                 return;
 
-            IDataVault vault = _dataVault;
+            IDataVault vault = _solveJobGuardVault ?? _dataVault;
             if (vault != null)
-                UnlockSectorSolveJobBuffers(vault, 25);
+                vault.ReleaseMutationGuard(SectorSolveMutationGuardMask);
             _solveJobLocksHeld = false;
+            _solveJobGuardVault = null;
         }
 
-        private static void UnlockSectorSolveJobBuffers(IDataVault vault, int lockedCount)
+        private bool HasSectorSolveJobViews()
         {
-            if (lockedCount >= 25) vault.TryUnlockBuffer(BufferID.EcosystemBiomassBlackBox, SystemID.AIEcology);
-            if (lockedCount >= 24) vault.TryUnlockBuffer(BufferID.EcosystemBiomassCellFlags, SystemID.AIEcology);
-            if (lockedCount >= 23) vault.TryUnlockBuffer(BufferID.EcosystemBiomassSumScratch, SystemID.AIEcology);
-            if (lockedCount >= 22) vault.TryUnlockBuffer(BufferID.EcosystemPredatorBiomassBack, SystemID.AIEcology);
-            if (lockedCount >= 21) vault.TryUnlockBuffer(BufferID.EcosystemPreyBiomassBack, SystemID.AIEcology);
-            if (lockedCount >= 20) vault.TryUnlockBuffer(BufferID.EcosystemBiomassIndexEntries, SystemID.AIEcology);
-            if (lockedCount >= 19) vault.TryUnlockBuffer(BufferID.EcosystemBiomassMacroCellCoords, SystemID.AIEcology);
-            if (lockedCount >= 18) vault.TryUnlockBuffer(BufferID.EcosystemBiomassCarryingCapacity, SystemID.AIEcology);
-            if (lockedCount >= 17) vault.TryUnlockBuffer(BufferID.EcosystemPredatorBiomassFront, SystemID.AIEcology);
-            if (lockedCount >= 16) vault.TryUnlockBuffer(BufferID.EcosystemPreyBiomassFront, SystemID.AIEcology);
-            if (lockedCount >= 15) vault.TryUnlockBuffer(BufferID.EcosystemHeadlessMutationStableHashes, SystemID.AIEcology);
-            if (lockedCount >= 14) vault.TryUnlockBuffer(BufferID.EcosystemHeadlessFaunaGenomes, SystemID.AIEcology);
-            if (lockedCount >= 13) vault.TryUnlockBuffer(BufferID.EcosystemHeadlessSectorId, SystemID.AIEcology);
-            if (lockedCount >= 12) vault.TryUnlockBuffer(BufferID.EcosystemHeadlessSectorCoord, SystemID.AIEcology);
-            if (lockedCount >= 11) vault.TryUnlockBuffer(BufferID.EcosystemHeadlessHunger, SystemID.AIEcology);
-            if (lockedCount >= 10) vault.TryUnlockBuffer(BufferID.EcosystemHeadlessSpeciesId, SystemID.AIEcology);
-            if (lockedCount >= 9) vault.TryUnlockBuffer(BufferID.EcosystemHeadlessPositions, SystemID.AIEcology);
-            if (lockedCount >= 8) vault.TryUnlockBuffer(BufferID.EcosystemSectorIndexEntries, SystemID.AIEcology);
-            if (lockedCount >= 7) vault.TryUnlockBuffer(BufferID.EcosystemPredatorBackCounts, SystemID.AIEcology);
-            if (lockedCount >= 6) vault.TryUnlockBuffer(BufferID.EcosystemPreyBackCounts, SystemID.AIEcology);
-            if (lockedCount >= 5) vault.TryUnlockBuffer(BufferID.EcosystemSectorBackStates, SystemID.AIEcology);
-            if (lockedCount >= 4) vault.TryUnlockBuffer(BufferID.EcosystemSectorFoodHeatmapR8, SystemID.AIEcology);
-            if (lockedCount >= 3) vault.TryUnlockBuffer(BufferID.EcosystemPredatorFrontCounts, SystemID.AIEcology);
-            if (lockedCount >= 2) vault.TryUnlockBuffer(BufferID.EcosystemPreyFrontCounts, SystemID.AIEcology);
-            if (lockedCount >= 1) vault.TryUnlockBuffer(BufferID.EcosystemSectorFrontStates, SystemID.AIEcology);
+            return IsAIEcologyBuffer(_sectorFrontStates, BufferID.EcosystemSectorFrontStates) &&
+                   IsAIEcologyBuffer(_preyFrontCounts, BufferID.EcosystemPreyFrontCounts) &&
+                   IsAIEcologyBuffer(_predatorFrontCounts, BufferID.EcosystemPredatorFrontCounts) &&
+                   IsAIEcologyBuffer(_sectorFoodHeatmapR8, BufferID.EcosystemSectorFoodHeatmapR8) &&
+                   IsAIEcologyBuffer(_sectorBackStates, BufferID.EcosystemSectorBackStates) &&
+                   IsAIEcologyBuffer(_preyBackCounts, BufferID.EcosystemPreyBackCounts) &&
+                   IsAIEcologyBuffer(_predatorBackCounts, BufferID.EcosystemPredatorBackCounts) &&
+                   IsAIEcologyBuffer(_sectorIndexEntries, BufferID.EcosystemSectorIndexEntries) &&
+                   IsAIEcologyBuffer(_headlessEntities.Positions, BufferID.EcosystemHeadlessPositions) &&
+                   IsAIEcologyBuffer(_headlessEntities.SpeciesID, BufferID.EcosystemHeadlessSpeciesId) &&
+                   IsAIEcologyBuffer(_headlessEntities.Hunger, BufferID.EcosystemHeadlessHunger) &&
+                   IsAIEcologyBuffer(_headlessEntities.SectorCoord, BufferID.EcosystemHeadlessSectorCoord) &&
+                   IsAIEcologyBuffer(_headlessEntities.SectorID, BufferID.EcosystemHeadlessSectorId) &&
+                   IsAIEcologyBuffer(_headlessEntities.FaunaGenomes, BufferID.EcosystemHeadlessFaunaGenomes) &&
+                   IsAIEcologyBuffer(_headlessEntities.MutationStableHashes, BufferID.EcosystemHeadlessMutationStableHashes) &&
+                   IsAIEcologyBuffer(_preyBiomassFront, BufferID.EcosystemPreyBiomassFront) &&
+                   IsAIEcologyBuffer(_predatorBiomassFront, BufferID.EcosystemPredatorBiomassFront) &&
+                   IsAIEcologyBuffer(_biomassCarryingCapacity, BufferID.EcosystemBiomassCarryingCapacity) &&
+                   IsAIEcologyBuffer(_biomassMacroCellCoords, BufferID.EcosystemBiomassMacroCellCoords) &&
+                   IsAIEcologyBuffer(_biomassIndexEntries, BufferID.EcosystemBiomassIndexEntries) &&
+                   IsAIEcologyBuffer(_preyBiomassBack, BufferID.EcosystemPreyBiomassBack) &&
+                   IsAIEcologyBuffer(_predatorBiomassBack, BufferID.EcosystemPredatorBiomassBack) &&
+                   IsAIEcologyBuffer(_biomassSumScratch, BufferID.EcosystemBiomassSumScratch) &&
+                   IsAIEcologyBuffer(_biomassCellFlags, BufferID.EcosystemBiomassCellFlags) &&
+                   IsAIEcologyBuffer(_biomassBlackBox, BufferID.EcosystemBiomassBlackBox);
         }
 
         private bool TryLockGenomeMutationJobBuffers()
@@ -4902,21 +4968,25 @@ namespace Hecton8.World
             if (vault == null || _genomeMutationJobLocksHeld)
                 return false;
 
-            int lockedCount = 0;
-            if (!TryLockAIEcologyBuffer(vault, BufferID.EcosystemHeadlessFaunaGenomes, ref lockedCount)) { UnlockGenomeMutationJobBuffers(vault, lockedCount); return false; }
-            if (!TryLockAIEcologyBuffer(vault, BufferID.EcosystemHeadlessMutationRadiation, ref lockedCount)) { UnlockGenomeMutationJobBuffers(vault, lockedCount); return false; }
-            if (!TryLockAIEcologyBuffer(vault, BufferID.EcosystemHeadlessMutationToxicity, ref lockedCount)) { UnlockGenomeMutationJobBuffers(vault, lockedCount); return false; }
-            if (!TryLockAIEcologyBuffer(vault, BufferID.EcosystemHeadlessMutationBrine, ref lockedCount)) { UnlockGenomeMutationJobBuffers(vault, lockedCount); return false; }
-            if (!TryLockAIEcologyBuffer(vault, BufferID.EcosystemHeadlessMutationStableHashes, ref lockedCount)) { UnlockGenomeMutationJobBuffers(vault, lockedCount); return false; }
-            if (!TryLockAIEcologyBuffer(vault, BufferID.EcosystemHeadlessMutationResults, ref lockedCount)) { UnlockGenomeMutationJobBuffers(vault, lockedCount); return false; }
-            if (!TryLockAIEcologyBuffer(vault, BufferID.EcosystemMacroSwarms, ref lockedCount)) { UnlockGenomeMutationJobBuffers(vault, lockedCount); return false; }
-            if (!TryLockAIEcologyBuffer(vault, BufferID.EcosystemMacroSwarmMutationRadiation, ref lockedCount)) { UnlockGenomeMutationJobBuffers(vault, lockedCount); return false; }
-            if (!TryLockAIEcologyBuffer(vault, BufferID.EcosystemMacroSwarmMutationToxicity, ref lockedCount)) { UnlockGenomeMutationJobBuffers(vault, lockedCount); return false; }
-            if (!TryLockAIEcologyBuffer(vault, BufferID.EcosystemMacroSwarmMutationBrine, ref lockedCount)) { UnlockGenomeMutationJobBuffers(vault, lockedCount); return false; }
-            if (!TryLockAIEcologyBuffer(vault, BufferID.EcosystemMacroSwarmMutationResults, ref lockedCount)) { UnlockGenomeMutationJobBuffers(vault, lockedCount); return false; }
+            if (!vault.TryAcquireMutationGuard(GenomeMutationGuardMask))
+                return false;
 
-            _genomeMutationJobLocksHeld = true;
-            return true;
+            bool keepGuard = false;
+            try
+            {
+                if (!HasGenomeMutationJobViews())
+                    return false;
+
+                _genomeMutationJobLocksHeld = true;
+                _genomeMutationJobGuardVault = vault;
+                keepGuard = true;
+                return true;
+            }
+            finally
+            {
+                if (!keepGuard)
+                    vault.ReleaseMutationGuard(GenomeMutationGuardMask);
+            }
         }
 
         private void UnlockGenomeMutationJobBuffers()
@@ -4924,25 +4994,26 @@ namespace Hecton8.World
             if (!_genomeMutationJobLocksHeld)
                 return;
 
-            IDataVault vault = _dataVault;
+            IDataVault vault = _genomeMutationJobGuardVault ?? _dataVault;
             if (vault != null)
-                UnlockGenomeMutationJobBuffers(vault, 11);
+                vault.ReleaseMutationGuard(GenomeMutationGuardMask);
             _genomeMutationJobLocksHeld = false;
+            _genomeMutationJobGuardVault = null;
         }
 
-        private static void UnlockGenomeMutationJobBuffers(IDataVault vault, int lockedCount)
+        private bool HasGenomeMutationJobViews()
         {
-            if (lockedCount >= 11) vault.TryUnlockBuffer(BufferID.EcosystemMacroSwarmMutationResults, SystemID.AIEcology);
-            if (lockedCount >= 10) vault.TryUnlockBuffer(BufferID.EcosystemMacroSwarmMutationBrine, SystemID.AIEcology);
-            if (lockedCount >= 9) vault.TryUnlockBuffer(BufferID.EcosystemMacroSwarmMutationToxicity, SystemID.AIEcology);
-            if (lockedCount >= 8) vault.TryUnlockBuffer(BufferID.EcosystemMacroSwarmMutationRadiation, SystemID.AIEcology);
-            if (lockedCount >= 7) vault.TryUnlockBuffer(BufferID.EcosystemMacroSwarms, SystemID.AIEcology);
-            if (lockedCount >= 6) vault.TryUnlockBuffer(BufferID.EcosystemHeadlessMutationResults, SystemID.AIEcology);
-            if (lockedCount >= 5) vault.TryUnlockBuffer(BufferID.EcosystemHeadlessMutationStableHashes, SystemID.AIEcology);
-            if (lockedCount >= 4) vault.TryUnlockBuffer(BufferID.EcosystemHeadlessMutationBrine, SystemID.AIEcology);
-            if (lockedCount >= 3) vault.TryUnlockBuffer(BufferID.EcosystemHeadlessMutationToxicity, SystemID.AIEcology);
-            if (lockedCount >= 2) vault.TryUnlockBuffer(BufferID.EcosystemHeadlessMutationRadiation, SystemID.AIEcology);
-            if (lockedCount >= 1) vault.TryUnlockBuffer(BufferID.EcosystemHeadlessFaunaGenomes, SystemID.AIEcology);
+            return IsAIEcologyBuffer(_headlessEntities.FaunaGenomes, BufferID.EcosystemHeadlessFaunaGenomes) &&
+                   IsAIEcologyBuffer(_headlessEntities.MutationRadiation, BufferID.EcosystemHeadlessMutationRadiation) &&
+                   IsAIEcologyBuffer(_headlessEntities.MutationToxicity, BufferID.EcosystemHeadlessMutationToxicity) &&
+                   IsAIEcologyBuffer(_headlessEntities.MutationBrine, BufferID.EcosystemHeadlessMutationBrine) &&
+                   IsAIEcologyBuffer(_headlessEntities.MutationStableHashes, BufferID.EcosystemHeadlessMutationStableHashes) &&
+                   IsAIEcologyBuffer(_headlessEntities.MutationResults, BufferID.EcosystemHeadlessMutationResults) &&
+                   IsAIEcologyBuffer(_macroSwarms, BufferID.EcosystemMacroSwarms) &&
+                   IsAIEcologyBuffer(_macroSwarmMutationRadiation, BufferID.EcosystemMacroSwarmMutationRadiation) &&
+                   IsAIEcologyBuffer(_macroSwarmMutationToxicity, BufferID.EcosystemMacroSwarmMutationToxicity) &&
+                   IsAIEcologyBuffer(_macroSwarmMutationBrine, BufferID.EcosystemMacroSwarmMutationBrine) &&
+                   IsAIEcologyBuffer(_macroSwarmMutationResults, BufferID.EcosystemMacroSwarmMutationResults);
         }
 
         private bool TryLockMacroSwarmTravelJobBuffers()
@@ -4951,25 +5022,25 @@ namespace Hecton8.World
             if (vault == null || _macroSwarmTravelJobLocksHeld)
                 return false;
 
-            int lockedCount = 0;
-            if (!TryLockAIEcologyBuffer(vault, BufferID.EcosystemMacroSwarms, ref lockedCount)) { UnlockMacroSwarmTravelJobBuffers(vault, lockedCount); return false; }
-            if (!TryLockAIEcologyBuffer(vault, BufferID.EcosystemMacroSwarmArrivals, ref lockedCount)) { UnlockMacroSwarmTravelJobBuffers(vault, lockedCount); return false; }
-            if (!TryLockAIEcologyBuffer(vault, BufferID.EcosystemMacroSwarmCounters, ref lockedCount)) { UnlockMacroSwarmTravelJobBuffers(vault, lockedCount); return false; }
-            if (!TryLockAIEcologyBuffer(vault, BufferID.EcosystemMacroSwarmBlackBox, ref lockedCount)) { UnlockMacroSwarmTravelJobBuffers(vault, lockedCount); return false; }
-            if (!TryLockAIEcologyBuffer(vault, BufferID.EcosystemMacroHydrationScratch, ref lockedCount)) { UnlockMacroSwarmTravelJobBuffers(vault, lockedCount); return false; }
-            if (!TryLockAIEcologyBuffer(vault, BufferID.EcosystemMacroDehydrationScratch, ref lockedCount)) { UnlockMacroSwarmTravelJobBuffers(vault, lockedCount); return false; }
-            if (!TryLockAIEcologyBuffer(vault, BufferID.EcosystemPreyBiomassFront, ref lockedCount)) { UnlockMacroSwarmTravelJobBuffers(vault, lockedCount); return false; }
-            if (!TryLockAIEcologyBuffer(vault, BufferID.EcosystemPreyBiomassBack, ref lockedCount)) { UnlockMacroSwarmTravelJobBuffers(vault, lockedCount); return false; }
-            if (!TryLockAIEcologyBuffer(vault, BufferID.EcosystemPredatorBiomassFront, ref lockedCount)) { UnlockMacroSwarmTravelJobBuffers(vault, lockedCount); return false; }
-            if (!TryLockAIEcologyBuffer(vault, BufferID.EcosystemPredatorBiomassBack, ref lockedCount)) { UnlockMacroSwarmTravelJobBuffers(vault, lockedCount); return false; }
-            if (!TryLockAIEcologyBuffer(vault, BufferID.EcosystemBiomassCarryingCapacity, ref lockedCount)) { UnlockMacroSwarmTravelJobBuffers(vault, lockedCount); return false; }
-            if (!TryLockAIEcologyBuffer(vault, BufferID.EcosystemBiomassSumScratch, ref lockedCount)) { UnlockMacroSwarmTravelJobBuffers(vault, lockedCount); return false; }
-            if (!TryLockAIEcologyBuffer(vault, BufferID.EcosystemBiomassMacroCellCoords, ref lockedCount)) { UnlockMacroSwarmTravelJobBuffers(vault, lockedCount); return false; }
-            if (!TryLockAIEcologyBuffer(vault, BufferID.EcosystemBiomassIndexEntries, ref lockedCount)) { UnlockMacroSwarmTravelJobBuffers(vault, lockedCount); return false; }
-            if (!TryLockAIEcologyBuffer(vault, BufferID.EcosystemBiomassCellFlags, ref lockedCount)) { UnlockMacroSwarmTravelJobBuffers(vault, lockedCount); return false; }
+            if (!vault.TryAcquireMutationGuard(MacroSwarmTravelMutationGuardMask))
+                return false;
 
-            _macroSwarmTravelJobLocksHeld = true;
-            return true;
+            bool keepGuard = false;
+            try
+            {
+                if (!HasMacroSwarmTravelJobViews())
+                    return false;
+
+                _macroSwarmTravelJobLocksHeld = true;
+                _macroSwarmTravelJobGuardVault = vault;
+                keepGuard = true;
+                return true;
+            }
+            finally
+            {
+                if (!keepGuard)
+                    vault.ReleaseMutationGuard(MacroSwarmTravelMutationGuardMask);
+            }
         }
 
         private void UnlockMacroSwarmTravelJobBuffers()
@@ -4977,29 +5048,30 @@ namespace Hecton8.World
             if (!_macroSwarmTravelJobLocksHeld)
                 return;
 
-            IDataVault vault = _dataVault;
+            IDataVault vault = _macroSwarmTravelJobGuardVault ?? _dataVault;
             if (vault != null)
-                UnlockMacroSwarmTravelJobBuffers(vault, MacroSwarmTravelJobBufferLockCount);
+                vault.ReleaseMutationGuard(MacroSwarmTravelMutationGuardMask);
             _macroSwarmTravelJobLocksHeld = false;
+            _macroSwarmTravelJobGuardVault = null;
         }
 
-        private static void UnlockMacroSwarmTravelJobBuffers(IDataVault vault, int lockedCount)
+        private bool HasMacroSwarmTravelJobViews()
         {
-            if (lockedCount >= 15) vault.TryUnlockBuffer(BufferID.EcosystemBiomassCellFlags, SystemID.AIEcology);
-            if (lockedCount >= 14) vault.TryUnlockBuffer(BufferID.EcosystemBiomassIndexEntries, SystemID.AIEcology);
-            if (lockedCount >= 13) vault.TryUnlockBuffer(BufferID.EcosystemBiomassMacroCellCoords, SystemID.AIEcology);
-            if (lockedCount >= 12) vault.TryUnlockBuffer(BufferID.EcosystemBiomassSumScratch, SystemID.AIEcology);
-            if (lockedCount >= 11) vault.TryUnlockBuffer(BufferID.EcosystemBiomassCarryingCapacity, SystemID.AIEcology);
-            if (lockedCount >= 10) vault.TryUnlockBuffer(BufferID.EcosystemPredatorBiomassBack, SystemID.AIEcology);
-            if (lockedCount >= 9) vault.TryUnlockBuffer(BufferID.EcosystemPredatorBiomassFront, SystemID.AIEcology);
-            if (lockedCount >= 8) vault.TryUnlockBuffer(BufferID.EcosystemPreyBiomassBack, SystemID.AIEcology);
-            if (lockedCount >= 7) vault.TryUnlockBuffer(BufferID.EcosystemPreyBiomassFront, SystemID.AIEcology);
-            if (lockedCount >= 6) vault.TryUnlockBuffer(BufferID.EcosystemMacroDehydrationScratch, SystemID.AIEcology);
-            if (lockedCount >= 5) vault.TryUnlockBuffer(BufferID.EcosystemMacroHydrationScratch, SystemID.AIEcology);
-            if (lockedCount >= 4) vault.TryUnlockBuffer(BufferID.EcosystemMacroSwarmBlackBox, SystemID.AIEcology);
-            if (lockedCount >= 3) vault.TryUnlockBuffer(BufferID.EcosystemMacroSwarmCounters, SystemID.AIEcology);
-            if (lockedCount >= 2) vault.TryUnlockBuffer(BufferID.EcosystemMacroSwarmArrivals, SystemID.AIEcology);
-            if (lockedCount >= 1) vault.TryUnlockBuffer(BufferID.EcosystemMacroSwarms, SystemID.AIEcology);
+            return IsAIEcologyBuffer(_macroSwarms, BufferID.EcosystemMacroSwarms) &&
+                   IsAIEcologyBuffer(_macroSwarmArrivals, BufferID.EcosystemMacroSwarmArrivals) &&
+                   IsAIEcologyBuffer(_macroSwarmCounters, BufferID.EcosystemMacroSwarmCounters) &&
+                   IsAIEcologyBuffer(_macroSwarmBlackBox, BufferID.EcosystemMacroSwarmBlackBox) &&
+                   IsAIEcologyBuffer(_macroHydrationScratch, BufferID.EcosystemMacroHydrationScratch) &&
+                   IsAIEcologyBuffer(_macroDehydrationScratch, BufferID.EcosystemMacroDehydrationScratch) &&
+                   IsAIEcologyBuffer(_preyBiomassFront, BufferID.EcosystemPreyBiomassFront) &&
+                   IsAIEcologyBuffer(_preyBiomassBack, BufferID.EcosystemPreyBiomassBack) &&
+                   IsAIEcologyBuffer(_predatorBiomassFront, BufferID.EcosystemPredatorBiomassFront) &&
+                   IsAIEcologyBuffer(_predatorBiomassBack, BufferID.EcosystemPredatorBiomassBack) &&
+                   IsAIEcologyBuffer(_biomassCarryingCapacity, BufferID.EcosystemBiomassCarryingCapacity) &&
+                   IsAIEcologyBuffer(_biomassSumScratch, BufferID.EcosystemBiomassSumScratch) &&
+                   IsAIEcologyBuffer(_biomassMacroCellCoords, BufferID.EcosystemBiomassMacroCellCoords) &&
+                   IsAIEcologyBuffer(_biomassIndexEntries, BufferID.EcosystemBiomassIndexEntries) &&
+                   IsAIEcologyBuffer(_biomassCellFlags, BufferID.EcosystemBiomassCellFlags);
         }
 
         private bool TryLockApexTerritoryOverlapJobBuffers()
@@ -5008,12 +5080,26 @@ namespace Hecton8.World
             if (vault == null || _apexTerritoryOverlapJobLocksHeld)
                 return false;
 
-            int lockedCount = 0;
-            if (!TryLockAIEcologyBuffer(vault, BufferID.EcosystemApexTerritorySamples, ref lockedCount)) { UnlockApexTerritoryOverlapJobBuffers(vault, lockedCount); return false; }
-            if (!TryLockAIEcologyBuffer(vault, BufferID.EcosystemApexTerritoryOverlapResults, ref lockedCount)) { UnlockApexTerritoryOverlapJobBuffers(vault, lockedCount); return false; }
+            if (!vault.TryAcquireMutationGuard(ApexTerritoryOverlapMutationGuardMask))
+                return false;
 
-            _apexTerritoryOverlapJobLocksHeld = true;
-            return true;
+            bool keepGuard = false;
+            try
+            {
+                if (!IsAIEcologyBuffer(_apexTerritorySamples, BufferID.EcosystemApexTerritorySamples) ||
+                    !IsAIEcologyBuffer(_apexTerritoryOverlapResults, BufferID.EcosystemApexTerritoryOverlapResults))
+                    return false;
+
+                _apexTerritoryOverlapJobLocksHeld = true;
+                _apexTerritoryOverlapJobGuardVault = vault;
+                keepGuard = true;
+                return true;
+            }
+            finally
+            {
+                if (!keepGuard)
+                    vault.ReleaseMutationGuard(ApexTerritoryOverlapMutationGuardMask);
+            }
         }
 
         private void UnlockApexTerritoryOverlapJobBuffers()
@@ -5021,16 +5107,22 @@ namespace Hecton8.World
             if (!_apexTerritoryOverlapJobLocksHeld)
                 return;
 
-            IDataVault vault = _dataVault;
+            IDataVault vault = _apexTerritoryOverlapJobGuardVault ?? _dataVault;
             if (vault != null)
-                UnlockApexTerritoryOverlapJobBuffers(vault, 2);
+                vault.ReleaseMutationGuard(ApexTerritoryOverlapMutationGuardMask);
             _apexTerritoryOverlapJobLocksHeld = false;
+            _apexTerritoryOverlapJobGuardVault = null;
         }
 
-        private static void UnlockApexTerritoryOverlapJobBuffers(IDataVault vault, int lockedCount)
+        private static ulong EcosystemVaultMutationGuardBit(BufferID bufferId)
         {
-            if (lockedCount >= 2) vault.TryUnlockBuffer(BufferID.EcosystemApexTerritoryOverlapResults, SystemID.AIEcology);
-            if (lockedCount >= 1) vault.TryUnlockBuffer(BufferID.EcosystemApexTerritorySamples, SystemID.AIEcology);
+            return 1UL << (unchecked((int)(uint)(int)bufferId) & 31);
+        }
+
+        private static bool IsAIEcologyBuffer<T>(VaultBufferView<T> buffer, BufferID bufferId)
+            where T : struct
+        {
+            return buffer.IsOwnedHandle(SystemID.AIEcology, bufferId) && buffer.IsCreated;
         }
 
         private void CompleteScheduledSimulation(bool forceComplete)

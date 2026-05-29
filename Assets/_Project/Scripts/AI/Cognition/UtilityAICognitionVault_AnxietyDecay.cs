@@ -94,6 +94,9 @@ namespace Hecton8.AI.Cognition
         private const string AnxietyDumpFileName = "Dump_SHINOBU_312.bin";
         private const string AnxietyAgent1300DumpFileName = "Dump_1300_AICognition.bin";
         private const string AnxietyCsvFileName = "fauna_psychology_profiles.csv";
+        private static readonly ulong AnxietyTuningProfileMutationGuardMask =
+            AnxietyVaultMutationGuardBit(UtilityAIAnxietyVaultBufferIds.Tuning) |
+            AnxietyVaultMutationGuardBit(UtilityAIAnxietyVaultBufferIds.Profiles);
 
         public static bool TryAcquireAnxietyHandles(IDataVault vault, out UtilityAIAnxietyVaultHandles handles)
         {
@@ -292,32 +295,35 @@ namespace Hecton8.AI.Cognition
         public static bool TrySetAnxietyTuning(IDataVault vault, ref UtilityAIAnxietyVaultHandles handles, in AnxietyRuntimeTuningDTO tuning)
         {
             if (vault == null ||
-                handles.Tuning.BufferID == 0u ||
+                handles.Tuning.BufferID != (uint)UtilityAIAnxietyVaultBufferIds.Tuning ||
                 handles.Tuning.Generation == 0u ||
-                !vault.TryAcquireWriteLock(in handles.Tuning, SystemID.AICognition, out NativeArray<AnxietyRuntimeTuningDTO> tuningBuffer))
+                !vault.TryAcquireMutationGuard(AnxietyTuningProfileMutationGuardMask))
             {
                 return false;
             }
 
-            bool profilesLocked = false;
-            NativeArray<AnxietyProfileDTO> profiles = default;
             try
             {
-                if (!tuningBuffer.IsCreated || tuningBuffer.Length <= 0)
+                if (!TryOpenAnxietyVaultView(vault, in handles.Tuning, 1, out NativeArray<AnxietyRuntimeTuningDTO> tuningBuffer))
                     return false;
 
+                bool profilesResolved = false;
+                NativeArray<AnxietyProfileDTO> profiles = default;
                 if (handles.Profiles.BufferID != 0u &&
                     handles.Profiles.Generation != 0u)
                 {
-                    if (!vault.TryAcquireWriteLock(in handles.Profiles, SystemID.AICognition, out profiles))
+                    if (handles.Profiles.BufferID != (uint)UtilityAIAnxietyVaultBufferIds.Profiles)
                         return false;
 
-                    profilesLocked = true;
+                    if (!TryOpenAnxietyVaultView(vault, in handles.Profiles, AnxietyDecayConstants.MaxProfiles, out profiles))
+                        return false;
+
+                    profilesResolved = true;
                 }
 
                 AnxietyRuntimeTuningDTO sanitized = AnxietyDecayJobMath.SanitizeTuning(in tuning);
                 WriteAnxietyTuningDirect(tuningBuffer, in sanitized);
-                if (profilesLocked && profiles.IsCreated && profiles.Length > 0)
+                if (profilesResolved && profiles.IsCreated && profiles.Length > 0)
                 {
                     AnxietyProfileDTO profile = AnxietyDecayDefaults.BuildProfile();
                     profile.FearDecayRate = sanitized.BaseFearDecayRate;
@@ -330,10 +336,7 @@ namespace Hecton8.AI.Cognition
             }
             finally
             {
-                if (profilesLocked)
-                    vault.ReleaseWriteLock(in handles.Profiles, SystemID.AICognition);
-
-                vault.ReleaseWriteLock(in handles.Tuning, SystemID.AICognition);
+                vault.ReleaseMutationGuard(AnxietyTuningProfileMutationGuardMask);
             }
         }
 
@@ -527,6 +530,11 @@ namespace Hecton8.AI.Cognition
                    vault.TryResolveHandle(in handle, out buffer) &&
                    buffer.IsCreated &&
                    buffer.Length >= requiredLength;
+        }
+
+        private static ulong AnxietyVaultMutationGuardBit(BufferID bufferId)
+        {
+            return 1UL << (unchecked((int)(uint)(int)bufferId) & 31);
         }
 
         private static void EnsureAnxietyColdDefaults(UtilityAIAnxietyVaultBuffers buffers, bool forceWrite)

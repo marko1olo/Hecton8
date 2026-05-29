@@ -3767,3 +3767,995 @@ Evidence:
 - Diff layout scan: `0` hits.
 - `git diff --check`: exit `0`.
 - Build/import/profiler: not run. CPU sampled `100%` and `VBCSCompiler` PID `53464` was active.
+
+## 2026-05-29 - Chained DataVault Write-Lock Validation Repair
+
+What was wrong:
+- Chained `TryAcquireWriteLock(...) || !buffer.IsCreated || buffer.Length...` patterns could leak a DataVault write lock when acquisition succeeded and post-acquire validation failed.
+- `PropwashGpuTunerWindow` could call `ReleaseWriteLock` after failed acquire because release was gated by handle validity rather than an acquired flag.
+
+What was done:
+- Split acquisition and validation in the affected runtime/editor helpers.
+- Ensured failed post-acquire validation releases in `finally` or immediate release before returning.
+- Preserved existing caller-owned handoff in methods that intentionally return a locked `NativeArray` view.
+
+Cinematic cheats used:
+- None. No physical simulation, DTO layout, quality curve, phase order, or visual fidelity route was changed.
+
+Exact microseconds saved:
+- Measured: `0 us`.
+- Expected steady-frame delta: `0 us`; the patch removes lock/freeze risk on existing write paths.
+
+Evidence:
+- Patched source files: `HectonInputRuntime_HapticSynth.cs`, `VegetationNavGridSynchronizer.cs`, `HectonWorldGenerator.cs`, `SpatialAudioManager.cs`, `PlayerCriticalProceduralAudioRenderer.cs`, `SubmarineOsThermalGridRuntime.cs`, `SubmarineAtmosphereSystem.cs`, `ThermodynamicsHazardGridRuntime.FileWorker.cs`, `ModuleDeconstructionResourceReturnEditor_SHINOBU336.cs`, `RadiationShieldingTunerWindow.cs`, `SubmarineBallastTunerWindow.cs`, `PropwashGpuTunerWindow.cs`.
+- `rg '!.*TryAcquireWriteLock.*\\|\\|' Assets -g '*.cs'`: no source hits.
+- `git diff --check` on patched files: exit `0`, LF/CRLF warnings only.
+- Build/import/profiler: not run; current mandate requested static validation and no build spam.
+
+## 2026-05-29 - GlobalPhysicsStateManager Write-Lock Group Flattening
+
+What was wrong:
+- `GlobalPhysicsStateManager` culling/scheduling paths held multiple DataVault write locks simultaneously.
+- Affected slices: tracked position publish, culling scheduling, culling dispatch, Shinobu37 clear, tracked lane mutation, target wake queue, mock body generation, and runtime clear.
+- This was a deadlock/stall vector against DataVault writer metadata and compaction guards.
+
+What was done:
+- Added cold cached `_nativeStateDataVault`.
+- Added `VaultBufferBinding<T>.TryResolve` and `VaultBufferBinding<T>.HasValidView`.
+- Replaced multi-lock groups with one `TryAcquireMutationGuard(mask)` per phase slice.
+- Kept post-acquire NativeArray view validation and existing `finally` release paths.
+
+Cinematic cheats used:
+- None. No new physics or presentation simulation was added.
+- Existing continuous culling quality behavior remains unchanged.
+
+Exact microseconds saved:
+- Measured: `0 us`.
+- Static-only estimate: fewer DataVault metadata lock transitions and no nested writer ownership. No profiler sample was run.
+
+Evidence:
+- Patched source files: `Assets/_Project/Scripts/GlobalPhysicsStateManager.cs`, `Assets/_Project/Scripts/Physics/GlobalPhysicsStateManager.Shinobu37PhysicsCulling.cs`.
+- Key anchors: `TryResolve` line `337`, `HasValidView` line `343`, cached `_nativeStateDataVault` line `684`, mutation guard helpers lines `1276-1290`, scheduling guard line `3148`, dispatch guard line `3165`, runtime clear guard line `4749`, Shinobu37 clear guard line `921`, tracked lane guard line `1548`, target wake guard line `1571`, mock body guard line `1854`.
+- `git diff --check` on both patched files: exit `0`, LF/CRLF warnings only.
+- Brace scanner over all `GlobalPhysicsStateManager*.cs`: `0` methods with more than one `.TryAcquireWriteLock(` call.
+- Added diff Zero-GC scan: `0` hits.
+- Added dependency scan for `GlobalRegistry.Get`/`GetComponent`: `0` hits.
+- Build/import/profiler: not run; CPU sample was `48.27%` and current mandate requested static validation/no build spam.
+
+## 2026-05-29 - BiomeBoundarySdfRuntime Map/Sample Write-Lock Flattening
+
+What was wrong:
+- `BiomeBoundarySdfRuntime` held nested DataVault write locks for biome map/hash refresh and map/hash/sample result execution.
+- The phase is single-owner WorldStreaming mutation; multiple writer locks added lock-order risk without changing data ownership.
+
+What was done:
+- Added `BiomeMapMutationGuardMask` and `SampleMutationGuardMask`.
+- Map refresh/clear and sample execution now reserve one mutation guard, validate exact `BufferID` handles, resolve native views with `TryResolveHandle`, and release one guard through the existing `finally` paths.
+- The telemetry ring stayed as one direct write-lock lane because it is independent and already single-buffer.
+
+Cinematic cheats used:
+- None. The existing heatmap/SDF approximation remains the cheap visual route.
+- No physical biome simulation, DTO layout change, or binary quality switch was added.
+
+Exact microseconds saved:
+- Measured: `0 us`.
+- Static-only estimate: fewer DataVault metadata transitions and no nested writer ownership. No profiler sample was run.
+
+Evidence:
+- Patched source file: `Assets/_Project/Scripts/World/Biomes/BiomeBoundarySdfRuntime.cs`.
+- Key anchors: mutation masks lines `37-42`, biome map guard method line `430`, biome map release line `468`, sample guard method line `477`, sample release line `520`, `MutationGuardBit` line `595`.
+- `git diff --check` on the file: exit `0`, LF/CRLF warning only.
+- Method scanner on the file: `OFFENDERS=0` for methods with more than one `.TryAcquireWriteLock(`.
+- Added diff Zero-GC/dependency scan: `0` hits for added `new`, `string.Format`, `.ToString`, LINQ, `foreach`, `GlobalRegistry.Get`, or `GetComponent`.
+- Build/import/profiler: not run; CPU sample was `19.38%` and current mandate requested static validation/no build spam.
+
+## 2026-05-29 - SpatialAudio Acoustic Portal Write-Lock Flattening
+
+What was wrong:
+- `SpatialAudioManager` acquired six acoustic portal work write locks and two scratch write locks for synchronous path evaluation.
+- It also acquired previous-velocity AUP/frame write locks together during audio velocity tracking.
+- Virtual voice append acquired voice/DTO/source/previous-AUP write locks together for each accepted voice.
+- Acoustic occlusion scheduling acquired selected-source, selected-previous-AUP, and DSP-output write locks across a scheduled job.
+- These were real nested writer groups in audio runtime paths, separate from sequential cursor/ring telemetry false positives.
+
+What was done:
+- Added `VirtualVoiceAppendMutationGuardMask`.
+- Added `AcousticOcclusionMutationGuardMask`.
+- Added `AcousticPortalWorkMutationGuardMask` and `AcousticPortalScratchMutationGuardMask`.
+- Added `PreviousVelocityAupMutationGuardMask`.
+- Replaced virtual voice append, acoustic occlusion, portal work/scratch, and previous-velocity write-lock chains with one mutation guard per group.
+- Resolved all required buffers through existing exact audio-handle `TryOpenAudioVaultBuffer` validation.
+- Existing `finally` release sites now release one guard per acquired group.
+
+Cinematic cheats used:
+- None added. Existing portal pathing remains a cheap bounded path fake gated by continuous virtual voice quality weight.
+- No physical acoustic simulation, DTO change, or binary quality switch was introduced.
+
+Exact microseconds saved:
+- Measured: `0 us`.
+- Static-only estimate: seventeen nested write-lock acquisitions became five mutation guard reservations. No profiler sample was run.
+
+Evidence:
+- Patched source file: `Assets/_Project/Scripts/SpatialAudioManager.cs`.
+- Key anchors: virtual voice append mask lines `513-517`, acoustic occlusion mask lines `521-524`, append acquire line `3051`, append guard acquire line `3071`, append guard release line `3190`, occlusion schedule line `3354`, occlusion guard acquire line `3375`, occlusion guard release line `8718`, work acquire line `8905`, scratch acquire line `9053`, `AudioVaultMutationGuardBit` line `9295`.
+- `git diff --check` on the file: exit `0`, LF/CRLF warning only.
+- Targeted scans: `AppendVirtualVoice directWriteLocks=0 helperWriteLocks=0 mutationGuards=1`; `ScheduleAcousticOcclusionJob directWriteLocks=0 helperWriteLocks=1 mutationGuards=1` with the remaining helper being the independent material-rows lock; portal work/scratch and previous-velocity acquire helpers report no direct/helper write-lock calls.
+- Added diff non-struct Zero-GC/dependency scan: `ADDED_NONSTRUCT_PATTERN_HITS=0`; added `new` scan reports no hits.
+- Build/import/profiler: not run; current mandate requested static validation/no build spam.
+
+## 2026-05-29 - UtilityAI Anxiety Tuning Write-Lock Flattening
+
+What was wrong:
+- `UtilityAICognitionVault.TrySetAnxietyTuning` acquired tuning and profile DataVault write locks in one method.
+- This was a nested AI cognition writer path even though the work itself is small and usually editor/cold driven.
+
+What was done:
+- Added `AnxietyTuningProfileMutationGuardMask`.
+- Replaced tuning/profile write locks with one mutation guard.
+- Added exact tuning/profile `BufferID` checks before resolving native views.
+- Kept existing tuning sanitization and default profile derivation unchanged.
+
+Cinematic cheats used:
+- None. No AI behavior math, DTO layout, telemetry layout, or CSV route was changed.
+
+Exact microseconds saved:
+- Measured: `0 us`.
+- Static-only estimate: two write-lock acquisitions became one mutation guard. No profiler sample was run.
+
+Evidence:
+- Patched source file: `Assets/_Project/Scripts/AI/Cognition/UtilityAICognitionVault_AnxietyDecay.cs`.
+- Key anchors: mutation mask lines `97-99`, `TrySetAnxietyTuning` line `295`, guard acquire line `300`, guard release line `339`, `AnxietyVaultMutationGuardBit` line `535`.
+- `git diff --check` on the file: exit `0`, LF/CRLF warning only.
+- Targeted scan: `TrySetAnxietyTuning line=295 directWriteLocks=0 mutationGuards=1 mutationReleases=1`.
+- Added diff Zero-GC/dependency scan: `ADDED_PATTERN_HITS=0`.
+- Build/import/profiler: not run; current mandate requested static validation/no build spam.
+
+## 2026-05-29 - SpatialAudio Sort/Rebase Write-Lock Tail Flattening
+
+What was wrong:
+- `SpatialAudioManager.FastTick` still acquired virtual voice sort pool, sort key pool, selections, and statistics through helper write-lock calls before scheduling `VirtualVoiceSortJob`.
+- `RebaseAcousticSourcePool` still acquired source DTO and previous-AUP buffers together during floating-origin rebasing.
+- These were the last two `SpatialAudioManager` helper-lock multi-methods reported by the previous targeted scanner.
+
+What was done:
+- Added `VirtualVoiceSortMutationGuardMask` for `SpatialAudioVirtualVoiceSortPool`, `SpatialAudioVirtualVoiceSortKeyPool`, `SpatialAudioVirtualVoiceSelections`, and `SpatialAudioVirtualVoiceStatistics`.
+- Replaced `FastTick` sort-buffer helper write-lock acquisition with one mutation guard plus exact `TryOpenAudioVaultBuffer` validation for all four buffers.
+- Changed `ReleaseVirtualVoiceSortBufferLocks` to clear the job-held flags and release the sort mutation guard exactly once.
+- Replaced `RebaseAcousticSourcePool` source/AUP helper write locks with a dynamic two-buffer mutation guard and exact handle resolution.
+
+Cinematic cheats used:
+- None added. The existing virtual voice sort, SDF sampler, portal fake, and continuous `GlobalQualityWeight` voice budget remain unchanged.
+- No physical audio simulation, DSP rewrite, DTO layout change, or binary quality switch was introduced.
+
+Exact microseconds saved:
+- Measured: `0 us`.
+- Static-only estimate: six helper write-lock acquisitions became two mutation guard reservations. No profiler sample was run.
+
+Evidence:
+- Patched source file: `Assets/_Project/Scripts/SpatialAudioManager.cs`.
+- Key anchors: `VirtualVoiceSortMutationGuardMask` lines `508-512`, `FastTick` line `1948`, sort guard acquire line `2074`, sort guard failure release line `2140`, sort guard final release line `8705`, `RebaseAcousticSourcePool` line `4586`, rebase guard acquire line `4598`, rebase guard release line `4627`, `AudioVaultMutationGuardBit` line `9289`.
+- Targeted method scan: `FastTick DirectWriteLocks=0 MutationGuards=1 Releases=1 GlobalRegistryGet=0 GetComponent=0`; `RebaseAcousticSourcePool DirectWriteLocks=0 MutationGuards=1 Releases=1 GlobalRegistryGet=0 GetComponent=0`.
+- SpatialAudio helper scanner: `SPATIAL_AUDIO_HELPER_MULTI_METHODS=0`.
+- Added diff Zero-GC/dependency scans: `ADDED_NONSTRUCT_PATTERN_HITS=0`; `ADDED_DEPENDENCY_PATTERN_HITS=0`.
+- Scoped `git diff --check`: exit `0`, LF/CRLF warnings only.
+- Broad all-scripts write-lock scanner: timed out after `60000 ms`; broad hot dependency scanner: timed out after `60000 ms`.
+- CPU/build guard: final CPU sample returned `100`; no compiler process rows were listed by that sample. No `dotnet build`, Unity import, Play Mode, profiler, GCMonitor, or fresh native ledger proof was launched.
+
+## 2026-05-29 - Tether Editor Validator Write-Lock Flattening
+
+What was wrong:
+- `TetherMemorySovereigntyValidator1303.RunDefragRaceFuzzer` acquired 12 DataVault write locks at once while a defrag worker thread ran.
+- The code was editor-only, but it contradicted the lock-flattening rule in the memory-sovereignty validator itself.
+
+What was done:
+- Added `StressMutationGuardMask` for `TetherVerletPositions=326`, `TetherVerletPreviousPositions=327`, `TetherVerletVelocities=328`, `TetherVerletPinnedPositions=329`, `TetherVerletPinnedMask=330`, `TetherVerletSegmentRestLengths=331`, `TetherVerletSegmentTensions=332`, `TetherVerletCorrections=333`, `TetherVerletCorrectionWeights=334`, `TetherVerletSolverStats=335`, `TetherVerletSolverFlags=336`, and `TetherVerletNodeFaultFlags=337`.
+- Replaced the 12 write-lock chain with one `TryAcquireMutationGuard`.
+- Added exact handle validation for `BufferID`, `SystemID.Physics`, and generation before resolving every stress buffer.
+- Released the mutation guard exactly once in `finally` after stopping and joining the compaction worker.
+
+Cinematic cheats used:
+- None added. Tether runtime solver, fuzzer stress workload, and defrag worker behavior remain unchanged.
+- No binary quality switch, DTO layout change, or physical simulation expansion was introduced.
+
+Exact microseconds saved:
+- Measured: `0 us`.
+- Static-only estimate: 12 editor validator write-lock acquisitions became one mutation guard. No profiler sample was run.
+
+Evidence:
+- Patched source file: `Assets/_Project/Scripts/Physics/TetherVerletJobs.cs`.
+- Key anchors: `StressMutationGuardMask` line `530`, exact validations lines `624-635`, guard acquire line `645`, exact resolves lines `652-663`, guard release line `745`, `TryResolveStressBuffer` line `834`.
+- Targeted method scan: `RUN_DEFRAG_DIRECT_WRITELOCKS=0`, `RUN_DEFRAG_MUTATION_GUARDS=1`, `RUN_DEFRAG_MUTATION_RELEASES=1`, `RUN_DEFRAG_GLOBALREGISTRY_GET=0`, `RUN_DEFRAG_GETCOMPONENT=0`, `RUN_DEFRAG_VALIDATE_EXACT=12`.
+- Added diff scans for `new`, `string.Format`, `.ToString`, LINQ, `foreach`, `GlobalRegistry.Get`, and `GetComponent`: no hits.
+- `git diff --check`: exit `0`, LF/CRLF warning only.
+- Broad all-scripts write-lock scanner: timed out after `64015 ms`; broad hot dependency scanner: timed out after `64025 ms`.
+- CPU/build guard: CPU sample returned `100`; no `dotnet build`, Unity import, Play Mode, profiler, GCMonitor, or native ledger proof was launched.
+
+## 2026-05-29 - TetherInstance Synchronous Writer Lock Flattening
+
+What was wrong:
+- `TetherInstance` synchronous runtime paths still held multi-buffer DataVault writer groups in visual fallback, cable publish/clear, telemetry failure/dump, and Verlet bootstrap.
+- These paths did not need job-held ownership, so nested writer locks added deadlock/stall risk without changing gameplay truth.
+
+What was done:
+- Added `VisualFallbackMutationGuardMask`, `CableStateMutationGuardMask`, `TelemetryMutationGuardMask`, and `VerletBootstrapMutationGuardMask`.
+- Converted `UpdateVisuals`, `PublishDataVaultCableState`, `ClearDataVaultCableEntry`, `TryWriteVaultFailureTelemetry`, `DumpVerletTelemetryOnce`, and `InitializeVerletRuntime` to one mutation guard plus exact `BufferID/SystemID.Physics/generation` resolve views.
+- Left `RunVerletSolver` unchanged because its buffers are passed to scheduled jobs and need a separate completion-handoff design.
+
+Cinematic cheats used:
+- Preserved the existing cheap visual catenary fallback and quality-scaled upload cadence.
+- No physical cable simulation, DTO layout change, or binary quality switch was introduced.
+
+Exact microseconds saved:
+- Measured: `0 us`.
+- Static-only estimate: visual/cable/telemetry/bootstrap multi-lock groups now reserve one guard each. No profiler sample was run.
+
+Evidence:
+- Patched source file: `Assets/_Project/Scripts/TetherInstance.cs`.
+- Key anchors: masks lines `117-140`, `UpdateVisuals` guard `686/773`, `InitializeVerletRuntime` guard `1230/1370`, telemetry guards `2008/2039` and `3386/3446`, cable-state guards `2545/2655` and `2722/2800`.
+- Targeted method scan: `UpdateVisuals helperAcquire=0 mutationGuard=1 mutationRelease=1`; `PublishDataVaultCableState helperAcquire=0 mutationGuard=1 mutationRelease=1`; `ClearDataVaultCableEntry helperAcquire=0 mutationGuard=1 mutationRelease=1`; `TryWriteVaultFailureTelemetry helperAcquire=0 mutationGuard=1 mutationRelease=1`; `DumpVerletTelemetryOnce helperAcquire=0 mutationGuard=1 mutationRelease=1`; `InitializeVerletRuntime helperAcquire=1 mutationGuard=1 mutationRelease=1` with the helper lock after guard release; hot dependency hits `0`.
+- Added diff scans for `new`, `string.Format`, `.ToString`, LINQ, `foreach`, `GlobalRegistry.Get`, and `GetComponent`: no hits.
+- `git diff --check`: exit `0`, LF/CRLF warning only.
+- CPU/build guard: CPU sample returned `100`; compiler process sample returned no rows, but no `dotnet build`, Unity import, Play Mode, profiler, GCMonitor, or native ledger proof was launched.
+
+## 2026-05-29 - TetherInstance RunVerletSolver Guard Handoff
+
+What was wrong:
+- `RunVerletSolver` scheduled jobs over solver/telemetry DataVault buffers but released the old write locks in the method `finally`.
+- That left pending jobs with native views after writer protection was gone, and the method still held a 14-buffer lock group before scheduling.
+
+What was done:
+- Added `VerletSolveMutationGuardMask` for the solver bootstrap lanes, correction lanes, and tether telemetry ring/head.
+- Replaced all `RunVerletSolver` helper write-lock acquisition with exact resolve-only views under one mutation guard.
+- Added `_pendingVerletSolveGuardVault` and `_pendingVerletSolveGuardHeld` so the guard transfers with `_pendingVerletSolveHandle`.
+- Added `ReleasePendingVerletSolveGuard`, called from `CommitPendingVerletSolve` after the job fence and before result publish mutations.
+
+Cinematic cheats used:
+- Preserved the existing Verlet solver and cheap visual catenary fallback.
+- No physical cable simulation, quality-tier binary switch, or DTO layout change was introduced.
+
+Exact microseconds saved:
+- Measured: `0 us`.
+- Static-only estimate: 14 writer lock acquisitions became one job-held mutation guard. No profiler sample was run.
+
+Evidence:
+- Patched source file: `Assets/_Project/Scripts/TetherInstance.cs`.
+- Key anchors: `VerletSolveMutationGuardMask` line `142`, pending guard fields lines `348-349`, solve guard acquire line `2879`, guard transfer lines `3154-3156`, fallback release lines `3163-3164`, commit release line `3196`, `ReleasePendingVerletSolveGuard` lines `3211-3220`.
+- Targeted scan: `RunVerletSolver helperAcquire=0 mutationGuard=1 mutationRelease=2 writeLockRelease=0 hotDependencyHits=0`; `ReleasePendingVerletSolveGuard helperAcquire=0 mutationGuard=0 mutationRelease=1 writeLockRelease=0 hotDependencyHits=0`.
+- Helper-acquire caller scan: only `TryAcquireDataVaultCableSlice<T>` itself has more than one helper call.
+- Hot dependency/LINQ/foreach scan over solver/finalize/presentation methods: `0`.
+- Added diff scans for `new`, `string.Format`, `.ToString`, LINQ, `foreach`, `GlobalRegistry.Get`, and `GetComponent`: no hits.
+- `git diff --check`: exit `0`, LF/CRLF warning only.
+- CPU/build guard: CPU sample returned `51`; compiler process sample returned no rows, but no `dotnet build`, Unity import, Play Mode, profiler, GCMonitor, or native ledger proof was launched.
+
+## 2026-05-29 - EcosystemDirector Job-Held Lock Flattening
+
+What was wrong:
+- `EcosystemDirector` still held four multi-buffer AIEcology writer groups with `TryLockBuffer/TryUnlockBuffer`.
+- The groups covered sector solve `25` lanes, fauna genome mutation `11` lanes, macro swarm travel `15` lanes, and apex territory overlap `2` lanes.
+- Partial-unlock counters were required to unwind acquisition failure, which preserved a lock-order/deadlock vector.
+
+What was done:
+- Added `SectorSolveMutationGuardMask`, `GenomeMutationGuardMask`, `MacroSwarmTravelMutationGuardMask`, and `ApexTerritoryOverlapMutationGuardMask`.
+- Replaced the four multi-lock acquisition chains with one `TryAcquireMutationGuard` per job-held group.
+- Added `IsOwnedHandle` and `IsAIEcologyBuffer` validation so each guard handoff proves exact `BufferID`, `SystemID.AIEcology`, generation, and a resolved native view.
+- Added `_solveJobGuardVault`, `_genomeMutationJobGuardVault`, `_macroSwarmTravelJobGuardVault`, and `_apexTerritoryOverlapJobGuardVault` so unlock targets the same vault instance that granted the guard.
+
+Cinematic cheats used:
+- Preserved current Lotka-Volterra biomass approximation, macro swarm diffusion, fauna genome mutation pass, and apex overlap sampling.
+- No physical ecology simulation, DTO layout change, or binary device quality branch was introduced.
+
+Exact microseconds saved:
+- Measured: `0 us`.
+- Static-only estimate: `53` buffer lock acquisitions across the four routes became `4` mutation guard reservations. No profiler sample was run.
+
+Evidence:
+- Patched source file: `Assets/_Project/Scripts/World/EcosystemDirector.cs`.
+- Key anchors: masks lines `330-386`, guard owner fields lines `1438-1441`, `TryLockSectorSolveJobBuffers` line `4897`, `TryLockGenomeMutationJobBuffers` line `4965`, `TryLockMacroSwarmTravelJobBuffers` line `5019`, `TryLockApexTerritoryOverlapJobBuffers` line `5077`, `IsAIEcologyBuffer` lines `5122-5125`.
+- Targeted scan: all eight lock/unlock methods report `DirectWriteLocks=0`, `BufferLocks=0`, `HotDependencies=0`; each `TryLock*` has `MutationGuards=1` and failure-path `MutationReleases=1`; each `Unlock*` has `MutationReleases=1`.
+- Source scan for `TryLockBuffer`, `TryUnlockBuffer`, `TryLockAIEcologyBuffer`, and stale partial-unlock overload calls in `EcosystemDirector.cs`: no hits.
+- Added diff scans for `new`, `string.Format`, `.ToString`, LINQ, `foreach`, `GlobalRegistry.Get`, and `GetComponent`: no hits.
+- `git diff --check`: exit `0`, LF/CRLF warning only.
+- CPU/build guard: CPU samples returned `52` then `59`; compiler process sample returned no rows, but no `dotnet build`, Unity import, Play Mode, profiler, GCMonitor, or native ledger proof was launched.
+
+## 2026-05-29 - SubmarineAtmosphere Job/Telemetry Lock Flattening
+
+What was wrong:
+- `SubmarineAtmosphereSystem.TryLockAtmosphereJobBuffers` held 26 HabitatAtmosphere writer lanes with `TryLockBuffer/TryUnlockBuffer`.
+- Black-box telemetry wrote cursor and ring through two separate direct write locks instead of one exact owner route.
+
+What was done:
+- Added `AtmosphereJobMutationGuardMask`, `AtmosphereTelemetryMutationGuardMask`, and `_atmosphereJobMutationGuardVault`.
+- Replaced the atmosphere step job buffer lock chain with one mutation guard plus exact `BufferID`, `SystemID.HabitatAtmosphere`, generation, and length validation.
+- Stored the guard vault owner so release on completion, dispose, or DataVault hot-swap targets the same vault that granted the guard.
+- Converted telemetry cold clear, black-box record, and failure record to one telemetry mutation guard resolving cursor+ring under exact validation.
+
+Cinematic cheats used:
+- Preserved compartment/Dalton pressure approximation, soot overlay, visor glitch, and pressure audio fakes.
+- No physical gas simulation, DTO layout change, or binary device quality branch was introduced.
+
+Exact microseconds saved:
+- Measured: `0 us`.
+- Static-only estimate: 26 job buffer locks plus two telemetry write-lock routes became two mutation guard routes. No profiler sample was run.
+
+Evidence:
+- Patched source file: `Assets/_Project/Scripts/SubmarineAtmosphereSystem.cs`.
+- Key anchors: `AtmosphereJobMutationGuardMask` near line `1123`, `AtmosphereTelemetryMutationGuardMask` near line `1149`, `_atmosphereJobMutationGuardVault` near line `1866`, `TryLockAtmosphereJobBuffers` near line `5575`, `TryAcquireAtmosphereTelemetryWriteGuard` near line `5618`, `RecordAtmosphereBlackBox` near line `5828`, `RecordAtmosphereFailure` near line `5883`.
+- Targeted scan: `TryLockAtmosphereJobBuffers directWriteLocks=0 writeReleases=0 bufferLocks=0 mutationGuards=1 mutationReleases=1 hotDependencies=0`; telemetry guard acquire `mutationGuards=1 mutationReleases=1`; black-box/failure/cold clear `directWriteLocks=0`.
+- File scanner: `TOTAL_MULTI_DIRECT_WRITELOCK_METHODS=0`.
+- Source scan for `TryLockBuffer`, `TryUnlockBuffer`, stale atmosphere job buffer helpers: no hits.
+- Added diff scans for `new`, `string.Format`, `.ToString`, LINQ, `foreach`, `GlobalRegistry.Get`, and `GetComponent`: count `0`.
+- `git diff --check`: exit `0`, LF/CRLF warning only.
+- CPU/build guard: CPU sample returned `82`; compiler process sample returned no rows, but no `dotnet build`, Unity import, Play Mode, profiler, GCMonitor, or native ledger proof was launched.
+
+## 2026-05-29 - AmbientBiota Job Pin Lock Flattening
+
+What was wrong:
+- `AmbientBiotaDirector.TryPinBiotaJobBuffers` still pinned `BiotaAUPs`, `BiotaVelocities`, and `BiotaStates` with three `TryLockBuffer` calls while scheduled drift/spawn jobs owned the native views.
+
+What was done:
+- Added `BiotaJobMutationGuardMask` and `_jobBufferGuardVault`.
+- Replaced the three legacy pins with one mutation guard and exact `TryResolveBiotaBuffers(_capacity, ...)` validation before and after acquire.
+- Released the stored guard after `LateFrameTick` job finalization or teardown; DataVault rebind now releases a finalized leftover guard before handles are released.
+
+Cinematic cheats used:
+- Preserved existing ambient drift, spawn, macro hydration, indirect draw, and quality-weight scaling.
+- No physical swarm simulation, DTO layout change, or binary device quality branch was introduced.
+
+Exact microseconds saved:
+- Measured: `0 us`.
+- Static-only estimate: three job writer pins became one guard reservation. No profiler sample was run.
+
+Evidence:
+- Patched source file: `Assets/_Project/Scripts/AI/Ambient/AmbientBiotaDirector.cs`.
+- Key anchors: `BiotaJobMutationGuardMask` near line `76`, `_jobBufferGuardVault` near line `177`, `TryPinBiotaJobBuffers` near line `949`, `ReleaseBiotaJobBufferPins` near line `986`, rebind guard release near line `785`.
+- Targeted scan: `TryPinBiotaJobBuffers directWriteLocks=0 bufferLocks=0 mutationGuards=1 mutationReleases=1 hotDependencies=0`; `ReleaseBiotaJobBufferPins directWriteLocks=0 bufferLocks=0 mutationReleases=1`; `Tick/SlowTick/LateFrameTick hotDependencies=0`.
+- Source scan for `TryLockBuffer/TryUnlockBuffer` in `AmbientBiotaDirector.cs`: no hits.
+- Added diff scan excluding value-type job/signal/telemetry constructors: count `0`.
+- `git diff --check`: exit `0`, LF/CRLF warning only.
+- CPU/build guard: CPU sample returned `70`; compiler process sample returned no rows, but no `dotnet build`, Unity import, Play Mode, profiler, GCMonitor, or native ledger proof was launched.
+
+## 2026-05-29 - ProceduralLadderClimb Solve Pin Lock Flattening
+
+What was wrong:
+- `ProceduralLadderClimbRuntime.TryPinSolveBuffers` still pinned five AnimationLocomotion DataVault writer lanes with `TryLockBuffer/TryUnlockBuffer` while `LadderClimbIkSolveJob` owned native views.
+- The exact handle gates were already present, but the solve ownership route still held a multi-buffer legacy lock chain.
+
+What was done:
+- Added `SolveMutationGuardMask`, `_solveBufferGuardVault`, and `LadderMutationGuardBit`.
+- Replaced the five legacy pins for `LadderClimbIkInput`, `LadderAUPs`, `LadderClimbIkOutput`, `LadderClimbIkTelemetryRing`, and `LadderClimbIkTelemetryCursor` with one mutation guard.
+- Validated `TryResolveVaultViews().HasSolveCapacity` before and after guard acquire.
+- Released the stored guard after schedule failure, `LateFrameTick` job completion, or barrier teardown.
+
+Cinematic cheats used:
+- Preserved the existing cheap camera-slide presentation and IK target solve.
+- No physical body climb simulation, DTO layout change, or binary device quality branch was introduced.
+
+Exact microseconds saved:
+- Measured: `0 us`.
+- Static-only estimate: five job writer pins became one guard reservation. No profiler sample was run.
+
+Evidence:
+- Patched source file: `Assets/_Project/Scripts/Animation/Locomotion/ProceduralLadderClimbRuntime.cs`.
+- Key anchors: `SolveMutationGuardMask` near line `46`, `_solveBufferGuardVault` near line `74`, `TryPinSolveBuffers` near line `750`, failure release near line `790`, `ReleaseSolveBufferPins` near lines `794` and `807`, guard release near line `810`.
+- Targeted scan: `TryPinSolveBuffers directWriteLocks=0 bufferLocks=0 mutationGuards=1 mutationReleases=1 hotDependencies=0`; schedule/fast/late/barrier methods direct write/buffer lock/hot dependency hits `0`.
+- Source scan for `TryLockBuffer/TryUnlockBuffer` in `ProceduralLadderClimbRuntime.cs`: no hits.
+- Added diff scan excluding value-type `LadderClimbIkInput` and `LadderClimbIkSolveJob` constructors: count `0`.
+- `git diff --check`: exit `0`, LF/CRLF warning only.
+- CPU/build guard: CPU sample returned `97`; compiler process sample returned no rows, but no `dotnet build`, Unity import, Play Mode, profiler, GCMonitor, or native ledger proof was launched.
+
+## 2026-05-29 - ProceduralBoneBlender Job Pin Lock Flattening
+
+What was wrong:
+- `ProceduralBoneBlenderRuntime.TryLockJobBuffers` still pinned eleven AnimationFauna DataVault writer lanes with `TryLockBuffer/TryUnlockBuffer`.
+- The pins covered rigs, frame inputs, parent indices, bind poses, bone states, matrices, stats, telemetry ring/cursor, tuning, and mock AI signals while scheduled jobs owned native views.
+
+What was done:
+- Added `JobMutationGuardMask`, `_jobBufferGuardVault`, and `ProceduralBoneMutationGuardBit`.
+- Replaced the legacy lock chain with one mutation guard and exact `TryResolveRuntimeBuffers` validation before and after guard acquire.
+- Returned the post-guard native views directly to `Tick`, avoiding an extra resolve pass before scheduling jobs.
+- Released the stored guard after `FinishPendingSolverCompletion` or forced teardown through `CompletePendingSolverForTeardown`.
+
+Cinematic cheats used:
+- Preserved the existing procedural sine/spring bone animation, mock AI velocity signal, and GPU skinning upload route.
+- No physical bone simulation, DTO layout change, or binary device quality branch was introduced.
+
+Exact microseconds saved:
+- Measured: `0 us`.
+- Static-only estimate: eleven job writer pins became one guard reservation. No profiler sample was run.
+
+Evidence:
+- Patched source file: `Assets/_Project/Scripts/Animation/FaunaProcedural/ProceduralBoneBlenderRuntime.cs`.
+- Key anchors: `JobMutationGuardMask` near line `45`, `_jobBufferGuardVault` near line `102`, `TryLockJobBuffers` near line `904`, failure release near line `981`, `UnlockJobBuffers` near line `985`, guard release near line `995`.
+- Targeted scan: `TryLockJobBuffers directWriteLocks=0 bufferLocks=0 mutationGuards=1 mutationReleases=1 hotDependencies=0`; `UnlockJobBuffers directWriteLocks=0 bufferLocks=0 mutationReleases=1`; `Tick/LateFrameTick/CompletePendingSolverForTeardown/FinishPendingSolverCompletion` direct write/buffer lock/hot dependency hits `0`.
+- Source scan for `TryLockBuffer/TryUnlockBuffer/private TryLock/private Unlock` in `ProceduralBoneBlenderRuntime.cs`: no hits.
+- Added diff scan for `new`, `string.Format`, `.ToString`, LINQ, `foreach`, `GlobalRegistry.Get`, and `GetComponent`: no source hits.
+- `git diff --check`: exit `0`, LF/CRLF warning only.
+- CPU/build guard: CPU sample returned `73`; compiler process sample returned no rows, but no `dotnet build`, Unity import, Play Mode, profiler, GCMonitor, or native ledger proof was launched.
+
+## 2026-05-29 - HapticSynthesis Native Writer Route Hardening
+
+What was wrong:
+- `HectonInputRuntime_HapticSynth` schedule/fallback haptic synthesis needed one owner for pulses, final pulse, telemetry, profiles, tuning, and optional mock impulse lanes.
+- Local haptic open/read/write/release paths still passed through generic input helpers that accepted any nonzero haptic handle instead of exact `BufferID` proof.
+
+What was done:
+- Added haptic base/mock mutation guard masks for pulses, final pulse, telemetry ring, profile table, tuning, and optional mock impulses.
+- `TryPinHapticSynthesisScheduleBuffers` validates exact haptic views before and after guard acquire, then releases through post-simulation/fallback paths.
+- Added exact haptic open/read/write/release helpers requiring `BufferID`, `SystemID.CoreDeterminism`, and nonzero generation.
+- Replaced haptic lifecycle teardown release calls with exact haptic handle release.
+
+Cinematic cheats used:
+- Preserved synthesized haptic pulse coalescing from impact/tool/signal DTOs and mock impulse fakes.
+- No physical controller simulation, DTO layout change, or binary device quality branch was introduced.
+
+Exact microseconds saved:
+- Measured: `0 us`.
+- Static-only estimate: six schedule writer pins became one mutation guard. Single-buffer writes remain exact and scoped. No profiler sample was run.
+
+Evidence:
+- Patched source file: `Assets/_Project/Scripts/Core/HectonInputRuntime_HapticSynth.cs`.
+- Key anchors: `HapticSynthesisBaseScheduleGuardMask` line `33`, `TryReadHapticInputBuffer` line `544`, `OpenOrAcquireHapticSynthesisBufferForOwnerRoute` line `564`, `ReleaseHapticSynthesisVaultHandle` line `860`, `TryAcquireInputWriteBuffer` line `871`, `TryPinHapticSynthesisScheduleBuffers` line `1000`, `ReleaseHapticSynthesisSchedulePins` line `1033`, `IsHapticSynthesisHandle` line `1068`.
+- Source scan for `TryLockBuffer/TryUnlockBuffer/TryPinHapticSynthesisBuffer/GlobalRegistry.Get/GetComponent`: no hits.
+- Weak haptic generic-route scan for `OpenOrAcquireInputBufferForOwnerRoute`, `TryReadInputBuffer(in _haptic...)`, `ReleaseVaultHandle(vault, ref _haptic...)`, and ownerless handle zero checks: no hits.
+- Targeted scan: `TryPinHapticSynthesisScheduleBuffers directWriteLocks=0 mutationGuards=1 mutationReleases=1`; `ReleaseHapticSynthesisSchedulePins mutationReleases=1`; schedule/run/consume hot methods have no direct write-lock groups, hot dependencies, `foreach`, string formatting, `.ToString`, or reference `new`; `TryAcquireInputWriteBuffer directWriteLocks=1 writeReleases=1`.
+- Added diff Zero-GC/dependency scan: `ADDED_PATTERN_HITS=0`.
+- `git diff --check`: exit `0`, LF/CRLF warning only.
+- CPU/build guard: CPU sample returned `63`; compiler process sample returned no rows, but no `dotnet build`, Unity import, Play Mode, profiler, GCMonitor, or native ledger proof was launched.
+
+## 2026-05-29 - FoveatedSimulation Importance Job Lock Flattening
+
+What was wrong:
+- `FoveatedSimulationManager` still held seven DataVault writer pins for importance scoring through `TryLockBuffer/TryUnlockBuffer`.
+- Vault array open/resolve/release paths accepted nonzero handles instead of proving exact `BufferID`, `SystemID.SystemDispatcher`, and generation.
+
+What was done:
+- Added `ImportanceJobMutationGuardMask` for score positions, entity AUPs, importance scores, tick-rate codes, frustum flags, sim tiers, and distance lanes.
+- Replaced the seven legacy buffer pins with one mutation guard and exact validation before/after acquire.
+- Stored the guard vault in `_importanceJobGuardVault` and released once after job completion or teardown.
+- Tightened `OpenOrAcquireVaultArray`, `TryResolveVaultArray`, `ReleaseVaultHandle`, score-position writes, and telemetry writes to exact foveated handle gates.
+
+Cinematic cheats used:
+- Preserved distance/frustum foveation, cadence throttling, and visual interpolation.
+- No binary device tier branch, physical visibility simulation, or DTO layout change was introduced.
+
+Exact microseconds saved:
+- Measured: `0 us`.
+- Static-only estimate: seven job writer pins became one mutation guard reservation. No profiler sample was run.
+
+Evidence:
+- Patched source file: `Assets/_Project/Scripts/Core/FoveatedSimulationManager.cs`.
+- Key anchors: `ImportanceJobMutationGuardMask` line `222`, `_importanceJobGuardVault` line `299`, `TryWriteScorePositionsForImportanceJob` line `1413`, `TryPinImportanceJobBuffers` line `1444`, `TryValidateImportanceJobBuffers` line `1475`, `ReleaseImportanceJobBufferLocks` line `1486`, `OpenOrAcquireVaultArray` line `1499`, `TryResolveVaultArray` line `1524`, `IsFoveatedVaultHandle` line `1540`, `ReleaseVaultHandle` line `1629`.
+- Source scan for `TryLockBuffer/TryUnlockBuffer/TryLockImportanceJobBuffer/ownerless handle zero checks/weak vault resolve/release patterns`: no hits.
+- Targeted scan: `TryPinImportanceJobBuffers directWriteLocks=0 bufferLocks=0 mutationGuards=1 mutationReleases=1 hotDependencies=0`; `ReleaseImportanceJobBufferLocks mutationReleases=1`; `TryWriteScorePositionsForImportanceJob directWriteLocks=1 writeReleases=1`; `WriteTelemetryFrame directWriteLocks=1 writeReleases=1`; schedule/apply/visual-sync/complete methods have no hot dependency or allocation-pattern hits.
+- Added diff Zero-GC/dependency scan: `ADDED_PATTERN_HITS=0`.
+- `git diff --check`: exit `0`, LF/CRLF warning only.
+- CPU/build guard: CPU sample returned `56` and compiler process sample listed active `dotnet` PID `28000`; no `dotnet build`, Unity import, Play Mode, profiler, GCMonitor, or native ledger proof was launched.
+
+## 2026-05-29 - GroundPenetratingRadar State Lock Flattening
+
+What was wrong:
+- `GroundPenetratingRadarRuntime` still used legacy DataVault buffer pins for GPR state snapshot and ping copy.
+- The publish route needed a single guarded route, not nested write-locks or sequential partial lane updates.
+- Generic GPR helpers accepted nonzero handles before this pass; they now require exact GPR `BufferID` ownership.
+
+What was done:
+- Added `ScanJobMutationGuardMask`, `PingGpuReadGuardMask`, `_scanJobGuardVault`, and `GroundRadarMutationGuardBit`.
+- Replaced `TryLockScanJobBuffers`, `TryLockWorldBuffer`, partial unlock counters, and `TryUnlockBuffer` calls with one mutation guard release path.
+- `TryCopyCurrentGprStateToPending` and `TryPublishRadarPendingJob` resolve all state lanes from the same guarded `IDataVault`.
+- `TryCopyGprPings` uses one method-scoped ping GPU guard and exact read-only handle resolution.
+- `TryOpenVaultBufferForOwnerWrite`, `TryReadVaultBuffer`, and `AreGprHandlesCreated` now require exact `BufferID`, `SystemID.WorldStreaming`, and generation.
+
+Cinematic cheats used:
+- Preserved the cheap subsurface raymarch/GPR ping visualization and existing SDF/ore read models.
+- Preserved continuous `GlobalQualityWeight` scaling for ray count and raymarch step count.
+- No physical subsurface simulation, DTO layout change, or binary low-end branch was introduced.
+
+Exact microseconds saved:
+- Measured: `0 us`.
+- Static-only estimate: seven GPR state lanes and one ping-copy lane moved from legacy pins/nested writer paths to mutation guard routes. No profiler sample was run.
+
+Evidence:
+- Patched source file: `Assets/_Project/Scripts/World/GroundPenetratingRadarRuntime.cs`.
+- Key anchors: `ScanJobMutationGuardMask` line `35`, `PingGpuReadGuardMask` line `43`, `_scanJobGuardVault` line `118`, `TryCopyGprPings` line `317`, `TryPublishRadarPendingJob` line `729`, `TryPinScanJobBuffers` line `1138`, `ReleaseScanJobBufferPins` line `1168`, `TryPinPingGpuReadBuffer` line `1181`, `GroundRadarMutationGuardBit` line `1222`, `WriteTelemetry` line `1469`.
+- Source scan for `TryLockBuffer/TryUnlockBuffer/TryLockWorldBuffer/UnlockScanJobBuffers/TryLockScanJobBuffers/ReleaseScanJobBufferLocks/_scanJobBufferLockCount/IsVaultHandleCreated`: no hits.
+- Targeted scan: `TryPublishRadarPendingJob directWriteLocks=0 mutationGuards=1 mutationReleases=1`; `TryPinScanJobBuffers directWriteLocks=0 mutationGuards=1 mutationReleases=1`; `ReleaseScanJobBufferPins mutationReleases=1`; `TryPinPingGpuReadBuffer mutationGuards=1 mutationReleases=1`; `WriteTelemetry directWriteLocks=1 writeReleases=1`; hot dependency/allocation pattern hits `0`.
+- Added diff Zero-GC/dependency scan: `ADDED_PATTERN_HITS=0`.
+- `git diff --check`: exit `0`, LF/CRLF warning only.
+- CPU/build guard: CPU sample returned `68`; compiler process sample listed active `dotnet` PID `23456`; no `dotnet build`, Unity import, Play Mode, profiler, GCMonitor, or native ledger proof was launched.
+
+## 2026-05-29 - HectonSeismicTideDirector Celestial/Seismic Guard Flattening
+
+What was wrong:
+- `HectonSeismicTideDirector` still held seven celestial mechanics lanes and six seismic evaluation lanes through legacy `TryLockBuffer/TryUnlockBuffer` chains.
+- Job pointer opens used `_dataVault` after acquiring pins, so the guarded vault and resolved vault were not explicitly tied.
+
+What was done:
+- Added `CelestialMechanicsMutationGuardMask` for celestial state write/read, environment state, flow modifiers, tuning, mock timeline, and orbital parameters.
+- Added `SeismicEvaluationMutationGuardMask` for seismic events, states, shake offsets, turbidity spikes, telemetry ring, and mock silt.
+- Added stored guard vault fields so release targets the same `IDataVault` that granted the mutation guard.
+- Tightened `TryOpenVaultBuffer`/`IsHandleCreated` to require exact `BufferID`, `SystemID.HabitatAtmosphere`, and generation.
+- Replaced both legacy lock/unlock chains with one guard acquire, exact view validation before/after acquire, same-vault pointer opens, and one release after job completion or teardown.
+
+Cinematic cheats used:
+- Preserved deterministic harmonic tide/orbit solve, signal-driven camera/audio shake, turbidity scalar, and shader-global visual sync.
+- No physical ocean/tide/seismic simulation, DTO layout change, or binary device branch was introduced.
+
+Exact microseconds saved:
+- Measured: `0 us`.
+- Static-only estimate: thirteen legacy buffer pins became two mutation guard reservations. No profiler sample was run.
+
+Evidence:
+- Patched source file: `Assets/_Project/Scripts/Environment/HectonSeismicTideDirector.cs`.
+- Key anchors: `CelestialMechanicsMutationGuardMask` line `998`, `SeismicEvaluationMutationGuardMask` line `1006`, `_seismicEvaluationGuardVault` line `1035`, `_celestialMechanicsGuardVault` line `1036`, `SeismicMutationGuardBit` line `1283`, `TryPinCelestialMechanicsVaultBuffers` line `2868`, `ReleaseCelestialMechanicsVaultPins` line `2919`, `TryPinSeismicEvaluationVaultBuffers` line `3382`, `ReleaseSeismicEvaluationVaultPins` line `3432`.
+- Source scan for `TryLockBuffer/TryUnlockBuffer/TryLockCelestialMechanicsVaultBuffers/UnlockCelestialMechanicsVaultBuffers/TryLockSeismicEvaluationVaultBuffers/UnlockSeismicEvaluationVaultBuffers`: no hits.
+- Targeted scan: `TryPinCelestialMechanicsVaultBuffers directWriteLocks=0 mutationGuards=1 mutationReleases=1`; `ReleaseCelestialMechanicsVaultPins mutationReleases=1`; `TryPinSeismicEvaluationVaultBuffers directWriteLocks=0 mutationGuards=1 mutationReleases=1`; `ReleaseSeismicEvaluationVaultPins mutationReleases=1`; commit/schedule/complete hot dependency hits `0`.
+- Added diff Zero-GC/dependency scan: `ADDED_PATTERN_HITS=0`.
+- `git diff --check`: exit `0`, LF/CRLF warning only.
+- CPU/build guard: CPU sample returned `25`; compiler process sample returned no rows. No `dotnet build`, Unity import, Play Mode, profiler, GCMonitor, or native ledger proof was launched because current mandate requested static validation/no build spam.
+
+## 2026-05-29 - WorldProceduralFieldSampler Sampling Guard Flattening
+
+What was wrong:
+- `WorldProceduralFieldSampler.TryPinSamplingJobBuffers` held six DataVault pins through a partial `TryLockBuffer/TryUnlockBuffer` counter.
+- The sampling resolve/read helpers accepted nonzero handles without proving exact `BufferID` and `SystemID.WorldProceduralFieldSampler`.
+
+What was done:
+- Added `SamplingJobMutationGuardMask` for zones, biome matrices, matrix index, biome families, cave entrance hints, and noise lookup.
+- Added `_samplingJobGuardVault` so release targets the same `IDataVault` that granted the mutation guard.
+- Added exact `IsWorldProceduralFieldHandle` checks and routed sampling resolve/read/release through exact owner gates.
+- Replaced the partial unlock counter with one guard release in `ReleaseSamplingJobBufferPins`.
+
+Cinematic cheats used:
+- Preserved deterministic biome/noise/cave sampling and packed biome influence upload.
+- No physical terrain simulation, MapMagic behavior rewrite, DTO layout change, or binary device branch was introduced.
+
+Exact microseconds saved:
+- Measured: `0 us`.
+- Static-only estimate: six legacy buffer pins became one mutation guard reservation. No profiler sample was run.
+
+Evidence:
+- Patched source file: `Assets/_Project/Scripts/WorldProceduralFieldSampler.cs`.
+- Key anchors: `SamplingJobMutationGuardMask` line `53`, `_samplingJobGuardVault` line `644`, `TryResolveVaultBuffer` line `5154`, `TryReadVaultBuffer` line `5168`, `IsWorldProceduralFieldHandle` line `5177`, `WorldProceduralFieldMutationGuardBit` line `5184`, `TryPinSamplingJobBuffers` line `5231`, `ReleaseSamplingJobBufferPins` line `5326`, `ReleaseVaultHandle` line `5395`.
+- Source scan for `TryLockBuffer/TryUnlockBuffer/ReleaseSamplingJobBufferPins(int)/pinnedCount`: no hits.
+- Targeted scan: `TryPinSamplingJobBuffers directWriteLocks=0 mutationGuards=1 mutationReleases=1`; `ReleaseSamplingJobBufferPins mutationReleases=1`; schedule/complete/resolve helper hot dependency hits `0`.
+- Added diff Zero-GC/dependency scan: `ADDED_PATTERN_HITS=0`.
+- `git diff --check`: exit `0`, LF/CRLF warning only.
+- CPU/build guard: CPU sample returned `14`; compiler process sample returned no rows. No `dotnet build`, Unity import, Play Mode, profiler, GCMonitor, or native ledger proof was launched because current mandate requested static validation/no build spam.
+
+## 2026-05-29 - BaseAtmosphereLogistics Simulation Guard Flattening
+
+What was wrong:
+- `BaseAtmosphereLogisticsRuntime.ScheduleSimulation` held nineteen HabitatAtmosphere writer pins through `_lockedBufferMask`, `TryLockJobBuffers`, `TryLock`, and `UnlockJobBuffers`.
+- The scheduled job ownership window depended on partial unlock order instead of one writer reservation.
+
+What was done:
+- Added `AtmosphereJobMutationGuardMask` for front/back cells, CSR lanes, counters, telemetry, gas delta lanes, remainders, shader payload, nodes, consumers, sources, vents, and tuning.
+- Replaced `_lockedVault`/`_lockedBufferMask`/front-back lock IDs with `_jobGuardVault` and `_jobBuffersPinned`.
+- `ScheduleSimulation` now pins with `TryPinJobBuffers`, resolves job views from the same guarded `IDataVault`, and releases through `ReleaseJobBufferPins` on failure or after post-simulation completion.
+- `QueueOrApplyVaultRebind` and `ApplyPendingVaultRebindIfSafe` now use `_jobBuffersPinned` so DataVault hot-swap cannot invalidate a guarded job.
+
+Cinematic cheats used:
+- Preserved cheap CSR gas diffusion, quantized gas deltas, and shader scalar presentation.
+- Preserved continuous `GlobalQualityWeight` diffusion-iteration scaling.
+- No physical gas simulation, DTO layout change, visual-sync phase change, or binary low-end branch was introduced.
+
+Exact microseconds saved:
+- Measured: `0 us`.
+- Static-only estimate: nineteen scheduled-job writer pins became one mutation guard reservation. No profiler sample was run.
+
+Evidence:
+- Patched source file: `Assets/_Project/Scripts/Atmosphere/BaseAtmosphereLogisticsRuntime.cs`.
+- Key anchors: `AtmosphereJobMutationGuardMask` line `33`, `_jobGuardVault` line `73`, `_jobBuffersPinned` line `86`, `ScheduleSimulation` line `598`, `VisualSyncTick` line `843`, `TryResolveSimulationBuffers` line `1204`, `TryPinJobBuffers` line `1306`, `ReleaseJobBufferPins` line `1359`, `AtmosphereLogisticsMutationGuardBit` line `549`.
+- Source scan for `TryLockJobBuffers/UnlockJobBuffers/private bool TryLock/_lockedBufferMask/_lockedVault/_lockedFrontBufferId/_lockedBackBufferId/ResolveActiveCellBufferId`: no hits.
+- Hot dependency scan for `GlobalRegistry.Get/GetComponent`: no hits.
+- Targeted scan: `TryPinJobBuffers directWriteLocks=0 bufferLocks=0 mutationGuards=1 mutationReleases=1 hotDeps=0 foreach=0 linq=0`; `ReleaseJobBufferPins mutationReleases=1`; schedule/post/complete/visual-sync hot dependency hits `0`.
+- Remaining `TryLockBuffer/TryUnlockBuffer` hits: `SetEditorTuning` single `Tuning` lane only, released in `finally`.
+- Added diff Zero-GC/dependency scan: `ADDED_PATTERN_HITS=0`.
+- `git diff --check`: exit `0`, LF/CRLF warning only.
+- CPU/build guard: CPU sample returned `42`; compiler process sample returned no rows. No `dotnet build`, Unity import, Play Mode, profiler, GCMonitor, or native ledger proof was launched because current mandate requested static validation/no build spam.
+
+## 2026-05-29 - StressDrivenSpawnDirector Job/Reload Guard Flattening
+
+What was wrong:
+- `StressDrivenSpawnDirector.ColdTick` held twelve AIEcology writer lanes through partial `TryLockBuffer/TryUnlockBuffer` counters across scheduled spawn director work.
+- Editor CSV reload held four direct buffer pins for rules, links, counters, and scratch.
+
+What was done:
+- Added `JobMutationGuardMask`, `ReloadMutationGuardMask`, `_jobGuardVault`, and `_jobBuffersPinned`.
+- Job scheduling now validates all owned views before/after a single mutation guard acquire and resolves job views from that guarded vault.
+- Editor reload now uses one reload guard and releases it in `finally`.
+
+Cinematic cheats used:
+- Preserved deterministic spawn tension, hidden culling, inventory preload tickets, and continuous `GlobalQualityWeight` scaling.
+- No physical fauna simulation, CSV schema change, or binary device branch was introduced.
+
+Exact microseconds saved:
+- Measured: `0 us`.
+- Static-only estimate: twelve scheduled-job pins and four reload pins became two mutation guard routes. No profiler sample was run.
+
+Evidence:
+- Patched source file: `Assets/_Project/Scripts/Fauna/StressDrivenSpawnDirector.cs`.
+- Key anchors: `JobMutationGuardMask` line `348`, `ReloadMutationGuardMask` line `362`, `_jobGuardVault` line `412`, `_jobBuffersPinned` line `418`, `StressDirectorMutationGuardBit` line `1064`, `TryResolveJobBuffers` line `1402`, `TryPinJobBuffers` line `1449`, `ReleaseJobBufferPins` line `1477`, `TryPinReloadBuffers` line `1494`.
+- Source scan for `TryLockJobBuffers/UnlockJobBuffers/TryLockBuffer/TryUnlockBuffer/_lockedVault/_lockedCount/TryLockReloadBuffers/UnlockReloadBuffers`: no hits.
+- Targeted scan: `TryPinJobBuffers mutationGuards=1 mutationReleases=1`; `ReleaseJobBufferPins mutationReleases=1`; `TryPinReloadBuffers mutationGuards=1 mutationReleases=1`; `TryReloadRulesCold/TryLoadRulesCsvCold mutationReleases=1`; `ColdTick/LateFrameTick/EnsureVaultState` direct write/buffer lock/hot dependency hits `0`.
+- Added diff Zero-GC/dependency scan: `ADDED_PATTERN_HITS=0`.
+- `git diff --check`: exit `0`, LF/CRLF warning only.
+- CPU/build guard: CPU sample returned `45`; compiler process sample returned no rows. No `dotnet build`, Unity import, Play Mode, profiler, GCMonitor, or native ledger proof was launched because current mandate requested static validation/no build spam.
+
+## 2026-05-29 - HectonDirectorAI Predator Spatial Guard Flattening
+
+What was wrong:
+- `HectonDirectorAI` predator spatial refresh held `PredatorSpatialAbsolutePositions` and `PredatorSpatialCellCoords` simultaneously through two direct `TryLockBuffer` pins.
+- Director vault view open accepted nonzero handles without proving exact `BufferID`, `SystemID.AICognition`, and generation.
+
+What was done:
+- Added `_predatorSpatialHashMutationGuardMask`, `_predatorSpatialHashGuardVault`, and `_predatorSpatialHashBuffersPinned`.
+- `SchedulePredatorSpatialHashRefresh` now acquires one mutation guard, resolves both writable views from the same guarded `IDataVault`, writes the contact mirror, and releases in `finally`.
+- `TryOpenDirectorVaultView` now exact-gates every predator spatial handle by `BufferID`, owner `SystemID`, and nonzero generation.
+
+Cinematic cheats used:
+- Preserved the cheap predator sight fake: coarse cell hash, frustum/rear-view cull, three terrain samples, and deterministic cadence.
+- No physical perception simulation, AI behavior rewrite, or binary low-end branch was introduced.
+
+Exact microseconds saved:
+- Measured: `0 us`.
+- Static-only estimate: two writer pins became one mutation guard reservation. No profiler sample was run.
+
+Evidence:
+- Patched source file: `Assets/_Project/Scripts/HectonDirectorAI.cs`.
+- Key anchors: `_predatorSpatialHashMutationGuardMask` line `594`, `_predatorSpatialHashGuardVault` line `640`, `_predatorSpatialHashBuffersPinned` line `646`, `SchedulePredatorSpatialHashRefresh` line `1310`, `TryOpenDirectorVaultView` line `1516`, guarded overload line `1526`, `TryPinPredatorSpatialHashVaultBuffers` line `1553`, `ReleasePredatorSpatialHashVaultPins` line `1597`, `IsDirectorVaultHandle` line `1608`, `PredatorSpatialHashMutationGuardBit` line `1618`.
+- Source scan for `TryLockBuffer/TryUnlockBuffer/TryLockPredatorSpatialHashVaultBuffers/UnlockPredatorSpatialHashVaultBuffers/_predatorSpatialHashVaultLocked`: no hits.
+- Raw hot dependency scan for `GlobalRegistry.Get<` and non-`TryGetComponent` `GetComponent()`: no hits.
+- Targeted scan: `SchedulePredatorSightBatch legacyBufferLocks=0 hotDeps=0 gcPatterns=0`; `SchedulePredatorSpatialHashRefresh legacyBufferLocks=0 hotDeps=0 gcPatterns=0`; `TryPinPredatorSpatialHashVaultBuffers mutationAcquire=1 mutationRelease=1 legacyBufferLocks=0 hotDeps=0 gcPatterns=0`; `ReleasePredatorSpatialHashVaultPins mutationRelease=1`.
+- Added diff Zero-GC/dependency scan: `ADDED_PATTERN_HITS=0`.
+- `git diff --check`: exit `0`, LF/CRLF warning only.
+- CPU/build guard: CPU sample returned `53`; compiler process sample returned no rows. No `dotnet build`, Unity import, Play Mode, profiler, GCMonitor, or native ledger proof was launched because CPU exceeded the 50% guard.
+
+## 2026-05-29 - ProximityColliderSystem Job Guard Flattening
+
+What was wrong:
+- `ProximityColliderSystem.TryAcquireJobBuffers` held runtime job views through mixed DataVault writer routes: `TryLockBuffer` for positions and previous status, plus `TryAcquireWriteLock` for results.
+- That scheduled job route could hold multiple writer-protection mechanisms simultaneously.
+
+What was done:
+- Added `_jobMutationGuardMask` for `ProximityColliderPositions`, `ProximityColliderJobResults`, and `ProximityColliderPrevStatus`.
+- Added `_jobBufferGuardVault` so release targets the same vault that granted the guard.
+- Previous-status managed mirror is copied under one short exact write lock and released before job pinning.
+- The scheduled distance job now resolves positions, previous status, and result views under one mutation guard; `ReleaseJobBufferLocks` releases one guard.
+
+Cinematic cheats used:
+- Preserved cheap distance-squared collider activation, existing activation/deactivation hysteresis, and object-pool collider presentation.
+- No physical collider simulation, broadphase rewrite, or binary device branch was introduced.
+
+Exact microseconds saved:
+- Measured: `0 us`.
+- Static-only estimate: mixed two buffer pins plus one result write lock became one short copy write lock followed by one mutation guard reservation. No profiler sample was run.
+
+Evidence:
+- Patched source file: `Assets/_Project/Scripts/ProximityColliderSystem.cs`.
+- Key anchors: `_jobMutationGuardMask` line `92`, `_jobBufferGuardVault` line `102`, `TryAcquireJobBuffers` line `927`, mutation guard acquire line `969`, failure release line `999`, `ReleaseJobBufferLocks` line `1035`, `ProximityMutationGuardBit` line `1078`.
+- Source scan for `TryLockBuffer/TryUnlockBuffer`: no hits in the file.
+- Raw hot dependency scan for `GlobalRegistry.Get<` and non-`TryGetComponent` `GetComponent()`: no hits.
+- Targeted scan: `ScheduleDistanceJob legacyBufferLocks=0 hotDeps=0 gcPatterns=0`; `TryAcquireJobBuffers mutationAcquire=1 mutationRelease=1 writeLocks=1 writeReleases=2 legacyBufferLocks=0 hotDeps=0 gcPatterns=0`; `ReleaseJobBufferLocks mutationRelease=1`; `Tick/LateFrameTick legacyBufferLocks=0 hotDeps=0 gcPatterns=0`.
+- Added diff Zero-GC/dependency scan: `ADDED_PATTERN_HITS=0`.
+- `git diff --check`: exit `0`, LF/CRLF warning only.
+- CPU/build guard: CPU sample returned `100`; compiler process sample returned no rows. No `dotnet build`, Unity import, Play Mode, profiler, GCMonitor, or native ledger proof was launched because CPU exceeded the 50% guard.
+
+## 2026-05-29 - Voxel/Interaction/LightShaft Writer Group Flattening
+
+What was wrong:
+- `HectonVoxelEngine` still had grouped DataVault pins around marching-cubes job tables and streaming scratch job-lifetime buffers.
+- `EquipmentInteractionHandler` held scheduled/staged surface-query lanes through direct buffer locks.
+- `ScreenSpaceLightShaftRuntime` held top/history/telemetry light-shaft buffers through a multi-lock route.
+
+What was done:
+- Added `JobTableMutationGuardMask` and dynamic streaming scratch mutation guard ownership in `HectonVoxelEngine`.
+- Added `SurfaceQueryScheduledMutationGuardMask` and `SurfaceQueryScheduleMutationGuardMask` in `EquipmentInteractionHandler`.
+- Added `FrameBufferMutationGuardMask` and exact frame-buffer ownership checks in `ScreenSpaceLightShaftRuntime`.
+
+Cinematic cheats used:
+- Kept marching-cubes tables, raycast scheduling, and screen-space light shafts unchanged.
+- No physical light simulation, interaction rewrite, or binary quality branch was introduced.
+
+Exact microseconds saved:
+- Measured: `0 us`.
+- Static-only estimate: several multi-buffer pin groups became one mutation guard per route. No profiler sample was run.
+
+Evidence:
+- Patched source files: `Assets/_Project/Scripts/HectonVoxelEngine.cs`, `Assets/_Project/Scripts/Interaction/EquipmentInteractionHandler.cs`, `Assets/_Project/Scripts/Lighting/Shafts/ScreenSpaceLightShaftRuntime.cs`.
+- Key anchors: `HectonVoxelEngine.cs` `JobTableMutationGuardMask` line `47`, acquire line `607`, release line `627`, `StreamingScratchMutationGuardBit` line `10065`; `EquipmentInteractionHandler.cs` `SurfaceQueryScheduledMutationGuardMask` line `28`, acquire line `1002`, release line `1061`; `ScreenSpaceLightShaftRuntime.cs` `FrameBufferMutationGuardMask` line `68`, acquire line `352`, releases lines `385` and `396`.
+- Targeted scans: Hecton voxel job table range `bufferLocks=0`, streaming scratch range `bufferLocks=0`; equipment surface-query ranges `bufferLocks=0`; light-shaft file has no `TryLockBuffer/TryUnlockBuffer` hits.
+- `git diff --check`: exit `0`, LF/CRLF warnings only.
+
+## 2026-05-29 - Exosuit Optional Voxel SDF Guard Flattening
+
+What was wrong:
+- `ExosuitKinematicsRuntime` held the solver job mutation guard and then acquired two extra DataVault pins for `VoxelSdfPayloadDescriptor` and `VoxelSdfTexture3D`.
+
+What was done:
+- Added `VoxelSdfPayloadMutationGuardMask`, `_jobBufferGuardMask`, and exact `IsVoxelSdfHandle`.
+- `TryAcquireJobBufferViews` now tries job+SDF guard first, then falls back to job-only guard.
+- `TryAcquireVoxelSdfPayload` resolves WorldStreaming SDF handles only when the current job guard includes the SDF bits.
+
+Cinematic cheats used:
+- Preserved the analytic/mock SDF fallback when the optional voxel SDF guard cannot be acquired.
+- No exosuit kinematic solver rewrite or physical terrain simulation was introduced.
+
+Exact microseconds saved:
+- Measured: `0 us`.
+- Static-only estimate: two nested SDF pins became optional bits in the existing job guard. No profiler sample was run.
+
+Evidence:
+- Patched source file: `Assets/_Project/Scripts/Physics/Exosuit/ExosuitKinematicsRuntime.cs`.
+- Key anchors: `GuardVoxelSdfPayloadDescriptor` line `91`, `VoxelSdfPayloadMutationGuardMask` line `114`, `_jobBufferGuardMask` line `205`, `IsVoxelSdfHandle` line `462`, `TryAcquireJobBufferViews` line `962`, optional guard line `997`, `TryAcquireVoxelSdfPayload` line `1040`, SDF guard check line `1068`, release line `1130`.
+- Source scan for `TryLockBuffer|TryUnlockBuffer|_voxelSdf|UnlockVoxelSdfPayloadBuffers`: no hits.
+- Targeted scans: `TryAcquireJobBufferViews bufferLocks=0 mutationAcquire=2 mutationRelease=1 hotDeps=0 gcPatterns=0`; `TryAcquireVoxelSdfPayload bufferLocks=0 mutationAcquire=0 mutationRelease=0 hotDeps=0 gcPatterns=0`; `UnlockJobBuffers mutationRelease=1`.
+- Added diff scan for dependency/GC patterns in this file: `ADDED_PATTERN_HITS=0`.
+- `git diff --check`: exit `0`, LF/CRLF warning only.
+
+## 2026-05-29 - Buoyancy SIMD Telemetry Guard Flattening
+
+What was wrong:
+- `BuoyancyDisplacementRuntime.WriteCompletedSimdUtilizationTelemetry` locked SIMD telemetry ring and cursor separately with direct `TryLockBuffer` calls.
+- The same route did not exact-gate the telemetry/tuning handles by expected `BufferID` and `SystemID.Physics`.
+
+What was done:
+- Added `SimdTelemetryMutationGuardMask`.
+- Added `HasPhysicsHandle`.
+- Replaced telemetry ring/cursor direct locks with one mutation guard and exact handle gates.
+
+Cinematic cheats used:
+- Kept hydrodynamic SIMD telemetry, throughput-drop detection, and continuous `GlobalQualityWeight` reporting unchanged.
+- No buoyancy math or SIMD benchmark model was rewritten.
+
+Exact microseconds saved:
+- Measured: `0 us`.
+- Static-only estimate: two telemetry pins became one mutation guard. No profiler sample was run.
+
+Evidence:
+- Patched source file: `Assets/_Project/Scripts/Physics/Buoyancy/BuoyancyDisplacementRuntime.cs`.
+- Key anchors: `SimdTelemetryMutationGuardMask` line `60`, `HasPhysicsHandle` line `1240`, `WriteCompletedSimdUtilizationTelemetry` line `1512`, exact handle gates lines `1516-1517`, guard acquire line `1522`, release line `1585`.
+- Targeted scan: `WriteCompletedSimdUtilizationTelemetry bufferLocks=0 mutationAcquire=1 mutationRelease=1 hotDeps=0 gcPatterns=0`.
+- Scoped `git diff --check`: exit `0`, LF/CRLF warning only.
+- CPU/build guard: CPU sample returned `91`; active compiler processes existed: `csc` PID `28592`, `dotnet` PID `44644`. No `dotnet build`, Unity import, Play Mode, profiler, GCMonitor, or fresh native ledger proof was launched.
+
+## 2026-05-29 - Buoyancy Main Solver Job Guard Flattening
+
+What was wrong:
+- `BuoyancyDisplacementRuntime.FixedTick` protected the scheduled buoyancy solver with `_lockedBuffers`, direct `TryLockBuffer` pins, and direct `TryUnlockBuffer` release paths.
+- The route covered thirteen Physics-owned lanes and therefore violated the one writer route rule for job-held DataVault ownership.
+- The no-active-state branch could enter SIMD telemetry publication before releasing the job writer group.
+
+What was done:
+- Added `JobMutationGuardMask`, `_jobGuardVault`, and `_jobBuffersPinned`.
+- Moved runtime job view resolution behind one Physics mutation guard.
+- Added `ResolvePhysicsVaultBuffer` exact handle resolution and reused `HasPhysicsHandle`.
+- Removed `_lockedBuffers`, legacy `TryLock`, direct job `TryLockBuffer`, and job `TryUnlockBuffer` routes.
+- Released the job guard before `WriteCompletedSimdUtilizationTelemetry(0f)` in the no-active-state path.
+
+Cinematic cheats used:
+- Kept buoyancy force math, sleep prepass, SIMD hydrodynamic telemetry, material settling, and force packet compaction unchanged.
+- No physical water simulation, binary device tier branch, or gameplay truth migration was introduced.
+
+Exact microseconds saved:
+- Measured: `0 us`.
+- Static-only estimate: thirteen scheduled-job writer pins became one mutation guard. No profiler sample was run.
+
+Evidence:
+- Patched source file: `Assets/_Project/Scripts/Physics/Buoyancy/BuoyancyDisplacementRuntime.cs`.
+- Key anchors: `JobMutationGuardMask` line `38`, `_jobGuardVault` line `147`, `_jobBuffersPinned` line `148`, no-active-state release line `499`, `ResolvePhysicsVaultBuffer` line `1225`, `HasPhysicsHandle` line `1240`, exact runtime resolves lines `1383-1395`, `TryLockJobBuffers` line `1603`, `UnlockJobBuffers` line `1627`.
+- Source scan for `_lockedBuffers|LockStates|TryLock\(|TryLockBuffer|TryUnlockBuffer`: no remaining job-lock hits in the file.
+- Targeted scans: `FixedTick bufferLocks=0 mutationAcquire=0 mutationRelease=0 hotDeps=0 gcPatterns=0`; `TryResolveRuntimeBuffers bufferLocks=0 mutationAcquire=0 mutationRelease=0 hotDeps=0 gcPatterns=0`; `TryLockJobBuffers bufferLocks=0 mutationAcquire=1 mutationRelease=0 hotDeps=0 gcPatterns=0`; `UnlockJobBuffers bufferLocks=0 mutationAcquire=0 mutationRelease=1 hotDeps=0 gcPatterns=0`; `WriteCompletedSimdUtilizationTelemetry bufferLocks=0 mutationAcquire=1 mutationRelease=1 hotDeps=0 gcPatterns=0`.
+- Scoped `git diff --check`: exit `0`, LF/CRLF warning only.
+- CPU/build guard: CPU sample returned `91`; active compiler processes existed: `csc` PID `28592`, `dotnet` PID `44644`. No `dotnet build`, Unity import, Play Mode, profiler, GCMonitor, or fresh all-scripts native ledger proof was launched.
+
+## 2026-05-29 - VisualPressureAging Job And Defaults Guard Flattening
+
+What was wrong:
+- `VisualPressureAgingRuntime.ScheduleSimulation` used `_lockedBufferMask` and direct `TryLockBuffer/TryUnlockBuffer` chains for core visual-aging job lanes plus optional thermal/structural input lanes.
+- `WriteDefaults` wrote params, degradation, tuning, mock temperature, and runtime defaults through separate direct buffer pins.
+
+What was done:
+- Added `JobMutationGuardMask`, `DefaultsMutationGuardMask`, `ThermalInputMutationGuardMask`, `StructuralInputMutationGuardMask`, and `StructuralTuningMutationGuardMask`.
+- Replaced the job-held lock mask with `_jobGuardVault`, `_jobGuardMask`, and `_jobBuffersPinned`.
+- `ScheduleSimulation` now acquires one job mutation guard with optional input bits when available, validates owned/external handles exactly, and releases once through `UnlockJobBuffers`.
+- `WriteDefaults` now acquires one defaults mutation guard and releases it in `finally`.
+- External input handles now require exact expected owners: `SystemID.HullIntegrity` for structural lanes and `SystemID.Thermodynamics` for the temperature mirror.
+
+Cinematic cheats used:
+- Kept mock-temperature fallback when thermodynamics input is unavailable.
+- Kept structural/thermal scalar degradation and shader upload path unchanged.
+- No physical material-aging simulation or binary device-quality branch was introduced.
+
+Exact microseconds saved:
+- Measured: `0 us`.
+- Static-only estimate: the scheduled visual-aging job group and defaults writer group now use two mutation guard routes instead of multiple legacy buffer pins. No profiler sample was run.
+
+Evidence:
+- Patched source file: `Assets/_Project/Scripts/Graphics/Materials/VisualPressureAgingRuntime.cs`.
+- Key anchors: `JobMutationGuardMask` line `158`, `DefaultsMutationGuardMask` line `169`, optional masks lines `176`, `179`, `183`, `_jobGuardVault` line `226`, `_jobGuardMask` line `227`, `_jobBuffersPinned` line `228`, `TryLockJobBuffers` line `1209`, `TryAcquireJobMutationGuard` line `1236`, `UnlockJobBuffers` line `1252`, `VisualAgingMutationGuardBit` line `1322`, `IsExpectedExternalOwner` line `1334`.
+- Guard-bit proof for selected lanes: `ThermodynamicsTemperatureFrontMirror=1`; visual lanes `8,9,10,11,12,14,15,16,17`; structural lanes `24,25,31`. No collision inside the selected VisualPressureAging masks.
+- Stale symbol scan for `_lockedBufferMask|TryLockStructuralInputs|TryLockOptional|UnlockOptional|TryLock\(`: no hits.
+- Remaining `TryLockBuffer/TryUnlockBuffer` hits in this file are single-lane editor/snapshot/visual-sync routes, not the job/default multi-pin routes patched here.
+- Added diff scan for `GlobalRegistry.Get<`, direct `GetComponent(`, `string.Format`, `.ToString(`, LINQ `.Select/.Where`, and `foreach`: no hits.
+- `git diff --check -- VisualPressureAgingRuntime.cs`: exit `0`, LF/CRLF warning only.
+- CPU/build guard: CPU sample returned `41`; active compiler lane existed: `dotnet` PID `22304`, command `dotnet build .\MapMagic.MicroSplat.Editor.csproj -nologo --no-restore -v:minimal /m:1 /p:UseSharedCompilation=false`.
+- Compile/import/profiler proof: not run for this patch.
+
+## 2026-05-29 - StructuralIntegrity Solver And Base Warning Guard Flattening
+
+What was wrong:
+- `StructuralIntegrityCalculatorRuntime` solver/boot/mock routes and base-warning spike/default/load/clear routes still used grouped direct DataVault pins or stale lock helpers.
+- SDF participation was folded into the same scheduled solver window but the old lock topology made ownership harder to reason about.
+- A failure path was found during self-audit: if guard acquisition succeeded and the first marked buffer failed, `UnlockSolverBuffers(0)` returned before releasing `_solverMutationGuardMask`.
+
+What was done:
+- Added structural mutation guard masks from exact low active-lock bits for HullIntegrity-owned buffers and optional `VoxelSdfTexture3D`.
+- Replaced direct structural/base-warning buffer pins with one guard per writer group and exact `BufferID`, `SystemID.HullIntegrity`, and generation validation.
+- Renamed stale `TryLockSolverBuffers` to `TryPinSolverBuffers`.
+- Removed obsolete base-warning aggregate lock mask and direct unlock/rollback helpers.
+- Fixed `UnlockSolverBuffers(int mask)` so a held guard is released even when no mask bit was marked.
+
+Cinematic cheats used:
+- Kept structural solve math, warning grouping, CSV schemas, and SDF sampling unchanged.
+- No physical deformation simulation and no binary low-end/high-end branch was added; existing `GlobalQualityWeight` route remains continuous.
+
+Exact microseconds saved:
+- Measured: `0 us`.
+- Static-only estimate: steady-frame delta `0 us`; value is risk removal, not measured frame-time win.
+
+Evidence:
+- Patched source files: `Assets/_Project/Scripts/Habitat/Deformation/Runtime/StructuralIntegrityCalculatorRuntime.cs`, `Assets/_Project/Scripts/Habitat/Deformation/Runtime/BaseStructuralWarningDispatcherTypes.cs`.
+- Key anchors: `StructuralMutationGuardMask` line `39`, `StructuralSolverSdfMutationGuardMask` line `59`, `TryPinSolverBuffers` line `897`, `UnlockSolverBuffers(int)` line `966`, `TryMarkBaseStructuralWarningBuffers` line `1265`, `ResolveSimulationQualityWeight` line `1527`, `IsHullIntegrityVaultHandle` lines `1547` and `1555`.
+- Stale scan for `TryLockBuffer|TryUnlockBuffer|TryLockSolverBuffers|TryLockBaseStructuralWarningBuffers|UnlockBaseStructuralWarningBuffers|RollbackBaseStructuralWarningLocks|SolverLockBaseWarningMask`: no hits.
+- Hot dependency/GC scan for `GlobalRegistry.Get<`, direct `GetComponent(`, `string.Format`, `.ToString(`, LINQ `.Select/.Where`, and `foreach`: no hits.
+- Added diff scan for `new`, `string.Format`, `.ToString`, LINQ, `foreach`, `GlobalRegistry.Get`, and direct `GetComponent`: no hits.
+- `git diff --check` on the two source files: exit `0`, LF/CRLF warnings only.
+- Build throttling: CPU before build was `16`; compiler process sample returned no rows. One build command was attempted, timed out after `604027 ms`, and the spawned `dotnet`/`VBCSCompiler` processes were stopped. Follow-up compiler process scan returned no rows; CPU then sampled `60`.
+- Compile/import/profiler proof: incomplete. No successful build, Unity import, Play Mode, profiler, GCMonitor, or fresh native ledger proof exists for this patch.
+
+## 2026-05-29 - VoxelDelta Compaction Scratch Guard Flattening
+
+What was wrong:
+- `VoxelDeltaProcessor.TryLockCompactionScratchBuffers` held nine TerrainSeams scratch buffer pins for compaction: source SDF, dirty mask, delta SDF, material, flags, output SDF, output materials, output flags, and uniform flag.
+- Failure release depended on `_compactionScratchLockCount` and ordered partial unlocks.
+- DataVault rebind saw `_compactionScratchLeased`, but not the underlying guard/lock acquisition state.
+
+What was done:
+- Added `CompactionScratchMutationGuardMask`.
+- Replaced the nine-buffer direct pin chain with `TryPinCompactionScratchBuffers`.
+- Stored the granting vault in `_compactionScratchGuardVault`.
+- Added `_compactionScratchGuardHeld` to rebind busy checks.
+- Strengthened `IsExactVaultHandle` to require `BufferID`, `SystemID.TerrainSeams`, and nonzero generation.
+- Kept scheduled carve write buffer direct pinning unchanged because it is a single-buffer route and not the multi-lock defect fixed here.
+
+Cinematic cheats used:
+- Kept voxel carve, thermal melt, scheduled compaction, RLE, and save DTO layout unchanged.
+- No physical voxel simulation or binary device switch was added.
+
+Exact microseconds saved:
+- Measured: `0 us`.
+- Static-only estimate: steady-frame delta `0 us`; nine scratch pins became one mutation guard, reducing deadlock/stall risk rather than measured frame time.
+
+Evidence:
+- Patched source file: `Assets/_Project/Scripts/VoxelDeltaProcessor.cs`.
+- Key anchors: `CompactionScratchMutationGuardMask` line `182`, `_compactionScratchGuardHeld` line `283`, `_compactionScratchGuardVault` line `284`, rebind busy gates lines `461` and `542`, exact handle gate line `1312`, `TryPinCompactionScratchBuffers` line `5599`, `UnlockCompactionScratchBuffers` line `5631`, `VoxelDeltaMutationGuardBit` line `5741`.
+- Guard-bit proof from `H8Memory.BufferID`: `SaveVoxelDeltaCompactionSourceSdfScratch=70380` through `SaveVoxelDeltaCompactionUniformFlagScratch=70388`, mapping to active-lock bits `12..20`.
+- Stale scan for `TryLockCompactionScratch|TryLockCompactionScratchBuffer|UnlockCompactionScratchBuffers(IDataVault|_compactionScratchLockCount|SaveVoxelDeltaCompaction.*TryLockBuffer|SaveVoxelDeltaCompaction.*TryUnlockBuffer`: no hits.
+- Direct hot dependency scan for `GlobalRegistry.Get<` and non-`TryGetComponent` `GetComponent(`: no hits.
+- Added diff scan for `new`, `string.Format`, `.ToString`, LINQ, `foreach`, `GlobalRegistry.Get`, and direct `GetComponent`: no hits.
+- `git diff --check -- VoxelDeltaProcessor.cs`: exit `0`, LF/CRLF warning only.
+- Build throttling: active compiler lane exists, `dotnet` PID `50204`, command `dotnet build .\Hecton8.Editor.csproj /m:1 /p:UseSharedCompilation=false --no-restore`; CPU sample `79`.
+- Compile/import/profiler proof: not run for this patch.
+
+## 2026-05-29 - SubmarineAutoLevel Ballast And Flood Input Guard Flattening
+
+What was wrong:
+- `SubmarineAutoLevelBallastController.TryAcquireBallastSolverJobBuffers` mixed four direct write locks with one pinned command buffer for one scheduled ballast solver job.
+- `TryAcquireFloodRoomInputAliases` pinned room water levels, room volumes, and room local AUPs through three separate `TryLockBuffer` calls.
+- The flood alias helper accepted generic nonzero handles instead of requiring the `VehiclesPhysics` owner that publishes these shared room lanes.
+
+What was done:
+- Added `BallastSolverMutationGuardMask` and `FloodRoomInputMutationGuardMask`.
+- Added `_ballastSolverGuardVault` and `_floodRoomInputGuardVault`.
+- Replaced ballast solver direct locks with one mutation guard and guarded exact view resolution for tanks, commands, fluid samples, force packets, and telemetry.
+- Replaced flood room input per-buffer pins with one mutation guard and exact `SystemID.VehiclesPhysics` read-only view resolution.
+- Removed `_ballastCommandsReadPinHeld`, `_floodRoomInputVaultLockMask`, `TryAcquirePinnedJobReadBuffer`, and `TryAcquirePinnedReadOnlyVaultBuffer`.
+
+Cinematic cheats used:
+- Kept PID, ballast force integration, dynamic flood mass solve, room SoA publication, and Rigidbody force dispatch unchanged.
+- No physical flood/water simulation or binary device quality switch was introduced.
+
+Exact microseconds saved:
+- Measured: `0 us`.
+- Static-only estimate: five ballast job pins and three flood room pins became two mutation guard routes. No profiler sample was run.
+
+Evidence:
+- Patched source file: `Assets/_Project/Scripts/Gameplay/SubmarineAutoLevelBallastController.cs`.
+- Key anchors: `BallastSolverMutationGuardMask` lines `408-413`, `FloodRoomInputMutationGuardMask` lines `414-417`, `_ballastSolverGuardVault` line `513`, `_floodRoomInputGuardVault` line `514`, `TryAcquireBallastSolverJobBuffers` line `3320`, `TryResolveBallastSolverGuardedBuffer` line `3415`, `ReleaseBallastSolverVaultLocks` line `3446`, `ReleaseFloodRoomInputVaultLocks` line `3476`, `TryAcquireFloodRoomInputAliases` line `3571`, `TryResolveFloodRoomInputReadOnly` line `3660`, `BallastMutationGuardBit` line `3929`.
+- Source scan for `TryLockBuffer|TryUnlockBuffer|TryAcquirePinnedReadOnlyVaultBuffer|TryAcquirePinnedJobReadBuffer|_ballastCommandsReadPinHeld|_floodRoomInputVaultLockMask`: no hits.
+- Targeted scans: `TryAcquireBallastSolverJobBuffers directWriteLocks=0 legacyBufferLocks=0 mutationAcquire=1 mutationRelease=1`; `TryAcquireFloodRoomInputAliases directWriteLocks=0 legacyBufferLocks=0 mutationAcquire=1 mutationRelease=1`; `ReleaseFloodRoomInputVaultLocks mutationRelease=1`; hot dependency and GC-pattern hits `0`.
+- Guard-bit proof: ballast buffer IDs `71771-71775` map to bits `27,28,29,30,31`; flood input IDs map to bits `12,15,16`; total unique bits `8/8`.
+- Added diff scan for `GlobalRegistry.Get<`, direct `GetComponent(`, `string.Format`, `.ToString(`, LINQ `.Select/.Where`, and `foreach`: `ADDED_PATTERN_HITS=0`.
+- `git diff --check -- SubmarineAutoLevelBallastController.cs`: exit `0`, LF/CRLF warning only.
+- CPU/build guard: CPU samples returned `62` then `84`; compiler process samples returned no rows, but CPU guard is above `50%`.
+- Compile/import/profiler proof: not run for this patch.
+## 2026-05-29 - Shinobu Material Response Job Guard Flattening
+
+What was wrong: `Assets/_Project/Scripts/Graphics/Materials/ShinobuMaterialResponseRuntime.cs` had a scheduled graphics-material job route protected by `_lockedBufferMask` and eight `TryLockBuffer/TryUnlockBuffer` pins. Generic handle validation did not prove `SystemID.GraphicsMaterials`.
+
+What was done: Added `JobMutationGuardMask`, `_jobBufferGuardVault`, and `_jobBufferGuardHeld`; replaced the eight writer pins with one mutation guard; strengthened `IsMatchingVaultHandle` to require exact `BufferID`, `SystemID.GraphicsMaterials`, and nonzero generation; moved simulation view resolution under the guard and re-read `GlobalQualityWeight` from the scalar lane inside the guarded section; release now happens after post-simulation/lifecycle completion or unscheduled failure through `finally`.
+
+Cinematic cheats used: none added. Existing biomass scalar fake, wear-rate scalar math, visible-payload packing, and shader-buffer upload remain intact. No physical material simulation was introduced.
+
+Exact microseconds saved: 0 us measured; expected steady-frame delta 0 us. Removed eight DataVault buffer-pin operations and partial unlock topology from one scheduled job route. Static proof: stale lock symbol scan returns no hits; hot dependency/GC scan returns no hits; `TryAcquireWriteLock` scan returns no hits; `git diff --check` exits 0 with LF/CRLF warning only. Compile/import/profiler proof not run because CPU sampled 68 and the build guard is 50.
+
+## 2026-05-29 - Abyssal Reactor Shared Buffer Guard Flattening
+
+What was wrong: `Assets/_Project/Scripts/Thermodynamics/AbyssalThermodynamicsSolver.ReactorBridge.cs` borrowed mutable Power, Fluid, and Airlock buffers for a scheduled reactor job through three separate `TryLockBuffer` calls using the wrong owner identity (`SystemID.Thermodynamics`).
+
+What was done: Replaced `_reactorSharedBufferLockMask` and `TryLockAndResolveOptionalBuffer` with one dynamic mutation guard. The bridge now validates exact owner identities (`SystemID.Power`, `SystemID.Fluid`, `SystemID.HabitatAtmosphere`), resolves optional pointers under the granted guard, and releases once after `LateFrameTick` job completion, lifecycle completion, or failed schedule via `finally`.
+
+Cinematic cheats used: none added. Existing deterministic reactor heat, coolant boil-off scalar, power-node atomics, and meltdown signal fakes remain intact.
+
+Exact microseconds saved: 0 us measured; expected steady-frame delta 0 us. Removed up to three foreign DataVault writer pins from one scheduled job route. Static proof: stale lock symbol scan returns no hits; added diff GC/dependency scan returns no hits; `git diff --check` exits 0 with LF/CRLF warning only. Compile/import/profiler proof not run because CPU sampled 100 and active `csc`/`dotnet` processes existed.
+
+## 2026-05-29 - Abyssal Reactor Empty Shared Guard Refinement
+
+What was wrong: the dynamic reactor shared guard could remain held after optional foreign handles were discovered if all guarded buffers then resolved to null or empty pointers.
+
+What was done: `ResolveOptionalReactorIntegrationPointers` now releases the shared guard immediately when no power, fluid, or airlock pointer survives guarded resolution. Partial-success jobs keep the guard until the scheduled fence.
+
+Cinematic cheats used: none added. Preserved optional cheap scalar integration; no physical reactor/coolant rewrite.
+
+Exact microseconds saved: 0 us measured; expected steady-frame delta 0 us. Static value is shorter unused cross-domain guard lifetime. Proof: reactor stale-lock scan and hot dependency/GC scan return no hits; scoped `git diff --check` exits 0 with LF/CRLF warning only.
+
+## 2026-05-29 - FoundationPylonGpuBatch Scheduled Guard Flattening
+
+What was wrong: `Assets/_Project/Scripts/Construction/FoundationPylonGpuBatch.cs` held one scheduled construction VFX route through many direct `TryLockBuffer/TryUnlockBuffer` pins stored in `_pendingVaultLocks`.
+
+What was done: replaced the fixed lock array with `_pendingVaultGuardVault/_pendingVaultGuardMask`; `TryBeginVaultJobGuard` acquires one mutation guard for foundation core lanes plus optional socket/SDF lanes; existing failure, finalize, discard, and teardown cleanup now release one guard route.
+
+Cinematic cheats used: none added. Kept mock SDF fallback, scalar tuning, GPU pylon upload, culling, and warning signal behavior unchanged.
+
+Exact microseconds saved: 0 us measured; expected steady-frame delta 0 us. Static value is removal of a long multi-pin DataVault writer topology from a LateFrame presentation route. Proof: stale lock scan no hits, hot dependency/GC scan no hits, added diff scan no hits, scoped `git diff --check` clean except LF/CRLF warning.
+
+## 2026-05-29 - Shinobu38 QA Watchdog Runtime Guard Flattening
+
+What was wrong: `Assets/_Project/Scripts/QA/Headless/Shinobu38QaWatchdogRuntime.cs` held sixteen editor/headless DataVault buffers through direct buffer pins and accepted watchdog handles without checking `SystemID.External`.
+
+What was done: added `RuntimeBufferMutationGuardMask`, `_runtimeBufferGuardVault`, and `_runtimeBufferGuardMask`; replaced the lock/unlock loop with one mutation guard; added exact owner validation to `IsWatchdogVaultHandle`.
+
+Cinematic cheats used: none added. Kept QA bot navigation, telemetry, fast-forward, CSV/file writer, and dump schemas unchanged.
+
+Exact microseconds saved: 0 us measured; expected player-frame delta 0 us because the runtime is `UNITY_EDITOR` gated. Static value is removal of a long editor/headless multi-pin DataVault topology. Proof: stale lock scan no hits, mutation scan one acquire/one release, added diff scan no hits, scoped `git diff --check` clean except LF/CRLF warning.
+
+## 2026-05-29 - HullDentShaderController VFX Guard Flattening
+
+What was wrong: `Assets/_Project/Scripts/Vehicles/VFX/HullDentShaderController.cs` still used legacy `TryLockBuffer/TryUnlockBuffer` around `BufferID.HullDents` in three LateFrame/presentation-adjacent VFX routes.
+
+What was done: added `HullDentsMutationGuardMask` and `HullDentMutationGuardBit`; replaced the three legacy buffer pins with `TryAcquireMutationGuard`/`ReleaseMutationGuard` guarded by existing exact `BufferID.HullDents`, `SystemID.Vfx`, and generation validation.
+
+Cinematic cheats used: preserved shader-only hull dents, fixed 16-entry global vector array, local-space impact packing, repair fade, and quality-weight scar proxy. No physical hull deformation or binary device tier was added.
+
+Exact microseconds saved: 0 us measured; expected steady-frame delta 0 us. Static value is removal of legacy DataVault pins from one VFX presenter. Proof: source scan has no `TryLockBuffer/TryUnlockBuffer` in the file; mutation scan has three acquire/release pairs; only `GetComponent` hit is cold `ResolveBreachReadModel`; scoped `git diff --check` exits 0 with LF/CRLF warning only. Compile/import/profiler proof not run.
+
+## 2026-05-29 - RadiationHazardGrid SDF Snapshot Guard Flattening
+
+What was wrong: `Assets/_Project/Scripts/Gameplay/RadiationHazardGrid.cs` held a scheduled radiation SDF snapshot through legacy `TryLockBuffer/TryUnlockBuffer`, and the readiness check did not verify `SystemID.GameplayRadiation`.
+
+What was done: added `RadiationSdfSnapshotMutationGuardMask`, `IsRadiationSdfSnapshotHandle`, and `RadiationMutationGuardBit`; replaced the snapshot legacy pin with `TryAcquireMutationGuard` and `ReleaseMutationGuard`; exact handle validation now requires `BufferID`, owner system, and generation.
+
+Cinematic cheats used: preserved the cheap SDF snapshot shielding fake, bulkhead sample cap, inverse-square radiation source sampling, and continuous quality-driven sample counts. No physical radiation transport simulation or binary quality switch was added.
+
+Exact microseconds saved: 0 us measured; expected steady-frame delta 0 us. Static value is removal of one job-held legacy DataVault pin with stronger owner validation. Proof: source scan has no `TryLockBuffer/TryUnlockBuffer` in the file; mutation scan has one acquire and two release sites; added diff Zero-GC/dependency scan returns no hits; scoped `git diff --check` exits 0 with LF/CRLF warning only. Compile/import/profiler proof not run.
+
+## 2026-05-29 - HectonShaderGlobalDataVaultBridge Shader-Global Guard Flattening
+
+What was wrong: `Assets/_Project/Scripts/Rendering/HectonShaderGlobalDataVaultBridge.cs` still wrote `BufferID.ShaderGlobalState` through legacy `TryLockBuffer/TryUnlockBuffer`, while the owning `GlobalShaderDispatcher` already uses a mutation guard for the same shader-global lane.
+
+What was done: added `ShaderGlobalStateMutationGuardMask`; replaced the legacy lock/unlock in `WriteReadSlot` with `TryAcquireMutationGuard` and `ReleaseMutationGuard` in `finally`; strengthened `IsSlotsHandleOwned` to require exact `BufferID.ShaderGlobalState`, `SystemID.GraphicsScalability`, and generation before resolving the mutable slot array.
+
+Cinematic cheats used: preserved the existing shader/global-vector fake path for AUP, water extinction, physiology discomfort, power brownout, respawn cover, suit crush, and radiation mutation. No physical simulation, new renderer pass, or binary quality branch was added.
+
+Exact microseconds saved: 0 us measured; expected steady-frame delta 0 us. Static value is removal of one legacy DataVault pin from a shader presentation bridge and alignment with `GlobalShaderDispatcher` guard topology. Proof: source scan has no `TryLockBuffer/TryUnlockBuffer` in the file; mutation scan has one acquire/release site; added diff Zero-GC/dependency scan returns no hits; scoped `git diff --check` exits 0 with LF/CRLF warning only. Compile/import/profiler proof not run.

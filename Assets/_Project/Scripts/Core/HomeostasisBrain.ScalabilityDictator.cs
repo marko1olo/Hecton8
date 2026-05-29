@@ -3,6 +3,7 @@ using System.Buffers.Binary;
 using System.IO;
 using System.Runtime.InteropServices;
 using Hecton8.Core.Contracts;
+using Hecton8.Core.Contracts.Signals;
 using Hecton8.Core.Memory;
 using Unity.Burst;
 using Unity.Collections;
@@ -234,12 +235,12 @@ namespace Hecton8.Core
         private static float _hardwareMaxQualityWeight;
         private static float _hardwareConstraintPressure01;
         private static bool _mockProfilesGenerated;
-        private static bool _lowTierEmergencyActive;
+        private static bool _survivalEmergencyActive;
         private static int _emergencyReleaseCounter;
         private static bool _visualOverkillActive;
         private static int _visualOverkillCounter;
         private static bool _forceVisualOverkillOverride;
-        private static bool _mathLodLowScalarActive;
+        private static float _mathLodLowPressure01;
         private static bool _mathLodLowScalarWritten;
         private static float _lastMathLodLowScalar;
         private static bool _mockHeavyLoadActive;
@@ -258,7 +259,7 @@ namespace Hecton8.Core
         private static int _gcFreezeFramesRemaining;
 #pragma warning restore CS0414
         private static bool _gcSafeBaseMenuArmed;
-        private static uint _lastRegistryKillBits;
+        private static uint _lastRuntimeKillBits;
         private static bool _scalabilityDumped;
         private static int _lastMockTerrainScheduleFrame;
         private static int _lastMockTerrainQualityBucket;
@@ -325,12 +326,12 @@ namespace Hecton8.Core
             _dynamicResolutionRuntime = GlobalRegistry.DynamicResolutionRuntime;
             _lastStopwatchTimestamp = 0L;
             _stopwatchSeeded = false;
-            _lowTierEmergencyActive = false;
+            _survivalEmergencyActive = false;
             _emergencyReleaseCounter = 0;
             _visualOverkillActive = false;
             _visualOverkillCounter = 0;
             _forceVisualOverkillOverride = false;
-            _mathLodLowScalarActive = false;
+            _mathLodLowPressure01 = 0f;
             _mathLodLowScalarWritten = false;
             _lastMathLodLowScalar = ForcedQualityWeightDisabled;
             _mockHeavyLoadActive = false;
@@ -348,7 +349,7 @@ namespace Hecton8.Core
             _gcFrozenByDictator = false;
             _gcFreezeFramesRemaining = 0;
             _gcSafeBaseMenuArmed = false;
-            _lastRegistryKillBits = 0u;
+            _lastRuntimeKillBits = 0u;
             _scalabilityDumped = false;
             _lastMockTerrainScheduleFrame = -MockTerrainSamplerCadenceFrames;
             _lastMockTerrainQualityBucket = -1;
@@ -406,20 +407,16 @@ namespace Hecton8.Core
             if (OpenOrAcquireScalabilityTelemetryForOwnerRoute(out NativeArray<ScalabilityTelemetryEntry> telemetry))
                 MemClearIfCreated(telemetry);
             GenerateEmergencyMockProfiles();
-            Shader.SetGlobalFloat(_cullingMultiplierId, 1f);
-            PublishQualityShaderGlobalsImmediate(true);
-            SetMathLodLowScalarActive(ResolveHardwareConstraintPressure01() >= HardwareConstraintFlagThreshold01);
+            _pendingCullingMultiplier = 1f;
+            _pendingScalabilityShaderDirtyFlags |= ScalabilityShaderDirtyCullingMultiplier;
+            PublishQualityShaderGlobals(true);
+            SetMathLodLowPressure(ResolveHardwareConstraintPressure01());
             FlushVisualSyncShaderState();
         }
 
         private static void ShutdownScalabilityDictator()
         {
-            if (_mockTerrainSamplerJobPending)
-            {
-                DispatcherJobFence.TryComplete(ref _mockTerrainSamplerJobHandle, forceComplete: true);
-                _mockTerrainSamplerJobPending = false;
-                ReleaseMockTerrainSamplerJobBufferLock(_dataVault);
-            }
+            ForceCompleteMockTerrainSamplerJobInPostSimulationWindow(_dataVault);
 
             if (_gcFrozenByDictator)
             {
@@ -460,7 +457,7 @@ namespace Hecton8.Core
             _hardwareConstraintPressure01 = 0f;
             _hardwareShiFloor = 0f;
             _hardwareMaxQualityWeight = 1f;
-            _lastRegistryKillBits = 0u;
+            _lastRuntimeKillBits = 0u;
         }
 
         private static void ResetScalabilityDictatorVaultHandles()
@@ -470,12 +467,7 @@ namespace Hecton8.Core
 
         private static void ResetScalabilityDictatorVaultHandles(IDataVault releaseVault)
         {
-            if (_mockTerrainSamplerJobPending)
-            {
-                DispatcherJobFence.TryComplete(ref _mockTerrainSamplerJobHandle, forceComplete: true);
-                _mockTerrainSamplerJobPending = false;
-                ReleaseMockTerrainSamplerJobBufferLock(releaseVault);
-            }
+            ForceCompleteMockTerrainSamplerJobInPostSimulationWindow(releaseVault);
 
             ReleaseMockTerrainSamplerJobBufferLock(releaseVault);
             ReleaseScalabilityDictatorVaultHandles(releaseVault);
@@ -491,6 +483,24 @@ namespace Hecton8.Core
             _qualityPidIntegral = 0f;
             _qualityPidPreviousError = 0f;
             _mockProfilesGenerated = false;
+        }
+
+        private static void ForceCompleteMockTerrainSamplerJobInPostSimulationWindow(IDataVault releaseVault)
+        {
+            if (!_mockTerrainSamplerJobPending)
+                return;
+
+            DispatcherJobFence.BeginPostSimulationSwapWindow();
+            try
+            {
+                DispatcherJobFence.TryComplete(ref _mockTerrainSamplerJobHandle, forceComplete: true);
+                _mockTerrainSamplerJobPending = false;
+            }
+            finally
+            {
+                DispatcherJobFence.EndPostSimulationSwapWindow();
+                ReleaseMockTerrainSamplerJobBufferLock(releaseVault);
+            }
         }
 
         private static void ReleaseScalabilityDictatorVaultHandles(IDataVault vault)
@@ -730,10 +740,10 @@ namespace Hecton8.Core
 
             if (systemHealth >= emergencyThreshold)
             {
-                _lowTierEmergencyActive = true;
+                _survivalEmergencyActive = true;
                 _emergencyReleaseCounter = 0;
             }
-            else if (_lowTierEmergencyActive)
+            else if (_survivalEmergencyActive)
             {
                 if (systemHealth < EmergencyReleaseThreshold)
                 {
@@ -748,16 +758,33 @@ namespace Hecton8.Core
                 int releaseFrames = SanitizeTunerHysteresisFrames(_hysteresisReleaseFrames);
                 if (_emergencyReleaseCounter >= releaseFrames)
                 {
-                    _lowTierEmergencyActive = false;
+                    _survivalEmergencyActive = false;
                     _emergencyReleaseCounter = 0;
                 }
             }
 
             bool mathLodLow = systemHealth > MathLodLowThreshold ||
                               vramPressure01 > VramOomThreshold ||
-                              _lowTierEmergencyActive ||
+                              _survivalEmergencyActive ||
                               hardwareConstraint01 >= HardwareConstraintFlagThreshold01;
-            if (_lowTierEmergencyActive)
+            float healthMathLodPressure01 = SmoothStep01(
+                (systemHealth - MathLodHealthSoftStart) *
+                math.rcp(math.max(0.0001f, MathLodLowThreshold - MathLodHealthSoftStart)));
+            float vramMathLodPressure01 = SmoothStep01(
+                (vramPressure01 - VramSpikeThreshold) *
+                math.rcp(math.max(0.0001f, 1f - VramSpikeThreshold)));
+            float hardwareMathLodPressure01 = SmoothStep01(
+                hardwareConstraint01 *
+                math.rcp(math.max(0.0001f, HardwareConstraintFlagThreshold01)));
+            float emergencyMathLodPressure01 = _survivalEmergencyActive
+                ? 1f
+                : SmoothStep01(
+                    (systemHealth - EmergencyReleaseThreshold) *
+                    math.rcp(math.max(0.0001f, emergencyThreshold - EmergencyReleaseThreshold)));
+            float mathLodPressure01 = math.max(
+                math.max(healthMathLodPressure01, vramMathLodPressure01),
+                math.max(hardwareMathLodPressure01, emergencyMathLodPressure01));
+            if (_survivalEmergencyActive)
             {
                 targetMask |= Level3Mask | (ulong)SystemBit.LowTierEmergency;
                 if (targetLevel < 3)
@@ -793,7 +820,7 @@ namespace Hecton8.Core
                 targetMask &= ~(ulong)SystemBit.VramShedding;
             }
 
-            bool squeezeCulling = systemHealth > MathLodLowThreshold || _lowTierEmergencyActive;
+            bool squeezeCulling = systemHealth > MathLodLowThreshold || _survivalEmergencyActive;
             if (squeezeCulling)
                 targetMask |= (ulong)SystemBit.CullingDistanceSqueeze;
             else if (systemHealth < EmergencyReleaseThreshold)
@@ -813,7 +840,7 @@ namespace Hecton8.Core
 
             ApplyVisualOverkillPolicy(systemHealth, ref targetMask);
             ApplyGarbageCollectorPolicy(safeFrameMs, ref targetMask);
-            SetMathLodLowScalarActive(mathLodLow);
+            SetMathLodLowPressure(mathLodPressure01);
             UpdateCullingMultiplier(math.lerp(1f, SanitizeLowCullingMultiplier(_lowCullingMultiplier), ResolveMathLodLowWeight()));
             UpdateRegistryKillMask(targetMask);
             WriteDictatorState(frame, safeFrameMs, vramPressure01, thermalIndex, targetMask);
@@ -925,9 +952,9 @@ namespace Hecton8.Core
 #endif
         }
 
-        private static void SetMathLodLowScalarActive(bool enabled)
+        private static void SetMathLodLowPressure(float pressure01)
         {
-            _mathLodLowScalarActive = enabled;
+            _mathLodLowPressure01 = SanitizePressure01(pressure01, 0f);
             RefreshMathLodLowScalar();
         }
 
@@ -948,7 +975,7 @@ namespace Hecton8.Core
             float survivalFloor = SmoothStep01(
                 (MathLodSurvivalStep - qualityWeight) *
                 math.rcp(math.max(0.0001f, MathLodSurvivalStep)));
-            return math.saturate(math.max(math.max(qualityPressure, healthPressure), survivalFloor));
+            return math.saturate(math.max(math.max(qualityPressure, healthPressure), math.max(survivalFloor, _mathLodLowPressure01)));
         }
 
         private static void RefreshMathLodLowScalar()
@@ -1056,17 +1083,6 @@ namespace Hecton8.Core
             _pendingScalabilityShaderDirtyFlags |= ScalabilityShaderDirtyQualityWeight;
         }
 
-        private static void PublishQualityShaderGlobalsImmediate(bool force)
-        {
-            float qualityWeight = GlobalQualityWeight;
-            if (!force && math.abs(_lastPublishedGlobalQualityWeight - qualityWeight) < QualityShaderEpsilon)
-                return;
-
-            Shader.SetGlobalFloat(_globalQualityWeightId, qualityWeight);
-            Shader.SetGlobalFloat(_h8GlobalQualityWeightId, qualityWeight);
-            _lastPublishedGlobalQualityWeight = qualityWeight;
-        }
-
         internal static void FlushVisualSyncShaderState()
         {
             uint flags = _pendingScalabilityShaderDirtyFlags;
@@ -1096,13 +1112,13 @@ namespace Hecton8.Core
         private static void UpdateRegistryKillMask(ulong targetMask)
         {
             uint currentBits = FoldMaskToUInt(targetMask);
-            uint clearBits = _lastRegistryKillBits & ~currentBits;
-            uint setBits = currentBits & ~_lastRegistryKillBits;
+            uint clearBits = _lastRuntimeKillBits & ~currentBits;
+            uint setBits = currentBits & ~_lastRuntimeKillBits;
             if (clearBits != 0u)
-                GlobalRegistry.SetSystemKillSwitchBits(clearBits, false);
+                SignalBusRegistry.SetSystemKillSwitchBits(clearBits, false, DictatorReasonHash);
             if (setBits != 0u)
-                GlobalRegistry.SetSystemKillSwitchBits(setBits, true);
-            _lastRegistryKillBits = currentBits;
+                SignalBusRegistry.SetSystemKillSwitchBits(setBits, true, DictatorReasonHash);
+            _lastRuntimeKillBits = currentBits;
         }
 
         private static void WriteDictatorState(
@@ -1567,6 +1583,7 @@ namespace Hecton8.Core
             where T : struct
         {
             view = default;
+            bool handedOff = false;
             if (vault == null ||
                 handle.BufferID == 0u ||
                 handle.Generation == 0u ||
@@ -1575,12 +1592,22 @@ namespace Hecton8.Core
                 return false;
             }
 
-            if (view.IsCreated && view.Length >= requiredLength)
-                return true;
+            try
+            {
+                if (view.IsCreated && view.Length >= requiredLength)
+                {
+                    handedOff = true;
+                    return true;
+                }
 
-            vault.ReleaseWriteLock(in handle, SystemID.HardwareHomeostasis);
-            view = default;
-            return false;
+                view = default;
+                return false;
+            }
+            finally
+            {
+                if (!handedOff)
+                    vault.ReleaseWriteLock(in handle, SystemID.HardwareHomeostasis);
+            }
         }
 
         private static unsafe void MemClearIfCreated<T>(NativeArray<T> array) where T : struct

@@ -280,6 +280,7 @@ namespace Hecton8.UI.Navigation
         private bool _diegeticTextValid = true;
         private bool _blackBoxDumped;
         private bool _indirectBuffersDirty;
+        private bool _supportsIndirectDialCold;
         private float _qualityWeight01 = 1f;
         private float _visualOverkillWeight01 = 1f;
         private float _fastCadenceAccumulatedDelta;
@@ -321,13 +322,15 @@ namespace Hecton8.UI.Navigation
 
         private void Awake()
         {
+            CacheGraphicsCapabilitiesCold();
             ValidateDiegeticTextBinding();
         }
 
         private void OnEnable()
         {
+            CacheGraphicsCapabilitiesCold();
             ConfigureSignalLanes();
-            ResolveColdDependencies();
+            CacheColdDependencies();
             TryResolveVaultBuffers();
             TryRegisterHotSwapListener();
             TryRegisterService();
@@ -336,7 +339,8 @@ namespace Hecton8.UI.Navigation
 
         private void Start()
         {
-            ResolveColdDependencies();
+            CacheGraphicsCapabilitiesCold();
+            CacheColdDependencies();
             TryResolveVaultBuffers();
             TryRegisterService();
             TryRegisterTickables();
@@ -458,6 +462,11 @@ namespace Hecton8.UI.Navigation
             EnsureIndirectBuffers();
         }
 
+        private void CacheGraphicsCapabilitiesCold()
+        {
+            _supportsIndirectDialCold = SupportsIndirectDialCold();
+        }
+
         /// <summary>
         /// Binds the runtime to a physical compass tool without relying on screen-space UI.
         /// </summary>
@@ -569,7 +578,7 @@ namespace Hecton8.UI.Navigation
             SignalBus<AupShiftSignal>.EnsureInitialized();
         }
 
-        private void ResolveColdDependencies()
+        private void CacheColdDependencies()
         {
             RefreshQualityPolicy();
 
@@ -1286,7 +1295,7 @@ namespace Hecton8.UI.Navigation
                    IsValidBuffer(_dialMatrixBufferB) &&
                    dialMesh != null &&
                    dialIndirectMaterial != null &&
-                   SupportsIndirectDial() &&
+                   _supportsIndirectDialCold &&
                    _visualOverkillWeight01 > 0.001f &&
                    state.SystemStress01 <= StressSlowThreshold01;
         }
@@ -1527,7 +1536,7 @@ namespace Hecton8.UI.Navigation
                 _visualOverkillWeight01 <= 0.001f ||
                 dialMesh == null ||
                 dialIndirectMaterial == null ||
-                !SupportsIndirectDial())
+                !_supportsIndirectDialCold)
             {
                 ReleaseIndirectBuffers();
                 return;
@@ -1763,7 +1772,7 @@ namespace Hecton8.UI.Navigation
             BinaryPrimitives.WriteInt32LittleEndian(destination, BitConverter.SingleToInt32Bits(value));
         }
 
-        private static bool SupportsIndirectDial()
+        private static bool SupportsIndirectDialCold()
         {
             GraphicsDeviceType deviceType = SystemInfo.graphicsDeviceType;
             if (deviceType == GraphicsDeviceType.OpenGLES3)

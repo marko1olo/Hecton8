@@ -187,15 +187,17 @@ namespace Hecton8.Construction.Editor
                 SystemID.Construction,
                 NativeArrayOptions.ClearMemory);
 
-            if (handle.Generation == 0u ||
-                !vault.TryAcquireWriteLock(in handle, SystemID.Construction, out NativeArray<RefundProfileDTO> profiles) ||
-                !profiles.IsCreated)
-            {
+            if (handle.Generation == 0u)
                 return false;
-            }
+
+            if (!vault.TryAcquireWriteLock(in handle, SystemID.Construction, out NativeArray<RefundProfileDTO> profiles))
+                return false;
 
             try
             {
+                if (!profiles.IsCreated)
+                    return false;
+
                 for (int i = 0; i < profiles.Length; i++)
                     profiles[i] = default;
 

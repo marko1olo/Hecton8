@@ -732,10 +732,13 @@ namespace Hecton8.AI
         {
             public VaultGenerationHandle<T> Handle;
             public uint ExpectedBufferID;
+            public uint ExpectedSystemID;
             public int Length;
 
             public bool IsCreated => ExpectedBufferID != 0u &&
+                                     ExpectedSystemID != 0u &&
                                      Handle.BufferID == ExpectedBufferID &&
+                                     Handle.SystemID == ExpectedSystemID &&
                                      Handle.Generation != 0u &&
                                      Length > 0;
 
@@ -792,14 +795,6 @@ namespace Hecton8.AI
                 return array.Open();
             }
 
-            public static implicit operator VaultArray<T>(VaultGenerationHandle<T> handle)
-            {
-                return new VaultArray<T>
-                {
-                    Handle = handle,
-                    ExpectedBufferID = handle.BufferID
-                };
-            }
         }
 
         private static VaultArray<CognitionCore> _cores;
@@ -2614,13 +2609,17 @@ namespace Hecton8.AI
                 ownerSystem,
                 options);
             uint expectedBufferId = unchecked((uint)(int)bufferId);
-            if (handle.BufferID != expectedBufferId || handle.Generation == 0u)
+            uint expectedSystemId = (uint)ownerSystem;
+            if (handle.BufferID != expectedBufferId ||
+                handle.SystemID != expectedSystemId ||
+                handle.Generation == 0u)
                 return default;
 
             return new VaultArray<T>
             {
                 Handle = handle,
                 ExpectedBufferID = expectedBufferId,
+                ExpectedSystemID = expectedSystemId,
                 Length = requiredLength
             };
         }

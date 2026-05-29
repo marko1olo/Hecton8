@@ -9,6 +9,6 @@ namespace Hecton8.UI.Diegetic.Contracts
         int VisibleSlotCount { get; }
         int HoveredSlotIndex { get; }
         uint SourceInventoryRevision { get; }
-        bool LowTierFlatProjection { get; }
+        float ProjectionQualityWeight01 { get; }
     }
 }

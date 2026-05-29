@@ -26,23 +26,23 @@ namespace Hecton8.Construction
         [FieldOffset(20)]
         public float MiningHoldSeconds;
         [FieldOffset(24)]
-        public float LowTierSteeringHz;
+        public float SurvivalSteeringHz;
         [FieldOffset(28)]
-        public float MidTierSteeringHz;
+        public float StandardSteeringHz;
         [FieldOffset(32)]
-        public float HighTierSteeringHz;
+        public float HighFidelitySteeringHz;
         [FieldOffset(36)]
-        public float UltraTierSteeringHz;
+        public float OverkillSteeringHz;
         [FieldOffset(40)]
         public float AStarCellSize;
         [FieldOffset(44)]
-        public float LowTierSolveBudget;
+        public float SurvivalSolveBudget;
         [FieldOffset(48)]
-        public float MidTierSolveBudget;
+        public float StandardSolveBudget;
         [FieldOffset(52)]
-        public float HighTierSolveBudget;
+        public float HighFidelitySolveBudget;
         [FieldOffset(56)]
-        public float UltraTierSolveBudget;
+        public float OverkillSolveBudget;
         [FieldOffset(60)]
         public float Reserved0;
 
@@ -56,15 +56,15 @@ namespace Hecton8.Construction
                 RepairSpeed = 1f,
                 CargoCapacity = 10f,
                 MiningHoldSeconds = 0.35f,
-                LowTierSteeringHz = 15f,
-                MidTierSteeringHz = 30f,
-                HighTierSteeringHz = 60f,
-                UltraTierSteeringHz = 60f,
+                SurvivalSteeringHz = 15f,
+                StandardSteeringHz = 30f,
+                HighFidelitySteeringHz = 60f,
+                OverkillSteeringHz = 60f,
                 AStarCellSize = 4f,
-                LowTierSolveBudget = 2f,
-                MidTierSolveBudget = 4f,
-                HighTierSolveBudget = 8f,
-                UltraTierSolveBudget = 12f,
+                SurvivalSolveBudget = 2f,
+                StandardSolveBudget = 4f,
+                HighFidelitySolveBudget = 8f,
+                OverkillSolveBudget = 12f,
                 Reserved0 = 0f
             };
         }

@@ -298,13 +298,6 @@ namespace Hecton8.UI
         private const int StateFlagLegacyMissing = 1 << 6;
         private const int StateFlagGpuUploadFault = 1 << 7;
 
-        private const uint WristHudWriteMaskState = 1u << 0;
-        private const uint WristHudWriteMaskQuads = 1u << 1;
-        private const uint WristHudWriteMaskTelemetry = 1u << 2;
-        private const uint WristHudWriteMaskCounters = 1u << 3;
-        private const uint WristHudWriteMaskFontAtlas = 1u << 4;
-        private const uint WristHudWriteMaskAcousticTaps = 1u << 5;
-
         private static readonly int WristHudQuadsId = Shader.PropertyToID("_WristHudQuads");
         private static readonly int FontAtlasId = Shader.PropertyToID("_FontAtlas");
         private static readonly int BaseIntensityId = Shader.PropertyToID("_BaseIntensity");
@@ -391,6 +384,13 @@ namespace Hecton8.UI
         private int _lastUploadedFrameIndex = -1;
         private int _frontQuadCount;
         private int _quadBufferCapacity;
+        private WristHudQuadTransformDTO[] _quadScratch = Array.Empty<WristHudQuadTransformDTO>();
+        private readonly WristHudStateDTO[] _stateScratch = new WristHudStateDTO[StateCapacity];
+        private readonly WristHudTelemetryEntry[] _telemetryScratch = new WristHudTelemetryEntry[TelemetryCapacity];
+        private readonly uint[] _counterScratch = new uint[CounterCapacity];
+        private readonly AcousticEchoTap[] _acousticTapScratch = new AcousticEchoTap[DefaultAcousticCapacity];
+        private int _acousticTapScratchCount;
+        private int _acousticTapWriteCursor;
         private float _lastHudDeltaTime;
         private float _cachedQualityWeight01 = 1f;
         private PlayerVitalsSignal _latestVitals;
@@ -463,23 +463,32 @@ namespace Hecton8.UI
 
         public void InjectAcousticEchoTap(in AcousticEchoTap tap)
         {
-            if (!EnsureNativeBuffers() ||
-                !TryAcquireAcousticWriteBuffers(out NativeArray<AcousticEchoTap> acousticTaps, out NativeArray<uint> counters, out uint acquiredMask))
+            StoreAcousticTapScratch(in tap);
+
+            if (EnsureNativeBuffers())
+                FlushAcousticTapScratchToVault();
+        }
+
+        private void StoreAcousticTapScratch(in AcousticEchoTap tap)
+        {
+            int capacity = _acousticTapScratch.Length;
+            if (capacity <= 0)
                 return;
 
-            try
-            {
-                int index = (int)counters[2];
-                if ((uint)index >= (uint)acousticTaps.Length)
-                    index = 0;
+            int index = _acousticTapWriteCursor;
+            if ((uint)index >= (uint)capacity)
+                index = 0;
 
-                acousticTaps[index] = tap;
-                counters[2] = (uint)(index + 1);
-            }
-            finally
-            {
-                ReleaseWristHudAcquiredBuffers(acquiredMask);
-            }
+            _acousticTapScratch[index] = tap;
+            index++;
+            if (index >= capacity)
+                index = 0;
+
+            _acousticTapWriteCursor = index;
+            if (_acousticTapScratchCount < capacity)
+                _acousticTapScratchCount++;
+
+            _counterScratch[2] = (uint)_acousticTapScratchCount;
         }
 
         public void ApplyTunerSettings(float distance, float scale, float glitch, Color low, Color mid, Color danger)
@@ -567,6 +576,7 @@ namespace Hecton8.UI
         {
             RefreshCachedRegistryServices();
             EnsureNativeBuffers();
+            EnsureSignalBuffers();
             EnsureGraphicsResources();
             TryRegisterTickLanes();
         }
@@ -622,10 +632,7 @@ namespace Hecton8.UI
             if (_nativeResourcesDirty || !HasRequiredVaultHandles() || !HasSignalBuffers())
             {
                 _nativeResourcesDirty = false;
-                if (!EnsureNativeBuffers())
-                    return;
-
-                EnsureSignalBuffers();
+                return;
             }
 
             if (_materialColdStateDirty && _runtimeMaterial != null)
@@ -685,6 +692,9 @@ namespace Hecton8.UI
                 return false;
 
             _quadBufferCapacity = quads.Length;
+            if (_quadScratch.Length != _quadBufferCapacity)
+                _quadScratch = new WristHudQuadTransformDTO[_quadBufferCapacity]; // COLD ALLOC: WristHudQuadTransformDTO[quadCapacity] - owner-phase scratch before one-lock DataVault publish - owner: WristHologramHudRuntime
+
             if (!_fontAtlasGenerated)
             {
                 GenerateMockFontAtlas();
@@ -784,79 +794,6 @@ namespace Hecton8.UI
             return TryReadOnlyWristHudVaultBuffer(in _quadHandle, BufferID.WristHudQuads, 1, out quads);
         }
 
-        private bool TryAcquireHudFrameBuffers(
-            out NativeArray<WristHudStateDTO> states,
-            out NativeArray<WristHudQuadTransformDTO> quads,
-            out NativeArray<WristHudFontGlyphDTO>.ReadOnly fontAtlas,
-            out NativeArray<WristHudTelemetryEntry> telemetry,
-            out NativeArray<uint> counters,
-            out NativeArray<AcousticEchoTap>.ReadOnly acousticTaps,
-            out uint acquiredMask)
-        {
-            states = default;
-            quads = default;
-            fontAtlas = default;
-            telemetry = default;
-            counters = default;
-            acousticTaps = default;
-            acquiredMask = 0u;
-            if (!HasRequiredVaultHandles())
-                return false;
-
-            bool success = false;
-            try
-            {
-                if (!TryAcquireWristHudVaultBuffer(in _stateHandle, BufferID.WristHudState, StateCapacity, out states))
-                    return false;
-                acquiredMask |= WristHudWriteMaskState;
-                if (!TryAcquireWristHudVaultBuffer(in _quadHandle, BufferID.WristHudQuads, 1, out quads))
-                    return false;
-                acquiredMask |= WristHudWriteMaskQuads;
-                if (!TryAcquireWristHudVaultBuffer(in _telemetryHandle, BufferID.WristHudTelemetryRing, TelemetryCapacity, out telemetry))
-                    return false;
-                acquiredMask |= WristHudWriteMaskTelemetry;
-                if (!TryAcquireWristHudVaultBuffer(in _counterHandle, BufferID.WristHudCounters, CounterCapacity, out counters))
-                    return false;
-                acquiredMask |= WristHudWriteMaskCounters;
-                if (!TryReadOnlyWristHudVaultBuffer(in _fontAtlasHandle, BufferID.WristHudFontAtlas, GlyphCapacity, out fontAtlas))
-                    return false;
-                if (!TryReadOnlyWristHudVaultBuffer(in _acousticTapHandle, BufferID.WristHudAcousticTaps, 1, out acousticTaps))
-                    return false;
-
-                success = true;
-                return true;
-            }
-            finally
-            {
-                if (!success)
-                    ReleaseWristHudAcquiredBuffers(acquiredMask);
-            }
-        }
-
-        private bool TryAcquireAcousticWriteBuffers(out NativeArray<AcousticEchoTap> acousticTaps, out NativeArray<uint> counters, out uint acquiredMask)
-        {
-            acousticTaps = default;
-            counters = default;
-            acquiredMask = 0u;
-            bool success = false;
-            try
-            {
-                if (!TryAcquireWristHudVaultBuffer(in _acousticTapHandle, BufferID.WristHudAcousticTaps, 1, out acousticTaps))
-                    return false;
-                acquiredMask |= WristHudWriteMaskAcousticTaps;
-                if (!TryAcquireWristHudVaultBuffer(in _counterHandle, BufferID.WristHudCounters, 3, out counters))
-                    return false;
-                acquiredMask |= WristHudWriteMaskCounters;
-                success = true;
-                return true;
-            }
-            finally
-            {
-                if (!success)
-                    ReleaseWristHudAcquiredBuffers(acquiredMask);
-            }
-        }
-
         private bool TryAcquireWristHudVaultBuffer<T>(
             in VaultGenerationHandle<T> handle,
             BufferID expectedBufferId,
@@ -874,16 +811,27 @@ namespace Hecton8.UI
                 return false;
             }
 
-            if (!vault.IsCompactionFenceActive &&
-                buffer.IsCreated &&
-                buffer.Length >= requiredLength)
+            bool releaseOnExit = true;
+            try
             {
-                return true;
-            }
+                if (!vault.IsCompactionFenceActive &&
+                    buffer.IsCreated &&
+                    buffer.Length >= requiredLength)
+                {
+                    releaseOnExit = false;
+                    return true;
+                }
 
-            vault.ReleaseWriteLock(in handle, SystemID.UI);
-            buffer = default;
-            return false;
+                return false;
+            }
+            finally
+            {
+                if (releaseOnExit)
+                {
+                    vault.ReleaseWriteLock(in handle, SystemID.UI);
+                    buffer = default;
+                }
+            }
         }
 
         private bool TryReadOnlyWristHudVaultBuffer<T>(
@@ -906,26 +854,6 @@ namespace Hecton8.UI
             }
 
             return true;
-        }
-
-        private void ReleaseWristHudAcquiredBuffers(uint acquiredMask)
-        {
-            IDataVault vault = _vault;
-            if (vault == null || acquiredMask == 0u)
-                return;
-
-            if ((acquiredMask & WristHudWriteMaskAcousticTaps) != 0u)
-                vault.ReleaseWriteLock(in _acousticTapHandle, SystemID.UI);
-            if ((acquiredMask & WristHudWriteMaskFontAtlas) != 0u)
-                vault.ReleaseWriteLock(in _fontAtlasHandle, SystemID.UI);
-            if ((acquiredMask & WristHudWriteMaskCounters) != 0u)
-                vault.ReleaseWriteLock(in _counterHandle, SystemID.UI);
-            if ((acquiredMask & WristHudWriteMaskTelemetry) != 0u)
-                vault.ReleaseWriteLock(in _telemetryHandle, SystemID.UI);
-            if ((acquiredMask & WristHudWriteMaskQuads) != 0u)
-                vault.ReleaseWriteLock(in _quadHandle, SystemID.UI);
-            if ((acquiredMask & WristHudWriteMaskState) != 0u)
-                vault.ReleaseWriteLock(in _stateHandle, SystemID.UI);
         }
 
         private static bool IsExactVaultHandle<T>(in VaultGenerationHandle<T> handle, BufferID expectedBufferId) where T : unmanaged
@@ -989,7 +917,7 @@ namespace Hecton8.UI
                 return;
 
             if (_materialProperties == null)
-                _materialProperties = new MaterialPropertyBlock(); // COLD ALLOC: MaterialPropertyBlock[1] - instanced UI shader payload - owner: WristHologramHudRuntime
+                return;
 
             _materialProperties.Clear();
             if (_activeQuadGpuBuffer != null && _activeQuadGpuBuffer.IsValid())
@@ -1171,36 +1099,52 @@ namespace Hecton8.UI
 
         private void GenerateMockAcousticTaps()
         {
-            if (!TryAcquireAcousticWriteBuffers(out NativeArray<AcousticEchoTap> acousticTaps, out NativeArray<uint> counters, out uint acquiredMask))
-                return;
+            int max = ResolveMockAcousticTapCapacity();
+            int count = math.min(max, _acousticTapScratch.Length);
+            float t = (float)SystemDispatcher.CurrentUnscaledTimeSeconds;
+            for (int i = 0; i < count; i++)
+            {
+                float phase = t * (0.0477f + i * 0.0027f) + i * 0.6180339f;
+                float radius = 8f + ((i * 13) % 27);
+                _acousticTapScratch[i] = new AcousticEchoTap
+                {
+                    RelativePositionMeters = new float3(
+                        TriangleWaveSigned(phase) * radius,
+                        TriangleWaveSigned(phase * 0.37f + 0.11f) * 3f,
+                        TriangleWaveSigned(phase + 0.25f) * radius),
+                    Amplitude01 = math.saturate(0.25f + HudTriangle01(phase * 2.17f) * 0.45f),
+                    StableId = (uint)(0xA700u + i),
+                    AgeSeconds = math.frac(t + i * 0.13f),
+                    Flags = 1u
+                };
+            }
+
+            _acousticTapScratchCount = count;
+            _acousticTapWriteCursor = count >= _acousticTapScratch.Length ? 0 : count;
+            _counterScratch[2] = (uint)count;
+            FlushAcousticTapScratchToVault();
+        }
+
+        private bool FlushAcousticTapScratchToVault()
+        {
+            int count = math.min(_acousticTapScratchCount, _acousticTapScratch.Length);
+            if (count <= 0)
+                return true;
+            if (!TryAcquireWristHudVaultBuffer(in _acousticTapHandle, BufferID.WristHudAcousticTaps, 1, out NativeArray<AcousticEchoTap> acousticTaps))
+                return false;
 
             try
             {
-                int max = ResolveMockAcousticTapCapacity();
-                int count = math.min(max, acousticTaps.Length);
-                float t = (float)SystemDispatcher.CurrentUnscaledTimeSeconds;
-                for (int i = 0; i < count; i++)
-                {
-                    float phase = t * (0.0477f + i * 0.0027f) + i * 0.6180339f;
-                    float radius = 8f + ((i * 13) % 27);
-                    acousticTaps[i] = new AcousticEchoTap
-                    {
-                        RelativePositionMeters = new float3(
-                            TriangleWaveSigned(phase) * radius,
-                            TriangleWaveSigned(phase * 0.37f + 0.11f) * 3f,
-                            TriangleWaveSigned(phase + 0.25f) * radius),
-                        Amplitude01 = math.saturate(0.25f + HudTriangle01(phase * 2.17f) * 0.45f),
-                        StableId = (uint)(0xA700u + i),
-                        AgeSeconds = math.frac(t + i * 0.13f),
-                        Flags = 1u
-                    };
-                }
-
-                counters[2] = (uint)count;
+                int writeCount = math.min(count, acousticTaps.Length);
+                for (int i = 0; i < writeCount; i++)
+                    acousticTaps[i] = _acousticTapScratch[i];
+                return true;
             }
             finally
             {
-                ReleaseWristHudAcquiredBuffers(acquiredMask);
+                IDataVault vault = _vault;
+                if (vault != null && IsExactVaultHandle(in _acousticTapHandle, BufferID.WristHudAcousticTaps))
+                    vault.ReleaseWriteLock(in _acousticTapHandle, SystemID.UI);
             }
         }
 
@@ -1293,116 +1237,208 @@ namespace Hecton8.UI
 
         private void BuildTextQuadsOwnerPhase(float deltaTime)
         {
-            if (!TryAcquireHudFrameBuffers(
-                    out NativeArray<WristHudStateDTO> states,
-                    out NativeArray<WristHudQuadTransformDTO> quads,
-                    out NativeArray<WristHudFontGlyphDTO>.ReadOnly fontAtlas,
-                    out NativeArray<WristHudTelemetryEntry> telemetry,
-                    out NativeArray<uint> counters,
-                    out NativeArray<AcousticEchoTap>.ReadOnly acousticTaps,
-                    out uint acquiredMask))
+            if (!HasRequiredVaultHandles() ||
+                _quadScratch.Length <= 0 ||
+                !TryReadOnlyWristHudVaultBuffer(in _fontAtlasHandle, BufferID.WristHudFontAtlas, GlyphCapacity, out NativeArray<WristHudFontGlyphDTO>.ReadOnly fontAtlas))
             {
                 return;
             }
 
             bool dumpBlackBox = false;
-            try
+            Transform wrist = leftWristAnchor != null ? leftWristAnchor : transform;
+            Transform head = ResolveHeadsetTransform();
+            Quaternion wristRotation = wrist.rotation;
+            Quaternion headRotation = head.rotation;
+            Vector3 wristPosition = wrist.position;
+            Vector3 headPosition = head.position;
+
+            float3 headForward = (float3)(headRotation * Vector3.forward);
+            float3 headUp = (float3)(headRotation * Vector3.up);
+            float3 wristNormal = (float3)(wristRotation * Vector3.back);
+            float3 wristRight = (float3)(wristRotation * Vector3.right);
+            float3 wristUp = (float3)(wristRotation * Vector3.up);
+            float3 wristForward = (float3)(wristRotation * Vector3.forward);
+            float3 visorPosition = (float3)headPosition + headForward * 0.35f;
+            int acousticTapCount = math.min(_acousticTapScratchCount, _acousticTapScratch.Length);
+
+            TextToQuadsBuilder builder = new TextToQuadsBuilder
             {
-                Transform wrist = leftWristAnchor != null ? leftWristAnchor : transform;
-                Transform head = ResolveHeadsetTransform();
-                Quaternion wristRotation = wrist.rotation;
-                Quaternion headRotation = head.rotation;
-                Vector3 wristPosition = wrist.position;
-                Vector3 headPosition = head.position;
+                States = _stateScratch.AsSpan(0, StateCapacity),
+                Quads = _quadScratch.AsSpan(0, math.min(_quadScratch.Length, _quadBufferCapacity)),
+                FontAtlas = fontAtlas,
+                Telemetry = _telemetryScratch.AsSpan(0, TelemetryCapacity),
+                Counters = _counterScratch.AsSpan(0, CounterCapacity),
+                AcousticTaps = _acousticTapScratch.AsSpan(0, acousticTapCount),
+                O2Text = _o2Text,
+                DepthText = _depthText,
+                HeadingText = _headingText,
+                LoadText = _loadText,
+                CurrentWristPosition = (float3)wristPosition,
+                CurrentWristRotation = new float4(wristRotation.x, wristRotation.y, wristRotation.z, wristRotation.w),
+                CurrentHeadPosition = (float3)headPosition,
+                CurrentHeadRotation = new float4(headRotation.x, headRotation.y, headRotation.z, headRotation.w),
+                HeadForward = NormalizeSafe(headForward, new float3(0f, 0f, 1f)),
+                HeadUp = NormalizeSafe(headUp, new float3(0f, 1f, 0f)),
+                WristNormal = NormalizeSafe(wristNormal, new float3(0f, 0f, -1f)),
+                WristRight = NormalizeSafe(wristRight, new float3(1f, 0f, 0f)),
+                WristUp = NormalizeSafe(wristUp, new float3(0f, 1f, 0f)),
+                WristForward = NormalizeSafe(wristForward, new float3(0f, 0f, 1f)),
+                VisorPosition = visorPosition,
+                Oxygen01 = math.saturate(_latestVitals.Oxygen01),
+                Health01 = math.saturate(_latestVitals.Health01),
+                Power01 = math.saturate(_latestVitals.Power01),
+                DepthMeters = math.max(0f, _latestVitals.DepthMeters),
+                SafeDepthMeters = math.max(1f, _latestVitals.SafeDepthMeters),
+                Radiation01 = math.saturate(_latestVitals.Radiation01),
+                Toxemia01 = math.saturate(_latestVitals.Toxemia01),
+                InventoryLoad01 = UIStateStore.ReadValueOrDefault(UIValueSlotId.InventoryLoad01, 0f),
+                HologramDistance = hologramDistanceFromWrist,
+                TextScale = textScale,
+                PdaGridCellSize = pdaGridCellSizeMeters,
+                PdaGridDistance = pdaGridDistanceMeters,
+                GlitchMultiplier = glitchMultiplier,
+                TimeSeconds = (float)SystemDispatcher.CurrentUnscaledTimeSeconds,
+                DeltaTime = math.max(0f, deltaTime),
+                FrameIndex = Hecton8.Core.SystemDispatcher.CurrentFrameIndex,
+                QualityWeight01 = _cachedQualityWeight01,
+                MathLodPressure01 = ResolveMathLodPressure01(),
+                PdaOpen = _latestPdaSignal.IsOpen,
+                AcousticTapCount = acousticTapCount,
+                LowColor = ToFloat4(lowColor),
+                MidColor = ToFloat4(midColor),
+                DangerColor = ToFloat4(dangerColor)
+            };
 
-                float3 headForward = (float3)(headRotation * Vector3.forward);
-                float3 headUp = (float3)(headRotation * Vector3.up);
-                float3 wristNormal = (float3)(wristRotation * Vector3.back);
-                float3 wristRight = (float3)(wristRotation * Vector3.right);
-                float3 wristUp = (float3)(wristRotation * Vector3.up);
-                float3 wristForward = (float3)(wristRotation * Vector3.forward);
-                float3 visorPosition = (float3)headPosition + headForward * 0.35f;
-                int acousticTapCount = (int)math.min(counters[2], (uint)acousticTaps.Length);
+            long startTicks = Stopwatch.GetTimestamp();
+            builder.Execute();
+            long elapsedTicks = Stopwatch.GetTimestamp() - startTicks;
+            int elapsedQ16 = (int)math.round((float)elapsedTicks * 1000000f * 16f / Stopwatch.Frequency);
+            WristHudStateDTO state = _stateScratch[0];
+            state.LastJobMicrosecondsQ16 = elapsedQ16;
+            if (elapsedQ16 > (int)(JobWarningMicroseconds * 16f))
+                state.Flags |= StateFlagJobOverBudget;
+            _stateScratch[0] = state;
 
-                TextToQuadsBuilder builder = new TextToQuadsBuilder
-                {
-                    States = states,
-                    Quads = quads,
-                    FontAtlas = fontAtlas,
-                    Telemetry = telemetry,
-                    Counters = counters,
-                    AcousticTaps = acousticTaps,
-                    O2Text = _o2Text,
-                    DepthText = _depthText,
-                    HeadingText = _headingText,
-                    LoadText = _loadText,
-                    CurrentWristPosition = (float3)wristPosition,
-                    CurrentWristRotation = new float4(wristRotation.x, wristRotation.y, wristRotation.z, wristRotation.w),
-                    CurrentHeadPosition = (float3)headPosition,
-                    CurrentHeadRotation = new float4(headRotation.x, headRotation.y, headRotation.z, headRotation.w),
-                    HeadForward = NormalizeSafe(headForward, new float3(0f, 0f, 1f)),
-                    HeadUp = NormalizeSafe(headUp, new float3(0f, 1f, 0f)),
-                    WristNormal = NormalizeSafe(wristNormal, new float3(0f, 0f, -1f)),
-                    WristRight = NormalizeSafe(wristRight, new float3(1f, 0f, 0f)),
-                    WristUp = NormalizeSafe(wristUp, new float3(0f, 1f, 0f)),
-                    WristForward = NormalizeSafe(wristForward, new float3(0f, 0f, 1f)),
-                    VisorPosition = visorPosition,
-                    Oxygen01 = math.saturate(_latestVitals.Oxygen01),
-                    Health01 = math.saturate(_latestVitals.Health01),
-                    Power01 = math.saturate(_latestVitals.Power01),
-                    DepthMeters = math.max(0f, _latestVitals.DepthMeters),
-                    SafeDepthMeters = math.max(1f, _latestVitals.SafeDepthMeters),
-                    Radiation01 = math.saturate(_latestVitals.Radiation01),
-                    Toxemia01 = math.saturate(_latestVitals.Toxemia01),
-                    InventoryLoad01 = UIStateStore.ReadValueOrDefault(UIValueSlotId.InventoryLoad01, 0f),
-                    HologramDistance = hologramDistanceFromWrist,
-                    TextScale = textScale,
-                    PdaGridCellSize = pdaGridCellSizeMeters,
-                    PdaGridDistance = pdaGridDistanceMeters,
-                    GlitchMultiplier = glitchMultiplier,
-                    TimeSeconds = (float)SystemDispatcher.CurrentUnscaledTimeSeconds,
-                    DeltaTime = math.max(0f, deltaTime),
-                    FrameIndex = Hecton8.Core.SystemDispatcher.CurrentFrameIndex,
-                    QualityWeight01 = _cachedQualityWeight01,
-                    MathLodPressure01 = ResolveMathLodPressure01(),
-                    PdaOpen = _latestPdaSignal.IsOpen,
-                    AcousticTapCount = acousticTapCount,
-                    LowColor = ToFloat4(lowColor),
-                    MidColor = ToFloat4(midColor),
-                    DangerColor = ToFloat4(dangerColor)
-                };
-
-                long startTicks = Stopwatch.GetTimestamp();
-                builder.Execute();
-                long elapsedTicks = Stopwatch.GetTimestamp() - startTicks;
-                int elapsedQ16 = (int)math.round((float)elapsedTicks * 1000000f * 16f / Stopwatch.Frequency);
-                WristHudStateDTO state = states[0];
-                state.LastJobMicrosecondsQ16 = elapsedQ16;
-                if (elapsedQ16 > (int)(JobWarningMicroseconds * 16f))
-                    state.Flags |= StateFlagJobOverBudget;
-                states[0] = state;
-
-                PatchLatestTelemetryJobCost(states, telemetry, (uint)elapsedQ16);
-                dumpBlackBox = (state.Flags & StateFlagNaNDetected) != 0;
-            }
-            finally
-            {
-                ReleaseWristHudAcquiredBuffers(acquiredMask);
-            }
+            PatchLatestTelemetryJobCost(ref state, _telemetryScratch.AsSpan(0, TelemetryCapacity), (uint)elapsedQ16);
+            _stateScratch[0] = state;
+            PublishWristHudScratch(state.ActiveQuadCount);
+            dumpBlackBox = (state.Flags & StateFlagNaNDetected) != 0;
 
             if (dumpBlackBox)
                 DumpBlackBoxOnce();
         }
 
+        private void PublishWristHudScratch(int activeQuadCount)
+        {
+            int quadCount = math.clamp(activeQuadCount, 0, math.min(_quadScratch.Length, _quadBufferCapacity));
+            if (!FlushWristHudQuadScratch(quadCount))
+            {
+                WristHudStateDTO safeState = _stateScratch[0];
+                safeState.ActiveQuadCount = 0;
+                safeState.Flags |= StateFlagGpuUploadFault;
+                _stateScratch[0] = safeState;
+            }
+
+            FlushWristHudTelemetryScratch(ResolveLatestTelemetryIndex(_stateScratch[0]));
+            FlushWristHudCounterScratch();
+            FlushWristHudStateScratch();
+        }
+
+        private bool FlushWristHudStateScratch()
+        {
+            if (!TryAcquireWristHudVaultBuffer(in _stateHandle, BufferID.WristHudState, StateCapacity, out NativeArray<WristHudStateDTO> states))
+                return false;
+
+            try
+            {
+                states[0] = _stateScratch[0];
+                return true;
+            }
+            finally
+            {
+                IDataVault vault = _vault;
+                if (vault != null && IsExactVaultHandle(in _stateHandle, BufferID.WristHudState))
+                    vault.ReleaseWriteLock(in _stateHandle, SystemID.UI);
+            }
+        }
+
+        private bool FlushWristHudQuadScratch(int count)
+        {
+            if (count <= 0)
+                return true;
+            if (!TryAcquireWristHudVaultBuffer(in _quadHandle, BufferID.WristHudQuads, 1, out NativeArray<WristHudQuadTransformDTO> quads))
+                return false;
+
+            try
+            {
+                int writeCount = math.min(count, quads.Length);
+                for (int i = 0; i < writeCount; i++)
+                    quads[i] = _quadScratch[i];
+                return true;
+            }
+            finally
+            {
+                IDataVault vault = _vault;
+                if (vault != null && IsExactVaultHandle(in _quadHandle, BufferID.WristHudQuads))
+                    vault.ReleaseWriteLock(in _quadHandle, SystemID.UI);
+            }
+        }
+
+        private bool FlushWristHudTelemetryScratch(int index)
+        {
+            if ((uint)index >= TelemetryCapacity)
+                return false;
+            if (!TryAcquireWristHudVaultBuffer(in _telemetryHandle, BufferID.WristHudTelemetryRing, TelemetryCapacity, out NativeArray<WristHudTelemetryEntry> telemetry))
+                return false;
+
+            try
+            {
+                if (index < telemetry.Length)
+                    telemetry[index] = _telemetryScratch[index];
+                return true;
+            }
+            finally
+            {
+                IDataVault vault = _vault;
+                if (vault != null && IsExactVaultHandle(in _telemetryHandle, BufferID.WristHudTelemetryRing))
+                    vault.ReleaseWriteLock(in _telemetryHandle, SystemID.UI);
+            }
+        }
+
+        private bool FlushWristHudCounterScratch()
+        {
+            if (!TryAcquireWristHudVaultBuffer(in _counterHandle, BufferID.WristHudCounters, CounterCapacity, out NativeArray<uint> counters))
+                return false;
+
+            try
+            {
+                int count = math.min(counters.Length, _counterScratch.Length);
+                for (int i = 0; i < count; i++)
+                    counters[i] = _counterScratch[i];
+                return true;
+            }
+            finally
+            {
+                IDataVault vault = _vault;
+                if (vault != null && IsExactVaultHandle(in _counterHandle, BufferID.WristHudCounters))
+                    vault.ReleaseWriteLock(in _counterHandle, SystemID.UI);
+            }
+        }
+
+        private static int ResolveLatestTelemetryIndex(in WristHudStateDTO state)
+        {
+            int index = state.TelemetryCursor - 1;
+            return index < 0 ? TelemetryCapacity - 1 : index;
+        }
+
         private static void PatchLatestTelemetryJobCost(
-            NativeArray<WristHudStateDTO> states,
-            NativeArray<WristHudTelemetryEntry> telemetry,
+            ref WristHudStateDTO state,
+            Span<WristHudTelemetryEntry> telemetry,
             uint elapsedQ16)
         {
-            if (!states.IsCreated || states.Length == 0 || !telemetry.IsCreated || telemetry.Length == 0)
+            if (telemetry.Length == 0)
                 return;
 
-            WristHudStateDTO state = states[0];
             int index = state.TelemetryCursor - 1;
             if (index < 0)
                 index += telemetry.Length;
@@ -2355,6 +2391,13 @@ namespace Hecton8.UI
                 ReleaseNativeStateHandles();
                 _fontAtlasGenerated = false;
                 PdaProjectorOnDataVaultServiceReplaced();
+                if (isActiveAndEnabled)
+                {
+                    EnsureNativeBuffers();
+                    EnsureSignalBuffers();
+                    EnsureGraphicsResources();
+                    SeedInitialState();
+                }
             }
         }
 
@@ -2436,12 +2479,12 @@ namespace Hecton8.UI
 
         private ref struct TextToQuadsBuilder
         {
-            public NativeArray<WristHudStateDTO> States;
-            public NativeArray<WristHudQuadTransformDTO> Quads;
+            public Span<WristHudStateDTO> States;
+            public Span<WristHudQuadTransformDTO> Quads;
             public NativeArray<WristHudFontGlyphDTO>.ReadOnly FontAtlas;
-            public NativeArray<WristHudTelemetryEntry> Telemetry;
-            public NativeArray<uint> Counters;
-            public NativeArray<AcousticEchoTap>.ReadOnly AcousticTaps;
+            public Span<WristHudTelemetryEntry> Telemetry;
+            public Span<uint> Counters;
+            public ReadOnlySpan<AcousticEchoTap> AcousticTaps;
 
             public FixedString64Bytes O2Text;
             public FixedString64Bytes DepthText;
@@ -2485,7 +2528,7 @@ namespace Hecton8.UI
 
             public void Execute()
             {
-                if (!States.IsCreated || !Quads.IsCreated || Quads.Length == 0)
+                if (States.Length == 0 || Quads.Length == 0)
                     return;
 
                 WristHudStateDTO state = States[0];
@@ -2517,7 +2560,7 @@ namespace Hecton8.UI
                     state.Flags |= StateFlagCulled;
                     WriteTelemetry(ref state, 0, 0, 0, attentionDot, 0f);
                     States[0] = state;
-                    if (Counters.IsCreated && Counters.Length > 0)
+                    if (Counters.Length > 0)
                         Counters[0] = 0u;
                     return;
                 }
@@ -2580,7 +2623,7 @@ namespace Hecton8.UI
 
                 WriteTelemetry(ref state, quadIndex, glyphCount, radarCount, attentionDot, ResolveHeadingDegrees(HeadForward));
                 States[0] = state;
-                if (Counters.IsCreated && Counters.Length > 1)
+                if (Counters.Length > 1)
                 {
                     Counters[0] = (uint)quadIndex;
                     Counters[1] = (uint)state.Flags;
@@ -2727,7 +2770,7 @@ namespace Hecton8.UI
 
             private void WriteTelemetry(ref WristHudStateDTO state, int quadCount, int glyphCount, int radarCount, float attentionDot, float heading)
             {
-                if (!Telemetry.IsCreated || Telemetry.Length == 0)
+                if (Telemetry.Length == 0)
                     return;
 
                 int cursor = state.TelemetryCursor;

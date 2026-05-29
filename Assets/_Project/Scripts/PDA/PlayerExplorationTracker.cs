@@ -204,8 +204,6 @@ namespace Hecton8.PDA
         /// <summary>Live registry-owned instance for PDA map systems.</summary>
         private static PlayerExplorationTracker s_activeRuntimeInstance;
 
-        public static PlayerExplorationTracker Instance => s_activeRuntimeInstance;
-
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
         private static void ResetStaticState()
         {

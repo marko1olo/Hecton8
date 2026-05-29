@@ -109,17 +109,17 @@ namespace Hecton8.Quest
         private void Awake()
         {
             EnsureRuntimeResources();
-            ResolvePlayerContextCold();
-            ResolveQuestRuntimeCold();
-            ResolveAtlasSignalCold();
+            CachePlayerContextFromRegistryCold();
+            CacheQuestRuntimeFromRegistryCold();
+            CacheAtlasSignalFromRegistryCold();
         }
 
         private void OnEnable()
         {
             EnsureRuntimeResources();
-            ResolvePlayerContextCold();
-            ResolveQuestRuntimeCold();
-            ResolveAtlasSignalCold();
+            CachePlayerContextFromRegistryCold();
+            CacheQuestRuntimeFromRegistryCold();
+            CacheAtlasSignalFromRegistryCold();
             TryRegisterHotSwapListener();
             PrimeActiveQuestSet();
             QuestEvents.Register(this);
@@ -276,18 +276,18 @@ namespace Hecton8.Quest
                 _playerMovement = _playerRuntimeContext.PlayerMovement;
         }
 
-        private void ResolvePlayerContextCold()
+        private void CachePlayerContextFromRegistryCold()
         {
             CachePlayerContext(GlobalRegistry.Player);
             ResolvePlayerContext();
         }
 
-        private void ResolveQuestRuntimeCold()
+        private void CacheQuestRuntimeFromRegistryCold()
         {
             CacheQuestRuntime(GlobalRegistry.Quest);
         }
 
-        private void ResolveAtlasSignalCold()
+        private void CacheAtlasSignalFromRegistryCold()
         {
             CacheAtlasSignal(GlobalRegistry.AtlasSignalReadModel);
         }

@@ -379,19 +379,12 @@ namespace Hecton8.Audio
             }
 
             DrainSignalInputs();
-            if (!TryAcquireStemWriteViews(out AdaptiveStemVaultViews views))
+            if (!TryResolveStemOwnerViews(out AdaptiveStemVaultViews views))
                 return;
 
-            try
-            {
-                UpdateBeatAndBiomeState(ref views, safeDelta);
-                UpdateVaultRulesFromManagedState(ref views, safeDelta);
-                RunAudioKernels(ref views);
-            }
-            finally
-            {
-                ReleaseStemWriteViews();
-            }
+            UpdateBeatAndBiomeState(ref views, safeDelta);
+            UpdateVaultRulesFromManagedState(ref views, safeDelta);
+            RunAudioKernels(ref views);
 
             if (Interlocked.Exchange(ref _telemetryDumpRequested, 0) != 0)
                 DumpTelemetryOnce();
@@ -462,22 +455,15 @@ namespace Hecton8.Audio
             if (Volatile.Read(ref _nativeAllocated) == 0)
                 return false;
 
-            if (!TryAcquireStemWriteViews(out AdaptiveStemVaultViews views))
+            if (!TryResolveStemOwnerViews(out AdaptiveStemVaultViews views))
                 return false;
 
-            try
-            {
-                if (views.Rules.Length <= 0)
-                    return false;
+            if (views.Rules.Length <= 0)
+                return false;
 
-                AudioStemRuleDTO sanitized = SanitizeRule(rule);
-                views.Rules[0] = sanitized;
-                return true;
-            }
-            finally
-            {
-                ReleaseStemWriteViews();
-            }
+            AudioStemRuleDTO sanitized = SanitizeRule(rule);
+            views.Rules[0] = sanitized;
+            return true;
         }
 
         public bool TryGetEditorMixFrame(out StemMixFrameDTO frame)
@@ -650,31 +636,24 @@ namespace Hecton8.Audio
                 NativeArrayOptions.UninitializedMemory);
 #endif
 
-            if (!TryAcquireStemWriteViews(out AdaptiveStemVaultViews views))
+            if (!TryResolveStemOwnerViews(out AdaptiveStemVaultViews views))
             {
                 DisposeVaultStorage();
                 return;
             }
 
-            try
-            {
-                MemClearArray(views.StemState);
-                MemClearArray(views.StemCommands);
-                MemClearArray(views.MixFrame);
-                MemClearArray(views.Rules);
-                MemClearArray(views.MockPredator);
-                MemClearArray(views.MockDepth);
-                MemClearArray(views.MockTension);
-                MemClearArray(views.TelemetryRing);
-                MemClearArray(views.TelemetryCursor);
+            MemClearArray(views.StemState);
+            MemClearArray(views.StemCommands);
+            MemClearArray(views.MixFrame);
+            MemClearArray(views.Rules);
+            MemClearArray(views.MockPredator);
+            MemClearArray(views.MockDepth);
+            MemClearArray(views.MockTension);
+            MemClearArray(views.TelemetryRing);
+            MemClearArray(views.TelemetryCursor);
 #if UNITY_EDITOR
-                MemClearArray(views.CsvScratch);
+            MemClearArray(views.CsvScratch);
 #endif
-            }
-            finally
-            {
-                ReleaseStemWriteViews();
-            }
 
             TryRefreshScalabilityStateHandleCold();
             RefreshGlobalQualitySnapshotCold();
@@ -796,178 +775,64 @@ namespace Hecton8.Audio
             return true;
         }
 
-        private bool TryAcquireStemWriteViews(out AdaptiveStemVaultViews views)
+        private bool TryResolveStemOwnerViews(out AdaptiveStemVaultViews views)
         {
             views = default;
             IDataVault vault = _dataVault;
             if (vault == null || !AreAdaptiveStemVaultHandlesExact())
                 return false;
 
-            bool stateLocked = false;
-            bool commandsLocked = false;
-            bool mixLocked = false;
-            bool rulesLocked = false;
-            bool predatorLocked = false;
-            bool depthLocked = false;
-            bool tensionLocked = false;
-            bool telemetryLocked = false;
-            bool telemetryCursorLocked = false;
+            if (!vault.TryResolveHandle(in _stemStateHandle, out views.StemState) ||
+                !vault.TryResolveHandle(in _stemCommandsHandle, out views.StemCommands) ||
+                !vault.TryResolveHandle(in _mixFrameHandle, out views.MixFrame) ||
+                !vault.TryResolveHandle(in _rulesHandle, out views.Rules) ||
+                !vault.TryResolveHandle(in _mockPredatorHandle, out views.MockPredator) ||
+                !vault.TryResolveHandle(in _mockDepthHandle, out views.MockDepth) ||
+                !vault.TryResolveHandle(in _mockTensionHandle, out views.MockTension) ||
+                !vault.TryResolveHandle(in _telemetryRingHandle, out views.TelemetryRing) ||
+                !vault.TryResolveHandle(in _telemetryCursorHandle, out views.TelemetryCursor)
 #if UNITY_EDITOR
-            bool csvLocked = false;
+                || !vault.TryResolveHandle(in _csvScratchHandle, out views.CsvScratch)
 #endif
-            bool success = false;
-
-            try
+               )
             {
-                if (!vault.TryAcquireWriteLock(in _stemStateHandle, VaultOwner, out views.StemState))
-                    return false;
-                stateLocked = true;
-                if (!vault.TryAcquireWriteLock(in _stemCommandsHandle, VaultOwner, out views.StemCommands))
-                    return false;
-                commandsLocked = true;
-                if (!vault.TryAcquireWriteLock(in _mixFrameHandle, VaultOwner, out views.MixFrame))
-                    return false;
-                mixLocked = true;
-                if (!vault.TryAcquireWriteLock(in _rulesHandle, VaultOwner, out views.Rules))
-                    return false;
-                rulesLocked = true;
-                if (!vault.TryAcquireWriteLock(in _mockPredatorHandle, VaultOwner, out views.MockPredator))
-                    return false;
-                predatorLocked = true;
-                if (!vault.TryAcquireWriteLock(in _mockDepthHandle, VaultOwner, out views.MockDepth))
-                    return false;
-                depthLocked = true;
-                if (!vault.TryAcquireWriteLock(in _mockTensionHandle, VaultOwner, out views.MockTension))
-                    return false;
-                tensionLocked = true;
-                if (!vault.TryAcquireWriteLock(in _telemetryRingHandle, VaultOwner, out views.TelemetryRing))
-                    return false;
-                telemetryLocked = true;
-                if (!vault.TryAcquireWriteLock(in _telemetryCursorHandle, VaultOwner, out views.TelemetryCursor))
-                    return false;
-                telemetryCursorLocked = true;
-#if UNITY_EDITOR
-                if (!vault.TryAcquireWriteLock(in _csvScratchHandle, VaultOwner, out views.CsvScratch))
-                    return false;
-                csvLocked = true;
-#endif
-
-                success =
-                    views.StemState.IsCreated &&
-                    views.StemCommands.IsCreated &&
-                    views.MixFrame.IsCreated &&
-                    views.Rules.IsCreated &&
-                    views.MockPredator.IsCreated &&
-                    views.MockDepth.IsCreated &&
-                    views.MockTension.IsCreated &&
-                    views.TelemetryRing.IsCreated &&
-                    views.TelemetryCursor.IsCreated &&
-#if UNITY_EDITOR
-                    views.CsvScratch.IsCreated &&
-#endif
-                    views.StemState.Length > 0 &&
-                    views.StemCommands.Length >= 2 &&
-                    views.MixFrame.Length > 0 &&
-                    views.Rules.Length > 0 &&
-                    views.MockPredator.Length > 0 &&
-                    views.MockDepth.Length > 0 &&
-                    views.MockTension.Length > 0 &&
-                    views.TelemetryRing.Length > 0 &&
-                    views.TelemetryCursor.Length > 0
-#if UNITY_EDITOR
-                    && views.CsvScratch.Length > 0
-#endif
-                    ;
-                if (!success)
-                    views = default;
-                return success;
+                views = default;
+                return false;
             }
-            finally
+
+            bool success =
+                views.StemState.IsCreated &&
+                views.StemCommands.IsCreated &&
+                views.MixFrame.IsCreated &&
+                views.Rules.IsCreated &&
+                views.MockPredator.IsCreated &&
+                views.MockDepth.IsCreated &&
+                views.MockTension.IsCreated &&
+                views.TelemetryRing.IsCreated &&
+                views.TelemetryCursor.IsCreated &&
+#if UNITY_EDITOR
+                views.CsvScratch.IsCreated &&
+#endif
+                views.StemState.Length > 0 &&
+                views.StemCommands.Length >= 2 &&
+                views.MixFrame.Length > 0 &&
+                views.Rules.Length > 0 &&
+                views.MockPredator.Length > 0 &&
+                views.MockDepth.Length > 0 &&
+                views.MockTension.Length > 0 &&
+                views.TelemetryRing.Length > 0 &&
+                views.TelemetryCursor.Length > 0
+#if UNITY_EDITOR
+                && views.CsvScratch.Length > 0
+#endif
+                ;
+            if (!success)
             {
-                if (!success)
-                {
-                    ReleaseStemWriteViews(
-                        vault,
-                        stateLocked,
-                        commandsLocked,
-                        mixLocked,
-                        rulesLocked,
-                        predatorLocked,
-                        depthLocked,
-                        tensionLocked,
-                        telemetryLocked,
-                        telemetryCursorLocked
-#if UNITY_EDITOR
-                        ,
-                        csvLocked
-#endif
-                    );
-                }
+                views = default;
+                return false;
             }
-        }
 
-        private void ReleaseStemWriteViews()
-        {
-            ReleaseStemWriteViews(
-                _dataVault,
-                stateLocked: true,
-                commandsLocked: true,
-                mixLocked: true,
-                rulesLocked: true,
-                predatorLocked: true,
-                depthLocked: true,
-                tensionLocked: true,
-                telemetryLocked: true,
-                telemetryCursorLocked: true
-#if UNITY_EDITOR
-                ,
-                csvLocked: true
-#endif
-            );
-        }
-
-        private void ReleaseStemWriteViews(
-            IDataVault vault,
-            bool stateLocked,
-            bool commandsLocked,
-            bool mixLocked,
-            bool rulesLocked,
-            bool predatorLocked,
-            bool depthLocked,
-            bool tensionLocked,
-            bool telemetryLocked,
-            bool telemetryCursorLocked
-#if UNITY_EDITOR
-            ,
-            bool csvLocked
-#endif
-        )
-        {
-            if (vault == null)
-                return;
-
-#if UNITY_EDITOR
-            if (csvLocked)
-                vault.ReleaseWriteLock(in _csvScratchHandle, VaultOwner);
-#endif
-            if (telemetryCursorLocked)
-                vault.ReleaseWriteLock(in _telemetryCursorHandle, VaultOwner);
-            if (telemetryLocked)
-                vault.ReleaseWriteLock(in _telemetryRingHandle, VaultOwner);
-            if (tensionLocked)
-                vault.ReleaseWriteLock(in _mockTensionHandle, VaultOwner);
-            if (depthLocked)
-                vault.ReleaseWriteLock(in _mockDepthHandle, VaultOwner);
-            if (predatorLocked)
-                vault.ReleaseWriteLock(in _mockPredatorHandle, VaultOwner);
-            if (rulesLocked)
-                vault.ReleaseWriteLock(in _rulesHandle, VaultOwner);
-            if (mixLocked)
-                vault.ReleaseWriteLock(in _mixFrameHandle, VaultOwner);
-            if (commandsLocked)
-                vault.ReleaseWriteLock(in _stemCommandsHandle, VaultOwner);
-            if (stateLocked)
-                vault.ReleaseWriteLock(in _stemStateHandle, VaultOwner);
+            return true;
         }
 
         private void ConfigureSourcesCold()
@@ -1071,57 +936,50 @@ namespace Hecton8.Audio
         private void GenerateEmergencyMockAudioProfiles()
         {
             if (Volatile.Read(ref _nativeAllocated) == 0 ||
-                !TryAcquireStemWriteViews(out AdaptiveStemVaultViews views))
+                !TryResolveStemOwnerViews(out AdaptiveStemVaultViews views))
                 return;
 
-            try
-            {
-                if (views.Rules.Length <= 0 || views.StemCommands.Length < 2)
-                    return;
+            if (views.Rules.Length <= 0 || views.StemCommands.Length < 2)
+                return;
 
-                AudioStemRuleDTO rule = default;
-                rule.AttackSeconds = DefaultAttackSeconds;
-                rule.ReleaseSeconds = DefaultReleaseSeconds;
-                rule.CrossfadeSeconds = DefaultCrossfadeSeconds;
-                rule.BeatBpm = DefaultBeatBpm;
-                rule.BeatWindowSeconds = DefaultBeatWindowSeconds;
-                rule.DepthMinMeters = DefaultDepthMinMeters;
-                rule.DepthMaxMeters = DefaultDepthMaxMeters;
-                rule.DepthFilterMinHz = DefaultDepthFilterMinHz;
-                rule.DepthFilterMaxHz = DefaultDepthFilterMaxHz;
-                rule.CombatEnterThreshold = 0.5f;
-                rule.CombatExitThreshold = 0.35f;
-                rule.NarrativeOverrideWeight = 1f;
-                rule.GlobalQualityWeight = ResolveGlobalQualityWeightFromSnapshot();
-                rule.SystemHealth01 = 1f;
-                rule.IoPressure01 = 0f;
-                rule.BiomeFadeSeconds = DefaultBiomeFadeSeconds;
-                rule.CurrentBiomeHash = DefaultBiomeHash;
-                rule.TargetBiomeHash = DefaultBiomeHash;
-                rule.StemBaseHash = StemBaseHash;
-                rule.StemActionHash = StemActionHash;
-                rule.StemDepthHash = StemDepthHash;
-                rule.StemBossHash = StemBossHash;
-                rule.KernelCadenceSeconds = ResolveKernelCadenceSeconds(rule.GlobalQualityWeight);
-                views.Rules[0] = rule;
+            AudioStemRuleDTO rule = default;
+            rule.AttackSeconds = DefaultAttackSeconds;
+            rule.ReleaseSeconds = DefaultReleaseSeconds;
+            rule.CrossfadeSeconds = DefaultCrossfadeSeconds;
+            rule.BeatBpm = DefaultBeatBpm;
+            rule.BeatWindowSeconds = DefaultBeatWindowSeconds;
+            rule.DepthMinMeters = DefaultDepthMinMeters;
+            rule.DepthMaxMeters = DefaultDepthMaxMeters;
+            rule.DepthFilterMinHz = DefaultDepthFilterMinHz;
+            rule.DepthFilterMaxHz = DefaultDepthFilterMaxHz;
+            rule.CombatEnterThreshold = 0.5f;
+            rule.CombatExitThreshold = 0.35f;
+            rule.NarrativeOverrideWeight = 1f;
+            rule.GlobalQualityWeight = ResolveGlobalQualityWeightFromSnapshot();
+            rule.SystemHealth01 = 1f;
+            rule.IoPressure01 = 0f;
+            rule.BiomeFadeSeconds = DefaultBiomeFadeSeconds;
+            rule.CurrentBiomeHash = DefaultBiomeHash;
+            rule.TargetBiomeHash = DefaultBiomeHash;
+            rule.StemBaseHash = StemBaseHash;
+            rule.StemActionHash = StemActionHash;
+            rule.StemDepthHash = StemDepthHash;
+            rule.StemBossHash = StemBossHash;
+            rule.KernelCadenceSeconds = ResolveKernelCadenceSeconds(rule.GlobalQualityWeight);
+            views.Rules[0] = rule;
 
-                StemCommandDTO primary = default;
-                primary.StemHash_A = StemBaseHash;
-                primary.Volume_A = 1f;
-                primary.StemHash_B = StemActionHash;
-                primary.Volume_B = 0f;
-                StemCommandDTO secondary = default;
-                secondary.StemHash_A = StemDepthHash;
-                secondary.Volume_A = 0f;
-                secondary.StemHash_B = StemBossHash;
-                secondary.Volume_B = 0f;
-                views.StemCommands[0] = primary;
-                views.StemCommands[1] = secondary;
-            }
-            finally
-            {
-                ReleaseStemWriteViews();
-            }
+            StemCommandDTO primary = default;
+            primary.StemHash_A = StemBaseHash;
+            primary.Volume_A = 1f;
+            primary.StemHash_B = StemActionHash;
+            primary.Volume_B = 0f;
+            StemCommandDTO secondary = default;
+            secondary.StemHash_A = StemDepthHash;
+            secondary.Volume_A = 0f;
+            secondary.StemHash_B = StemBossHash;
+            secondary.Volume_B = 0f;
+            views.StemCommands[0] = primary;
+            views.StemCommands[1] = secondary;
         }
 
         private void DrainSignalInputs()
@@ -1489,57 +1347,50 @@ namespace Hecton8.Audio
 #if UNITY_EDITOR
         private void PollCsvRulesCold()
         {
-            if (!TryAcquireStemWriteViews(out AdaptiveStemVaultViews views))
+            if (!TryResolveStemOwnerViews(out AdaptiveStemVaultViews views))
                 return;
 
+            if (!views.CsvScratch.IsCreated ||
+                views.CsvScratch.Length <= 0)
+                return;
+
+            if (_csvPollCountdown > 0)
+            {
+                _csvPollCountdown--;
+                return;
+            }
+
+            _csvPollCountdown = CsvPollSlowTickInterval;
+            string path = ResolveCachedCsvPathCold();
+            if (string.IsNullOrEmpty(path) || !File.Exists(path))
+                return;
+
+            DateTime writeTime = File.GetLastWriteTimeUtc(path);
+            if (writeTime == _lastCsvWriteUtc)
+                return;
+
+            _lastCsvWriteUtc = writeTime;
             try
             {
-                if (!views.CsvScratch.IsCreated ||
-                    views.CsvScratch.Length <= 0)
-                    return;
-
-                if (_csvPollCountdown > 0)
+                int bytesRead;
+                NativeArray<byte> csvScratch = views.CsvScratch;
+                byte* scratch = (byte*)NativeArrayUnsafeUtility.GetUnsafeBufferPointerWithoutChecks(csvScratch);
+                using (FileStream stream = new FileStream(path, FileMode.Open, FileAccess.Read, FileShare.ReadWrite))
                 {
-                    _csvPollCountdown--;
-                    return;
+                    int safeLength = (int)math.min(stream.Length, math.min(CsvScratchBytes, csvScratch.Length));
+                    Span<byte> scratchSpan = new Span<byte>(scratch, safeLength);
+                    bytesRead = stream.Read(scratchSpan);
                 }
 
-                _csvPollCountdown = CsvPollSlowTickInterval;
-                string path = ResolveCachedCsvPathCold();
-                if (string.IsNullOrEmpty(path) || !File.Exists(path))
-                    return;
-
-                DateTime writeTime = File.GetLastWriteTimeUtc(path);
-                if (writeTime == _lastCsvWriteUtc)
-                    return;
-
-                _lastCsvWriteUtc = writeTime;
-                try
-                {
-                    int bytesRead;
-                    NativeArray<byte> csvScratch = views.CsvScratch;
-                    byte* scratch = (byte*)NativeArrayUnsafeUtility.GetUnsafeBufferPointerWithoutChecks(csvScratch);
-                    using (FileStream stream = new FileStream(path, FileMode.Open, FileAccess.Read, FileShare.ReadWrite))
-                    {
-                        int safeLength = (int)math.min(stream.Length, math.min(CsvScratchBytes, csvScratch.Length));
-                        Span<byte> scratchSpan = new Span<byte>(scratch, safeLength);
-                        bytesRead = stream.Read(scratchSpan);
-                    }
-
-                    ParseCsvRules(bytesRead, ref views);
-                }
-                catch (IOException)
-                {
-                    Hecton8.Core.H8Debug.LogWarning("[SHINOBU_46] audio_stem_rules.csv parse failed.");
-                }
-                catch (UnauthorizedAccessException)
-                {
-                    Hecton8.Core.H8Debug.LogWarning("[SHINOBU_46] audio_stem_rules.csv parse failed.");
-                }
+                ParseCsvRules(bytesRead, ref views);
             }
-            finally
+            catch (IOException)
             {
-                ReleaseStemWriteViews();
+                Hecton8.Core.H8Debug.LogWarning("[SHINOBU_46] audio_stem_rules.csv parse failed.");
+            }
+            catch (UnauthorizedAccessException)
+            {
+                Hecton8.Core.H8Debug.LogWarning("[SHINOBU_46] audio_stem_rules.csv parse failed.");
             }
         }
 

@@ -39,6 +39,34 @@ namespace Hecton8.Power
         private static float s_pendingMaxChargeRate = BatteryChargerLogisticsConstants.DefaultMaxChargeRate01PerSecond;
         private static float s_pendingEfficiencyExponent = BatteryChargerLogisticsConstants.DefaultEfficiencyExponent;
         private static float s_pendingQualityOverride = -1f;
+        private static readonly ulong TuningMutationGuardMask =
+            MutationGuardBit(BatteryChargerLogisticsBufferIds.Tuning);
+        private static readonly ulong ProfileImportMutationGuardMask =
+            MutationGuardBit(BatteryChargerLogisticsBufferIds.Profiles);
+        private static readonly ulong CsvImportMutationGuardMask =
+            MutationGuardBit(BatteryChargerLogisticsBufferIds.CsvScratch) |
+            MutationGuardBit(BatteryChargerLogisticsBufferIds.Profiles);
+        private static readonly ulong LinkMutationGuardMask =
+            MutationGuardBit(BatteryChargerLogisticsBufferIds.Links) |
+            MutationGuardBit(BatteryChargerLogisticsBufferIds.LinkAup) |
+            MutationGuardBit(BatteryChargerLogisticsBufferIds.ExpectedPowerNodeHashes) |
+            MutationGuardBit(BatteryChargerLogisticsBufferIds.VisualStates);
+        private static readonly ulong LinkMutationWithPowerNodesGuardMask =
+            LinkMutationGuardMask |
+            MutationGuardBit(PowerGridBufferIds.Nodes);
+        private static readonly ulong JobMutationGuardMask =
+            LinkMutationGuardMask |
+            MutationGuardBit(BatteryChargerLogisticsBufferIds.MockInventorySlots) |
+            MutationGuardBit(BufferID.ShinobuInventorySlots) |
+            MutationGuardBit(PowerGridBufferIds.Nodes) |
+            MutationGuardBit(BatteryChargerLogisticsBufferIds.AtomicCounters) |
+            MutationGuardBit(BatteryChargerLogisticsBufferIds.Tuning);
+        private static readonly ulong MockGenerationMutationGuardMask =
+            LinkMutationGuardMask |
+            MutationGuardBit(BatteryChargerLogisticsBufferIds.MockInventorySlots) |
+            MutationGuardBit(PowerGridBufferIds.Nodes) |
+            MutationGuardBit(PowerGridBufferIds.NodeAup) |
+            MutationGuardBit(BatteryChargerLogisticsBufferIds.Tuning);
 
         private readonly string _dumpPath;
         private readonly string _csvPath;
@@ -66,8 +94,8 @@ namespace Hecton8.Power
         private bool _usingMockInventorySlots;
         private bool _jobLockedMockInventorySlots;
         private bool _dumpWrittenThisFault;
-        private int _lockedBufferMask;
-        private int _mockLockedBufferMask;
+        private ulong _lockedBufferMask;
+        private ulong _mockLockedBufferMask;
         private int _activeCount;
         private int _powerNodeCount;
         private int _mockPendingCount;
@@ -192,7 +220,7 @@ namespace Hecton8.Power
             if (runtime._usingMockInventorySlots)
                 runtime.DropMockNetworkForLiveRegistration();
 
-            if (!runtime.TryLockLinkMutationBuffers(vault, includePowerNodes: true, out int lockMask))
+            if (!runtime.TryLockLinkMutationBuffers(vault, includePowerNodes: true, out ulong lockMask))
                 return false;
 
             try
@@ -269,7 +297,7 @@ namespace Hecton8.Power
                 return;
 
             IDataVault vault = runtime._vault;
-            if (vault == null || !runtime.TryLockLinkMutationBuffers(vault, includePowerNodes: false, out int lockMask))
+            if (vault == null || !runtime.TryLockLinkMutationBuffers(vault, includePowerNodes: false, out ulong lockMask))
                 return;
 
             try
@@ -315,7 +343,7 @@ namespace Hecton8.Power
                 return 0;
 
             IDataVault vault = runtime._vault;
-            if (vault == null || !runtime.TryLockLinkMutationBuffers(vault, includePowerNodes: false, out int lockMask))
+            if (vault == null || !runtime.TryLockLinkMutationBuffers(vault, includePowerNodes: false, out ulong lockMask))
                 return 0;
 
             try
@@ -467,7 +495,7 @@ namespace Hecton8.Power
                 return true;
 
             IDataVault vault = runtime._vault;
-            if (vault == null || !vault.TryLockBuffer(BatteryChargerLogisticsBufferIds.Tuning, SystemID.Power))
+            if (vault == null || !vault.TryAcquireMutationGuard(TuningMutationGuardMask))
             {
                 return true;
             }
@@ -485,7 +513,7 @@ namespace Hecton8.Power
             }
             finally
             {
-                vault.TryUnlockBuffer(BatteryChargerLogisticsBufferIds.Tuning, SystemID.Power);
+                vault.ReleaseMutationGuard(TuningMutationGuardMask);
             }
         }
 
@@ -500,7 +528,7 @@ namespace Hecton8.Power
             if (vault == null || !runtime.EnsureVaultState(vault, requireDefaults: false) ||
                 runtime._simulationScheduled ||
                 runtime._mockGenerationScheduled ||
-                !vault.TryLockBuffer(BatteryChargerLogisticsBufferIds.Profiles, SystemID.Power))
+                !vault.TryAcquireMutationGuard(ProfileImportMutationGuardMask))
             {
                 return false;
             }
@@ -514,7 +542,7 @@ namespace Hecton8.Power
             }
             finally
             {
-                vault.TryUnlockBuffer(BatteryChargerLogisticsBufferIds.Profiles, SystemID.Power);
+                vault.ReleaseMutationGuard(ProfileImportMutationGuardMask);
             }
         }
 #endif
@@ -611,15 +639,13 @@ namespace Hecton8.Power
             Application.quitting -= ShutdownActive;
             if (_simulationScheduled)
             {
-                // Teardown is the only legal forced completion window for the scheduled charge kernel.
-                DispatcherJobFence.TryComplete(ref _simulationHandle, forceComplete: true);
+                ForceCompleteInPostSimulationWindow(ref _simulationHandle);
                 _simulationScheduled = false;
             }
 
             if (_mockGenerationScheduled)
             {
-                // Teardown is the only legal forced completion window for the cold mock hydration job.
-                DispatcherJobFence.TryComplete(ref _mockGenerationHandle, forceComplete: true);
+                ForceCompleteInPostSimulationWindow(ref _mockGenerationHandle);
                 _mockGenerationScheduled = false;
             }
 
@@ -738,8 +764,8 @@ namespace Hecton8.Power
             if (!_hasPendingVaultRebind ||
                 _simulationScheduled ||
                 _mockGenerationScheduled ||
-                _lockedBufferMask != 0 ||
-                _mockLockedBufferMask != 0)
+                _lockedBufferMask != 0UL ||
+                _mockLockedBufferMask != 0UL)
             {
                 return;
             }
@@ -821,63 +847,71 @@ namespace Hecton8.Power
             if (!TryLockJobBuffers(vault))
                 return dependsOn;
 
-            if (!TryResolveSimulationBuffers(
-                    out NativeArray<ChargerLinkDTO> links,
-                    out NativeArray<double3> linkAups,
-                    out NativeArray<uint> expectedHashes,
-                    out NativeArray<ChargerVisualStateDTO> visuals,
-                    out NativeArray<InventorySlotDTO> inventorySlots,
-                    out NativeArray<PowerNodeDTO> powerNodes,
-                    out NativeArray<ChargerTuningDTO> tuning,
-                    out NativeArray<ChargerAtomicCountersDTO> counters))
+            bool keepJobGuard = false;
+            try
             {
-                UnlockJobBuffers();
-                return dependsOn;
+                if (!TryResolveSimulationBuffers(
+                        out NativeArray<ChargerLinkDTO> links,
+                        out NativeArray<double3> linkAups,
+                        out NativeArray<uint> expectedHashes,
+                        out NativeArray<ChargerVisualStateDTO> visuals,
+                        out NativeArray<InventorySlotDTO> inventorySlots,
+                        out NativeArray<PowerNodeDTO> powerNodes,
+                        out NativeArray<ChargerTuningDTO> tuning,
+                        out NativeArray<ChargerAtomicCountersDTO> counters))
+                {
+                    return dependsOn;
+                }
+
+                int linkCount = math.clamp(_activeCount, 0, math.min(links.Length, math.min(linkAups.Length, math.min(expectedHashes.Length, visuals.Length))));
+                if (linkCount <= 0)
+                {
+                    _authorityAccumulator = 0f;
+                    _lastDeltaSeconds = 0f;
+                    return dependsOn;
+                }
+
+                _lastDeltaSeconds = integrationDt;
+                _authorityAccumulator = math.max(0f, _authorityAccumulator - integrationDt);
+                ChargerTuningDTO tune = tuning.Length > 0 ? tuning[0] : DefaultTuning();
+                long start = Stopwatch.GetTimestamp();
+                JobHandle handle = new ClearChargerCountersJob
+                {
+                    Counters = counters
+                }.Schedule(dependsOn);
+
+                ExecuteBatteryChargingJob job = new ExecuteBatteryChargingJob
+                {
+                    Links = (ChargerLinkDTO*)NativeArrayUnsafeUtility.GetUnsafePtr(links),
+                    LinkAup = (double3*)NativeArrayUnsafeUtility.GetUnsafeReadOnlyPtr(linkAups),
+                    ExpectedPowerNodeHashes = (uint*)NativeArrayUnsafeUtility.GetUnsafeReadOnlyPtr(expectedHashes),
+                    VisualStates = (ChargerVisualStateDTO*)NativeArrayUnsafeUtility.GetUnsafePtr(visuals),
+                    InventorySlots = (InventorySlotDTO*)NativeArrayUnsafeUtility.GetUnsafePtr(inventorySlots),
+                    PowerNodes = (PowerNodeDTO*)NativeArrayUnsafeUtility.GetUnsafePtr(powerNodes),
+                    Counters = (ChargerAtomicCountersDTO*)NativeArrayUnsafeUtility.GetUnsafePtr(counters),
+                    LinkCount = linkCount,
+                    InventorySlotCount = inventorySlots.Length,
+                    PowerNodeCount = math.min(powerNodes.Length, math.max(1, _powerNodeCount)),
+                    CounterLaneCount = math.max(1, math.min(counters.Length, BatteryChargerLogisticsConstants.CounterLaneCount)),
+                    DeltaSeconds = integrationDt,
+                    GlobalMaxChargeRate = tune.GlobalMaxChargeRate,
+                    EfficiencyCurveExponent = tune.EfficiencyCurveExponent,
+                    BatteryCapacity = tune.BatteryCapacity
+                };
+                handle = job.Schedule(linkCount, 64, handle);
+
+                _simulationHandle = handle;
+                _simulationScheduled = true;
+                _jobScheduleTimestamp = start;
+                H8Memory.RegisterActiveJob(SystemID.Power, handle);
+                keepJobGuard = true;
+                return handle;
             }
-
-            int linkCount = math.clamp(_activeCount, 0, math.min(links.Length, math.min(linkAups.Length, math.min(expectedHashes.Length, visuals.Length))));
-            if (linkCount <= 0)
+            finally
             {
-                _authorityAccumulator = 0f;
-                _lastDeltaSeconds = 0f;
-                UnlockJobBuffers();
-                return dependsOn;
+                if (!keepJobGuard)
+                    UnlockJobBuffers();
             }
-
-            _lastDeltaSeconds = integrationDt;
-            _authorityAccumulator = math.max(0f, _authorityAccumulator - integrationDt);
-            ChargerTuningDTO tune = tuning.Length > 0 ? tuning[0] : DefaultTuning();
-            long start = Stopwatch.GetTimestamp();
-            JobHandle handle = new ClearChargerCountersJob
-            {
-                Counters = counters
-            }.Schedule(dependsOn);
-
-            ExecuteBatteryChargingJob job = new ExecuteBatteryChargingJob
-            {
-                Links = (ChargerLinkDTO*)NativeArrayUnsafeUtility.GetUnsafePtr(links),
-                LinkAup = (double3*)NativeArrayUnsafeUtility.GetUnsafeReadOnlyPtr(linkAups),
-                ExpectedPowerNodeHashes = (uint*)NativeArrayUnsafeUtility.GetUnsafeReadOnlyPtr(expectedHashes),
-                VisualStates = (ChargerVisualStateDTO*)NativeArrayUnsafeUtility.GetUnsafePtr(visuals),
-                InventorySlots = (InventorySlotDTO*)NativeArrayUnsafeUtility.GetUnsafePtr(inventorySlots),
-                PowerNodes = (PowerNodeDTO*)NativeArrayUnsafeUtility.GetUnsafePtr(powerNodes),
-                Counters = (ChargerAtomicCountersDTO*)NativeArrayUnsafeUtility.GetUnsafePtr(counters),
-                LinkCount = linkCount,
-                InventorySlotCount = inventorySlots.Length,
-                PowerNodeCount = math.min(powerNodes.Length, math.max(1, _powerNodeCount)),
-                CounterLaneCount = math.max(1, math.min(counters.Length, BatteryChargerLogisticsConstants.CounterLaneCount)),
-                DeltaSeconds = integrationDt,
-                GlobalMaxChargeRate = tune.GlobalMaxChargeRate,
-                EfficiencyCurveExponent = tune.EfficiencyCurveExponent,
-                BatteryCapacity = tune.BatteryCapacity
-            };
-            handle = job.Schedule(linkCount, 64, handle);
-
-            _simulationHandle = handle;
-            _simulationScheduled = true;
-            _jobScheduleTimestamp = start;
-            H8Memory.RegisterActiveJob(SystemID.Power, handle);
-            return handle;
         }
 
         private void PostSimulationTick(in DispatcherTimingDTO timing)
@@ -895,31 +929,48 @@ namespace Hecton8.Power
             _simulationScheduled = false;
             _lastFenceElapsedMicroseconds = ElapsedMicroseconds(_jobScheduleTimestamp);
 
-            if (Resolve(in _handles.AtomicCounters, out NativeArray<ChargerAtomicCountersDTO> counters) &&
-                Resolve(in _handles.TelemetryRing, out NativeArray<ChargerTelemetryEntry> telemetry) &&
-                Resolve(in _handles.TelemetryCursor, out NativeArray<uint> cursor) &&
-                counters.Length > 0 &&
-                telemetry.Length > 0 &&
-                cursor.Length > 0)
+            bool emitHum = false;
+            double3 humAup = default;
+            ChargerAtomicCountersDTO humAggregate = default;
+            try
             {
-                ChargerAtomicCountersDTO aggregate = AggregateCounters(counters);
-                WriteTelemetryFrame(telemetry, cursor, aggregate);
-                TryEmitHumSignal(aggregate);
-                if ((_lastFenceElapsedMicroseconds > BatteryChargerLogisticsConstants.FaultDumpFenceElapsedThresholdMicroseconds ||
-                     (aggregate.FaultFlags & BatteryChargerLogisticsConstants.TelemetryFlagNaN) != 0u) &&
-                    !_dumpWrittenThisFault)
+                if (Resolve(in _handles.AtomicCounters, out NativeArray<ChargerAtomicCountersDTO> counters) &&
+                    Resolve(in _handles.TelemetryRing, out NativeArray<ChargerTelemetryEntry> telemetry) &&
+                    Resolve(in _handles.TelemetryCursor, out NativeArray<uint> cursor) &&
+                    counters.Length > 0 &&
+                    telemetry.Length > 0 &&
+                    cursor.Length > 0)
                 {
-                    WriteDump(telemetry, cursor);
-                }
+                    ChargerAtomicCountersDTO aggregate = AggregateCounters(counters);
+                    WriteTelemetryFrame(telemetry, cursor, aggregate);
+                    if (TryResolveHumSignalAup(aggregate, out humAup))
+                    {
+                        humAggregate = aggregate;
+                        emitHum = true;
+                    }
 
-                if (_lastFenceElapsedMicroseconds <= BatteryChargerLogisticsConstants.FaultDumpFenceElapsedThresholdMicroseconds &&
-                    (aggregate.FaultFlags & BatteryChargerLogisticsConstants.TelemetryFlagNaN) == 0u)
-                {
-                    _dumpWrittenThisFault = false;
+                    if ((_lastFenceElapsedMicroseconds > BatteryChargerLogisticsConstants.FaultDumpFenceElapsedThresholdMicroseconds ||
+                         (aggregate.FaultFlags & BatteryChargerLogisticsConstants.TelemetryFlagNaN) != 0u) &&
+                        !_dumpWrittenThisFault)
+                    {
+                        WriteDump(telemetry, cursor);
+                    }
+
+                    if (_lastFenceElapsedMicroseconds <= BatteryChargerLogisticsConstants.FaultDumpFenceElapsedThresholdMicroseconds &&
+                        (aggregate.FaultFlags & BatteryChargerLogisticsConstants.TelemetryFlagNaN) == 0u)
+                    {
+                        _dumpWrittenThisFault = false;
+                    }
                 }
             }
+            finally
+            {
+                UnlockJobBuffers();
+            }
 
-            UnlockJobBuffers();
+            if (emitHum)
+                EmitHumSignal(humAggregate, humAup);
+
             ApplyPendingVaultRebindIfIdle();
         }
 
@@ -1007,12 +1058,18 @@ namespace Hecton8.Power
                         return false;
 
                     _mockGenerationScheduled = false;
-                    UnlockMockBuffers();
-                    _activeCount = _mockPendingCount;
-                    _powerNodeCount = _mockPendingPowerNodeCount;
-                    _defaultsInitialized = true;
-                    _usingMockInventorySlots = true;
-                    _visualDirty = true;
+                    try
+                    {
+                        _activeCount = _mockPendingCount;
+                        _powerNodeCount = _mockPendingPowerNodeCount;
+                        _defaultsInitialized = true;
+                        _usingMockInventorySlots = true;
+                        _visualDirty = true;
+                    }
+                    finally
+                    {
+                        UnlockMockBuffers();
+                    }
 
                     if (_hasPendingVaultRebind)
                     {
@@ -1054,49 +1111,55 @@ namespace Hecton8.Power
             if (_simulationScheduled || _mockGenerationScheduled || !TryLockMockBuffers(vault))
                 return;
 
-            if (!Resolve(in _handles.Links, out NativeArray<ChargerLinkDTO> links) ||
-                !Resolve(in _handles.LinkAup, out NativeArray<double3> linkAups) ||
-                !Resolve(in _handles.ExpectedPowerNodeHashes, out NativeArray<uint> expectedHashes) ||
-                !Resolve(in _handles.VisualStates, out NativeArray<ChargerVisualStateDTO> visuals) ||
-                !Resolve(in _handles.Tuning, out NativeArray<ChargerTuningDTO> tuning) ||
-                !Resolve(in _handles.MockInventorySlots, out NativeArray<InventorySlotDTO> inventorySlots) ||
-                !Resolve(in _powerHandles.Nodes, out NativeArray<PowerNodeDTO> powerNodes) ||
-                !Resolve(in _powerHandles.NodeAup, out NativeArray<double3> nodeAups))
+            bool keepMockGuard = false;
+            try
             {
-                UnlockMockBuffers();
-                return;
+                if (!Resolve(in _handles.Links, out NativeArray<ChargerLinkDTO> links) ||
+                    !Resolve(in _handles.LinkAup, out NativeArray<double3> linkAups) ||
+                    !Resolve(in _handles.ExpectedPowerNodeHashes, out NativeArray<uint> expectedHashes) ||
+                    !Resolve(in _handles.VisualStates, out NativeArray<ChargerVisualStateDTO> visuals) ||
+                    !Resolve(in _handles.Tuning, out NativeArray<ChargerTuningDTO> tuning) ||
+                    !Resolve(in _handles.MockInventorySlots, out NativeArray<InventorySlotDTO> inventorySlots) ||
+                    !Resolve(in _powerHandles.Nodes, out NativeArray<PowerNodeDTO> powerNodes) ||
+                    !Resolve(in _powerHandles.NodeAup, out NativeArray<double3> nodeAups))
+                {
+                    return;
+                }
+
+                if (tuning.Length > 0)
+                    tuning[0] = DefaultTuning();
+
+                int powerNodeCount = math.min(powerNodes.Length, nodeAups.IsCreated ? nodeAups.Length : powerNodes.Length);
+                int linkWindow = math.min(links.Length, math.min(linkAups.Length, math.min(expectedHashes.Length, visuals.Length)));
+                int count = math.min(BatteryChargerLogisticsConstants.DefaultLinkCapacity, math.min(linkWindow, inventorySlots.Length));
+                if (count <= 0 || powerNodeCount <= 0)
+                    return;
+
+                GenerateMockChargerNetworkJob job = new GenerateMockChargerNetworkJob
+                {
+                    Links = links,
+                    LinkAup = linkAups,
+                    ExpectedPowerNodeHashes = expectedHashes,
+                    VisualStates = visuals,
+                    InventorySlots = inventorySlots,
+                    PowerNodes = powerNodes,
+                    PowerNodeAup = nodeAups,
+                    LinkCount = count,
+                    BaseAup = HectonFloatingOrigin.CurrentTotalOffsetDouble
+                };
+                JobHandle mockHandle = job.Schedule(count, 64);
+                H8Memory.RegisterActiveJob(SystemID.Power, mockHandle);
+                _mockGenerationHandle = mockHandle;
+                _mockGenerationScheduled = true;
+                _mockPendingCount = count;
+                _mockPendingPowerNodeCount = math.min(powerNodeCount, BatteryChargerLogisticsConstants.DefaultNodeCapacity);
+                keepMockGuard = true;
             }
-
-            if (tuning.Length > 0)
-                tuning[0] = DefaultTuning();
-
-            int powerNodeCount = math.min(powerNodes.Length, nodeAups.IsCreated ? nodeAups.Length : powerNodes.Length);
-            int linkWindow = math.min(links.Length, math.min(linkAups.Length, math.min(expectedHashes.Length, visuals.Length)));
-            int count = math.min(BatteryChargerLogisticsConstants.DefaultLinkCapacity, math.min(linkWindow, inventorySlots.Length));
-            if (count <= 0 || powerNodeCount <= 0)
+            finally
             {
-                UnlockMockBuffers();
-                return;
+                if (!keepMockGuard)
+                    UnlockMockBuffers();
             }
-
-            GenerateMockChargerNetworkJob job = new GenerateMockChargerNetworkJob
-            {
-                Links = links,
-                LinkAup = linkAups,
-                ExpectedPowerNodeHashes = expectedHashes,
-                VisualStates = visuals,
-                InventorySlots = inventorySlots,
-                PowerNodes = powerNodes,
-                PowerNodeAup = nodeAups,
-                LinkCount = count,
-                BaseAup = HectonFloatingOrigin.CurrentTotalOffsetDouble
-            };
-            JobHandle mockHandle = job.Schedule(count, 64);
-            H8Memory.RegisterActiveJob(SystemID.Power, mockHandle);
-            _mockGenerationHandle = mockHandle;
-            _mockGenerationScheduled = true;
-            _mockPendingCount = count;
-            _mockPendingPowerNodeCount = math.min(powerNodeCount, BatteryChargerLogisticsConstants.DefaultNodeCapacity);
         }
 
         private static bool AllowEmergencyMockNetwork()
@@ -1128,7 +1191,7 @@ namespace Hecton8.Power
                 return;
 
             IDataVault vault = _vault;
-            if (vault == null || !vault.TryLockBuffer(BatteryChargerLogisticsBufferIds.Tuning, SystemID.Power))
+            if (vault == null || !vault.TryAcquireMutationGuard(TuningMutationGuardMask))
                 return;
 
             try
@@ -1142,7 +1205,7 @@ namespace Hecton8.Power
             }
             finally
             {
-                vault.TryUnlockBuffer(BatteryChargerLogisticsBufferIds.Tuning, SystemID.Power);
+                vault.ReleaseMutationGuard(TuningMutationGuardMask);
             }
         }
 
@@ -1304,132 +1367,103 @@ namespace Hecton8.Power
 
         private bool TryLockJobBuffers(IDataVault vault)
         {
-            if (_lockedBufferMask != 0)
+            if (_lockedBufferMask != 0UL)
                 return false;
 
-            if (!TryLock(vault, BatteryChargerLogisticsBufferIds.Links, 1 << 0)) { UnlockJobBuffers(); return false; }
-            if (!TryLock(vault, BatteryChargerLogisticsBufferIds.LinkAup, 1 << 1)) { UnlockJobBuffers(); return false; }
-            if (!TryLock(vault, BatteryChargerLogisticsBufferIds.ExpectedPowerNodeHashes, 1 << 2)) { UnlockJobBuffers(); return false; }
-            if (!TryLock(vault, BatteryChargerLogisticsBufferIds.VisualStates, 1 << 3)) { UnlockJobBuffers(); return false; }
+            if (vault == null ||
+                vault.IsCompactionFenceActive ||
+                !vault.TryAcquireMutationGuard(JobMutationGuardMask))
+            {
+                return false;
+            }
+
+            _lockedBufferMask = JobMutationGuardMask;
             _jobLockedMockInventorySlots = _usingMockInventorySlots;
-            BufferID inventoryBuffer = _jobLockedMockInventorySlots ? BatteryChargerLogisticsBufferIds.MockInventorySlots : BufferID.ShinobuInventorySlots;
-            if (!TryLock(vault, inventoryBuffer, 1 << 4)) { UnlockJobBuffers(); return false; }
-            if (!TryLock(vault, PowerGridBufferIds.Nodes, 1 << 5)) { UnlockJobBuffers(); return false; }
-            if (!TryLock(vault, BatteryChargerLogisticsBufferIds.AtomicCounters, 1 << 6)) { UnlockJobBuffers(); return false; }
-            if (!TryLock(vault, BatteryChargerLogisticsBufferIds.Tuning, 1 << 7)) { UnlockJobBuffers(); return false; }
             return true;
         }
 
-        private bool TryLockLinkMutationBuffers(IDataVault vault, bool includePowerNodes, out int lockMask)
+        private bool TryLockLinkMutationBuffers(IDataVault vault, bool includePowerNodes, out ulong lockMask)
         {
-            lockMask = 0;
-            if (!TryLockMutationBuffer(vault, BatteryChargerLogisticsBufferIds.Links, 1 << 0, ref lockMask)) { UnlockLinkMutationBuffers(vault, lockMask); return false; }
-            if (!TryLockMutationBuffer(vault, BatteryChargerLogisticsBufferIds.LinkAup, 1 << 1, ref lockMask)) { UnlockLinkMutationBuffers(vault, lockMask); return false; }
-            if (!TryLockMutationBuffer(vault, BatteryChargerLogisticsBufferIds.ExpectedPowerNodeHashes, 1 << 2, ref lockMask)) { UnlockLinkMutationBuffers(vault, lockMask); return false; }
-            if (!TryLockMutationBuffer(vault, BatteryChargerLogisticsBufferIds.VisualStates, 1 << 3, ref lockMask)) { UnlockLinkMutationBuffers(vault, lockMask); return false; }
-            if (includePowerNodes && !TryLockMutationBuffer(vault, PowerGridBufferIds.Nodes, 1 << 4, ref lockMask)) { UnlockLinkMutationBuffers(vault, lockMask); return false; }
-            return true;
-        }
-
-        private static bool TryLockMutationBuffer(IDataVault vault, BufferID id, int bit, ref int lockMask)
-        {
-            if (vault == null || !vault.TryLockBuffer(id, SystemID.Power))
+            lockMask = includePowerNodes ? LinkMutationWithPowerNodesGuardMask : LinkMutationGuardMask;
+            if (vault == null ||
+                lockMask == 0UL ||
+                vault.IsCompactionFenceActive ||
+                !vault.TryAcquireMutationGuard(lockMask))
+            {
+                lockMask = 0UL;
                 return false;
+            }
 
-            lockMask |= bit;
             return true;
         }
 
-        private void UnlockLinkMutationBuffers(IDataVault vault, int lockMask)
+        private void UnlockLinkMutationBuffers(IDataVault vault, ulong lockMask)
         {
-            if (vault == null || lockMask == 0)
+            if (vault == null || lockMask == 0UL)
                 return;
 
-            if ((lockMask & (1 << 4)) != 0) vault.TryUnlockBuffer(PowerGridBufferIds.Nodes, SystemID.Power);
-            if ((lockMask & (1 << 3)) != 0) vault.TryUnlockBuffer(BatteryChargerLogisticsBufferIds.VisualStates, SystemID.Power);
-            if ((lockMask & (1 << 2)) != 0) vault.TryUnlockBuffer(BatteryChargerLogisticsBufferIds.ExpectedPowerNodeHashes, SystemID.Power);
-            if ((lockMask & (1 << 1)) != 0) vault.TryUnlockBuffer(BatteryChargerLogisticsBufferIds.LinkAup, SystemID.Power);
-            if ((lockMask & 1) != 0) vault.TryUnlockBuffer(BatteryChargerLogisticsBufferIds.Links, SystemID.Power);
+            vault.ReleaseMutationGuard(lockMask);
         }
 
         private bool TryLockMockBuffers(IDataVault vault)
         {
-            if (_mockLockedBufferMask != 0)
+            if (_mockLockedBufferMask != 0UL)
                 return false;
 
-            if (!TryLockMockBuffer(vault, BatteryChargerLogisticsBufferIds.Links, 1 << 0)) { UnlockMockBuffers(); return false; }
-            if (!TryLockMockBuffer(vault, BatteryChargerLogisticsBufferIds.LinkAup, 1 << 1)) { UnlockMockBuffers(); return false; }
-            if (!TryLockMockBuffer(vault, BatteryChargerLogisticsBufferIds.ExpectedPowerNodeHashes, 1 << 2)) { UnlockMockBuffers(); return false; }
-            if (!TryLockMockBuffer(vault, BatteryChargerLogisticsBufferIds.VisualStates, 1 << 3)) { UnlockMockBuffers(); return false; }
-            if (!TryLockMockBuffer(vault, BatteryChargerLogisticsBufferIds.MockInventorySlots, 1 << 4)) { UnlockMockBuffers(); return false; }
-            if (!TryLockMockBuffer(vault, PowerGridBufferIds.Nodes, 1 << 5)) { UnlockMockBuffers(); return false; }
-            if (!TryLockMockBuffer(vault, PowerGridBufferIds.NodeAup, 1 << 6)) { UnlockMockBuffers(); return false; }
-            if (!TryLockMockBuffer(vault, BatteryChargerLogisticsBufferIds.Tuning, 1 << 7)) { UnlockMockBuffers(); return false; }
-            return true;
-        }
-
-        private bool TryLockMockBuffer(IDataVault vault, BufferID id, int bit)
-        {
-            if (vault == null || !vault.TryLockBuffer(id, SystemID.Power))
+            if (vault == null ||
+                vault.IsCompactionFenceActive ||
+                !vault.TryAcquireMutationGuard(MockGenerationMutationGuardMask))
+            {
                 return false;
+            }
 
-            _mockLockedBufferMask |= bit;
+            _mockLockedBufferMask = MockGenerationMutationGuardMask;
             return true;
         }
 
         private void UnlockMockBuffers()
         {
             IDataVault vault = _vault;
-            if (vault == null || _mockLockedBufferMask == 0)
+            ulong lockedMask = _mockLockedBufferMask;
+            _mockLockedBufferMask = 0UL;
+            if (vault == null || lockedMask == 0UL)
             {
-                _mockLockedBufferMask = 0;
                 return;
             }
 
-            if ((_mockLockedBufferMask & (1 << 7)) != 0) vault.TryUnlockBuffer(BatteryChargerLogisticsBufferIds.Tuning, SystemID.Power);
-            if ((_mockLockedBufferMask & (1 << 6)) != 0) vault.TryUnlockBuffer(PowerGridBufferIds.NodeAup, SystemID.Power);
-            if ((_mockLockedBufferMask & (1 << 5)) != 0) vault.TryUnlockBuffer(PowerGridBufferIds.Nodes, SystemID.Power);
-            if ((_mockLockedBufferMask & (1 << 4)) != 0) vault.TryUnlockBuffer(BatteryChargerLogisticsBufferIds.MockInventorySlots, SystemID.Power);
-            if ((_mockLockedBufferMask & (1 << 3)) != 0) vault.TryUnlockBuffer(BatteryChargerLogisticsBufferIds.VisualStates, SystemID.Power);
-            if ((_mockLockedBufferMask & (1 << 2)) != 0) vault.TryUnlockBuffer(BatteryChargerLogisticsBufferIds.ExpectedPowerNodeHashes, SystemID.Power);
-            if ((_mockLockedBufferMask & (1 << 1)) != 0) vault.TryUnlockBuffer(BatteryChargerLogisticsBufferIds.LinkAup, SystemID.Power);
-            if ((_mockLockedBufferMask & 1) != 0) vault.TryUnlockBuffer(BatteryChargerLogisticsBufferIds.Links, SystemID.Power);
-            _mockLockedBufferMask = 0;
-        }
-
-        private bool TryLock(IDataVault vault, BufferID id, int bit)
-        {
-            if (vault == null || !vault.TryLockBuffer(id, SystemID.Power))
-                return false;
-
-            _lockedBufferMask |= bit;
-            return true;
+            vault.ReleaseMutationGuard(lockedMask);
         }
 
         private void UnlockJobBuffers()
         {
             IDataVault vault = _vault;
-            if (vault == null || _lockedBufferMask == 0)
+            ulong lockedMask = _lockedBufferMask;
+            _lockedBufferMask = 0UL;
+            _jobLockedMockInventorySlots = false;
+            if (vault == null || lockedMask == 0UL)
             {
-                _lockedBufferMask = 0;
-                _jobLockedMockInventorySlots = false;
                 return;
             }
 
-            if ((_lockedBufferMask & (1 << 7)) != 0) vault.TryUnlockBuffer(BatteryChargerLogisticsBufferIds.Tuning, SystemID.Power);
-            if ((_lockedBufferMask & (1 << 6)) != 0) vault.TryUnlockBuffer(BatteryChargerLogisticsBufferIds.AtomicCounters, SystemID.Power);
-            if ((_lockedBufferMask & (1 << 5)) != 0) vault.TryUnlockBuffer(PowerGridBufferIds.Nodes, SystemID.Power);
-            if ((_lockedBufferMask & (1 << 4)) != 0)
+            vault.ReleaseMutationGuard(lockedMask);
+        }
+
+        private static bool ForceCompleteInPostSimulationWindow(ref JobHandle handle)
+        {
+            DispatcherJobFence.BeginPostSimulationSwapWindow();
+            try
             {
-                BufferID inventoryBuffer = _jobLockedMockInventorySlots ? BatteryChargerLogisticsBufferIds.MockInventorySlots : BufferID.ShinobuInventorySlots;
-                vault.TryUnlockBuffer(inventoryBuffer, SystemID.Power);
+                return DispatcherJobFence.TryComplete(ref handle, forceComplete: true);
             }
-            if ((_lockedBufferMask & (1 << 3)) != 0) vault.TryUnlockBuffer(BatteryChargerLogisticsBufferIds.VisualStates, SystemID.Power);
-            if ((_lockedBufferMask & (1 << 2)) != 0) vault.TryUnlockBuffer(BatteryChargerLogisticsBufferIds.ExpectedPowerNodeHashes, SystemID.Power);
-            if ((_lockedBufferMask & (1 << 1)) != 0) vault.TryUnlockBuffer(BatteryChargerLogisticsBufferIds.LinkAup, SystemID.Power);
-            if ((_lockedBufferMask & 1) != 0) vault.TryUnlockBuffer(BatteryChargerLogisticsBufferIds.Links, SystemID.Power);
-            _lockedBufferMask = 0;
-            _jobLockedMockInventorySlots = false;
+            finally
+            {
+                DispatcherJobFence.EndPostSimulationSwapWindow();
+            }
+        }
+
+        private static ulong MutationGuardBit(BufferID bufferId)
+        {
+            return 1UL << (unchecked((int)(uint)(int)bufferId) & 31);
         }
 
         private void ExtendPowerNodeWindowForLink(uint nodeIndex)
@@ -1501,21 +1535,27 @@ namespace Hecton8.Power
             cursor[0] = unchecked(cursor[0] + 1u);
         }
 
-        private void TryEmitHumSignal(ChargerAtomicCountersDTO aggregate)
+        private bool TryResolveHumSignalAup(ChargerAtomicCountersDTO aggregate, out double3 aup)
         {
+            aup = default;
             if (aggregate.ActiveLinks <= 0 || aggregate.TotalEnergyMilli <= 0 ||
                 !Resolve(in _handles.LinkAup, out NativeArray<double3> linkAups) ||
                 !linkAups.IsCreated ||
                 linkAups.Length == 0)
             {
-                return;
+                return false;
             }
 
             int linkIndex = (int)aggregate.LastActiveLink;
             if ((uint)linkIndex >= (uint)linkAups.Length)
-                return;
+                return false;
 
-            double3 aup = linkAups[linkIndex];
+            aup = linkAups[linkIndex];
+            return true;
+        }
+
+        private static void EmitHumSignal(ChargerAtomicCountersDTO aggregate, double3 aup)
+        {
             AcousticPingSignal signal = default;
             if (!TryWriteAbsoluteAupFields(ref signal, aup))
                 return;
@@ -1630,16 +1670,16 @@ namespace Hecton8.Power
                 return;
 
             IDataVault vault = _vault;
-            if (vault == null || !vault.TryLockBuffer(BatteryChargerLogisticsBufferIds.CsvScratch, SystemID.Power))
+            if (vault == null)
                 return;
 
-            bool profilesLocked = false;
+            if (!vault.TryAcquireMutationGuard(CsvImportMutationGuardMask))
+            {
+                return;
+            }
+
             try
             {
-                if (!vault.TryLockBuffer(BatteryChargerLogisticsBufferIds.Profiles, SystemID.Power))
-                    return;
-
-                profilesLocked = true;
                 if (!Resolve(in _handles.CsvScratch, out NativeArray<byte> scratch) ||
                     !Resolve(in _handles.Profiles, out NativeArray<ChargerProfileDTO> profiles) ||
                     !scratch.IsCreated ||
@@ -1671,9 +1711,7 @@ namespace Hecton8.Power
             }
             finally
             {
-                if (profilesLocked)
-                    vault.TryUnlockBuffer(BatteryChargerLogisticsBufferIds.Profiles, SystemID.Power);
-                vault.TryUnlockBuffer(BatteryChargerLogisticsBufferIds.CsvScratch, SystemID.Power);
+                vault.ReleaseMutationGuard(CsvImportMutationGuardMask);
             }
         }
 #endif
@@ -1705,7 +1743,7 @@ namespace Hecton8.Power
         private bool SampleQualityWeightUnderTuningLock(IDataVault vault, out float q)
         {
             q = ResolvePendingQualityWeight();
-            if (vault == null || !vault.TryLockBuffer(BatteryChargerLogisticsBufferIds.Tuning, SystemID.Power))
+            if (vault == null || !vault.TryAcquireMutationGuard(TuningMutationGuardMask))
                 return false;
 
             try
@@ -1721,7 +1759,7 @@ namespace Hecton8.Power
             }
             finally
             {
-                vault.TryUnlockBuffer(BatteryChargerLogisticsBufferIds.Tuning, SystemID.Power);
+                vault.ReleaseMutationGuard(TuningMutationGuardMask);
             }
         }
 

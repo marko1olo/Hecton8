@@ -140,6 +140,24 @@ namespace Hecton8.Gameplay
         private IInteractionSignalService _interactionSignalService;
         private IPlayerMovementForceSink _playerMovementForceSink;
         private IToolDurabilityService _toolDurabilityService;
+        private static PlayerTool s_lastSpawnedTool;
+
+        internal static bool TryResolveLastSpawnedTool(GameObject instance, out PlayerTool tool)
+        {
+            tool = s_lastSpawnedTool;
+            return tool != null && ReferenceEquals(tool.gameObject, instance);
+        }
+
+        internal void BindSpawnedPresentationContractsCold(
+            PlayerToolSwimContract swimContract,
+            PlayerTransportFeelContract transportFeelContract)
+        {
+            if (swimContract != null && ReferenceEquals(swimContract.gameObject, gameObject))
+                _swimContract = swimContract;
+
+            if (transportFeelContract != null && ReferenceEquals(transportFeelContract.gameObject, gameObject))
+                _transportFeelContract = transportFeelContract;
+        }
 
         // ══════════════════════════════════════════════════════════
         //  IPoolable
@@ -147,6 +165,7 @@ namespace Hecton8.Gameplay
 
         public virtual void OnSpawn()
         {
+            s_lastSpawnedTool = this;
             if (lifecycleDebugLogging)
                 PublishLifecycleDebug(ToolLifecycleSpawnHash);
             _isEquipped = false;
@@ -161,8 +180,6 @@ namespace Hecton8.Gameplay
             RefreshOperationalToolNameCache();
             CacheRuntimeToolIdsCold();
             CacheToolItemHash();
-            CacheSwimContractCold();
-            CacheTransportFeelContractCold();
             CacheToolRegistryDependenciesCold();
             RegisterDurabilityMirrorCold();
             TryRegisterModularHotSwap();
@@ -175,6 +192,9 @@ namespace Hecton8.Gameplay
 
         public virtual void OnDespawn()
         {
+            if (ReferenceEquals(s_lastSpawnedTool, this))
+                s_lastSpawnedTool = null;
+
             if (lifecycleDebugLogging)
                 PublishLifecycleDebug(ToolLifecycleDespawnHash);
             if (IsEquipped) OnUnequip();
@@ -266,9 +286,6 @@ namespace Hecton8.Gameplay
             _interactionFrameIndex = next != 0u ? next : 1u;
             return _interactionFrameIndex;
         }
-
-        private void CacheSwimContractCold() { if (_swimContract == null) TryGetComponent(out _swimContract); }
-        private void CacheTransportFeelContractCold() { if (_transportFeelContract == null) TryGetComponent(out _transportFeelContract); }
 
         // ══════════════════════════════════════════════════════════
         //  TOOL LIFECYCLE

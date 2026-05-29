@@ -27,11 +27,6 @@ namespace Hecton8.Economy
 
         private static ScrapManager s_activeRuntimeInstance;
 
-        /// <summary>
-        /// Active runtime owner while the gameplay scene is loaded.
-        /// </summary>
-        public static ScrapManager Instance => s_activeRuntimeInstance;
-
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
         private static void ResetStaticState()
         {

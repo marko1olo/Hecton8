@@ -156,8 +156,8 @@ namespace Hecton8.Physics.Editor
 
         private static void GenerateMock()
         {
-            SeaglideHydrodynamicsRuntime runtime = SeaglideHydrodynamicsRuntime.EnsureRuntimeInstance();
-            runtime?.GenerateMockPropulsionRequests();
+            if (SeaglideHydrodynamicsRuntime.TryGetActiveRuntime(out SeaglideHydrodynamicsRuntime runtime))
+                runtime.GenerateMockPropulsionRequests();
         }
 
         private void DrawGraph()

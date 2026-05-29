@@ -433,7 +433,7 @@ namespace Hecton8.World
 
         private void RefreshCullingRegistration()
         {
-            CullingManager manager = CullingManager.Instance;
+            CullingManager manager = GlobalRegistry.Culling;
             if (manager == null)
             {
                 UnregisterCulling();

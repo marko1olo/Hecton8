@@ -1894,6 +1894,30 @@ namespace Hecton8.Core.Memory
         ShinobuNetcodeFuzzerDeliveryTicks = 71894,
         ShinobuNetcodeFuzzerHostDispatcherState = 71895,
         ShinobuNetcodeFuzzerClientDispatcherState = 71896,
+        ToxicOutgassingDensityFront = 72800,
+        ToxicOutgassingDensityBack = 72801,
+        ToxicOutgassingFlowField = 72802,
+        ToxicOutgassingWorldSampler = 72803,
+        ToxicOutgassingSources = 72804,
+        ToxicOutgassingSourceIds = 72805,
+        ToxicOutgassingEntityAups = 72806,
+        ToxicOutgassingEntityIds = 72807,
+        ToxicOutgassingEntityCorrosionTimers = 72808,
+        ToxicOutgassingEntityExposureAccumulators = 72809,
+        ToxicOutgassingExposureSignals = 72810,
+        ToxicOutgassingStatusSignals = 72811,
+        ToxicOutgassingBiolumSignals = 72812,
+        ToxicOutgassingSignalCounters = 72813,
+        ToxicOutgassingTelemetryRing = 72814,
+        ToxicOutgassingTelemetryScratch = 72815,
+        ToxicOutgassingConstants = 72816,
+        ToxicOutgassingCsvBytes = 72817,
+        ToxicOutgassingBinaryProbeBytes = 72818,
+        ToxicOutgassingNanFlags = 72819,
+        ToxicOutgassingDensityMirror = 72820,
+        ToxicOutgassingGridHeader = 72821,
+        ToxicOutgassingCellStatesFront = 72822,
+        ToxicOutgassingCellStatesBack = 72823,
         ShinobuActiveEquipmentState = 71300,
         ShinobuActiveEquipmentPublishedState = 71301,
         ShinobuActiveEquipmentAupSamples = 71302,
@@ -3566,7 +3590,15 @@ namespace Hecton8.Core.Memory
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         private static void TryCompleteOwnerJobHandle(ref JobHandle ownerHandle)
         {
-            Hecton8.Core.DispatcherJobFence.TryComplete(ref ownerHandle, forceComplete: true);
+            Hecton8.Core.DispatcherJobFence.BeginPostSimulationSwapWindow();
+            try
+            {
+                Hecton8.Core.DispatcherJobFence.TryComplete(ref ownerHandle, forceComplete: true);
+            }
+            finally
+            {
+                Hecton8.Core.DispatcherJobFence.EndPostSimulationSwapWindow();
+            }
         }
 
         private static void RemoveOwnerJobKey(ushort ownerKey)

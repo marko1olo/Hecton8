@@ -709,6 +709,7 @@ namespace Hecton8.UI
         private bool _inventorySignalDirty = true;
         private bool _playerStateSignalDirty;
         private bool _inputStateSignalDirty;
+        private bool _localizedPresentationDirty;
         private int _reactiveUiCadenceStride = 1;
         private float _qualityWeight01 = 1f;
         private uint _lastInventorySignalRevision;
@@ -1254,6 +1255,7 @@ namespace Hecton8.UI
             EnsureSavingProgressPulseRuntimeResources();
             EnsureThreatChevronRuntimeResources();
             ProcessPendingRuntimeCanvasRefresh();
+            RefreshQuickbarSlotHashCacheCold();
         }
 
         private void Start()
@@ -1266,6 +1268,7 @@ namespace Hecton8.UI
 
             TryRegisterRuntimeTick();
             ProcessPendingRuntimeCanvasRefresh();
+            RefreshQuickbarSlotHashCacheCold();
         }
 
         private void OnDisable()
@@ -1523,7 +1526,7 @@ namespace Hecton8.UI
         {
             if (IsStencilRenderGraphSuppressedRuntime())
             {
-                QueueStencilSuppressionApply();
+                _pendingStencilSuppressionApply = true;
                 return;
             }
 
@@ -1584,7 +1587,7 @@ namespace Hecton8.UI
         {
             if (IsStencilRenderGraphSuppressedRuntime())
             {
-                QueueStencilSuppressionApply();
+                _pendingStencilSuppressionApply = true;
                 return;
             }
 
@@ -1592,7 +1595,6 @@ namespace Hecton8.UI
                 return;
 
             RefreshQualityPolicy();
-            TryRegisterRuntimeTick();
             QueueRuntimeCanvasRefresh(forceResolve: true, refreshDepthSignal: true);
             RefreshThreatChevronTargets();
         }
@@ -1635,19 +1637,16 @@ namespace Hecton8.UI
             if (IsStencilRenderGraphSuppressedRuntime())
             {
                 _pendingStencilSuppressionApply = false;
-                ApplyStencilRenderGraphSuppressionIfNeeded();
                 return;
             }
 
             if (_pendingStencilSuppressionApply)
             {
                 _pendingStencilSuppressionApply = false;
-                ApplyStencilRenderGraphSuppressionIfNeeded();
+                return;
             }
 
-            ProcessPendingRuntimeCanvasRefresh();
-
-            if (!Application.isPlaying || _root == null)
+            if (!Application.isPlaying || _pendingRuntimeCanvasRefresh || _forceResolveOnSlowTick || !IsRuntimeHierarchyReady())
                 return;
 
             if (!_reactiveLateFrameSolveRequested)
@@ -1781,6 +1780,7 @@ namespace Hecton8.UI
             TryRegisterRuntimeTick();
             QueueRuntimeCanvasRefresh(forceResolve: true, refreshDepthSignal: true);
             ProcessPendingRuntimeCanvasRefresh();
+            RefreshQuickbarSlotHashCacheCold();
         }
 
         public void OnLocalizationLanguageChanged(in LocalizationEventPayload payload)
@@ -1794,11 +1794,7 @@ namespace Hecton8.UI
 
         private void HandleLanguageChanged(GameLanguage language)
         {
-            RebuildLocalizationCache();
-            InvalidateVisualCaches();
-
-            if (isActiveAndEnabled)
-                QueueRuntimeCanvasRefresh(forceResolve: false, refreshDepthSignal: false);
+            QueueLocalizedPresentationRefresh(forceResolve: false, refreshDepthSignal: false);
         }
 
         void IPlayerSignalEventListener.OnTraumaHudSignal(in TraumaHudSignal signal)
@@ -1859,6 +1855,16 @@ namespace Hecton8.UI
                 _pendingDepthSignalRefresh = true;
         }
 
+        private void QueueLocalizedPresentationRefresh(bool forceResolve, bool refreshDepthSignal)
+        {
+            _localizedPresentationDirty = true;
+            if (isActiveAndEnabled)
+            {
+                QueueRuntimeCanvasRefresh(forceResolve, refreshDepthSignal);
+                TryRegisterRuntimeTick();
+            }
+        }
+
         private void ProcessPendingRuntimeCanvasRefresh()
         {
             if (IsStencilRenderGraphSuppressedRuntime())
@@ -1871,6 +1877,7 @@ namespace Hecton8.UI
             bool needsRuntimeCanvasRefresh =
                 _pendingRuntimeCanvasRefresh ||
                 _forceResolveOnSlowTick ||
+                _localizedPresentationDirty ||
                 !runtimeHierarchyReady ||
                 NeedsAutoResolve();
             if (!needsRuntimeCanvasRefresh && !_pendingDepthSignalRefresh)
@@ -1882,6 +1889,13 @@ namespace Hecton8.UI
 
             if (_pendingDepthSignalRefresh || survival != _depthSignalSource)
                 RefreshDepthSignalSubscription();
+
+            if (_localizedPresentationDirty)
+            {
+                _localizedPresentationDirty = false;
+                RebuildLocalizationCache();
+                InvalidateVisualCaches();
+            }
 
             if (_layoutBuilt && _root != null && targetCanvas != null)
                 RefreshVisuals(0.016f, refreshMediumCadence: true, refreshSlowCadence: true);
@@ -2054,9 +2068,7 @@ namespace Hecton8.UI
                         return;
 
                     _localizationRuntime = currentService as ILocalizationStressPresentationReadModel;
-                    RebuildLocalizationCache();
-                    InvalidateVisualCaches();
-                    needsRefresh = true;
+                    QueueLocalizedPresentationRefresh(forceResolve: false, refreshDepthSignal: false);
                     break;
 
                 case GlobalRegistryServiceSlot.Audio:
@@ -2819,7 +2831,6 @@ namespace Hecton8.UI
             if (IsStencilRenderGraphSuppressedRuntime())
                 return;
 
-            EnsureAcousticRadarRuntimeResources();
             if (_acousticRadarMaterial == null)
                 return;
 
@@ -3224,7 +3235,6 @@ namespace Hecton8.UI
                 return;
             }
 
-            EnsureThreatChevronRuntimeResources();
             if (_threatChevronMaterial == null || _threatChevronMesh == null)
                 return;
 
@@ -3465,7 +3475,6 @@ namespace Hecton8.UI
             if (_acousticRadarOverlay == null)
                 return;
 
-            EnsureAcousticRadarRuntimeResources();
             if (_acousticRadarMaterial == null)
             {
                 _acousticRadarOverlay.enabled = false;
@@ -4030,7 +4039,6 @@ namespace Hecton8.UI
             if (_root == null)
                 return;
 
-            EnsureRootCanvasGroup();
             if (_rootCanvasGroup == null)
                 return;
 
@@ -5631,6 +5639,33 @@ namespace Hecton8.UI
             }
         }
 
+        private void RefreshQuickbarSlotHashCacheCold()
+        {
+            if (_toolManager == null)
+                return;
+
+            for (int slotIndex = 0; slotIndex < QuickbarSlotCount; slotIndex++)
+            {
+                GameObject prefab = _toolManager.GetAssignedToolPrefab(slotIndex);
+                _quickbarSlotPrefabCache[slotIndex] = prefab;
+                _quickbarSlotHashCache[slotIndex] = ResolveQuickbarPrefabHashCold(prefab);
+                _quickbarSlotHashResolved[slotIndex] = true;
+            }
+        }
+
+        private static int ResolveQuickbarPrefabHashCold(GameObject prefab)
+        {
+            if (prefab == null ||
+                !prefab.TryGetComponent(out IPlayerToolDataReadModel tool) ||
+                tool.ToolData == null)
+            {
+                return 0;
+            }
+
+            string persistentId = tool.ToolData.PersistentId;
+            return !string.IsNullOrWhiteSpace(persistentId) ? LocHash.Compute(persistentId) : 0;
+        }
+
         private int ResolveQuickbarSlotHash(int slotIndex, GameObject prefab)
         {
             if ((uint)slotIndex >= (uint)QuickbarSlotCount)
@@ -5643,22 +5678,7 @@ namespace Hecton8.UI
                 _quickbarSlotPrefabCache[slotIndex] = prefab;
             }
 
-            if (_quickbarSlotHashResolved[slotIndex])
-                return _quickbarSlotHashCache[slotIndex];
-
-            int itemHashId = 0;
-            if (prefab != null &&
-                prefab.TryGetComponent(out IPlayerToolDataReadModel tool) &&
-                tool.ToolData != null)
-            {
-                string persistentId = tool.ToolData.PersistentId;
-                if (!string.IsNullOrWhiteSpace(persistentId))
-                    itemHashId = LocHash.Compute(persistentId);
-            }
-
-            _quickbarSlotHashCache[slotIndex] = itemHashId;
-            _quickbarSlotHashResolved[slotIndex] = true;
-            return itemHashId;
+            return _quickbarSlotHashResolved[slotIndex] ? _quickbarSlotHashCache[slotIndex] : 0;
         }
 
         private bool TryResolveQuickbarRuntimeDescriptor(int itemHashId, out ItemCatalog.ItemRuntimeDescriptor descriptor)

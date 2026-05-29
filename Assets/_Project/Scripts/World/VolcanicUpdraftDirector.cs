@@ -942,6 +942,21 @@ namespace Hecton8.World
         private const uint HashHeatOutput = 0x800A1669u;
         private const uint HashGlobalQualityWeight = 0xB00FB719u;
         private const uint HashVent = 0xF8173F5Eu;
+        private static readonly ulong FixedPipelineMutationGuardMask =
+            MutationGuardBit(VolcanicUpdraftVault.VentsBuffer) |
+            MutationGuardBit(VolcanicUpdraftVault.SettingsBuffer) |
+            MutationGuardBit(VolcanicUpdraftVault.TelemetryBuffer) |
+            MutationGuardBit(VolcanicUpdraftVault.MockSubmarinesBuffer) |
+            MutationGuardBit(VolcanicUpdraftVault.MockLeviathansBuffer) |
+            MutationGuardBit(VolcanicUpdraftVault.MockDebrisBuffer) |
+            MutationGuardBit(VolcanicUpdraftVault.FloatSignalsBuffer) |
+            MutationGuardBit(VolcanicUpdraftVault.DynamicWakesBuffer) |
+            MutationGuardBit(VolcanicUpdraftVault.MockFlowFieldBuffer) |
+            MutationGuardBit(VolcanicUpdraftVault.FrameCountersBuffer) |
+            MutationGuardBit(VolcanicUpdraftVault.PlayerHeatBuffer) |
+            MutationGuardBit(BufferID.ShinobuSomaticKinematicState) |
+            MutationGuardBit(BufferID.AlphaLeviathanCognitionState) |
+            MutationGuardBit(BufferID.AlphaLeviathanSteeringOutput);
 
         [Header("Vault")]
         [SerializeField, Range(1, VolcanicUpdraftVault.MaxVents)] private int maxVentCount = 8;
@@ -1010,11 +1025,7 @@ namespace Hecton8.World
 
         private void OnDisable()
         {
-            if (_fixedPipelineScheduled)
-            {
-                DispatcherJobFence.TryComplete(ref _jobHandle, forceComplete: true);
-                _fixedPipelineScheduled = false;
-            }
+            ForceCompleteFixedPipelineInPostFixedWindow();
 
             UnlockExternalBuffers();
             UnlockOwnBuffers();
@@ -1034,11 +1045,7 @@ namespace Hecton8.World
 
         private void OnDestroy()
         {
-            if (_fixedPipelineScheduled)
-            {
-                DispatcherJobFence.TryComplete(ref _jobHandle, forceComplete: true);
-                _fixedPipelineScheduled = false;
-            }
+            ForceCompleteFixedPipelineInPostFixedWindow();
 
             UnlockExternalBuffers();
             UnlockOwnBuffers();
@@ -1050,6 +1057,24 @@ namespace Hecton8.World
         public uint GetFixedSystemIdHash()
         {
             return FixedSystemHash;
+        }
+
+        private void ForceCompleteFixedPipelineInPostFixedWindow()
+        {
+            if (!_fixedPipelineScheduled)
+                return;
+
+            DispatcherJobFence.BeginPostFixedSwapWindow();
+            try
+            {
+                DispatcherJobFence.TryComplete(ref _jobHandle, forceComplete: true);
+            }
+            finally
+            {
+                DispatcherJobFence.EndPostFixedSwapWindow();
+            }
+
+            _fixedPipelineScheduled = false;
         }
 
         public JobHandle ScheduleFixedSimulation(in DispatcherTimingDTO timing, JobHandle dependsOn)
@@ -1077,6 +1102,9 @@ namespace Hecton8.World
             if (!LockOwnBuffers())
                 return dependsOn;
 
+            bool keepPipelineGuard = false;
+            try
+            {
             VolcanicUpdraftSettingsDTO settings = SanitizeSettings(settingsArray[0]);
             settings.Frame = ++_frame;
             settings.GlobalQualityWeight = ResolveGlobalQualityWeight();
@@ -1165,8 +1193,18 @@ namespace Hecton8.World
 
             _jobHandle = handle;
             _fixedPipelineScheduled = true;
+            keepPipelineGuard = true;
             H8Memory.RegisterActiveJob(OwnerSystem, handle);
             return handle;
+            }
+            finally
+            {
+                if (!keepPipelineGuard)
+                {
+                    UnlockExternalBuffers();
+                    UnlockOwnBuffers();
+                }
+            }
         }
 
         public void PostFixedSimulation(in DispatcherTimingDTO timing)
@@ -1336,8 +1374,7 @@ namespace Hecton8.World
 
             if (_fixedPipelineScheduled)
             {
-                DispatcherJobFence.TryComplete(ref _jobHandle, forceComplete: true);
-                _fixedPipelineScheduled = false;
+                ForceCompleteFixedPipelineInPostFixedWindow();
             }
 
             UnlockExternalBuffers();
@@ -1511,24 +1548,9 @@ namespace Hecton8.World
             if (_ownBuffersLocked)
                 return true;
 
-            if (_dataVault == null)
+            if (_dataVault == null ||
+                !_dataVault.TryAcquireMutationGuard(FixedPipelineMutationGuardMask))
                 return false;
-
-            if (!_dataVault.TryLockBuffer(VolcanicUpdraftVault.VentsBuffer, OwnerSystem) ||
-                !_dataVault.TryLockBuffer(VolcanicUpdraftVault.SettingsBuffer, OwnerSystem) ||
-                !_dataVault.TryLockBuffer(VolcanicUpdraftVault.TelemetryBuffer, OwnerSystem) ||
-                !_dataVault.TryLockBuffer(VolcanicUpdraftVault.MockSubmarinesBuffer, OwnerSystem) ||
-                !_dataVault.TryLockBuffer(VolcanicUpdraftVault.MockLeviathansBuffer, OwnerSystem) ||
-                !_dataVault.TryLockBuffer(VolcanicUpdraftVault.MockDebrisBuffer, OwnerSystem) ||
-                !_dataVault.TryLockBuffer(VolcanicUpdraftVault.FloatSignalsBuffer, OwnerSystem) ||
-                !_dataVault.TryLockBuffer(VolcanicUpdraftVault.DynamicWakesBuffer, OwnerSystem) ||
-                !_dataVault.TryLockBuffer(VolcanicUpdraftVault.MockFlowFieldBuffer, OwnerSystem) ||
-                !_dataVault.TryLockBuffer(VolcanicUpdraftVault.FrameCountersBuffer, OwnerSystem) ||
-                !_dataVault.TryLockBuffer(VolcanicUpdraftVault.PlayerHeatBuffer, OwnerSystem))
-            {
-                UnlockOwnBuffers();
-                return false;
-            }
 
             _ownBuffersLocked = true;
             return true;
@@ -1536,21 +1558,11 @@ namespace Hecton8.World
 
         private void UnlockOwnBuffers()
         {
-            if (_dataVault == null)
+            if (!_ownBuffersLocked)
                 return;
 
-            _dataVault.TryUnlockBuffer(VolcanicUpdraftVault.VentsBuffer, OwnerSystem);
-            _dataVault.TryUnlockBuffer(VolcanicUpdraftVault.SettingsBuffer, OwnerSystem);
-            _dataVault.TryUnlockBuffer(VolcanicUpdraftVault.TelemetryBuffer, OwnerSystem);
-            _dataVault.TryUnlockBuffer(VolcanicUpdraftVault.MockSubmarinesBuffer, OwnerSystem);
-            _dataVault.TryUnlockBuffer(VolcanicUpdraftVault.MockLeviathansBuffer, OwnerSystem);
-            _dataVault.TryUnlockBuffer(VolcanicUpdraftVault.MockDebrisBuffer, OwnerSystem);
-            _dataVault.TryUnlockBuffer(VolcanicUpdraftVault.FloatSignalsBuffer, OwnerSystem);
-            _dataVault.TryUnlockBuffer(VolcanicUpdraftVault.DynamicWakesBuffer, OwnerSystem);
-            _dataVault.TryUnlockBuffer(VolcanicUpdraftVault.MockFlowFieldBuffer, OwnerSystem);
-            _dataVault.TryUnlockBuffer(VolcanicUpdraftVault.FrameCountersBuffer, OwnerSystem);
-            _dataVault.TryUnlockBuffer(VolcanicUpdraftVault.PlayerHeatBuffer, OwnerSystem);
             _ownBuffersLocked = false;
+            _dataVault?.ReleaseMutationGuard(FixedPipelineMutationGuardMask);
         }
 
         private void RefreshExternalHandles()
@@ -1567,14 +1579,13 @@ namespace Hecton8.World
         {
             playerState = default;
             if (!IsExactVaultHandle(in _playerStateHandle, BufferID.ShinobuSomaticKinematicState) ||
-                !_dataVault.TryLockBuffer(BufferID.ShinobuSomaticKinematicState, OwnerSystem))
+                !_ownBuffersLocked)
             {
                 return false;
             }
 
             if (!TryResolveVaultBuffer(in _playerStateHandle, BufferID.ShinobuSomaticKinematicState, 1, out playerState))
             {
-                _dataVault.TryUnlockBuffer(BufferID.ShinobuSomaticKinematicState, OwnerSystem);
                 return false;
             }
 
@@ -1590,7 +1601,7 @@ namespace Hecton8.World
             outputs = default;
             if (!IsExactVaultHandle(in _leviathanStateHandle, BufferID.AlphaLeviathanCognitionState) ||
                 !IsExactVaultHandle(in _leviathanOutputHandle, BufferID.AlphaLeviathanSteeringOutput) ||
-                !_dataVault.TryLockBuffer(BufferID.AlphaLeviathanSteeringOutput, OwnerSystem))
+                !_ownBuffersLocked)
             {
                 return false;
             }
@@ -1598,7 +1609,6 @@ namespace Hecton8.World
             if (!TryResolveVaultBuffer(in _leviathanStateHandle, BufferID.AlphaLeviathanCognitionState, 1, out states) ||
                 !TryResolveVaultBuffer(in _leviathanOutputHandle, BufferID.AlphaLeviathanSteeringOutput, 1, out outputs))
             {
-                _dataVault.TryUnlockBuffer(BufferID.AlphaLeviathanSteeringOutput, OwnerSystem);
                 return false;
             }
 
@@ -1608,15 +1618,13 @@ namespace Hecton8.World
 
         private void UnlockExternalBuffers()
         {
-            if (_dataVault == null)
-                return;
-
-            if (_playerLocked)
-                _dataVault.TryUnlockBuffer(BufferID.ShinobuSomaticKinematicState, OwnerSystem);
-            if (_leviathanLocked)
-                _dataVault.TryUnlockBuffer(BufferID.AlphaLeviathanSteeringOutput, OwnerSystem);
             _playerLocked = false;
             _leviathanLocked = false;
+        }
+
+        private static ulong MutationGuardBit(BufferID bufferId)
+        {
+            return 1UL << (unchecked((int)(uint)(int)bufferId) & 31);
         }
 
         private static VolcanicUpdraftSettingsDTO SanitizeSettings(VolcanicUpdraftSettingsDTO settings)

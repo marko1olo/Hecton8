@@ -179,7 +179,7 @@ namespace Hecton8.Core.Contracts.Signals
         [FieldOffset(30)] public ushort Flags;
     }
 
-    /// <summary>Registry-owned emergency kill-switch bit delta. Size: 32 bytes.</summary>
+    /// <summary>Runtime emergency kill-switch bit delta. Size: 32 bytes.</summary>
     [StructLayout(LayoutKind.Explicit, Size = 32)]
     public struct SystemKillSwitchBitsSignal : ISignal
     {
@@ -188,7 +188,8 @@ namespace Hecton8.Core.Contracts.Signals
         public const int LowTierFrameSignals = 8;
         public const uint LaneHash = HectonSignalLaneContract.SystemKillSwitchBitsSignalStableHash;
         public const byte FlagEnabled = 1 << 0;
-        public const byte FlagRegistryOwner = 1 << 1;
+        public const byte FlagRuntimeOwner = 1 << 1;
+        public const byte FlagRegistryOwner = FlagRuntimeOwner;
 
         [FieldOffset(0)] public uint Frame;
         [FieldOffset(4)] public uint SourceHash;

@@ -18,18 +18,26 @@ namespace CandiceAIforGames.AI.Pathfinding
         LayerMask walkableMask;
         int penaltyMin = int.MaxValue;
         int penaltyMax = int.MinValue;
-        Dictionary<int, int> walkableRegionsDictionary = new Dictionary<int, int>();
+        Dictionary<int, int> walkableRegionsDictionary;
+        // COLD ALLOC: List<Node>[8] - legacy neighbour API scratch list - owner: CandiceGrid
+        readonly List<Node> neighboursList = new List<Node>(8);
         public Vector3 worldBottomLeft;
         public bool is3D = true;
         // COLD ALLOC: RaycastHit[1] - grid terrain penalty probe scratch - owner: CandiceGrid
         private static readonly RaycastHit[] TerrainPenaltyHits = new RaycastHit[1];
+        // COLD ALLOC: Collider[1] - walkability occupancy probe scratch - owner: CandiceGrid
+        private static readonly Collider[] WalkabilityHits = new Collider[1];
         private void Awake()
         {
             nodeDiameter = nodeRadius * 2;
             gridSizeX = Mathf.RoundToInt(gridWorldSize.x / nodeDiameter);
             gridSizeY = Mathf.RoundToInt(gridWorldSize.y / nodeDiameter);
-            foreach (TerrainType region in walkableRegions)
+            int walkableRegionCount = walkableRegions == null ? 0 : walkableRegions.Length;
+            // COLD ALLOC: Dictionary<int,int>[walkableRegionCount] - terrain penalty lookup - owner: CandiceGrid
+            walkableRegionsDictionary = new Dictionary<int, int>(walkableRegionCount);
+            for (int i = 0; i < walkableRegionCount; i++)
             {
+                TerrainType region = walkableRegions[i];
                 walkableMask.value |= region.terrainMask.value;
                 walkableRegionsDictionary.Add(Convert.ToInt32(Mathf.Log(region.terrainMask.value, 2)), region.terrainPenalty);
             }
@@ -109,7 +117,7 @@ namespace CandiceAIforGames.AI.Pathfinding
 
         public bool isWalkable(Vector3 point)
         {
-            bool isWalkable = !(Physics.CheckSphere(point, nodeRadius, unwalkableMask));
+            bool isWalkable = Physics.OverlapSphereNonAlloc(point, nodeRadius, WalkabilityHits, unwalkableMask) == 0;
 
 
             return isWalkable;
@@ -187,7 +195,7 @@ namespace CandiceAIforGames.AI.Pathfinding
             //Input       : Node node
             //Output      : List<Node>
             //
-            List<Node> neighbours = new List<Node>();
+            neighboursList.Clear();
             for (int x = -1; x <= 1; x++)
             {
                 for (int y = -1; y <= 1; y++)
@@ -201,11 +209,42 @@ namespace CandiceAIforGames.AI.Pathfinding
 
                     if (checkX >= 0 && checkX < gridSizeX && checkY >= 0 && checkY < gridSizeY)
                     {
-                        neighbours.Add(grid[checkX, checkY]);
+                        neighboursList.Add(grid[checkX, checkY]);
                     }
                 }
             }
-            return neighbours;
+            return neighboursList;
+        }
+
+        public int GetNeighboursNonAlloc(Node node, Node[] neighbours)
+        {
+            if (node == null || neighbours == null)
+            {
+                return 0;
+            }
+
+            int count = 0;
+            for (int x = -1; x <= 1; x++)
+            {
+                for (int y = -1; y <= 1; y++)
+                {
+                    if (x == 0 && y == 0)
+                    {
+                        continue;
+                    }
+
+                    int checkX = node.gridX + x;
+                    int checkY = node.gridY + y;
+
+                    if (checkX >= 0 && checkX < gridSizeX && checkY >= 0 && checkY < gridSizeY && count < neighbours.Length)
+                    {
+                        neighbours[count] = grid[checkX, checkY];
+                        count++;
+                    }
+                }
+            }
+
+            return count;
         }
         public Node NodeFromWorldPoint(Vector3 worldPosition)
         {

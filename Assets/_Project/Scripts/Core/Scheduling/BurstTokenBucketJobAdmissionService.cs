@@ -584,7 +584,26 @@ namespace Hecton8.Core.Scheduling
                 return false;
             }
 
-            return vault.TryAcquireWriteLock(in handle, SystemID.JobAdmission, out buffer) && buffer.IsCreated;
+            if (!vault.TryAcquireWriteLock(in handle, SystemID.JobAdmission, out buffer))
+                return false;
+
+            bool handedOff = false;
+            try
+            {
+                if (buffer.IsCreated)
+                {
+                    handedOff = true;
+                    return true;
+                }
+
+                buffer = default;
+                return false;
+            }
+            finally
+            {
+                if (!handedOff)
+                    vault.ReleaseWriteLock(in handle, SystemID.JobAdmission);
+            }
         }
 
         private void ReleaseWriteView<T>(in VaultGenerationHandle<T> handle) where T : struct
@@ -962,7 +981,7 @@ namespace Hecton8.Core.Scheduling
             float safeValue = ClampCostTelemetryMilliseconds(value);
             WriteBlackbox(lane, jobHash, safeValue, 0f, admitted: false);
             DumpFaultStateToTelemetry();
-            _telemetrySink?.ReportNonFiniteAdmissionState(lane, jobHash, safeValue);
+            _telemetrySink?.ReportNonFiniteAdmissionState(lane, jobHash, safeValue, _criticalDebtFrameCount);
         }
 
         private void DumpFaultStateToTelemetry()

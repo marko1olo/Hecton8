@@ -55,10 +55,8 @@ namespace Hecton8.Power
         private const float OxygenPocketUnitsPerMegajoule = 0.02f;
         private const float BrownoutPotentialThreshold = LogisticsNetworkGraph.TwoPassPowerGridSolverJob.BrownoutPotentialThreshold;
         private const float FloodedShortCircuitPotentialThreshold = LogisticsNetworkGraph.TwoPassPowerGridSolverJob.FloodedShortCircuitPotentialThreshold;
-        private const int PowerGridScratchBufferBase = 731700;
-        private const int PowerGridScratchBufferStride = 16;
-        private const int BatteryDispatchRecordsBufferOffset = 0;
-        private const int BatteryDispatchResultsBufferOffset = 1;
+        private const int PowerGridScratchBufferBase = 2731700;
+        private const int PowerGridScratchBufferLockLaneStride = 32;
         private const int ThermalTemperatureFrontBufferOffset = 2;
         private const int ThermalTemperatureBackBufferOffset = 3;
         private const int ThermalHeatInjectionBufferOffset = 4;
@@ -66,6 +64,8 @@ namespace Hecton8.Power
         private const int ThermalEdgeOffsetsBufferOffset = 6;
         private const int ThermalEdgeDestinationsBufferOffset = 7;
         private const int ThermalEdgeConductanceBufferOffset = 8;
+        private const int PowerGridScratchBufferStride =
+            (ThermalEdgeConductanceBufferOffset + 1) * PowerGridScratchBufferLockLaneStride + PowerGridScratchBufferLockLaneStride;
         private static readonly uint ThermalDissipationDeferredWarningHash =
             unchecked((uint)LocHash.Compute("PowerGrid.ThermalDissipationDeferred"));
         private static readonly uint ThermalDissipationContextHash =
@@ -109,6 +109,13 @@ namespace Hecton8.Power
             public SubmarineFluidDynamics FluidDynamics;
             public IDamageReceiver DamageReceiver;
             public int RoomIndex;
+        }
+
+        private struct CachedOverloadServices
+        {
+            public ISubmarineAtmosphereRoomMutationSink Atmosphere;
+            public SubmarineFluidDynamics FluidDynamics;
+            public IDamageReceiver DamageReceiver;
         }
 
         [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Deterministic, FloatPrecision = FloatPrecision.Standard)]
@@ -180,11 +187,10 @@ namespace Hecton8.Power
         private readonly List<PowerNode> _topologyNodes;
         private readonly List<OverloadThermalBinding> _overloadThermalBindings;
         private readonly Dictionary<PowerNode, float> _overloadThermalDamageByNode;
+        private readonly Dictionary<BaseModule, CachedOverloadServices> _overloadServiceCache;
         private readonly LogisticsNetworkGraph _logisticsGraph;
         private readonly int _vaultBufferBase;
         private IDataVault _dataVault;
-        private VaultGenerationHandle<BatteryDispatchRecord> _batteryDispatchRecordsHandle;
-        private VaultGenerationHandle<BatteryDispatchResult> _batteryDispatchResultsHandle;
         private VaultGenerationHandle<float> _thermalTemperatureFrontHandle;
         private VaultGenerationHandle<float> _thermalTemperatureBackHandle;
         private VaultGenerationHandle<float> _thermalHeatInjectionHandle;
@@ -198,6 +204,8 @@ namespace Hecton8.Power
         private int _thermalDissipationNodeCount;
         private int _thermalDissipationScheduledIterations;
         private int _thermalDissipationDeferredFrames;
+        private ulong _thermalDissipationPinnedMask;
+        private IDataVault _thermalDissipationPinnedVault;
 
         private float _totalGeneration;
         private float _totalConsumption;
@@ -304,7 +312,10 @@ namespace Hecton8.Power
             int safeCapacity = math.max(1, initialCapacity);
 
             Id = _nextId++;
-            _vaultBufferBase = PowerGridScratchBufferBase + (Id * PowerGridScratchBufferStride);
+            _vaultBufferBase =
+                PowerGridScratchBufferBase +
+                Id * PowerGridScratchBufferStride +
+                (Id & 31);
             _dataVault = dataVault;
             // COLD ALLOC: HashSet<PowerNode>[initialCapacity] — grid membership cache — owner: PowerGrid
             _nodes = new HashSet<PowerNode>(safeCapacity);
@@ -319,18 +330,25 @@ namespace Hecton8.Power
             _overloadThermalBindings = new List<OverloadThermalBinding>(safeCapacity);
             // COLD ALLOC: Dictionary<PowerNode,float>[initialCapacity] — persistent overload damage accumulation keyed by live nodes — owner: PowerGrid
             _overloadThermalDamageByNode = new Dictionary<PowerNode, float>(safeCapacity);
-            _logisticsGraph = new LogisticsNetworkGraph(safeCapacity, safeCapacity * 4, safeCapacity * 2);
+            _overloadServiceCache = new Dictionary<BaseModule, CachedOverloadServices>(safeCapacity);
+            _logisticsGraph = new LogisticsNetworkGraph(safeCapacity, safeCapacity * 4, safeCapacity * 2, dataVault);
         }
 
         public void InjectDataVault(IDataVault dataVault)
         {
-            if (ReferenceEquals(_dataVault, dataVault))
+            bool samePowerVault = ReferenceEquals(_dataVault, dataVault);
+            bool graphRebound = _logisticsGraph.InjectDataVault(dataVault);
+            if (samePowerVault && !graphRebound)
                 return;
 
             CompleteThermalDissipationForTeardown();
-            DisposeBatteryDispatchBuffers();
             DisposeThermalDissipationBuffers();
             _dataVault = dataVault;
+            _isDirty = true;
+            _hasEvaluatedAtLeastOnce = false;
+            _slowTickEvaluationPending = false;
+            _slowTickNodeStatePublishScheduled = false;
+            _slowTickEvaluationPhase = SlowTickEvaluationPhase.Idle;
         }
 
         public void Dispose()
@@ -339,7 +357,6 @@ namespace Hecton8.Power
             _logisticsGraph.CompleteEvaluation();
             _logisticsGraph.CompleteNodeStatePublish();
             _logisticsGraph.Dispose();
-            DisposeBatteryDispatchBuffers();
             DisposeThermalDissipationBuffers();
         }
 
@@ -401,6 +418,7 @@ namespace Hecton8.Power
                 return;
 
             node.SetGrid(this);
+            WarmOverloadServiceCacheForNode(node);
             _isDirty = true;
         }
 
@@ -411,6 +429,7 @@ namespace Hecton8.Power
                 return;
 
             _nodes.Remove(node);
+            RemoveOverloadServiceCacheForNode(node);
             if (ReferenceEquals(node.Grid, this))
                 node.SetGrid(null);
 
@@ -432,9 +451,11 @@ namespace Hecton8.Power
 
                 _nodes.Add(node);
                 node.SetGrid(this);
+                TransferOrWarmOverloadServiceCacheForNode(node, other);
             }
 
             other._nodes.Clear();
+            other._overloadServiceCache.Clear();
             _isDirty = true;
         }
 
@@ -526,6 +547,9 @@ namespace Hecton8.Power
                 if (!_slowTickNodeStatePublishScheduled)
                 {
                     _logisticsGraph.ScheduleNodeStatePublish();
+                    if (!_logisticsGraph.HasPendingNodeStatePublish)
+                        return false;
+
                     _slowTickNodeStatePublishScheduled = true;
                 }
 
@@ -631,6 +655,38 @@ namespace Hecton8.Power
         }
 
         internal List<PowerNode> TopologyNodes => _topologyNodes;
+
+        internal int LogisticsNodeCount => _logisticsGraph.NodeCount;
+
+        internal int LogisticsEdgeCount => _logisticsGraph.EdgeCount;
+
+        internal NativeArray<int>.ReadOnly GetLogisticsEdgeOffsetsReadOnly()
+        {
+            return _logisticsGraph.GetEdgeOffsetsReadOnly();
+        }
+
+        internal NativeArray<int>.ReadOnly GetLogisticsEdgeDestinationsReadOnly()
+        {
+            return _logisticsGraph.GetEdgeDestinationsReadOnly();
+        }
+
+        internal bool TryResolveLogisticsNodeIndex(PowerNode node, out int nodeIndex)
+        {
+            nodeIndex = -1;
+            if (node == null || !ReferenceEquals(node.Grid, this))
+                return false;
+
+            int scratchIndex = node.GraphScratchIndex;
+            if (node.GraphScratchVersion != _graphBuildVersion ||
+                scratchIndex < 0 ||
+                scratchIndex >= _logisticsGraph.NodeCount)
+            {
+                return false;
+            }
+
+            nodeIndex = scratchIndex;
+            return true;
+        }
 
         internal int GetNodeComponentId(int nodeIndex)
         {
@@ -799,15 +855,16 @@ namespace Hecton8.Power
 
                         if (!overloadBindingResolved && component is BaseModule baseModule)
                         {
-                            ISubmarineAtmosphereRoomMutationSink atmosphere = ComponentReferenceUtility.ResolveParentService<ISubmarineAtmosphereRoomMutationSink>(baseModule);
+                            CachedOverloadServices services = ReadCachedOverloadServices(baseModule);
+                            ISubmarineAtmosphereRoomMutationSink atmosphere = services.Atmosphere;
                             if (atmosphere != null && !atmosphere.IsAtmosphereRuntimeActive)
                                 atmosphere = null;
                             overloadBinding = new OverloadThermalBinding
                             {
                                 BaseModule = baseModule,
                                 Atmosphere = atmosphere,
-                                FluidDynamics = baseModule.GetComponentInParent<SubmarineFluidDynamics>(),
-                                DamageReceiver = baseModule.GetComponent<IDamageReceiver>(),
+                                FluidDynamics = services.FluidDynamics,
+                                DamageReceiver = services.DamageReceiver,
                                 RoomIndex = atmosphere != null
                                     ? atmosphere.ResolveNearestRoomIndexForWorldPosition(baseModule.transform.position)
                                     : -1
@@ -876,6 +933,82 @@ namespace Hecton8.Power
 
             _logisticsGraph.FinalizeBuild();
             return true;
+        }
+
+        private CachedOverloadServices ReadCachedOverloadServices(BaseModule baseModule)
+        {
+            if (baseModule == null)
+                return default;
+
+            if (_overloadServiceCache.TryGetValue(baseModule, out CachedOverloadServices services))
+                return services;
+
+            return default;
+        }
+
+        private void WarmOverloadServiceCacheForNode(PowerNode node)
+        {
+            if (node == null || node.Components == null)
+                return;
+
+            List<IPowerComponent> components = node.Components;
+            int componentCount = components.Count;
+            for (int componentIndex = 0; componentIndex < componentCount; componentIndex++)
+            {
+                if (components[componentIndex] is BaseModule baseModule)
+                    WarmOverloadServiceCache(baseModule);
+            }
+        }
+
+        private void TransferOrWarmOverloadServiceCacheForNode(PowerNode node, PowerGrid sourceGrid)
+        {
+            if (node == null || node.Components == null)
+                return;
+
+            List<IPowerComponent> components = node.Components;
+            int componentCount = components.Count;
+            for (int componentIndex = 0; componentIndex < componentCount; componentIndex++)
+            {
+                if (components[componentIndex] is not BaseModule baseModule)
+                    continue;
+
+                if (sourceGrid != null &&
+                    sourceGrid._overloadServiceCache.TryGetValue(baseModule, out CachedOverloadServices services))
+                {
+                    _overloadServiceCache[baseModule] = services;
+                    continue;
+                }
+
+                WarmOverloadServiceCache(baseModule);
+            }
+        }
+
+        private void WarmOverloadServiceCache(BaseModule baseModule)
+        {
+            if (baseModule == null || _overloadServiceCache.ContainsKey(baseModule))
+                return;
+
+            CachedOverloadServices services = new CachedOverloadServices
+            {
+                Atmosphere = ComponentReferenceUtility.ResolveParentService<ISubmarineAtmosphereRoomMutationSink>(baseModule),
+                FluidDynamics = baseModule.GetComponentInParent<SubmarineFluidDynamics>(),
+                DamageReceiver = baseModule.GetComponent<IDamageReceiver>()
+            };
+            _overloadServiceCache[baseModule] = services;
+        }
+
+        private void RemoveOverloadServiceCacheForNode(PowerNode node)
+        {
+            if (node == null || node.Components == null)
+                return;
+
+            List<IPowerComponent> components = node.Components;
+            int componentCount = components.Count;
+            for (int componentIndex = 0; componentIndex < componentCount; componentIndex++)
+            {
+                if (components[componentIndex] is BaseModule baseModule)
+                    _overloadServiceCache.Remove(baseModule);
+            }
         }
 
         private void ApplyConsumerStates()
@@ -1082,15 +1215,16 @@ namespace Hecton8.Power
             if (directedEdgeCount <= 0)
                 return false;
 
-            float qualityWeight = PowerGridManager.ResolveMathLodQualityWeight();
-            int qualityIterationBudget = SubmarineOsThermalGridRuntime.ResolvePropagationIterations(qualityWeight);
-            int iterationBudget = math.clamp(_cableThermalIterationBudget, 1, qualityIterationBudget);
-
-            if (!TryLockThermalDissipationBuffers(out int thermalLockedMask))
+            if (!TryPinThermalDissipationJobBuffers(out IDataVault pinnedVault, out ulong pinnedMask))
                 return false;
 
+            bool scheduled = false;
             try
             {
+                float qualityWeight = PowerGridManager.ResolveMathLodQualityWeight();
+                int qualityIterationBudget = SubmarineOsThermalGridRuntime.ResolvePropagationIterations(qualityWeight);
+                int iterationBudget = math.clamp(_cableThermalIterationBudget, 1, qualityIterationBudget);
+
                 NativeArray<float> inputTemperatures = ResolveVaultBuffer(in _thermalTemperatureFrontHandle);
                 NativeArray<float> outputTemperatures = ResolveVaultBuffer(in _thermalTemperatureBackHandle);
                 NativeArray<int> edgeOffsets = ResolveVaultBuffer(in _thermalEdgeOffsetsHandle);
@@ -1143,11 +1277,15 @@ namespace Hecton8.Power
                 _thermalDissipationScheduledIterations = iterationBudget;
                 _thermalDissipationDeferredFrames = 0;
                 _thermalDissipationResultInBackBuffer = (iterationBudget & 1) != 0;
+                _thermalDissipationPinnedVault = pinnedVault;
+                _thermalDissipationPinnedMask = pinnedMask;
+                scheduled = true;
                 return true;
             }
             finally
             {
-                UnlockThermalDissipationBuffers(thermalLockedMask);
+                if (!scheduled)
+                    ReleaseThermalDissipationJobPins(pinnedVault, pinnedMask);
             }
         }
 
@@ -1169,42 +1307,41 @@ namespace Hecton8.Power
                 return false;
             }
 
-            VaultGenerationHandle<float> resultHandle = _thermalDissipationResultInBackBuffer
-                ? _thermalTemperatureBackHandle
-                : _thermalTemperatureFrontHandle;
-            if (!TryReadOnlyVaultBuffer(in resultHandle, out NativeArray<float>.ReadOnly resultTemperatures))
+            try
+            {
+                VaultGenerationHandle<float> resultHandle = _thermalDissipationResultInBackBuffer
+                    ? _thermalTemperatureBackHandle
+                    : _thermalTemperatureFrontHandle;
+                if (!TryReadOnlyVaultBuffer(in resultHandle, out NativeArray<float>.ReadOnly resultTemperatures))
+                    return true;
+
+                int nodeCount = math.min(_thermalDissipationNodeCount, math.min(_topologyNodes.Count, _overloadThermalBindings.Count));
+                ApplyThermalDissipationResult(nodeCount, resultTemperatures);
+                AdaptCableThermalIterationBudget(false, _thermalDissipationScheduledIterations, _thermalDissipationScheduledIterations);
+
+                for (int nodeIndex = 0; nodeIndex < nodeCount; nodeIndex++)
+                {
+                    PowerNode node = _topologyNodes[nodeIndex];
+                    if (node == null)
+                        continue;
+
+                    OverloadThermalBinding binding = _overloadThermalBindings[nodeIndex];
+                    if (binding.BaseModule == null || binding.Atmosphere == null || binding.RoomIndex < 0)
+                        continue;
+
+                    float roomTemperature = binding.Atmosphere.GetRoomTemperatureCelsius(binding.RoomIndex);
+                    TryTriggerThermalMeltdown(node, binding, roomTemperature, roomTemperature);
+                }
+            }
+            finally
             {
                 _thermalDissipationPending = false;
                 _thermalDissipationResultInBackBuffer = false;
                 _thermalDissipationNodeCount = 0;
                 _thermalDissipationScheduledIterations = 0;
                 _thermalDissipationDeferredFrames = 0;
-                return true;
+                ReleaseThermalDissipationJobPins();
             }
-
-            int nodeCount = math.min(_thermalDissipationNodeCount, math.min(_topologyNodes.Count, _overloadThermalBindings.Count));
-            ApplyThermalDissipationResult(nodeCount, resultTemperatures);
-            AdaptCableThermalIterationBudget(false, _thermalDissipationScheduledIterations, _thermalDissipationScheduledIterations);
-
-            for (int nodeIndex = 0; nodeIndex < nodeCount; nodeIndex++)
-            {
-                PowerNode node = _topologyNodes[nodeIndex];
-                if (node == null)
-                    continue;
-
-                OverloadThermalBinding binding = _overloadThermalBindings[nodeIndex];
-                if (binding.BaseModule == null || binding.Atmosphere == null || binding.RoomIndex < 0)
-                    continue;
-
-                float roomTemperature = binding.Atmosphere.GetRoomTemperatureCelsius(binding.RoomIndex);
-                TryTriggerThermalMeltdown(node, binding, roomTemperature, roomTemperature);
-            }
-
-            _thermalDissipationPending = false;
-            _thermalDissipationResultInBackBuffer = false;
-            _thermalDissipationNodeCount = 0;
-            _thermalDissipationScheduledIterations = 0;
-            _thermalDissipationDeferredFrames = 0;
             return true;
         }
 
@@ -1226,35 +1363,13 @@ namespace Hecton8.Power
             if (!EnsureThermalDissipationCapacity(nodeCount, directedEdgeCount))
                 return 0;
 
-            if (!TryLockThermalDissipationBuffers(out int thermalLockedMask))
+            if (!TryAcquireWriteBuffer(in _thermalEdgeOffsetsHandle, out NativeArray<int> thermalEdgeOffsets))
                 return 0;
 
             try
             {
-                NativeArray<float> thermalTemperatureFront = ResolveVaultBuffer(in _thermalTemperatureFrontHandle);
-                NativeArray<float> thermalTemperatureBack = ResolveVaultBuffer(in _thermalTemperatureBackHandle);
-                NativeArray<float> thermalHeatInjection = ResolveVaultBuffer(in _thermalHeatInjectionHandle);
-                NativeArray<float> thermalHullSinkConductance = ResolveVaultBuffer(in _thermalHullSinkConductanceHandle);
-                NativeArray<int> thermalEdgeOffsets = ResolveVaultBuffer(in _thermalEdgeOffsetsHandle);
-                NativeArray<int> thermalEdgeDestinations = ResolveVaultBuffer(in _thermalEdgeDestinationsHandle);
-                NativeArray<float> thermalEdgeConductance = ResolveVaultBuffer(in _thermalEdgeConductanceHandle);
-                if (!thermalTemperatureFront.IsCreated ||
-                    !thermalTemperatureBack.IsCreated ||
-                    !thermalHeatInjection.IsCreated ||
-                    !thermalHullSinkConductance.IsCreated ||
-                    !thermalEdgeOffsets.IsCreated ||
-                    !thermalEdgeDestinations.IsCreated ||
-                    !thermalEdgeConductance.IsCreated ||
-                    thermalTemperatureFront.Length < nodeCount ||
-                    thermalTemperatureBack.Length < nodeCount ||
-                    thermalHeatInjection.Length < nodeCount ||
-                    thermalHullSinkConductance.Length < nodeCount ||
-                    thermalEdgeOffsets.Length <= nodeCount ||
-                    thermalEdgeDestinations.Length < directedEdgeCount ||
-                    thermalEdgeConductance.Length < directedEdgeCount)
-                {
+                if (!thermalEdgeOffsets.IsCreated || thermalEdgeOffsets.Length <= nodeCount)
                     return 0;
-                }
 
                 for (int nodeIndex = 0; nodeIndex <= nodeCount; nodeIndex++)
                     thermalEdgeOffsets[nodeIndex] = 0;
@@ -1262,15 +1377,6 @@ namespace Hecton8.Power
                 for (int nodeIndex = 0; nodeIndex < nodeCount; nodeIndex++)
                 {
                     PowerNode node = _topologyNodes[nodeIndex];
-                    OverloadThermalBinding binding = _overloadThermalBindings[nodeIndex];
-                    float roomTemperature = binding.Atmosphere != null && binding.RoomIndex >= 0
-                        ? binding.Atmosphere.GetRoomTemperatureCelsius(binding.RoomIndex)
-                        : OceanThermalSinkTemperatureCelsius;
-                    thermalTemperatureFront[nodeIndex] = roomTemperature;
-                    thermalTemperatureBack[nodeIndex] = roomTemperature;
-                    thermalHeatInjection[nodeIndex] = ResolveNodeHeatInjection(node);
-                    thermalHullSinkConductance[nodeIndex] = ResolveHullSinkConductance(in binding);
-
                     List<PowerNode> neighbors = node != null ? node.Neighbors : null;
                     int neighborCount = neighbors != null ? neighbors.Count : 0;
                     for (int neighborIndex = 0; neighborIndex < neighborCount; neighborIndex++)
@@ -1285,8 +1391,99 @@ namespace Hecton8.Power
 
                 for (int nodeIndex = 1; nodeIndex <= nodeCount; nodeIndex++)
                     thermalEdgeOffsets[nodeIndex] = thermalEdgeOffsets[nodeIndex] + thermalEdgeOffsets[nodeIndex - 1];
+            }
+            finally
+            {
+                ReleaseWriteBuffer(in _thermalEdgeOffsetsHandle);
+            }
 
-                int writeIndex = 0;
+            if (!TryAcquireWriteBuffer(in _thermalTemperatureFrontHandle, out NativeArray<float> thermalTemperatureFront))
+                return 0;
+
+            try
+            {
+                if (!thermalTemperatureFront.IsCreated || thermalTemperatureFront.Length < nodeCount)
+                    return 0;
+
+                for (int nodeIndex = 0; nodeIndex < nodeCount; nodeIndex++)
+                {
+                    PowerNode node = _topologyNodes[nodeIndex];
+                    OverloadThermalBinding binding = _overloadThermalBindings[nodeIndex];
+                    thermalTemperatureFront[nodeIndex] = binding.Atmosphere != null && binding.RoomIndex >= 0
+                        ? binding.Atmosphere.GetRoomTemperatureCelsius(binding.RoomIndex)
+                        : OceanThermalSinkTemperatureCelsius;
+                }
+            }
+            finally
+            {
+                ReleaseWriteBuffer(in _thermalTemperatureFrontHandle);
+            }
+
+            if (!TryAcquireWriteBuffer(in _thermalTemperatureBackHandle, out NativeArray<float> thermalTemperatureBack))
+                return 0;
+
+            try
+            {
+                if (!thermalTemperatureBack.IsCreated || thermalTemperatureBack.Length < nodeCount)
+                    return 0;
+
+                for (int nodeIndex = 0; nodeIndex < nodeCount; nodeIndex++)
+                {
+                    OverloadThermalBinding binding = _overloadThermalBindings[nodeIndex];
+                    thermalTemperatureBack[nodeIndex] = binding.Atmosphere != null && binding.RoomIndex >= 0
+                        ? binding.Atmosphere.GetRoomTemperatureCelsius(binding.RoomIndex)
+                        : OceanThermalSinkTemperatureCelsius;
+                }
+            }
+            finally
+            {
+                ReleaseWriteBuffer(in _thermalTemperatureBackHandle);
+            }
+
+            if (!TryAcquireWriteBuffer(in _thermalHeatInjectionHandle, out NativeArray<float> thermalHeatInjection))
+                return 0;
+
+            try
+            {
+                if (!thermalHeatInjection.IsCreated || thermalHeatInjection.Length < nodeCount)
+                    return 0;
+
+                for (int nodeIndex = 0; nodeIndex < nodeCount; nodeIndex++)
+                    thermalHeatInjection[nodeIndex] = ResolveNodeHeatInjection(_topologyNodes[nodeIndex]);
+            }
+            finally
+            {
+                ReleaseWriteBuffer(in _thermalHeatInjectionHandle);
+            }
+
+            if (!TryAcquireWriteBuffer(in _thermalHullSinkConductanceHandle, out NativeArray<float> thermalHullSinkConductance))
+                return 0;
+
+            try
+            {
+                if (!thermalHullSinkConductance.IsCreated || thermalHullSinkConductance.Length < nodeCount)
+                    return 0;
+
+                for (int nodeIndex = 0; nodeIndex < nodeCount; nodeIndex++)
+                {
+                    OverloadThermalBinding binding = _overloadThermalBindings[nodeIndex];
+                    thermalHullSinkConductance[nodeIndex] = ResolveHullSinkConductance(in binding);
+                }
+            }
+            finally
+            {
+                ReleaseWriteBuffer(in _thermalHullSinkConductanceHandle);
+            }
+
+            if (!TryAcquireWriteBuffer(in _thermalEdgeDestinationsHandle, out NativeArray<int> thermalEdgeDestinations))
+                return 0;
+
+            int writeIndex = 0;
+            try
+            {
+                if (!thermalEdgeDestinations.IsCreated || thermalEdgeDestinations.Length < directedEdgeCount)
+                    return 0;
+
                 for (int nodeIndex = 0; nodeIndex < nodeCount; nodeIndex++)
                 {
                     PowerNode node = _topologyNodes[nodeIndex];
@@ -1299,18 +1496,51 @@ namespace Hecton8.Power
                             continue;
 
                         thermalEdgeDestinations[writeIndex] = neighbor.GraphScratchIndex;
-                        thermalEdgeConductance[writeIndex] = CableThermalConductivityWattsPerCelsius /
-                                                              math.max(MinEdgeResistance, ResolveEdgeResistance(node, neighbor));
                         writeIndex++;
                     }
                 }
-
-                return writeIndex;
             }
             finally
             {
-                UnlockThermalDissipationBuffers(thermalLockedMask);
+                ReleaseWriteBuffer(in _thermalEdgeDestinationsHandle);
             }
+
+            if (writeIndex != directedEdgeCount)
+                return 0;
+
+            if (!TryAcquireWriteBuffer(in _thermalEdgeConductanceHandle, out NativeArray<float> thermalEdgeConductance))
+                return 0;
+
+            int conductanceWriteIndex = 0;
+            try
+            {
+                if (!thermalEdgeConductance.IsCreated || thermalEdgeConductance.Length < directedEdgeCount)
+                    return 0;
+
+                for (int nodeIndex = 0; nodeIndex < nodeCount; nodeIndex++)
+                {
+                    PowerNode node = _topologyNodes[nodeIndex];
+                    List<PowerNode> neighbors = node != null ? node.Neighbors : null;
+                    int neighborCount = neighbors != null ? neighbors.Count : 0;
+                    for (int neighborIndex = 0; neighborIndex < neighborCount; neighborIndex++)
+                    {
+                        PowerNode neighbor = neighbors[neighborIndex];
+                        if (!IsThermalNeighborValid(node, neighbor, nodeCount))
+                            continue;
+
+                        thermalEdgeConductance[conductanceWriteIndex] =
+                            CableThermalConductivityWattsPerCelsius /
+                            math.max(MinEdgeResistance, ResolveEdgeResistance(node, neighbor));
+                        conductanceWriteIndex++;
+                    }
+                }
+            }
+            finally
+            {
+                ReleaseWriteBuffer(in _thermalEdgeConductanceHandle);
+            }
+
+            return conductanceWriteIndex == directedEdgeCount ? directedEdgeCount : 0;
         }
 
         private int CountThermalDirectedEdges(int nodeCount)
@@ -1446,14 +1676,24 @@ namespace Hecton8.Power
         private void CompleteThermalDissipationForTeardown()
         {
             if (!_thermalDissipationPending)
+            {
+                ReleaseThermalDissipationJobPins();
                 return;
+            }
 
-            DispatcherJobSwap.TryComplete(ref _thermalDissipationHandle, forceComplete: true);
-            _thermalDissipationPending = false;
-            _thermalDissipationResultInBackBuffer = false;
-            _thermalDissipationNodeCount = 0;
-            _thermalDissipationScheduledIterations = 0;
-            _thermalDissipationDeferredFrames = 0;
+            try
+            {
+                DispatcherJobSwap.TryComplete(ref _thermalDissipationHandle, forceComplete: true);
+            }
+            finally
+            {
+                _thermalDissipationPending = false;
+                _thermalDissipationResultInBackBuffer = false;
+                _thermalDissipationNodeCount = 0;
+                _thermalDissipationScheduledIterations = 0;
+                _thermalDissipationDeferredFrames = 0;
+                ReleaseThermalDissipationJobPins();
+            }
         }
 
         private void DisposeThermalDissipationBuffers()
@@ -1722,126 +1962,105 @@ namespace Hecton8.Power
             if (batteryCount <= 0)
                 return;
 
-            if (!EnsureBatteryDispatchCapacity(batteryCount))
-                return;
-
-            if (!TryLockBatteryDispatchBuffers(out int batteryLockedMask))
-                return;
-
-            try
+            float totalChargeAcceptanceWatts = 0f;
+            float totalDischargeAvailabilityWatts = 0f;
+            float totalReservePreservingDischargeWatts = 0f;
+            for (int batteryIndex = 0; batteryIndex < batteryCount; batteryIndex++)
             {
-                NativeArray<BatteryDispatchRecord> batteryDispatchRecords = ResolveVaultBuffer(in _batteryDispatchRecordsHandle);
-                NativeArray<BatteryDispatchResult> batteryDispatchResults = ResolveVaultBuffer(in _batteryDispatchResultsHandle);
-                if (!batteryDispatchRecords.IsCreated ||
-                    !batteryDispatchResults.IsCreated ||
-                    batteryDispatchRecords.Length < batteryCount ||
-                    batteryDispatchResults.Length < batteryCount)
+                BatteryBankModule battery = _batteryRefs[batteryIndex];
+                if (battery == null)
+                    continue;
+
+                float chargeAcceptanceWatts = battery.ResolveChargeAcceptanceWatts(BatteryDispatchDeltaTimeSeconds);
+                float dischargeAvailabilityWatts = battery.ResolveDischargeAvailabilityWatts(BatteryDispatchDeltaTimeSeconds);
+                float reservePreservingDischargeWatts = battery.ResolveDischargeAvailabilityWatts(
+                    BatteryDispatchDeltaTimeSeconds,
+                    BatteryEmergencyReserveThreshold);
+
+                _totalBatteryStoredEnergyWattSeconds += battery.StoredEnergyWattSeconds;
+                _totalBatteryCapacityWattSeconds += battery.CapacityWattSeconds;
+                totalChargeAcceptanceWatts += chargeAcceptanceWatts;
+                totalDischargeAvailabilityWatts += dischargeAvailabilityWatts;
+                totalReservePreservingDischargeWatts += reservePreservingDischargeWatts;
+            }
+
+            bool reserveAlreadyActive = ResolveBatteryEmergencyReserveActive(
+                _totalBatteryStoredEnergyWattSeconds,
+                _totalBatteryCapacityWattSeconds);
+
+            BatteryDispatchMode dispatchMode = BatteryDispatchMode.Idle;
+            float requestedPowerWatts = 0f;
+            float totalAvailablePowerWatts = 0f;
+            if (rawBalance > 0.0001f && totalChargeAcceptanceWatts > 0.0001f)
+            {
+                dispatchMode = BatteryDispatchMode.Charge;
+                requestedPowerWatts = rawBalance;
+                totalAvailablePowerWatts = totalChargeAcceptanceWatts;
+            }
+            else if (rawBalance < -0.0001f && totalDischargeAvailabilityWatts > 0.0001f)
+            {
+                dispatchMode = BatteryDispatchMode.Discharge;
+                if (reserveAlreadyActive)
                 {
-                    return;
+                    requestedPowerWatts = math.max(0f, ResolveEmergencyReservedDemandWatts() - rawDistribution.TotalGeneration);
+                    totalAvailablePowerWatts = totalDischargeAvailabilityWatts;
                 }
-
-                float totalChargeAcceptanceWatts = 0f;
-                float totalDischargeAvailabilityWatts = 0f;
-                float totalReservePreservingDischargeWatts = 0f;
-                for (int batteryIndex = 0; batteryIndex < batteryCount; batteryIndex++)
+                else
                 {
-                    BatteryBankModule battery = _batteryRefs[batteryIndex];
-                    if (battery == null)
-                        continue;
-
-                    float chargeAcceptanceWatts = battery.ResolveChargeAcceptanceWatts(BatteryDispatchDeltaTimeSeconds);
-                    float dischargeAvailabilityWatts = battery.ResolveDischargeAvailabilityWatts(BatteryDispatchDeltaTimeSeconds);
-                    float reservePreservingDischargeWatts = battery.ResolveDischargeAvailabilityWatts(
-                        BatteryDispatchDeltaTimeSeconds,
-                        BatteryEmergencyReserveThreshold);
-                    batteryDispatchRecords[batteryIndex] = new BatteryDispatchRecord
-                    {
-                        StoredEnergyWattSeconds = battery.StoredEnergyWattSeconds,
-                        CapacityWattSeconds = battery.CapacityWattSeconds,
-                        MaxChargePowerWatts = chargeAcceptanceWatts,
-                        MaxDischargePowerWatts = dischargeAvailabilityWatts,
-                        ChargeEfficiency = battery.ChargeEfficiency,
-                        DischargeEfficiency = battery.DischargeEfficiency
-                    };
-
-                    _totalBatteryStoredEnergyWattSeconds += battery.StoredEnergyWattSeconds;
-                    _totalBatteryCapacityWattSeconds += battery.CapacityWattSeconds;
-                    totalChargeAcceptanceWatts += chargeAcceptanceWatts;
-                    totalDischargeAvailabilityWatts += dischargeAvailabilityWatts;
-                    totalReservePreservingDischargeWatts += reservePreservingDischargeWatts;
+                    requestedPowerWatts = -rawBalance;
+                    totalAvailablePowerWatts = totalReservePreservingDischargeWatts;
                 }
+            }
 
-                bool reserveAlreadyActive = ResolveBatteryEmergencyReserveActive(
-                    _totalBatteryStoredEnergyWattSeconds,
-                    _totalBatteryCapacityWattSeconds);
-
-                BatteryDispatchMode dispatchMode = BatteryDispatchMode.Idle;
-                float requestedPowerWatts = 0f;
-                float totalAvailablePowerWatts = 0f;
-                if (rawBalance > 0.0001f && totalChargeAcceptanceWatts > 0.0001f)
-                {
-                    dispatchMode = BatteryDispatchMode.Charge;
-                    requestedPowerWatts = rawBalance;
-                    totalAvailablePowerWatts = totalChargeAcceptanceWatts;
-                }
-                else if (rawBalance < -0.0001f && totalDischargeAvailabilityWatts > 0.0001f)
-                {
-                    dispatchMode = BatteryDispatchMode.Discharge;
-                    if (reserveAlreadyActive)
-                    {
-                        requestedPowerWatts = math.max(0f, ResolveEmergencyReservedDemandWatts() - rawDistribution.TotalGeneration);
-                        totalAvailablePowerWatts = totalDischargeAvailabilityWatts;
-                    }
-                    else
-                    {
-                        requestedPowerWatts = -rawBalance;
-                        totalAvailablePowerWatts = totalReservePreservingDischargeWatts;
-                    }
-                }
-
-                if (dispatchMode == BatteryDispatchMode.Idle ||
-                    requestedPowerWatts <= 0.0001f ||
-                    totalAvailablePowerWatts <= 0.0001f)
-                {
-                    _batteryEmergencyReserveActive = ResolveBatteryEmergencyReserveActive(
-                        _totalBatteryStoredEnergyWattSeconds,
-                        _totalBatteryCapacityWattSeconds);
-                    return;
-                }
-
-                for (int batteryIndex = 0; batteryIndex < batteryCount; batteryIndex++)
-                {
-                    BatteryDispatchRecord dispatchRecord = batteryDispatchRecords[batteryIndex];
-                    batteryDispatchResults[batteryIndex] = ResolveBatteryDispatchRecord(
-                        in dispatchRecord,
-                        dispatchMode,
-                        requestedPowerWatts,
-                        totalAvailablePowerWatts,
-                        BatteryDispatchDeltaTimeSeconds);
-                }
-
-                _totalBatteryStoredEnergyWattSeconds = 0f;
-                _totalBatteryCapacityWattSeconds = 0f;
-                for (int batteryIndex = 0; batteryIndex < batteryCount; batteryIndex++)
-                {
-                    BatteryBankModule battery = _batteryRefs[batteryIndex];
-                    if (battery == null)
-                        continue;
-
-                    BatteryDispatchResult result = batteryDispatchResults[batteryIndex];
-                    battery.StageResolvedDispatch(result.NextStoredEnergyWattSeconds, result.PlannedGridPowerWatts);
-                    _totalBatteryStoredEnergyWattSeconds += result.NextStoredEnergyWattSeconds;
-                    _totalBatteryCapacityWattSeconds += battery.CapacityWattSeconds;
-                }
-
+            if (dispatchMode == BatteryDispatchMode.Idle ||
+                requestedPowerWatts <= 0.0001f ||
+                totalAvailablePowerWatts <= 0.0001f)
+            {
                 _batteryEmergencyReserveActive = ResolveBatteryEmergencyReserveActive(
                     _totalBatteryStoredEnergyWattSeconds,
                     _totalBatteryCapacityWattSeconds);
+                return;
             }
-            finally
+
+            _totalBatteryStoredEnergyWattSeconds = 0f;
+            _totalBatteryCapacityWattSeconds = 0f;
+            for (int batteryIndex = 0; batteryIndex < batteryCount; batteryIndex++)
             {
-                UnlockBatteryDispatchBuffers(batteryLockedMask);
+                BatteryBankModule battery = _batteryRefs[batteryIndex];
+                if (battery == null)
+                    continue;
+
+                float chargeAcceptanceWatts = battery.ResolveChargeAcceptanceWatts(BatteryDispatchDeltaTimeSeconds);
+                float dischargeAvailabilityWatts = battery.ResolveDischargeAvailabilityWatts(BatteryDispatchDeltaTimeSeconds);
+                float reservePreservingDischargeWatts = battery.ResolveDischargeAvailabilityWatts(
+                    BatteryDispatchDeltaTimeSeconds,
+                    BatteryEmergencyReserveThreshold);
+                float dispatchDischargeWatts = dispatchMode == BatteryDispatchMode.Discharge && !reserveAlreadyActive
+                    ? reservePreservingDischargeWatts
+                    : dischargeAvailabilityWatts;
+
+                BatteryDispatchRecord dispatchRecord;
+                dispatchRecord.StoredEnergyWattSeconds = battery.StoredEnergyWattSeconds;
+                dispatchRecord.CapacityWattSeconds = battery.CapacityWattSeconds;
+                dispatchRecord.MaxChargePowerWatts = chargeAcceptanceWatts;
+                dispatchRecord.MaxDischargePowerWatts = dispatchDischargeWatts;
+                dispatchRecord.ChargeEfficiency = battery.ChargeEfficiency;
+                dispatchRecord.DischargeEfficiency = battery.DischargeEfficiency;
+
+                BatteryDispatchResult result = ResolveBatteryDispatchRecord(
+                    in dispatchRecord,
+                    dispatchMode,
+                    requestedPowerWatts,
+                    totalAvailablePowerWatts,
+                    BatteryDispatchDeltaTimeSeconds);
+                battery.StageResolvedDispatch(result.NextStoredEnergyWattSeconds, result.PlannedGridPowerWatts);
+                _totalBatteryStoredEnergyWattSeconds += result.NextStoredEnergyWattSeconds;
+                _totalBatteryCapacityWattSeconds += battery.CapacityWattSeconds;
             }
+
+            _batteryEmergencyReserveActive = ResolveBatteryEmergencyReserveActive(
+                _totalBatteryStoredEnergyWattSeconds,
+                _totalBatteryCapacityWattSeconds);
         }
 
         private static BatteryDispatchResult ResolveBatteryDispatchRecord(
@@ -1852,11 +2071,9 @@ namespace Hecton8.Power
             float deltaTimeSeconds)
         {
             float safeCapacity = math.max(1f, record.CapacityWattSeconds);
-            BatteryDispatchResult result = new BatteryDispatchResult
-            {
-                NextStoredEnergyWattSeconds = math.clamp(record.StoredEnergyWattSeconds, 0f, safeCapacity),
-                PlannedGridPowerWatts = 0f
-            };
+            BatteryDispatchResult result;
+            result.NextStoredEnergyWattSeconds = math.clamp(record.StoredEnergyWattSeconds, 0f, safeCapacity);
+            result.PlannedGridPowerWatts = 0f;
 
             if (mode == BatteryDispatchMode.Idle ||
                 requestedPowerWatts <= 0.0001f ||
@@ -1923,33 +2140,9 @@ namespace Hecton8.Power
                 _totalBatteryCapacityWattSeconds);
         }
 
-        private bool EnsureBatteryDispatchCapacity(int batteryCount)
-        {
-            if (batteryCount <= 0)
-                return false;
-
-            return
-                EnsureVaultBuffer(
-                    ref _batteryDispatchRecordsHandle,
-                    BatteryDispatchRecordsBufferOffset,
-                    batteryCount,
-                    NativeArrayOptions.ClearMemory) &&
-                EnsureVaultBuffer(
-                    ref _batteryDispatchResultsHandle,
-                    BatteryDispatchResultsBufferOffset,
-                    batteryCount,
-                    NativeArrayOptions.ClearMemory);
-        }
-
-        private void DisposeBatteryDispatchBuffers()
-        {
-            ReleaseVaultBuffer(ref _batteryDispatchRecordsHandle);
-            ReleaseVaultBuffer(ref _batteryDispatchResultsHandle);
-        }
-
         private BufferID ResolveScratchBufferId(int localOffset)
         {
-            return (BufferID)(_vaultBufferBase + localOffset);
+            return (BufferID)(_vaultBufferBase + localOffset * PowerGridScratchBufferLockLaneStride);
         }
 
         private NativeArray<T> ResolveVaultBuffer<T>(in VaultGenerationHandle<T> handle)
@@ -1962,6 +2155,64 @@ namespace Hecton8.Power
             return vault.TryResolveHandle(in handle, out NativeArray<T> buffer) && buffer.IsCreated
                 ? buffer
                 : default;
+        }
+
+        private bool TryPinThermalDissipationJobBuffers(out IDataVault vault, out ulong pinnedMask)
+        {
+            vault = _dataVault;
+            pinnedMask = 0UL;
+            if (vault == null || vault.IsCompactionFenceActive)
+                return false;
+
+            pinnedMask = ResolveThermalDissipationMutationGuardMask();
+            if (pinnedMask == 0UL || !vault.TryAcquireMutationGuard(pinnedMask))
+            {
+                vault = null;
+                pinnedMask = 0UL;
+                return false;
+            }
+
+            return true;
+        }
+
+        private ulong ResolveThermalDissipationMutationGuardMask()
+        {
+            return ResolveScratchMutationGuardBit(ThermalTemperatureFrontBufferOffset) |
+                   ResolveScratchMutationGuardBit(ThermalTemperatureBackBufferOffset) |
+                   ResolveScratchMutationGuardBit(ThermalHeatInjectionBufferOffset) |
+                   ResolveScratchMutationGuardBit(ThermalHullSinkConductanceBufferOffset) |
+                   ResolveScratchMutationGuardBit(ThermalEdgeOffsetsBufferOffset) |
+                   ResolveScratchMutationGuardBit(ThermalEdgeDestinationsBufferOffset) |
+                   ResolveScratchMutationGuardBit(ThermalEdgeConductanceBufferOffset);
+        }
+
+        private ulong ResolveScratchMutationGuardBit(int localOffset)
+        {
+            int activeLockBit = ((int)ResolveScratchBufferId(localOffset)) & 31;
+            return 1UL << activeLockBit;
+        }
+
+        private void ReleaseThermalDissipationJobPins()
+        {
+            IDataVault vault = _thermalDissipationPinnedVault;
+            ulong pinnedMask = _thermalDissipationPinnedMask;
+            _thermalDissipationPinnedVault = null;
+            _thermalDissipationPinnedMask = 0UL;
+            ReleaseThermalDissipationJobPins(vault, pinnedMask);
+        }
+
+        private void ReleaseThermalDissipationJobPins(IDataVault vault, ulong pinnedMask)
+        {
+            if (vault == null || pinnedMask == 0UL)
+                return;
+
+            try
+            {
+            }
+            finally
+            {
+                vault.ReleaseMutationGuard(pinnedMask);
+            }
         }
 
         private bool TryReadOnlyVaultBuffer<T>(in VaultGenerationHandle<T> handle, out NativeArray<T>.ReadOnly buffer)
@@ -2020,103 +2271,43 @@ namespace Hecton8.Power
             handle = default;
         }
 
-        private bool TryLockVaultBuffer<T>(
-            IDataVault vault,
-            in VaultGenerationHandle<T> handle,
-            int bit,
-            ref int lockedMask)
+        private bool TryAcquireWriteBuffer<T>(in VaultGenerationHandle<T> handle, out NativeArray<T> buffer)
             where T : struct
         {
-            if (handle.BufferID == 0u)
+            buffer = default;
+            IDataVault vault = _dataVault;
+            if (vault == null || handle.BufferID == 0u || vault.IsCompactionFenceActive)
+                return false;
+
+            bool acquired = false;
+            try
+            {
+                if (!vault.TryAcquireWriteLock(in handle, SystemID.Power, out buffer))
+                    return false;
+
+                acquired = true;
+                if (!buffer.IsCreated)
+                    return false;
+
+                acquired = false;
                 return true;
-
-            if (vault == null || vault.IsCompactionFenceActive)
-                return false;
-
-            if (!vault.TryAcquireWriteLock(in handle, SystemID.Power, out NativeArray<T> _))
-                return false;
-
-            lockedMask |= 1 << bit;
-            return true;
+            }
+            finally
+            {
+                if (acquired)
+                {
+                    vault.ReleaseWriteLock(in handle, SystemID.Power);
+                    buffer = default;
+                }
+            }
         }
 
-        private static void UnlockVaultBuffer<T>(
-            IDataVault vault,
-            in VaultGenerationHandle<T> handle,
-            int bit,
-            int lockedMask)
+        private void ReleaseWriteBuffer<T>(in VaultGenerationHandle<T> handle)
             where T : struct
         {
-            if ((lockedMask & (1 << bit)) != 0 && handle.BufferID != 0u)
+            IDataVault vault = _dataVault;
+            if (vault != null && handle.BufferID != 0u)
                 vault.ReleaseWriteLock(in handle, SystemID.Power);
-        }
-
-        private bool TryLockThermalDissipationBuffers(out int lockedMask)
-        {
-            lockedMask = 0;
-            IDataVault vault = _dataVault;
-            if (vault == null || vault.IsCompactionFenceActive)
-                return false;
-
-            bool locked =
-                TryLockVaultBuffer(vault, in _thermalTemperatureFrontHandle, ThermalTemperatureFrontBufferOffset, ref lockedMask) &&
-                TryLockVaultBuffer(vault, in _thermalTemperatureBackHandle, ThermalTemperatureBackBufferOffset, ref lockedMask) &&
-                TryLockVaultBuffer(vault, in _thermalHeatInjectionHandle, ThermalHeatInjectionBufferOffset, ref lockedMask) &&
-                TryLockVaultBuffer(vault, in _thermalHullSinkConductanceHandle, ThermalHullSinkConductanceBufferOffset, ref lockedMask) &&
-                TryLockVaultBuffer(vault, in _thermalEdgeOffsetsHandle, ThermalEdgeOffsetsBufferOffset, ref lockedMask) &&
-                TryLockVaultBuffer(vault, in _thermalEdgeDestinationsHandle, ThermalEdgeDestinationsBufferOffset, ref lockedMask) &&
-                TryLockVaultBuffer(vault, in _thermalEdgeConductanceHandle, ThermalEdgeConductanceBufferOffset, ref lockedMask);
-
-            if (locked)
-                return true;
-
-            UnlockThermalDissipationBuffers(lockedMask);
-            lockedMask = 0;
-            return false;
-        }
-
-        private void UnlockThermalDissipationBuffers(int lockedMask)
-        {
-            IDataVault vault = _dataVault;
-            if (vault == null || lockedMask == 0)
-                return;
-
-            UnlockVaultBuffer(vault, in _thermalEdgeConductanceHandle, ThermalEdgeConductanceBufferOffset, lockedMask);
-            UnlockVaultBuffer(vault, in _thermalEdgeDestinationsHandle, ThermalEdgeDestinationsBufferOffset, lockedMask);
-            UnlockVaultBuffer(vault, in _thermalEdgeOffsetsHandle, ThermalEdgeOffsetsBufferOffset, lockedMask);
-            UnlockVaultBuffer(vault, in _thermalHullSinkConductanceHandle, ThermalHullSinkConductanceBufferOffset, lockedMask);
-            UnlockVaultBuffer(vault, in _thermalHeatInjectionHandle, ThermalHeatInjectionBufferOffset, lockedMask);
-            UnlockVaultBuffer(vault, in _thermalTemperatureBackHandle, ThermalTemperatureBackBufferOffset, lockedMask);
-            UnlockVaultBuffer(vault, in _thermalTemperatureFrontHandle, ThermalTemperatureFrontBufferOffset, lockedMask);
-        }
-
-        private bool TryLockBatteryDispatchBuffers(out int lockedMask)
-        {
-            lockedMask = 0;
-            IDataVault vault = _dataVault;
-            if (vault == null || vault.IsCompactionFenceActive)
-                return false;
-
-            bool locked =
-                TryLockVaultBuffer(vault, in _batteryDispatchRecordsHandle, BatteryDispatchRecordsBufferOffset, ref lockedMask) &&
-                TryLockVaultBuffer(vault, in _batteryDispatchResultsHandle, BatteryDispatchResultsBufferOffset, ref lockedMask);
-
-            if (locked)
-                return true;
-
-            UnlockBatteryDispatchBuffers(lockedMask);
-            lockedMask = 0;
-            return false;
-        }
-
-        private void UnlockBatteryDispatchBuffers(int lockedMask)
-        {
-            IDataVault vault = _dataVault;
-            if (vault == null || lockedMask == 0)
-                return;
-
-            UnlockVaultBuffer(vault, in _batteryDispatchResultsHandle, BatteryDispatchResultsBufferOffset, lockedMask);
-            UnlockVaultBuffer(vault, in _batteryDispatchRecordsHandle, BatteryDispatchRecordsBufferOffset, lockedMask);
         }
 
         private static bool ResolveBatteryEmergencyReserveActive(float totalStoredEnergyWattSeconds, float totalCapacityWattSeconds)

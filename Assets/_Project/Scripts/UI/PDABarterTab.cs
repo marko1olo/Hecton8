@@ -166,7 +166,7 @@ namespace Hecton8.UI
 
         private void RefreshExchangeBinding()
         {
-            PDAExchangeSystem current = exchangeSystem != null ? exchangeSystem : GlobalRegistry.PDAExchange;
+            PDAExchangeSystem current = exchangeSystem;
             if (current == null)
             {
                 exchangeSystem = null;
@@ -249,11 +249,22 @@ namespace Hecton8.UI
             object previousService,
             object currentService)
         {
-            if (serviceSlot != GlobalRegistryServiceSlot.Dispatcher || currentService == null || !isActiveAndEnabled)
-                return;
+            switch (serviceSlot)
+            {
+                case GlobalRegistryServiceSlot.PDAExchangeRuntime:
+                    exchangeSystem = currentService as PDAExchangeSystem;
+                    RefreshExchangeBinding();
+                    QueueRefreshAll(true);
+                    return;
 
-            TryUnregister();
-            TryRegister();
+                case GlobalRegistryServiceSlot.Dispatcher:
+                    if (currentService == null || !isActiveAndEnabled)
+                        return;
+
+                    TryUnregister();
+                    TryRegister();
+                    return;
+            }
         }
 
         private void TryRegisterHotSwapListener()
@@ -543,8 +554,8 @@ namespace Hecton8.UI
 
         private static string ResolveTransactionOfferName(PDAExchangeSystem.TransactionSnapshot transaction)
         {
-            if (transaction.Offer != null && !string.IsNullOrWhiteSpace(transaction.Offer.offerName))
-                return transaction.Offer.offerName;
+            if (transaction.Offer != null && !string.IsNullOrWhiteSpace(transaction.Offer.RuntimeOfferName))
+                return transaction.Offer.RuntimeOfferName;
 
             return transaction.LegacyOfferName;
         }
@@ -603,9 +614,9 @@ namespace Hecton8.UI
             {
                 Span<char> buffer = lease.Buffer.AsSpan();
                 int cursor = 0;
-                if (TryAppendUpperInvariant(buffer, ref cursor, offer.offerName, "UNKNOWN".AsSpan()) &&
+                if (TryAppendUpperInvariant(buffer, ref cursor, offer.RuntimeOfferName, "UNKNOWN".AsSpan()) &&
                     TryAppend(buffer, ref cursor, "  //  ".AsSpan()) &&
-                    TryAppendUpperInvariant(buffer, ref cursor, offer.channelName, "FIELD".AsSpan()))
+                    TryAppendUpperInvariant(buffer, ref cursor, offer.RuntimeChannelName, "FIELD".AsSpan()))
                 {
                     label.SetCharArray(lease.Buffer, 0, cursor);
                 }
@@ -627,10 +638,10 @@ namespace Hecton8.UI
                 int cursor = 0;
                 bool written =
                     TryAppend(buffer, ref cursor, "REQ  ".AsSpan()) &&
-                    exchangeSystem.TryAppendBundleSummary(buffer, ref cursor, offer.costs, "NONE".AsSpan()) &&
+                    exchangeSystem.TryAppendOfferCostSummary(buffer, ref cursor, offer, "NONE".AsSpan()) &&
                     TryAppendNewLine(buffer, ref cursor) &&
                     TryAppend(buffer, ref cursor, "OUT  ".AsSpan()) &&
-                    exchangeSystem.TryAppendBundleSummary(buffer, ref cursor, offer.rewards, "NO PAYOUT".AsSpan()) &&
+                    exchangeSystem.TryAppendOfferRewardSummary(buffer, ref cursor, offer, "NO PAYOUT".AsSpan()) &&
                     TryAppendNewLine(buffer, ref cursor);
 
                 if (written && snapshot.HasRequiredScanEntry)
@@ -702,7 +713,7 @@ namespace Hecton8.UI
             ReadOnlySpan<char> emptyLabel)
         {
             if (transaction.Offer != null && exchangeSystem != null)
-                return exchangeSystem.TryAppendBundleSummary(buffer, ref cursor, transaction.Offer.rewards, emptyLabel);
+                return exchangeSystem.TryAppendOfferRewardSummary(buffer, ref cursor, transaction.Offer, emptyLabel);
 
             ReadOnlySpan<char> reward = string.IsNullOrWhiteSpace(transaction.LegacyRewardSummary)
                 ? emptyLabel

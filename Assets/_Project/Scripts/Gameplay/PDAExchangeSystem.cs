@@ -354,15 +354,15 @@ namespace Hecton8.Gameplay
                 return false;
             }
 
-            if (!ConsumeBundle(offer.costs))
+            if (!ConsumeOfferCosts(offer))
             {
                 NotifyWarning(RelayCostFailedMessage);
                 return false;
             }
 
-            if (!GrantRewards(offer.rewards))
+            if (!GrantOfferRewards(offer))
             {
-                RefundBundle(offer.costs);
+                RefundOfferCosts(offer);
                 NotifyWarning(RelayCargoFullMessage);
                 return false;
             }
@@ -409,9 +409,15 @@ namespace Hecton8.Gameplay
                 return false;
             }
 
-            if (HasReachedLimit(offerHash, offer.repeatLimit))
+            if (HasReachedLimit(offerHash, offer.RuntimeRepeatLimit))
             {
                 status = ExchangeStatus.ContractClosed;
+                return false;
+            }
+
+            if (offer.HasBlockingRuntimeErrors)
+            {
+                status = ExchangeStatus.CostDataInvalid;
                 return false;
             }
 
@@ -421,24 +427,20 @@ namespace Hecton8.Gameplay
                 return false;
             }
 
-            BarterItemAmount[] costs = offer.costs;
-            if (costs != null)
+            int costCount = offer.RuntimeCostCount;
+            for (int i = 0; i < costCount; i++)
             {
-                for (int i = 0; i < costs.Length; i++)
+                if (!offer.TryGetCost(i, out BarterItemAmount cost))
                 {
-                    if (costs[i].item == null)
-                    {
-                        status = ExchangeStatus.CostDataInvalid;
-                        return false;
-                    }
+                    status = ExchangeStatus.CostDataInvalid;
+                    return false;
+                }
 
-                    int amount = math.max(1, costs[i].amount);
-                    int itemHash = costs[i].item.PersistentHashId;
-                    if (itemHash == 0 || playerInventory.CountTotal(itemHash) < amount)
-                    {
-                        status = ExchangeStatus.InsufficientMaterials;
-                        return false;
-                    }
+                int itemHash = cost.RuntimeItemHash;
+                if (itemHash == 0 || playerInventory.CountTotal(itemHash) < cost.RuntimeAmount)
+                {
+                    status = ExchangeStatus.InsufficientMaterials;
+                    return false;
                 }
             }
 
@@ -473,10 +475,77 @@ namespace Hecton8.Gameplay
             return true;
         }
 
+        public bool TryAppendOfferCostSummary(Span<char> buffer, ref int cursor, BarterOfferData offer, ReadOnlySpan<char> emptyLabel)
+        {
+            return TryAppendOfferBundleSummary(buffer, ref cursor, offer, false, emptyLabel);
+        }
+
+        public bool TryAppendOfferRewardSummary(Span<char> buffer, ref int cursor, BarterOfferData offer, ReadOnlySpan<char> emptyLabel)
+        {
+            return TryAppendOfferBundleSummary(buffer, ref cursor, offer, true, emptyLabel);
+        }
+
+        private bool TryAppendOfferBundleSummary(
+            Span<char> buffer,
+            ref int cursor,
+            BarterOfferData offer,
+            bool rewards,
+            ReadOnlySpan<char> emptyLabel)
+        {
+            int count = offer != null ? (rewards ? offer.RuntimeRewardCount : offer.RuntimeCostCount) : 0;
+            if (count <= 0)
+                return TryAppend(buffer, ref cursor, emptyLabel);
+
+            for (int i = 0; i < count; i++)
+            {
+                if (i > 0 && !TryAppend(buffer, ref cursor, "  |  ".AsSpan()))
+                    return false;
+
+                bool hasEntry = rewards
+                    ? offer.TryGetReward(i, out BarterItemAmount entry)
+                    : offer.TryGetCost(i, out entry);
+                if (!hasEntry)
+                    return false;
+
+                ReadOnlySpan<char> itemName = entry.item != null && !string.IsNullOrWhiteSpace(entry.item.itemName)
+                    ? entry.item.itemName.AsSpan()
+                    : "UNKNOWN".AsSpan();
+
+                if (!TryAppend(buffer, ref cursor, itemName) ||
+                    !TryAppend(buffer, ref cursor, " X".AsSpan()) ||
+                    !entry.RuntimeAmount.TryFormat(buffer.Slice(cursor), out int written))
+                {
+                    return false;
+                }
+
+                cursor += written;
+            }
+
+            return true;
+        }
+
         private string BuildBundleSummaryForSave(BarterItemAmount[] bundle, string emptyLabel)
         {
             int cursor = 0;
             if (!TryAppendBundleSummary(_saveSummaryBuffer.AsSpan(), ref cursor, bundle, emptyLabel.AsSpan()))
+                cursor = math.min(cursor, _saveSummaryBuffer.Length);
+
+            return new string(_saveSummaryBuffer, 0, cursor);
+        }
+
+        private string BuildOfferCostSummaryForSave(BarterOfferData offer, string emptyLabel)
+        {
+            int cursor = 0;
+            if (!TryAppendOfferCostSummary(_saveSummaryBuffer.AsSpan(), ref cursor, offer, emptyLabel.AsSpan()))
+                cursor = math.min(cursor, _saveSummaryBuffer.Length);
+
+            return new string(_saveSummaryBuffer, 0, cursor);
+        }
+
+        private string BuildOfferRewardSummaryForSave(BarterOfferData offer, string emptyLabel)
+        {
+            int cursor = 0;
+            if (!TryAppendOfferRewardSummary(_saveSummaryBuffer.AsSpan(), ref cursor, offer, emptyLabel.AsSpan()))
                 cursor = math.min(cursor, _saveSummaryBuffer.Length);
 
             return new string(_saveSummaryBuffer, 0, cursor);
@@ -513,7 +582,7 @@ namespace Hecton8.Gameplay
 
                     data.barter.offerStates[count] = new BarterOfferStateDTO
                     {
-                        offerId = offer.offerId,
+                        offerId = offer.RuntimeOfferId,
                         executionCount = executionCount
                     };
                     count++;
@@ -532,11 +601,11 @@ namespace Hecton8.Gameplay
                 BarterOfferData txOffer = tx.Offer;
                 data.barter.recentTransactions[i] = new BarterTransactionDTO
                 {
-                    offerId = txOffer != null ? txOffer.offerId : tx.LegacyOfferId,
-                    offerName = txOffer != null ? txOffer.offerName : tx.LegacyOfferName,
-                    channelName = txOffer != null ? txOffer.channelName : tx.LegacyChannelName,
-                    costSummary = txOffer != null ? BuildBundleSummaryForSave(txOffer.costs, "NONE") : tx.LegacyCostSummary,
-                    rewardSummary = txOffer != null ? BuildBundleSummaryForSave(txOffer.rewards, "NONE") : tx.LegacyRewardSummary
+                    offerId = txOffer != null ? txOffer.RuntimeOfferId : tx.LegacyOfferId,
+                    offerName = txOffer != null ? txOffer.RuntimeOfferName : tx.LegacyOfferName,
+                    channelName = txOffer != null ? txOffer.RuntimeChannelName : tx.LegacyChannelName,
+                    costSummary = txOffer != null ? BuildOfferCostSummaryForSave(txOffer, "NONE") : tx.LegacyCostSummary,
+                    rewardSummary = txOffer != null ? BuildOfferRewardSummaryForSave(txOffer, "NONE") : tx.LegacyRewardSummary
                 };
             }
 
@@ -688,9 +757,6 @@ namespace Hecton8.Gameplay
 
         public void Tick(float deltaTime)
         {
-            if (playerInventory == null || ActiveScanLogService == null)
-                AutoResolve(false);
-
             RefreshSignalFilters();
             byte dirtyFlags = 0;
             if (ConsumeInventoryChangedSignals())
@@ -804,7 +870,7 @@ namespace Hecton8.Gameplay
             if (offer == null)
                 return true;
 
-            return HasReachedLimit(ResolveOfferHash(offer), offer.repeatLimit);
+            return HasReachedLimit(ResolveOfferHash(offer), offer.RuntimeRepeatLimit);
         }
 
         private bool HasReachedLimit(int offerHash, int repeatLimit)
@@ -1026,8 +1092,8 @@ namespace Hecton8.Gameplay
                 BarterOfferData offer = offerCatalog.GetAt(i);
                 if (offer != null)
                 {
-                    _catalogOfferHashes[i] = ComputeOfferHash(offer.offerId);
-                    _catalogRequiredScanEntryHashes[i] = ScanEvents.ComputeEntryHash(offer.requiredScanEntryId);
+                    _catalogOfferHashes[i] = ComputeOfferHash(offer.RuntimeOfferId);
+                    _catalogRequiredScanEntryHashes[i] = ScanEvents.ComputeEntryHash(offer.RuntimeRequiredScanEntryId);
                 }
             }
 
@@ -1045,21 +1111,26 @@ namespace Hecton8.Gameplay
             _catalogRuntimeHashCount = 0;
         }
 
-        private bool ConsumeBundle(BarterItemAmount[] bundle)
+        private bool ConsumeOfferCosts(BarterOfferData offer)
         {
-            if (bundle == null || bundle.Length == 0)
-                return true;
+            if (offer == null || offer.RuntimeCostCount <= 0 || playerInventory == null)
+                return false;
 
-            for (int i = 0; i < bundle.Length; i++)
+            int count = offer.RuntimeCostCount;
+            for (int i = 0; i < count; i++)
             {
-                if (bundle[i].item == null)
+                if (!offer.TryGetCost(i, out BarterItemAmount cost))
                     return false;
 
-                int itemHash = bundle[i].item.PersistentHashId;
-                if (itemHash == 0 || !playerInventory.TryRemoveQuantity(itemHash, math.max(1, bundle[i].amount)))
+                int itemHash = cost.RuntimeItemHash;
+                if (itemHash == 0 || !playerInventory.TryRemoveQuantity(itemHash, cost.RuntimeAmount))
                 {
                     for (int j = 0; j < i; j++)
-                        playerInventory.TryAddItem(bundle[j].item.PersistentHashId, math.max(1, bundle[j].amount));
+                    {
+                        if (offer.TryGetCost(j, out BarterItemAmount refund))
+                            playerInventory.TryAddItem(refund.RuntimeItemHash, refund.RuntimeAmount);
+                    }
+
                     return false;
                 }
             }
@@ -1067,21 +1138,26 @@ namespace Hecton8.Gameplay
             return true;
         }
 
-        private bool GrantRewards(BarterItemAmount[] bundle)
+        private bool GrantOfferRewards(BarterOfferData offer)
         {
-            if (bundle == null || bundle.Length == 0)
-                return true;
+            if (offer == null || offer.RuntimeRewardCount <= 0 || playerInventory == null)
+                return false;
 
-            for (int i = 0; i < bundle.Length; i++)
+            int count = offer.RuntimeRewardCount;
+            for (int i = 0; i < count; i++)
             {
-                if (bundle[i].item == null)
+                if (!offer.TryGetReward(i, out BarterItemAmount reward))
                     return false;
 
-                int itemHash = bundle[i].item.PersistentHashId;
-                if (itemHash == 0 || !playerInventory.TryAddItem(itemHash, math.max(1, bundle[i].amount)))
+                int itemHash = reward.RuntimeItemHash;
+                if (itemHash == 0 || !playerInventory.TryAddItem(itemHash, reward.RuntimeAmount))
                 {
                     for (int j = 0; j < i; j++)
-                        playerInventory.TryRemoveQuantity(bundle[j].item.PersistentHashId, math.max(1, bundle[j].amount));
+                    {
+                        if (offer.TryGetReward(j, out BarterItemAmount rollback))
+                            playerInventory.TryRemoveQuantity(rollback.RuntimeItemHash, rollback.RuntimeAmount);
+                    }
+
                     return false;
                 }
             }
@@ -1089,19 +1165,20 @@ namespace Hecton8.Gameplay
             return true;
         }
 
-        private void RefundBundle(BarterItemAmount[] bundle)
+        private void RefundOfferCosts(BarterOfferData offer)
         {
-            if (bundle == null || bundle.Length == 0 || playerInventory == null)
+            if (offer == null || playerInventory == null)
                 return;
 
-            for (int i = 0; i < bundle.Length; i++)
+            int count = offer.RuntimeCostCount;
+            for (int i = 0; i < count; i++)
             {
-                if (bundle[i].item == null)
+                if (!offer.TryGetCost(i, out BarterItemAmount cost))
                     continue;
 
-                int itemHash = bundle[i].item.PersistentHashId;
+                int itemHash = cost.RuntimeItemHash;
                 if (itemHash != 0)
-                    playerInventory.TryAddItem(itemHash, math.max(1, bundle[i].amount));
+                    playerInventory.TryAddItem(itemHash, cost.RuntimeAmount);
             }
         }
 

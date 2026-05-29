@@ -77,6 +77,7 @@ namespace Hecton8.Core
         private const int PostShiftUnloadUnusedAssetsMinimumFrames = 300;
 
         private static OriginShiftEventData _lastShiftEvent;
+        private static HectonFloatingOrigin s_activeRuntime;
 
         // COLD ALLOC: List<GameObject>[1024] - scene root staging for shift target and particle rebases - owner: HectonFloatingOrigin
         private readonly List<GameObject> _sceneRootObjects = new List<GameObject>(ShiftSceneRootCapacity);
@@ -159,7 +160,7 @@ namespace Hecton8.Core
         {
             get
             {
-                HectonFloatingOrigin origin = GlobalRegistry.FloatingOrigin;
+                HectonFloatingOrigin origin = s_activeRuntime;
                 return origin != null ? origin.TotalOffset : Vector3.zero;
             }
         }
@@ -169,7 +170,7 @@ namespace Hecton8.Core
         {
             get
             {
-                HectonFloatingOrigin origin = GlobalRegistry.FloatingOrigin;
+                HectonFloatingOrigin origin = s_activeRuntime;
                 return origin != null ? origin._totalOffsetDouble : double3.zero;
             }
         }
@@ -182,7 +183,7 @@ namespace Hecton8.Core
         {
             get
             {
-                HectonFloatingOrigin origin = GlobalRegistry.FloatingOrigin;
+                HectonFloatingOrigin origin = s_activeRuntime;
                 return origin != null ? origin._shiftSequence : 0u;
             }
         }
@@ -192,7 +193,7 @@ namespace Hecton8.Core
         {
             get
             {
-                HectonFloatingOrigin origin = GlobalRegistry.FloatingOrigin;
+                HectonFloatingOrigin origin = s_activeRuntime;
                 return origin != null && origin._isShiftInProgress;
             }
         }
@@ -202,7 +203,7 @@ namespace Hecton8.Core
         {
             get
             {
-                HectonFloatingOrigin origin = GlobalRegistry.FloatingOrigin;
+                HectonFloatingOrigin origin = s_activeRuntime;
                 return origin != null && origin._physicsPauseActive;
             }
         }
@@ -210,7 +211,7 @@ namespace Hecton8.Core
         /// <summary>Editor/runtime readback for the unmanaged AUP coordinator state.</summary>
         public static bool TryGetAupUniverseTunerSnapshot(out AupUniverseTunerSnapshot snapshot)
         {
-            HectonFloatingOrigin origin = GlobalRegistry.FloatingOrigin;
+            HectonFloatingOrigin origin = s_activeRuntime;
             IDataVault vault = ResolveAupTunerVault(origin);
             uint sequence = origin != null ? origin._shiftSequence : 0u;
             return AupOriginShiftCoordinator.TryGetEditorSnapshot(vault, sequence, out snapshot);
@@ -219,7 +220,7 @@ namespace Hecton8.Core
         /// <summary>Editor facade for the unmanaged rebase threshold.</summary>
         public static void SetRebaseThresholdForTuner(float thresholdMeters)
         {
-            HectonFloatingOrigin origin = GlobalRegistry.FloatingOrigin;
+            HectonFloatingOrigin origin = s_activeRuntime;
             IDataVault vault = ResolveAupTunerVault(origin);
             float threshold = math.clamp(math.isfinite(thresholdMeters) ? thresholdMeters : 4000f, 2000f, 8000f);
             if (origin != null)
@@ -234,7 +235,7 @@ namespace Hecton8.Core
         /// <summary>Editor facade that raises the unmanaged pending rebase flag.</summary>
         public static void ForceRebaseNowForTuner()
         {
-            HectonFloatingOrigin origin = GlobalRegistry.FloatingOrigin;
+            HectonFloatingOrigin origin = s_activeRuntime;
             IDataVault vault = ResolveAupTunerVault(origin);
             AupOriginShiftCoordinator.RequestManualRebase(vault);
         }
@@ -243,7 +244,7 @@ namespace Hecton8.Core
         public static bool ReloadAupConstantsForTuner()
         {
 #if UNITY_EDITOR
-            HectonFloatingOrigin origin = GlobalRegistry.FloatingOrigin;
+            HectonFloatingOrigin origin = s_activeRuntime;
             IDataVault vault = ResolveAupTunerVault(origin);
             return AupOriginShiftCoordinator.TryReloadCsvOverrideFromDisk(vault);
 #else
@@ -271,9 +272,16 @@ namespace Hecton8.Core
         /// <returns>Live floating-origin owner.</returns>
         internal static HectonFloatingOrigin EnsureRuntimeInstance()
         {
-            HectonFloatingOrigin origin = GlobalRegistry.FloatingOrigin;
+            HectonFloatingOrigin origin = s_activeRuntime;
             if (origin != null)
                 return origin;
+
+            origin = GlobalRegistry.FloatingOrigin;
+            if (origin != null)
+            {
+                s_activeRuntime = origin;
+                return origin;
+            }
 
             GameObject runtimeRoot = new GameObject("[HectonFloatingOrigin]"); // COLD ALLOC: GameObject[1] - bootstrap-owned AUP/floating-origin authority - owner: HectonFloatingOrigin
             return runtimeRoot.AddComponent<HectonFloatingOrigin>();
@@ -285,7 +293,7 @@ namespace Hecton8.Core
         public static void BeginSafeTeleportProtocol()
         {
             GlobalRegistry.Physics?.ClearQueuedPackets();
-            HectonFloatingOrigin origin = GlobalRegistry.FloatingOrigin;
+            HectonFloatingOrigin origin = s_activeRuntime;
             if (origin != null)
                 BeginSafeTeleportProtocolInternal(origin);
         }
@@ -295,14 +303,14 @@ namespace Hecton8.Core
         /// </summary>
         public static void EndSafeTeleportProtocol()
         {
-            HectonFloatingOrigin origin = GlobalRegistry.FloatingOrigin;
+            HectonFloatingOrigin origin = s_activeRuntime;
             if (origin != null)
                 origin._physicsResumeFrame = SystemDispatcher.CurrentFrameIndex + 1;
         }
 
         internal static bool TryFlushInitialSceneRebaseBeforeTicks()
         {
-            HectonFloatingOrigin origin = GlobalRegistry.FloatingOrigin;
+            HectonFloatingOrigin origin = s_activeRuntime;
             if (origin == null)
                 return true;
 
@@ -321,6 +329,7 @@ namespace Hecton8.Core
         private static void ResetStaticState()
         {
             _lastShiftEvent = default;
+            s_activeRuntime = null;
             ClearOriginShiftListeners();
             HectonShaderGlobalDataVaultBridge.ResetAupShaderGlobals();
             HectonXRRuntimeState.ResetShaderGlobals();
@@ -469,7 +478,7 @@ namespace Hecton8.Core
         /// </summary>
         public static void MarkShiftTargetsDirty()
         {
-            HectonFloatingOrigin origin = GlobalRegistry.FloatingOrigin;
+            HectonFloatingOrigin origin = s_activeRuntime;
             if (origin == null)
                 return;
 
@@ -486,7 +495,7 @@ namespace Hecton8.Core
         public static async Awaitable<OriginShiftEventData> WaitForShiftStabilityAsync(CancellationToken cancellationToken = default)
         {
             int watchdog = 0;
-            HectonFloatingOrigin origin = GlobalRegistry.FloatingOrigin;
+            HectonFloatingOrigin origin = s_activeRuntime;
             while (origin != null &&
                    (origin._isShiftInProgress ||
                     origin._physicsPauseActive ||
@@ -503,7 +512,7 @@ namespace Hecton8.Core
                 }
 
                 await AwaitableDebtMonitor.NextFrameAsync(cancellationToken);
-                origin = GlobalRegistry.FloatingOrigin;
+                origin = s_activeRuntime;
             }
 
             double3 currentOffsetDouble = CurrentTotalOffsetDouble;
@@ -529,6 +538,7 @@ namespace Hecton8.Core
             }
 
             GlobalRegistry.RegisterFloatingOriginRuntime(this);
+            s_activeRuntime = this;
             _dataVault = GlobalRegistry.DataVault;
             _playerRuntimeContext = GlobalRegistry.Player;
             _submarineRuntime = GlobalRegistry.Submarine;
@@ -607,6 +617,9 @@ namespace Hecton8.Core
             UnsubscribeSceneEvents();
             DisposeDriftCheckState();
 
+            if (ReferenceEquals(s_activeRuntime, this))
+                s_activeRuntime = null;
+
             if (GlobalRegistry.FloatingOrigin == this)
             {
                 if (_physicsPauseActive)
@@ -627,6 +640,7 @@ namespace Hecton8.Core
             if (GlobalRegistry.FloatingOrigin != this)
                 GlobalRegistry.RegisterFloatingOriginRuntime(this);
 
+            s_activeRuntime = this;
             _dataVault = GlobalRegistry.DataVault;
             TryRegisterHotSwapListener();
             RefreshThresholdCache();
@@ -1966,7 +1980,7 @@ namespace Hecton8.Core
 
         internal static void PublishCurrentGlobalOffsetsForRenderLoop()
         {
-            HectonFloatingOrigin origin = GlobalRegistry.FloatingOrigin;
+            HectonFloatingOrigin origin = s_activeRuntime;
             if (origin != null)
             {
                 origin.PublishGlobalOffsets();

@@ -26,6 +26,7 @@ namespace Hecton8.Physics
         private const uint FloodMuffleLaneHash = 0x464C4D46u; // FLMF
         private const int FloodMuffleSignalCapacity = 32;
         private const int FloodMuffleMinimumQualityFrameSignals = 8;
+        private const ulong FluidSimulationMutationGuardMask = 0x00000000F00C4FFFUL;
         private static readonly int s_WaterlineBufferId = Shader.PropertyToID("_H8HabitatFluidWaterlines");
         private static readonly int s_WaterlineCountId = Shader.PropertyToID("_H8HabitatFluidWaterlineCount");
         private static readonly int s_GlobalFloodScalarId = Shader.PropertyToID("_H8HabitatFloodScalar");
@@ -71,7 +72,7 @@ namespace Hecton8.Physics
         private int _edgeCount;
         private int _waterlineBufferCapacity;
         private int _waterlineWriteBufferIndex;
-        private int _lockedBufferMask;
+        private ulong _activeMutationGuardMask;
         private int _droppedSignalCount;
         private int _frame;
         private long _simulationScheduleTimestamp;
@@ -115,7 +116,7 @@ namespace Hecton8.Physics
         private void OnDisable()
         {
             CompleteScheduledSimulationForAuthoritativeWrite();
-            UnlockJobBuffers();
+            ReleaseFluidSimulationMutationGuard();
 
             if (_registeredFixed)
                 GlobalRegistry.UnregisterFixedTickable(this, PriorityLayer.Environment);
@@ -144,7 +145,7 @@ namespace Hecton8.Physics
             if (serviceSlot == GlobalRegistryServiceSlot.DataVault)
             {
                 CompleteScheduledSimulationForAuthoritativeWrite();
-                UnlockJobBuffers();
+                ReleaseFluidSimulationMutationGuard();
                 CacheDataVaultCold(currentService as IDataVault);
                 if (isActiveAndEnabled)
                 {
@@ -202,122 +203,134 @@ namespace Hecton8.Physics
             if (!_buffersReady && !EnsureBuffersInitialized())
                 return;
 
-            NativeArray<FluidCompartmentDTO> read = ResolveActiveCompartments();
-            NativeArray<FluidCompartmentDTO> write = ResolveInactiveCompartments();
-            int capacity = ResolveCompartmentCapacity();
-            NativeArray<IntegrityStateDTO> integrity = ResolveFluidVaultBuffer(ref _integrityHandle, BufferID.ShinobuFluidIntegrityState, capacity);
-            NativeArray<int> edgeOffsets = ResolveFluidVaultBuffer(ref _edgeOffsetsHandle, BufferID.ShinobuFluidEdgeOffsets, capacity + 1);
-            NativeArray<int> edgeDestinations = ResolveFluidVaultBuffer(ref _edgeDestinationsHandle, BufferID.ShinobuFluidEdgeDestinations, HabitatFluidIncursionConstants.MaxEdges);
-            NativeArray<byte> edgeFlags = ResolveFluidVaultBuffer(ref _edgeFlagsHandle, BufferID.ShinobuFluidEdgeFlags, HabitatFluidIncursionConstants.MaxEdges);
-            NativeArray<float> edgeConductivity = ResolveFluidVaultBuffer(ref _edgeConductivityHandle, BufferID.ShinobuFluidEdgeConductivity, HabitatFluidIncursionConstants.MaxEdges);
-            NativeArray<float3> centroids = ResolveFluidVaultBuffer(ref _centroidsHandle, BufferID.ShinobuFluidCompartmentCentroids, capacity);
-            NativeArray<FluidWaterlineShaderDTO> waterlines = ResolveFluidVaultBuffer(ref _waterlineHandle, BufferID.ShinobuFluidWaterlineShader, capacity);
-            NativeArray<FluidMassStateDTO> massState = ResolveFluidVaultBuffer(ref _massStateHandle, BufferID.ShinobuFluidMassState, 1);
-            NativeArray<FluidIncursionTuningDTO> tuningArray = ResolveFluidVaultBuffer(ref _tuningHandle, BufferID.ShinobuFluidTuning, 1);
-            NativeArray<FluidIncursionTelemetryEntry> telemetry = ResolveFluidVaultBuffer(ref _telemetryHandle, BufferID.ShinobuFluidTelemetryRing, HabitatFluidIncursionConstants.TelemetryFrameCount);
-            NativeArray<FluidCompartmentTelemetryDTO> compartmentTelemetry = ResolveFluidVaultBuffer(ref _compartmentTelemetryHandle, BufferID.ShinobuFluidCompartmentTelemetry, capacity);
-            NativeArray<int> telemetryCursor = ResolveFluidVaultBuffer(ref _telemetryCursorHandle, BufferID.ShinobuFluidTelemetryCursor, 1);
-            NativeArray<int> bfsQueue = ResolveFluidVaultBuffer(ref _bfsQueueHandle, BufferID.ShinobuFluidBfsQueue, capacity);
-            NativeArray<byte> bfsVisited = ResolveFluidVaultBuffer(ref _bfsVisitedHandle, BufferID.ShinobuFluidBfsVisited, capacity);
-            NativeArray<float> deltaVolumes = ResolveFluidVaultBuffer(ref _deltaVolumesHandle, BufferID.ShinobuFluidDeltaVolumes, capacity);
-            NativeArray<float> transferRemainders = ResolveFluidVaultBuffer(ref _transferRemaindersHandle, BufferID.ShinobuFluidTransferRemainders, HabitatFluidIncursionConstants.MaxEdges);
-            NativeArray<FluidIncursionFrameSummaryDTO> summary = ResolveFluidVaultBuffer(ref _summaryHandle, BufferID.ShinobuFluidFrameSummary, 1);
-
-            if (!read.IsCreated || !write.IsCreated || !integrity.IsCreated || !edgeOffsets.IsCreated ||
-                !edgeDestinations.IsCreated || !edgeFlags.IsCreated || !edgeConductivity.IsCreated || !centroids.IsCreated ||
-                !waterlines.IsCreated || !massState.IsCreated || !tuningArray.IsCreated ||
-                !telemetry.IsCreated || !compartmentTelemetry.IsCreated || !telemetryCursor.IsCreated || !bfsQueue.IsCreated ||
-                !bfsVisited.IsCreated || !deltaVolumes.IsCreated || !transferRemainders.IsCreated || !summary.IsCreated)
-            {
+            if (!TryAcquireFluidSimulationMutationGuard())
                 return;
+
+            bool scheduled = false;
+            try
+            {
+                NativeArray<FluidCompartmentDTO> read = ResolveActiveCompartments();
+                NativeArray<FluidCompartmentDTO> write = ResolveInactiveCompartments();
+                int capacity = ResolveCompartmentCapacity();
+                NativeArray<IntegrityStateDTO> integrity = ResolveFluidVaultBuffer(ref _integrityHandle, BufferID.ShinobuFluidIntegrityState, capacity);
+                NativeArray<int> edgeOffsets = ResolveFluidVaultBuffer(ref _edgeOffsetsHandle, BufferID.ShinobuFluidEdgeOffsets, capacity + 1);
+                NativeArray<int> edgeDestinations = ResolveFluidVaultBuffer(ref _edgeDestinationsHandle, BufferID.ShinobuFluidEdgeDestinations, HabitatFluidIncursionConstants.MaxEdges);
+                NativeArray<byte> edgeFlags = ResolveFluidVaultBuffer(ref _edgeFlagsHandle, BufferID.ShinobuFluidEdgeFlags, HabitatFluidIncursionConstants.MaxEdges);
+                NativeArray<float> edgeConductivity = ResolveFluidVaultBuffer(ref _edgeConductivityHandle, BufferID.ShinobuFluidEdgeConductivity, HabitatFluidIncursionConstants.MaxEdges);
+                NativeArray<float3> centroids = ResolveFluidVaultBuffer(ref _centroidsHandle, BufferID.ShinobuFluidCompartmentCentroids, capacity);
+                NativeArray<FluidWaterlineShaderDTO> waterlines = ResolveFluidVaultBuffer(ref _waterlineHandle, BufferID.ShinobuFluidWaterlineShader, capacity);
+                NativeArray<FluidMassStateDTO> massState = ResolveFluidVaultBuffer(ref _massStateHandle, BufferID.ShinobuFluidMassState, 1);
+                NativeArray<FluidIncursionTuningDTO> tuningArray = ResolveFluidVaultBuffer(ref _tuningHandle, BufferID.ShinobuFluidTuning, 1);
+                NativeArray<FluidIncursionTelemetryEntry> telemetry = ResolveFluidVaultBuffer(ref _telemetryHandle, BufferID.ShinobuFluidTelemetryRing, HabitatFluidIncursionConstants.TelemetryFrameCount);
+                NativeArray<FluidCompartmentTelemetryDTO> compartmentTelemetry = ResolveFluidVaultBuffer(ref _compartmentTelemetryHandle, BufferID.ShinobuFluidCompartmentTelemetry, capacity);
+                NativeArray<int> telemetryCursor = ResolveFluidVaultBuffer(ref _telemetryCursorHandle, BufferID.ShinobuFluidTelemetryCursor, 1);
+                NativeArray<int> bfsQueue = ResolveFluidVaultBuffer(ref _bfsQueueHandle, BufferID.ShinobuFluidBfsQueue, capacity);
+                NativeArray<byte> bfsVisited = ResolveFluidVaultBuffer(ref _bfsVisitedHandle, BufferID.ShinobuFluidBfsVisited, capacity);
+                NativeArray<float> deltaVolumes = ResolveFluidVaultBuffer(ref _deltaVolumesHandle, BufferID.ShinobuFluidDeltaVolumes, capacity);
+                NativeArray<float> transferRemainders = ResolveFluidVaultBuffer(ref _transferRemaindersHandle, BufferID.ShinobuFluidTransferRemainders, HabitatFluidIncursionConstants.MaxEdges);
+                NativeArray<FluidIncursionFrameSummaryDTO> summary = ResolveFluidVaultBuffer(ref _summaryHandle, BufferID.ShinobuFluidFrameSummary, 1);
+
+                if (!read.IsCreated || !write.IsCreated || !integrity.IsCreated || !edgeOffsets.IsCreated ||
+                    !edgeDestinations.IsCreated || !edgeFlags.IsCreated || !edgeConductivity.IsCreated || !centroids.IsCreated ||
+                    !waterlines.IsCreated || !massState.IsCreated || !tuningArray.IsCreated ||
+                    !telemetry.IsCreated || !compartmentTelemetry.IsCreated || !telemetryCursor.IsCreated || !bfsQueue.IsCreated ||
+                    !bfsVisited.IsCreated || !deltaVolumes.IsCreated || !transferRemainders.IsCreated || !summary.IsCreated)
+                {
+                    return;
+                }
+
+                _simulationAccumulator = 0f;
+
+                int safeCompartmentCount = math.min(compartmentCount, read.Length);
+                safeCompartmentCount = math.min(safeCompartmentCount, write.Length);
+                safeCompartmentCount = math.min(safeCompartmentCount, integrity.Length);
+                FluidIncursionTuningDTO tuning = RefreshTuning(tuningArray, solverDeltaTime, safeCompartmentCount);
+                ApplyIncomingFluidIncursionSignals(read, write, integrity, safeCompartmentCount);
+                summary[0] = default;
+
+                FluidCompartmentDTO* readPtr = (FluidCompartmentDTO*)NativeArrayUnsafeUtility.GetUnsafeReadOnlyPtr(read);
+                FluidCompartmentDTO* writePtr = (FluidCompartmentDTO*)NativeArrayUnsafeUtility.GetUnsafePtr(write);
+                IntegrityStateDTO* integrityPtr = (IntegrityStateDTO*)NativeArrayUnsafeUtility.GetUnsafeReadOnlyPtr(integrity);
+                _simulationScheduleTimestamp = Stopwatch.GetTimestamp();
+
+                FluidIngressJob ingressJob = new FluidIngressJob
+                {
+                    ReadCompartments = readPtr,
+                    WriteCompartments = writePtr,
+                    Integrity = integrityPtr,
+                    IncursionWriter = SignalBus<FluidIncursionSignal>.ParallelWriter,
+                    IncursionWriterBudget = SignalBus<FluidIncursionSignal>.ParallelWriterBudget,
+                    CompartmentCount = safeCompartmentCount,
+                    DeltaTime = solverDeltaTime,
+                    DischargeCoefficient = tuning.DischargeCoefficient,
+                    MaxIngressPerSecondNormalized = tuning.MaxIngressPerSecondNormalized,
+                    ExternalWaterlineAup = ResolveExternalWaterlineAup()
+                };
+                JobHandle ingressHandle = ingressJob.Schedule(safeCompartmentCount, 32);
+
+                FluidBfsPressureEqualizationJob bfsJob = new FluidBfsPressureEqualizationJob
+                {
+                    Compartments = writePtr,
+                    Integrity = integrityPtr,
+                    EdgeOffsets = edgeOffsets,
+                    EdgeDestinations = edgeDestinations,
+                    EdgeFlags = edgeFlags,
+                    EdgeConductivity = edgeConductivity,
+                    BfsQueue = bfsQueue,
+                    BfsVisited = bfsVisited,
+                    DeltaVolumes = deltaVolumes,
+                    TransferRemainders = transferRemainders,
+                    CompartmentCount = safeCompartmentCount,
+                    EdgeCount = math.min(_edgeCount, edgeDestinations.Length),
+                    SolverIterations = tuning.SolverIterations,
+                    MaxVisitedNodes = ResolveAuthorityBfsNodeBudget(),
+                    DeltaTime = solverDeltaTime,
+                    TransferRate01PerSecond = tuning.TransferRate01PerSecond,
+                    MaxTransferPerNodeM3 = tuning.MaxTransferPerNodeM3,
+                    Summary = summary
+                };
+                JobHandle bfsHandle = bfsJob.Schedule(ingressHandle);
+
+                FluidWaterlineMassSummaryJob massJob = new FluidWaterlineMassSummaryJob
+                {
+                    Compartments = writePtr,
+                    LocalCentroids = centroids,
+                    Waterlines = waterlines,
+                    CompartmentTelemetry = compartmentTelemetry,
+                    MassState = massState,
+                    Summary = summary,
+                    CompartmentCount = safeCompartmentCount,
+                    EdgeCount = _edgeCount,
+                    Frame = unchecked((uint)_frame),
+                    SourceBodyId = _sourceBodyId,
+                    BaseMassKg = tuning.BaseMassKg,
+                    WaterDensityKgPerM3 = tuning.WaterDensityKgPerM3,
+                    GlobalQualityWeight = tuning.GlobalQualityWeight,
+                    VisualWobbleScalar = tuning.VisualWobbleScalar,
+                    MathLod = (byte)tuning.SolverIterations
+                };
+                JobHandle massHandle = massJob.Schedule(bfsHandle);
+
+                FluidTelemetryRecorderJob telemetryJob = new FluidTelemetryRecorderJob
+                {
+                    Summary = summary,
+                    TelemetryRing = telemetry,
+                    TelemetryCursor = telemetryCursor,
+                    TelemetryCapacity = HabitatFluidIncursionConstants.TelemetryFrameCount,
+                    CompartmentCount = safeCompartmentCount,
+                    EdgeCount = _edgeCount
+                };
+                _simulationHandle = telemetryJob.Schedule(massHandle);
+                H8Memory.RegisterActiveJob(OwnerSystem, _simulationHandle);
+                _hasScheduled = true;
+                _frame++;
+                scheduled = true;
             }
-
-            if (!TryLockJobBuffers())
-                return;
-            _simulationAccumulator = 0f;
-
-            int safeCompartmentCount = math.min(compartmentCount, read.Length);
-            safeCompartmentCount = math.min(safeCompartmentCount, write.Length);
-            safeCompartmentCount = math.min(safeCompartmentCount, integrity.Length);
-            FluidIncursionTuningDTO tuning = RefreshTuning(tuningArray, solverDeltaTime, safeCompartmentCount);
-            ApplyIncomingFluidIncursionSignals(read, write, integrity, safeCompartmentCount);
-            summary[0] = default;
-
-            FluidCompartmentDTO* readPtr = (FluidCompartmentDTO*)NativeArrayUnsafeUtility.GetUnsafeReadOnlyPtr(read);
-            FluidCompartmentDTO* writePtr = (FluidCompartmentDTO*)NativeArrayUnsafeUtility.GetUnsafePtr(write);
-            IntegrityStateDTO* integrityPtr = (IntegrityStateDTO*)NativeArrayUnsafeUtility.GetUnsafeReadOnlyPtr(integrity);
-            _simulationScheduleTimestamp = Stopwatch.GetTimestamp();
-
-            FluidIngressJob ingressJob = new FluidIngressJob
+            finally
             {
-                ReadCompartments = readPtr,
-                WriteCompartments = writePtr,
-                Integrity = integrityPtr,
-                IncursionWriter = SignalBus<FluidIncursionSignal>.ParallelWriter,
-                IncursionWriterBudget = SignalBus<FluidIncursionSignal>.ParallelWriterBudget,
-                CompartmentCount = safeCompartmentCount,
-                DeltaTime = solverDeltaTime,
-                DischargeCoefficient = tuning.DischargeCoefficient,
-                MaxIngressPerSecondNormalized = tuning.MaxIngressPerSecondNormalized,
-                ExternalWaterlineAup = ResolveExternalWaterlineAup()
-            };
-            JobHandle ingressHandle = ingressJob.Schedule(safeCompartmentCount, 32);
-
-            FluidBfsPressureEqualizationJob bfsJob = new FluidBfsPressureEqualizationJob
-            {
-                Compartments = writePtr,
-                Integrity = integrityPtr,
-                EdgeOffsets = edgeOffsets,
-                EdgeDestinations = edgeDestinations,
-                EdgeFlags = edgeFlags,
-                EdgeConductivity = edgeConductivity,
-                BfsQueue = bfsQueue,
-                BfsVisited = bfsVisited,
-                DeltaVolumes = deltaVolumes,
-                TransferRemainders = transferRemainders,
-                CompartmentCount = safeCompartmentCount,
-                EdgeCount = math.min(_edgeCount, edgeDestinations.Length),
-                SolverIterations = tuning.SolverIterations,
-                MaxVisitedNodes = ResolveAuthorityBfsNodeBudget(),
-                DeltaTime = solverDeltaTime,
-                TransferRate01PerSecond = tuning.TransferRate01PerSecond,
-                MaxTransferPerNodeM3 = tuning.MaxTransferPerNodeM3,
-                Summary = summary
-            };
-            JobHandle bfsHandle = bfsJob.Schedule(ingressHandle);
-
-            FluidWaterlineMassSummaryJob massJob = new FluidWaterlineMassSummaryJob
-            {
-                Compartments = writePtr,
-                LocalCentroids = centroids,
-                Waterlines = waterlines,
-                CompartmentTelemetry = compartmentTelemetry,
-                MassState = massState,
-                Summary = summary,
-                CompartmentCount = safeCompartmentCount,
-                EdgeCount = _edgeCount,
-                Frame = unchecked((uint)_frame),
-                SourceBodyId = _sourceBodyId,
-                BaseMassKg = tuning.BaseMassKg,
-                WaterDensityKgPerM3 = tuning.WaterDensityKgPerM3,
-                GlobalQualityWeight = tuning.GlobalQualityWeight,
-                VisualWobbleScalar = tuning.VisualWobbleScalar,
-                MathLod = (byte)tuning.SolverIterations
-            };
-            JobHandle massHandle = massJob.Schedule(bfsHandle);
-
-            FluidTelemetryRecorderJob telemetryJob = new FluidTelemetryRecorderJob
-            {
-                Summary = summary,
-                TelemetryRing = telemetry,
-                TelemetryCursor = telemetryCursor,
-                TelemetryCapacity = HabitatFluidIncursionConstants.TelemetryFrameCount,
-                CompartmentCount = safeCompartmentCount,
-                EdgeCount = _edgeCount
-            };
-            _simulationHandle = telemetryJob.Schedule(massHandle);
-            _hasScheduled = true;
-            _frame++;
+                if (!scheduled)
+                    ReleaseFluidSimulationMutationGuard();
+            }
         }
 
         /// <summary>Completes the scheduled flood job chain, swaps buffers, and publishes deferred scalar bridges.</summary>
@@ -329,37 +342,43 @@ namespace Hecton8.Physics
             if (!TryFinalizeScheduledSimulation())
                 return;
 
-            uint solverWallMicroseconds = ResolveElapsedMicroseconds(_simulationScheduleTimestamp);
-            UnlockJobBuffers();
-            _frontIsA = !_frontIsA;
-            _waterlineUploadDirty = true;
-
-            NativeArray<FluidIncursionFrameSummaryDTO> summaryArray = ResolveFluidVaultBuffer(ref _summaryHandle, BufferID.ShinobuFluidFrameSummary, 1);
-            if (!summaryArray.IsCreated || summaryArray.Length <= 0)
-                return;
-
-            StampSolverWallTime(solverWallMicroseconds);
-            FluidIncursionFrameSummaryDTO summary = summaryArray[0];
-            if (summary.InvalidCount > 0 || (summary.Flags & 1u) != 0u)
-                DumpBlackBoxOnce();
-
-            _massPublishAccumulator += fixedDeltaTime;
-            NativeArray<FluidIncursionTuningDTO> tuningArray = ResolveFluidVaultBuffer(ref _tuningHandle, BufferID.ShinobuFluidTuning, 1);
-            float publishInterval = tuningArray.IsCreated && tuningArray.Length > 0
-                ? math.max(0.02f, tuningArray[0].MassPublishIntervalSeconds)
-                : HabitatFluidIncursionConstants.DefaultMassPublishIntervalSeconds;
-            if (_massPublishAccumulator >= publishInterval)
+            try
             {
-                _massPublishAccumulator = 0f;
-                if (!PublishMassAndAcousticSignals(in summary))
-                {
-                    summary.Flags |= FluidCompartmentFlags.SignalOverflow;
-                    summaryArray[0] = summary;
-                }
-            }
+                uint solverWallMicroseconds = ResolveElapsedMicroseconds(_simulationScheduleTimestamp);
+                _frontIsA = !_frontIsA;
+                _waterlineUploadDirty = true;
 
-            _pendingFloodScalar = summary.AcousticFloodIntensity01;
-            _floodScalarDirty = true;
+                NativeArray<FluidIncursionFrameSummaryDTO> summaryArray = ResolveFluidVaultBuffer(ref _summaryHandle, BufferID.ShinobuFluidFrameSummary, 1);
+                if (!summaryArray.IsCreated || summaryArray.Length <= 0)
+                    return;
+
+                StampSolverWallTime(solverWallMicroseconds);
+                FluidIncursionFrameSummaryDTO summary = summaryArray[0];
+                if (summary.InvalidCount > 0 || (summary.Flags & 1u) != 0u)
+                    DumpBlackBoxOnce();
+
+                _massPublishAccumulator += fixedDeltaTime;
+                NativeArray<FluidIncursionTuningDTO> tuningArray = ResolveFluidVaultBuffer(ref _tuningHandle, BufferID.ShinobuFluidTuning, 1);
+                float publishInterval = tuningArray.IsCreated && tuningArray.Length > 0
+                    ? math.max(0.02f, tuningArray[0].MassPublishIntervalSeconds)
+                    : HabitatFluidIncursionConstants.DefaultMassPublishIntervalSeconds;
+                if (_massPublishAccumulator >= publishInterval)
+                {
+                    _massPublishAccumulator = 0f;
+                    if (!PublishMassAndAcousticSignals(in summary))
+                    {
+                        summary.Flags |= FluidCompartmentFlags.SignalOverflow;
+                        summaryArray[0] = summary;
+                    }
+                }
+
+                _pendingFloodScalar = summary.AcousticFloodIntensity01;
+                _floodScalarDirty = true;
+            }
+            finally
+            {
+                ReleaseFluidSimulationMutationGuard();
+            }
         }
 
         /// <summary>Uploads dirty waterline scalar DTOs to the double-buffered global shader buffer.</summary>
@@ -452,45 +471,55 @@ namespace Hecton8.Physics
             if (!_buffersReady && !EnsureBuffersInitialized())
                 return false;
 
-            NativeArray<int> targetOffsets = ResolveFluidVaultBuffer(ref _edgeOffsetsHandle, BufferID.ShinobuFluidEdgeOffsets, ResolveCompartmentCapacity() + 1);
-            NativeArray<int> targetDestinations = ResolveFluidVaultBuffer(ref _edgeDestinationsHandle, BufferID.ShinobuFluidEdgeDestinations, HabitatFluidIncursionConstants.MaxEdges);
-            NativeArray<byte> targetFlags = ResolveFluidVaultBuffer(ref _edgeFlagsHandle, BufferID.ShinobuFluidEdgeFlags, HabitatFluidIncursionConstants.MaxEdges);
-            NativeArray<float> targetConductivity = ResolveFluidVaultBuffer(ref _edgeConductivityHandle, BufferID.ShinobuFluidEdgeConductivity, HabitatFluidIncursionConstants.MaxEdges);
-            if (!edgeOffsets.IsCreated || !edgeDestinations.IsCreated || !edgeFlags.IsCreated ||
-                edgeOffsets.Length <= 0 ||
-                !targetOffsets.IsCreated || !targetDestinations.IsCreated || !targetFlags.IsCreated || !targetConductivity.IsCreated)
-            {
+            if (!TryAcquireLocalFluidMutationGuard(out ulong guardMask))
                 return false;
-            }
 
-            int safeNodeCount = math.min(math.max(0, nodeCount), math.min(compartmentCount, math.min(edgeOffsets.Length - 1, targetOffsets.Length - 1)));
-            int safeEdgeCount = math.min(math.max(0, graphEdgeCount), math.min(edgeDestinations.Length, targetDestinations.Length));
-            if (edgeConductivity.IsCreated)
-                safeEdgeCount = math.min(safeEdgeCount, edgeConductivity.Length);
-            NativeArray<float> transferRemainders = ResolveFluidVaultBuffer(ref _transferRemaindersHandle, BufferID.ShinobuFluidTransferRemainders, HabitatFluidIncursionConstants.MaxEdges);
-            for (int i = 0; i <= safeNodeCount; i++)
-                targetOffsets[i] = edgeOffsets[i];
-            for (int i = 0; i < safeEdgeCount; i++)
+            try
             {
-                targetDestinations[i] = edgeDestinations[i];
-                targetFlags[i] = edgeFlags[i];
-                targetConductivity[i] = (edgeFlags[i] & FluidEdgeFlags.Sealed) != 0
-                    ? 0f
-                    : (edgeConductivity.IsCreated ? math.saturate(edgeConductivity[i]) : 1f);
-                if (transferRemainders.IsCreated && i < transferRemainders.Length)
-                    transferRemainders[i] = 0f;
-            }
-            for (int i = safeEdgeCount; i < targetDestinations.Length; i++)
-            {
-                targetDestinations[i] = 0;
-                targetFlags[i] = FluidEdgeFlags.Sealed;
-                targetConductivity[i] = 0f;
-                if (transferRemainders.IsCreated && i < transferRemainders.Length)
-                    transferRemainders[i] = 0f;
-            }
+                NativeArray<int> targetOffsets = ResolveFluidVaultBuffer(ref _edgeOffsetsHandle, BufferID.ShinobuFluidEdgeOffsets, ResolveCompartmentCapacity() + 1);
+                NativeArray<int> targetDestinations = ResolveFluidVaultBuffer(ref _edgeDestinationsHandle, BufferID.ShinobuFluidEdgeDestinations, HabitatFluidIncursionConstants.MaxEdges);
+                NativeArray<byte> targetFlags = ResolveFluidVaultBuffer(ref _edgeFlagsHandle, BufferID.ShinobuFluidEdgeFlags, HabitatFluidIncursionConstants.MaxEdges);
+                NativeArray<float> targetConductivity = ResolveFluidVaultBuffer(ref _edgeConductivityHandle, BufferID.ShinobuFluidEdgeConductivity, HabitatFluidIncursionConstants.MaxEdges);
+                if (!edgeOffsets.IsCreated || !edgeDestinations.IsCreated || !edgeFlags.IsCreated ||
+                    edgeOffsets.Length <= 0 ||
+                    !targetOffsets.IsCreated || !targetDestinations.IsCreated || !targetFlags.IsCreated || !targetConductivity.IsCreated)
+                {
+                    return false;
+                }
 
-            _edgeCount = safeEdgeCount;
-            return true;
+                int safeNodeCount = math.min(math.max(0, nodeCount), math.min(compartmentCount, math.min(edgeOffsets.Length - 1, targetOffsets.Length - 1)));
+                int safeEdgeCount = math.min(math.max(0, graphEdgeCount), math.min(edgeDestinations.Length, targetDestinations.Length));
+                if (edgeConductivity.IsCreated)
+                    safeEdgeCount = math.min(safeEdgeCount, edgeConductivity.Length);
+                NativeArray<float> transferRemainders = ResolveFluidVaultBuffer(ref _transferRemaindersHandle, BufferID.ShinobuFluidTransferRemainders, HabitatFluidIncursionConstants.MaxEdges);
+                for (int i = 0; i <= safeNodeCount; i++)
+                    targetOffsets[i] = edgeOffsets[i];
+                for (int i = 0; i < safeEdgeCount; i++)
+                {
+                    targetDestinations[i] = edgeDestinations[i];
+                    targetFlags[i] = edgeFlags[i];
+                    targetConductivity[i] = (edgeFlags[i] & FluidEdgeFlags.Sealed) != 0
+                        ? 0f
+                        : (edgeConductivity.IsCreated ? math.saturate(edgeConductivity[i]) : 1f);
+                    if (transferRemainders.IsCreated && i < transferRemainders.Length)
+                        transferRemainders[i] = 0f;
+                }
+                for (int i = safeEdgeCount; i < targetDestinations.Length; i++)
+                {
+                    targetDestinations[i] = 0;
+                    targetFlags[i] = FluidEdgeFlags.Sealed;
+                    targetConductivity[i] = 0f;
+                    if (transferRemainders.IsCreated && i < transferRemainders.Length)
+                        transferRemainders[i] = 0f;
+                }
+
+                _edgeCount = safeEdgeCount;
+                return true;
+            }
+            finally
+            {
+                ReleaseLocalFluidMutationGuard(guardMask);
+            }
         }
 
 #if UNITY_EDITOR
@@ -501,14 +530,24 @@ namespace Hecton8.Physics
             if (!_buffersReady && !EnsureBuffersInitialized())
                 return 0;
 
-            NativeArray<FluidCompartmentDTO> active = ResolveActiveCompartments();
-            NativeArray<FluidCompartmentDTO> inactive = ResolveInactiveCompartments();
-            if (!active.IsCreated || !inactive.IsCreated)
+            if (!TryAcquireLocalFluidMutationGuard(out ulong guardMask))
                 return 0;
 
-            int applied = HabitatFluidIncursionCsv.ParseCompartmentVolumesCsv(csvBytes, byteCount, active, compartmentCount);
-            HabitatFluidIncursionCsv.ParseCompartmentVolumesCsv(csvBytes, byteCount, inactive, compartmentCount);
-            return applied;
+            try
+            {
+                NativeArray<FluidCompartmentDTO> active = ResolveActiveCompartments();
+                NativeArray<FluidCompartmentDTO> inactive = ResolveInactiveCompartments();
+                if (!active.IsCreated || !inactive.IsCreated)
+                    return 0;
+
+                int applied = HabitatFluidIncursionCsv.ParseCompartmentVolumesCsv(csvBytes, byteCount, active, compartmentCount);
+                HabitatFluidIncursionCsv.ParseCompartmentVolumesCsv(csvBytes, byteCount, inactive, compartmentCount);
+                return applied;
+            }
+            finally
+            {
+                ReleaseLocalFluidMutationGuard(guardMask);
+            }
         }
 #endif
 
@@ -519,36 +558,46 @@ namespace Hecton8.Physics
             if (!_buffersReady && !EnsureBuffersInitialized())
                 return false;
 
-            NativeArray<FluidCompartmentDTO> front = ResolveFluidVaultBuffer(ref _frontHandle, BufferID.ShinobuFluidCompartmentFront, ResolveCompartmentCapacity());
-            NativeArray<FluidCompartmentDTO> back = ResolveFluidVaultBuffer(ref _backHandle, BufferID.ShinobuFluidCompartmentBack, ResolveCompartmentCapacity());
-            NativeArray<IntegrityStateDTO> integrity = ResolveFluidVaultBuffer(ref _integrityHandle, BufferID.ShinobuFluidIntegrityState, ResolveCompartmentCapacity());
-            if (!front.IsCreated || !back.IsCreated || !integrity.IsCreated)
+            if (!TryAcquireLocalFluidMutationGuard(out ulong guardMask))
                 return false;
 
-            int safeCount = math.min(compartmentCount, math.min(front.Length, back.Length));
-            if (safeCount <= 0)
-                return false;
-
-            MockHullBreachJob breachFront = new MockHullBreachJob
+            try
             {
-                Compartments = (FluidCompartmentDTO*)NativeArrayUnsafeUtility.GetUnsafePtr(front),
-                Integrity = (IntegrityStateDTO*)NativeArrayUnsafeUtility.GetUnsafePtr(integrity),
-                CompartmentCount = safeCount,
-                BreachIndex = breachIndex,
-                BreachAreaM2 = math.max(0.0001f, breachAreaM2),
-                IngressRateM3PerSecond = math.max(0f, ingressRateM3PerSecond)
-            };
-            // COLD SYNC JOB: explicit damage-control/profiling breach injection outside fixed solver cadence.
-            JobHandle breachFrontHandle = breachFront.Schedule();
-            DispatcherJobFence.TryComplete(ref breachFrontHandle, forceComplete: true);
+                NativeArray<FluidCompartmentDTO> front = ResolveFluidVaultBuffer(ref _frontHandle, BufferID.ShinobuFluidCompartmentFront, ResolveCompartmentCapacity());
+                NativeArray<FluidCompartmentDTO> back = ResolveFluidVaultBuffer(ref _backHandle, BufferID.ShinobuFluidCompartmentBack, ResolveCompartmentCapacity());
+                NativeArray<IntegrityStateDTO> integrity = ResolveFluidVaultBuffer(ref _integrityHandle, BufferID.ShinobuFluidIntegrityState, ResolveCompartmentCapacity());
+                if (!front.IsCreated || !back.IsCreated || !integrity.IsCreated)
+                    return false;
 
-            MockHullBreachJob breachBack = breachFront;
-            breachBack.Compartments = (FluidCompartmentDTO*)NativeArrayUnsafeUtility.GetUnsafePtr(back);
-            // COLD SYNC JOB: mirror seed preserves deterministic double-buffer state.
-            JobHandle breachBackHandle = breachBack.Schedule();
-            DispatcherJobFence.TryComplete(ref breachBackHandle, forceComplete: true);
-            _waterlineUploadDirty = true;
-            return true;
+                int safeCount = math.min(compartmentCount, math.min(front.Length, back.Length));
+                if (safeCount <= 0)
+                    return false;
+
+                MockHullBreachJob breachFront = new MockHullBreachJob
+                {
+                    Compartments = (FluidCompartmentDTO*)NativeArrayUnsafeUtility.GetUnsafePtr(front),
+                    Integrity = (IntegrityStateDTO*)NativeArrayUnsafeUtility.GetUnsafePtr(integrity),
+                    CompartmentCount = safeCount,
+                    BreachIndex = breachIndex,
+                    BreachAreaM2 = math.max(0.0001f, breachAreaM2),
+                    IngressRateM3PerSecond = math.max(0f, ingressRateM3PerSecond)
+                };
+                // COLD SYNC JOB: explicit damage-control/profiling breach injection outside fixed solver cadence.
+                JobHandle breachFrontHandle = breachFront.Schedule();
+                DispatcherJobFence.TryComplete(ref breachFrontHandle, forceComplete: true);
+
+                MockHullBreachJob breachBack = breachFront;
+                breachBack.Compartments = (FluidCompartmentDTO*)NativeArrayUnsafeUtility.GetUnsafePtr(back);
+                // COLD SYNC JOB: mirror seed preserves deterministic double-buffer state.
+                JobHandle breachBackHandle = breachBack.Schedule();
+                DispatcherJobFence.TryComplete(ref breachBackHandle, forceComplete: true);
+                _waterlineUploadDirty = true;
+                return true;
+            }
+            finally
+            {
+                ReleaseLocalFluidMutationGuard(guardMask);
+            }
         }
 
         /// <summary>Injects deterministic scalar water into one node for headless flood distribution tests.</summary>
@@ -558,31 +607,41 @@ namespace Hecton8.Physics
             if (!_buffersReady && !EnsureBuffersInitialized())
                 return false;
 
-            NativeArray<FluidCompartmentDTO> front = ResolveFluidVaultBuffer(ref _frontHandle, BufferID.ShinobuFluidCompartmentFront, ResolveCompartmentCapacity());
-            NativeArray<FluidCompartmentDTO> back = ResolveFluidVaultBuffer(ref _backHandle, BufferID.ShinobuFluidCompartmentBack, ResolveCompartmentCapacity());
-            if (!front.IsCreated || !back.IsCreated)
+            if (!TryAcquireLocalFluidMutationGuard(out ulong guardMask))
                 return false;
 
-            int safeCount = math.min(compartmentCount, math.min(front.Length, back.Length));
-            if (safeCount <= 0)
-                return false;
-
-            GenerateMockFloodIncursionJob frontJob = new GenerateMockFloodIncursionJob
+            try
             {
-                Compartments = (FluidCompartmentDTO*)NativeArrayUnsafeUtility.GetUnsafePtr(front),
-                CompartmentCount = safeCount,
-                TargetNodeIndex = targetNodeIndex,
-                AddedWaterM3 = math.max(0f, addedWaterM3)
-            };
-            JobHandle frontHandle = frontJob.Schedule();
-            DispatcherJobFence.TryComplete(ref frontHandle, forceComplete: true);
+                NativeArray<FluidCompartmentDTO> front = ResolveFluidVaultBuffer(ref _frontHandle, BufferID.ShinobuFluidCompartmentFront, ResolveCompartmentCapacity());
+                NativeArray<FluidCompartmentDTO> back = ResolveFluidVaultBuffer(ref _backHandle, BufferID.ShinobuFluidCompartmentBack, ResolveCompartmentCapacity());
+                if (!front.IsCreated || !back.IsCreated)
+                    return false;
 
-            GenerateMockFloodIncursionJob backJob = frontJob;
-            backJob.Compartments = (FluidCompartmentDTO*)NativeArrayUnsafeUtility.GetUnsafePtr(back);
-            JobHandle backHandle = backJob.Schedule();
-            DispatcherJobFence.TryComplete(ref backHandle, forceComplete: true);
-            _waterlineUploadDirty = true;
-            return true;
+                int safeCount = math.min(compartmentCount, math.min(front.Length, back.Length));
+                if (safeCount <= 0)
+                    return false;
+
+                GenerateMockFloodIncursionJob frontJob = new GenerateMockFloodIncursionJob
+                {
+                    Compartments = (FluidCompartmentDTO*)NativeArrayUnsafeUtility.GetUnsafePtr(front),
+                    CompartmentCount = safeCount,
+                    TargetNodeIndex = targetNodeIndex,
+                    AddedWaterM3 = math.max(0f, addedWaterM3)
+                };
+                JobHandle frontHandle = frontJob.Schedule();
+                DispatcherJobFence.TryComplete(ref frontHandle, forceComplete: true);
+
+                GenerateMockFloodIncursionJob backJob = frontJob;
+                backJob.Compartments = (FluidCompartmentDTO*)NativeArrayUnsafeUtility.GetUnsafePtr(back);
+                JobHandle backHandle = backJob.Schedule();
+                DispatcherJobFence.TryComplete(ref backHandle, forceComplete: true);
+                _waterlineUploadDirty = true;
+                return true;
+            }
+            finally
+            {
+                ReleaseLocalFluidMutationGuard(guardMask);
+            }
         }
 
         private void ApplyIncomingFluidIncursionSignals(
@@ -748,7 +807,7 @@ namespace Hecton8.Physics
             _transferRemaindersHandle = default;
             _summaryHandle = default;
             _edgeCount = 0;
-            _lockedBufferMask = 0;
+            _activeMutationGuardMask = 0UL;
             _buffersReady = false;
         }
 
@@ -1200,7 +1259,14 @@ namespace Hecton8.Physics
             if (!DispatcherJobFence.TryComplete(ref _simulationHandle, forceComplete: true))
                 return;
 
-            _hasScheduled = false;
+            try
+            {
+                _hasScheduled = false;
+            }
+            finally
+            {
+                ReleaseFluidSimulationMutationGuard();
+            }
         }
 
         private bool TryFinalizeScheduledSimulation()
@@ -1215,70 +1281,43 @@ namespace Hecton8.Physics
             return true;
         }
 
-        private bool TryLockJobBuffers()
+        private bool TryAcquireFluidSimulationMutationGuard()
         {
-            _lockedBufferMask = 0;
-            return TryLock(BufferID.ShinobuFluidCompartmentFront, 0) &&
-                   TryLock(BufferID.ShinobuFluidCompartmentBack, 1) &&
-                   TryLock(BufferID.ShinobuFluidIntegrityState, 2) &&
-                   TryLock(BufferID.ShinobuFluidEdgeOffsets, 3) &&
-                   TryLock(BufferID.ShinobuFluidEdgeDestinations, 4) &&
-                   TryLock(BufferID.ShinobuFluidEdgeFlags, 5) &&
-                   TryLock(BufferID.ShinobuFluidEdgeConductivity, 6) &&
-                   TryLock(BufferID.ShinobuFluidCompartmentCentroids, 7) &&
-                   TryLock(BufferID.ShinobuFluidWaterlineShader, 8) &&
-                   TryLock(BufferID.ShinobuFluidMassState, 9) &&
-                   TryLock(BufferID.ShinobuFluidTuning, 10) &&
-                   TryLock(BufferID.ShinobuFluidTelemetryRing, 11) &&
-                   TryLock(BufferID.ShinobuFluidCompartmentTelemetry, 12) &&
-                   TryLock(BufferID.ShinobuFluidTelemetryCursor, 13) &&
-                   TryLock(BufferID.ShinobuFluidBfsQueue, 14) &&
-                   TryLock(BufferID.ShinobuFluidBfsVisited, 15) &&
-                   TryLock(BufferID.ShinobuFluidDeltaVolumes, 16) &&
-                   TryLock(BufferID.ShinobuFluidTransferRemainders, 17) &&
-                   TryLock(BufferID.ShinobuFluidFrameSummary, 18);
-        }
-
-        private bool TryLock(BufferID bufferId, int bit)
-        {
-            if (_vault.TryLockBuffer(bufferId, OwnerSystem))
-            {
-                _lockedBufferMask |= 1 << bit;
+            if (_activeMutationGuardMask != 0UL)
                 return true;
-            }
 
-            UnlockJobBuffers();
-            return false;
+            if (_vault == null || !_vault.TryAcquireMutationGuard(FluidSimulationMutationGuardMask))
+                return false;
+
+            _activeMutationGuardMask = FluidSimulationMutationGuardMask;
+            return true;
         }
 
-        private void UnlockJobBuffers()
+        private bool TryAcquireLocalFluidMutationGuard(out ulong guardMask)
         {
-            UnlockIf(BufferID.ShinobuFluidFrameSummary, 18);
-            UnlockIf(BufferID.ShinobuFluidTransferRemainders, 17);
-            UnlockIf(BufferID.ShinobuFluidDeltaVolumes, 16);
-            UnlockIf(BufferID.ShinobuFluidBfsVisited, 15);
-            UnlockIf(BufferID.ShinobuFluidBfsQueue, 14);
-            UnlockIf(BufferID.ShinobuFluidTelemetryCursor, 13);
-            UnlockIf(BufferID.ShinobuFluidCompartmentTelemetry, 12);
-            UnlockIf(BufferID.ShinobuFluidTelemetryRing, 11);
-            UnlockIf(BufferID.ShinobuFluidTuning, 10);
-            UnlockIf(BufferID.ShinobuFluidMassState, 9);
-            UnlockIf(BufferID.ShinobuFluidWaterlineShader, 8);
-            UnlockIf(BufferID.ShinobuFluidCompartmentCentroids, 7);
-            UnlockIf(BufferID.ShinobuFluidEdgeConductivity, 6);
-            UnlockIf(BufferID.ShinobuFluidEdgeFlags, 5);
-            UnlockIf(BufferID.ShinobuFluidEdgeDestinations, 4);
-            UnlockIf(BufferID.ShinobuFluidEdgeOffsets, 3);
-            UnlockIf(BufferID.ShinobuFluidIntegrityState, 2);
-            UnlockIf(BufferID.ShinobuFluidCompartmentBack, 1);
-            UnlockIf(BufferID.ShinobuFluidCompartmentFront, 0);
-            _lockedBufferMask = 0;
+            guardMask = 0UL;
+            if (_vault == null || _activeMutationGuardMask != 0UL)
+                return false;
+
+            if (!_vault.TryAcquireMutationGuard(FluidSimulationMutationGuardMask))
+                return false;
+
+            guardMask = FluidSimulationMutationGuardMask;
+            return true;
         }
 
-        private void UnlockIf(BufferID bufferId, int bit)
+        private void ReleaseFluidSimulationMutationGuard()
         {
-            if ((_lockedBufferMask & (1 << bit)) != 0)
-                _vault?.TryUnlockBuffer(bufferId, OwnerSystem);
+            ulong guardMask = _activeMutationGuardMask;
+            if (guardMask != 0UL)
+                _vault?.ReleaseMutationGuard(guardMask);
+            _activeMutationGuardMask = 0UL;
+        }
+
+        private void ReleaseLocalFluidMutationGuard(ulong guardMask)
+        {
+            if (guardMask != 0UL)
+                _vault?.ReleaseMutationGuard(guardMask);
         }
 
         private bool EnsureWaterlineGraphicsBuffers(int safeCount)

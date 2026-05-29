@@ -307,7 +307,6 @@ namespace Hecton8.VFX.Bioluminescence
         private bool _registeredLateFrame;
         private bool _registeredHotSwap;
         private bool _stateJobScheduled;
-        private bool _jobLocksHeld;
         private bool _mockGlowsInitialized;
         private bool _disposed;
         private bool _dumpedFault;
@@ -526,36 +525,22 @@ namespace Hecton8.VFX.Bioluminescence
 
             vault.TryGetGenerationHandle(BufferID.BiolumGlowStates, out VaultGenerationHandle<GlowStateDTO> glowHandle);
 
-            bool lockedGlowStates = false;
-            bool lockedSpecies = false;
-            NativeArray<GlowStateDTO> glowStates = default;
-            NativeArray<BiolumSpeciesTuningDTO> species = default;
-            try
+            if (!TryResolveBiolumVaultBuffer(
+                    vault,
+                    in speciesHandle,
+                    BufferID.BiolumSpeciesTuning,
+                    MaxSpeciesTuningCount,
+                    out NativeArray<BiolumSpeciesTuningDTO> species) ||
+                index >= species.Length)
             {
-                lockedGlowStates = IsBiolumVaultHandle(in glowHandle, BufferID.BiolumGlowStates) &&
-                                   vault.TryAcquireWriteLock(in glowHandle, SystemID.Vfx, out glowStates);
-                lockedSpecies = vault.TryAcquireWriteLock(in speciesHandle, SystemID.Vfx, out species);
-                if (!lockedSpecies)
-                    return false;
-
-                if (!species.IsCreated || index >= species.Length)
-                    return false;
-
-                species[index] = tuning;
-                if (lockedGlowStates)
-                {
-                    ApplySpeciesTuningToGlowStates(glowStates, tuning);
-                }
-
-                return true;
+                return false;
             }
-            finally
-            {
-                if (lockedSpecies)
-                    vault.ReleaseWriteLock(in speciesHandle, SystemID.Vfx);
-                if (lockedGlowStates)
-                    vault.ReleaseWriteLock(in glowHandle, SystemID.Vfx);
-            }
+
+            species[index] = tuning;
+            if (TryResolveBiolumVaultBuffer(vault, in glowHandle, BufferID.BiolumGlowStates, MaxGlowInstances, out NativeArray<GlowStateDTO> glowStates))
+                ApplySpeciesTuningToGlowStates(glowStates, tuning);
+
+            return true;
         }
 
         /// <summary>
@@ -750,59 +735,35 @@ namespace Hecton8.VFX.Bioluminescence
                 return false;
             }
 
-            bool lockedProfile = false;
-            bool lockedPulse = false;
-            NativeArray<float> profileFloats = default;
-            NativeArray<BiolumPulseStateDTO> pulseState = default;
-            try
+            if (!TryResolveBiolumVaultBuffer(vault, in profileHandle, BufferID.BiolumProfileFloats, ProfileFloatCount, out NativeArray<float> profileFloats) ||
+                !TryResolveBiolumVaultBuffer(vault, in pulseHandle, BiolumPulseStateBufferId, 1, out NativeArray<BiolumPulseStateDTO> pulseState))
             {
-                lockedProfile = vault.TryAcquireWriteLock(in profileHandle, SystemID.Vfx, out profileFloats);
-                if (!lockedProfile)
-                    return false;
-
-                lockedPulse = vault.TryAcquireWriteLock(in pulseHandle, SystemID.Vfx, out pulseState);
-                if (!lockedPulse)
-                    return false;
-
-                if (!profileFloats.IsCreated ||
-                    profileFloats.Length < ProfileFloatCount ||
-                    !pulseState.IsCreated ||
-                    pulseState.Length <= 0)
-                {
-                    return false;
-                }
-
-                float frequency = math.clamp(baseFrequency, 0.0025f, 8f);
-                float offsetMultiplier = math.clamp(spatialOffsetMultiplier, 0f, 8f);
-                float threshold = math.saturate(darknessActivationThreshold);
-                float panicEncoded = math.saturate((math.clamp(predatorPanicSpeed, 1f, 4f) - 1f) / 3f);
-                BiolumPulseStateDTO state = pulseState[0];
-                for (int i = 0; i < SyncGroupCount; i++)
-                {
-                    int offset = i * ProfileFloatStride;
-                    float groupFrequency = math.clamp(frequency * (1f + i * 0.13f), 0.0025f, 8f);
-                    float groupSpatialOffset = math.clamp((0.18f + i * 0.07f) * offsetMultiplier, 0f, 4f);
-                    profileFloats[offset + 1] = groupFrequency;
-                    profileFloats[offset + 3] = groupSpatialOffset;
-                    profileFloats[offset + 4] = threshold;
-                    profileFloats[offset + 5] = panicEncoded;
-
-                    float4 row = GetPulseGroup(in state, i);
-                    row.y = groupFrequency;
-                    row.w = groupSpatialOffset;
-                    SetPulseGroup(ref state, i, row);
-                }
-
-                pulseState[0] = state;
-                return true;
+                return false;
             }
-            finally
+
+            float frequency = math.clamp(baseFrequency, 0.0025f, 8f);
+            float offsetMultiplier = math.clamp(spatialOffsetMultiplier, 0f, 8f);
+            float threshold = math.saturate(darknessActivationThreshold);
+            float panicEncoded = math.saturate((math.clamp(predatorPanicSpeed, 1f, 4f) - 1f) / 3f);
+            BiolumPulseStateDTO state = pulseState[0];
+            for (int i = 0; i < SyncGroupCount; i++)
             {
-                if (lockedPulse)
-                    vault.ReleaseWriteLock(in pulseHandle, SystemID.Vfx);
-                if (lockedProfile)
-                    vault.ReleaseWriteLock(in profileHandle, SystemID.Vfx);
+                int offset = i * ProfileFloatStride;
+                float groupFrequency = math.clamp(frequency * (1f + i * 0.13f), 0.0025f, 8f);
+                float groupSpatialOffset = math.clamp((0.18f + i * 0.07f) * offsetMultiplier, 0f, 4f);
+                profileFloats[offset + 1] = groupFrequency;
+                profileFloats[offset + 3] = groupSpatialOffset;
+                profileFloats[offset + 4] = threshold;
+                profileFloats[offset + 5] = panicEncoded;
+
+                float4 row = GetPulseGroup(in state, i);
+                row.y = groupFrequency;
+                row.w = groupSpatialOffset;
+                SetPulseGroup(ref state, i, row);
             }
+
+            pulseState[0] = state;
+            return true;
         }
 
         /// <summary>
@@ -826,68 +787,49 @@ namespace Hecton8.VFX.Bioluminescence
                 return false;
             }
 
-            bool lockedPulse = false;
-            bool lockedProfile = false;
-            NativeArray<BiolumPulseStateDTO> pulseState = default;
-            NativeArray<float> profileFloats = default;
-            try
+            if (!TryResolveBiolumVaultBuffer(vault, in pulseHandle, BiolumPulseStateBufferId, 1, out NativeArray<BiolumPulseStateDTO> pulseState) ||
+                !TryResolveBiolumVaultBuffer(vault, in profileHandle, BufferID.BiolumProfileFloats, ProfileFloatCount, out NativeArray<float> profileFloats))
             {
-                lockedPulse = vault.TryAcquireWriteLock(in pulseHandle, SystemID.Vfx, out pulseState);
-                if (!lockedPulse)
-                    return false;
-
-                lockedProfile = vault.TryAcquireWriteLock(in profileHandle, SystemID.Vfx, out profileFloats);
-                if (!lockedProfile)
-                    return false;
-
-                if (!pulseState.IsCreated || pulseState.Length <= 0 || !profileFloats.IsCreated || profileFloats.Length < ProfileFloatCount)
-                    return false;
-
-                double3 aupReference = new double3(runtime._aupOriginOffset.x, runtime._aupOriginOffset.y, runtime._aupOriginOffset.z);
-                double3 localAup = AupPrecisionMath.LocalDeltaDouble(originAUP, aupReference);
-                float3 local = AupPrecisionMath.DowncastLocalDelta(localAup, float3.zero);
-                float x = math.isfinite(local.x) ? local.x : 0f;
-                float y = math.isfinite(local.y) ? local.y : 0f;
-                float z = math.isfinite(local.z) ? local.z : 0f;
-                uint hash = DeterministicHash(
-                    math.asuint(x) ^
-                    (math.asuint(y) * 0x9E3779B9u) ^
-                    (math.asuint(z) * 0x85EBCA6Bu));
-                int group = (int)(hash & (SyncGroupCount - 1));
-                int offset = group * ProfileFloatStride;
-                float speed = math.clamp(math.isfinite(waveSpeed) ? waveSpeed : DefaultPingRadiusMeters, 1f, 180f);
-                float alpha = ((colorOverride >> 30) & 3u) * (1f / 3f);
-                float frequency = math.clamp(speed * 0.0125f, 0.0025f, 8f);
-                float amplitude = math.clamp(0.85f + alpha * 0.5f, 0f, MaxHdrIntensity);
-                float spatialOffset = math.clamp(math.length(new float3(x, y, z)) * 0.0007f + speed * 0.006f, 0.05f, 4f);
-
-                BiolumPulseStateDTO state = pulseState[0];
-                float4 row = GetPulseGroup(in state, group);
-                row.x = RepeatRadians(row.x + math.PI * 0.5f + ((hash >> 8) & 255u) * (math.PI / 255f));
-                row.y = frequency;
-                row.z = math.max(math.clamp(row.z, 0f, MaxHdrIntensity), amplitude);
-                row.w = spatialOffset;
-                SetPulseGroup(ref state, group, row);
-                pulseState[0] = state;
-
-                profileFloats[offset + 1] = frequency;
-                profileFloats[offset + 2] = math.max(math.clamp(profileFloats[offset + 2], 0f, MaxHdrIntensity), amplitude);
-                profileFloats[offset + 3] = spatialOffset;
-
-                runtime._activeBiolumProfileId = group;
-                runtime._strobeTimerSeconds = StrobeDurationSeconds;
-                runtime._strobePeak01 = math.max(runtime._strobePeak01, math.saturate(amplitude));
-                runtime._forceSchedule = true;
-
-                return true;
+                return false;
             }
-            finally
-            {
-                if (lockedProfile)
-                    vault.ReleaseWriteLock(in profileHandle, SystemID.Vfx);
-                if (lockedPulse)
-                    vault.ReleaseWriteLock(in pulseHandle, SystemID.Vfx);
-            }
+
+            double3 aupReference = new double3(runtime._aupOriginOffset.x, runtime._aupOriginOffset.y, runtime._aupOriginOffset.z);
+            double3 localAup = AupPrecisionMath.LocalDeltaDouble(originAUP, aupReference);
+            float3 local = AupPrecisionMath.DowncastLocalDelta(localAup, float3.zero);
+            float x = math.isfinite(local.x) ? local.x : 0f;
+            float y = math.isfinite(local.y) ? local.y : 0f;
+            float z = math.isfinite(local.z) ? local.z : 0f;
+            uint hash = DeterministicHash(
+                math.asuint(x) ^
+                (math.asuint(y) * 0x9E3779B9u) ^
+                (math.asuint(z) * 0x85EBCA6Bu));
+            int group = (int)(hash & (SyncGroupCount - 1));
+            int offset = group * ProfileFloatStride;
+            float speed = math.clamp(math.isfinite(waveSpeed) ? waveSpeed : DefaultPingRadiusMeters, 1f, 180f);
+            float alpha = ((colorOverride >> 30) & 3u) * (1f / 3f);
+            float frequency = math.clamp(speed * 0.0125f, 0.0025f, 8f);
+            float amplitude = math.clamp(0.85f + alpha * 0.5f, 0f, MaxHdrIntensity);
+            float spatialOffset = math.clamp(math.length(new float3(x, y, z)) * 0.0007f + speed * 0.006f, 0.05f, 4f);
+
+            BiolumPulseStateDTO state = pulseState[0];
+            float4 row = GetPulseGroup(in state, group);
+            row.x = RepeatRadians(row.x + math.PI * 0.5f + ((hash >> 8) & 255u) * (math.PI / 255f));
+            row.y = frequency;
+            row.z = math.max(math.clamp(row.z, 0f, MaxHdrIntensity), amplitude);
+            row.w = spatialOffset;
+            SetPulseGroup(ref state, group, row);
+            pulseState[0] = state;
+
+            profileFloats[offset + 1] = frequency;
+            profileFloats[offset + 2] = math.max(math.clamp(profileFloats[offset + 2], 0f, MaxHdrIntensity), amplitude);
+            profileFloats[offset + 3] = spatialOffset;
+
+            runtime._activeBiolumProfileId = group;
+            runtime._strobeTimerSeconds = StrobeDurationSeconds;
+            runtime._strobePeak01 = math.max(runtime._strobePeak01, math.saturate(amplitude));
+            runtime._forceSchedule = true;
+
+            return true;
         }
 #endif
 
@@ -951,7 +893,6 @@ namespace Hecton8.VFX.Bioluminescence
             _stateJobScheduled = false;
             _jobOverrunFrames = 0;
             bool finite = CopyPulseStateToManagedBuffer();
-            UnlockJobBuffers();
             if (finite)
                 return true;
 
@@ -1062,7 +1003,7 @@ namespace Hecton8.VFX.Bioluminescence
 
         private void FenceScheduledJobBeforeVaultHandleInvalidation()
         {
-            if (_stateJobScheduled || _jobLocksHeld)
+            if (_stateJobScheduled)
                 CompleteScheduledJobForTeardown();
         }
 
@@ -1301,124 +1242,61 @@ namespace Hecton8.VFX.Bioluminescence
             if (vault == null || !HasVaultBuffers())
                 return;
 
-            bool lockedGlowStates = false;
-            bool lockedAup = false;
-            bool lockedSpecies = false;
-            bool lockedWeather = false;
-            bool lockedPredator = false;
-            bool lockedDamage = false;
-            bool lockedPulses = false;
-            bool lockedPulseAges = false;
-
-            try
+            if (!TryResolveBiolumVaultBuffer(vault, in _glowStatesHandle, BufferID.BiolumGlowStates, MaxGlowInstances, out NativeArray<GlowStateDTO> glowStates) ||
+                !TryResolveBiolumVaultBuffer(vault, in _glowAupOriginsHandle, BufferID.BiolumGlowAupOrigins, MaxGlowInstances, out NativeArray<double3> aupOrigins) ||
+                !TryResolveBiolumVaultBuffer(vault, in _speciesTuningHandle, BufferID.BiolumSpeciesTuning, MaxSpeciesTuningCount, out NativeArray<BiolumSpeciesTuningDTO> speciesTuning) ||
+                !TryResolveBiolumVaultBuffer(vault, in _mockWeatherSignalHandle, BufferID.BiolumMockWeatherSignal, 1, out NativeArray<MockWeatherSignal> weatherSignal) ||
+                !TryResolveBiolumVaultBuffer(vault, in _mockPredatorSignalHandle, BufferID.BiolumMockPredatorSignal, 1, out NativeArray<BiolumMockPredatorProximitySignal> predatorSignal) ||
+                !TryResolveBiolumVaultBuffer(vault, in _mockDamageSignalHandle, BufferID.BiolumMockDamageSignal, 1, out NativeArray<BiolumMockCombatDamageSignal> damageSignal) ||
+                !TryResolveBiolumVaultBuffer(vault, in _syncPulsesHandle, BufferID.BiolumSyncPulses, SyncPulseCapacity, out NativeArray<SyncPulseDTO> pulses) ||
+                !TryResolveBiolumVaultBuffer(vault, in _syncPulseAgesHandle, BufferID.BiolumSyncPulseAges, SyncPulseCapacity, out NativeArray<float> pulseAges))
             {
-                lockedGlowStates = vault.TryLockBuffer(BufferID.BiolumGlowStates, SystemID.Vfx);
-                if (!lockedGlowStates)
-                    return;
-
-                lockedAup = vault.TryLockBuffer(BufferID.BiolumGlowAupOrigins, SystemID.Vfx);
-                if (!lockedAup)
-                    return;
-
-                lockedSpecies = vault.TryLockBuffer(BufferID.BiolumSpeciesTuning, SystemID.Vfx);
-                if (!lockedSpecies)
-                    return;
-
-                lockedWeather = vault.TryLockBuffer(BufferID.BiolumMockWeatherSignal, SystemID.Vfx);
-                if (!lockedWeather)
-                    return;
-
-                lockedPredator = vault.TryLockBuffer(BufferID.BiolumMockPredatorSignal, SystemID.Vfx);
-                if (!lockedPredator)
-                    return;
-
-                lockedDamage = vault.TryLockBuffer(BufferID.BiolumMockDamageSignal, SystemID.Vfx);
-                if (!lockedDamage)
-                    return;
-
-                lockedPulses = vault.TryLockBuffer(BufferID.BiolumSyncPulses, SystemID.Vfx);
-                if (!lockedPulses)
-                    return;
-
-                lockedPulseAges = vault.TryLockBuffer(BufferID.BiolumSyncPulseAges, SystemID.Vfx);
-                if (!lockedPulseAges)
-                    return;
-
-                if (!TryResolveBiolumVaultBuffer(vault, in _glowStatesHandle, BufferID.BiolumGlowStates, MaxGlowInstances, out NativeArray<GlowStateDTO> glowStates) ||
-                    !TryResolveBiolumVaultBuffer(vault, in _glowAupOriginsHandle, BufferID.BiolumGlowAupOrigins, MaxGlowInstances, out NativeArray<double3> aupOrigins) ||
-                    !TryResolveBiolumVaultBuffer(vault, in _speciesTuningHandle, BufferID.BiolumSpeciesTuning, MaxSpeciesTuningCount, out NativeArray<BiolumSpeciesTuningDTO> speciesTuning) ||
-                    !TryResolveBiolumVaultBuffer(vault, in _mockWeatherSignalHandle, BufferID.BiolumMockWeatherSignal, 1, out NativeArray<MockWeatherSignal> weatherSignal) ||
-                    !TryResolveBiolumVaultBuffer(vault, in _mockPredatorSignalHandle, BufferID.BiolumMockPredatorSignal, 1, out NativeArray<BiolumMockPredatorProximitySignal> predatorSignal) ||
-                    !TryResolveBiolumVaultBuffer(vault, in _mockDamageSignalHandle, BufferID.BiolumMockDamageSignal, 1, out NativeArray<BiolumMockCombatDamageSignal> damageSignal) ||
-                    !TryResolveBiolumVaultBuffer(vault, in _syncPulsesHandle, BufferID.BiolumSyncPulses, SyncPulseCapacity, out NativeArray<SyncPulseDTO> pulses) ||
-                    !TryResolveBiolumVaultBuffer(vault, in _syncPulseAgesHandle, BufferID.BiolumSyncPulseAges, SyncPulseCapacity, out NativeArray<float> pulseAges))
-                {
-                    return;
-                }
-
-                SeedSpeciesTuning(speciesTuning);
-
-                weatherSignal[0] = new MockWeatherSignal
-                {
-                    AmbientLightLevel = 0.08f,
-                    O2Level01 = 1f,
-                    SystemHealthIndex01 = 0.25f,
-                    CurrentBiomeHash = HashAscii32("ABYSS_NEON")
-                };
-                predatorSignal[0] = default;
-                damageSignal[0] = default;
-                for (int i = 0; i < SyncPulseCapacity; i++)
-                {
-                    pulses[i] = default;
-                    pulseAges[i] = 99f;
-                }
-
-                int speciesCount = math.min(MaxSpeciesTuningCount, speciesTuning.Length);
-                int activeCount = math.min(MaxGlowInstances, math.min(glowStates.Length, aupOrigins.Length));
-                if (speciesCount <= 0 || activeCount <= 0)
-                    return;
-
-                for (int i = 0; i < activeCount; i++)
-                {
-                    int speciesIndex = i % speciesCount;
-                    BiolumSpeciesTuningDTO species = speciesTuning[speciesIndex];
-                    float phase = math.frac((i * 0.754877666f) + (speciesIndex * 0.037f));
-                    ref GlowStateDTO state = ref GetGlowStateRef(glowStates, i);
-                    state.PackedColor = species.PackedColor;
-                    state.Phase = phase;
-                    state.Frequency = species.Frequency;
-                    state.SpeciesHash = species.SpeciesHash;
-
-                    int x = i % 250;
-                    int z = i / 250;
-                    double jitterX = ((int)(DeterministicHash((uint)i) & 1023u) - 512) * 0.00625;
-                    double jitterZ = ((int)((DeterministicHash((uint)i ^ 0xA341316Cu) >> 10) & 1023u) - 512) * 0.00625;
-                    aupOrigins[i] = new double3((x - 125) * 1.35 + jitterX, -220.0 - (speciesIndex & 7) * 0.75, (z - 100) * 1.35 + jitterZ);
-                }
-
-                _activeSyncPulseCount = 0;
-                _activeGlowingInstanceCount = activeCount;
-                _mockGlowsInitialized = true;
+                return;
             }
-            finally
+
+            SeedSpeciesTuning(speciesTuning);
+
+            weatherSignal[0] = new MockWeatherSignal
             {
-                if (lockedPulseAges)
-                    vault.TryUnlockBuffer(BufferID.BiolumSyncPulseAges, SystemID.Vfx);
-                if (lockedPulses)
-                    vault.TryUnlockBuffer(BufferID.BiolumSyncPulses, SystemID.Vfx);
-                if (lockedDamage)
-                    vault.TryUnlockBuffer(BufferID.BiolumMockDamageSignal, SystemID.Vfx);
-                if (lockedPredator)
-                    vault.TryUnlockBuffer(BufferID.BiolumMockPredatorSignal, SystemID.Vfx);
-                if (lockedWeather)
-                    vault.TryUnlockBuffer(BufferID.BiolumMockWeatherSignal, SystemID.Vfx);
-                if (lockedSpecies)
-                    vault.TryUnlockBuffer(BufferID.BiolumSpeciesTuning, SystemID.Vfx);
-                if (lockedAup)
-                    vault.TryUnlockBuffer(BufferID.BiolumGlowAupOrigins, SystemID.Vfx);
-                if (lockedGlowStates)
-                    vault.TryUnlockBuffer(BufferID.BiolumGlowStates, SystemID.Vfx);
+                AmbientLightLevel = 0.08f,
+                O2Level01 = 1f,
+                SystemHealthIndex01 = 0.25f,
+                CurrentBiomeHash = HashAscii32("ABYSS_NEON")
+            };
+            predatorSignal[0] = default;
+            damageSignal[0] = default;
+            for (int i = 0; i < SyncPulseCapacity; i++)
+            {
+                pulses[i] = default;
+                pulseAges[i] = 99f;
             }
+
+            int speciesCount = math.min(MaxSpeciesTuningCount, speciesTuning.Length);
+            int activeCount = math.min(MaxGlowInstances, math.min(glowStates.Length, aupOrigins.Length));
+            if (speciesCount <= 0 || activeCount <= 0)
+                return;
+
+            for (int i = 0; i < activeCount; i++)
+            {
+                int speciesIndex = i % speciesCount;
+                BiolumSpeciesTuningDTO species = speciesTuning[speciesIndex];
+                float phase = math.frac((i * 0.754877666f) + (speciesIndex * 0.037f));
+                ref GlowStateDTO state = ref GetGlowStateRef(glowStates, i);
+                state.PackedColor = species.PackedColor;
+                state.Phase = phase;
+                state.Frequency = species.Frequency;
+                state.SpeciesHash = species.SpeciesHash;
+
+                int x = i % 250;
+                int z = i / 250;
+                double jitterX = ((int)(DeterministicHash((uint)i) & 1023u) - 512) * 0.00625;
+                double jitterZ = ((int)((DeterministicHash((uint)i ^ 0xA341316Cu) >> 10) & 1023u) - 512) * 0.00625;
+                aupOrigins[i] = new double3((x - 125) * 1.35 + jitterX, -220.0 - (speciesIndex & 7) * 0.75, (z - 100) * 1.35 + jitterZ);
+            }
+
+            _activeSyncPulseCount = 0;
+            _activeGlowingInstanceCount = activeCount;
+            _mockGlowsInitialized = true;
         }
 
         private void GenerateMockLightingState()
@@ -1427,60 +1305,26 @@ namespace Hecton8.VFX.Bioluminescence
             if (vault == null || !HasVaultBuffers())
                 return;
 
-            bool lockedPulse = false;
-            bool lockedProfile = false;
-            bool lockedWeather = false;
-            bool lockedPredator = false;
-            try
+            if (!TryResolveBiolumVaultBuffer(vault, in _pulseStateHandle, BiolumPulseStateBufferId, 1, out NativeArray<BiolumPulseStateDTO> pulseState) ||
+                !TryResolveBiolumVaultBuffer(vault, in _profileFloatsHandle, BufferID.BiolumProfileFloats, ProfileFloatCount, out NativeArray<float> profileFloats) ||
+                !TryResolveBiolumVaultBuffer(vault, in _mockWeatherSignalHandle, BufferID.BiolumMockWeatherSignal, 1, out NativeArray<MockWeatherSignal> weather) ||
+                !TryResolveBiolumVaultBuffer(vault, in _mockPredatorSignalHandle, BufferID.BiolumMockPredatorSignal, 1, out NativeArray<BiolumMockPredatorProximitySignal> predator))
             {
-                lockedPulse = vault.TryLockBuffer(BiolumPulseStateBufferId, SystemID.Vfx);
-                if (!lockedPulse)
-                    return;
-
-                lockedProfile = vault.TryLockBuffer(BufferID.BiolumProfileFloats, SystemID.Vfx);
-                if (!lockedProfile)
-                    return;
-
-                lockedWeather = vault.TryLockBuffer(BufferID.BiolumMockWeatherSignal, SystemID.Vfx);
-                if (!lockedWeather)
-                    return;
-
-                lockedPredator = vault.TryLockBuffer(BufferID.BiolumMockPredatorSignal, SystemID.Vfx);
-                if (!lockedPredator)
-                    return;
-
-                if (!TryResolveBiolumVaultBuffer(vault, in _pulseStateHandle, BiolumPulseStateBufferId, 1, out NativeArray<BiolumPulseStateDTO> pulseState) ||
-                    !TryResolveBiolumVaultBuffer(vault, in _profileFloatsHandle, BufferID.BiolumProfileFloats, ProfileFloatCount, out NativeArray<float> profileFloats) ||
-                    !TryResolveBiolumVaultBuffer(vault, in _mockWeatherSignalHandle, BufferID.BiolumMockWeatherSignal, 1, out NativeArray<MockWeatherSignal> weather) ||
-                    !TryResolveBiolumVaultBuffer(vault, in _mockPredatorSignalHandle, BufferID.BiolumMockPredatorSignal, 1, out NativeArray<BiolumMockPredatorProximitySignal> predator))
-                {
-                    return;
-                }
-
-                GenerateMockLightingStateJob job = new GenerateMockLightingStateJob
-                {
-                    PulseState = pulseState,
-                    ProfileFloats = profileFloats,
-                    WeatherSignal = weather,
-                    PredatorSignal = predator,
-                    AupReference = new double3(_aupOriginOffset.x, _aupOriginOffset.y, _aupOriginOffset.z),
-                    GlobalQualityWeight = _globalQualityWeight
-                };
-                // Cold mock seed: keep the job system/Burst route visible without scheduling a tiny hot-path job.
-                job.Run();
-                CopyPulseStateToManagedBuffer();
+                return;
             }
-            finally
+
+            GenerateMockLightingStateJob job = new GenerateMockLightingStateJob
             {
-                if (lockedPredator)
-                    vault.TryUnlockBuffer(BufferID.BiolumMockPredatorSignal, SystemID.Vfx);
-                if (lockedWeather)
-                    vault.TryUnlockBuffer(BufferID.BiolumMockWeatherSignal, SystemID.Vfx);
-                if (lockedProfile)
-                    vault.TryUnlockBuffer(BufferID.BiolumProfileFloats, SystemID.Vfx);
-                if (lockedPulse)
-                    vault.TryUnlockBuffer(BiolumPulseStateBufferId, SystemID.Vfx);
-            }
+                PulseState = pulseState,
+                ProfileFloats = profileFloats,
+                WeatherSignal = weather,
+                PredatorSignal = predator,
+                AupReference = new double3(_aupOriginOffset.x, _aupOriginOffset.y, _aupOriginOffset.z),
+                GlobalQualityWeight = _globalQualityWeight
+            };
+            // Cold mock seed: keep the job system/Burst route visible without scheduling a tiny hot-path job.
+            job.Run();
+            CopyPulseStateToManagedBuffer();
         }
 
         private static unsafe ref GlowStateDTO GetGlowStateRef(NativeArray<GlowStateDTO> states, int index)
@@ -2013,73 +1857,51 @@ namespace Hecton8.VFX.Bioluminescence
             if (vault == null || !HasVaultBuffers())
                 return;
 
-            BiolumMockPredatorProximitySignal predator = default;
-            if (!vault.TryLockBuffer(BufferID.BiolumMockPredatorSignal, SystemID.Vfx))
+            if (!TryResolveBiolumVaultBuffer(
+                    vault,
+                    in _mockPredatorSignalHandle,
+                    BufferID.BiolumMockPredatorSignal,
+                    1,
+                    out NativeArray<BiolumMockPredatorProximitySignal> predatorSignal))
+            {
                 return;
-
-            try
-            {
-                if (!TryResolveBiolumVaultBuffer(vault, in _mockPredatorSignalHandle, BufferID.BiolumMockPredatorSignal, 1, out NativeArray<BiolumMockPredatorProximitySignal> predatorSignal))
-                    return;
-
-                predator = predatorSignal[0];
             }
-            finally
-            {
-                vault.TryUnlockBuffer(BufferID.BiolumMockPredatorSignal, SystemID.Vfx);
-            }
+
+            BiolumMockPredatorProximitySignal predator = predatorSignal[0];
 
             if (predator.Strength01 <= 0.01f || predator.FrameStamp == _lastPredatorSignalFrame)
                 return;
 
-            bool lockedPulses = false;
-            bool lockedAges = false;
-            try
+            if (!TryResolveBiolumVaultBuffer(vault, in _syncPulsesHandle, BufferID.BiolumSyncPulses, SyncPulseCapacity, out NativeArray<SyncPulseDTO> pulses) ||
+                !TryResolveBiolumVaultBuffer(vault, in _syncPulseAgesHandle, BufferID.BiolumSyncPulseAges, SyncPulseCapacity, out NativeArray<float> ages))
             {
-                lockedPulses = vault.TryLockBuffer(BufferID.BiolumSyncPulses, SystemID.Vfx);
-                if (!lockedPulses)
-                    return;
+                return;
+            }
 
-                lockedAges = vault.TryLockBuffer(BufferID.BiolumSyncPulseAges, SystemID.Vfx);
-                if (!lockedAges)
-                    return;
-
-                if (!TryResolveBiolumVaultBuffer(vault, in _syncPulsesHandle, BufferID.BiolumSyncPulses, SyncPulseCapacity, out NativeArray<SyncPulseDTO> pulses) ||
-                    !TryResolveBiolumVaultBuffer(vault, in _syncPulseAgesHandle, BufferID.BiolumSyncPulseAges, SyncPulseCapacity, out NativeArray<float> ages))
-                    return;
-
-                float waveSpeed = ResolveMockPredatorWaveSpeed(in predator);
-                int slot = 0;
-                float oldestAge = -1f;
-                int count = math.min(SyncPulseCapacity, math.min(pulses.Length, ages.Length));
-                for (int i = 0; i < count; i++)
+            float waveSpeed = ResolveMockPredatorWaveSpeed(in predator);
+            int slot = 0;
+            float oldestAge = -1f;
+            int count = math.min(SyncPulseCapacity, math.min(pulses.Length, ages.Length));
+            for (int i = 0; i < count; i++)
+            {
+                float age = ages[i];
+                if (age > oldestAge)
                 {
-                    float age = ages[i];
-                    if (age > oldestAge)
-                    {
-                        oldestAge = age;
-                        slot = i;
-                    }
+                    oldestAge = age;
+                    slot = i;
                 }
+            }
 
-                pulses[slot] = new SyncPulseDTO
-                {
-                    OriginAUP = predator.OriginAUP,
-                    WaveSpeed = waveSpeed,
-                    ColorOverride = BiolumPackedColorUtility.PackRgb10A2(new float3(1f, 0.92f, 0.62f), 1f)
-                };
-                ages[slot] = 0f;
-                _lastPredatorSignalFrame = predator.FrameStamp;
-                _lastPulseOriginAUP = predator.OriginAUP;
-                _activeSyncPulseCount = math.min(_activeSyncPulseCount + 1, count);
-            }
-            finally
+            pulses[slot] = new SyncPulseDTO
             {
-                if (lockedAges)
-                    vault.TryUnlockBuffer(BufferID.BiolumSyncPulseAges, SystemID.Vfx);
-                if (lockedPulses)
-                    vault.TryUnlockBuffer(BufferID.BiolumSyncPulses, SystemID.Vfx);
-            }
+                OriginAUP = predator.OriginAUP,
+                WaveSpeed = waveSpeed,
+                ColorOverride = BiolumPackedColorUtility.PackRgb10A2(new float3(1f, 0.92f, 0.62f), 1f)
+            };
+            ages[slot] = 0f;
+            _lastPredatorSignalFrame = predator.FrameStamp;
+            _lastPulseOriginAUP = predator.OriginAUP;
+            _activeSyncPulseCount = math.min(_activeSyncPulseCount + 1, count);
         }
 
         private void AdvanceMockPredatorSignal(float dt)
@@ -2173,46 +1995,26 @@ namespace Hecton8.VFX.Bioluminescence
             if (vault == null || !HasVaultBuffers())
                 return;
 
-            bool lockedPulses = false;
-            bool lockedAges = false;
-            try
+            if (!TryResolveBiolumVaultBuffer(vault, in _syncPulsesHandle, BufferID.BiolumSyncPulses, SyncPulseCapacity, out NativeArray<SyncPulseDTO> pulses) ||
+                !TryResolveBiolumVaultBuffer(vault, in _syncPulseAgesHandle, BufferID.BiolumSyncPulseAges, SyncPulseCapacity, out NativeArray<float> ages))
+                return;
+
+            int active = 0;
+            int count = math.min(SyncPulseCapacity, math.min(pulses.Length, ages.Length));
+            for (int i = 0; i < count; i++)
             {
-                lockedPulses = vault.TryLockBuffer(BufferID.BiolumSyncPulses, SystemID.Vfx);
-                if (!lockedPulses)
-                    return;
-
-                lockedAges = vault.TryLockBuffer(BufferID.BiolumSyncPulseAges, SystemID.Vfx);
-                if (!lockedAges)
-                    return;
-
-                if (!TryResolveBiolumVaultBuffer(vault, in _syncPulsesHandle, BufferID.BiolumSyncPulses, SyncPulseCapacity, out NativeArray<SyncPulseDTO> pulses) ||
-                    !TryResolveBiolumVaultBuffer(vault, in _syncPulseAgesHandle, BufferID.BiolumSyncPulseAges, SyncPulseCapacity, out NativeArray<float> ages))
-                    return;
-
-                int active = 0;
-                int count = math.min(SyncPulseCapacity, math.min(pulses.Length, ages.Length));
-                for (int i = 0; i < count; i++)
+                SyncPulseDTO pulse = pulses[i];
+                float age = ages[i];
+                if (age < 8f && math.isfinite(pulse.WaveSpeed) && pulse.WaveSpeed > 0.0001f)
                 {
-                    SyncPulseDTO pulse = pulses[i];
-                    float age = ages[i];
-                    if (age < 8f && math.isfinite(pulse.WaveSpeed) && pulse.WaveSpeed > 0.0001f)
-                    {
-                        age += dt;
-                        ages[i] = age;
-                        if (age < 8f)
-                            active++;
-                    }
+                    age += dt;
+                    ages[i] = age;
+                    if (age < 8f)
+                        active++;
                 }
+            }
 
-                _activeSyncPulseCount = active;
-            }
-            finally
-            {
-                if (lockedAges)
-                    vault.TryUnlockBuffer(BufferID.BiolumSyncPulseAges, SystemID.Vfx);
-                if (lockedPulses)
-                    vault.TryUnlockBuffer(BufferID.BiolumSyncPulses, SystemID.Vfx);
-            }
+            _activeSyncPulseCount = active;
         }
 
         private void AdvanceMockDamageAge(float dt)
@@ -2324,31 +2126,9 @@ namespace Hecton8.VFX.Bioluminescence
                 return;
             }
 
-            bool lockedScratch = false;
-            bool lockedGlowStates = false;
-            bool lockedSpecies = false;
-            bool lockedProfile = false;
-            bool lockedPulse = false;
             bool retryWhenVaultUnlocks = false;
             try
             {
-                lockedScratch = vault.TryLockBuffer(BufferID.BiolumCsvScratch, SystemID.Vfx);
-                if (!lockedScratch)
-                {
-                    retryWhenVaultUnlocks = true;
-                    return;
-                }
-
-                lockedGlowStates = vault.TryLockBuffer(BufferID.BiolumGlowStates, SystemID.Vfx);
-                lockedSpecies = vault.TryLockBuffer(BufferID.BiolumSpeciesTuning, SystemID.Vfx);
-                lockedProfile = vault.TryLockBuffer(BufferID.BiolumProfileFloats, SystemID.Vfx);
-                lockedPulse = vault.TryLockBuffer(BiolumPulseStateBufferId, SystemID.Vfx);
-                if (!lockedSpecies || !lockedProfile || !lockedPulse)
-                {
-                    retryWhenVaultUnlocks = true;
-                    return;
-                }
-
                 if (!TryResolveBiolumVaultBuffer(vault, in _csvScratchHandle, BufferID.BiolumCsvScratch, CsvScratchByteCount, out NativeArray<byte> scratch) ||
                     !TryResolveBiolumVaultBuffer(vault, in _speciesTuningHandle, BufferID.BiolumSpeciesTuning, MaxSpeciesTuningCount, out NativeArray<BiolumSpeciesTuningDTO> species) ||
                     !TryResolveBiolumVaultBuffer(vault, in _profileFloatsHandle, BufferID.BiolumProfileFloats, ProfileFloatCount, out NativeArray<float> profileFloats) ||
@@ -2359,12 +2139,7 @@ namespace Hecton8.VFX.Bioluminescence
                 }
 
                 NativeArray<GlowStateDTO> glowStates = default;
-                if (lockedGlowStates &&
-                    !TryResolveBiolumVaultBuffer(vault, in _glowStatesHandle, BufferID.BiolumGlowStates, MaxGlowInstances, out glowStates))
-                {
-                    retryWhenVaultUnlocks = true;
-                    return;
-                }
+                TryResolveBiolumVaultBuffer(vault, in _glowStatesHandle, BufferID.BiolumGlowStates, MaxGlowInstances, out glowStates);
                 int bytesRead = TryReadCsvOverrideIntoScratch(scratch, out long writeTicks);
                 if (!scratch.IsCreated || !species.IsCreated || bytesRead <= 0)
                     return;
@@ -2375,16 +2150,6 @@ namespace Hecton8.VFX.Bioluminescence
             }
             finally
             {
-                if (lockedPulse)
-                    vault.TryUnlockBuffer(BiolumPulseStateBufferId, SystemID.Vfx);
-                if (lockedProfile)
-                    vault.TryUnlockBuffer(BufferID.BiolumProfileFloats, SystemID.Vfx);
-                if (lockedSpecies)
-                    vault.TryUnlockBuffer(BufferID.BiolumSpeciesTuning, SystemID.Vfx);
-                if (lockedGlowStates)
-                    vault.TryUnlockBuffer(BufferID.BiolumGlowStates, SystemID.Vfx);
-                if (lockedScratch)
-                    vault.TryUnlockBuffer(BufferID.BiolumCsvScratch, SystemID.Vfx);
                 Interlocked.CompareExchange(
                     ref _csvWorkerState,
                     retryWhenVaultUnlocks ? CsvWorkerRequested : CsvWorkerIdle,
@@ -2751,87 +2516,35 @@ namespace Hecton8.VFX.Bioluminescence
             if (vault == null || !HasVaultBuffers())
                 return;
 
-            bool lockedPulseState = false;
-            bool lockedProfile = false;
-            bool lockedWeather = false;
-            bool lockedPredator = false;
-            bool lockedPulses = false;
-            bool lockedPulseAges = false;
-            try
+            if (!TryResolveBiolumVaultBuffer(vault, in _pulseStateHandle, BiolumPulseStateBufferId, 1, out NativeArray<BiolumPulseStateDTO> pulseState) ||
+                !TryResolveBiolumVaultBuffer(vault, in _profileFloatsHandle, BufferID.BiolumProfileFloats, ProfileFloatCount, out NativeArray<float> profileFloats) ||
+                !TryResolveBiolumVaultBuffer(vault, in _mockWeatherSignalHandle, BufferID.BiolumMockWeatherSignal, 1, out NativeArray<MockWeatherSignal> weather) ||
+                !TryResolveBiolumVaultBuffer(vault, in _mockPredatorSignalHandle, BufferID.BiolumMockPredatorSignal, 1, out NativeArray<BiolumMockPredatorProximitySignal> predator) ||
+                !TryResolveBiolumVaultBuffer(vault, in _syncPulsesHandle, BufferID.BiolumSyncPulses, SyncPulseCapacity, out NativeArray<SyncPulseDTO> syncPulses) ||
+                !TryResolveBiolumVaultBuffer(vault, in _syncPulseAgesHandle, BufferID.BiolumSyncPulseAges, SyncPulseCapacity, out NativeArray<float> syncPulseAges))
             {
-                lockedPulseState = vault.TryLockBuffer(BiolumPulseStateBufferId, SystemID.Vfx);
-                if (!lockedPulseState)
-                    return;
-
-                lockedProfile = vault.TryLockBuffer(BufferID.BiolumProfileFloats, SystemID.Vfx);
-                if (!lockedProfile)
-                    return;
-
-                lockedWeather = vault.TryLockBuffer(BufferID.BiolumMockWeatherSignal, SystemID.Vfx);
-                if (!lockedWeather)
-                    return;
-
-                lockedPredator = vault.TryLockBuffer(BufferID.BiolumMockPredatorSignal, SystemID.Vfx);
-                if (!lockedPredator)
-                    return;
-
-                lockedPulses = vault.TryLockBuffer(BufferID.BiolumSyncPulses, SystemID.Vfx);
-                if (!lockedPulses)
-                    return;
-
-                lockedPulseAges = vault.TryLockBuffer(BufferID.BiolumSyncPulseAges, SystemID.Vfx);
-                if (!lockedPulseAges)
-                    return;
-
-                if (!TryResolveBiolumVaultBuffer(vault, in _pulseStateHandle, BiolumPulseStateBufferId, 1, out NativeArray<BiolumPulseStateDTO> pulseState) ||
-                    !TryResolveBiolumVaultBuffer(vault, in _profileFloatsHandle, BufferID.BiolumProfileFloats, ProfileFloatCount, out NativeArray<float> profileFloats) ||
-                    !TryResolveBiolumVaultBuffer(vault, in _mockWeatherSignalHandle, BufferID.BiolumMockWeatherSignal, 1, out NativeArray<MockWeatherSignal> weather) ||
-                    !TryResolveBiolumVaultBuffer(vault, in _mockPredatorSignalHandle, BufferID.BiolumMockPredatorSignal, 1, out NativeArray<BiolumMockPredatorProximitySignal> predator) ||
-                    !TryResolveBiolumVaultBuffer(vault, in _syncPulsesHandle, BufferID.BiolumSyncPulses, SyncPulseCapacity, out NativeArray<SyncPulseDTO> syncPulses) ||
-                    !TryResolveBiolumVaultBuffer(vault, in _syncPulseAgesHandle, BufferID.BiolumSyncPulseAges, SyncPulseCapacity, out NativeArray<float> syncPulseAges))
-                {
-                    return;
-                }
-
-                AdvanceBiolumPhasesJob phaseJob = new AdvanceBiolumPhasesJob
-                {
-                    PulseState = pulseState,
-                    ProfileFloats = profileFloats,
-                    WeatherSignal = weather,
-                    PredatorSignal = predator,
-                    SyncPulses = syncPulses,
-                    SyncPulseAges = syncPulseAges,
-                    DeltaTime = deltaTime,
-                    GlobalQualityWeight = _globalQualityWeight,
-                    AupReference = new double3(_aupOriginOffset.x, _aupOriginOffset.y, _aupOriginOffset.z),
-                    DarknessActivationThreshold = ResolveDarknessActivationThreshold(profileFloats),
-                    PredatorPanicSpeed = ResolvePredatorPanicSpeed(profileFloats)
-                };
-
-                _stateJobScheduleTimestamp = Stopwatch.GetTimestamp();
-                _stateJobHandle = phaseJob.Schedule();
-                H8Memory.RegisterActiveJob(SystemID.Vfx, _stateJobHandle);
-                _stateJobScheduled = true;
-                _jobLocksHeld = true;
+                return;
             }
-            finally
+
+            AdvanceBiolumPhasesJob phaseJob = new AdvanceBiolumPhasesJob
             {
-                if (!_jobLocksHeld)
-                {
-                    if (lockedPulseAges)
-                        vault.TryUnlockBuffer(BufferID.BiolumSyncPulseAges, SystemID.Vfx);
-                    if (lockedPulses)
-                        vault.TryUnlockBuffer(BufferID.BiolumSyncPulses, SystemID.Vfx);
-                    if (lockedPredator)
-                        vault.TryUnlockBuffer(BufferID.BiolumMockPredatorSignal, SystemID.Vfx);
-                    if (lockedWeather)
-                        vault.TryUnlockBuffer(BufferID.BiolumMockWeatherSignal, SystemID.Vfx);
-                    if (lockedProfile)
-                        vault.TryUnlockBuffer(BufferID.BiolumProfileFloats, SystemID.Vfx);
-                    if (lockedPulseState)
-                        vault.TryUnlockBuffer(BiolumPulseStateBufferId, SystemID.Vfx);
-                }
-            }
+                PulseState = pulseState,
+                ProfileFloats = profileFloats,
+                WeatherSignal = weather,
+                PredatorSignal = predator,
+                SyncPulses = syncPulses,
+                SyncPulseAges = syncPulseAges,
+                DeltaTime = deltaTime,
+                GlobalQualityWeight = _globalQualityWeight,
+                AupReference = new double3(_aupOriginOffset.x, _aupOriginOffset.y, _aupOriginOffset.z),
+                DarknessActivationThreshold = ResolveDarknessActivationThreshold(profileFloats),
+                PredatorPanicSpeed = ResolvePredatorPanicSpeed(profileFloats)
+            };
+
+            _stateJobScheduleTimestamp = Stopwatch.GetTimestamp();
+            _stateJobHandle = phaseJob.Schedule();
+            H8Memory.RegisterActiveJob(SystemID.Vfx, _stateJobHandle);
+            _stateJobScheduled = true;
         }
 
         private bool CompleteScheduledJobAndPublish()
@@ -2859,7 +2572,6 @@ namespace Hecton8.VFX.Bioluminescence
             _stateJobScheduled = false;
             _jobOverrunFrames = 0;
             bool finite = CopyPulseStateToManagedBuffer();
-            UnlockJobBuffers();
             if (!finite)
             {
                 _pendingTelemetryFlags |= TelemetryFlagNonFinite;
@@ -2886,27 +2598,6 @@ namespace Hecton8.VFX.Bioluminescence
                 DispatcherJobFence.TryComplete(ref _stateJobHandle, forceComplete: true);
                 _stateJobScheduled = false;
             }
-
-            UnlockJobBuffers();
-        }
-
-        private void UnlockJobBuffers()
-        {
-            if (!_jobLocksHeld)
-                return;
-
-            IDataVault vault = _dataVault;
-            if (vault != null)
-            {
-                vault.TryUnlockBuffer(BufferID.BiolumSyncPulseAges, SystemID.Vfx);
-                vault.TryUnlockBuffer(BufferID.BiolumSyncPulses, SystemID.Vfx);
-                vault.TryUnlockBuffer(BufferID.BiolumMockPredatorSignal, SystemID.Vfx);
-                vault.TryUnlockBuffer(BufferID.BiolumMockWeatherSignal, SystemID.Vfx);
-                vault.TryUnlockBuffer(BufferID.BiolumProfileFloats, SystemID.Vfx);
-                vault.TryUnlockBuffer(BiolumPulseStateBufferId, SystemID.Vfx);
-            }
-
-            _jobLocksHeld = false;
         }
 
         private bool CopyPulseStateToManagedBuffer()

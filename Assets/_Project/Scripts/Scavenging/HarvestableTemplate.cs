@@ -153,7 +153,7 @@ namespace Hecton8.Scavenging
                 BaseHealth = math.max(0.1f, baseHealth),
                 ToolResistance = math.max(0.01f, toolResistance),
                 LootStartIndex = math.max(0, lootStartIndex),
-                LootCount = (byte)math.min(byte.MaxValue, lootTable != null ? lootTable.Length : 0),
+                LootCount = (byte)CountValidLootEntries(byte.MaxValue),
                 MaterialClassId = (byte)materialClass
             };
         }
@@ -171,7 +171,7 @@ namespace Hecton8.Scavenging
             for (int i = 0; i < maxEntries; i++)
             {
                 LootAuthoringEntry source = lootTable[i];
-                if (source.item == null || string.IsNullOrWhiteSpace(source.item.PersistentId))
+                if (!IsValidLootEntry(in source))
                     continue;
 
                 destination.AddNoResize(new LootRuntimeEntry
@@ -185,6 +185,27 @@ namespace Hecton8.Scavenging
             }
 
             return copiedCount;
+        }
+
+        private int CountValidLootEntries(int maxCount)
+        {
+            if (lootTable == null || maxCount <= 0)
+                return 0;
+
+            int count = 0;
+            int scanCount = math.min(lootTable.Length, maxCount);
+            for (int i = 0; i < scanCount; i++)
+            {
+                if (IsValidLootEntry(in lootTable[i]))
+                    count++;
+            }
+
+            return count;
+        }
+
+        private static bool IsValidLootEntry(in LootAuthoringEntry entry)
+        {
+            return entry.item != null && !string.IsNullOrWhiteSpace(entry.item.PersistentId);
         }
 
 #if UNITY_EDITOR

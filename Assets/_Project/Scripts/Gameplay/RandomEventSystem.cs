@@ -28,7 +28,6 @@ using System.Collections.Generic;
 #endif
 using Hecton.Localization;
 using Hecton8.Atmosphere;
-using Hecton8.Bootstrap;
 using Hecton8.Caves;
 using Hecton8.Core;
 using Hecton8.Core.Contracts;
@@ -980,6 +979,7 @@ namespace Hecton8.Gameplay
             TryRegisterHotSwapListener();
             TryRegisterRuntime();
             TryRegister();
+            TryRegisterLateFrame();
 
             ResolveSurvivalSystem();
         }
@@ -1060,8 +1060,6 @@ namespace Hecton8.Gameplay
         public void LateFrameTick()
         {
             FlushQueuedRandomEventVisuals();
-            if (!HasQueuedRandomEventVisuals())
-                TryUnregisterLateFrame();
         }
 
         private void TryRegister()
@@ -1328,13 +1326,9 @@ namespace Hecton8.Gameplay
             if (survivalSystem != null)
                 return true;
 
-            if (!GameBootstrapper.TryGetCurrentPlayerTransform(out Transform playerTransform) ||
-                playerTransform == null)
-            {
-                return false;
-            }
-
-            return playerTransform.TryGetComponent(out survivalSystem);
+            IPlayerRuntimeContext playerContext = _cachedPlayerContext;
+            survivalSystem = playerContext != null ? playerContext.SurvivalSystem : null;
+            return survivalSystem != null;
         }
 
         public void OnGlobalRegistryServiceReplaced(
@@ -1350,8 +1344,7 @@ namespace Hecton8.Gameplay
                     if (currentService != null && isActiveAndEnabled)
                     {
                         TryRegister();
-                        if (HasQueuedRandomEventVisuals())
-                            TryRegisterLateFrame();
+                        TryRegisterLateFrame();
                     }
                     break;
                 case GlobalRegistryServiceSlot.LocalizationRuntime:
@@ -1365,6 +1358,10 @@ namespace Hecton8.Gameplay
                     break;
                 case GlobalRegistryServiceSlot.Player:
                     _cachedPlayerContext = currentService as IPlayerRuntimeContext;
+                    if (_cachedPlayerContext == null)
+                        survivalSystem = null;
+                    else if (survivalSystem == null)
+                        survivalSystem = _cachedPlayerContext.SurvivalSystem;
                     break;
                 case GlobalRegistryServiceSlot.Physics:
                     _cachedPhysicsService = currentService as IPhysicsService;
@@ -1409,6 +1406,8 @@ namespace Hecton8.Gameplay
 
             if (voxelEngine == null)
                 voxelEngine = _cachedVoxelEngine;
+            if (survivalSystem == null && _cachedPlayerContext != null)
+                survivalSystem = _cachedPlayerContext.SurvivalSystem;
         }
 
         private ReadOnlySpan<char> ResolveLocalizedSpan(string key, string fallback)
@@ -1520,7 +1519,6 @@ namespace Hecton8.Gameplay
                 math.max(0.02f, meteorShowerStreakLength),
                 math.max(0.0005f, meteorShowerStreakWidth));
             _meteorShowerGlobalsDirty = true;
-            TryRegisterLateFrame();
         }
 
         private Vector2 ResolveMeteorSkyDirection()
@@ -1845,21 +1843,18 @@ namespace Hecton8.Gameplay
                 0f,
                 math.saturate(intensity));
             _meteorWaterImpactGlobalsDirty = true;
-            TryRegisterLateFrame();
         }
 
         private void PublishBiolumStormGlobal(float value)
         {
             _pendingBiolumStormGlobal = math.saturate(value);
             _biolumStormGlobalDirty = true;
-            TryRegisterLateFrame();
         }
 
         private void PublishGlitchGlobal(float value)
         {
             _pendingGlitchGlobal = math.saturate(value);
             _glitchGlobalDirty = true;
-            TryRegisterLateFrame();
         }
 
         private bool HasQueuedRandomEventVisuals()
@@ -1975,7 +1970,7 @@ namespace Hecton8.Gameplay
 
             string familyId = null;
             string geologyProfileId = null;
-            if (targetVolume.TryGetComponent(out WorldGenerativeGeologyVoxelRuntime runtime))
+            if (WorldGenerativeGeologyVoxelRuntime.TryGetActiveRuntime(targetVolume, out WorldGenerativeGeologyVoxelRuntime runtime))
             {
                 familyId = runtime.FamilyId;
                 geologyProfileId = runtime.GeologyProfileId;

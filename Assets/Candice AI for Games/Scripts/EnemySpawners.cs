@@ -11,6 +11,7 @@ public class EnemySpawners : MonoBehaviour
     [SerializeField] private float interval = 1f;
     private float timer = 0f;
     //parent layer parallax
+    [SerializeField]
     private GameObject parentLayer;
     private Transform parentLayerTransform;
     // COLD ALLOC: GameObject[32] - bounded Candice demo enemy pool - owner: EnemySpawners
@@ -25,8 +26,6 @@ public class EnemySpawners : MonoBehaviour
     // Start is called before the first frame update
     void Start()
     {
-        //get parent layer
-        parentLayer = GameObject.Find("Move BackGround Layer_1");
         parentLayerTransform = parentLayer == null ? null : parentLayer.transform;
 
         for (int i = 0; i < enemyPool.Length; i++)

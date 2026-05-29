@@ -191,10 +191,23 @@ namespace Hecton8.Core
             else
             {
                 JobHandle disposeHandle = array.Dispose(dependency);
-                DispatcherJobFence.TryComplete(ref disposeHandle, forceComplete: true);
+                ForceCompleteDisposeHandleInPostSimulationWindow(ref disposeHandle);
             }
 
             array = default;
+        }
+
+        private static void ForceCompleteDisposeHandleInPostSimulationWindow(ref JobHandle disposeHandle)
+        {
+            DispatcherJobFence.BeginPostSimulationSwapWindow();
+            try
+            {
+                DispatcherJobFence.TryComplete(ref disposeHandle, forceComplete: true);
+            }
+            finally
+            {
+                DispatcherJobFence.EndPostSimulationSwapWindow();
+            }
         }
 
         private static void DisposeRingBuffer(ref NativeRingBuffer<TelemetryEvent> buffer)

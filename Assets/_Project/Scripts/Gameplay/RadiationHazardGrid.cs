@@ -66,6 +66,7 @@ namespace Hecton8.Gameplay
         private const BufferID RadiationSdfSnapshotBuffer = (BufferID)72752;
         private const SystemID OwnerSystemId = SystemID.GameplayRadiation;
         private const string RadiationDumpFileName = "Dump_SHINOBU_274.bin";
+        private static readonly ulong RadiationSdfSnapshotMutationGuardMask = RadiationMutationGuardBit(RadiationSdfSnapshotBuffer);
 
         private static readonly uint _iodineItemHash = H8DataHash.ComputeFnv1A32("iodine");
         private static readonly uint _iodineCapsItemHash = H8DataHash.ComputeFnv1A32("Iodine");
@@ -1614,7 +1615,7 @@ namespace Hecton8.Gameplay
 
             IDataVault vault = _dataVault;
             if (vault != null)
-                vault.TryUnlockBuffer(RadiationSdfSnapshotBuffer, OwnerSystemId);
+                vault.ReleaseMutationGuard(RadiationSdfSnapshotMutationGuardMask);
 
             _radiationSdfSnapshotLocked = false;
         }
@@ -1831,7 +1832,7 @@ namespace Hecton8.Gameplay
             }
 
             if (vault.IsCompactionFenceActive ||
-                !vault.TryLockBuffer(RadiationSdfSnapshotBuffer, OwnerSystemId))
+                !vault.TryAcquireMutationGuard(RadiationSdfSnapshotMutationGuardMask))
             {
                 return false;
             }
@@ -1862,8 +1863,7 @@ namespace Hecton8.Gameplay
             return vault != null &&
                    requiredLength > 0 &&
                    !vault.IsCompactionFenceActive &&
-                   _radiationSdfSnapshotHandle.BufferID != 0u &&
-                   _radiationSdfSnapshotHandle.Generation != 0u &&
+                   IsRadiationSdfSnapshotHandle(in _radiationSdfSnapshotHandle) &&
                    vault.TryResolveHandle(in _radiationSdfSnapshotHandle, out snapshot) &&
                    !vault.IsCompactionFenceActive &&
                    snapshot.IsCreated &&
@@ -1877,9 +1877,21 @@ namespace Hecton8.Gameplay
 
             IDataVault vault = _dataVault;
             if (vault != null)
-                vault.TryUnlockBuffer(RadiationSdfSnapshotBuffer, OwnerSystemId);
+                vault.ReleaseMutationGuard(RadiationSdfSnapshotMutationGuardMask);
 
             locked = false;
+        }
+
+        private static bool IsRadiationSdfSnapshotHandle(in VaultGenerationHandle<byte> handle)
+        {
+            return handle.BufferID == unchecked((uint)(int)RadiationSdfSnapshotBuffer) &&
+                   handle.SystemID == (uint)OwnerSystemId &&
+                   handle.Generation != 0u;
+        }
+
+        private static ulong RadiationMutationGuardBit(BufferID bufferId)
+        {
+            return 1UL << ((int)bufferId & 63);
         }
 
         private void ResolveBulkheadReadBuffers(

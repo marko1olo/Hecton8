@@ -136,17 +136,46 @@ namespace Hecton8.Gameplay
             if (missionHash == 0u)
                 return null;
 
-            IQuestSystem questManager = _questManager;
-            if (questManager != null && questManager.IsActive(missionId))
-                return EnsureActiveInstance(missionHash, missionId);
+            if (!_activeMissions.TryGetValue(missionHash, out MissionInstance instance))
+                return null;
 
-            _activeMissions.Remove(missionHash);
-            return null;
+            IQuestSystem questManager = _questManager;
+            return questManager != null && questManager.IsActive(missionId) ? instance : null;
         }
 
-        public IEnumerable<MissionInstance> GetActiveMissions()
+        public int ActiveMissionCount => _activeMissions.Count;
+
+        public bool TryCopyActiveMissionsNonAlloc(MissionInstance[] destination, out int count)
         {
-            return _activeMissions.Values;
+            count = 0;
+            if (destination == null || destination.Length == 0)
+                return _activeMissions.Count == 0;
+
+            var enumerator = _activeMissions.GetEnumerator();
+            while (enumerator.MoveNext() && count < destination.Length)
+                destination[count++] = enumerator.Current.Value;
+
+            return count == _activeMissions.Count;
+        }
+
+        public bool TryGetActiveMissionAt(int index, out MissionInstance instance)
+        {
+            instance = null;
+            if ((uint)index >= (uint)_activeMissions.Count)
+                return false;
+
+            int currentIndex = 0;
+            var enumerator = _activeMissions.GetEnumerator();
+            while (enumerator.MoveNext())
+            {
+                if (currentIndex++ != index)
+                    continue;
+
+                instance = enumerator.Current.Value;
+                return instance != null;
+            }
+
+            return false;
         }
 
         public bool IsMissionCompleted(string missionId)
@@ -206,6 +235,11 @@ namespace Hecton8.Gameplay
                 case QuestEventType.Completed:
                     _activeMissions.Remove(payload.QuestHashID);
                     _completedMissions.Add(payload.QuestHashID);
+                    return;
+
+                case QuestEventType.Failed:
+                case QuestEventType.RevertRequested:
+                    _activeMissions.Remove(payload.QuestHashID);
                     return;
             }
         }

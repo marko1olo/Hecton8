@@ -1388,6 +1388,7 @@ namespace Hecton8.Gameplay
         private bool _registeredLateFrame;
         private bool _registeredOriginShiftListener;
         private bool _registeredHotSwapListener;
+        private bool _hasPendingAnimationInjection;
         private int _freeSlotCount;
         private float _cameraResolveRetryTimer;
         private float3 _lastKccVelocity;
@@ -1568,6 +1569,8 @@ namespace Hecton8.Gameplay
         /// <inheritdoc />
         public void LateFrameTick()
         {
+            TryCompletePendingAnimationInjection();
+
             if (!_groundResponseScheduled)
                 return;
 
@@ -1575,7 +1578,7 @@ namespace Hecton8.Gameplay
                 return;
 
             SwapTargetBuffers();
-            PublishFrontTargetBuffer();
+            PublishFrontTargetBuffer(applyPresentation: true);
             WriteTelemetrySample(0u);
             _groundResponseScheduled = false;
             _pendingGroundResponseHandle = default;
@@ -1590,7 +1593,7 @@ namespace Hecton8.Gameplay
             bool completedTargetFrame = CompletePendingGroundResponseForStructuralMutation();
             if (completedTargetFrame)
             {
-                PublishFrontTargetBuffer();
+                PublishFrontTargetBuffer(applyPresentation: false);
                 WriteTelemetrySample(TelemetryReasonStructuralMutation);
             }
 
@@ -1602,6 +1605,8 @@ namespace Hecton8.Gameplay
             _slotActive[slotIndex] = true;
             ResetTargetSlot(slotIndex);
             rig.AssignEntitySlot(slotIndex, _frontTargetFrames.IsCreated ? _frontTargetFrames.AsReadOnly() : default);
+            if (rig.HasPendingAnimationInjection)
+                _hasPendingAnimationInjection = true;
             return true;
         }
 
@@ -1623,9 +1628,31 @@ namespace Hecton8.Gameplay
 
             if (completedTargetFrame)
             {
-                PublishFrontTargetBuffer();
+                PublishFrontTargetBuffer(applyPresentation: false);
                 WriteTelemetrySample(TelemetryReasonStructuralMutation);
             }
+        }
+
+        private void TryCompletePendingAnimationInjection()
+        {
+            if (!_hasPendingAnimationInjection)
+                return;
+
+            bool stillPending = false;
+            for (int slotIndex = 0; slotIndex < MaxEntities; slotIndex++)
+            {
+                if (!_slotActive[slotIndex])
+                    continue;
+
+                ContextualPhysicalIkRig rig = _registeredRigs[slotIndex];
+                if (rig == null || !rig.HasPendingAnimationInjection)
+                    continue;
+
+                if (!rig.TryCompleteLateFrameAnimationInjection())
+                    stillPending = true;
+            }
+
+            _hasPendingAnimationInjection = stillPending;
         }
 
         private void InitializeFreeSlots()
@@ -1964,7 +1991,7 @@ namespace Hecton8.Gameplay
             // COLD SYNC JOB: floating-origin rebasing must not race pending IK target writes.
             DispatcherJobSwap.TryComplete(ref _pendingGroundResponseHandle, forceComplete: true);
             SwapTargetBuffers();
-            PublishFrontTargetBuffer();
+            PublishFrontTargetBuffer(applyPresentation: false);
             WriteTelemetrySample(TelemetryReasonOriginShift);
             _groundResponseScheduled = false;
             _pendingGroundResponseHandle = default;
@@ -1991,7 +2018,7 @@ namespace Hecton8.Gameplay
             // COLD SYNC JOB: disabled runtimes must not leave pre-shift target writes pending.
             DispatcherJobSwap.TryComplete(ref _pendingGroundResponseHandle, forceComplete: true);
             SwapTargetBuffers();
-            PublishFrontTargetBuffer();
+            PublishFrontTargetBuffer(applyPresentation: false);
             WriteTelemetrySample(TelemetryReasonRuntimeDisable);
             _groundResponseScheduled = false;
             _pendingGroundResponseHandle = default;
@@ -2538,7 +2565,7 @@ namespace Hecton8.Gameplay
             _backTargetFrames = swapBuffer;
         }
 
-        private void PublishFrontTargetBuffer()
+        private void PublishFrontTargetBuffer(bool applyPresentation)
         {
             for (int slotIndex = 0; slotIndex < MaxEntities; slotIndex++)
             {
@@ -2549,7 +2576,7 @@ namespace Hecton8.Gameplay
                 if (rig == null)
                     continue;
 
-                rig.OnTargetBufferSwapped(_frontTargetFrames.IsCreated ? _frontTargetFrames.AsReadOnly() : default);
+                rig.OnTargetBufferSwapped(_frontTargetFrames.IsCreated ? _frontTargetFrames.AsReadOnly() : default, applyPresentation);
             }
         }
 

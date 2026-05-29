@@ -490,7 +490,7 @@ namespace Hecton8.Narrative
         /// <returns>Number of newly unlocked records.</returns>
         public int UnlockByPackedBits(ulong packedBits)
         {
-            if (packedBits == 0UL || !TryAcquireUnlockWordsWrite(out NativeArray<uint> unlockedWords))
+            if (packedBits == 0UL || !TryAcquireUnlockWordsWrite(out NativeArray<uint> unlockedWords, out IDataVault lockedVault))
                 return 0;
 
             try
@@ -500,7 +500,7 @@ namespace Hecton8.Narrative
             }
             finally
             {
-                ReleaseUnlockWordsWrite();
+                ReleaseUnlockWordsWrite(lockedVault);
             }
         }
 
@@ -606,7 +606,7 @@ namespace Hecton8.Narrative
         public void LoadFromSaveData(SaveData data)
         {
             bool loadedPackedWords = false;
-            if (TryAcquireUnlockWordsWrite(out NativeArray<uint> unlockedWords))
+            if (TryAcquireUnlockWordsWrite(out NativeArray<uint> unlockedWords, out IDataVault lockedVault))
             {
                 try
                 {
@@ -625,7 +625,7 @@ namespace Hecton8.Narrative
                 }
                 finally
                 {
-                    ReleaseUnlockWordsWrite();
+                    ReleaseUnlockWordsWrite(lockedVault);
                 }
             }
 
@@ -780,7 +780,7 @@ namespace Hecton8.Narrative
             if (!_recordIndexByHash.TryGetValue(logHash, out int index))
                 return false;
 
-            if (!TryAcquireUnlockWordsWrite(out NativeArray<uint> unlockedWords))
+            if (!TryAcquireUnlockWordsWrite(out NativeArray<uint> unlockedWords, out IDataVault lockedVault))
                 return false;
 
             try
@@ -799,7 +799,7 @@ namespace Hecton8.Narrative
             }
             finally
             {
-                ReleaseUnlockWordsWrite();
+                ReleaseUnlockWordsWrite(lockedVault);
             }
         }
 
@@ -922,9 +922,10 @@ namespace Hecton8.Narrative
                    words.Length >= IndustrialLoreBitMask.RuntimeWordCount;
         }
 
-        private bool TryAcquireUnlockWordsWrite(out NativeArray<uint> words)
+        private bool TryAcquireUnlockWordsWrite(out NativeArray<uint> words, out IDataVault lockedVault)
         {
             words = default;
+            lockedVault = null;
             EnsureUnlockStorage();
 
             IDataVault vault = _dataVault;
@@ -936,18 +937,20 @@ namespace Hecton8.Narrative
             }
 
             if (words.IsCreated && words.Length >= IndustrialLoreBitMask.RuntimeWordCount)
+            {
+                lockedVault = vault;
                 return true;
+            }
 
             vault.ReleaseWriteLock(in _unlockedWordsHandle, VaultOwnerSystemId);
             words = default;
             return false;
         }
 
-        private void ReleaseUnlockWordsWrite()
+        private void ReleaseUnlockWordsWrite(IDataVault lockedVault)
         {
-            IDataVault vault = _dataVault;
-            if (vault != null && IsVaultHandleCreated(in _unlockedWordsHandle))
-                vault.ReleaseWriteLock(in _unlockedWordsHandle, VaultOwnerSystemId);
+            if (lockedVault != null && IsVaultHandleCreated(in _unlockedWordsHandle))
+                lockedVault.ReleaseWriteLock(in _unlockedWordsHandle, VaultOwnerSystemId);
         }
 
         private void ReleaseUnlockStorage(IDataVault vault)

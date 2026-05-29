@@ -43,6 +43,9 @@ namespace Hecton8.Construction
         private const int DockTelemetryDumpCooldownFrames = 30;
         private const int DockedCargoCrateCapacity = 16;
         private const int DockedCargoTraversalCapacity = 64;
+        private const ulong DockTelemetryMutationGuardMask =
+            (1UL << ((int)BufferID.VehicleDockingTelemetryRing & 31)) |
+            (1UL << ((int)BufferID.VehicleDockingTelemetryCursor & 31));
 
         [StructLayout(LayoutKind.Explicit, Size = 128)]
         private struct DockTelemetryEntry
@@ -1347,38 +1350,39 @@ namespace Hecton8.Construction
                 return false;
             }
 
-            bool ringLocked = false;
-            bool cursorLocked = false;
-            if (!IsDockTelemetryHandle(in _dockTelemetryHandle, BufferID.VehicleDockingTelemetryRing) ||
-                !vault.TryAcquireWriteLock(in _dockTelemetryHandle, SystemID.VehiclesPhysics, out telemetry))
+            if (!vault.TryAcquireMutationGuard(DockTelemetryMutationGuardMask))
                 return false;
-            ringLocked = true;
-            if (!IsDockTelemetryHandle(in _dockTelemetryCursorHandle, BufferID.VehicleDockingTelemetryCursor) ||
-                !vault.TryAcquireWriteLock(in _dockTelemetryCursorHandle, SystemID.VehiclesPhysics, out cursor))
-            {
-                ReleaseDockTelemetryWriteLocks(vault, cursorLocked, ringLocked);
-                telemetry = default;
-                return false;
-            }
-            cursorLocked = true;
 
-            if (!telemetry.IsCreated ||
-                telemetry.Length < DockTelemetryCapacity ||
-                !cursor.IsCreated ||
-                cursor.Length < 1)
+            bool guardTransferred = false;
+            try
             {
-                ReleaseDockTelemetryWriteLocks(vault, cursorLocked, ringLocked);
-                telemetry = default;
-                cursor = default;
-                ClearDockTelemetryDescriptor();
-                return false;
-            }
+                if (!IsDockTelemetryHandle(in _dockTelemetryHandle, BufferID.VehicleDockingTelemetryRing) ||
+                    !IsDockTelemetryHandle(in _dockTelemetryCursorHandle, BufferID.VehicleDockingTelemetryCursor) ||
+                    !vault.TryResolveHandle(in _dockTelemetryHandle, out telemetry) ||
+                    !vault.TryResolveHandle(in _dockTelemetryCursorHandle, out cursor) ||
+                    !telemetry.IsCreated ||
+                    telemetry.Length < DockTelemetryCapacity ||
+                    !cursor.IsCreated ||
+                    cursor.Length < 1)
+                {
+                    telemetry = default;
+                    cursor = default;
+                    ClearDockTelemetryDescriptor();
+                    return false;
+                }
 
-            telemetryLength = telemetry.Length;
-            int sanitizedCursor = SanitizeDockTelemetryCursor(cursor[0], telemetryLength);
-            if (cursor[0] != sanitizedCursor)
-                cursor[0] = sanitizedCursor;
-            return true;
+                telemetryLength = telemetry.Length;
+                int sanitizedCursor = SanitizeDockTelemetryCursor(cursor[0], telemetryLength);
+                if (cursor[0] != sanitizedCursor)
+                    cursor[0] = sanitizedCursor;
+                guardTransferred = true;
+                return true;
+            }
+            finally
+            {
+                if (!guardTransferred)
+                    vault.ReleaseMutationGuard(DockTelemetryMutationGuardMask);
+            }
         }
 
         private void ReleaseDockTelemetryWriteLocks(IDataVault vault)
@@ -1391,10 +1395,8 @@ namespace Hecton8.Construction
             if (vault == null)
                 return;
 
-            if (cursorLocked && IsDockTelemetryHandle(in _dockTelemetryCursorHandle, BufferID.VehicleDockingTelemetryCursor))
-                vault.ReleaseWriteLock(in _dockTelemetryCursorHandle, SystemID.VehiclesPhysics);
-            if (ringLocked && IsDockTelemetryHandle(in _dockTelemetryHandle, BufferID.VehicleDockingTelemetryRing))
-                vault.ReleaseWriteLock(in _dockTelemetryHandle, SystemID.VehiclesPhysics);
+            if (cursorLocked || ringLocked)
+                vault.ReleaseMutationGuard(DockTelemetryMutationGuardMask);
         }
 
         private static bool TryValidateDockTelemetryHandles(

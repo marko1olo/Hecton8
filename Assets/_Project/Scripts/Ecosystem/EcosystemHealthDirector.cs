@@ -35,9 +35,6 @@ namespace Hecton8.Ecosystem
         private ISaveService _saveService;
         private static EcosystemHealthDirector s_activeRuntime;
 
-        /// <summary>Active runtime owner while the gameplay scene is loaded.</summary>
-        public static EcosystemHealthDirector Instance => s_activeRuntime;
-
         /// <inheritdoc />
         public int SavePriority => 42;
 

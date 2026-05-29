@@ -35,17 +35,6 @@ namespace Hecton8.World
     }
 
     /// <summary>
-    /// Hardware tier used by generation jobs to clamp math cost.
-    /// </summary>
-    public enum FloraGenomeHardwareTier : byte
-    {
-        Low = 0,
-        Middle = 1,
-        High = 2,
-        Ultra = 3
-    }
-
-    /// <summary>
     /// Genome trait flags copied from OSHINO binary payloads.
     /// </summary>
     [Flags]
@@ -142,7 +131,7 @@ namespace Hecton8.World
         [FieldOffset(36)] public uint PlantHash;
         [FieldOffset(40)] public uint SpeciesHash;
         [FieldOffset(44)] public uint WorldSeed;
-        [FieldOffset(48)] public byte HardwareTier;
+        [FieldOffset(48)] public byte QualityWeightQ8;
         [FieldOffset(49)] public byte RequestedIterations;
         [FieldOffset(50)] public ushort ChunkSlot;
         [FieldOffset(52)] public uint Reserved0;

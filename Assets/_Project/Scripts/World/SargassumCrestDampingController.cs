@@ -28,6 +28,8 @@ namespace Hecton8.World
         private const string OilFilmInputName = "SargassumOilFilmInput";
         private const int FacadeThreadGroupSize = 8;
         private const uint PortableMaxComputeThreadsPerGroup = 256u;
+        private const float FacadeResolutionSurvivalScale = 0.35f;
+        private const float FacadeResolutionVisualOverkillScale = 1f;
 #if UNITY_EDITOR
         private const string FacadeComputeAssetPath = "Assets/_Project/Art/Shaders/Hecton_SargassumDampingFacade.compute";
 #endif
@@ -137,6 +139,7 @@ namespace Hecton8.World
         private bool _legacyInputDisableDirty;
         private bool _facadeRefreshRequested;
         private bool _facadeRefreshForce;
+        private bool _supportsR8RandomWriteFacadeCold;
         private LegacyInputState _wavesInputState;
         private LegacyInputState _foamInputState;
         private LegacyInputState _oilFilmInputState;
@@ -159,6 +162,7 @@ namespace Hecton8.World
         private void Awake()
         {
             SanitizeSettings();
+            CacheGraphicsCapabilitiesCold();
             CacheRegistryServicesCold();
             DisableLegacyInputs();
             EnsureFacadeResources();
@@ -168,6 +172,7 @@ namespace Hecton8.World
         private void OnEnable()
         {
             SanitizeSettings();
+            CacheGraphicsCapabilitiesCold();
             TryRegisterHotSwapListener();
             CacheRegistryServicesCold();
             DisableLegacyInputs();
@@ -203,7 +208,6 @@ namespace Hecton8.World
         /// <param name="dt">Frame delta supplied by GameTickManager.</param>
         public void Tick(float dt)
         {
-            ResolveDependencies();
             QueueLegacyInputDisable();
 
             if (dragManager == null)
@@ -255,7 +259,7 @@ namespace Hecton8.World
         {
             if (_legacyInputDisableDirty)
             {
-                DisableLegacyInputs();
+                DisableLegacyInputsFromCachedState();
                 _legacyInputDisableDirty = false;
             }
 
@@ -297,6 +301,13 @@ namespace Hecton8.World
                 cutManager = SargassumCutManager.Instance;
 
             ResolveLegacyInputs();
+        }
+
+        private void CacheGraphicsCapabilitiesCold()
+        {
+            _supportsR8RandomWriteFacadeCold =
+                SystemInfo.SupportsRenderTextureFormat(RenderTextureFormat.R8) &&
+                SystemInfo.SupportsRandomWriteOnRenderTextureFormat(RenderTextureFormat.R8);
         }
 
         public void OnGlobalRegistryServiceReplaced(
@@ -378,7 +389,7 @@ namespace Hecton8.World
                 _facadeThreadGroupSizeY = 0;
             }
 
-            if (_facadeBakeCompute == null || !HardwareTierDetector.AllowHighResourceComputeShaders)
+            if (_facadeBakeCompute == null)
                 return;
 
             if (_facadeBakeKernel < 0)
@@ -433,7 +444,6 @@ namespace Hecton8.World
             sizeY = 0;
             if (compute == null ||
                 kernel < 0 ||
-                !HardwareTierDetector.AllowHighResourceComputeShaders ||
                 !compute.IsSupported(kernel))
                 return;
 
@@ -451,7 +461,7 @@ namespace Hecton8.World
 
         private static int ResolveSupportedKernel(ComputeShader compute, string kernelName)
         {
-            if (compute == null || !HardwareTierDetector.AllowHighResourceComputeShaders || !compute.HasKernel(kernelName))
+            if (compute == null || !compute.HasKernel(kernelName))
                 return -1;
 
             int kernel = compute.FindKernel(kernelName);
@@ -478,8 +488,10 @@ namespace Hecton8.World
 
         private bool EnsureFacadeResources(int width, int height, bool allowAllocate = true)
         {
-            if (!EnsureRenderTexture(ref _waveDampingMask, "__SargassumWaveDampingFacade", width, height, allowAllocate) ||
-                !EnsureRenderTexture(ref _oilFilmMask, "__SargassumOilFilmFacade", width, height, allowAllocate))
+            int facadeWidth = ResolveFacadeResolutionDimension(width);
+            int facadeHeight = ResolveFacadeResolutionDimension(height);
+            if (!EnsureRenderTexture(ref _waveDampingMask, "__SargassumWaveDampingFacade", facadeWidth, facadeHeight, allowAllocate, _supportsR8RandomWriteFacadeCold) ||
+                !EnsureRenderTexture(ref _oilFilmMask, "__SargassumOilFilmFacade", facadeWidth, facadeHeight, allowAllocate, _supportsR8RandomWriteFacadeCold))
             {
                 return false;
             }
@@ -489,7 +501,18 @@ namespace Hecton8.World
             return _waveDampingMask != null && _oilFilmMask != null;
         }
 
-        private static bool EnsureRenderTexture(ref RenderTexture texture, string name, int width, int height, bool allowAllocate)
+        private static int ResolveFacadeResolutionDimension(int sourceDimension)
+        {
+            int safeDimension = Mathf.Max(FacadeThreadGroupSize, sourceDimension);
+            float quality = ResolveFacadeQualityWeight01();
+            float curve = quality * quality * (3f - 2f * quality);
+            float scale = Mathf.Lerp(FacadeResolutionSurvivalScale, FacadeResolutionVisualOverkillScale, curve);
+            int scaled = Mathf.RoundToInt(safeDimension * scale);
+            int aligned = Mathf.Max(FacadeThreadGroupSize, (scaled / FacadeThreadGroupSize) * FacadeThreadGroupSize);
+            return Mathf.Min(safeDimension, aligned);
+        }
+
+        private static bool EnsureRenderTexture(ref RenderTexture texture, string name, int width, int height, bool allowAllocate, bool supportsR8RandomWrite)
         {
             if (texture != null && texture.width == width && texture.height == height)
                 return true;
@@ -504,8 +527,6 @@ namespace Hecton8.World
                 texture = null;
             }
 
-            bool supportsR8RandomWrite = SystemInfo.SupportsRenderTextureFormat(RenderTextureFormat.R8) &&
-                                         SystemInfo.SupportsRandomWriteOnRenderTextureFormat(RenderTextureFormat.R8);
             RenderTextureFormat format = supportsR8RandomWrite
                 ? RenderTextureFormat.R8
                 : RenderTextureFormat.ARGB32;
@@ -623,6 +644,11 @@ namespace Hecton8.World
         private void DisableLegacyInputs()
         {
             ResolveLegacyInputs();
+            DisableLegacyInputsFromCachedState();
+        }
+
+        private void DisableLegacyInputsFromCachedState()
+        {
             bool suppressLegacyInputs = !_usesCrest4LegacyInputs;
             ApplyLegacyInputState(ref _wavesInputState, suppressLegacyInputs);
             ApplyLegacyInputState(ref _foamInputState, suppressLegacyInputs);

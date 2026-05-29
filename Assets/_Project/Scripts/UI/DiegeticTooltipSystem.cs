@@ -244,7 +244,6 @@ namespace Hecton8.UI
             if (_visibleAlpha <= 0.0001f || (_textGlyphCount == 0 && _iconCount == 0))
                 return;
 
-            EnsureResources();
             if (!_resourceObjectsReady || !_materialsReady || _runtimeQuadMesh == null)
                 return;
 
@@ -615,7 +614,14 @@ namespace Hecton8.UI
             if (refreshScheme)
                 RefreshActiveSchemeHash();
 
-            EnsureResources();
+            if (!_resourceObjectsReady || !_materialsReady)
+            {
+                _textGlyphCount = 0;
+                _iconCount = 0;
+                ClearTextSink();
+                return;
+            }
+
             BuildGlyphLayout(_promptBuffer.AsSpan(0, _promptLength), includeBindingIcon: true);
         }
 

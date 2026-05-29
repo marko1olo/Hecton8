@@ -51,6 +51,7 @@ namespace Hecton8.UI
                     s_activeRuntimeInstance.enabled = true;
 
                 s_activeRuntimeInstance.QueueRuntimeBootstrap(forceManagerResolve: true);
+                s_activeRuntimeInstance.ProcessPendingBootstrap();
 
                 return;
             }
@@ -59,6 +60,7 @@ namespace Hecton8.UI
             GameObject runtimeRoot = new GameObject("HectonSystemsDebugUI_Auto");
             HectonSystemsDebugUI runtimeOverlay = runtimeRoot.AddComponent<HectonSystemsDebugUI>();
             runtimeOverlay.QueueRuntimeBootstrap(forceManagerResolve: true);
+            runtimeOverlay.ProcessPendingBootstrap();
         }
 
         private static bool ShouldAutoCreateRuntimeOverlay(Scene scene)
@@ -149,6 +151,9 @@ namespace Hecton8.UI
         private bool _slowVisualRefreshRequested;
         private bool _diagnosticsRefreshPending;
         private bool _stressApplied;
+        private int _cachedTickableCount;
+        private int _cachedFixedTickableCount;
+        private int _cachedSlowTickableCount;
         private float _refreshTimer;
         private float _nextManagerResolveAttemptTime = float.NegativeInfinity;
         private DynamicResolutionScaler _resolvedScaler;
@@ -234,6 +239,7 @@ namespace Hecton8.UI
                 Hecton8.Core.H8Debug.Log("[HectonSystemsDebugUI] Awake.", this);
 #endif
             QueueRuntimeBootstrap(forceManagerResolve: true);
+            ProcessPendingBootstrap();
         }
 
         private void OnEnable()
@@ -247,6 +253,7 @@ namespace Hecton8.UI
             if (!_slowTickRegistered || !_lateFrameRegistered)
                 TryRegister();
             QueueRuntimeBootstrap(forceManagerResolve: true);
+            ProcessPendingBootstrap();
         }
 
         private void OnDisable()
@@ -346,8 +353,6 @@ namespace Hecton8.UI
                 return;
 
             _slowVisualRefreshRequested = false;
-            ProcessPendingBootstrap();
-            ResolveManagers(force: false);
             if (_diagnosticsRefreshPending)
             {
                 _diagnosticsRefreshPending = false;
@@ -363,6 +368,7 @@ namespace Hecton8.UI
             _runtimeSnapshotScene = string.Empty;
             InvalidateResolvedManagers();
             QueueRuntimeBootstrap(forceManagerResolve: true);
+            ProcessPendingBootstrap();
         }
 
         private void QueueRuntimeBootstrap(bool forceManagerResolve)
@@ -397,7 +403,7 @@ namespace Hecton8.UI
             {
                 EnsureCanvasResolved();
                 EnsureVisualTree();
-                ResolveManagers(force: _forceManagerResolveOnBootstrap);
+                CacheManagersCold(force: _forceManagerResolveOnBootstrap);
                 ApplyStressHarness();
                 RefreshDiagnostics();
                 _bootstrapPending = ResolveCanvas() == null || _root == null;
@@ -581,8 +587,6 @@ namespace Hecton8.UI
                 return;
             }
 
-            ResolveManagers(force: false);
-
             DynamicResolutionScaler scaler = _resolvedScaler;
             FaunaDirector fauna = _resolvedFaunaDirector;
             HectonMusicDirector music = _resolvedMusicDirector;
@@ -604,9 +608,9 @@ namespace Hecton8.UI
 
             SetTickCountsText(
                 _tickCountsValue,
-                GlobalRegistry.Updatables.Count,
-                GlobalRegistry.FixedTickables.Count,
-                GlobalRegistry.SlowTickables.Count);
+                _cachedTickableCount,
+                _cachedFixedTickableCount,
+                _cachedSlowTickableCount);
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
             debugTickCounts = "LIVE HUD";
 #endif
@@ -755,7 +759,6 @@ namespace Hecton8.UI
 
         private void ApplyStressHarness()
         {
-            ResolveManagers(force: false);
             DynamicResolutionScaler scaler = _resolvedScaler;
             if (scaler == null)
                 return;
@@ -776,7 +779,7 @@ namespace Hecton8.UI
             if (!_stressApplied)
                 return;
 
-            DynamicResolutionScaler scaler = _resolvedScaler != null ? _resolvedScaler : GlobalRegistry.DynamicResolution;
+            DynamicResolutionScaler scaler = _resolvedScaler;
             if (scaler != null)
             {
                 scaler.ClearDebugFrameTimeOverride();
@@ -888,7 +891,7 @@ namespace Hecton8.UI
             return text;
         }
 
-        private void ResolveManagers(bool force)
+        private void CacheManagersCold(bool force)
         {
             if (!Application.isPlaying)
                 return;
@@ -933,6 +936,10 @@ namespace Hecton8.UI
             {
                 _resolvedCameraJuiceSystem = GlobalRegistry.CameraJuice;
             }
+
+            _cachedTickableCount = GlobalRegistry.Updatables.Count;
+            _cachedFixedTickableCount = GlobalRegistry.FixedTickables.Count;
+            _cachedSlowTickableCount = GlobalRegistry.SlowTickables.Count;
         }
 
         private bool AllResolvedManagersReady()

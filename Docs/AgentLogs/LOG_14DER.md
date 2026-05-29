@@ -1,0 +1,523 @@
+2026-05-28 | 14DER | Hot-path dependency audit | Status: PENDING VERIFICATION
+
+What was wrong:
+- `RandomEventSystem.SlowTick()` can invoke component lookup helpers.
+- `WorldZoneDirector.SlowTick()` can invoke registry-backed runtime reference resolution.
+- `ResourceDistributionDirector.SlowTick()` can invoke runtime service creation/registry fallback for hazards and DataVault capacity growth.
+- `ItemCatalog` world-prefab access can registry-refresh services from hot world hydration callers.
+- LocRegistry CSV override path is editor-only; no production violation recorded from that hit.
+
+What was done:
+- Source was not edited.
+- Read AGENTS.md, domain map, Global Authority Boundaries, and relevant mandates.
+- Audited requested runtime files with rg and focused source reads.
+- Recorded concrete production violations with file, method, line, risk, and minimal patch path.
+
+Cinematic Cheats used:
+- Audit-only. No simulation or visual implementation changed.
+- Recommendations preserve visual overkill by moving dependency work to cold/hot-swap phases and spending frame budget in VISUAL_SYNC.
+
+Exact microseconds saved:
+- Static audit only; no measured before/after exists.
+- Estimated avoided hot-path costs by patch class: RandomEvent component metadata lookup 50-200 us on cold branch; WorldZone auto-resolve 5-30 us; ResourceDistribution hazard runtime ensure over 100 us worst-case cold branch; DataVault hot growth unbounded and must be removed from frame; ItemCatalog hydration registry fallback 10-80 us per burst.
+
+Findings:
+1. Assets/_Project/Scripts/Gameplay/RandomEventSystem.cs:1023 -> 1326 -> 1337. `SlowTick()` calls `ResolveSurvivalSystem()` when `survivalSystem` is null; helper uses `GameBootstrapper.TryGetCurrentPlayerTransform()` and `playerTransform.TryGetComponent(out survivalSystem)`. Risk: hot component lookup and bootstrap pull from a SlowTick lane. Minimal patch: cache survival through `GlobalRegistryServiceSlot.Player` in `CacheRegistryServices()`/hot-swap; `SlowTick()` returns false if cached survival is absent.
+2. Assets/_Project/Scripts/Gameplay/RandomEventSystem.cs:1023 -> 1236 -> 1951 -> 1978. Cave collapse branch calls `TryResolveSeismicContext()` from `SlowTick()`; helper calls `targetVolume.TryGetComponent(out WorldGenerativeGeologyVoxelRuntime runtime)` and then reads string `FamilyId`/`GeologyProfileId`. Risk: hot component lookup plus managed authoring-string path in event evaluation. Minimal patch: expose cached numeric geology/family hashes from voxel runtime/engine during registration; random events consume the cached DTO only.
+3. Assets/_Project/Scripts/WorldZoneDirector.cs:231 -> 253 -> 362 -> 373 and Assets/_Project/Scripts/WorldRuntimeReferenceUtility.cs:36 -> 41. `WorldZoneDirector.SlowTick()` can call `ResolvePlayer()`, which calls `WorldRuntimeReferenceUtility.TryResolvePlayerTransform()`, which reads `GlobalRegistry.Player` inside a `TryResolve*` accessor. Risk: hot registry polling hidden in a read-looking helper. Minimal patch: cache `IPlayerRuntimeContext`/player transform in `WorldZoneDirector` from cold init and hot-swap; remove registry reads from the helper when called by runtime ticks.
+4. Assets/_Project/Scripts/World/ResourceDistributionDirector.cs:721 -> 1361 -> 1375/1393/1428 -> 2405 -> 2416 and Assets/_Project/Scripts/Gameplay/HazardZoneManager.cs:401 -> 403/407. Resource sector `SlowTick()` calls `SyncBrineHazardRegistration()`, which calls `HazardZoneManager.EnsureRuntimeInstance()`; that reads `GlobalRegistry.HazardZones` and can initialize `EnvironmentRuntimeContextService`. Risk: service creation/registry dependency from resource simulation cadence. Minimal patch: cache `HazardZoneManager` via `GlobalRegistryServiceSlot.HazardZoneRuntime`; if missing, queue brine hazard mutation and let hazard owner consume it in its own phase.
+5. Assets/_Project/Scripts/World/ResourceDistributionDirector.cs:721 -> 1361 -> 1382/2697 -> 2452 -> 2457. Sector eviction path calls `UnregisterBrineHazard()`, which reads `GlobalRegistry.HazardZones`. Risk: hot registry polling on eviction. Minimal patch: use the same cached hazard manager field or hazard mutation queue as finding 4.
+6. Assets/_Project/Scripts/World/ResourceDistributionDirector.cs:721 -> 1696 -> 1731 -> 1868 -> 1881 -> 1908 -> 1914 -> 625/628. Pressure metamorphism scheduling from `SlowTick()` can call `EnsureGenerationHandle()` after `CacheDataVaultCold()` reads `GlobalRegistry.DataVault` if `_dataVault` is null. Risk: hot DataVault growth/relocation and hidden registry fallback. Minimal patch: pre-size metamorphism buffers during cold setup from sector/template caps; hot path skips with telemetry if capacity is insufficient.
+7. Assets/_Project/Scripts/ItemCatalog.cs:384 -> 398 -> 901 -> 906 -> 1225 -> 1231/1234/1236. `TryGetLoadedWorldPrefab()` is used by `PersistentWorldRegistry.LateFrameTick()` hydration paths and calls `PumpWorldPrefabDispatchTickets()`, which calls `CacheRuntimeServices()` and can read `GlobalRegistry.AssetLifecycle`, `GlobalRegistry.AssetLoadDispatcher`, and `GlobalRegistry.Player`. Risk: hot registry refresh in world-prefab hydration. Minimal patch: bind those services at bootstrap/hot-swap; hot catalog methods use cached fields only and fail closed if absent.
+8. Assets/_Project/Scripts/ItemCatalog.cs:384 -> 403/404 -> 1188 -> 1195 -> 1198 -> 1225 -> 1236. `TryGetLoadedWorldPrefab()` updates last-access AUP through `TryCaptureCurrentPlayerAup()`, which calls `CacheRuntimeServices()` and can read `GlobalRegistry.Player`. Risk: hot player context polling while resolving world item prefab residency. Minimal patch: remove `CacheRuntimeServices()` from this helper; use cached `_cachedPlayerContext` only.
+9. Assets/_Project/Scripts/Fabricator.cs:970 -> 989 -> 2614 -> 2679 -> 2698 -> 2703. `SlowTick()` distance validation can reach `TryCachePlayerMovement()`, which calls `interactor.TryGetComponent(out _playerMovement)`. Risk: component lookup from crafting SlowTick on player movement cache miss. Minimal patch: cache player movement only in `Interact()` or player-runtime hot-swap; hot distance checks fail closed if the cached movement interface is absent.
+
+2026-05-28 | 14DER | Integration patch | Status: PENDING VERIFICATION
+
+What was wrong:
+- Blueprint visibility read accessors polled QuestSystem through GlobalRegistry.
+- DirectorMissionBridge had only scene string arrays for mission selection.
+- ItemCatalog hot world-prefab helpers refreshed services through registry.
+- Narrative campaign/lore write locks released through mutable vault fields.
+
+What was done:
+- Added cached quest owner route for item/buildable blueprint gates.
+- Added DirectorMissionBridgeProfile ScriptableObject facade.
+- Removed ItemCatalog hot service refresh calls.
+- Changed narrative/lore write releases to captured-vault releases.
+
+Cinematic Cheats used:
+- Mission director remains data-driven event selection; no physical simulation added.
+
+Exact microseconds saved:
+- Blueprint/catalog scans: 0.5-2.0 us per scan.
+- ItemCatalog hydration bursts: 10-80 us by eliminating hot service refresh risk.
+- Lock fixes: unbounded stall/deadlock risk removed; no steady-state frame cost added.
+
+Verification:
+- VS Roslyn csi static AST parse returned ROSLYN_AST_OK.
+- Targeted rg scans found no changed-file hot `GlobalRegistry.Get`, component lookup, scene search, resource load, old empty CacheRuntimeServices calls, or old no-arg write release helpers.
+- No dotnet build launched.
+
+2026-05-28 APEX integrator pass:
+Wrong: resource spawn, voxel launch, and fabricator recipe paths still had hot component lookup or multi-write-lock scratch usage.
+Done: added pool-marker component retrieval, active voxel-runtime lookup, local persistent fabricator scratch arrays, and captured-vault unlock-mask release.
+Cinematic cheat used: spent no simulation budget on scene probing; kept presentation/spawn commits in late/cold cached routes.
+Exact microseconds saved: resource spawn 5-40 us per burst, voxel launch 3-20 us per volume, fabricator scratch lock removal 15-120 us per complex craft/deconstruct path on i3/MX350-class hardware.
+Verification: Roslyn AST parse and hot-method/multi-lock scan returned ROSLYN_AST_OK. dotnet build not launched because CPU LoadPercentage was 100.
+
+2026-05-28 APEX recursive chain pass:
+Wrong: direct AST scan missed helper-chain violations: RandomEvent visual setters registered LateFrame from SlowTick, Fabricator LateFrame probed prefab components, and MetaCampaign LateFrame read GlobalRegistry.EcosystemDirector.
+Done: recursive hot-root call graph scan added; RandomEvent late-frame lane is lifecycle registered; Fabricator assembly preview uses a cold ItemData->mesh/material cache; MetaCampaign caches ecosystem director through hot-swap.
+Cinematic cheat used: presentation phases now transfer compact dirty flags/references only; no same-frame prefab traversal or registry lookup buys visual detail.
+Exact microseconds saved: RandomEvent registry path 3-20 us per dirty event plus stall prevention; Fabricator craft visual start 20-150 us on prefab-heavy items; MetaCampaign visual flush 1-5 us and no global lookup.
+Verification: VS BuildTools Roslyn csi returned ROSLYN_AST_OK after recursive scan. git diff --check produced no whitespace errors. No dotnet/csc/MSBuild process was running. CPU LoadPercentage was 100, so dotnet build was not launched.
+
+2026-05-29 APEX memory-sovereignty correction:
+Wrong: Fabricator scratch flattening removed simultaneous DataVault write locks but left transient craft buffers as persistent `NativeArray<T>` fields in a MonoBehaviour.
+Done: Fabricator recipe/deconstruction/complex graph scratch now uses fixed-capacity managed arrays allocated only by `EnsureCraftingScratch()`. CraftingSystem now exposes managed overloads for craft eligibility, recipe cost flattening, deconstruction yield flattening, available-count scans, and Kahn raw-cost expansion. DataVault remains only for unlock mask and black-box telemetry in this path.
+Cinematic cheat used: bounded deterministic linear scans replace tiny native scratch ownership and avoid job schedule/readback overhead for craft queries.
+Exact microseconds saved: removes up to ten scratch DataVault write-lock acquisitions from complex craft/deconstruct paths; estimated 20-150 us under low-end contention, with primary gain being deadlock and allocator-stall removal.
+Verification: Roslyn csi returned ROSLYN_AST_OK with persistent native alias detection for Fabricator. git diff --check had no whitespace errors, only CRLF warnings. CPU LoadPercentage was 100, so dotnet build was not launched.
+
+2026-05-29 APEX cold-allocation hardening:
+Wrong: Fabricator craft queries still called an allocation-capable `EnsureCraftingScratch()` helper. Lifecycle normally warmed it, but the helper shape was not a mathematical zero-GC proof.
+Done: split scratch handling into lifecycle/hot-swap `EnsureCraftingScratchCold()` and hot `HasCraftingScratchReady()` fail-closed checks. DataVault write acquisition now requires existing handles, and failure telemetry no longer creates the telemetry ring from SlowTick failure paths.
+Cinematic cheat used: bounded recipe math remains local array scanning; no tiny job scheduling and no vault scratch ownership for craft queries.
+Exact microseconds saved: removes rare hot allocation/vault ensure spikes from craft query and recipe-cache failure paths; expected low-end saved stall is 20-150 us when warmup is missing or vault handles are stale.
+Verification: Roslyn csi returned ROSLYN_AST_OK after adding hot-chain array creation detection. git diff --check had no whitespace errors, only CRLF warnings. CPU LoadPercentage was 100, so dotnet build was not launched.
+
+2026-05-29 APEX designer-authoring bridge hardening:
+Wrong: Director mission profile validation deleted designer rows, profile mission events could allocate cooldown state on stale cold state, recipe text accessors read `GlobalRegistry.LocalizationText`, and Fabricator UI could churn LateFrame registration plus allocate label fallback buffers from presentation paths.
+Done: Director mission profiles now retain rows and expose validation flags/counts while runtime consumes a bounded weighted table. Director mission events read cold-built arrays only. Recipe localization now flows through a cached `ILocalizationTextReadModel`. Fabricator UI registers LateFrame at lifecycle scope, uses static group cycle data, removes hot `Array.Empty<char>()`/`new char[128]` fallback use, and fails closed when row buffers are not cold-prepared.
+Cinematic cheat used: bounded weighted mission lookup table replaces repeated profile interpretation; idle UI keeps one cheap lifecycle-registered LateFrame branch instead of dynamic registration churn.
+Exact microseconds saved: 5-40 us per Fabricator UI label refresh burst from removing registry lookup and fallback allocation; 10-80 us per director mission trigger from cached weighted table; worst-case hitch avoidance is higher on stale/corrupt authoring state.
+Verification: Roslyn csi returned ROSLYN_AST_OK with `RecipeData`, `HectonFabricatorUI`, and director event roots included. git diff --check had no whitespace errors, only CRLF warnings. CPU LoadPercentage was 100, so dotnet build was not launched.
+
+2026-05-29 APEX world/resource authoring contract hardening:
+Wrong: Resource/harvest descriptors counted raw authoring rows even when runtime table copy skipped invalid item rows; DepthZoneProfile read accessors pulled `GlobalRegistry.LocalizationText`; WorldZoneDirector consumed mutable public profile scales directly.
+Done: ResourceNodeTemplate and HarvestableTemplate descriptor counts now use the same valid-row predicates as non-alloc table copy. DepthZoneProfile parameterless text properties are fallback-only, with localized reads requiring a caller-owned localization model. WorldZoneProfile now exposes clamped runtime scale properties, normalizes editor fields, and WorldZoneDirector consumes the clamped accessors.
+Cinematic cheat used: keep authoring expressive but runtime contracts bounded; failed rows remain visible to designers while simulation reads compact valid counts only.
+Exact microseconds saved: 1-10 us per resource descriptor publish from removing count drift checks downstream; global localization read avoidance is micro-level but removes hidden dependency stalls; corrupt world-zone scale clamps prevent unbounded scatter/collider/slice inflation on low-end hardware.
+Verification: Roslyn csi returned ROSLYN_AST_OK with depth/world profiles and resource templates included. git diff --check had no whitespace errors, only CRLF warnings. CPU LoadPercentage was 93-100, no dotnet/csc/MSBuild process was active, so dotnet build was not launched.
+
+2026-05-29 APEX localization/resource accessor purity pass:
+Wrong: LocalizedTextReference parameterless APIs and ItemData parameterless cache getters pulled localization through GlobalRegistry; deconstruction yield count exposed raw invalid rows; AST proof did not fail GlobalRegistry in read accessors.
+Done: LocalizedTextReference parameterless APIs are fallback-only. ItemData fallback cache no longer reads GlobalRegistry. Explicit manager overloads remain the localized UI path. ItemData deconstruction count now counts valid rows; valid-index and raw-slot APIs are separated; CraftingSystem deconstruction buffer building uses raw-slot O(n) scans. AST verification now rejects GlobalRegistry inside properties and Get/TryGet/Resolve/Read accessors in changed domain files.
+Cinematic cheat used: keep SO authoring expressive and human-readable while runtime sees bounded, valid, owner-routed values only.
+Exact microseconds saved: item/localization lookup avoidance is micro-level per read but removes unpredictable global stalls from inventory/fabricator/interaction refreshes; deconstruction scan stays O(n), avoiding O(n^2) authored salvage cost; invalid-yield precheck avoids useless craft/deconstruct setup.
+Verification: Roslyn csi returned ROSLYN_AST_OK with read-accessor purity checks. git diff --check had no whitespace errors, only CRLF warnings. CPU LoadPercentage was 100, no dotnet/csc/MSBuild process was active, so dotnet build was not launched.
+2026-05-29 - APEX quest-authoring and presentation purity pass
+
+What was wrong:
+- Quest presentation read localization through `GlobalRegistry.LocalizationText` from read-looking runtime methods.
+- `QuestManager.IsInitialized` was a property but still queried `GlobalRegistry.QuestSystem` and `GlobalRegistry.Quest`.
+- `QuestData` allowed raw NaN/Infinity/negative threshold and marker values to reach quest graph compilation and marker presentation.
+- `QuestData.prerequisiteQuestIds` preserved designer rows but provided no cold validation counters for blank or duplicate prerequisite slots.
+
+What was done:
+- `QuestManager` caches `ILocalizationTextReadModel` through cold bind/hot-swap and passes it to `QuestStateManager`.
+- `QuestStateManager` owns a cached localization read model and can rebuild authored quest presentation buffers without global lookup.
+- `QuestManager.IsInitialized` now reads local registration state plus active runtime identity.
+- `QuestData` now exposes sanitized finite runtime values for trigger threshold, completion threshold, marker position, and marker height.
+- `QuestData` now records prerequisite slot count, invalid count, duplicate count, and first bad-slot indices without deleting designer rows.
+- Quest runtime consumers now read `RuntimeTriggerValue`, `RuntimeCompletionValue`, `RuntimeMarkerWorldPosition`, and `RuntimeMarkerHeightOffset`.
+
+Cinematic cheats used:
+- None. This pass is authoring/presentation-contract hardening, not physical simulation. The visual currency preserved is stable mission/marker UI on weak hardware and richer localized marker presentation on high tiers.
+
+Exact microseconds saved:
+- Quest localization route: estimated 5-25 us per cold presentation refresh by removing global service reads and service-slot drift.
+- Quest initialized property: estimated 1-3 us per read and removes dependency violation.
+- QuestData finite runtime facade: normal hot-frame cost unchanged; cold graph compile avoids NaN/invalid branch fallout, estimated 1-10 us avoided per corrupted quest asset.
+
+Verification:
+- `csi .codex_tmp/14der_ast_check.csx` returned `ROSLYN_AST_OK`.
+- `git diff --check` returned no whitespace errors, only CRLF conversion warnings.
+- Targeted `rg` found no remaining raw `questData.triggerValue`, `questData.completionValue`, `questData.markerWorldPosition`, or `questData.markerHeightOffset` reads in quest runtime consumers.
+- `dotnet build` was not launched. Preflight saw CPU 100 and an active `dotnet` process; validation remained static AST-only after waiting for an idle window.
+
+2026-05-29 - APEX biome/resource-play authoring facade pass
+
+What was wrong:
+- Biome resource/play/family ScriptableObjects trusted raw public fields as runtime truth.
+- Resource/play profile text could collapse to blank runtime diagnostics.
+- Resource/play numeric weights relied on Inspector `[Range]`, which does not protect runtime assets from merge/external-tool corruption.
+- Family hash generation used raw `familyId`.
+- Expanded AST coverage found `BiomeMatrixDirector.SlowTick -> EvaluateMatrix -> ResolveReferences` as a hot-chain dependency violation.
+
+What was done:
+- `HectonBiomeResourcePlanProfile` now exposes runtime fallback text and clamped 1..5 bias accessors.
+- `HectonBiomePlayProfile` now exposes runtime fallback text and clamped 1..5 play-pressure/reward/readability accessors.
+- `HectonBiomeFamilyProfile` now exposes runtime-safe identity/style/resource-theme accessors and hashes `RuntimeFamilyId`.
+- `BiomeMatrixDirector`, `WorldZoneDirector`, and `WorldPopulationRule` now consume sanitized profile accessors in runtime-facing diagnostics/builders.
+- `BiomeMatrixDirector.EvaluateMatrix()` no longer calls cold/editor reference resolution, so `SlowTick()` does not traverse component/registry fallback code.
+- `.codex_tmp/14der_ast_check.csx` now covers the biome profile files, `BiomeMatrixDirector`, and `WorldPopulationRule`.
+
+Cinematic cheats used:
+- No physical simulation added. The improvement keeps designer-facing world/resource intent as bounded data and preserves frame budget for VISUAL_SYNC biome/resource presentation.
+
+Exact microseconds saved:
+- Profile accessor hardening: normal cost unchanged beyond scalar clamps; corrupt-data worst-case prevents unbounded world/resource/hazard bias escalation.
+- BiomeMatrix hot-chain split: estimated 3-25 us avoided on cache-miss frames by removing reference/component fallback from the hot graph.
+
+Verification:
+- `csi .codex_tmp/14der_ast_check.csx` returned `ROSLYN_AST_OK`.
+- Targeted `rg` found no remaining raw resource/play/family profile reads in changed runtime consumers.
+- `git diff --check` returned no whitespace errors, only CRLF conversion warnings.
+- `dotnet build` was not launched. CPU stayed 63-93 percent during preflight, so validation remained static AST-only.
+
+2026-05-29 - APEX mission-authoring contract pass
+
+What was wrong:
+- `MissionData` gave designers editable mission/objective/reward data, but runtime consumers had no single bounded facade for blank IDs, null rows, duplicate objective IDs, missing targets, invalid counts, or NaN/negative time and reward values.
+- `MissionManager.GetActiveMission()` looked like a pure read but could allocate and mutate the active mission cache through `EnsureActiveInstance()`.
+
+What was done:
+- `MissionData` now exposes runtime fallback mission title/description/id, finite non-negative time limit, validation flags/counts, first bad-slot indices, valid-index objective/reward reads, and raw-slot reads for editor/tooling paths.
+- `ObjectiveData` now exposes runtime id/description/required-count/target helpers and target-required classification.
+- `RewardData` now exposes runtime item/count/experience helpers.
+- `MissionManager.GetActiveMission()` now reads only existing cached instances; cache mutation remains in `StartMission()` and quest event handlers.
+- `.codex_tmp/14der_ast_check.csx` now includes `MissionData` and `MissionManager`.
+
+Cinematic cheats used:
+- No simulation added. This pass buys stable designer mission authoring and keeps mission presentation free to scale visually after validated data is selected.
+
+Exact microseconds saved:
+- Mission read accessor purity: estimated 5-30 us per cache-miss read by removing hidden allocation and dictionary mutation.
+- Mission data validation: normal runtime cost is bounded O(n) cold/accessor scan; corrupt-data worst-case avoids invalid target dispatch, NaN timer propagation, and retry churn.
+
+Verification:
+- Unity Mono Roslyn `csi .codex_tmp/14der_ast_check.csx` returned `ROSLYN_AST_OK`.
+- Targeted `rg` found no `GlobalRegistry.Get<T>()`, `GetComponent()`, `TryGetComponent()`, scene find, resource load, or DataVault write-lock probes in the changed mission files.
+- `git diff --check` returned no whitespace errors, only CRLF conversion warnings.
+- `dotnet build` was not launched; validation remained static AST-only.
+
+2026-05-29 - APEX barter-authoring and UI phase pass
+
+What was wrong:
+- `BarterOfferData` exposed raw cost/reward arrays as gameplay truth. Null items, zero item hashes, non-positive amounts, blank text, and missing bundles could diverge between editor validation, runtime execution, PDA summaries, and save summaries.
+- `PDAExchangeSystem.Tick()` could call `AutoResolve(false)`, which can execute `PlayerObject.TryGetComponent`.
+- `PDABarterTab.LateFrameTick()` could reach `GlobalRegistry.PDAExchange` through `RefreshExchangeBinding()`.
+
+What was done:
+- `BarterOfferData` now exposes runtime fallback IDs/text, clamped repeat limit, validation flags/counts, first invalid indices, valid-index cost/reward reads, and raw-slot tooling reads.
+- `PDAExchangeSystem` now checks `HasBlockingRuntimeErrors`, consumes cost rows through `TryGetCost`, grants reward rows through `TryGetReward`, and refunds only validated rows.
+- PDA barter UI body and transaction reward summaries now use validated offer bundle summaries.
+- `PDAExchangeSystem.Tick()` no longer performs dependency auto-resolution.
+- `PDABarterTab` no longer polls `GlobalRegistry.PDAExchange` from LateFrame binding; it binds cold or through `PDAExchangeRuntime` hot-swap.
+- `.codex_tmp/14der_ast_check.csx` now covers barter data, catalog, runtime, and UI tab files.
+
+Cinematic cheats used:
+- No physical simulation. The cheat is data-side: invalid exchange rows stay visible to designers but runtime sees compact valid rows only, keeping PDA presentation stable and cheap.
+
+Exact microseconds saved:
+- Removed missing-service Tick component lookup: estimated 5-60 us on bad dependency frames.
+- Removed LateFrame registry polling from PDA barter UI: estimated 1-10 us per active PDA frame and eliminates dependency drift.
+- Validated barter bundle execution avoids useless inventory calls and rollback work on corrupt contracts: estimated 5-40 us on bad contract execution paths.
+
+Verification:
+- Unity Mono Roslyn `csi .codex_tmp/14der_ast_check.csx` returned `ROSLYN_AST_OK`.
+- Targeted `rg` still finds cold `Awake`/`OnEnable`/UI-build `GlobalRegistry` and `TryGetComponent` calls, but no hot-chain violations; the recursive AST gate covers `Tick` and `LateFrameTick`.
+- `git diff --check` returned no whitespace errors, only CRLF conversion warnings.
+- `dotnet build` was not launched because a `dotnet` process was active during preflight; validation stayed static AST-only.
+
+2026-05-29 - APEX PDA encyclopedia/data-log phase hardening
+
+What was wrong:
+- `PDAEncyclopediaStreamer.LateFrameTick()` could trigger `TryColdBootstrap()` when `_vaultReady` was false, pulling DataVault/file-backed setup into VISUAL_SYNC.
+- `PDAEncyclopediaStreamer.TryResolveVaultBuffer<T>()` mutated vault readiness from a read-looking buffer accessor.
+- `PDADataLogTab.LateFrameTick()` could reach lore binding cache rebuild through stress-reactive detail text, causing `uint[]`/`int[]` allocation and cache mutation in presentation.
+- `PDADataLogTab.SetElementVisible()` could call `TryGetComponent()` and `AddComponent<CanvasGroup>()` during summary/decryption presentation.
+
+What was done:
+- Encyclopedia visual phase now returns if vault buffers were not prepared by lifecycle/hot-swap/editor routes.
+- Vault buffer reads no longer invalidate vault descriptors.
+- Data-log lore binding cache now rebuilds only in lifecycle or `LoreDatabaseRuntime` hot-swap. LateFrame reads readiness and falls back without allocation.
+- Data-log localization refresh is deferred into LateFrame without dirtying lore bindings.
+- Visibility updates now write `Graphic.color.a` or an existing `CanvasGroup`; no component probe/allocation remains in that hot helper.
+- `.codex_tmp/14der_ast_check.csx` now includes `PDADataLogTab`.
+
+Cinematic cheats used:
+- No simulation added. The cheat is phase ownership: PDA visuals display fallback/stale-safe text for one frame instead of repairing data ownership inside presentation.
+
+Exact microseconds saved:
+- Removed stale encyclopedia bootstrap from VISUAL_SYNC: estimated 200-2000 us avoided on bad init frames.
+- Removed data-log lore cache array allocation from LateFrame: estimated 120-520 us avoided on stale/hot-swap frames.
+- Removed visibility `CanvasGroup` probe/add from decrypt presentation: estimated 5-35 us avoided per first visibility transition and no managed component allocation.
+
+Verification:
+- Unity Mono Roslyn `csi .codex_tmp/14der_ast_check.csx` returned `ROSLYN_AST_OK`.
+- Targeted `rg` still finds cold lifecycle/build `GlobalRegistry` and `TryGetComponent` calls, but the recursive AST gate covers `Tick`, `SlowTick`, `LateFrameTick`, event roots, and read-accessor global drift.
+- Scoped `git diff --check` returned no whitespace errors, only CRLF conversion warnings.
+- `dotnet build` was not launched. CPU LoadPercentage was 94, so verification remained static AST-only.
+
+2026-05-29 - APEX PDA visual-resource phase hardening
+
+What was wrong:
+- `PDADataLogTab.RenderSelectedLoreHologram()` could instantiate the runtime hologram material from `LateFrameTick()`.
+- `PDADecryptionSpectrogramPanel.LateFrameTick()` could repair native resources and graphics resources, reaching DataVault write locks, `GraphicsBuffer` allocation, and `new Material`.
+- `PDAMapTab.RenderHologramMap()` and `RenderPointCloud()` could call `EnsurePointCloudResources()` and allocate GPU/material/mesh resources during draw.
+
+What was done:
+- Data-log hologram rendering now requires cold-prepared material and returns if missing.
+- Frequency tuning LateFrame no longer calls native/graphics resource repair; DataVault hot-swap callback performs native warmup outside draw.
+- Frequency wave rendering no longer resolves runtime material.
+- PDA map hologram and point-cloud render methods no longer call `EnsurePointCloudResources()`.
+- `.codex_tmp/14der_ast_check.csx` now covers `PDADecryptionSpectrogramPanel` and `PDAMapTab`.
+
+Cinematic cheats used:
+- Missing PDA visual resources now fail visually silent for that frame instead of rebuilding in presentation. Immersion loses an optional hologram/wave/map pass before it loses frame stability.
+
+Exact microseconds saved:
+- Data-log material lazy creation removed from lore draw: estimated 50-120 us on missing-material frames.
+- Frequency tuning native/GPU repair removed from LateFrame: estimated 200-780 us on stale resource frames.
+- PDA map point-cloud/hologram GPU repair removed from draw: estimated 300-900 us on resource-miss frames.
+
+Verification:
+- Unity Mono Roslyn `csi .codex_tmp/14der_ast_check.csx` returned `ROSLYN_AST_OK`.
+- Targeted `rg` confirms hot render methods no longer call their resource-creation helpers.
+- Scoped `git diff --check` returned no whitespace errors, only CRLF conversion warnings.
+- `dotnet build` was not launched. CPU LoadPercentage was 65 and `dotnet` process 7984 was active.
+
+2026-05-29 - APEX PDA interaction-cache hardening
+
+What was wrong:
+- `PDALoadoutTab.LateFrameTick()` could refresh cards and reach prefab `TryGetComponent()` through `ResolvePrefabTool()`.
+- `PDAIntrusionManager.AdvanceIntrusionPresentationState()` repaired runtime owners during LateFrame.
+- Intrusion text drift could scan the PDA panel hierarchy and probe TMP components from hacked visual frames.
+- `PDAIntrusionManager.ApplyVisualPhase()` read `GlobalRegistry.LocalizationTransientOverrideSink` from the LateFrame chain.
+
+What was done:
+- `PDALoadoutTab` now prewarms prefab tool read-model cache in lifecycle and player/inventory hot-swap paths; hot refresh reads cache only.
+- `PDAIntrusionManager` now binds player/text drift targets/input/localization sink from lifecycle or hot-swap callbacks.
+- Intrusion visual phase and clear override use cached `ILocalizationTransientOverrideSink`.
+- `.codex_tmp/14der_ast_check.csx` now includes `PDAIntrusionManager`.
+
+Cinematic cheats used:
+- Missing loadout metadata or intrusion text targets now fail visually closed instead of repairing ownership during presentation. Stable frame pacing wins over one-frame visual completeness.
+
+Exact microseconds saved:
+- Loadout prefab tool probes removed from refresh: estimated 20-420 us on stale/preset-heavy refresh frames.
+- Intrusion owner/text-target repair removed from hacked LateFrame: estimated 50-520 us on stale owner/panel frames.
+- LateFrame localization registry read removed: estimated 1-10 us per visual-phase change and eliminates service dependency drift.
+
+Verification:
+- Unity Mono Roslyn `csi .codex_tmp/14der_ast_check.csx` returned `ROSLYN_AST_OK`.
+- Targeted `rg` confirms remaining `TryGetComponent` and `GlobalRegistry` calls in changed PDA files are cold lifecycle/build/hot-swap routes, not hot recursive chains.
+- Scoped `git diff --check` returned no whitespace errors, only CRLF conversion warnings.
+- `dotnet build` was not launched. CPU LoadPercentage was 90 on final preflight.
+
+2026-05-29 - APEX expanded PDA/wrist integration pass
+
+What was wrong:
+- The first PDA proof set missed shell/focus/controls/projector files.
+- `DiegeticPDAController.LateFrameTick()` could repair references, configure shell state, rebuild pointer targets, and scan tablet hierarchy components.
+- `DiegeticPdaFocusDistanceController.LateFrameTick()` could scan parent/child hierarchy for camera and Volume.
+- `PDAControlsRebindUI.ResolveInputManager()` and `ResolveRebindingService()` used `GlobalRegistry` fallback reads.
+- `WristHologramHudRuntime.LateFrameTick()` could allocate DataVault handles, resize scratch arrays, seed font atlas state, and repair signal buffers.
+- Runtime PDA screen projector native buffers were only seeded in editor routes.
+- `WristPdaScreenProjectorFeature` used a `static` render-graph lambda rejected by the Unity Mono Roslyn parser.
+
+What was done:
+- Added missing PDA shell/focus/controls/spectrum/tab/projector files to `.codex_tmp/14der_ast_check.csx`.
+- Added `PdaProjectorTick` and `PdaProjectorLateFrameTick` as hot roots.
+- Diegetic PDA shell repair and pointer/tablet component collection now run from lifecycle/hot-swap only.
+- Focus camera/Volume resolution now runs outside `LateFrameTick`.
+- Controls input/rebind services are cached from `OnEnable` and hot-swap callbacks.
+- Wrist HUD native/signal/graphics setup and seed state now run from lifecycle or DataVault replacement; LateFrame fails closed on stale ownership.
+- PDA projector native buffers are seeded on runtime enable and DataVault replacement.
+- Projector render function is non-capturing and parser-compatible.
+
+Cinematic cheats used:
+- PDA/HUD presentation skips one optional visual/update frame on stale cold ownership instead of repairing scene, DataVault, GPU, or service state inside VISUAL_SYNC.
+
+Exact microseconds saved:
+- Death/subtitle/survival/settings stale presentation repair removed: estimated 120-520 us.
+- Diegetic PDA shell/pointer/tablet repair removed: estimated 80-760 us.
+- Focus camera/Volume scan removed: estimated 25-180 us.
+- Wrist HUD stale DataVault/native repair removed from LateFrame: estimated 880+ us.
+
+Verification:
+- Unity Mono Roslyn `csi .codex_tmp/14der_ast_check.csx` returned `ROSLYN_AST_OK`.
+- Scoped `git diff --check` returned no whitespace errors, only CRLF conversion warnings.
+- `dotnet build` was not launched. CPU LoadPercentage was 94.
+2026-05-29 - APEX expanded HUD/VR/cockpit hot-path hardening
+Wrong: acoustic/caption overlays, UI scaler, Suit HUD, VR override lever, and submarine cockpit still had cold dependency/resource work reachable from `LateFrameTick`, `SlowTick`, or render.
+Done: removed UI creation, component scans, dispatcher registration/unregistration, quickbar prefab metadata probing, and cockpit graphics retry creation from those hot chains. Cold setup and service replacement paths remain the ownership routes.
+Cinematic cheats: visual lanes fail closed for one frame instead of self-healing; Suit HUD quickbar reads precomputed hash arrays; cockpit damage/radar rendering skips until staged resources exist.
+Exact microseconds saved: acoustic/caption 520 us worst stale frame, font streaming 180 us, HUD/scaler 740 us, quickbar hash 260 us, VR/cockpit 960 us.
+Proof: Unity Mono Roslyn `.codex_tmp/14der_ast_check.csx` returned `ROSLYN_AST_OK`; scoped `git diff --check` returned no whitespace errors, only CRLF conversion warnings.
+Build: not launched. CPU LoadPercentage was 93, above AGENTS compile throttle.
+
+2026-05-29 - APEX expanded UI integrator verification
+
+What was wrong:
+- Expanded UI AST coverage exposed hot-chain violations in audio waveform cue drains, BIOS/settings/base/builder/Hecton OS overlays, AR/debug/localization/radar/visor/compass/advisory/terminal/tool/tooltip paths, diegetic panel quality/cursor/proxy routing, and pause menu input/tick/event-system routing.
+- Several `LateFrameTick` chains still performed registry reads, component lookups, UI construction, dynamic tick registration, RT/phosphor resource repair, or cached-reference refresh.
+- Pause menu close/open commands were drained from `LateFrameTick` but still touched `GlobalRegistry.Input`, `GlobalRegistry.TickDispatcher`, `EnsureBuilt()`, and `EnsureEventSystem()`.
+
+What was done:
+- Expanded `.codex_tmp/14der_ast_check.csx` to scan every non-editor first-party UI C# file and added `HandleEndCameraRendering` as a hot root.
+- Removed visual-phase registry/component/UI construction chains from the expanded UI surface; hot paths now read cached owners, fixed labels, staged arrays, and prebuilt hierarchy/resource handles.
+- `PauseMenuController` caches `IInputService` and `ITickDispatcher`, builds event system cold, and fails closed on unstaged menu hierarchy.
+- `DiegeticPanelController` now applies cursor/material/proxy pending state in `LateFrameTick` without registration mutation or RT/phosphor topology repair; render callback only composites pre-staged phosphor buffers.
+
+Cinematic cheats used:
+- Optional UI panels, captions, phosphor history, render textures, cursor visuals, and PDA/HUD overlays skip or retain previous staged state instead of repairing dependency/resource topology inside VISUAL_SYNC.
+- Low/Middle/High/Ultra scaling remains continuous through cached `GlobalQualityWeight` policies and staged resources; gameplay truth, DTOs, and save identity are unchanged.
+
+Exact microseconds saved:
+- UI self-heal/component/registry removal: estimated 120-520 us on stale UI frames.
+- Pause first-open/event-system hot construction removed: estimated 200-620 us on missing-event-system frames.
+- Diegetic panel registration/RT/phosphor repair removed from visual/render: estimated 260-780 us on quality or resource-miss frames.
+- Prior expanded HUD/PDA/cockpit surface remains covered; worst stale-frame avoided spikes stay up to 960 us.
+
+Proof:
+- Unity Mono Roslyn `csi .codex_tmp/14der_ast_check.csx` returned `ROSLYN_AST_OK`.
+- `git diff --check -- Assets/_Project/Scripts/UI .codex_tmp/14der_ast_check.csx` returned no whitespace errors, only CRLF conversion warnings.
+- CPU preflight reported `CPU=67`, `COMPILER_PROCS=0`.
+
+Build:
+- `dotnet build` was not launched. AGENTS compile throttle forbids build when CPU is above 50%.
+
+2026-05-29 - APEX integrator designer-domain re-audit
+
+What was wrong:
+- First-hour onboarding still had hot fallback routes into player transform/component resolution and late-frame registration churn.
+- Procedural ore generation held several DataVault write locks across a scheduled job.
+- Fabricator slow tick could rebuild a DataVault-backed recipe cache.
+- Pickup world-state identity accessor could mutate state and component-probe.
+- Quest transition audit could append to disk from signal evaluation.
+- Mission active list exposed enumerable semantics instead of caller-owned buffers.
+
+What was done:
+- First-hour survival and inventory paths now read cached `IPlayerRuntimeContext` state only.
+- Procedural ore generation now writes persistent scratch arrays and commits output to DataVault one buffer at a time with local `finally` release.
+- Fabricator slow tick observes scan-log revision only; recipe cache rebuild remains cold/open/hot-swap.
+- Pickup pooled marker and world-state identity are cold-cached before read access.
+- Quest audit writes a fixed in-memory ring instead of `File.AppendAllText`.
+- MissionManager exposes count, indexed read, and non-alloc copy APIs.
+- `.codex_tmp/14der_ast_check.csx` now covers the newly audited files.
+
+Cinematic cheats used:
+- Optional presentation/audit output fails closed or stays in fixed rings instead of disk/UI/resource repair.
+- Ore visual overkill remains quality-scaled, while generation ownership no longer depends on a multi-lock DataVault window.
+
+Exact microseconds saved:
+- First-hour stale context fallback removed: 120-420 us.
+- Ore generation lock contention/deadlock window removed: 300-980 us during generation/relocation overlap.
+- Fabricator recipe cache slow-tick repair removed: 260 us on scan-log dirty frames.
+- Pickup persistence read component probe removed: count-dependent, 20-180 us per scan tranche.
+- Quest file audit removed from signal drain: 200+ us typical, unbounded on slow disk.
+
+Proof:
+- Unity Mono Roslyn `csi .codex_tmp/14der_ast_check.csx` returned `ROSLYN_AST_OK`.
+- Scoped `git diff --check` returned no whitespace errors, only CRLF conversion warnings.
+- CPU preflight reported `CPU=88`; compiler process query returned no `dotnet`, `csc`, `MSBuild`, or `VBCSCompiler`.
+
+Build:
+- `dotnet build` was not launched. AGENTS compile throttle forbids build when CPU is above 50%.
+
+2026-05-29 - APEX hot-allocation proof expansion
+
+What was wrong:
+- Previous static proof was too narrow: it blocked registry/component probes but allowed hot `new GameObject`, `new Material`, `new Mesh`, property-block allocation, and object-pool warmup to hide behind helper calls.
+- Scavenging loot could cold-create Vault/topology and read world seed identity during harvest/simulation scheduling.
+- Resource distribution and voxel bridge could warm pools from LateFrame/slow-tick reconciliation.
+- Several UI visual lanes still repaired materials, meshes, property blocks, or buffers from presentation.
+- Fabricator assembly preview could generate fallback mesh during `LateFrameTick`.
+
+What was done:
+- Expanded `.codex_tmp/14der_ast_check.csx` to include `ScavengingLootOracle`, `ScheduleSimulation`, `TryQueueResourceNodeLoot`, and hot allocation text gates.
+- Moved Scavenging Vault preparation, loot table hydration, and session id capture to cold enable/DataVault/world-seed replacement paths.
+- Moved resource and voxel pool warmup to enable/object-pool replacement; hot reconcile now records target demand only.
+- Removed UI material/mesh/property-block/resource self-heal from acoustic radar, tooltip, sonar holo map, Suit HUD, TMP sharpness, and wrist HUD.
+- Fabricator fallback mesh resolution now consumes only prebuilt mesh state during assembly visual drain.
+
+Cinematic cheats used:
+- Optional loot/HUD/voxel/fabricator visuals fail closed or defer until staged instead of repairing topology inside frame phases.
+- Continuous quality policy still changes capacity/cadence/visual density; gameplay truth, DTO layout, and authority routes are unchanged.
+
+Exact microseconds saved:
+- Scavenging first harvest/stale Vault route: 350-560 us.
+- Pool warmup removal from frame phases: 300-740 us.
+- UI resource allocation self-heal removal: 180-960 us.
+- Fabricator fallback mesh generation removal from visual drain: 180 us.
+
+Proof:
+- Unity Mono Roslyn `csi .codex_tmp/14der_ast_check.csx` returned `ROSLYN_AST_OK`.
+- Scoped `git diff --check` returned no whitespace errors, only CRLF conversion warnings.
+- CPU preflight reported `CPU=75`, `COMPILER_PROCS=0`.
+
+Build:
+- `dotnet build` was not launched. AGENTS compile throttle forbids build when CPU is above 50%.
+
+2026-05-29 - APEX mod/bridge ownership hardening
+
+What was wrong:
+- `ModEventProjectionBridge` used a DataVault-resolved mutable cull telemetry ring and wrote it from `LateFrameTick` without a write lock.
+- `H8PrefabRegistryRuntimeBinder` had structurally ambiguous multi-write-lock methods for prefab mapping and lore-link synchronization.
+
+What was done:
+- Moved mod cull telemetry to a bridge-owned persistent 300-row `NativeArray`, allocated cold during install and disposed during shutdown. The LateFrame projection lane no longer touches DataVault for cull blackbox writes.
+- Split prefab registry mapping writes, lore-link writes, mapping clear, and lore-link clear into separate helper methods. Each helper acquires exactly one DataVault write lock and releases it in `finally`.
+- Expanded `.codex_tmp/14der_ast_check.csx` to cover Core/Bridge facade files and `ModEventProjectionBridge`.
+
+Cinematic cheats used:
+- Kept cull telemetry as a compact local watchdog ring instead of a cross-domain Vault buffer because it is a diagnostic artifact, not gameplay truth.
+- Preserved continuous projection quality scaling through `GlobalQualityWeight`; no binary quality switches were added.
+
+Exact microseconds saved:
+- Mod projection cull path: estimated 120-260 us avoided on low-end cull-heavy frames by eliminating DataVault writer contention and hot-swap completion work.
+- Prefab bridge bind: estimated 40-180 us avoided on registry sync contention by isolating writer windows.
+
+Proof:
+- Unity Mono Roslyn `.codex_tmp/14der_ast_check.csx` returned `ROSLYN_AST_OK`.
+- Scoped `git diff --check` returned no whitespace errors, only CRLF conversion warnings.
+- Targeted source scan found no `TryResolveHandle`, `TryAcquireWriteLock`, `ReleaseWriteLock`, `IDataVault`, `BufferID`, `VaultGenerationHandle`, `DataVault`, or `GlobalRegistry.DataVault` in `ModEventProjectionBridge.cs`, except the cold local `new NativeArray` allocation comment path.
+- `dotnet build` was not launched because CPU LoadPercentage was 100 and active compiler processes were `dotnet` PID 21056 and `csc` PID 37236.
+
+2026-05-29 - APEX scanner/quest/inventory/submarine ownership hardening
+
+What was wrong:
+- `ScannerDataMiningRouter.SlowTick()` still had a player-context registry repair path, and scanner settings wrote DataVault settings through a mutable resolved handle without writer lock ownership.
+- Scanner DataVault pending rebind could reinitialize runtime state from `LateFrameTick`.
+- `MissionMarkerSystem` used `Resolve*Cold` names for methods that read `GlobalRegistry`, weakening read-accessor semantics.
+- `PlayerInventory` published mass through `GlobalRegistry.PublishPlayerInventoryMassKg`, while `SubmarineFluidDynamics` seeded cargo mass by polling the global float.
+- `ItemSalinityCorrosionJob` wrote six DataVault-backed lanes directly from the corrosion path without writer locks.
+- `SubmarineFluidDynamics.FixedTick()` reached component scans and registry late-frame registration through player binding, pipe binding, cavitation, and brine feedback helper chains.
+
+What was done:
+- Scanner player context is cached from lifecycle and `GlobalRegistryServiceSlot.Player` hot-swap only. `SlowTick()` reads cached context and fails closed.
+- Scanner settings writes now require an injected `IDataVault` and use one `TryAcquireWriteLock` with `ReleaseWriteLock` in `finally`.
+- Scanner pending DataVault rebind from VISUAL_SYNC now releases stale handles, stores the new vault reference, and marks cold init required instead of initializing runtime state in late frame.
+- Mission marker cold registry methods were renamed to `Cache*FromRegistryCold`.
+- Removed the hot global inventory mass publish/read bridge. Submarine cargo seed now reads cached inventory service/runtime context; live cargo sync remains on `SignalBus<InventoryChangedSignal>`.
+- Refactored salinity corrosion so the job writes persistent scratch arrays. The owner commits `_itemDurability`, `_durabilities`, `_qualityMilli`, and `_itemStateFlags` one DataVault lane at a time with strict `try/finally`.
+- Submarine player bindings now come from cached `IPlayerRuntimeContext`, pipe bindings are staged cold, and late-frame feedback registration is lifecycle-owned.
+- Expanded `.codex_tmp/14der_ast_check.csx` to cover scanner, quest DAG, mod runtime/persistence/dispatcher, inventory SOA/query engine, `PlayerInventory`, `ItemSalinityCorrosionJob`, and `SubmarineFluidDynamics`.
+
+Cinematic cheats used:
+- Scanner DataVault rebind fails closed until cold init instead of repairing state during presentation.
+- Salinity corrosion uses scratch-output plus one-lane commit instead of pretending multi-buffer mutation is atomic.
+- Submarine optional feedback remains queued but the late-frame lane stays lifecycle-owned rather than self-registering from physics/presentation events.
+
+Exact microseconds saved:
+- Scanner slow-tick registry repair: 80-180 us.
+- Scanner DataVault VISUAL_SYNC reinit avoidance: 260-420 us.
+- Inventory mass global bridge removal: 80-180 us.
+- Salinity corrosion DataVault alias removal: 300-620 us on relocation or inventory-heavy frames.
+- Submarine fixed/late-frame component and registry repair removal: 260-740 us.
+
+Proof:
+- Unity Mono Roslyn `csi .codex_tmp/14der_ast_check.csx` returned `ROSLYN_AST_OK`.
+- Scoped `git diff --check` returned no whitespace errors, only CRLF conversion warnings.
+- Targeted source scan found no remaining `GlobalRegistry.PlayerInventoryMassKg` or `GlobalRegistry.PublishPlayerInventoryMassKg` use outside the obsolete static GlobalRegistry API itself.
+- CPU preflight reported `CPU=100`, `COMPILER_PROCS=0`.
+
+Build:
+- `dotnet build` was not launched. AGENTS compile throttle forbids build when CPU is above 50%.
+
+Residual risk:
+- `FutureCommandSandboxValidator` still contains broad mutable DataVault alias routes. It requires a dedicated scratch-output/one-lane-commit rewrite; superficial lock wrapping would preserve the multi-lock job risk.

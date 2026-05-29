@@ -287,7 +287,7 @@ namespace Hecton8.Core
                 int waitFrames = 0;
                 int nextWatchdogFrame = SceneActivationWatchdogInitialFrames;
 
-                while (Application.isPlaying && ReferenceEquals(GlobalRegistry.SceneRuntime, this) && !_pendingSceneLoadOperation.isDone)
+                while (Application.isPlaying && _isInitialized && isActiveAndEnabled && !_pendingSceneLoadOperation.isDone)
                 {
                     if (useCinematicTransition)
                         TickMainMenuCinematicTransition(ResolveTransitionUnscaledDeltaTime());
@@ -315,7 +315,7 @@ namespace Hecton8.Core
                     await AwaitableDebtMonitor.NextFrameAsync(destroyCancellationToken);
                 }
 
-                if (useCinematicTransition && Application.isPlaying && ReferenceEquals(GlobalRegistry.SceneRuntime, this))
+                if (useCinematicTransition && Application.isPlaying && _isInitialized && isActiveAndEnabled)
                     await CompleteMainMenuCinematicTransitionAsync(previousScene, sceneName);
             }
             catch (OperationCanceledException)

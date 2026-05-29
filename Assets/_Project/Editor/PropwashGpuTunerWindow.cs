@@ -189,20 +189,30 @@ namespace Hecton8.EditorTools
                     options);
             }
 
-            if (!IsPropwashVaultHandle(in handle, bufferId) ||
-                !vault.TryAcquireWriteLock(in handle, OwnerSystem, out buffer) ||
-                !buffer.IsCreated ||
-                buffer.Length < requiredLength)
-            {
-                if (IsPropwashVaultHandle(in handle, bufferId))
-                    vault.ReleaseWriteLock(in handle, OwnerSystem);
-
-                handle = default;
-                buffer = default;
+            if (!IsPropwashVaultHandle(in handle, bufferId))
                 return false;
-            }
 
-            return true;
+            if (!vault.TryAcquireWriteLock(in handle, OwnerSystem, out buffer))
+                return false;
+
+            bool handedOff = false;
+            try
+            {
+                if (!buffer.IsCreated || buffer.Length < requiredLength)
+                    return false;
+
+                handedOff = true;
+                return true;
+            }
+            finally
+            {
+                if (!handedOff)
+                {
+                    vault.ReleaseWriteLock(in handle, OwnerSystem);
+                    handle = default;
+                    buffer = default;
+                }
+            }
         }
 
         private static bool TryReadPropwashVaultBuffer<T>(

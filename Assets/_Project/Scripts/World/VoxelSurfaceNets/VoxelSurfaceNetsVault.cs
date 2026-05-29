@@ -121,10 +121,11 @@ namespace Hecton8.World.VoxelSurfaceNets
     {
         public IDataVault Vault;
         public byte LockedMask;
+        public ulong MutationGuardMask;
 
         public bool IsCreated()
         {
-            return Vault != null && LockedMask != 0;
+            return Vault != null && (LockedMask != 0 || MutationGuardMask != 0UL);
         }
     }
 
@@ -134,10 +135,11 @@ namespace Hecton8.World.VoxelSurfaceNets
         public VoxelSurfaceNetsVaultHandles Handles;
         public uint LockedMask;
         public uint WriteMask;
+        public ulong MutationGuardMask;
 
         public bool IsCreated()
         {
-            return Vault != null && (LockedMask != 0u || WriteMask != 0u);
+            return Vault != null && (LockedMask != 0u || WriteMask != 0u || MutationGuardMask != 0UL);
         }
     }
 
@@ -165,12 +167,44 @@ namespace Hecton8.World.VoxelSurfaceNets
         private const uint JobPrioritiesLock = 1u << 12;
         private const uint JobHzbTilesLock = 1u << 13;
         private const uint JobMockDensityConfigLock = 1u << 14;
+        private static readonly ulong GpuUploadSourceMutationGuardMask =
+            VaultMutationGuardBit(VoxelSurfaceNetsVaultBufferIds.Vertices) |
+            VaultMutationGuardBit(VoxelSurfaceNetsVaultBufferIds.Indices) |
+            VaultMutationGuardBit(VoxelSurfaceNetsVaultBufferIds.IndirectArgs);
+        private static readonly ulong MockDensityJobMutationGuardMask =
+            VaultMutationGuardBit(VoxelSurfaceNetsVaultBufferIds.Density) |
+            VaultMutationGuardBit(VoxelSurfaceNetsVaultBufferIds.Tuning) |
+            VaultMutationGuardBit(VoxelSurfaceNetsVaultBufferIds.MockDensityConfig);
+        private static readonly ulong ExtractionJobMutationGuardMask =
+            VaultMutationGuardBit(VoxelSurfaceNetsVaultBufferIds.Density) |
+            VaultMutationGuardBit(VoxelSurfaceNetsVaultBufferIds.Vertices) |
+            VaultMutationGuardBit(VoxelSurfaceNetsVaultBufferIds.Indices) |
+            VaultMutationGuardBit(VoxelSurfaceNetsVaultBufferIds.CellVertexMap) |
+            VaultMutationGuardBit(VoxelSurfaceNetsVaultBufferIds.States) |
+            VaultMutationGuardBit(VoxelSurfaceNetsVaultBufferIds.Tuning) |
+            VaultMutationGuardBit(VoxelSurfaceNetsVaultBufferIds.SurfaceEdgeMasks) |
+            VaultMutationGuardBit(VoxelSurfaceNetsVaultBufferIds.TelemetryRing) |
+            VaultMutationGuardBit(VoxelSurfaceNetsVaultBufferIds.TelemetryCursor) |
+            VaultMutationGuardBit(VoxelSurfaceNetsVaultBufferIds.RawDebugVertices) |
+            VaultMutationGuardBit(VoxelSurfaceNetsVaultBufferIds.IndirectArgs);
+        private static readonly ulong HzbCullJobMutationGuardMask =
+            VaultMutationGuardBit(VoxelSurfaceNetsVaultBufferIds.ChunkAabbs) |
+            VaultMutationGuardBit(VoxelSurfaceNetsVaultBufferIds.Priorities) |
+            VaultMutationGuardBit(VoxelSurfaceNetsVaultBufferIds.HzbTiles);
+        private static readonly ulong TelemetryDumpMutationGuardMask =
+            VaultMutationGuardBit(VoxelSurfaceNetsVaultBufferIds.TelemetryRing) |
+            VaultMutationGuardBit(VoxelSurfaceNetsVaultBufferIds.TelemetryCursor);
         private static readonly uint _globalQualityHash = HashAsciiLiteral("global_quality_weight");
         private static readonly uint _isoSurfaceHash = HashAsciiLiteral("iso_surface_threshold");
         private static readonly uint _normalAngleHash = HashAsciiLiteral("normal_smoothing_angle");
         private static readonly uint _decimationHash = HashAsciiLiteral("decimation_aggression");
         private static readonly uint _chunksPerFrameHash = HashAsciiLiteral("max_chunks_per_frame");
         private static readonly uint _debugRawHash = HashAsciiLiteral("show_raw_extraction");
+
+        private static ulong VaultMutationGuardBit(BufferID bufferId)
+        {
+            return 1UL << (unchecked((int)(uint)(int)bufferId) & 31);
+        }
 
         public static bool TryResolve(IDataVault vault, out VoxelSurfaceNetsVaultHandles handles)
         {
@@ -369,14 +403,12 @@ namespace Hecton8.World.VoxelSurfaceNets
             if (vault == null || vertexCount <= 0 || indexCount <= 0)
                 return false;
 
-            lease.Vault = vault;
-            if (!TryLockGpuUploadBuffer(vault, VoxelSurfaceNetsVaultBufferIds.Vertices, GpuUploadVerticesLock, ref lease) ||
-                !TryLockGpuUploadBuffer(vault, VoxelSurfaceNetsVaultBufferIds.Indices, GpuUploadIndicesLock, ref lease) ||
-                !TryLockGpuUploadBuffer(vault, VoxelSurfaceNetsVaultBufferIds.IndirectArgs, GpuUploadIndirectArgsLock, ref lease))
-            {
-                ReleaseGpuUploadSourceLease(ref lease);
+            if (!vault.TryAcquireMutationGuard(GpuUploadSourceMutationGuardMask))
                 return false;
-            }
+
+            lease.Vault = vault;
+            lease.LockedMask = (byte)(GpuUploadVerticesLock | GpuUploadIndicesLock | GpuUploadIndirectArgsLock);
+            lease.MutationGuardMask = GpuUploadSourceMutationGuardMask;
 
             if (!vault.TryResolveHandle(in buffers.Handles.Vertices, out vertices) ||
                 !vault.TryResolveHandle(in buffers.Handles.Indices, out indices) ||
@@ -401,15 +433,8 @@ namespace Hecton8.World.VoxelSurfaceNets
         public static void ReleaseGpuUploadSourceLease(ref VoxelSurfaceNetsGpuUploadSourceLease lease)
         {
             IDataVault vault = lease.Vault;
-            if (vault != null)
-            {
-                if ((lease.LockedMask & GpuUploadIndirectArgsLock) != 0)
-                    vault.TryUnlockBuffer(VoxelSurfaceNetsVaultBufferIds.IndirectArgs, SystemID.WorldStreaming);
-                if ((lease.LockedMask & GpuUploadIndicesLock) != 0)
-                    vault.TryUnlockBuffer(VoxelSurfaceNetsVaultBufferIds.Indices, SystemID.WorldStreaming);
-                if ((lease.LockedMask & GpuUploadVerticesLock) != 0)
-                    vault.TryUnlockBuffer(VoxelSurfaceNetsVaultBufferIds.Vertices, SystemID.WorldStreaming);
-            }
+            if (vault != null && lease.MutationGuardMask != 0UL)
+                vault.ReleaseMutationGuard(lease.MutationGuardMask);
 
             lease = default;
         }
@@ -423,15 +448,14 @@ namespace Hecton8.World.VoxelSurfaceNets
             if (vault == null)
                 return false;
 
-            lease.Vault = vault;
-            lease.Handles = buffers.Handles;
-            if (!TryLockJobWriteBuffer(vault, in buffers.Handles.Density, JobDensityLock, ref lease) ||
-                !TryLockJobBuffer(vault, VoxelSurfaceNetsVaultBufferIds.Tuning, JobTuningLock, ref lease) ||
-                !TryLockJobBuffer(vault, VoxelSurfaceNetsVaultBufferIds.MockDensityConfig, JobMockDensityConfigLock, ref lease))
-            {
-                ReleaseJobBufferLease(ref lease);
+            if (!TryAcquireJobBufferLeaseGuard(
+                    vault,
+                    in buffers.Handles,
+                    MockDensityJobMutationGuardMask,
+                    JobTuningLock | JobMockDensityConfigLock,
+                    JobDensityLock,
+                    out lease))
                 return false;
-            }
 
             return true;
         }
@@ -445,23 +469,14 @@ namespace Hecton8.World.VoxelSurfaceNets
             if (vault == null)
                 return false;
 
-            lease.Vault = vault;
-            lease.Handles = buffers.Handles;
-            if (!TryLockJobBuffer(vault, VoxelSurfaceNetsVaultBufferIds.Density, JobDensityLock, ref lease) ||
-                !TryLockJobWriteBuffer(vault, in buffers.Handles.Vertices, JobVerticesLock, ref lease) ||
-                !TryLockJobWriteBuffer(vault, in buffers.Handles.Indices, JobIndicesLock, ref lease) ||
-                !TryLockJobWriteBuffer(vault, in buffers.Handles.CellVertexMap, JobCellVertexMapLock, ref lease) ||
-                !TryLockJobWriteBuffer(vault, in buffers.Handles.States, JobStatesLock, ref lease) ||
-                !TryLockJobBuffer(vault, VoxelSurfaceNetsVaultBufferIds.Tuning, JobTuningLock, ref lease) ||
-                !TryLockJobBuffer(vault, VoxelSurfaceNetsVaultBufferIds.SurfaceEdgeMasks, JobSurfaceEdgeMasksLock, ref lease) ||
-                !TryLockJobWriteBuffer(vault, in buffers.Handles.TelemetryRing, JobTelemetryRingLock, ref lease) ||
-                !TryLockJobWriteBuffer(vault, in buffers.Handles.TelemetryCursor, JobTelemetryCursorLock, ref lease) ||
-                !TryLockJobWriteBuffer(vault, in buffers.Handles.RawDebugVertices, JobRawDebugVerticesLock, ref lease) ||
-                !TryLockJobWriteBuffer(vault, in buffers.Handles.IndirectArgs, JobIndirectArgsLock, ref lease))
-            {
-                ReleaseJobBufferLease(ref lease);
+            if (!TryAcquireJobBufferLeaseGuard(
+                    vault,
+                    in buffers.Handles,
+                    ExtractionJobMutationGuardMask,
+                    JobDensityLock | JobTuningLock | JobSurfaceEdgeMasksLock,
+                    JobVerticesLock | JobIndicesLock | JobCellVertexMapLock | JobStatesLock | JobTelemetryRingLock | JobTelemetryCursorLock | JobRawDebugVerticesLock | JobIndirectArgsLock,
+                    out lease))
                 return false;
-            }
 
             return true;
         }
@@ -475,15 +490,14 @@ namespace Hecton8.World.VoxelSurfaceNets
             if (vault == null)
                 return false;
 
-            lease.Vault = vault;
-            lease.Handles = buffers.Handles;
-            if (!TryLockJobWriteBuffer(vault, in buffers.Handles.ChunkAabbs, JobChunkAabbsLock, ref lease) ||
-                !TryLockJobWriteBuffer(vault, in buffers.Handles.Priorities, JobPrioritiesLock, ref lease) ||
-                !TryLockJobBuffer(vault, VoxelSurfaceNetsVaultBufferIds.HzbTiles, JobHzbTilesLock, ref lease))
-            {
-                ReleaseJobBufferLease(ref lease);
+            if (!TryAcquireJobBufferLeaseGuard(
+                    vault,
+                    in buffers.Handles,
+                    HzbCullJobMutationGuardMask,
+                    JobHzbTilesLock,
+                    JobChunkAabbsLock | JobPrioritiesLock,
+                    out lease))
                 return false;
-            }
 
             return true;
         }
@@ -491,103 +505,33 @@ namespace Hecton8.World.VoxelSurfaceNets
         public static void ReleaseJobBufferLease(ref VoxelSurfaceNetsJobBufferLease lease)
         {
             IDataVault vault = lease.Vault;
-            if (vault != null)
-            {
-                ReleaseJobWriteBuffer(vault, in lease.Handles.Priorities, JobPrioritiesLock, lease.WriteMask);
-                ReleaseJobWriteBuffer(vault, in lease.Handles.ChunkAabbs, JobChunkAabbsLock, lease.WriteMask);
-                ReleaseJobWriteBuffer(vault, in lease.Handles.IndirectArgs, JobIndirectArgsLock, lease.WriteMask);
-                ReleaseJobWriteBuffer(vault, in lease.Handles.RawDebugVertices, JobRawDebugVerticesLock, lease.WriteMask);
-                ReleaseJobWriteBuffer(vault, in lease.Handles.TelemetryCursor, JobTelemetryCursorLock, lease.WriteMask);
-                ReleaseJobWriteBuffer(vault, in lease.Handles.TelemetryRing, JobTelemetryRingLock, lease.WriteMask);
-                ReleaseJobWriteBuffer(vault, in lease.Handles.States, JobStatesLock, lease.WriteMask);
-                ReleaseJobWriteBuffer(vault, in lease.Handles.CellVertexMap, JobCellVertexMapLock, lease.WriteMask);
-                ReleaseJobWriteBuffer(vault, in lease.Handles.Indices, JobIndicesLock, lease.WriteMask);
-                ReleaseJobWriteBuffer(vault, in lease.Handles.Vertices, JobVerticesLock, lease.WriteMask);
-                ReleaseJobWriteBuffer(vault, in lease.Handles.Density, JobDensityLock, lease.WriteMask);
-                ReleaseJobBuffer(vault, VoxelSurfaceNetsVaultBufferIds.MockDensityConfig, JobMockDensityConfigLock, lease.LockedMask);
-                ReleaseJobBuffer(vault, VoxelSurfaceNetsVaultBufferIds.HzbTiles, JobHzbTilesLock, lease.LockedMask);
-                ReleaseJobBuffer(vault, VoxelSurfaceNetsVaultBufferIds.Priorities, JobPrioritiesLock, lease.LockedMask);
-                ReleaseJobBuffer(vault, VoxelSurfaceNetsVaultBufferIds.ChunkAabbs, JobChunkAabbsLock, lease.LockedMask);
-                ReleaseJobBuffer(vault, VoxelSurfaceNetsVaultBufferIds.IndirectArgs, JobIndirectArgsLock, lease.LockedMask);
-                ReleaseJobBuffer(vault, VoxelSurfaceNetsVaultBufferIds.RawDebugVertices, JobRawDebugVerticesLock, lease.LockedMask);
-                ReleaseJobBuffer(vault, VoxelSurfaceNetsVaultBufferIds.TelemetryCursor, JobTelemetryCursorLock, lease.LockedMask);
-                ReleaseJobBuffer(vault, VoxelSurfaceNetsVaultBufferIds.TelemetryRing, JobTelemetryRingLock, lease.LockedMask);
-                ReleaseJobBuffer(vault, VoxelSurfaceNetsVaultBufferIds.SurfaceEdgeMasks, JobSurfaceEdgeMasksLock, lease.LockedMask);
-                ReleaseJobBuffer(vault, VoxelSurfaceNetsVaultBufferIds.Tuning, JobTuningLock, lease.LockedMask);
-                ReleaseJobBuffer(vault, VoxelSurfaceNetsVaultBufferIds.States, JobStatesLock, lease.LockedMask);
-                ReleaseJobBuffer(vault, VoxelSurfaceNetsVaultBufferIds.CellVertexMap, JobCellVertexMapLock, lease.LockedMask);
-                ReleaseJobBuffer(vault, VoxelSurfaceNetsVaultBufferIds.Indices, JobIndicesLock, lease.LockedMask);
-                ReleaseJobBuffer(vault, VoxelSurfaceNetsVaultBufferIds.Vertices, JobVerticesLock, lease.LockedMask);
-                ReleaseJobBuffer(vault, VoxelSurfaceNetsVaultBufferIds.Density, JobDensityLock, lease.LockedMask);
-            }
+            if (vault != null && lease.MutationGuardMask != 0UL)
+                vault.ReleaseMutationGuard(lease.MutationGuardMask);
 
             lease = default;
         }
 
-        private static bool TryLockGpuUploadBuffer(
+        private static bool TryAcquireJobBufferLeaseGuard(
             IDataVault vault,
-            BufferID bufferId,
-            byte bit,
-            ref VoxelSurfaceNetsGpuUploadSourceLease lease)
+            in VoxelSurfaceNetsVaultHandles handles,
+            ulong mutationGuardMask,
+            uint lockedMask,
+            uint writeMask,
+            out VoxelSurfaceNetsJobBufferLease lease)
         {
-            if (!vault.TryLockBuffer(bufferId, SystemID.WorldStreaming))
+            lease = default;
+            if (vault == null || mutationGuardMask == 0UL)
                 return false;
 
-            lease.LockedMask = (byte)(lease.LockedMask | bit);
+            if (!vault.TryAcquireMutationGuard(mutationGuardMask))
+                return false;
+
+            lease.Vault = vault;
+            lease.Handles = handles;
+            lease.LockedMask = lockedMask;
+            lease.WriteMask = writeMask;
+            lease.MutationGuardMask = mutationGuardMask;
             return true;
-        }
-
-        private static bool TryLockJobBuffer(
-            IDataVault vault,
-            BufferID bufferId,
-            uint bit,
-            ref VoxelSurfaceNetsJobBufferLease lease)
-        {
-            if (!vault.TryLockBuffer(bufferId, SystemID.WorldStreaming))
-                return false;
-
-            lease.LockedMask |= bit;
-            return true;
-        }
-
-        private static bool TryLockJobWriteBuffer<T>(
-            IDataVault vault,
-            in VaultGenerationHandle<T> handle,
-            uint bit,
-            ref VoxelSurfaceNetsJobBufferLease lease)
-            where T : struct
-        {
-            if (handle.BufferID == 0u ||
-                !vault.TryAcquireWriteLock(in handle, SystemID.WorldStreaming, out NativeArray<T> buffer))
-            {
-                return false;
-            }
-
-            if (!buffer.IsCreated)
-            {
-                vault.ReleaseWriteLock(in handle, SystemID.WorldStreaming);
-                return false;
-            }
-
-            lease.WriteMask |= bit;
-            return true;
-        }
-
-        private static void ReleaseJobBuffer(IDataVault vault, BufferID bufferId, uint bit, uint lockedMask)
-        {
-            if ((lockedMask & bit) != 0u)
-                vault.TryUnlockBuffer(bufferId, SystemID.WorldStreaming);
-        }
-
-        private static void ReleaseJobWriteBuffer<T>(
-            IDataVault vault,
-            in VaultGenerationHandle<T> handle,
-            uint bit,
-            uint writeMask)
-            where T : struct
-        {
-            if ((writeMask & bit) != 0u)
-                vault.ReleaseWriteLock(in handle, SystemID.WorldStreaming);
         }
 
         private static bool TryCreateMockDensityJob(
@@ -1179,35 +1123,39 @@ namespace Hecton8.World.VoxelSurfaceNets
             in VoxelSurfaceNetsVaultHandles handles,
             in VoxelMeshingTuningDTO tuning)
         {
-            bool tuningLocked = false;
-            bool statesLocked = false;
+            if (vault == null)
+                return false;
+
+            VoxelMeshingTuningDTO sanitized = SanitizeTuning(in tuning);
+            if (!vault.TryAcquireWriteLock(in handles.Tuning, SystemID.WorldStreaming, out NativeArray<VoxelMeshingTuningDTO> tuningBuffer))
+                return false;
+
             try
             {
-                if (vault == null ||
-                    !vault.TryAcquireWriteLock(in handles.Tuning, SystemID.WorldStreaming, out NativeArray<VoxelMeshingTuningDTO> tuningBuffer))
-                {
-                    return false;
-                }
-
-                tuningLocked = true;
-                if (!vault.TryAcquireWriteLock(in handles.States, SystemID.WorldStreaming, out NativeArray<ChunkMeshingStateDTO> states))
+                if (!tuningBuffer.IsCreated || tuningBuffer.Length <= 0)
                     return false;
 
-                statesLocked = true;
-                if (!tuningBuffer.IsCreated || tuningBuffer.Length <= 0 || !states.IsCreated)
-                    return false;
-
-                VoxelMeshingTuningDTO sanitized = SanitizeTuning(in tuning);
                 tuningBuffer[0] = sanitized;
+            }
+            finally
+            {
+                vault.ReleaseWriteLock(in handles.Tuning, SystemID.WorldStreaming);
+            }
+
+            if (!vault.TryAcquireWriteLock(in handles.States, SystemID.WorldStreaming, out NativeArray<ChunkMeshingStateDTO> states))
+                return false;
+
+            try
+            {
+                if (!states.IsCreated)
+                    return false;
+
                 MarkVisibleChunksDirty(states, sanitized.ForceRemeshVersion);
                 return true;
             }
             finally
             {
-                if (statesLocked)
-                    vault.ReleaseWriteLock(in handles.States, SystemID.WorldStreaming);
-                if (tuningLocked)
-                    vault.ReleaseWriteLock(in handles.Tuning, SystemID.WorldStreaming);
+                vault.ReleaseWriteLock(in handles.States, SystemID.WorldStreaming);
             }
         }
 
@@ -1316,19 +1264,14 @@ namespace Hecton8.World.VoxelSurfaceNets
             if (vault == null)
                 return false;
 
-            lease.Vault = vault;
-            if (!TryLockJobBuffer(vault, VoxelSurfaceNetsVaultBufferIds.TelemetryRing, JobTelemetryRingLock, ref lease))
-            {
-                ReleaseJobBufferLease(ref lease);
+            if (!TryAcquireJobBufferLeaseGuard(
+                    vault,
+                    in buffers.Handles,
+                    TelemetryDumpMutationGuardMask,
+                    JobTelemetryRingLock | JobTelemetryCursorLock,
+                    0u,
+                    out lease))
                 return false;
-            }
-
-            if (buffers.Handles.TelemetryCursor.BufferID != 0u &&
-                !TryLockJobBuffer(vault, VoxelSurfaceNetsVaultBufferIds.TelemetryCursor, JobTelemetryCursorLock, ref lease))
-            {
-                ReleaseJobBufferLease(ref lease);
-                return false;
-            }
 
             return true;
         }

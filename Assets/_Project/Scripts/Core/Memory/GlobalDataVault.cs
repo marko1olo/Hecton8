@@ -2353,7 +2353,7 @@ namespace Hecton8.Core.Memory
         /// <inheritdoc />
         public NativeArray<T>.ReadOnly PinReadOnlyAlias<T>(BufferID bufferId, SystemID requester) where T : struct
         {
-            if (requester == SystemID.Unknown)
+            if (requester == SystemID.Unknown || bufferId == BufferID.Unknown)
                 return default;
 
             if (!TryOpenAliasBuffer<T>(bufferId, requester, out NativeArray<T> buffer))
@@ -2776,22 +2776,37 @@ namespace Hecton8.Core.Memory
             if (writeMask == 0UL)
                 return false;
             if (Volatile.Read(ref _compactionFence) != 0)
+            {
+                RecordMutationGuardContentionFault(writeMask);
                 return false;
+            }
 
             int lowMask = unchecked((int)(uint)writeMask);
             int highMask = unchecked((int)(uint)(writeMask >> 32));
+            int activeConflictMask = lowMask | highMask;
             int observedLow = Volatile.Read(ref _mutationGuardMaskLow);
             int observedHigh = Volatile.Read(ref _mutationGuardMaskHigh);
             if ((observedLow & lowMask) != 0 || (observedHigh & highMask) != 0)
+            {
+                RecordMutationGuardContentionFault(writeMask);
                 return false;
-            if (HasActiveLockConflictForMutationMask(lowMask))
+            }
+
+            if (HasActiveLockConflictForMutationMask(activeConflictMask))
+            {
+                RecordMutationGuardContentionFault(writeMask);
                 return false;
+            }
 
             bool lowAcquired = false;
             if (lowMask != 0)
             {
                 if (Interlocked.CompareExchange(ref _mutationGuardMaskLow, observedLow | lowMask, observedLow) != observedLow)
+                {
+                    RecordMutationGuardContentionFault(writeMask);
                     return false;
+                }
+
                 lowAcquired = true;
             }
 
@@ -2802,14 +2817,16 @@ namespace Hecton8.Core.Memory
                 {
                     if (lowAcquired)
                         ReleaseMutationGuard(unchecked((uint)lowMask));
+                    RecordMutationGuardContentionFault(writeMask);
                     return false;
                 }
+
                 highAcquired = true;
             }
 
             Thread.MemoryBarrier();
             if (Volatile.Read(ref _compactionFence) == 0 &&
-                !HasActiveLockConflictForMutationMask(lowMask))
+                !HasActiveLockConflictForMutationMask(activeConflictMask))
             {
                 return true;
             }
@@ -2821,6 +2838,7 @@ namespace Hecton8.Core.Memory
                 ReleaseMutationGuard(acquiredMask);
             }
 
+            RecordMutationGuardContentionFault(writeMask);
             return false;
         }
 
@@ -2979,8 +2997,10 @@ namespace Hecton8.Core.Memory
 
         private bool HasMutationGuardForActiveLockBit(int activeLockBit)
         {
+            int guardMask = Volatile.Read(ref _mutationGuardMaskLow) |
+                Volatile.Read(ref _mutationGuardMaskHigh);
             return activeLockBit != 0 &&
-                (Volatile.Read(ref _mutationGuardMaskLow) & activeLockBit) != 0;
+                (guardMask & activeLockBit) != 0;
         }
 
         private bool HasActiveLockConflictForMutationMask(int lowMask)
@@ -3620,7 +3640,7 @@ namespace Hecton8.Core.Memory
                 _blocks.Dispose();
             if (_defragBlackBox.IsCreated || _defragBlackBoxDetails.IsCreated)
             {
-                bool canReleaseBlackBox = WaitForMemorySentryDumpFlushOnDispose();
+                bool canReleaseBlackBox = IsMemorySentryDumpIdleOnDispose();
                 StopMemorySentryDumpWorker();
                 if (!canReleaseBlackBox)
                     canReleaseBlackBox = Volatile.Read(ref _memorySentryDumpInFlight) == 0;
@@ -3751,17 +3771,8 @@ namespace Hecton8.Core.Memory
             }
         }
 
-        private bool WaitForMemorySentryDumpFlushOnDispose()
+        private bool IsMemorySentryDumpIdleOnDispose()
         {
-            const int maxWaitMilliseconds = 250;
-            int waitedMilliseconds = 0;
-            while (Volatile.Read(ref _memorySentryDumpInFlight) != 0 &&
-                   waitedMilliseconds < maxWaitMilliseconds)
-            {
-                Thread.Sleep(1);
-                waitedMilliseconds++;
-            }
-
             return Volatile.Read(ref _memorySentryDumpInFlight) == 0;
         }
 
@@ -4995,6 +5006,15 @@ namespace Hecton8.Core.Memory
             _lastFaultHandleGeneration = 0u;
             _lastFaultMetaGeneration = 0u;
             LastDefragFlags = (byte)(LastDefragFlags | DefragFlagAliasBlocked);
+        }
+
+        private void RecordMutationGuardContentionFault(ulong writeMask)
+        {
+            uint foldedMask = unchecked((uint)writeMask ^ (uint)(writeMask >> 32));
+            int key = unchecked((int)(foldedMask & 0x7fffffffu));
+            if (key == 0 && writeMask != 0UL)
+                key = int.MaxValue;
+            RecordLockContentionFault(key);
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]

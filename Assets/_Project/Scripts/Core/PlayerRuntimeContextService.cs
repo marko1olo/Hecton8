@@ -33,6 +33,7 @@ namespace Hecton8.Core
         private GameObject _playerObject;
         private Transform _playerTransform;
         private HectonPlayerMovement _playerMovement;
+        private IBuoyancyAirStateReadModel _playerBuoyancyAirState;
         private Rigidbody _playerRigidbody;
         private HectonSurvivalSystem _survivalSystem;
         private HectonPlayerHealth _playerHealth;
@@ -90,6 +91,15 @@ namespace Hecton8.Core
             get
             {
                 return _playerMovement;
+            }
+        }
+
+        /// <inheritdoc />
+        public IBuoyancyAirStateReadModel PlayerBuoyancyAirState
+        {
+            get
+            {
+                return _playerBuoyancyAirState;
             }
         }
 
@@ -548,6 +558,7 @@ namespace Hecton8.Core
             _playerObject = null;
             _playerTransform = null;
             _playerMovement = null;
+            _playerBuoyancyAirState = null;
             _playerRigidbody = null;
             _survivalSystem = null;
             _playerHealth = null;
@@ -602,6 +613,7 @@ namespace Hecton8.Core
             _playerObject = currentPlayerObject;
             _playerTransform = _playerObject != null ? _playerObject.transform : null;
             _playerMovement = null;
+            _playerBuoyancyAirState = null;
             _playerRigidbody = null;
             _survivalSystem = null;
             _playerHealth = null;
@@ -625,6 +637,7 @@ namespace Hecton8.Core
             {
                 PlayerKinematicsRuntime.EnsureOnPlayerRoot(_playerObject);
                 _playerObject.TryGetComponent(out _playerMovement);
+                _playerObject.TryGetComponent(out _playerBuoyancyAirState);
                 _playerObject.TryGetComponent(out _playerRigidbody);
                 _playerObject.TryGetComponent(out _survivalSystem);
                 _playerObject.TryGetComponent(out _playerHealth);
@@ -650,6 +663,7 @@ namespace Hecton8.Core
                 _playerObject,
                 _playerTransform,
                 _playerMovement,
+                _playerBuoyancyAirState,
                 _playerRigidbody,
                 _survivalSystem,
                 _playerHealth,
@@ -996,7 +1010,10 @@ namespace Hecton8.Core
             GlobalRegistry.RegisterPlayerRuntimeContext(this);
             _registeredContext = ReferenceEquals(GlobalRegistry.Player, this);
             if (_registeredContext)
+            {
                 s_activeRuntimeInstance = this;
+                HectonXRRuntimeState.BindPlayerContextFallbackCold(this);
+            }
         }
 
         private void TryUnregisterContext()
@@ -1008,6 +1025,7 @@ namespace Hecton8.Core
             _registeredContext = false;
             if (ReferenceEquals(s_activeRuntimeInstance, this))
                 s_activeRuntimeInstance = null;
+            HectonXRRuntimeState.BindPlayerContextFallbackCold(null);
         }
     }
 }

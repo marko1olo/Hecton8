@@ -24,7 +24,6 @@ float4 _HectonFrustumPlane4;
 float4 _HectonFrustumPlane5;
 float _HectonBoundsRadius;
 float _HectonCullDistanceMeters;
-int _HectonQualityTier;
 float _HectonVramUsedMb;
 uint _HectonCullingFlags;
 float3 _HectonVoxelSdfOrigin;

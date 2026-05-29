@@ -116,6 +116,25 @@ namespace Hecton8.AI.Ecosystem
         private VaultGenerationHandle<SymbiosisAnomalyFieldMirror> _anomalyFieldHandle;
         private bool _ownsAmbientEntityHandle;
         private bool _ownsAmbientAupHandle;
+        private NativeArray<SymbiosisTelemetryEntry> _telemetryMirror;
+        private NativeArray<SymbiosisAcousticTapDTO> _acousticTapPublishScratch;
+        private NativeArray<AmbientEntityDTO> _ambientEntityJobSnapshot;
+        private NativeArray<AmbientEntityAupDTO> _ambientAupJobSnapshot;
+        private NativeArray<SymbiosisFloraDTO> _floraJobBuffer;
+        private NativeArray<SymbiosisFloraAupDTO> _floraAupJobBuffer;
+        private NativeArray<SymbiosisChemicalLinkDTO> _linkJobBuffer;
+        private NativeArray<SymbiosisExchangeDTO> _exchangeJobBuffer;
+        private NativeArray<SymbiosisCounterDTO> _counterJobBuffer;
+        private NativeArray<ScannerVfxDTO> _scannerVfxJobBuffer;
+        private NativeArray<SymbiosisOxygenEmitterDTO> _oxygenEmitterJobBuffer;
+        private NativeArray<AdherenceDTO> _adherenceJobBuffer;
+        private NativeArray<FloraSeedDTO> _seedJobBuffer;
+        private NativeArray<SymbiosisAcousticTapDTO> _acousticTapJobBuffer;
+        private NativeArray<int> _floraBucketHeadJobBuffer;
+        private NativeArray<int> _floraBucketNextJobBuffer;
+        private NativeArray<MockBoidArray> _mockBoidJobBuffer;
+        private NativeArray<MockFishSymbiosisDTO> _mockFishJobBuffer;
+        private NativeArray<SymbiosisAnomalyFieldMirror> _anomalyFieldJobSnapshot;
 
         private IDataVault _dataVault;
         private JobHandle _activeJobHandle;
@@ -124,6 +143,9 @@ namespace Hecton8.AI.Ecosystem
         private AbsoluteUniversePosition _submarineAup;
 #if UNITY_EDITOR
         private long _csvTimestampTicks;
+        private byte[] _symbiosisCsvManagedScratch;
+        private byte[] _symbiosisLegacyManagedScratch;
+        private SymbiosisChemicalLinkDTO[] _symbiosisLinkManagedScratch;
 #endif
         private long _scheduleTicks;
         private int _telemetryCursor;
@@ -135,7 +157,6 @@ namespace Hecton8.AI.Ecosystem
         private bool _registeredLateFrame;
         private bool _registeredHotSwap;
         private bool _jobScheduled;
-        private bool _jobLocksHeld;
         private bool _dumpedFault;
         private bool _hasSubmarineAup;
         private bool _vaultStateReady;
@@ -178,7 +199,6 @@ namespace Hecton8.AI.Ecosystem
             CompleteFrameJobForTeardown();
             TryUnregisterTicks();
             TryUnregisterHotSwapListener();
-            UnlockJobBuffers();
             ReleaseVaultStateForLifecycle();
         }
 
@@ -191,7 +211,6 @@ namespace Hecton8.AI.Ecosystem
                 return;
 
             CompleteFrameJobForTeardown();
-            UnlockJobBuffers();
             RebindDataVaultForLifecycle(currentService is IDataVault currentVault ? currentVault : null);
 
             if (_dataVault == null || !EnsureVaultState())
@@ -220,22 +239,30 @@ namespace Hecton8.AI.Ecosystem
 #if UNITY_EDITOR
             MonitorCsvOverrides(vault);
 #endif
-            RefreshAuthorityTuning(vault);
+            if (!TryRefreshAuthorityTuning(vault, out SymbiosisTuningDTO activeTuning))
+                return;
 
-            if (!TryBindJobBuffers(
-                    vault,
+            if (vault.IsCompactionFenceActive)
+                return;
+
+            if (!TrySnapshotJobBuffersFromVault(vault))
+                return;
+
+            JobHandle scheduledHandle = default;
+            bool scheduledWork = false;
+            try
+            {
+                if (!TryBindJobBuffers(
                     out NativeArray<SymbiosisFloraDTO> flora,
                     out NativeArray<SymbiosisFloraAupDTO> floraAups,
                     out NativeArray<SymbiosisChemicalLinkDTO> links,
                     out NativeArray<SymbiosisExchangeDTO> exchanges,
-                    out NativeArray<SymbiosisTelemetryEntry> telemetry,
                     out NativeArray<SymbiosisCounterDTO> counters,
                     out NativeArray<ScannerVfxDTO> scannerVfx,
                     out NativeArray<SymbiosisOxygenEmitterDTO> oxygenEmitters,
                     out NativeArray<AdherenceDTO> adherence,
                     out NativeArray<FloraSeedDTO> seeds,
                     out NativeArray<SymbiosisAcousticTapDTO> acousticTaps,
-                    out NativeArray<SymbiosisTuningDTO> tuning,
                     out NativeArray<int> floraBucketHeads,
                     out NativeArray<int> floraBucketNext,
                     out NativeArray<MockBoidArray> mockBoids,
@@ -243,118 +270,119 @@ namespace Hecton8.AI.Ecosystem
                     out NativeArray<AmbientEntityDTO> ambientEntities,
                     out NativeArray<AmbientEntityAupDTO> ambientAups,
                     out NativeArray<SymbiosisAnomalyFieldMirror> anomalyField))
-            {
-                return;
-            }
+                {
+                    return;
+                }
 
-            if (!TryLockJobBuffers(vault))
-                return;
-
-            try
-            {
                 int floraCount = math.min(DefaultFloraCapacity, math.min(flora.Length, floraAups.Length));
                 int mockFishCount = math.min(DefaultMockFishCapacity, mockFish.Length);
                 int ambientCount = math.min(_ambientFishCapacity, math.min(ambientEntities.Length, ambientAups.Length));
-                float quality = ResolveSymbiosisQualityWeight();
+                float quality = math.saturate(activeTuning.GlobalQualityWeight);
                 uint frame = AdvanceSimulationFrame(counters);
                 uint seed = ResolveFrameSectorSeed(in _centerAup, frame);
-                SymbiosisTuningDTO activeTuning = tuning.IsCreated && tuning.Length > 0
-                    ? SymbiosisTuningDTO.Sanitize(tuning[0])
-                    : SymbiosisTuningDTO.Default();
-                activeTuning.GlobalQualityWeight = quality;
-                if (tuning.IsCreated && tuning.Length > 0)
-                    tuning[0] = activeTuning;
+                activeTuning.ActiveFloraCount = math.max(activeTuning.ActiveFloraCount, floraCount);
+                activeTuning.ActiveLinkCount = math.max(activeTuning.ActiveLinkCount, math.min(5, links.Length));
                 float microExchangeWeight = ResolveMicroExchangeWeight(quality, activeTuning.MacroThreshold);
                 bool runMicroExchangeFrame = ResolveDitheredFrameGate(seed ^ 0x4D455843u, microExchangeWeight);
 
                 JobHandle handle = default;
                 if (counters.Length > 0 && counters[0].Initialized == 0)
                 {
-                    var hydrateJob = new GenerateEmergencyMockSymbiosisJob
-                    {
-                        Flora = flora,
-                        FloraAups = floraAups,
-                        Links = links,
-                        Tuning = tuning,
-                        Counters = counters,
-                        MockBoids = mockBoids,
-                        MockFish = mockFish,
-                        CenterAup = _centerAup,
-                        GlobalQualityWeight = quality,
-                        FloraCount = floraCount,
-                        MockFishCount = mockFishCount,
-                        LinkCount = math.min(LinkCapacity, links.Length),
-                        Seed = seed
-                    };
+                    GenerateEmergencyMockSymbiosisJob hydrateJob = default;
+                    hydrateJob.Flora = flora;
+                    hydrateJob.FloraAups = floraAups;
+                    hydrateJob.Links = links;
+                    hydrateJob.Counters = counters;
+                    hydrateJob.MockBoids = mockBoids;
+                    hydrateJob.MockFish = mockFish;
+                    hydrateJob.CenterAup = _centerAup;
+                    hydrateJob.GlobalQualityWeight = quality;
+                    hydrateJob.FloraCount = floraCount;
+                    hydrateJob.MockFishCount = mockFishCount;
+                    hydrateJob.LinkCount = math.min(LinkCapacity, links.Length);
+                    hydrateJob.Seed = seed;
                     handle = hydrateJob.Schedule(handle);
+                    scheduledHandle = handle;
+                    scheduledWork = true;
                     _runtimeFlags |= TuningFlagEmergencyMock;
                 }
 
                 if (runMicroExchangeFrame)
                 {
-                    var hashJob = new BuildSymbiosisFloraSpatialHashJob
-                    {
-                        Flora = flora,
-                        FloraAups = floraAups,
-                        BucketHeads = floraBucketHeads,
-                        BucketNext = floraBucketNext,
-                        CenterAup = _centerAup,
-                        CellSizeMeters = DefaultCellSizeMeters,
-                        Count = floraCount
-                    };
+                    BuildSymbiosisFloraSpatialHashJob hashJob = default;
+                    hashJob.Flora = flora;
+                    hashJob.FloraAups = floraAups;
+                    hashJob.BucketHeads = floraBucketHeads;
+                    hashJob.BucketNext = floraBucketNext;
+                    hashJob.CenterAup = _centerAup;
+                    hashJob.CellSizeMeters = DefaultCellSizeMeters;
+                    hashJob.Count = floraCount;
                     handle = hashJob.Schedule(handle);
+                    scheduledHandle = handle;
+                    scheduledWork = true;
                 }
 
-                var solveJob = new SymbiosisExchangeKernelJob
-                {
-                    Flora = flora,
-                    FloraAups = floraAups,
-                    Links = links,
-                    Exchanges = exchanges,
-                    Counters = counters,
-                    ScannerVfx = scannerVfx,
-                    OxygenEmitters = oxygenEmitters,
-                    Adherence = adherence,
-                    Seeds = seeds,
-                    AcousticTaps = acousticTaps,
-                    Tuning = tuning,
-                    BucketHeads = floraBucketHeads,
-                    BucketNext = floraBucketNext,
-                    MockBoids = mockBoids,
-                    MockFish = mockFish,
-                    AmbientEntities = ambientEntities,
-                    AmbientAups = ambientAups,
-                    AnomalyField = anomalyField,
-                    CenterAup = _centerAup,
-                    SubmarineAup = _submarineAup,
-                    SubmarineIdleSeconds = _submarineIdleSeconds,
-                    Frame = frame,
-                    CellSizeMeters = DefaultCellSizeMeters,
-                    SectorSizeMeters = DefaultSectorSizeMeters,
-                    SimulationTickDelta = DefaultSimulationTickDelta,
-                    FloraCount = floraCount,
-                    AmbientFishCount = ambientCount,
-                    MockFishCount = mockFishCount,
-                    MaxNeighborSamplesBase = MaxNeighborSamples,
-                    MaxSpatialHashChainSteps = MaxSpatialHashChainSteps,
-                    MicroExchangeThisFrame = math.select(0, 1, runMicroExchangeFrame)
-                };
+                SymbiosisExchangeKernelJob solveJob = default;
+                solveJob.Flora = flora;
+                solveJob.FloraAups = floraAups;
+                solveJob.Links = links;
+                solveJob.Exchanges = exchanges;
+                solveJob.Counters = counters;
+                solveJob.ScannerVfx = scannerVfx;
+                solveJob.OxygenEmitters = oxygenEmitters;
+                solveJob.Adherence = adherence;
+                solveJob.Seeds = seeds;
+                solveJob.AcousticTaps = acousticTaps;
+                solveJob.Tuning = activeTuning;
+                solveJob.BucketHeads = floraBucketHeads;
+                solveJob.BucketNext = floraBucketNext;
+                solveJob.MockBoids = mockBoids;
+                solveJob.MockFish = mockFish;
+                solveJob.AmbientEntities = ambientEntities;
+                solveJob.AmbientAups = ambientAups;
+                solveJob.AnomalyField = anomalyField;
+                solveJob.CenterAup = _centerAup;
+                solveJob.SubmarineAup = _submarineAup;
+                solveJob.SubmarineIdleSeconds = _submarineIdleSeconds;
+                solveJob.Frame = frame;
+                solveJob.CellSizeMeters = DefaultCellSizeMeters;
+                solveJob.SectorSizeMeters = DefaultSectorSizeMeters;
+                solveJob.SimulationTickDelta = DefaultSimulationTickDelta;
+                solveJob.FloraCount = floraCount;
+                solveJob.AmbientFishCount = ambientCount;
+                solveJob.MockFishCount = mockFishCount;
+                solveJob.MaxNeighborSamplesBase = MaxNeighborSamples;
+                solveJob.MaxSpatialHashChainSteps = MaxSpatialHashChainSteps;
+                solveJob.MicroExchangeThisFrame = math.select(0, 1, runMicroExchangeFrame);
                 handle = solveJob.Schedule(handle);
+                scheduledHandle = handle;
+                scheduledWork = true;
 
                 _activeJobHandle = handle;
                 _scheduleTicks = Stopwatch.GetTimestamp();
                 H8Memory.RegisterActiveJob(SystemID.AIEcology, _activeJobHandle);
                 _jobScheduled = true;
-                _jobLocksHeld = true;
             }
             catch (InvalidOperationException)
             {
-                UnlockJobBuffers();
+                if (scheduledWork)
+                {
+                    _activeJobHandle = scheduledHandle;
+                    H8Memory.RegisterActiveJob(SystemID.AIEcology, _activeJobHandle);
+                    _jobScheduled = true;
+                }
+
                 GlobalTelemetryBus.PublishPerformanceWarning(0x53364A53u, SourceHash, 0f);
             }
             catch (ArgumentException)
             {
-                UnlockJobBuffers();
+                if (scheduledWork)
+                {
+                    _activeJobHandle = scheduledHandle;
+                    H8Memory.RegisterActiveJob(SystemID.AIEcology, _activeJobHandle);
+                    _jobScheduled = true;
+                }
+
                 GlobalTelemetryBus.PublishPerformanceWarning(0x53364A53u, SourceHash, 0f);
             }
         }
@@ -588,6 +616,8 @@ namespace Hecton8.AI.Ecosystem
             _anomalyFieldHandle = BorrowGenerationHandle<SymbiosisAnomalyFieldMirror>(vault, BufferID.ShinobuSeedShipAnomalyField);
 
             bool ready = AreVaultHandlesReady();
+            if (ready)
+                ready = EnsureLocalBuffersCold();
             if (!ready)
                 return false;
 
@@ -603,6 +633,143 @@ namespace Hecton8.AI.Ecosystem
                 RebindDataVaultForLifecycle(currentVault);
 
             return _dataVault;
+        }
+
+        private bool EnsureLocalBuffersCold()
+        {
+            try
+            {
+                if (_telemetryMirror.IsCreated &&
+                    _telemetryMirror.Length == TelemetryCapacity &&
+                    _acousticTapPublishScratch.IsCreated &&
+                    _acousticTapPublishScratch.Length == AcousticTapCapacity &&
+                    _ambientEntityJobSnapshot.IsCreated &&
+                    _ambientEntityJobSnapshot.Length == _ambientFishCapacity &&
+                    _ambientAupJobSnapshot.IsCreated &&
+                    _ambientAupJobSnapshot.Length == _ambientFishCapacity &&
+                    _floraJobBuffer.IsCreated &&
+                    _floraJobBuffer.Length == DefaultFloraCapacity &&
+                    _floraAupJobBuffer.IsCreated &&
+                    _floraAupJobBuffer.Length == DefaultFloraCapacity &&
+                    _linkJobBuffer.IsCreated &&
+                    _linkJobBuffer.Length == LinkCapacity &&
+                    _exchangeJobBuffer.IsCreated &&
+                    _exchangeJobBuffer.Length == ExchangeCapacity &&
+                    _counterJobBuffer.IsCreated &&
+                    _counterJobBuffer.Length == 1 &&
+                    _scannerVfxJobBuffer.IsCreated &&
+                    _scannerVfxJobBuffer.Length == ScannerVfxCapacity &&
+                    _oxygenEmitterJobBuffer.IsCreated &&
+                    _oxygenEmitterJobBuffer.Length == OxygenEmitterCapacity &&
+                    _adherenceJobBuffer.IsCreated &&
+                    _adherenceJobBuffer.Length == AdherenceCapacity &&
+                    _seedJobBuffer.IsCreated &&
+                    _seedJobBuffer.Length == SeedCapacity &&
+                    _acousticTapJobBuffer.IsCreated &&
+                    _acousticTapJobBuffer.Length == AcousticTapCapacity &&
+                    _floraBucketHeadJobBuffer.IsCreated &&
+                    _floraBucketHeadJobBuffer.Length == SpatialBucketCapacity &&
+                    _floraBucketNextJobBuffer.IsCreated &&
+                    _floraBucketNextJobBuffer.Length == DefaultFloraCapacity &&
+                    _mockBoidJobBuffer.IsCreated &&
+                    _mockBoidJobBuffer.Length == 1 &&
+                    _mockFishJobBuffer.IsCreated &&
+                    _mockFishJobBuffer.Length == DefaultMockFishCapacity &&
+                    _anomalyFieldJobSnapshot.IsCreated &&
+                    _anomalyFieldJobSnapshot.Length == 1)
+                {
+                    return true;
+                }
+
+                DisposeLocalBuffersCold();
+                EnsureNativeJobArray(ref _telemetryMirror, TelemetryCapacity, nameof(_telemetryMirror));
+                EnsureNativeJobArray(ref _acousticTapPublishScratch, AcousticTapCapacity, nameof(_acousticTapPublishScratch));
+                EnsureNativeJobArray(ref _ambientEntityJobSnapshot, _ambientFishCapacity, nameof(_ambientEntityJobSnapshot));
+                EnsureNativeJobArray(ref _ambientAupJobSnapshot, _ambientFishCapacity, nameof(_ambientAupJobSnapshot));
+                EnsureNativeJobArray(ref _floraJobBuffer, DefaultFloraCapacity, nameof(_floraJobBuffer));
+                EnsureNativeJobArray(ref _floraAupJobBuffer, DefaultFloraCapacity, nameof(_floraAupJobBuffer));
+                EnsureNativeJobArray(ref _linkJobBuffer, LinkCapacity, nameof(_linkJobBuffer));
+                EnsureNativeJobArray(ref _exchangeJobBuffer, ExchangeCapacity, nameof(_exchangeJobBuffer));
+                EnsureNativeJobArray(ref _counterJobBuffer, 1, nameof(_counterJobBuffer));
+                EnsureNativeJobArray(ref _scannerVfxJobBuffer, ScannerVfxCapacity, nameof(_scannerVfxJobBuffer));
+                EnsureNativeJobArray(ref _oxygenEmitterJobBuffer, OxygenEmitterCapacity, nameof(_oxygenEmitterJobBuffer));
+                EnsureNativeJobArray(ref _adherenceJobBuffer, AdherenceCapacity, nameof(_adherenceJobBuffer));
+                EnsureNativeJobArray(ref _seedJobBuffer, SeedCapacity, nameof(_seedJobBuffer));
+                EnsureNativeJobArray(ref _acousticTapJobBuffer, AcousticTapCapacity, nameof(_acousticTapJobBuffer));
+                EnsureNativeJobArray(ref _floraBucketHeadJobBuffer, SpatialBucketCapacity, nameof(_floraBucketHeadJobBuffer));
+                EnsureNativeJobArray(ref _floraBucketNextJobBuffer, DefaultFloraCapacity, nameof(_floraBucketNextJobBuffer));
+                EnsureNativeJobArray(ref _mockBoidJobBuffer, 1, nameof(_mockBoidJobBuffer));
+                EnsureNativeJobArray(ref _mockFishJobBuffer, DefaultMockFishCapacity, nameof(_mockFishJobBuffer));
+                EnsureNativeJobArray(ref _anomalyFieldJobSnapshot, 1, nameof(_anomalyFieldJobSnapshot));
+                return true;
+            }
+            catch (ArgumentException)
+            {
+                DisposeLocalBuffersCold();
+                GlobalTelemetryBus.PublishPerformanceWarning(0x53364D41u, SourceHash, 0f);
+                return false;
+            }
+            catch (InvalidOperationException)
+            {
+                DisposeLocalBuffersCold();
+                GlobalTelemetryBus.PublishPerformanceWarning(0x53364D49u, SourceHash, 0f);
+                return false;
+            }
+            catch (OutOfMemoryException)
+            {
+                DisposeLocalBuffersCold();
+                GlobalTelemetryBus.PublishPerformanceWarning(0x53364D4Fu, SourceHash, 0f);
+                return false;
+            }
+        }
+
+        private static void EnsureNativeJobArray<T>(ref NativeArray<T> array, int length, string label)
+            where T : struct
+        {
+            if (array.IsCreated && array.Length == length)
+                return;
+
+            DisposeNativeJobArray(ref array);
+            array = new NativeArray<T>(length, Allocator.Persistent, NativeArrayOptions.ClearMemory);
+            NativeMemorySentinel.RegisterNativeArray(
+                array,
+                nameof(ShinobuFloraFaunaSymbiosisSolver),
+                label,
+                NativeAllocationLifetime.Session);
+        }
+
+        private void DisposeLocalBuffersCold()
+        {
+            DisposeNativeJobArray(ref _anomalyFieldJobSnapshot);
+            DisposeNativeJobArray(ref _mockFishJobBuffer);
+            DisposeNativeJobArray(ref _mockBoidJobBuffer);
+            DisposeNativeJobArray(ref _floraBucketNextJobBuffer);
+            DisposeNativeJobArray(ref _floraBucketHeadJobBuffer);
+            DisposeNativeJobArray(ref _acousticTapJobBuffer);
+            DisposeNativeJobArray(ref _seedJobBuffer);
+            DisposeNativeJobArray(ref _adherenceJobBuffer);
+            DisposeNativeJobArray(ref _oxygenEmitterJobBuffer);
+            DisposeNativeJobArray(ref _scannerVfxJobBuffer);
+            DisposeNativeJobArray(ref _counterJobBuffer);
+            DisposeNativeJobArray(ref _exchangeJobBuffer);
+            DisposeNativeJobArray(ref _linkJobBuffer);
+            DisposeNativeJobArray(ref _floraAupJobBuffer);
+            DisposeNativeJobArray(ref _floraJobBuffer);
+            DisposeNativeJobArray(ref _ambientAupJobSnapshot);
+            DisposeNativeJobArray(ref _ambientEntityJobSnapshot);
+            DisposeNativeJobArray(ref _acousticTapPublishScratch);
+            DisposeNativeJobArray(ref _telemetryMirror);
+        }
+
+        private static void DisposeNativeJobArray<T>(ref NativeArray<T> array)
+            where T : struct
+        {
+            if (!array.IsCreated)
+                return;
+
+            NativeMemorySentinel.UnregisterNativeArray(array);
+            array.Dispose();
+            array = default;
         }
 
         private bool AreVaultHandlesReady()
@@ -629,19 +796,16 @@ namespace Hecton8.AI.Ecosystem
         }
 
         private bool TryBindJobBuffers(
-            IDataVault vault,
             out NativeArray<SymbiosisFloraDTO> flora,
             out NativeArray<SymbiosisFloraAupDTO> floraAups,
             out NativeArray<SymbiosisChemicalLinkDTO> links,
             out NativeArray<SymbiosisExchangeDTO> exchanges,
-            out NativeArray<SymbiosisTelemetryEntry> telemetry,
             out NativeArray<SymbiosisCounterDTO> counters,
             out NativeArray<ScannerVfxDTO> scannerVfx,
             out NativeArray<SymbiosisOxygenEmitterDTO> oxygenEmitters,
             out NativeArray<AdherenceDTO> adherence,
             out NativeArray<FloraSeedDTO> seeds,
             out NativeArray<SymbiosisAcousticTapDTO> acousticTaps,
-            out NativeArray<SymbiosisTuningDTO> tuning,
             out NativeArray<int> floraBucketHeads,
             out NativeArray<int> floraBucketNext,
             out NativeArray<MockBoidArray> mockBoids,
@@ -654,14 +818,12 @@ namespace Hecton8.AI.Ecosystem
             floraAups = default;
             links = default;
             exchanges = default;
-            telemetry = default;
             counters = default;
             scannerVfx = default;
             oxygenEmitters = default;
             adherence = default;
             seeds = default;
             acousticTaps = default;
-            tuning = default;
             floraBucketHeads = default;
             floraBucketNext = default;
             mockBoids = default;
@@ -671,29 +833,243 @@ namespace Hecton8.AI.Ecosystem
             anomalyField = default;
 
             bool ready =
-                TryResolveOwnedVaultBuffer(vault, in _floraHandle, BufferID.ShinobuSymbiosisFlora, out flora) &&
-                TryResolveOwnedVaultBuffer(vault, in _floraAupHandle, BufferID.ShinobuSymbiosisFloraAups, out floraAups) &&
-                TryResolveOwnedVaultBuffer(vault, in _linkHandle, BufferID.ShinobuSymbiosisLinks, out links) &&
-                TryResolveOwnedVaultBuffer(vault, in _exchangeHandle, BufferID.ShinobuSymbiosisExchanges, out exchanges) &&
-                TryResolveOwnedVaultBuffer(vault, in _telemetryHandle, BufferID.ShinobuSymbiosisTelemetryRing, out telemetry) &&
-                TryResolveOwnedVaultBuffer(vault, in _counterHandle, BufferID.ShinobuSymbiosisCounters, out counters) &&
-                TryResolveOwnedVaultBuffer(vault, in _scannerVfxHandle, BufferID.ShinobuSymbiosisScannerVfx, out scannerVfx) &&
-                TryResolveOwnedVaultBuffer(vault, in _oxygenEmitterHandle, BufferID.ShinobuSymbiosisOxygenEmitters, out oxygenEmitters) &&
-                TryResolveOwnedVaultBuffer(vault, in _adherenceHandle, BufferID.ShinobuSymbiosisAdherence, out adherence) &&
-                TryResolveOwnedVaultBuffer(vault, in _seedHandle, BufferID.ShinobuSymbiosisSeeds, out seeds) &&
-                TryResolveOwnedVaultBuffer(vault, in _acousticTapHandle, BufferID.ShinobuSymbiosisAcousticTaps, out acousticTaps) &&
-                TryResolveOwnedVaultBuffer(vault, in _tuningHandle, BufferID.ShinobuSymbiosisTuning, out tuning) &&
-                TryResolveOwnedVaultBuffer(vault, in _floraBucketHeadHandle, BufferID.ShinobuSymbiosisFloraHashBucketHeads, out floraBucketHeads) &&
-                TryResolveOwnedVaultBuffer(vault, in _floraBucketNextHandle, BufferID.ShinobuSymbiosisFloraHashNext, out floraBucketNext) &&
-                TryResolveOwnedVaultBuffer(vault, in _mockBoidHandle, BufferID.ShinobuSymbiosisMockBoids, out mockBoids) &&
-                TryResolveOwnedVaultBuffer(vault, in _mockFishHandle, BufferID.ShinobuSymbiosisMockFish, out mockFish) &&
-                TryResolveVaultBuffer(vault, in _ambientEntityHandle, BufferID.ShinobuAmbientEntities, out ambientEntities) &&
-                TryResolveVaultBuffer(vault, in _ambientAupHandle, BufferID.ShinobuAmbientAups, out ambientAups);
+                _floraJobBuffer.IsCreated &&
+                _floraAupJobBuffer.IsCreated &&
+                _linkJobBuffer.IsCreated &&
+                _exchangeJobBuffer.IsCreated &&
+                _counterJobBuffer.IsCreated &&
+                _scannerVfxJobBuffer.IsCreated &&
+                _oxygenEmitterJobBuffer.IsCreated &&
+                _adherenceJobBuffer.IsCreated &&
+                _seedJobBuffer.IsCreated &&
+                _acousticTapJobBuffer.IsCreated &&
+                _floraBucketHeadJobBuffer.IsCreated &&
+                _floraBucketNextJobBuffer.IsCreated &&
+                _mockBoidJobBuffer.IsCreated &&
+                _mockFishJobBuffer.IsCreated &&
+                _ambientEntityJobSnapshot.IsCreated &&
+                _ambientAupJobSnapshot.IsCreated &&
+                _anomalyFieldJobSnapshot.IsCreated;
 
-            if (!TryResolveVaultBuffer(vault, in _anomalyFieldHandle, BufferID.ShinobuSeedShipAnomalyField, out anomalyField))
-                anomalyField = default;
+            if (ready)
+            {
+                flora = _floraJobBuffer;
+                floraAups = _floraAupJobBuffer;
+                links = _linkJobBuffer;
+                exchanges = _exchangeJobBuffer;
+                counters = _counterJobBuffer;
+                scannerVfx = _scannerVfxJobBuffer;
+                oxygenEmitters = _oxygenEmitterJobBuffer;
+                adherence = _adherenceJobBuffer;
+                seeds = _seedJobBuffer;
+                acousticTaps = _acousticTapJobBuffer;
+                floraBucketHeads = _floraBucketHeadJobBuffer;
+                floraBucketNext = _floraBucketNextJobBuffer;
+                mockBoids = _mockBoidJobBuffer;
+                mockFish = _mockFishJobBuffer;
+                ambientEntities = _ambientEntityJobSnapshot;
+                ambientAups = _ambientAupJobSnapshot;
+                anomalyField = _anomalyFieldJobSnapshot;
+            }
 
             return ready;
+        }
+
+        private bool TrySnapshotJobBuffersFromVault(IDataVault vault)
+        {
+            if (vault == null)
+                return false;
+
+            return ClearJobOutputBuffers() &&
+                   TryCopyVaultBufferToSnapshot(
+                       vault,
+                       in _floraHandle,
+                       BufferID.ShinobuSymbiosisFlora,
+                       _floraJobBuffer) &&
+                   TryCopyVaultBufferToSnapshot(
+                       vault,
+                       in _floraAupHandle,
+                       BufferID.ShinobuSymbiosisFloraAups,
+                       _floraAupJobBuffer) &&
+                   TryCopyVaultBufferToSnapshot(
+                       vault,
+                       in _linkHandle,
+                       BufferID.ShinobuSymbiosisLinks,
+                       _linkJobBuffer) &&
+                   TryCopyVaultBufferToSnapshot(
+                       vault,
+                       in _counterHandle,
+                       BufferID.ShinobuSymbiosisCounters,
+                       _counterJobBuffer) &&
+                   TryCopyVaultBufferToSnapshot(
+                       vault,
+                       in _floraBucketHeadHandle,
+                       BufferID.ShinobuSymbiosisFloraHashBucketHeads,
+                       _floraBucketHeadJobBuffer) &&
+                   TryCopyVaultBufferToSnapshot(
+                       vault,
+                       in _floraBucketNextHandle,
+                       BufferID.ShinobuSymbiosisFloraHashNext,
+                       _floraBucketNextJobBuffer) &&
+                   TryCopyVaultBufferToSnapshot(
+                       vault,
+                       in _mockBoidHandle,
+                       BufferID.ShinobuSymbiosisMockBoids,
+                       _mockBoidJobBuffer) &&
+                   TryCopyVaultBufferToSnapshot(
+                       vault,
+                       in _mockFishHandle,
+                       BufferID.ShinobuSymbiosisMockFish,
+                       _mockFishJobBuffer) &&
+                   TryCopyVaultBufferToSnapshot(
+                        vault,
+                        in _ambientEntityHandle,
+                        BufferID.ShinobuAmbientEntities,
+                        _ambientEntityJobSnapshot) &&
+                   TryCopyVaultBufferToSnapshot(
+                       vault,
+                        in _ambientAupHandle,
+                        BufferID.ShinobuAmbientAups,
+                        _ambientAupJobSnapshot) &&
+                   TrySnapshotAnomalyField(vault);
+        }
+
+        private bool ClearJobOutputBuffers()
+        {
+            return ClearNativeJobArray(_exchangeJobBuffer) &&
+                   ClearNativeJobArray(_scannerVfxJobBuffer) &&
+                   ClearNativeJobArray(_oxygenEmitterJobBuffer) &&
+                   ClearNativeJobArray(_adherenceJobBuffer) &&
+                   ClearNativeJobArray(_seedJobBuffer) &&
+                   ClearNativeJobArray(_acousticTapJobBuffer);
+        }
+
+        private static unsafe bool ClearNativeJobArray<T>(NativeArray<T> array)
+            where T : unmanaged
+        {
+            if (!array.IsCreated)
+                return false;
+
+            void* ptr = NativeArrayUnsafeUtility.GetUnsafePtr(array);
+            UnsafeUtility.MemClear(ptr, (long)UnsafeUtility.SizeOf<T>() * array.Length);
+
+            return true;
+        }
+
+        private bool TrySnapshotAnomalyField(IDataVault vault)
+        {
+            if (!_anomalyFieldJobSnapshot.IsCreated || _anomalyFieldJobSnapshot.Length <= 0)
+                return false;
+
+            _anomalyFieldJobSnapshot[0] = default;
+            if (!IsVaultHandleForBuffer(in _anomalyFieldHandle, BufferID.ShinobuSeedShipAnomalyField))
+                return true;
+
+            return TryCopyVaultBufferToSnapshot(
+                vault,
+                in _anomalyFieldHandle,
+                BufferID.ShinobuSeedShipAnomalyField,
+                _anomalyFieldJobSnapshot);
+        }
+
+        private bool TryPublishJobBuffersToVault(IDataVault vault)
+        {
+            if (vault == null || vault.IsCompactionFenceActive)
+                return false;
+
+            bool publishedData =
+                TryPublishSnapshotToVault(vault, in _floraHandle, BufferID.ShinobuSymbiosisFlora, _floraJobBuffer) &&
+                TryPublishSnapshotToVault(vault, in _floraAupHandle, BufferID.ShinobuSymbiosisFloraAups, _floraAupJobBuffer) &&
+                TryPublishSnapshotToVault(vault, in _linkHandle, BufferID.ShinobuSymbiosisLinks, _linkJobBuffer) &&
+                TryPublishSnapshotToVault(vault, in _exchangeHandle, BufferID.ShinobuSymbiosisExchanges, _exchangeJobBuffer) &&
+                TryPublishSnapshotToVault(vault, in _scannerVfxHandle, BufferID.ShinobuSymbiosisScannerVfx, _scannerVfxJobBuffer) &&
+                TryPublishSnapshotToVault(vault, in _oxygenEmitterHandle, BufferID.ShinobuSymbiosisOxygenEmitters, _oxygenEmitterJobBuffer) &&
+                TryPublishSnapshotToVault(vault, in _adherenceHandle, BufferID.ShinobuSymbiosisAdherence, _adherenceJobBuffer) &&
+                TryPublishSnapshotToVault(vault, in _seedHandle, BufferID.ShinobuSymbiosisSeeds, _seedJobBuffer) &&
+                TryPublishSnapshotToVault(vault, in _acousticTapHandle, BufferID.ShinobuSymbiosisAcousticTaps, _acousticTapJobBuffer) &&
+                TryPublishSnapshotToVault(vault, in _floraBucketHeadHandle, BufferID.ShinobuSymbiosisFloraHashBucketHeads, _floraBucketHeadJobBuffer) &&
+                TryPublishSnapshotToVault(vault, in _floraBucketNextHandle, BufferID.ShinobuSymbiosisFloraHashNext, _floraBucketNextJobBuffer) &&
+                TryPublishSnapshotToVault(vault, in _mockBoidHandle, BufferID.ShinobuSymbiosisMockBoids, _mockBoidJobBuffer) &&
+                TryPublishSnapshotToVault(vault, in _mockFishHandle, BufferID.ShinobuSymbiosisMockFish, _mockFishJobBuffer);
+
+            return publishedData &&
+                   TryPublishSnapshotToVault(vault, in _counterHandle, BufferID.ShinobuSymbiosisCounters, _counterJobBuffer);
+        }
+
+        private static unsafe bool TryPublishSnapshotToVault<T>(
+            IDataVault vault,
+            in VaultGenerationHandle<T> handle,
+            BufferID bufferId,
+            NativeArray<T> snapshot) where T : unmanaged
+        {
+            if (vault == null || !snapshot.IsCreated || vault.IsCompactionFenceActive)
+                return false;
+
+            if (!vault.TryLockBuffer(bufferId, SystemID.AIEcology))
+                return false;
+
+            try
+            {
+                if (!TryResolveOwnedVaultBuffer(vault, in handle, bufferId, out NativeArray<T> target))
+                    return false;
+
+                int safeCount = math.min(snapshot.Length, target.Length);
+                int stride = UnsafeUtility.SizeOf<T>();
+                byte* targetPtr = (byte*)NativeArrayUnsafeUtility.GetUnsafePtr(target);
+                if (safeCount > 0)
+                {
+                    void* sourcePtr = NativeArrayUnsafeUtility.GetUnsafeReadOnlyPtr(snapshot);
+                    UnsafeUtility.MemCpy(targetPtr, sourcePtr, (long)stride * safeCount);
+                }
+
+                int tailCount = target.Length - safeCount;
+                if (tailCount > 0)
+                    UnsafeUtility.MemClear(targetPtr + ((long)stride * safeCount), (long)stride * tailCount);
+
+                return true;
+            }
+            finally
+            {
+                vault.TryUnlockBuffer(bufferId, SystemID.AIEcology);
+            }
+        }
+
+        private static unsafe bool TryCopyVaultBufferToSnapshot<T>(
+            IDataVault vault,
+            in VaultGenerationHandle<T> handle,
+            BufferID bufferId,
+            NativeArray<T> snapshot) where T : unmanaged
+        {
+            if (vault == null || !snapshot.IsCreated || vault.IsCompactionFenceActive)
+                return false;
+
+            if (!vault.TryLockBuffer(bufferId, SystemID.AIEcology))
+                return false;
+
+            try
+            {
+                if (!TryResolveVaultBuffer(vault, in handle, bufferId, out NativeArray<T> source))
+                    return false;
+
+                int safeCount = math.min(source.Length, snapshot.Length);
+                int stride = UnsafeUtility.SizeOf<T>();
+                byte* snapshotPtr = (byte*)NativeArrayUnsafeUtility.GetUnsafePtr(snapshot);
+                if (safeCount > 0)
+                {
+                    void* sourcePtr = NativeArrayUnsafeUtility.GetUnsafeReadOnlyPtr(source);
+                    UnsafeUtility.MemCpy(snapshotPtr, sourcePtr, (long)stride * safeCount);
+                }
+
+                int tailCount = snapshot.Length - safeCount;
+                if (tailCount > 0)
+                    UnsafeUtility.MemClear(snapshotPtr + ((long)stride * safeCount), (long)stride * tailCount);
+
+                return true;
+            }
+            finally
+            {
+                vault.TryUnlockBuffer(bufferId, SystemID.AIEcology);
+            }
         }
 
         private void RefreshAupSignals()
@@ -755,18 +1131,41 @@ namespace Hecton8.AI.Ecosystem
             _submarineAup = latest;
         }
 
-        private void RefreshAuthorityTuning(IDataVault vault)
+        private bool TryRefreshAuthorityTuning(IDataVault vault, out SymbiosisTuningDTO dto)
         {
-            if (!TryResolveOwnedVaultBuffer(vault, in _tuningHandle, BufferID.ShinobuSymbiosisTuning, out NativeArray<SymbiosisTuningDTO> tuning))
-                return;
+            dto = SymbiosisTuningDTO.Default();
+            float quality = ResolveSymbiosisQualityWeight();
+            SymbiosisTuningDTO raw = default;
+            if (vault == null ||
+                !vault.TryLockBuffer(BufferID.ShinobuSymbiosisTuning, SystemID.AIEcology))
+            {
+                return false;
+            }
 
-            if (!tuning.IsCreated || tuning.Length <= 0)
-                return;
+            try
+            {
+                if (!TryResolveOwnedVaultBuffer(vault, in _tuningHandle, BufferID.ShinobuSymbiosisTuning, out NativeArray<SymbiosisTuningDTO> tuning) ||
+                    !tuning.IsCreated ||
+                    tuning.Length <= 0)
+                {
+                    return false;
+                }
 
-            SymbiosisTuningDTO dto = SymbiosisTuningDTO.Sanitize(tuning[0]);
-            dto.GlobalQualityWeight = ResolveSymbiosisQualityWeight();
+                raw = tuning[0];
+            }
+            finally
+            {
+                vault.TryUnlockBuffer(BufferID.ShinobuSymbiosisTuning, SystemID.AIEcology);
+            }
+
+            dto = SymbiosisTuningDTO.Sanitize(raw);
+            dto.GlobalQualityWeight = quality;
             dto.SimulationTickDelta = DefaultSimulationTickDelta;
-            tuning[0] = dto;
+            if (dto.ActiveFloraCount <= 0)
+                dto.ActiveFloraCount = DefaultFloraCapacity;
+            if (dto.ActiveLinkCount <= 0)
+                dto.ActiveLinkCount = math.min(5, LinkCapacity);
+            return TryWriteSymbiosisTuning(vault, dto);
         }
 
         private static float ResolveSymbiosisQualityWeight()
@@ -790,32 +1189,22 @@ namespace Hecton8.AI.Ecosystem
                 if (lastWriteUtc.Ticks == _csvTimestampTicks)
                     return;
 
-                if (!TryResolveOwnedVaultBuffer(vault, in _csvScratchHandle, BufferID.ShinobuSymbiosisCsvScratch, out NativeArray<byte> scratch))
-                    return;
-
-                if (!scratch.IsCreated)
-                    return;
-
-                int bytesRead = LoadFileIntoNativeScratch(path, scratch, CsvMaxBytes, FileShare.ReadWrite);
+                byte[] scratch = EnsureEditorByteScratch(ref _symbiosisCsvManagedScratch, CsvMaxBytes);
+                int bytesRead = LoadFileIntoManagedScratch(path, scratch, CsvMaxBytes, FileShare.ReadWrite);
                 if (bytesRead <= 0)
                     return;
 
-                TryResolveOwnedVaultBuffer(vault, in _tuningHandle, BufferID.ShinobuSymbiosisTuning, out NativeArray<SymbiosisTuningDTO> tuning);
-                TryResolveOwnedVaultBuffer(vault, in _linkHandle, BufferID.ShinobuSymbiosisLinks, out NativeArray<SymbiosisChemicalLinkDTO> links);
-                TryResolveOwnedVaultBuffer(vault, in _counterHandle, BufferID.ShinobuSymbiosisCounters, out NativeArray<SymbiosisCounterDTO> counters);
-                if (!tuning.IsCreated || !links.IsCreated || tuning.Length <= 0)
+                if (!TryReadSymbiosisTuning(vault, out SymbiosisTuningDTO profile))
                     return;
 
-                SymbiosisTuningDTO profile = SymbiosisTuningDTO.Sanitize(tuning[0]);
-                ParseCsvOverrides(scratch, bytesRead, ref profile, links);
+                SymbiosisChemicalLinkDTO[] linkScratch = EnsureEditorLinkScratch(ref _symbiosisLinkManagedScratch, LinkCapacity);
+                ParseCsvOverrides(new ReadOnlySpan<byte>(scratch, 0, bytesRead), ref profile, linkScratch, out int linkCount);
                 profile.Flags |= TuningFlagCsvOverride;
-                tuning[0] = SymbiosisTuningDTO.Sanitize(profile);
-                if (counters.IsCreated && counters.Length > 0)
-                {
-                    SymbiosisCounterDTO counter = counters[0];
-                    counter.CsvLoaded++;
-                    counters[0] = counter;
-                }
+                if (!TryWriteSymbiosisLinks(vault, linkScratch, linkCount))
+                    return;
+                if (!TryWriteSymbiosisTuning(vault, SymbiosisTuningDTO.Sanitize(profile)))
+                    return;
+                TryIncrementSymbiosisCsvCounter(vault);
 
                 _runtimeFlags |= TuningFlagCsvOverride;
                 _csvTimestampTicks = lastWriteUtc.Ticks;
@@ -844,10 +1233,10 @@ namespace Hecton8.AI.Ecosystem
 
         private bool TryLoadLegacyLinksIntoVault(IDataVault vault)
         {
-            if (!TryResolveOwnedVaultBuffer(vault, in _counterHandle, BufferID.ShinobuSymbiosisCounters, out NativeArray<SymbiosisCounterDTO> counters))
+            if (!TryReadSymbiosisCounter(vault, out SymbiosisCounterDTO counter))
                 return false;
 
-            if (!counters.IsCreated || counters.Length <= 0 || (counters[0].Flags & TuningFlagLegacyBinary) != 0u)
+            if ((counter.Flags & TuningFlagLegacyBinary) != 0u)
                 return false;
 
             try
@@ -856,40 +1245,42 @@ namespace Hecton8.AI.Ecosystem
                 if (path == null || path.Length == 0 || !File.Exists(path))
                     return false;
 
-                TryResolveOwnedVaultBuffer(vault, in _legacyScratchHandle, BufferID.ShinobuSymbiosisLegacyScratch, out NativeArray<byte> scratch);
-                TryResolveOwnedVaultBuffer(vault, in _linkHandle, BufferID.ShinobuSymbiosisLinks, out NativeArray<SymbiosisChemicalLinkDTO> links);
-                TryResolveOwnedVaultBuffer(vault, in _tuningHandle, BufferID.ShinobuSymbiosisTuning, out NativeArray<SymbiosisTuningDTO> tuning);
-                if (!scratch.IsCreated || !links.IsCreated || !tuning.IsCreated || tuning.Length <= 0)
-                    return false;
-
-                int bytesRead = LoadFileIntoNativeScratch(path, scratch, LegacyScratchBytes, FileShare.Read);
+                byte[] scratch = EnsureEditorByteScratch(ref _symbiosisLegacyManagedScratch, LegacyScratchBytes);
+                int bytesRead = LoadFileIntoManagedScratch(path, scratch, LegacyScratchBytes, FileShare.Read);
                 if (bytesRead < UnsafeUtility.SizeOf<SymbiosisChemicalLinkDTO>())
                     return false;
 
                 int stride = UnsafeUtility.SizeOf<SymbiosisChemicalLinkDTO>();
-                ResolveLegacyLinkEncoding(scratch, bytesRead, out bool bigEndian, out int payloadOffset);
+                ReadOnlySpan<byte> payload = new ReadOnlySpan<byte>(scratch, 0, bytesRead);
+                ResolveLegacyLinkEncoding(payload, out bool bigEndian, out int payloadOffset);
                 int payloadBytes = math.max(0, bytesRead - payloadOffset);
-                int count = math.min(links.Length, payloadBytes / stride);
+                int count = math.min(LinkCapacity, payloadBytes / stride);
+                SymbiosisChemicalLinkDTO[] linkScratch = EnsureEditorLinkScratch(ref _symbiosisLinkManagedScratch, LinkCapacity);
                 for (int i = 0; i < count; i++)
                 {
                     int offset = payloadOffset + (i * stride);
-                    links[i] = new SymbiosisChemicalLinkDTO
+                    linkScratch[i] = new SymbiosisChemicalLinkDTO
                     {
-                        FloraHash = ReadUInt32(scratch, offset, bigEndian),
-                        FaunaHash = ReadUInt32(scratch, offset + 4, bigEndian),
-                        ChemicalTransferRate = ReadFloat32(scratch, offset + 8, bigEndian, 0.01f),
-                        Flags = ReadUInt32(scratch, offset + 12, bigEndian)
+                        FloraHash = ReadUInt32(payload, offset, bigEndian),
+                        FaunaHash = ReadUInt32(payload, offset + 4, bigEndian),
+                        ChemicalTransferRate = ReadFloat32(payload, offset + 8, bigEndian, 0.01f),
+                        Flags = ReadUInt32(payload, offset + 12, bigEndian)
                     };
                 }
 
-                SymbiosisTuningDTO profile = SymbiosisTuningDTO.Sanitize(tuning[0]);
+                if (!TryWriteSymbiosisLinks(vault, linkScratch, count))
+                    return false;
+                if (!TryReadSymbiosisTuning(vault, out SymbiosisTuningDTO profile))
+                    return false;
+
                 profile.ActiveLinkCount = count;
                 profile.Flags |= TuningFlagLegacyBinary;
-                tuning[0] = profile;
+                if (!TryWriteSymbiosisTuning(vault, profile))
+                    return false;
 
-                SymbiosisCounterDTO counter = counters[0];
                 counter.Flags |= TuningFlagLegacyBinary;
-                counters[0] = counter;
+                if (!TryWriteSymbiosisCounter(vault, counter))
+                    return false;
                 _runtimeFlags |= TuningFlagLegacyBinary;
                 return true;
             }
@@ -913,6 +1304,187 @@ namespace Hecton8.AI.Ecosystem
             {
                 return false;
             }
+        }
+
+        private static byte[] EnsureEditorByteScratch(ref byte[] scratch, int minimumLength)
+        {
+            int length = math.max(1, minimumLength);
+            if (scratch == null || scratch.Length < length)
+                scratch = new byte[length];
+            return scratch;
+        }
+
+        private static SymbiosisChemicalLinkDTO[] EnsureEditorLinkScratch(
+            ref SymbiosisChemicalLinkDTO[] scratch,
+            int minimumLength)
+        {
+            int length = math.max(1, minimumLength);
+            if (scratch == null || scratch.Length < length)
+                scratch = new SymbiosisChemicalLinkDTO[length];
+            return scratch;
+        }
+
+        private static int LoadFileIntoManagedScratch(
+            string path,
+            byte[] scratch,
+            int maxBytes,
+            FileShare share)
+        {
+            if (path == null || scratch == null || maxBytes <= 0)
+                return 0;
+
+            int limit = math.min(maxBytes, scratch.Length);
+            using (FileStream stream = new FileStream(path, FileMode.Open, FileAccess.Read, share, 4096, FileOptions.SequentialScan))
+            {
+                int read = stream.Read(scratch, 0, limit);
+                return math.max(0, math.min(read, limit));
+            }
+        }
+
+        private bool TryReadSymbiosisTuning(IDataVault vault, out SymbiosisTuningDTO dto)
+        {
+            dto = SymbiosisTuningDTO.Default();
+            SymbiosisTuningDTO raw = default;
+            if (vault == null || !vault.TryLockBuffer(BufferID.ShinobuSymbiosisTuning, SystemID.AIEcology))
+            {
+                return false;
+            }
+
+            try
+            {
+                if (!TryResolveOwnedVaultBuffer(vault, in _tuningHandle, BufferID.ShinobuSymbiosisTuning, out NativeArray<SymbiosisTuningDTO> tuning) ||
+                    !tuning.IsCreated ||
+                    tuning.Length <= 0)
+                {
+                    return false;
+                }
+
+                raw = tuning[0];
+            }
+            finally
+            {
+                vault.TryUnlockBuffer(BufferID.ShinobuSymbiosisTuning, SystemID.AIEcology);
+            }
+
+            dto = SymbiosisTuningDTO.Sanitize(raw);
+            return true;
+        }
+
+        private bool TryWriteSymbiosisTuning(IDataVault vault, SymbiosisTuningDTO dto)
+        {
+            SymbiosisTuningDTO sanitized = SymbiosisTuningDTO.Sanitize(dto);
+            if (vault == null || !vault.TryLockBuffer(BufferID.ShinobuSymbiosisTuning, SystemID.AIEcology))
+            {
+                return false;
+            }
+
+            try
+            {
+                if (!TryResolveOwnedVaultBuffer(vault, in _tuningHandle, BufferID.ShinobuSymbiosisTuning, out NativeArray<SymbiosisTuningDTO> tuning) ||
+                    !tuning.IsCreated ||
+                    tuning.Length <= 0)
+                {
+                    return false;
+                }
+
+                tuning[0] = sanitized;
+                return true;
+            }
+            finally
+            {
+                vault.TryUnlockBuffer(BufferID.ShinobuSymbiosisTuning, SystemID.AIEcology);
+            }
+        }
+
+        private bool TryWriteSymbiosisLinks(
+            IDataVault vault,
+            SymbiosisChemicalLinkDTO[] source,
+            int count)
+        {
+            if (source == null ||
+                vault == null ||
+                !vault.TryLockBuffer(BufferID.ShinobuSymbiosisLinks, SystemID.AIEcology))
+            {
+                return false;
+            }
+
+            try
+            {
+                if (!TryResolveOwnedVaultBuffer(vault, in _linkHandle, BufferID.ShinobuSymbiosisLinks, out NativeArray<SymbiosisChemicalLinkDTO> links) ||
+                    !links.IsCreated)
+                {
+                    return false;
+                }
+
+                int writeCount = math.min(math.max(0, count), math.min(source.Length, links.Length));
+                for (int i = 0; i < writeCount; i++)
+                    links[i] = source[i];
+                return true;
+            }
+            finally
+            {
+                vault.TryUnlockBuffer(BufferID.ShinobuSymbiosisLinks, SystemID.AIEcology);
+            }
+        }
+
+        private bool TryReadSymbiosisCounter(IDataVault vault, out SymbiosisCounterDTO counter)
+        {
+            counter = default;
+            if (vault == null || !vault.TryLockBuffer(BufferID.ShinobuSymbiosisCounters, SystemID.AIEcology))
+            {
+                return false;
+            }
+
+            try
+            {
+                if (!TryResolveOwnedVaultBuffer(vault, in _counterHandle, BufferID.ShinobuSymbiosisCounters, out NativeArray<SymbiosisCounterDTO> counters) ||
+                    !counters.IsCreated ||
+                    counters.Length <= 0)
+                {
+                    return false;
+                }
+
+                counter = counters[0];
+                return true;
+            }
+            finally
+            {
+                vault.TryUnlockBuffer(BufferID.ShinobuSymbiosisCounters, SystemID.AIEcology);
+            }
+        }
+
+        private bool TryWriteSymbiosisCounter(IDataVault vault, SymbiosisCounterDTO counter)
+        {
+            if (vault == null || !vault.TryLockBuffer(BufferID.ShinobuSymbiosisCounters, SystemID.AIEcology))
+            {
+                return false;
+            }
+
+            try
+            {
+                if (!TryResolveOwnedVaultBuffer(vault, in _counterHandle, BufferID.ShinobuSymbiosisCounters, out NativeArray<SymbiosisCounterDTO> counters) ||
+                    !counters.IsCreated ||
+                    counters.Length <= 0)
+                {
+                    return false;
+                }
+
+                counters[0] = counter;
+                return true;
+            }
+            finally
+            {
+                vault.TryUnlockBuffer(BufferID.ShinobuSymbiosisCounters, SystemID.AIEcology);
+            }
+        }
+
+        private void TryIncrementSymbiosisCsvCounter(IDataVault vault)
+        {
+            if (!TryReadSymbiosisCounter(vault, out SymbiosisCounterDTO counter))
+                return;
+
+            counter.CsvLoaded++;
+            TryWriteSymbiosisCounter(vault, counter);
         }
 
         private void TryFinalizeFrameJobNoWait()
@@ -950,13 +1522,26 @@ namespace Hecton8.AI.Ecosystem
                 : 0f;
 
             IDataVault vault = _dataVault;
+            bool hasTelemetry = false;
+            SymbiosisTelemetryEntry telemetryEntry = default;
+            bool telemetryFault = false;
+            int acousticTapCount = 0;
+
             if (vault != null)
             {
-                WriteTelemetryAndFaultDump(vault);
-                PublishAcousticTaps(vault);
+                hasTelemetry = TryBuildTelemetryEntry(out telemetryEntry, out telemetryFault);
+                acousticTapCount = BuildAcousticTapPublishScratch();
             }
 
-            UnlockJobBuffers();
+            if (vault == null || !TryPublishJobBuffersToVault(vault))
+            {
+                GlobalTelemetryBus.PublishPerformanceWarning(0x53365046u, SourceHash, 0f);
+                return;
+            }
+
+            PublishAcousticTapsFromScratch(acousticTapCount);
+            if (hasTelemetry)
+                WriteTelemetryAndFaultDump(vault, in telemetryEntry, telemetryFault);
         }
 
         private uint AdvanceSimulationFrame(NativeArray<SymbiosisCounterDTO> counters)
@@ -977,167 +1562,126 @@ namespace Hecton8.AI.Ecosystem
             return next;
         }
 
-        private void WriteTelemetryAndFaultDump(IDataVault vault)
+        private bool TryBuildTelemetryEntry(
+            out SymbiosisTelemetryEntry entry,
+            out bool shouldDump)
         {
-            TryResolveOwnedVaultBuffer(vault, in _telemetryHandle, BufferID.ShinobuSymbiosisTelemetryRing, out NativeArray<SymbiosisTelemetryEntry> telemetry);
-            TryResolveOwnedVaultBuffer(vault, in _counterHandle, BufferID.ShinobuSymbiosisCounters, out NativeArray<SymbiosisCounterDTO> counters);
-            if (!telemetry.IsCreated || telemetry.Length <= 0 || !counters.IsCreated || counters.Length <= 0)
-                return;
+            entry = default;
+            shouldDump = false;
+            NativeArray<SymbiosisCounterDTO> counters = _counterJobBuffer;
+            if (!counters.IsCreated || counters.Length <= 0)
+                return false;
 
             SymbiosisCounterDTO counter = counters[0];
-            int cursor = _telemetryCursor;
-            int index = cursor % telemetry.Length;
-            _telemetryCursor = cursor + 1;
-
             uint stateHash = MixTelemetryHash(counter.ActiveExchanges, counter.BiomassTransferredMilli, counter.InvalidMath, counter.OverflowCount);
             uint frame = counter.Frame != 0u ? counter.Frame : _simulationFrameCounter;
-            telemetry[index] = new SymbiosisTelemetryEntry
-            {
-                Frame = frame,
-                StateHash = stateHash,
-                ActiveExchanges = counter.ActiveExchanges,
-                BiomassTransferred = counter.BiomassTransferredMilli * 0.001f,
-                SolverComputeTimeMs = math.max(0f, _lastSolverMs),
-                OxygenEmitterCount = counter.OxygenEmitterCount,
-                ToxemiaCount = counter.ToxemiaCount,
-                CamouflageCount = counter.CamouflageCount,
-                SeedCount = counter.SeedCount,
-                AdherenceCount = counter.AdherenceCount,
-                AcousticTapCount = counter.AcousticTapCount,
-                Flags = _runtimeFlags | counter.Flags,
-                InvalidMathCount = counter.InvalidMath,
-                OverflowCount = counter.OverflowCount
-            };
-
-            if ((counter.InvalidMath != 0 || counter.OverflowCount != 0) && !_dumpedFault)
-            {
-                _dumpedFault = true;
-                DumpBlackBox(telemetry, _telemetryCursor);
-            }
+            entry.Frame = frame;
+            entry.StateHash = stateHash;
+            entry.ActiveExchanges = counter.ActiveExchanges;
+            entry.BiomassTransferred = counter.BiomassTransferredMilli * 0.001f;
+            entry.SolverComputeTimeMs = math.max(0f, _lastSolverMs);
+            entry.OxygenEmitterCount = counter.OxygenEmitterCount;
+            entry.ToxemiaCount = counter.ToxemiaCount;
+            entry.CamouflageCount = counter.CamouflageCount;
+            entry.SeedCount = counter.SeedCount;
+            entry.AdherenceCount = counter.AdherenceCount;
+            entry.AcousticTapCount = counter.AcousticTapCount;
+            entry.Flags = _runtimeFlags | counter.Flags;
+            entry.InvalidMathCount = counter.InvalidMath;
+            entry.OverflowCount = counter.OverflowCount;
+            shouldDump = counter.InvalidMath != 0 || counter.OverflowCount != 0;
+            return true;
         }
 
-        private void PublishAcousticTaps(IDataVault vault)
+        private void WriteTelemetryAndFaultDump(
+            IDataVault vault,
+            in SymbiosisTelemetryEntry entry,
+            bool shouldDump)
         {
-            TryResolveOwnedVaultBuffer(vault, in _counterHandle, BufferID.ShinobuSymbiosisCounters, out NativeArray<SymbiosisCounterDTO> counters);
-            TryResolveOwnedVaultBuffer(vault, in _acousticTapHandle, BufferID.ShinobuSymbiosisAcousticTaps, out NativeArray<SymbiosisAcousticTapDTO> taps);
-            if (!counters.IsCreated || counters.Length <= 0 || !taps.IsCreated)
+            if (vault == null ||
+                !vault.TryLockBuffer(BufferID.ShinobuSymbiosisTelemetryRing, SystemID.AIEcology))
+            {
+                return;
+            }
+
+            bool dumpAfterRelease = false;
+            int dumpCursor = 0;
+            try
+            {
+                if (!TryResolveOwnedVaultBuffer(vault, in _telemetryHandle, BufferID.ShinobuSymbiosisTelemetryRing, out NativeArray<SymbiosisTelemetryEntry> telemetry) ||
+                    !telemetry.IsCreated ||
+                    telemetry.Length <= 0)
+                {
+                    return;
+                }
+
+                int cursor = _telemetryCursor;
+                if (cursor < 0 || cursor >= int.MaxValue - telemetry.Length)
+                    cursor = 0;
+
+                int index = cursor % telemetry.Length;
+                int nextCursor = cursor + 1;
+                _telemetryCursor = nextCursor;
+                telemetry[index] = entry;
+                if (_telemetryMirror.IsCreated && _telemetryMirror.Length == telemetry.Length)
+                    _telemetryMirror[index] = entry;
+
+                if (shouldDump && !_dumpedFault)
+                {
+                    _dumpedFault = true;
+                    dumpAfterRelease = true;
+                    dumpCursor = nextCursor;
+                }
+            }
+            finally
+            {
+                vault.TryUnlockBuffer(BufferID.ShinobuSymbiosisTelemetryRing, SystemID.AIEcology);
+            }
+
+            if (dumpAfterRelease && _telemetryMirror.IsCreated)
+                DumpBlackBox(_telemetryMirror, dumpCursor);
+        }
+
+        private int BuildAcousticTapPublishScratch()
+        {
+            NativeArray<SymbiosisCounterDTO> counters = _counterJobBuffer;
+            NativeArray<SymbiosisAcousticTapDTO> taps = _acousticTapJobBuffer;
+            if (!counters.IsCreated ||
+                counters.Length <= 0 ||
+                !taps.IsCreated ||
+                !_acousticTapPublishScratch.IsCreated)
+            {
+                return 0;
+            }
+
+            int count = math.min(counters[0].AcousticTapCount, math.min(taps.Length, _acousticTapPublishScratch.Length));
+            for (int i = 0; i < count; i++)
+                _acousticTapPublishScratch[i] = taps[i];
+            return count;
+        }
+
+        private void PublishAcousticTapsFromScratch(int count)
+        {
+            if (!_acousticTapPublishScratch.IsCreated)
                 return;
 
-            int count = math.min(counters[0].AcousticTapCount, taps.Length);
-            for (int i = 0; i < count; i++)
+            int safeCount = math.min(math.max(0, count), _acousticTapPublishScratch.Length);
+            for (int i = 0; i < safeCount; i++)
             {
-                SymbiosisAcousticTapDTO tap = taps[i];
+                SymbiosisAcousticTapDTO tap = _acousticTapPublishScratch[i];
                 if ((tap.Flags & 1u) == 0u || !IsFiniteAup(in tap.PositionAup))
                     continue;
 
                 AbsoluteUniversePosition tapAup = tap.PositionAup.ToAup();
-                AcousticPingSignal signal = new AcousticPingSignal
-                {
-                    PositionAup = tapAup,
-                    RadiusMeters = math.max(1f, tap.RadiusMeters),
-                    Intensity01 = math.saturate(tap.Magnitude01),
-                    SourceId = tap.SourceHash,
-                    Channel = AcousticPingSignal.ChannelJawSnap,
-                    Flags = AcousticPingSignal.FlagJawSnap
-                };
+                AcousticPingSignal signal = default;
+                signal.PositionAup = tapAup;
+                signal.RadiusMeters = math.max(1f, tap.RadiusMeters);
+                signal.Intensity01 = math.saturate(tap.Magnitude01);
+                signal.SourceId = tap.SourceHash;
+                signal.Channel = AcousticPingSignal.ChannelJawSnap;
+                signal.Flags = AcousticPingSignal.FlagJawSnap;
                 SignalBus<AcousticPingSignal>.TryPushTracked(in signal, ref s_x001ShinobuFloraFaunaSymbiosisSolverSignalPushDropCount);
             }
-        }
-
-        private bool TryLockJobBuffers(IDataVault vault)
-        {
-            if (vault == null || _jobLocksHeld)
-                return false;
-
-            int locked = 0;
-            bool ownershipTransferred = false;
-            try
-            {
-                if (!vault.TryLockBuffer(BufferID.ShinobuSymbiosisFlora, SystemID.AIEcology)) return false;
-                locked++;
-                if (!vault.TryLockBuffer(BufferID.ShinobuSymbiosisFloraAups, SystemID.AIEcology)) return false;
-                locked++;
-                if (!vault.TryLockBuffer(BufferID.ShinobuSymbiosisLinks, SystemID.AIEcology)) return false;
-                locked++;
-                if (!vault.TryLockBuffer(BufferID.ShinobuSymbiosisExchanges, SystemID.AIEcology)) return false;
-                locked++;
-                if (!vault.TryLockBuffer(BufferID.ShinobuSymbiosisTelemetryRing, SystemID.AIEcology)) return false;
-                locked++;
-                if (!vault.TryLockBuffer(BufferID.ShinobuSymbiosisCounters, SystemID.AIEcology)) return false;
-                locked++;
-                if (!vault.TryLockBuffer(BufferID.ShinobuSymbiosisScannerVfx, SystemID.AIEcology)) return false;
-                locked++;
-                if (!vault.TryLockBuffer(BufferID.ShinobuSymbiosisOxygenEmitters, SystemID.AIEcology)) return false;
-                locked++;
-                if (!vault.TryLockBuffer(BufferID.ShinobuSymbiosisAdherence, SystemID.AIEcology)) return false;
-                locked++;
-                if (!vault.TryLockBuffer(BufferID.ShinobuSymbiosisSeeds, SystemID.AIEcology)) return false;
-                locked++;
-                if (!vault.TryLockBuffer(BufferID.ShinobuSymbiosisAcousticTaps, SystemID.AIEcology)) return false;
-                locked++;
-                if (!vault.TryLockBuffer(BufferID.ShinobuSymbiosisTuning, SystemID.AIEcology)) return false;
-                locked++;
-                if (!vault.TryLockBuffer(BufferID.ShinobuSymbiosisFloraHashBucketHeads, SystemID.AIEcology)) return false;
-                locked++;
-                if (!vault.TryLockBuffer(BufferID.ShinobuSymbiosisFloraHashNext, SystemID.AIEcology)) return false;
-                locked++;
-                if (!vault.TryLockBuffer(BufferID.ShinobuSymbiosisMockBoids, SystemID.AIEcology)) return false;
-                locked++;
-                if (!vault.TryLockBuffer(BufferID.ShinobuSymbiosisMockFish, SystemID.AIEcology)) return false;
-                locked++;
-                if (!vault.TryLockBuffer(BufferID.ShinobuAmbientEntities, SystemID.AIEcology)) return false;
-                locked++;
-                if (!vault.TryLockBuffer(BufferID.ShinobuAmbientAups, SystemID.AIEcology)) return false;
-                locked++;
-
-                _jobLocksHeld = true;
-                ownershipTransferred = true;
-                return true;
-            }
-            finally
-            {
-                if (!ownershipTransferred)
-                    UnlockLockedJobBuffers(vault, locked);
-            }
-        }
-
-        private void UnlockJobBuffers()
-        {
-            if (!_jobLocksHeld)
-                return;
-
-            IDataVault vault = _dataVault;
-            try
-            {
-                if (vault != null)
-                    UnlockLockedJobBuffers(vault, 18);
-            }
-            finally
-            {
-                _jobLocksHeld = false;
-            }
-        }
-
-        private static void UnlockLockedJobBuffers(IDataVault vault, int locked)
-        {
-            if (locked >= 18) vault.TryUnlockBuffer(BufferID.ShinobuAmbientAups, SystemID.AIEcology);
-            if (locked >= 17) vault.TryUnlockBuffer(BufferID.ShinobuAmbientEntities, SystemID.AIEcology);
-            if (locked >= 16) vault.TryUnlockBuffer(BufferID.ShinobuSymbiosisMockFish, SystemID.AIEcology);
-            if (locked >= 15) vault.TryUnlockBuffer(BufferID.ShinobuSymbiosisMockBoids, SystemID.AIEcology);
-            if (locked >= 14) vault.TryUnlockBuffer(BufferID.ShinobuSymbiosisFloraHashNext, SystemID.AIEcology);
-            if (locked >= 13) vault.TryUnlockBuffer(BufferID.ShinobuSymbiosisFloraHashBucketHeads, SystemID.AIEcology);
-            if (locked >= 12) vault.TryUnlockBuffer(BufferID.ShinobuSymbiosisTuning, SystemID.AIEcology);
-            if (locked >= 11) vault.TryUnlockBuffer(BufferID.ShinobuSymbiosisAcousticTaps, SystemID.AIEcology);
-            if (locked >= 10) vault.TryUnlockBuffer(BufferID.ShinobuSymbiosisSeeds, SystemID.AIEcology);
-            if (locked >= 9) vault.TryUnlockBuffer(BufferID.ShinobuSymbiosisAdherence, SystemID.AIEcology);
-            if (locked >= 8) vault.TryUnlockBuffer(BufferID.ShinobuSymbiosisOxygenEmitters, SystemID.AIEcology);
-            if (locked >= 7) vault.TryUnlockBuffer(BufferID.ShinobuSymbiosisScannerVfx, SystemID.AIEcology);
-            if (locked >= 6) vault.TryUnlockBuffer(BufferID.ShinobuSymbiosisCounters, SystemID.AIEcology);
-            if (locked >= 5) vault.TryUnlockBuffer(BufferID.ShinobuSymbiosisTelemetryRing, SystemID.AIEcology);
-            if (locked >= 4) vault.TryUnlockBuffer(BufferID.ShinobuSymbiosisExchanges, SystemID.AIEcology);
-            if (locked >= 3) vault.TryUnlockBuffer(BufferID.ShinobuSymbiosisLinks, SystemID.AIEcology);
-            if (locked >= 2) vault.TryUnlockBuffer(BufferID.ShinobuSymbiosisFloraAups, SystemID.AIEcology);
-            if (locked >= 1) vault.TryUnlockBuffer(BufferID.ShinobuSymbiosisFlora, SystemID.AIEcology);
         }
 
         private void TryRegisterTicks()
@@ -1225,8 +1769,8 @@ namespace Hecton8.AI.Ecosystem
         private void ReleaseVaultStateForLifecycle()
         {
             CompleteFrameJobForTeardown();
-            UnlockJobBuffers();
             ReleaseOwnedVaultHandles(_dataVault);
+            DisposeLocalBuffersCold();
             ClearCachedState();
         }
 
@@ -1288,6 +1832,9 @@ namespace Hecton8.AI.Ecosystem
             ResetVaultHandles();
 #if UNITY_EDITOR
             _csvTimestampTicks = 0L;
+            _symbiosisCsvManagedScratch = null;
+            _symbiosisLegacyManagedScratch = null;
+            _symbiosisLinkManagedScratch = null;
 #endif
             _scheduleTicks = 0L;
             _telemetryCursor = 0;
@@ -1463,6 +2010,59 @@ namespace Hecton8.AI.Ecosystem
             }
         }
 
+        private static void ParseCsvOverrides(
+            ReadOnlySpan<byte> bytes,
+            ref SymbiosisTuningDTO tuning,
+            SymbiosisChemicalLinkDTO[] links,
+            out int linkCount)
+        {
+            linkCount = 0;
+            if (links == null)
+                return;
+
+            int length = bytes.Length;
+            int cursor = 0;
+            while (cursor < length)
+            {
+                int keyStart = cursor;
+                while (cursor < length && bytes[cursor] != (byte)',' && bytes[cursor] != (byte)'\n' && bytes[cursor] != (byte)'\r')
+                    cursor++;
+
+                int keyEnd = cursor;
+                uint keyHash = HashAsciiLower(bytes, keyStart, keyEnd);
+                if (cursor >= length || bytes[cursor] != (byte)',')
+                {
+                    cursor = SkipLine(bytes, cursor, length);
+                    continue;
+                }
+
+                cursor++;
+                if (keyHash == 0x0DDB0669u)
+                {
+                    if (linkCount < links.Length)
+                    {
+                        SymbiosisChemicalLinkDTO link = default;
+                        cursor = ParseCsvUInt(bytes, cursor, length, out link.FloraHash);
+                        cursor = ParseCsvUInt(bytes, cursor, length, out link.FaunaHash);
+                        cursor = ParseCsvFloat(bytes, cursor, length, out link.ChemicalTransferRate);
+                        cursor = ParseCsvUInt(bytes, cursor, length, out link.Flags);
+                        links[linkCount] = link;
+                        linkCount++;
+                        tuning.ActiveLinkCount = math.max(tuning.ActiveLinkCount, linkCount);
+                    }
+
+                    cursor = SkipLine(bytes, cursor, length);
+                    continue;
+                }
+
+                cursor = ParseCsvFloat(bytes, cursor, length, out float value);
+                if (math.isfinite(value))
+                    ApplyCsvScalar(keyHash, value, ref tuning);
+
+                cursor = SkipLine(bytes, cursor, length);
+            }
+        }
+
         private static void ApplyCsvScalar(uint keyHash, float value, ref SymbiosisTuningDTO tuning)
         {
             switch (keyHash)
@@ -1574,6 +2174,83 @@ namespace Hecton8.AI.Ecosystem
             return cursor;
         }
 
+        private static int ParseCsvFloat(ReadOnlySpan<byte> bytes, int cursor, int length, out float value)
+        {
+            value = 0f;
+            while (cursor < length && (bytes[cursor] == (byte)' ' || bytes[cursor] == (byte)'\t'))
+                cursor++;
+
+            int sign = 1;
+            if (cursor < length && bytes[cursor] == (byte)'-')
+            {
+                sign = -1;
+                cursor++;
+            }
+
+            double result = 0.0d;
+            bool found = false;
+            while (cursor < length && bytes[cursor] >= (byte)'0' && bytes[cursor] <= (byte)'9')
+            {
+                found = true;
+                result = (result * 10.0d) + (bytes[cursor] - (byte)'0');
+                cursor++;
+            }
+
+            if (cursor < length && bytes[cursor] == (byte)'.')
+            {
+                cursor++;
+                double factor = 0.1d;
+                while (cursor < length && bytes[cursor] >= (byte)'0' && bytes[cursor] <= (byte)'9')
+                {
+                    found = true;
+                    result += (bytes[cursor] - (byte)'0') * factor;
+                    factor *= 0.1d;
+                    cursor++;
+                }
+            }
+
+            value = found ? (float)(result * sign) : 0f;
+            while (cursor < length && bytes[cursor] != (byte)',' && bytes[cursor] != (byte)'\n' && bytes[cursor] != (byte)'\r')
+                cursor++;
+            if (cursor < length && bytes[cursor] == (byte)',')
+                cursor++;
+            return cursor;
+        }
+
+        private static int ParseCsvUInt(ReadOnlySpan<byte> bytes, int cursor, int length, out uint value)
+        {
+            value = 0u;
+            while (cursor < length && (bytes[cursor] == (byte)' ' || bytes[cursor] == (byte)'\t'))
+                cursor++;
+
+            bool hex = cursor + 1 < length && bytes[cursor] == (byte)'0' && (bytes[cursor + 1] == (byte)'x' || bytes[cursor + 1] == (byte)'X');
+            if (hex)
+                cursor += 2;
+
+            while (cursor < length)
+            {
+                byte b = bytes[cursor];
+                uint digit;
+                if (b >= (byte)'0' && b <= (byte)'9')
+                    digit = (uint)(b - (byte)'0');
+                else if (hex && b >= (byte)'a' && b <= (byte)'f')
+                    digit = (uint)(10 + b - (byte)'a');
+                else if (hex && b >= (byte)'A' && b <= (byte)'F')
+                    digit = (uint)(10 + b - (byte)'A');
+                else
+                    break;
+
+                value = hex ? ((value << 4) | digit) : ((value * 10u) + digit);
+                cursor++;
+            }
+
+            while (cursor < length && bytes[cursor] != (byte)',' && bytes[cursor] != (byte)'\n' && bytes[cursor] != (byte)'\r')
+                cursor++;
+            if (cursor < length && bytes[cursor] == (byte)',')
+                cursor++;
+            return cursor;
+        }
+
         private static int SkipLine(NativeArray<byte> bytes, int cursor, int length)
         {
             while (cursor < length && bytes[cursor] != (byte)'\n')
@@ -1581,7 +2258,28 @@ namespace Hecton8.AI.Ecosystem
             return cursor < length ? cursor + 1 : cursor;
         }
 
+        private static int SkipLine(ReadOnlySpan<byte> bytes, int cursor, int length)
+        {
+            while (cursor < length && bytes[cursor] != (byte)'\n')
+                cursor++;
+            return cursor < length ? cursor + 1 : cursor;
+        }
+
         private static uint HashAsciiLower(NativeArray<byte> bytes, int start, int end)
+        {
+            uint hash = 2166136261u;
+            for (int i = start; i < end; i++)
+            {
+                byte b = bytes[i];
+                if (b >= (byte)'A' && b <= (byte)'Z')
+                    b = (byte)(b + 32);
+                hash = (hash ^ b) * 16777619u;
+            }
+
+            return hash;
+        }
+
+        private static uint HashAsciiLower(ReadOnlySpan<byte> bytes, int start, int end)
         {
             uint hash = 2166136261u;
             for (int i = start; i < end; i++)
@@ -1617,9 +2315,42 @@ namespace Hecton8.AI.Ecosystem
             }
         }
 
+        private static void ResolveLegacyLinkEncoding(ReadOnlySpan<byte> bytes, out bool bigEndian, out int payloadOffset)
+        {
+            bigEndian = false;
+            payloadOffset = 0;
+            if (bytes.Length < LegacyLinksHeaderBytes)
+                return;
+
+            uint marker = ReadUInt32(bytes, 0, false);
+            if (marker == LegacyLinksMagicLittleEndian)
+            {
+                payloadOffset = LegacyLinksHeaderBytes;
+                return;
+            }
+
+            if (marker == LegacyLinksMagicBigEndian)
+            {
+                bigEndian = true;
+                payloadOffset = LegacyLinksHeaderBytes;
+            }
+        }
+
         private static uint ReadUInt32(NativeArray<byte> bytes, int offset, bool bigEndian)
         {
             if (!bytes.IsCreated || offset < 0 || offset > bytes.Length - 4)
+                return 0u;
+
+            uint raw = (uint)(bytes[offset] |
+                              (bytes[offset + 1] << 8) |
+                              (bytes[offset + 2] << 16) |
+                              (bytes[offset + 3] << 24));
+            return bigEndian ? ReverseUInt32(raw) : raw;
+        }
+
+        private static uint ReadUInt32(ReadOnlySpan<byte> bytes, int offset, bool bigEndian)
+        {
+            if (offset < 0 || offset > bytes.Length - 4)
                 return 0u;
 
             uint raw = (uint)(bytes[offset] |
@@ -1645,10 +2376,17 @@ namespace Hecton8.AI.Ecosystem
             return math.isfinite(value) ? value : fallback;
         }
 
+        private static float ReadFloat32(ReadOnlySpan<byte> bytes, int offset, bool bigEndian, float fallback)
+        {
+            uint raw = ReadUInt32(bytes, offset, bigEndian);
+            float value = math.asfloat(raw);
+            return math.isfinite(value) ? value : fallback;
+        }
+
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         internal static float3 AupToLocal(in AbsoluteUniversePosition position, in AbsoluteUniversePosition center)
         {
-            double3 delta = new double3(
+            double3 delta = math.double3(
                 (((double)position.GridX - center.GridX) * AupCellSizeMetersDouble) + (position.LocalX - center.LocalX),
                 (((double)position.GridY - center.GridY) * AupCellSizeMetersDouble) + (position.LocalY - center.LocalY),
                 (((double)position.GridZ - center.GridZ) * AupCellSizeMetersDouble) + (position.LocalZ - center.LocalZ));
@@ -1658,7 +2396,7 @@ namespace Hecton8.AI.Ecosystem
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         internal static float3 AupToLocal(in SymbiosisAup48 position, in AbsoluteUniversePosition center)
         {
-            double3 delta = new double3(
+            double3 delta = math.double3(
                 (((double)position.GridX - center.GridX) * AupCellSizeMetersDouble) + (position.LocalX - center.LocalX),
                 (((double)position.GridY - center.GridY) * AupCellSizeMetersDouble) + (position.LocalY - center.LocalY),
                 (((double)position.GridZ - center.GridZ) * AupCellSizeMetersDouble) + (position.LocalZ - center.LocalZ));
@@ -1668,7 +2406,7 @@ namespace Hecton8.AI.Ecosystem
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         internal static float3 AupToLocal(in SymbiosisAup48 position, in SymbiosisAup48 center)
         {
-            double3 delta = new double3(
+            double3 delta = math.double3(
                 (((double)position.GridX - center.GridX) * AupCellSizeMetersDouble) + (position.LocalX - center.LocalX),
                 (((double)position.GridY - center.GridY) * AupCellSizeMetersDouble) + (position.LocalY - center.LocalY),
                 (((double)position.GridZ - center.GridZ) * AupCellSizeMetersDouble) + (position.LocalZ - center.LocalZ));
@@ -1678,7 +2416,7 @@ namespace Hecton8.AI.Ecosystem
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         internal static float3 AupToLocal(in AbsoluteUniversePosition position, in SymbiosisAup48 center)
         {
-            double3 delta = new double3(
+            double3 delta = math.double3(
                 (((double)position.GridX - center.GridX) * AupCellSizeMetersDouble) + (position.LocalX - center.LocalX),
                 (((double)position.GridY - center.GridY) * AupCellSizeMetersDouble) + (position.LocalY - center.LocalY),
                 (((double)position.GridZ - center.GridZ) * AupCellSizeMetersDouble) + (position.LocalZ - center.LocalZ));
@@ -1705,7 +2443,7 @@ namespace Hecton8.AI.Ecosystem
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         internal static double3 ToAbsoluteDouble3(in AbsoluteUniversePosition aup)
         {
-            return new double3(
+            return math.double3(
                 (aup.GridX * AupCellSizeMetersDouble) + aup.LocalX,
                 (aup.GridY * AupCellSizeMetersDouble) + aup.LocalY,
                 (aup.GridZ * AupCellSizeMetersDouble) + aup.LocalZ);
@@ -1714,7 +2452,7 @@ namespace Hecton8.AI.Ecosystem
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         internal static double3 ToAbsoluteDouble3(in SymbiosisAup48 aup)
         {
-            return new double3(
+            return math.double3(
                 (aup.GridX * AupCellSizeMetersDouble) + aup.LocalX,
                 (aup.GridY * AupCellSizeMetersDouble) + aup.LocalY,
                 (aup.GridZ * AupCellSizeMetersDouble) + aup.LocalZ);
@@ -1729,15 +2467,14 @@ namespace Hecton8.AI.Ecosystem
             long gridX = (long)math.floor(absolute.x / AupCellSizeMetersDouble);
             long gridY = (long)math.floor(absolute.y / AupCellSizeMetersDouble);
             long gridZ = (long)math.floor(absolute.z / AupCellSizeMetersDouble);
-            return new AbsoluteUniversePosition
-            {
-                GridX = gridX,
-                GridY = gridY,
-                GridZ = gridZ,
-                LocalX = (float)(absolute.x - (gridX * AupCellSizeMetersDouble)),
-                LocalY = (float)(absolute.y - (gridY * AupCellSizeMetersDouble)),
-                LocalZ = (float)(absolute.z - (gridZ * AupCellSizeMetersDouble))
-            };
+            AbsoluteUniversePosition result = default;
+            result.GridX = gridX;
+            result.GridY = gridY;
+            result.GridZ = gridZ;
+            result.LocalX = (float)(absolute.x - (gridX * AupCellSizeMetersDouble));
+            result.LocalY = (float)(absolute.y - (gridY * AupCellSizeMetersDouble));
+            result.LocalZ = (float)(absolute.z - (gridZ * AupCellSizeMetersDouble));
+            return result;
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -1782,7 +2519,7 @@ namespace Hecton8.AI.Ecosystem
         {
             double3 absolute = ToAbsoluteDouble3(in aup);
             double inv = 1.0d / math.max(1.0d, sectorSize);
-            return new int3(
+            return math.int3(
                 (int)math.floor(absolute.x * inv),
                 (int)math.floor(absolute.y * inv),
                 (int)math.floor(absolute.z * inv));
@@ -1793,7 +2530,7 @@ namespace Hecton8.AI.Ecosystem
         {
             double3 absolute = ToAbsoluteDouble3(in aup);
             double inv = 1.0d / math.max(1.0d, sectorSize);
-            return new int3(
+            return math.int3(
                 (int)math.floor(absolute.x * inv),
                 (int)math.floor(absolute.y * inv),
                 (int)math.floor(absolute.z * inv));
@@ -2070,31 +2807,29 @@ namespace Hecton8.AI.Ecosystem
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static SymbiosisAup48 FromAup(in AbsoluteUniversePosition aup)
         {
-            return new SymbiosisAup48
-            {
-                GridX = aup.GridX,
-                GridY = aup.GridY,
-                GridZ = aup.GridZ,
-                LocalX = aup.LocalX,
-                LocalY = aup.LocalY,
-                LocalZ = aup.LocalZ,
-                _pad0 = 0u,
-                _pad1 = 0UL
-            };
+            SymbiosisAup48 result = default;
+            result.GridX = aup.GridX;
+            result.GridY = aup.GridY;
+            result.GridZ = aup.GridZ;
+            result.LocalX = aup.LocalX;
+            result.LocalY = aup.LocalY;
+            result.LocalZ = aup.LocalZ;
+            result._pad0 = 0u;
+            result._pad1 = 0UL;
+            return result;
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public AbsoluteUniversePosition ToAup()
         {
-            return new AbsoluteUniversePosition
-            {
-                GridX = GridX,
-                GridY = GridY,
-                GridZ = GridZ,
-                LocalX = LocalX,
-                LocalY = LocalY,
-                LocalZ = LocalZ
-            };
+            AbsoluteUniversePosition result = default;
+            result.GridX = GridX;
+            result.GridY = GridY;
+            result.GridZ = GridZ;
+            result.LocalX = LocalX;
+            result.LocalY = LocalY;
+            result.LocalZ = LocalZ;
+            return result;
         }
     }
 
@@ -2354,7 +3089,6 @@ namespace Hecton8.AI.Ecosystem
         [WriteOnly, NoAlias] public NativeArray<SymbiosisFloraDTO> Flora;
         [NoAlias] public NativeArray<SymbiosisFloraAupDTO> FloraAups;
         [WriteOnly, NoAlias] public NativeArray<SymbiosisChemicalLinkDTO> Links;
-        [WriteOnly, NoAlias] public NativeArray<SymbiosisTuningDTO> Tuning;
         [WriteOnly, NoAlias] public NativeArray<SymbiosisCounterDTO> Counters;
         [WriteOnly, NoAlias] public NativeArray<MockBoidArray> MockBoids;
         [WriteOnly, NoAlias] public NativeArray<MockFishSymbiosisDTO> MockFish;
@@ -2378,17 +3112,14 @@ namespace Hecton8.AI.Ecosystem
             tuning.GlobalQualityWeight = math.saturate(GlobalQualityWeight);
             tuning.ActiveFloraCount = floraLimit;
             tuning.ActiveLinkCount = math.min(5, linkLimit);
-            MemClearArray(Tuning);
-            if (Tuning.IsCreated && Tuning.Length > 0)
-                Tuning[0] = tuning;
 
-            Unity.Mathematics.Random rng = new Unity.Mathematics.Random(Seed != 0u ? Seed : 1u);
+            Unity.Mathematics.Random rng = Unity.Mathematics.Random.CreateFromIndex(Seed != 0u ? Seed : 1u);
             for (int i = 0; i < floraLimit; i++)
             {
                 int lane = i % 5;
                 float ring = 10f + ((i & 31) * 1.7f);
                 float angle = (i * 2.3999631f) + rng.NextFloat(-0.08f, 0.08f);
-                float3 local = new float3(
+                float3 local = math.float3(
                     SymbiosisSimdMath.CosPolynomial7(angle) * ring,
                     -6f + ((i % 7) * 0.75f),
                     SymbiosisSimdMath.SinPolynomial7(angle) * ring);
@@ -2397,27 +3128,26 @@ namespace Hecton8.AI.Ecosystem
                 float feedingRadius = lane == 1 ? 4.0f : 5.0f;
                 AbsoluteUniversePosition aup = ShinobuFloraFaunaSymbiosisSolver.OffsetAup(in centerAup, local);
                 int3 sectorCoord = ShinobuFloraFaunaSymbiosisSolver.ResolveSectorCoord(in aup, 64f);
-                Flora[i] = new SymbiosisFloraDTO
-                {
-                    LocalPosition = local,
-                    Biomass = 4f + (lane * 0.7f),
-                    FloraHash = floraHash,
-                    ChemicalMask = 0u,
-                    OxygenRate = lane == 2 ? 1.0f : 0.25f,
-                    ToxicPotency = lane == 1 ? 1.0f : 0.05f,
-                    CamouflageRadius = lane == 0 ? 2.0f : 0.5f,
-                    FeedingRadius = feedingRadius,
-                    Flags = flags,
-                    _pad0 = 0u
-                };
-                FloraAups[i] = new SymbiosisFloraAupDTO
-                {
-                    PositionAup = SymbiosisAup48.FromAup(in aup),
-                    FloraHash = floraHash,
-                    SectorHash = ShinobuFloraFaunaSymbiosisSolver.ResolveSectorHash(sectorCoord),
-                    SpatialCellHash = 0,
-                    StableSeed = ShinobuFloraFaunaSymbiosisSolver.MixHash(Seed ^ (uint)i ^ 0x464C4F52u)
-                };
+                SymbiosisFloraDTO floraDto = default;
+                floraDto.LocalPosition = local;
+                floraDto.Biomass = 4f + (lane * 0.7f);
+                floraDto.FloraHash = floraHash;
+                floraDto.ChemicalMask = 0u;
+                floraDto.OxygenRate = lane == 2 ? 1.0f : 0.25f;
+                floraDto.ToxicPotency = lane == 1 ? 1.0f : 0.05f;
+                floraDto.CamouflageRadius = lane == 0 ? 2.0f : 0.5f;
+                floraDto.FeedingRadius = feedingRadius;
+                floraDto.Flags = flags;
+                floraDto._pad0 = 0u;
+                Flora[i] = floraDto;
+
+                SymbiosisFloraAupDTO floraAupDto = default;
+                floraAupDto.PositionAup = SymbiosisAup48.FromAup(in aup);
+                floraAupDto.FloraHash = floraHash;
+                floraAupDto.SectorHash = ShinobuFloraFaunaSymbiosisSolver.ResolveSectorHash(sectorCoord);
+                floraAupDto.SpatialCellHash = 0;
+                floraAupDto.StableSeed = ShinobuFloraFaunaSymbiosisSolver.MixHash(Seed ^ (uint)i ^ 0x464C4F52u);
+                FloraAups[i] = floraAupDto;
             }
 
             MemClearTail(Flora, floraLimit);
@@ -2428,32 +3158,30 @@ namespace Hecton8.AI.Ecosystem
             MemClearArray(MockBoids);
             if (MockBoids.IsCreated && MockBoids.Length > 0)
             {
-                MockBoids[0] = new MockBoidArray
-                {
-                    StartIndex = 0,
-                    Count = fishLimit,
-                    StableSeed = Seed != 0u ? Seed : 1u,
-                    Flags = 1u
-                };
+                MockBoidArray mockBoids = default;
+                mockBoids.StartIndex = 0;
+                mockBoids.Count = fishLimit;
+                mockBoids.StableSeed = Seed != 0u ? Seed : 1u;
+                mockBoids.Flags = 1u;
+                MockBoids[0] = mockBoids;
             }
 
             for (int i = 0; i < fishLimit; i++)
             {
                 int targetFlora = floraLimit > 0 ? i % floraLimit : 0;
                 AbsoluteUniversePosition baseAup = targetFlora < FloraAups.Length ? FloraAups[targetFlora].PositionAup.ToAup() : centerAup;
-                float3 offset = new float3(((i & 3) - 1.5f) * 0.75f, 0.2f, (((i >> 2) & 3) - 1.5f) * 0.75f);
+                float3 offset = math.float3(((i & 3) - 1.5f) * 0.75f, 0.2f, (((i >> 2) & 3) - 1.5f) * 0.75f);
                 uint species = (i % 6) == 0
                     ? ShinobuFloraFaunaSymbiosisSolver.FaunaHashCarnivore
                     : ShinobuFloraFaunaSymbiosisSolver.FaunaHashHerbivore;
                 AbsoluteUniversePosition fishAup = ShinobuFloraFaunaSymbiosisSolver.OffsetAup(in baseAup, offset);
-                MockFish[i] = new MockFishSymbiosisDTO
-                {
-                    PositionAup = SymbiosisAup48.FromAup(in fishAup),
-                    Biomass = species == ShinobuFloraFaunaSymbiosisSolver.FaunaHashCarnivore ? 3.5f : 1.0f,
-                    SpeciesHash = species,
-                    Flags = ShinobuFloraFaunaSymbiosisSolver.FaunaFlagActive,
-                    StableSeed = ShinobuFloraFaunaSymbiosisSolver.MixHash(Seed ^ (uint)i ^ 0x4D464953u)
-                };
+                MockFishSymbiosisDTO mockFish = default;
+                mockFish.PositionAup = SymbiosisAup48.FromAup(in fishAup);
+                mockFish.Biomass = species == ShinobuFloraFaunaSymbiosisSolver.FaunaHashCarnivore ? 3.5f : 1.0f;
+                mockFish.SpeciesHash = species;
+                mockFish.Flags = ShinobuFloraFaunaSymbiosisSolver.FaunaFlagActive;
+                mockFish.StableSeed = ShinobuFloraFaunaSymbiosisSolver.MixHash(Seed ^ (uint)i ^ 0x4D464953u);
+                MockFish[i] = mockFish;
             }
 
             MemClearTail(MockFish, fishLimit);
@@ -2481,13 +3209,12 @@ namespace Hecton8.AI.Ecosystem
 
         private static SymbiosisChemicalLinkDTO Link(uint floraHash, uint faunaHash, float rate)
         {
-            return new SymbiosisChemicalLinkDTO
-            {
-                FloraHash = floraHash,
-                FaunaHash = faunaHash,
-                ChemicalTransferRate = rate,
-                Flags = ShinobuFloraFaunaSymbiosisSolver.LinkFlagCompatible
-            };
+            SymbiosisChemicalLinkDTO dto = default;
+            dto.FloraHash = floraHash;
+            dto.FaunaHash = faunaHash;
+            dto.ChemicalTransferRate = rate;
+            dto.Flags = ShinobuFloraFaunaSymbiosisSolver.LinkFlagCompatible;
+            return dto;
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -2595,7 +3322,7 @@ namespace Hecton8.AI.Ecosystem
         [NoAlias] public NativeArray<AdherenceDTO> Adherence;
         [NoAlias] public NativeArray<FloraSeedDTO> Seeds;
         [NoAlias] public NativeArray<SymbiosisAcousticTapDTO> AcousticTaps;
-        [ReadOnly, NoAlias] public NativeArray<SymbiosisTuningDTO> Tuning;
+        public SymbiosisTuningDTO Tuning;
         [ReadOnly, NoAlias] public NativeArray<int> BucketHeads;
         [ReadOnly, NoAlias] public NativeArray<int> BucketNext;
         [ReadOnly, NoAlias] public NativeArray<MockBoidArray> MockBoids;
@@ -2619,10 +3346,10 @@ namespace Hecton8.AI.Ecosystem
 
         public void Execute()
         {
-            if (!Counters.IsCreated || Counters.Length <= 0 || !Tuning.IsCreated || Tuning.Length <= 0)
+            if (!Counters.IsCreated || Counters.Length <= 0)
                 return;
 
-            SymbiosisTuningDTO tuning = SymbiosisTuningDTO.Sanitize(Tuning[0]);
+            SymbiosisTuningDTO tuning = SymbiosisTuningDTO.Sanitize(Tuning);
             float q = math.saturate(tuning.GlobalQualityWeight);
             float qualityCurve = q * q * (3f - 2f * q);
             int floraCount = math.min(FloraCount, math.min(Flora.Length, FloraAups.Length));
@@ -2781,7 +3508,7 @@ namespace Hecton8.AI.Ecosystem
                 {
                     for (int x = -1; x <= 1; x++)
                     {
-                        int bucket = ShinobuFloraFaunaSymbiosisSolver.ResolveBucket(baseCell + new int3(x, y, z));
+                        int bucket = ShinobuFloraFaunaSymbiosisSolver.ResolveBucket(baseCell + math.int3(x, y, z));
                         int floraIndex = BucketHeads[bucket];
                         int chain = 0;
                         while (floraIndex >= 0 && floraIndex < floraCount && chain < MaxSpatialHashChainSteps && sampled < maxSamples)
@@ -2927,13 +3654,12 @@ namespace Hecton8.AI.Ecosystem
                 return;
             }
 
-            Exchanges[index] = new SymbiosisExchangeDTO
-            {
-                FloraHash = floraHash,
-                FaunaHash = faunaHash,
-                ChemicalTransferRate = transfer,
-                _pad0 = 0f
-            };
+            SymbiosisExchangeDTO exchange = default;
+            exchange.FloraHash = floraHash;
+            exchange.FaunaHash = faunaHash;
+            exchange.ChemicalTransferRate = transfer;
+            exchange._pad0 = 0f;
+            Exchanges[index] = exchange;
             counter.ActiveExchanges = index + 1;
             counter.BiomassTransferredMilli += (int)math.round(math.max(0f, transfer) * 1000f);
         }
@@ -2947,15 +3673,14 @@ namespace Hecton8.AI.Ecosystem
                 return;
             }
 
-            ScannerVfx[index] = new ScannerVfxDTO
-            {
-                HitLocal = flora.LocalPosition,
-                HitDistance = SymbiosisSimdMath.LengthFromSq(math.lengthsq(delta)),
-                ScanProgress = math.saturate(toxin),
-                TargetHash = flora.FloraHash,
-                Flags = 1u,
-                BeamScore = math.saturate(toxin)
-            };
+            ScannerVfxDTO scanner = default;
+            scanner.HitLocal = flora.LocalPosition;
+            scanner.HitDistance = SymbiosisSimdMath.LengthFromSq(math.lengthsq(delta));
+            scanner.ScanProgress = math.saturate(toxin);
+            scanner.TargetHash = flora.FloraHash;
+            scanner.Flags = 1u;
+            scanner.BeamScore = math.saturate(toxin);
+            ScannerVfx[index] = scanner;
         }
 
         private void WriteOxygenEmitter(ref SymbiosisCounterDTO counter, SymbiosisFloraDTO flora, SymbiosisFloraAupDTO aup, SymbiosisTuningDTO tuning, float qualityCurve)
@@ -2983,15 +3708,14 @@ namespace Hecton8.AI.Ecosystem
                 return;
             }
 
-            OxygenEmitters[index] = new SymbiosisOxygenEmitterDTO
-            {
-                LocalPosition = flora.LocalPosition,
-                Oxygen01 = math.saturate(oxygen),
-                SectorHash = sectorHash,
-                RadiusMeters = 24f + (flora.Biomass * 2f),
-                FloraHash = flora.FloraHash,
-                Flags = 1u
-            };
+            SymbiosisOxygenEmitterDTO emitter = default;
+            emitter.LocalPosition = flora.LocalPosition;
+            emitter.Oxygen01 = math.saturate(oxygen);
+            emitter.SectorHash = sectorHash;
+            emitter.RadiusMeters = 24f + (flora.Biomass * 2f);
+            emitter.FloraHash = flora.FloraHash;
+            emitter.Flags = 1u;
+            OxygenEmitters[index] = emitter;
             counter.OxygenEmitterCount = index + 1;
         }
 
@@ -3008,15 +3732,14 @@ namespace Hecton8.AI.Ecosystem
                 return;
             }
 
-            Adherence[index] = new AdherenceDTO
-            {
-                LocalPosition = flora.LocalPosition,
-                Growth01 = math.saturate((SubmarineIdleSeconds - 60f) * tuning.ParasiteGrowthSpeed),
-                HostHash = 0x5355424Du,
-                FloraHash = flora.FloraHash,
-                Flags = 1u,
-                Frame = Frame
-            };
+            AdherenceDTO adherence = default;
+            adherence.LocalPosition = flora.LocalPosition;
+            adherence.Growth01 = math.saturate((SubmarineIdleSeconds - 60f) * tuning.ParasiteGrowthSpeed);
+            adherence.HostHash = 0x5355424Du;
+            adherence.FloraHash = flora.FloraHash;
+            adherence.Flags = 1u;
+            adherence.Frame = Frame;
+            Adherence[index] = adherence;
             counter.AdherenceCount = index + 1;
         }
 
@@ -3030,16 +3753,15 @@ namespace Hecton8.AI.Ecosystem
             }
 
             uint hash = ShinobuFloraFaunaSymbiosisSolver.MixHash((uint)floraIndex ^ carrierHash ^ Frame);
-            float2 offset = new float2(((hash & 255u) - 128) * (1f / 64f), (((hash >> 8) & 255u) - 128) * (1f / 64f));
-            Seeds[index] = new FloraSeedDTO
-            {
-                LocalPosition = flora.LocalPosition + new float3(offset.x, 0f, offset.y),
-                Viability01 = 0.75f,
-                FloraHash = flora.FloraHash,
-                CarrierHash = carrierHash,
-                Frame = Frame,
-                Flags = 1u
-            };
+            float2 offset = math.float2(((hash & 255u) - 128) * (1f / 64f), (((hash >> 8) & 255u) - 128) * (1f / 64f));
+            FloraSeedDTO seed = default;
+            seed.LocalPosition = flora.LocalPosition + math.float3(offset.x, 0f, offset.y);
+            seed.Viability01 = 0.75f;
+            seed.FloraHash = flora.FloraHash;
+            seed.CarrierHash = carrierHash;
+            seed.Frame = Frame;
+            seed.Flags = 1u;
+            Seeds[index] = seed;
             counter.SeedCount = index + 1;
         }
 
@@ -3052,14 +3774,13 @@ namespace Hecton8.AI.Ecosystem
                 return;
             }
 
-            AcousticTaps[index] = new SymbiosisAcousticTapDTO
-            {
-                PositionAup = SymbiosisAup48.FromAup(in fishAup),
-                Magnitude01 = math.saturate(sampled * (1f / 32f)),
-                RadiusMeters = 18f + sampled,
-                SourceHash = 0x53485250u,
-                Flags = 1u
-            };
+            SymbiosisAcousticTapDTO tap = default;
+            tap.PositionAup = SymbiosisAup48.FromAup(in fishAup);
+            tap.Magnitude01 = math.saturate(sampled * (1f / 32f));
+            tap.RadiusMeters = 18f + sampled;
+            tap.SourceHash = 0x53485250u;
+            tap.Flags = 1u;
+            AcousticTaps[index] = tap;
             counter.AcousticTapCount = index + 1;
         }
     }

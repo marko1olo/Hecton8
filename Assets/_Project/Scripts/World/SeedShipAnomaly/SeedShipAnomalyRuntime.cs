@@ -24,7 +24,6 @@ namespace Hecton8.World.SeedShipAnomaly
         private const int CsvMaxBytes = 8192;
 #endif
         private const int DumpScratchBytes = 32 + SeedShipAnomalyConstants.TelemetryFrameCount * 64;
-        private const int LockBufferCount = 9;
         private const int JobBatchSize = 64;
         private const float ComputeBudgetMs = 0.1f;
         private const float RadiationExportSlowTickSeconds = 0.1f;
@@ -37,6 +36,26 @@ namespace Hecton8.World.SeedShipAnomaly
         private const string LegacyGlitchFile = "glitch_zones_007.bin";
         private const ulong DumpMagic = 0x5345454453484950UL; // SEEDSHIP
         private const uint DumpVersion = 1u;
+
+        private static readonly ulong JobMutationGuardMask =
+            MutationGuardBit(BufferID.ShinobuSeedShipAnomalyField) |
+            MutationGuardBit(BufferID.ShinobuSeedShipAnomalyTuning) |
+            MutationGuardBit(BufferID.ShinobuSeedShipAnomalyGlobals) |
+            MutationGuardBit(BufferID.ShinobuSeedShipAnomalyGlitchCommand) |
+            MutationGuardBit(BufferID.ShinobuSeedShipAnomalyMockHudSignals) |
+            MutationGuardBit(BufferID.ShinobuSeedShipAnomalyMockLeviathans) |
+            MutationGuardBit(BufferID.ShinobuSeedShipAnomalyMockAupRebase) |
+            MutationGuardBit(BufferID.ShinobuSeedShipAnomalyThermoSource) |
+            MutationGuardBit(BufferID.ShinobuSeedShipAnomalyTelemetryRing);
+        private static readonly ulong IoScratchMutationGuardMask = MutationGuardBit(BufferID.ShinobuSeedShipAnomalyIoScratch);
+        private static readonly ulong DumpMutationGuardMask =
+            MutationGuardBit(BufferID.ShinobuSeedShipAnomalyTelemetryRing) |
+            MutationGuardBit(BufferID.ShinobuSeedShipAnomalyDumpScratch);
+        private static readonly ulong CsvImportMutationGuardMask =
+            MutationGuardBit(BufferID.ShinobuSeedShipAnomalyIoScratch) |
+            MutationGuardBit(BufferID.ShinobuSeedShipAnomalyTuning) |
+            MutationGuardBit(BufferID.ShinobuSeedShipAnomalyField) |
+            MutationGuardBit(BufferID.ShinobuSeedShipAnomalyCsvOverrides);
 
         private static readonly uint _MaxCorruptionRadiusHash = HashLowerAsciiString("max_corruption_radius");
         private static readonly uint _GravityInversionStrengthHash = HashLowerAsciiString("gravity_inversion_strength");
@@ -100,6 +119,11 @@ namespace Hecton8.World.SeedShipAnomaly
         private bool _dumpedBudgetBreach;
         private bool _legacyReconComplete;
         private uint _legacyReconFlags;
+
+        private static ulong MutationGuardBit(BufferID bufferId)
+        {
+            return 1UL << (unchecked((int)(uint)(int)bufferId) & 31);
+        }
 
         private void Awake()
         {
@@ -179,86 +203,96 @@ namespace Hecton8.World.SeedShipAnomaly
             _simulationFrameCounter++;
             ConsumeHackSignals(dt);
 
-            if (!TryResolveBuffers(
-                    vault,
-                    out NativeArray<AnomalyFieldDTO> field,
-                    out NativeArray<AnomalyTuningDTO> tuningArray,
-                    out NativeArray<AnomalyGlobalScalarsDTO> globals,
-                    out NativeArray<GlitchCommandDTO> glitch,
-                    out NativeArray<MockHudSignal> hud,
-                    out NativeArray<MockLeviathanState> leviathans,
-                    out NativeArray<MockAupRebaseSignal> rebase,
-                    out NativeArray<AnomalyThermoSourceDTO> thermo,
-                    out NativeArray<AnomalyTelemetryEntry> telemetry))
-            {
-                return;
-            }
-
             if (!TryLockJobBuffers(vault))
                 return;
 
-            AnomalyTuningDTO tuning = SeedShipAnomalyMath.SanitizeTuning(tuningArray[0]);
-            tuning.GlobalQualityWeight = ResolveGlobalQualityWeight(vault, tuning.GlobalQualityWeight);
-            tuningArray[0] = tuning;
-
-            int entityBudget = SeedShipAnomalyMath.ResolveEntityBudget(
-                leviathans.Length,
-                tuning.GlobalQualityWeight,
-                globals[0].Corruption01,
-                tuning.MinEntityBudget,
-                tuning.MaxEntityBudget);
-            _scheduledEntityBudget = entityBudget;
-
-            double3 playerAup = ResolvePlayerAup();
-            uint frame = _simulationFrameCounter;
-            uint sectorHash = SeedShipAnomalyMath.HashAupSector(playerAup);
-            _jobStartTimestamp = Stopwatch.GetTimestamp();
-
-            JobHandle handle = new SeedShipMockAupRebaseJob
+            bool keepJobGuard = false;
+            try
             {
-                RebaseSignals = rebase,
-                Frame = frame,
-                Seed = SeedShipAnomalyConstants.SourceHash,
-                SectorHash = sectorHash,
-                Chance01 = tuning.MockRebaseChance01
-            }.Schedule();
+                if (!TryResolveBuffers(
+                        vault,
+                        out NativeArray<AnomalyFieldDTO> field,
+                        out NativeArray<AnomalyTuningDTO> tuningArray,
+                        out NativeArray<AnomalyGlobalScalarsDTO> globals,
+                        out NativeArray<GlitchCommandDTO> glitch,
+                        out NativeArray<MockHudSignal> hud,
+                        out NativeArray<MockLeviathanState> leviathans,
+                        out NativeArray<MockAupRebaseSignal> rebase,
+                        out NativeArray<AnomalyThermoSourceDTO> thermo,
+                        out NativeArray<AnomalyTelemetryEntry> telemetry))
+                {
+                    return;
+                }
 
-            handle = new SeedShipAnomalyFieldJob
-            {
-                Field = field,
-                Tuning = tuningArray,
-                Globals = globals,
-                GlitchCommands = glitch,
-                HudSignals = hud,
-                ThermoSources = thermo,
-                RebaseSignals = rebase,
-                Telemetry = telemetry,
-                RadarJamWriter = SignalBus<RadarJamSignal>.ParallelWriter,
-                RadarJamWriterBudget = SignalBus<RadarJamSignal>.ParallelWriterBudget,
-                PlayerAUP = playerAup,
-                DeltaSeconds = dt,
-                TimeSeconds = _localTimeSeconds,
-                HackHealingSeconds = _healingSecondsRemaining,
-                TelemetryCursor = _telemetryCursor,
-                EntityBudget = entityBudget,
-                Frame = frame,
-                EmitRadarSignal = 1
-            }.Schedule(handle);
+                AnomalyTuningDTO tuning = SeedShipAnomalyMath.SanitizeTuning(tuningArray[0]);
+                tuning.GlobalQualityWeight = ResolveGlobalQualityWeight(vault, tuning.GlobalQualityWeight);
+                tuningArray[0] = tuning;
 
-            if (entityBudget > 0)
-            {
-                handle = new SeedShipLeviathanFrenzyJob
+                int entityBudget = SeedShipAnomalyMath.ResolveEntityBudget(
+                    leviathans.Length,
+                    tuning.GlobalQualityWeight,
+                    globals[0].Corruption01,
+                    tuning.MinEntityBudget,
+                    tuning.MaxEntityBudget);
+                _scheduledEntityBudget = entityBudget;
+
+                double3 playerAup = ResolvePlayerAup();
+                uint frame = _simulationFrameCounter;
+                uint sectorHash = SeedShipAnomalyMath.HashAupSector(playerAup);
+                _jobStartTimestamp = Stopwatch.GetTimestamp();
+
+                JobHandle handle = new SeedShipMockAupRebaseJob
+                {
+                    RebaseSignals = rebase,
+                    Frame = frame,
+                    Seed = SeedShipAnomalyConstants.SourceHash,
+                    SectorHash = sectorHash,
+                    Chance01 = tuning.MockRebaseChance01
+                }.Schedule();
+
+                handle = new SeedShipAnomalyFieldJob
                 {
                     Field = field,
                     Tuning = tuningArray,
-                    Leviathans = leviathans,
-                    Frame = frame
-                }.Schedule(entityBudget, JobBatchSize, handle);
-            }
+                    Globals = globals,
+                    GlitchCommands = glitch,
+                    HudSignals = hud,
+                    ThermoSources = thermo,
+                    RebaseSignals = rebase,
+                    Telemetry = telemetry,
+                    RadarJamWriter = SignalBus<RadarJamSignal>.ParallelWriter,
+                    RadarJamWriterBudget = SignalBus<RadarJamSignal>.ParallelWriterBudget,
+                    PlayerAUP = playerAup,
+                    DeltaSeconds = dt,
+                    TimeSeconds = _localTimeSeconds,
+                    HackHealingSeconds = _healingSecondsRemaining,
+                    TelemetryCursor = _telemetryCursor,
+                    EntityBudget = entityBudget,
+                    Frame = frame,
+                    EmitRadarSignal = 1
+                }.Schedule(handle);
 
-            _activeJobHandle = handle;
-            _jobScheduled = true;
-            H8Memory.RegisterActiveJob(OwnerSystem, _activeJobHandle);
+                if (entityBudget > 0)
+                {
+                    handle = new SeedShipLeviathanFrenzyJob
+                    {
+                        Field = field,
+                        Tuning = tuningArray,
+                        Leviathans = leviathans,
+                        Frame = frame
+                    }.Schedule(entityBudget, JobBatchSize, handle);
+                }
+
+                _activeJobHandle = handle;
+                _jobScheduled = true;
+                H8Memory.RegisterActiveJob(OwnerSystem, _activeJobHandle);
+                keepJobGuard = true;
+            }
+            finally
+            {
+                if (!keepJobGuard)
+                    UnlockJobBuffers();
+            }
         }
 
         public void LateFrameTick()
@@ -635,7 +669,7 @@ namespace Hecton8.World.SeedShipAnomaly
             }
             finally
             {
-                vault.TryUnlockBuffer(BufferID.ShinobuSeedShipAnomalyIoScratch, OwnerSystem);
+                vault.ReleaseMutationGuard(IoScratchMutationGuardMask);
             }
         }
 
@@ -658,12 +692,16 @@ namespace Hecton8.World.SeedShipAnomaly
             }
             finally
             {
-                vault.TryUnlockBuffer(BufferID.ShinobuSeedShipAnomalyIoScratch, OwnerSystem);
+                vault.ReleaseMutationGuard(IoScratchMutationGuardMask);
             }
         }
 
         private bool TryLockIoScratch(IDataVault vault, out NativeArray<byte> scratch)
         {
+            scratch = default;
+            if (!vault.TryAcquireMutationGuard(IoScratchMutationGuardMask))
+                return false;
+
             if (!TryResolveSeedShipVaultBuffer(
                     vault,
                     ref _ioScratchHandle,
@@ -671,10 +709,11 @@ namespace Hecton8.World.SeedShipAnomaly
                     CsvMaxBytes,
                     out scratch))
             {
+                vault.ReleaseMutationGuard(IoScratchMutationGuardMask);
                 return false;
             }
 
-            return vault.TryLockBuffer(BufferID.ShinobuSeedShipAnomalyIoScratch, OwnerSystem);
+            return true;
         }
 
         private static int ReadColdBytes(string path, int maxBytes, NativeArray<byte> scratch)
@@ -727,27 +766,10 @@ namespace Hecton8.World.SeedShipAnomaly
             if (_jobLocksHeld)
                 return true;
 
-            int locked = 0;
-            if (!vault.TryLockBuffer(BufferID.ShinobuSeedShipAnomalyField, OwnerSystem)) { UnlockPartial(vault, locked); return false; }
-            locked++;
-            if (!vault.TryLockBuffer(BufferID.ShinobuSeedShipAnomalyTuning, OwnerSystem)) { UnlockPartial(vault, locked); return false; }
-            locked++;
-            if (!vault.TryLockBuffer(BufferID.ShinobuSeedShipAnomalyGlobals, OwnerSystem)) { UnlockPartial(vault, locked); return false; }
-            locked++;
-            if (!vault.TryLockBuffer(BufferID.ShinobuSeedShipAnomalyGlitchCommand, OwnerSystem)) { UnlockPartial(vault, locked); return false; }
-            locked++;
-            if (!vault.TryLockBuffer(BufferID.ShinobuSeedShipAnomalyMockHudSignals, OwnerSystem)) { UnlockPartial(vault, locked); return false; }
-            locked++;
-            if (!vault.TryLockBuffer(BufferID.ShinobuSeedShipAnomalyMockLeviathans, OwnerSystem)) { UnlockPartial(vault, locked); return false; }
-            locked++;
-            if (!vault.TryLockBuffer(BufferID.ShinobuSeedShipAnomalyMockAupRebase, OwnerSystem)) { UnlockPartial(vault, locked); return false; }
-            locked++;
-            if (!vault.TryLockBuffer(BufferID.ShinobuSeedShipAnomalyThermoSource, OwnerSystem)) { UnlockPartial(vault, locked); return false; }
-            locked++;
-            if (!vault.TryLockBuffer(BufferID.ShinobuSeedShipAnomalyTelemetryRing, OwnerSystem)) { UnlockPartial(vault, locked); return false; }
-            locked++;
+            if (!vault.TryAcquireMutationGuard(JobMutationGuardMask))
+                return false;
 
-            _jobLocksHeld = locked == LockBufferCount;
+            _jobLocksHeld = true;
             return _jobLocksHeld;
         }
 
@@ -757,21 +779,8 @@ namespace Hecton8.World.SeedShipAnomaly
             if (vault == null || !_jobLocksHeld)
                 return;
 
-            UnlockPartial(vault, LockBufferCount);
+            vault.ReleaseMutationGuard(JobMutationGuardMask);
             _jobLocksHeld = false;
-        }
-
-        private static void UnlockPartial(IDataVault vault, int lockedCount)
-        {
-            if (lockedCount >= 9) vault.TryUnlockBuffer(BufferID.ShinobuSeedShipAnomalyTelemetryRing, OwnerSystem);
-            if (lockedCount >= 8) vault.TryUnlockBuffer(BufferID.ShinobuSeedShipAnomalyThermoSource, OwnerSystem);
-            if (lockedCount >= 7) vault.TryUnlockBuffer(BufferID.ShinobuSeedShipAnomalyMockAupRebase, OwnerSystem);
-            if (lockedCount >= 6) vault.TryUnlockBuffer(BufferID.ShinobuSeedShipAnomalyMockLeviathans, OwnerSystem);
-            if (lockedCount >= 5) vault.TryUnlockBuffer(BufferID.ShinobuSeedShipAnomalyMockHudSignals, OwnerSystem);
-            if (lockedCount >= 4) vault.TryUnlockBuffer(BufferID.ShinobuSeedShipAnomalyGlitchCommand, OwnerSystem);
-            if (lockedCount >= 3) vault.TryUnlockBuffer(BufferID.ShinobuSeedShipAnomalyGlobals, OwnerSystem);
-            if (lockedCount >= 2) vault.TryUnlockBuffer(BufferID.ShinobuSeedShipAnomalyTuning, OwnerSystem);
-            if (lockedCount >= 1) vault.TryUnlockBuffer(BufferID.ShinobuSeedShipAnomalyField, OwnerSystem);
         }
 
         private void TryFinalizeFrameJobNoWait()
@@ -793,60 +802,93 @@ namespace Hecton8.World.SeedShipAnomaly
             if (!_jobScheduled)
                 return;
 
-            if (!DispatcherJobFence.TryComplete(ref _activeJobHandle, forceComplete: true))
+            if (!ForceCompleteFrameJobInPostSimulationWindow())
                 return;
 
             FinishFrameJobCompletion();
+        }
+
+        private bool ForceCompleteFrameJobInPostSimulationWindow()
+        {
+            DispatcherJobFence.BeginPostSimulationSwapWindow();
+            try
+            {
+                return DispatcherJobFence.TryComplete(ref _activeJobHandle, forceComplete: true);
+            }
+            finally
+            {
+                DispatcherJobFence.EndPostSimulationSwapWindow();
+            }
         }
 
         private void FinishFrameJobCompletion()
         {
             float elapsedMs = (float)((Stopwatch.GetTimestamp() - _jobStartTimestamp) * 1000.0 / Stopwatch.Frequency);
             IDataVault vault = _dataVault;
-            if (vault != null &&
-                TryResolveBuffers(
-                    vault,
-                    out NativeArray<AnomalyFieldDTO> field,
-                    out _,
-                    out NativeArray<AnomalyGlobalScalarsDTO> globals,
-                    out _,
-                    out NativeArray<MockHudSignal> hud,
-                    out _,
-                    out NativeArray<MockAupRebaseSignal> rebase,
-                    out NativeArray<AnomalyThermoSourceDTO> thermo,
-                    out NativeArray<AnomalyTelemetryEntry> telemetry))
+            bool hasSnapshot = false;
+            bool shouldDump = false;
+            uint diagnosticFlags = 0u;
+            AnomalyFieldDTO fieldSnapshot = default;
+            AnomalyGlobalScalarsDTO scalarSnapshot = default;
+            MockHudSignal hudSnapshot = default;
+            MockAupRebaseSignal rebaseSnapshot = default;
+            AnomalyThermoSourceDTO thermoSnapshot = default;
+            try
             {
-                AnomalyGlobalScalarsDTO scalar = globals[0];
-                uint diagnosticFlags = scalar.Flags;
-                if (elapsedMs > ComputeBudgetMs)
-                    diagnosticFlags |= SeedShipAnomalyFlags.BudgetExceeded;
-                scalar.AnomalyComputeTimeMs = 0f;
-                globals[0] = scalar;
-
-                if (telemetry.IsCreated && telemetry.Length > 0)
+                if (vault != null &&
+                    TryResolveBuffers(
+                        vault,
+                        out NativeArray<AnomalyFieldDTO> field,
+                        out _,
+                        out NativeArray<AnomalyGlobalScalarsDTO> globals,
+                        out _,
+                        out NativeArray<MockHudSignal> hud,
+                        out _,
+                        out NativeArray<MockAupRebaseSignal> rebase,
+                        out NativeArray<AnomalyThermoSourceDTO> thermo,
+                        out NativeArray<AnomalyTelemetryEntry> telemetry))
                 {
-                    int cursor = math.clamp(_telemetryCursor, 0, telemetry.Length - 1);
-                    AnomalyTelemetryEntry entry = telemetry[cursor];
-                    entry.AnomalyComputeTimeMs = elapsedMs;
+                    AnomalyGlobalScalarsDTO scalar = globals[0];
+                    diagnosticFlags = scalar.Flags;
                     if (elapsedMs > ComputeBudgetMs)
-                        entry.Flags |= SeedShipAnomalyFlags.BudgetExceeded;
-                    telemetry[cursor] = entry;
+                        diagnosticFlags |= SeedShipAnomalyFlags.BudgetExceeded;
+                    scalar.AnomalyComputeTimeMs = 0f;
+                    globals[0] = scalar;
+
+                    if (telemetry.IsCreated && telemetry.Length > 0)
+                    {
+                        int cursor = math.clamp(_telemetryCursor, 0, telemetry.Length - 1);
+                        AnomalyTelemetryEntry entry = telemetry[cursor];
+                        entry.AnomalyComputeTimeMs = elapsedMs;
+                        if (elapsedMs > ComputeBudgetMs)
+                            entry.Flags |= SeedShipAnomalyFlags.BudgetExceeded;
+                        telemetry[cursor] = entry;
+                    }
+
+                    fieldSnapshot = field[0];
+                    scalarSnapshot = scalar;
+                    hudSnapshot = hud[0];
+                    rebaseSnapshot = rebase[0];
+                    thermoSnapshot = thermo[0];
+                    shouldDump = (diagnosticFlags & (SeedShipAnomalyFlags.BudgetExceeded | SeedShipAnomalyFlags.NonFinite)) != 0u;
+                    hasSnapshot = true;
                 }
-
-                AnomalyFieldDTO fieldSnapshot = field[0];
-                MockHudSignal hudSnapshot = hud[0];
-                MockAupRebaseSignal rebaseSnapshot = rebase[0];
-                AnomalyThermoSourceDTO thermoSnapshot = thermo[0];
-                PublishLateFrameSignals(in fieldSnapshot, in scalar, in hudSnapshot, in rebaseSnapshot, in thermoSnapshot);
-                SeedShipAnomalyShaderBridge.Publish(vault, in fieldSnapshot, in scalar);
-
-                if ((diagnosticFlags & (SeedShipAnomalyFlags.BudgetExceeded | SeedShipAnomalyFlags.NonFinite)) != 0u)
-                    TryDumpTelemetry(vault, telemetry, diagnosticFlags);
+            }
+            finally
+            {
+                _telemetryCursor = (_telemetryCursor + 1) % SeedShipAnomalyConstants.TelemetryFrameCount;
+                _jobScheduled = false;
+                UnlockJobBuffers();
             }
 
-            _telemetryCursor = (_telemetryCursor + 1) % SeedShipAnomalyConstants.TelemetryFrameCount;
-            _jobScheduled = false;
-            UnlockJobBuffers();
+            if (!hasSnapshot)
+                return;
+
+            PublishLateFrameSignals(in fieldSnapshot, in scalarSnapshot, in hudSnapshot, in rebaseSnapshot, in thermoSnapshot);
+            SeedShipAnomalyShaderBridge.Publish(vault, in fieldSnapshot, in scalarSnapshot);
+
+            if (shouldDump)
+                TryDumpTelemetry(vault, diagnosticFlags);
         }
 
         private void PublishLateFrameSignals(
@@ -940,26 +982,34 @@ namespace Hecton8.World.SeedShipAnomaly
             }
         }
 
-        private void TryDumpTelemetry(IDataVault vault, NativeArray<AnomalyTelemetryEntry> telemetry, uint reasonFlags)
+        private void TryDumpTelemetry(IDataVault vault, uint reasonFlags)
         {
-            if (_dumpedBudgetBreach || !telemetry.IsCreated || telemetry.Length == 0)
+            if (_dumpedBudgetBreach || vault == null)
                 return;
 
-            if (!TryResolveSeedShipVaultBuffer(
-                    vault,
-                    ref _dumpScratchHandle,
-                    BufferID.ShinobuSeedShipAnomalyDumpScratch,
-                    DumpScratchBytes,
-                    out NativeArray<byte> dumpScratch))
-            {
-                return;
-            }
-
-            if (!vault.TryLockBuffer(BufferID.ShinobuSeedShipAnomalyDumpScratch, OwnerSystem))
+            if (!vault.TryAcquireMutationGuard(DumpMutationGuardMask))
                 return;
 
             try
             {
+                if (!TryResolveSeedShipVaultBuffer(
+                        vault,
+                        ref _telemetryHandle,
+                        BufferID.ShinobuSeedShipAnomalyTelemetryRing,
+                        SeedShipAnomalyConstants.TelemetryFrameCount,
+                        out NativeArray<AnomalyTelemetryEntry> telemetry) ||
+                    !TryResolveSeedShipVaultBuffer(
+                        vault,
+                        ref _dumpScratchHandle,
+                        BufferID.ShinobuSeedShipAnomalyDumpScratch,
+                        DumpScratchBytes,
+                        out NativeArray<byte> dumpScratch) ||
+                    !telemetry.IsCreated ||
+                    telemetry.Length == 0)
+                {
+                    return;
+                }
+
                 _dumpedBudgetBreach = true;
                 void* ptr = NativeArrayUnsafeUtility.GetUnsafeBufferPointerWithoutChecks(dumpScratch);
                 Span<byte> scratch = new Span<byte>(ptr, math.min(DumpScratchBytes, dumpScratch.Length));
@@ -1000,7 +1050,7 @@ namespace Hecton8.World.SeedShipAnomaly
             }
             finally
             {
-                vault.TryUnlockBuffer(BufferID.ShinobuSeedShipAnomalyDumpScratch, OwnerSystem);
+                vault.ReleaseMutationGuard(DumpMutationGuardMask);
             }
         }
 
@@ -1058,11 +1108,21 @@ namespace Hecton8.World.SeedShipAnomaly
                     return;
 
                 _csvLastWriteTicks = ticks;
-                if (!TryLockIoScratch(vault, out NativeArray<byte> scratch))
+                if (!vault.TryAcquireMutationGuard(CsvImportMutationGuardMask))
                     return;
 
                 try
                 {
+                    if (!TryResolveSeedShipVaultBuffer(
+                            vault,
+                            ref _ioScratchHandle,
+                            BufferID.ShinobuSeedShipAnomalyIoScratch,
+                            CsvMaxBytes,
+                            out NativeArray<byte> scratch))
+                    {
+                        return;
+                    }
+
                     int read = ReadColdBytes(_csvPath, CsvMaxBytes, scratch);
                     if (read > 0)
                     {
@@ -1072,7 +1132,7 @@ namespace Hecton8.World.SeedShipAnomaly
                 }
                 finally
                 {
-                    vault.TryUnlockBuffer(BufferID.ShinobuSeedShipAnomalyIoScratch, OwnerSystem);
+                    vault.ReleaseMutationGuard(CsvImportMutationGuardMask);
                 }
             }
             catch (Exception)
@@ -1090,72 +1150,51 @@ namespace Hecton8.World.SeedShipAnomaly
                 return;
             }
 
-            if (!vault.TryLockBuffer(BufferID.ShinobuSeedShipAnomalyTuning, OwnerSystem))
-                return;
+            AnomalyTuningDTO tuning = tuningArray[0];
+            AnomalyFieldDTO field = fieldArray[0];
+            int overrideIndex = 0;
+            int lineStart = 0;
+            uint frame = _simulationFrameCounter;
 
-            bool fieldLocked = false;
-            bool overrideLocked = false;
-            try
+            for (int i = 0; i <= bytes.Length; i++)
             {
-                fieldLocked = vault.TryLockBuffer(BufferID.ShinobuSeedShipAnomalyField, OwnerSystem);
-                overrideLocked = vault.TryLockBuffer(BufferID.ShinobuSeedShipAnomalyCsvOverrides, OwnerSystem);
-                AnomalyTuningDTO tuning = tuningArray[0];
-                AnomalyFieldDTO field = fieldArray[0];
-                int overrideIndex = 0;
-                int lineStart = 0;
-                uint frame = _simulationFrameCounter;
+                if (i < bytes.Length && bytes[i] != (byte)'\n')
+                    continue;
 
-                for (int i = 0; i <= bytes.Length; i++)
+                ReadOnlySpan<byte> line = TrimAscii(bytes.Slice(lineStart, i - lineStart));
+                lineStart = i + 1;
+                if (line.Length == 0 || line[0] == (byte)'#')
+                    continue;
+
+                int comma = IndexOf(line, (byte)',');
+                if (comma <= 0)
+                    comma = IndexOf(line, (byte)'=');
+                if (comma <= 0)
+                    continue;
+
+                ReadOnlySpan<byte> key = TrimAscii(line.Slice(0, comma));
+                ReadOnlySpan<byte> valueSpan = TrimAscii(line.Slice(comma + 1));
+                if (!TryParseAsciiFloat(valueSpan, out float value))
+                    continue;
+
+                uint keyHash = HashLowerAscii(key);
+                ApplyCsvOverride(keyHash, value, ref tuning, ref field);
+                if (overrideIndex < overrides.Length)
                 {
-                    if (i < bytes.Length && bytes[i] != (byte)'\n')
-                        continue;
-
-                    ReadOnlySpan<byte> line = TrimAscii(bytes.Slice(lineStart, i - lineStart));
-                    lineStart = i + 1;
-                    if (line.Length == 0 || line[0] == (byte)'#')
-                        continue;
-
-                    int comma = IndexOf(line, (byte)',');
-                    if (comma <= 0)
-                        comma = IndexOf(line, (byte)'=');
-                    if (comma <= 0)
-                        continue;
-
-                    ReadOnlySpan<byte> key = TrimAscii(line.Slice(0, comma));
-                    ReadOnlySpan<byte> valueSpan = TrimAscii(line.Slice(comma + 1));
-                    if (!TryParseAsciiFloat(valueSpan, out float value))
-                        continue;
-
-                    uint keyHash = HashLowerAscii(key);
-                    ApplyCsvOverride(keyHash, value, ref tuning, ref field);
-                    if (overrideLocked && overrideIndex < overrides.Length)
+                    overrides[overrideIndex++] = new AnomalyCsvOverrideDTO
                     {
-                        overrides[overrideIndex++] = new AnomalyCsvOverrideDTO
-                        {
-                            KeyHash = keyHash,
-                            Value = value,
-                            Frame = frame,
-                            Flags = 1u
-                        };
-                    }
+                        KeyHash = keyHash,
+                        Value = value,
+                        Frame = frame,
+                        Flags = 1u
+                    };
                 }
+            }
 
-                tuningArray[0] = SeedShipAnomalyMath.SanitizeTuning(tuning);
-                if (fieldLocked)
-                {
-                    field.Radius = math.max(0f, field.Radius);
-                    field.CorruptionLevel = math.saturate(field.CorruptionLevel);
-                    fieldArray[0] = field;
-                }
-            }
-            finally
-            {
-                if (overrideLocked)
-                    vault.TryUnlockBuffer(BufferID.ShinobuSeedShipAnomalyCsvOverrides, OwnerSystem);
-                if (fieldLocked)
-                    vault.TryUnlockBuffer(BufferID.ShinobuSeedShipAnomalyField, OwnerSystem);
-                vault.TryUnlockBuffer(BufferID.ShinobuSeedShipAnomalyTuning, OwnerSystem);
-            }
+            tuningArray[0] = SeedShipAnomalyMath.SanitizeTuning(tuning);
+            field.Radius = math.max(0f, field.Radius);
+            field.CorruptionLevel = math.saturate(field.CorruptionLevel);
+            fieldArray[0] = field;
         }
 
         private static void ApplyCsvOverride(uint keyHash, float value, ref AnomalyTuningDTO tuning, ref AnomalyFieldDTO field)

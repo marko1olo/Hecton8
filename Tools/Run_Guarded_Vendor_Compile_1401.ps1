@@ -4,6 +4,8 @@ param(
         'CandiceAIforGames.Editor',
         'AmplifyImpostors.Runtime',
         'AmplifyImpostors.Editor',
+        'GPUInstancer',
+        'GPUInstancer.Editor',
         'TechniePhysicsCreator',
         'Technie.PhysicsCreator.Updater',
         'Den.Tools',
@@ -160,7 +162,7 @@ foreach ($project in $projects) {
     $exitCode = $LASTEXITCODE
     $output | Set-Content -LiteralPath $logPath -Encoding UTF8
 
-    $diagnostics = Select-String -LiteralPath $logPath -Pattern 'Candice', 'Amplify', 'Technie', 'Den.Tools', 'MapMagic', 'MicroSplat', 'MasterAudio', 'RelationsInspector', 'CS0246', 'CS1061', 'CS0618', ': error ', ': warning ' -SimpleMatch
+    $diagnostics = Select-String -LiteralPath $logPath -Pattern 'Candice', 'Amplify', 'GPUInstancer', 'Technie', 'Den.Tools', 'MapMagic', 'MicroSplat', 'MasterAudio', 'RelationsInspector', 'CS0246', 'CS1061', 'CS0618', ': error ', ': warning ' -SimpleMatch
     $vendorDiagnostics = New-Object System.Collections.Generic.List[object]
     foreach ($d in $diagnostics) {
         $vendorDiagnostics.Add([pscustomobject]@{

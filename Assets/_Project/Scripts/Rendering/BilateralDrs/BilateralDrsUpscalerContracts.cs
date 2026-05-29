@@ -113,22 +113,9 @@ namespace Hecton8.Rendering
     [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
     public unsafe struct CalculateUpscalerParamsJob : IJob
     {
-        // SAFETY_JUSTIFICATION_PARAGRAPH_1:
-        // Parameters writes only the pending CBuffer slot in the Vault-owned parameter lane. Telemetry writes
-        // only the 300-entry black-box lane. TelemetryCursor writes only the single cursor lane. Tuning,
-        // Profiles, and the mock-state snapshot are read-only. These BufferIDs are distinct and acquired by the owner before
-        // _vaultStateReady, so the containers do not overlap in memory or lifetime ownership.
-        //
-        // SAFETY_JUSTIFICATION_PARAGRAPH_2:
-        // HectonBilateralDrsUpscalerRuntime schedules CalculateUpscalerParamsJob through the dispatcher,
-        // returns the handle to the dispatcher, and registers it through H8Memory
-        // under SystemID.GraphicsScalability. PostSimulation publishes only after the dispatcher completes
-        // the Simulation fence.
-        //
-        // SAFETY_JUSTIFICATION_PARAGRAPH_3:
-        // Rejected alternatives: a local completion call would stall the owner phase, private NativeArray fields
-        // would bypass GlobalDataVault, and array-of-interface hot dispatch would block Burst inlining. The
-        // job uses explicit [NoAlias] on non-overlapping lanes so Burst can vectorize scalar math safely.
+        // SAFETY: Runtime invokes this scalar kernel inline from Simulation while holding only
+        // the pending parameter lane. Telemetry is emitted as a value snapshot and committed by
+        // the owner through separate one-lock DataVault windows after the parameter lock exits.
         [NativeDisableContainerSafetyRestriction] [WriteOnly] [NoAlias] public NativeArray<UpscalerParamsDTO> Parameters;
         [NativeDisableContainerSafetyRestriction] [WriteOnly] [NoAlias] public NativeArray<UpscalerTelemetryEntry> Telemetry;
         [NativeDisableContainerSafetyRestriction] [NoAlias] public NativeArray<int> TelemetryCursor;
@@ -147,9 +134,12 @@ namespace Hecton8.Rendering
         public int OutputIndex;
         public byte HasScaleState;
         public byte UseMockState;
+        public UpscalerTelemetryEntry LastTelemetry;
+        public byte HasLastTelemetry;
 
         public void Execute()
         {
+            HasLastTelemetry = 0;
             if (!Parameters.IsCreated || Parameters.Length < 1)
                 return;
 
@@ -224,7 +214,10 @@ namespace Hecton8.Rendering
             UpscalerParamsDTO* parameterPtr = (UpscalerParamsDTO*)NativeArrayUnsafeUtility.GetUnsafePtr(Parameters);
             ref UpscalerParamsDTO outputDto = ref UnsafeUtility.AsRef<UpscalerParamsDTO>(parameterPtr + output);
             outputDto = dto;
-            WriteTelemetry(in dto, flags, currentScale, targetScale, quality, radius, depthWeight, drop01);
+            UpscalerTelemetryEntry telemetry = BuildTelemetryEntry(in dto, flags, currentScale, targetScale, quality, radius, depthWeight, drop01, FrameIndex);
+            LastTelemetry = telemetry;
+            HasLastTelemetry = 1;
+            WriteTelemetry(in telemetry);
         }
 
         public static UpscalerTuningDTO DefaultTuning()
@@ -249,7 +242,19 @@ namespace Hecton8.Rendering
             return radiusQ + jxQ * 0.0009765625f + jyQ * 0.000030517578125f;
         }
 
-        private void WriteTelemetry(
+        private void WriteTelemetry(in UpscalerTelemetryEntry entry)
+        {
+            if (!Telemetry.IsCreated || Telemetry.Length <= 0)
+                return;
+
+            int cursor = ResolveTelemetryCursor(TelemetryCursor, Telemetry.Length);
+            Telemetry[cursor] = entry;
+
+            if (TelemetryCursor.IsCreated && TelemetryCursor.Length > 0)
+                TelemetryCursor[0] = (cursor + 1) % Telemetry.Length;
+        }
+
+        internal static UpscalerTelemetryEntry BuildTelemetryEntry(
             in UpscalerParamsDTO dto,
             uint flags,
             float currentScale,
@@ -257,20 +262,11 @@ namespace Hecton8.Rendering
             float quality,
             float radius,
             float depthWeight,
-            float drop01)
+            float drop01,
+            uint frameIndex)
         {
-            if (!Telemetry.IsCreated || Telemetry.Length <= 0)
-                return;
-
-            int cursor = 0;
-            if (TelemetryCursor.IsCreated && TelemetryCursor.Length > 0)
-            {
-                int rawCursor = TelemetryCursor[0];
-                cursor = rawCursor == int.MinValue ? 0 : math.abs(rawCursor) % Telemetry.Length;
-            }
-
             UpscalerTelemetryEntry entry;
-            entry.FrameIndex = FrameIndex;
+            entry.FrameIndex = frameIndex;
             entry.Flags = flags;
             entry.CurrentRenderScale01 = currentScale;
             entry.TargetRenderScale01 = targetScale;
@@ -280,10 +276,21 @@ namespace Hecton8.Rendering
             entry.EstimatedGpuMicros = EstimateGpuMicros(drop01, quality, radius);
             entry.ResolutionParams = dto.ResolutionParams;
             entry.FilterParams = dto.FilterParams;
-            Telemetry[cursor] = entry;
+            return entry;
+        }
 
-            if (TelemetryCursor.IsCreated && TelemetryCursor.Length > 0)
-                TelemetryCursor[0] = (cursor + 1) % Telemetry.Length;
+        internal static int ResolveTelemetryCursor(NativeArray<int> telemetryCursor, int telemetryLength)
+        {
+            if (telemetryLength <= 0)
+                return 0;
+
+            if (telemetryCursor.IsCreated && telemetryCursor.Length > 0)
+            {
+                int rawCursor = telemetryCursor[0];
+                return rawCursor == int.MinValue ? 0 : math.abs(rawCursor) % telemetryLength;
+            }
+
+            return 0;
         }
 
         private static UpscalerTuningDTO SanitizeTuning(UpscalerTuningDTO tuning)

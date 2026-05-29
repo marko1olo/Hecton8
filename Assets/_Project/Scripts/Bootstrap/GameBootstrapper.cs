@@ -141,11 +141,6 @@ namespace Hecton8.Bootstrap
         private const int ShaderWarmupLowQualityFrameCadenceMilliseconds = 34;
         private const int ShaderWarmupHighQualityFrameCadenceMilliseconds = 17;
         private const int SuspiciousGraphicsMemoryFallbackThresholdMb = 256;
-        private const int LowTierGraphicsMemoryMb = 3000;
-        private const int LowTierProcessorCount = 6;
-        private const int MidTierGraphicsMemoryMb = 4200;
-        private const int HighTierGraphicsMemoryMb = 8200;
-        private const int HighTierProcessorCount = 8;
         private const int UltraTierProcessorCount = 12;
         private const double ObjectPoolWarmupFrameBudgetMilliseconds = 8.0d;
         private const int BootStateRecordBytes = 32;
@@ -188,10 +183,10 @@ namespace Hecton8.Bootstrap
         private const int BackgroundDomainHandshakeFailureIo = 2;
         private const int BackgroundDomainHandshakeFailureUnauthorized = 3;
         private const int BackgroundDomainHandshakeFailureUnsupported = 4;
-        private const int LowTierAsyncUploadBufferMb = 64;
+        private const int SurvivalAsyncUploadBufferMb = 64;
         private const int MidTierAsyncUploadBufferMb = 128;
         private const int HighTierAsyncUploadBufferMb = 256;
-        private const int LowTierAsyncUploadTimeSliceMs = 1;
+        private const int SurvivalAsyncUploadTimeSliceMs = 1;
         private const int MidTierAsyncUploadTimeSliceMs = 2;
         private const int HighTierAsyncUploadTimeSliceMs = 4;
         private const int HeartbeatFreezeSlowTickLimit = 3;
@@ -5106,16 +5101,20 @@ namespace Hecton8.Bootstrap
             int systemMemoryMb = snapshot.SystemMemoryMegabytes;
             int processorCount = snapshot.ProcessorCount;
             double biosPhysicsMillisecondsPerStep = global::Hecton8.Optimization.HardwareProfiler.RunBiosPhysicsBenchmarkMillisecondsPerStep();
+            float startupQualityWeight01 = global::Hecton8.Optimization.HardwareProfiler.ResolveStartupQualityWeight01(
+                in snapshot,
+                biosPhysicsMillisecondsPerStep);
             global::Hecton8.Core.HectonQualityTier qualityTier = ResolveBenchmarkScalabilityTier(
                 graphicsMemoryMb,
                 systemMemoryMb,
                 processorCount,
-                biosPhysicsMillisecondsPerStep);
+                startupQualityWeight01);
             global::Hecton8.Core.MathPrecisionLevel mathPrecisionLevel = ResolveMathPrecisionLevel(
                 graphicsMemoryMb,
                 systemMemoryMb,
                 processorCount,
-                qualityTier);
+                startupQualityWeight01);
+            int startupHardwareScore = math.clamp((int)math.round(startupQualityWeight01 * 100f), 0, 100);
 
             return new global::Hecton8.Core.HectonHardwareProfile(
                 graphicsMemoryMb,
@@ -5123,7 +5122,7 @@ namespace Hecton8.Bootstrap
                 processorCount,
                 qualityTier,
                 biosPhysicsMillisecondsPerStep,
-                snapshot.HardwareScore,
+                startupHardwareScore,
                 mathPrecisionLevel);
         }
 
@@ -5131,24 +5130,23 @@ namespace Hecton8.Bootstrap
             int graphicsMemoryMb,
             int systemMemoryMb,
             int processorCount,
-            double biosPhysicsMillisecondsPerStep)
+            float startupQualityWeight01)
         {
+            float q = math.saturate(startupQualityWeight01);
             if (graphicsMemoryMb < SuspiciousGraphicsMemoryFallbackThresholdMb ||
-                graphicsMemoryMb < LowTierGraphicsMemoryMb ||
                 systemMemoryMb < 7000 ||
-                processorCount < LowTierProcessorCount ||
-                global::Hecton8.Optimization.HardwareProfiler.ShouldForceLowTier(biosPhysicsMillisecondsPerStep, graphicsMemoryMb))
+                q < 0.18f)
             {
                 return global::Hecton8.Core.HectonQualityTier.Low;
             }
 
-            if (graphicsMemoryMb < MidTierGraphicsMemoryMb)
+            if (q < 0.38f)
                 return global::Hecton8.Core.HectonQualityTier.Mx350;
 
-            if (graphicsMemoryMb < HighTierGraphicsMemoryMb || processorCount <= HighTierProcessorCount)
+            if (q < 0.62f)
                 return global::Hecton8.Core.HectonQualityTier.Mid;
 
-            return processorCount > UltraTierProcessorCount && systemMemoryMb >= 32000
+            return q >= 0.88f && processorCount > UltraTierProcessorCount && systemMemoryMb >= 32000
                 ? global::Hecton8.Core.HectonQualityTier.Ultra
                 : global::Hecton8.Core.HectonQualityTier.High;
         }
@@ -5157,16 +5155,14 @@ namespace Hecton8.Bootstrap
             int graphicsMemoryMb,
             int systemMemoryMb,
             int processorCount,
-            global::Hecton8.Core.HectonQualityTier qualityTier)
+            float startupQualityWeight01)
         {
-            if (graphicsMemoryMb < LowTierGraphicsMemoryMb || processorCount < LowTierProcessorCount)
+            float q = math.saturate(startupQualityWeight01);
+            if (q < 0.35f)
                 return global::Hecton8.Core.MathPrecisionLevel.Low;
 
-            if (qualityTier == global::Hecton8.Core.HectonQualityTier.High ||
-                qualityTier == global::Hecton8.Core.HectonQualityTier.Ultra)
-            {
+            if (q >= 0.70f)
                 return global::Hecton8.Core.MathPrecisionLevel.High;
-            }
 
             return graphicsMemoryMb >= 4200 && systemMemoryMb >= 12000 && processorCount > 4
                 ? global::Hecton8.Core.MathPrecisionLevel.High
@@ -5233,8 +5229,8 @@ namespace Hecton8.Bootstrap
         {
             float budget = ResolveBootQualityCurve(
                 ResolveBootQualityWeight01(in hardwareProfile),
-                LowTierAsyncUploadBufferMb,
-                LowTierAsyncUploadBufferMb,
+                SurvivalAsyncUploadBufferMb,
+                SurvivalAsyncUploadBufferMb,
                 MidTierAsyncUploadBufferMb,
                 HighTierAsyncUploadBufferMb,
                 HighTierAsyncUploadBufferMb);
@@ -5245,8 +5241,8 @@ namespace Hecton8.Bootstrap
         {
             float budget = ResolveBootQualityCurve(
                 ResolveBootQualityWeight01(in hardwareProfile),
-                LowTierAsyncUploadTimeSliceMs,
-                LowTierAsyncUploadTimeSliceMs,
+                SurvivalAsyncUploadTimeSliceMs,
+                SurvivalAsyncUploadTimeSliceMs,
                 MidTierAsyncUploadTimeSliceMs,
                 HighTierAsyncUploadTimeSliceMs,
                 HighTierAsyncUploadTimeSliceMs);

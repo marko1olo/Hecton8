@@ -345,6 +345,26 @@ namespace Hecton8.AI
         private const BufferID MesofaunaStateDTOsBufferId = BufferID.ShinobuMesofaunaStates;
         private const BufferID MesofaunaMockPreyTargetsBufferId = BufferID.ShinobuMesofaunaMockPreyTargets;
         private const BufferID MesofaunaVisualSyncBufferId = BufferID.ShinobuMesofaunaVisualSync;
+        private static readonly ulong JobMutationGuardMask =
+            StressDirectorMutationGuardBit(RulesBufferId) |
+            StressDirectorMutationGuardBit(RuleLinksBufferId) |
+            StressDirectorMutationGuardBit(CandidatesBufferId) |
+            StressDirectorMutationGuardBit(SelectionBufferId) |
+            StressDirectorMutationGuardBit(InputBufferId) |
+            StressDirectorMutationGuardBit(TuningBufferId) |
+            StressDirectorMutationGuardBit(TelemetryBufferId) |
+            StressDirectorMutationGuardBit(CountersBufferId) |
+            StressDirectorMutationGuardBit(FrustumPlanesBufferId) |
+            StressDirectorMutationGuardBit(OwnedSlotsBufferId) |
+            StressDirectorMutationGuardBit(InventoryTicketsBufferId) |
+            StressDirectorMutationGuardBit(SpawnDebugBufferId);
+#if UNITY_EDITOR
+        private static readonly ulong ReloadMutationGuardMask =
+            StressDirectorMutationGuardBit(RulesBufferId) |
+            StressDirectorMutationGuardBit(RuleLinksBufferId) |
+            StressDirectorMutationGuardBit(CountersBufferId) |
+            StressDirectorMutationGuardBit(CsvScratchBufferId);
+#endif
 
         private const int CounterRuleCount = 0;
         private const int CounterCandidateCount = 1;
@@ -389,13 +409,13 @@ namespace Hecton8.AI
         private VaultGenerationHandle<MacroEcosystemTuningVaultRecord> _macroTuningHandle;
         private IEcosystemDirectorService _ecosystemDirector;
         private JobHandle _activeHandle;
-        private IDataVault _lockedVault;
+        private IDataVault _jobGuardVault;
         private bool _registeredCold;
         private bool _registeredLate;
         private bool _registeredHotSwap;
         private bool _registeredOriginShiftListener;
         private bool _jobScheduled;
-        private int _lockedCount;
+        private bool _jobBuffersPinned;
         private long _scheduleTicks;
         private int _lastAppliedFrame = -1;
         private int _monolithReady;
@@ -436,7 +456,7 @@ namespace Hecton8.AI
                 director._jobScheduled)
                 return false;
 
-            if (!director.TryRead(vault, in director._tuningHandle, out NativeArray<DirectorTuningDTO> tuningArray) ||
+            if (!director.TryRead(vault, in director._tuningHandle, TuningBufferId, SystemID.AIEcology, out NativeArray<DirectorTuningDTO> tuningArray) ||
                 !tuningArray.IsCreated ||
                 tuningArray.Length <= 0)
             {
@@ -451,7 +471,7 @@ namespace Hecton8.AI
         {
             if (!TryGetExistingInstanceVault(out StressDrivenSpawnDirector director, out IDataVault vault) ||
                 director._jobScheduled ||
-                director._tuningHandle.BufferID == 0u)
+                !IsOwnedVaultHandle(in director._tuningHandle, TuningBufferId, SystemID.AIEcology))
             {
                 return false;
             }
@@ -483,18 +503,16 @@ namespace Hecton8.AI
                 director._jobScheduled ||
                 vault.IsAllocationLocked ||
                 vault.IsCompactionFenceActive ||
-                director._rulesHandle.BufferID == 0u ||
-                director._ruleLinksHandle.BufferID == 0u ||
-                director._countersHandle.BufferID == 0u ||
-                director._csvScratchHandle.BufferID == 0u)
+                !IsOwnedVaultHandle(in director._rulesHandle, RulesBufferId, SystemID.AIEcology) ||
+                !IsOwnedVaultHandle(in director._ruleLinksHandle, RuleLinksBufferId, SystemID.AIEcology) ||
+                !IsOwnedVaultHandle(in director._countersHandle, CountersBufferId, SystemID.AIEcology) ||
+                !IsOwnedVaultHandle(in director._csvScratchHandle, CsvScratchBufferId, SystemID.AIEcology))
             {
                 return false;
             }
 
-            int locked = TryLockReloadBuffers(vault);
-            if (locked != 4)
+            if (!director.TryPinReloadBuffers(vault))
             {
-                UnlockReloadBuffers(vault, locked);
                 return false;
             }
 
@@ -504,7 +522,7 @@ namespace Hecton8.AI
             }
             finally
             {
-                UnlockReloadBuffers(vault, locked);
+                vault.ReleaseMutationGuard(ReloadMutationGuardMask);
             }
         }
 #endif
@@ -516,8 +534,8 @@ namespace Hecton8.AI
                 director._jobScheduled)
                 return false;
 
-            if (!director.TryRead(vault, in director._telemetryHandle, out NativeArray<DirectorTelemetryEntry> telemetry) ||
-                !director.TryRead(vault, in director._countersHandle, out NativeArray<int> counters) ||
+            if (!director.TryRead(vault, in director._telemetryHandle, TelemetryBufferId, SystemID.AIEcology, out NativeArray<DirectorTelemetryEntry> telemetry) ||
+                !director.TryRead(vault, in director._countersHandle, CountersBufferId, SystemID.AIEcology, out NativeArray<int> counters) ||
                 !telemetry.IsCreated ||
                 telemetry.Length <= 0 ||
                 counters.Length <= CounterTelemetryCursor)
@@ -541,7 +559,7 @@ namespace Hecton8.AI
                 destination.Length == 0 ||
                 !TryGetExistingInstanceVault(out StressDrivenSpawnDirector director, out IDataVault vault) ||
                 director._jobScheduled ||
-                !director.TryRead(vault, in director._telemetryHandle, out NativeArray<DirectorTelemetryEntry> telemetry) ||
+                !director.TryRead(vault, in director._telemetryHandle, TelemetryBufferId, SystemID.AIEcology, out NativeArray<DirectorTelemetryEntry> telemetry) ||
                 !telemetry.IsCreated ||
                 telemetry.Length <= 0)
             {
@@ -561,7 +579,7 @@ namespace Hecton8.AI
                 director._jobScheduled)
                 return false;
 
-            if (!director.TryRead(vault, in director._spawnDebugHandle, out NativeArray<DirectorSpawnDebugDTO> debugArray) ||
+            if (!director.TryRead(vault, in director._spawnDebugHandle, SpawnDebugBufferId, SystemID.AIEcology, out NativeArray<DirectorSpawnDebugDTO> debugArray) ||
                 !debugArray.IsCreated ||
                 debugArray.Length <= 0)
             {
@@ -583,7 +601,7 @@ namespace Hecton8.AI
         {
             if (!TryGetExistingInstanceVault(out StressDrivenSpawnDirector director, out IDataVault vault) ||
                 director._jobScheduled ||
-                director._inputHandle.BufferID == 0u)
+                !IsOwnedVaultHandle(in director._inputHandle, InputBufferId, SystemID.AIEcology))
             {
                 return false;
             }
@@ -644,121 +662,126 @@ namespace Hecton8.AI
 #if UNITY_EDITOR
             TryLoadRulesCsvCold(vault, forceReload: false, locksHeld: false);
 #endif
-            if (!TryResolve(vault, in _rulesHandle, out NativeArray<SpawnRuleDTO> rules) ||
-                !TryResolve(vault, in _ruleLinksHandle, out NativeArray<SpawnRuleLinkDTO> links) ||
-                !TryResolve(vault, in _candidatesHandle, out NativeArray<DirectorCandidateDTO> candidates) ||
-                !TryResolve(vault, in _selectionHandle, out NativeArray<DirectorSelectionDTO> selection) ||
-                !TryResolve(vault, in _inputHandle, out NativeArray<DirectorInputDTO> inputs) ||
-                !TryResolve(vault, in _tuningHandle, out NativeArray<DirectorTuningDTO> tuning) ||
-                !TryResolve(vault, in _telemetryHandle, out NativeArray<DirectorTelemetryEntry> telemetry) ||
-                !TryResolve(vault, in _countersHandle, out NativeArray<int> counters) ||
-                !TryResolve(vault, in _frustumPlanesHandle, out NativeArray<float4> frustumPlanes) ||
-                !TryResolve(vault, in _ownedSlotsHandle, out NativeArray<DirectorOwnedSlotDTO> ownedSlots) ||
-                !TryResolve(vault, in _inventoryTicketsHandle, out NativeArray<InventoryPreloadTicketDTO> inventoryTickets) ||
-                !TryResolve(vault, in _spawnDebugHandle, out NativeArray<DirectorSpawnDebugDTO> spawnDebug))
+            if (!TryPinJobBuffers(vault) ||
+                !TryResolveJobBuffers(
+                    vault,
+                    out NativeArray<SpawnRuleDTO> rules,
+                    out NativeArray<SpawnRuleLinkDTO> links,
+                    out NativeArray<DirectorCandidateDTO> candidates,
+                    out NativeArray<DirectorSelectionDTO> selection,
+                    out NativeArray<DirectorInputDTO> inputs,
+                    out NativeArray<DirectorTuningDTO> tuning,
+                    out NativeArray<DirectorTelemetryEntry> telemetry,
+                    out NativeArray<int> counters,
+                    out NativeArray<float4> frustumPlanes,
+                    out NativeArray<DirectorOwnedSlotDTO> ownedSlots,
+                    out NativeArray<InventoryPreloadTicketDTO> inventoryTickets,
+                    out NativeArray<DirectorSpawnDebugDTO> spawnDebug))
             {
+                ReleaseJobBufferPins();
                 return;
             }
 
-            int locked = TryLockJobBuffers(vault);
-            if (locked < 12)
+            bool keepGuardForScheduledJob = false;
+            try
             {
-                UnlockJobBuffers(vault, locked);
-                return;
+                DirectorTuningDTO activeTuning = StressDrivenSpawnDirectorSanitizer.Sanitize(tuning[0], ResolveGlobalQualityWeight(vault));
+                if (_monolithReady == 0)
+                    activeTuning.Flags |= TuningFlagMonolithLootMissing;
+                else
+                    activeTuning.Flags &= ~TuningFlagMonolithLootMissing;
+                tuning[0] = activeTuning;
+
+                int ruleCount = math.min(math.max(counters[CounterRuleCount], 0), math.min(rules.Length, RuleCapacity));
+                _scheduleTicks = System.Diagnostics.Stopwatch.GetTimestamp();
+
+                JobHandle handle = default;
+                var mockJob = new GenerateMockTensionJob
+                {
+                    Inputs = inputs,
+                    Tuning = tuning,
+                    Frame = inputs[0].SimulationTick,
+                    WorldSeed = inputs[0].WorldSeed
+                };
+                handle = mockJob.Schedule(handle);
+
+                var evaluateJob = new EvaluateSpawnConditionsJob
+                {
+                    Rules = (SpawnRuleDTO*)NativeArrayUnsafeUtility.GetUnsafeReadOnlyPtr(rules),
+                    Links = (SpawnRuleLinkDTO*)NativeArrayUnsafeUtility.GetUnsafeReadOnlyPtr(links),
+                    Candidates = (DirectorCandidateDTO*)NativeArrayUnsafeUtility.GetUnsafePtr(candidates),
+                    Counters = (int*)NativeArrayUnsafeUtility.GetUnsafePtr(counters),
+                    Inputs = (DirectorInputDTO*)NativeArrayUnsafeUtility.GetUnsafeReadOnlyPtr(inputs),
+                    Tuning = (DirectorTuningDTO*)NativeArrayUnsafeUtility.GetUnsafeReadOnlyPtr(tuning),
+                    RuleCount = ruleCount,
+                    CandidateCapacity = candidates.Length
+                };
+                handle = evaluateJob.Schedule(handle);
+
+                var selectionJob = new AllocateThreatBudgetJob
+                {
+                    Candidates = (DirectorCandidateDTO*)NativeArrayUnsafeUtility.GetUnsafePtr(candidates),
+                    Selection = (DirectorSelectionDTO*)NativeArrayUnsafeUtility.GetUnsafePtr(selection),
+                    Inputs = (DirectorInputDTO*)NativeArrayUnsafeUtility.GetUnsafeReadOnlyPtr(inputs),
+                    Tuning = (DirectorTuningDTO*)NativeArrayUnsafeUtility.GetUnsafeReadOnlyPtr(tuning),
+                    Counters = (int*)NativeArrayUnsafeUtility.GetUnsafePtr(counters),
+                    CandidateCapacity = candidates.Length,
+                    MonolithReady = _monolithReady
+                };
+                handle = selectionJob.Schedule(handle);
+
+                var hiddenJob = new CalculateHiddenSpawnAupJob
+                {
+                    FrustumPlanes = (float4*)NativeArrayUnsafeUtility.GetUnsafeReadOnlyPtr(frustumPlanes),
+                    Selection = (DirectorSelectionDTO*)NativeArrayUnsafeUtility.GetUnsafePtr(selection),
+                    Inputs = (DirectorInputDTO*)NativeArrayUnsafeUtility.GetUnsafeReadOnlyPtr(inputs),
+                    Tuning = (DirectorTuningDTO*)NativeArrayUnsafeUtility.GetUnsafeReadOnlyPtr(tuning),
+                    PlaneCount = math.min(frustumPlanes.Length, 6),
+                    ProbeCapacity = MaxHiddenProbeCapacity
+                };
+                handle = hiddenJob.Schedule(handle);
+
+                var cullJob = new CullDistantDirectorSlotsJob
+                {
+                    OwnedSlots = (DirectorOwnedSlotDTO*)NativeArrayUnsafeUtility.GetUnsafePtr(ownedSlots),
+                    Counters = (int*)NativeArrayUnsafeUtility.GetUnsafePtr(counters),
+                    Inputs = (DirectorInputDTO*)NativeArrayUnsafeUtility.GetUnsafeReadOnlyPtr(inputs),
+                    Tuning = (DirectorTuningDTO*)NativeArrayUnsafeUtility.GetUnsafeReadOnlyPtr(tuning),
+                    OwnedSlotCapacity = ownedSlots.Length
+                };
+                handle = cullJob.Schedule(handle);
+
+                var inventoryJob = new AsyncInventoryPreloadTicketJob
+                {
+                    Selection = (DirectorSelectionDTO*)NativeArrayUnsafeUtility.GetUnsafeReadOnlyPtr(selection),
+                    Tickets = (InventoryPreloadTicketDTO*)NativeArrayUnsafeUtility.GetUnsafePtr(inventoryTickets),
+                    Inputs = (DirectorInputDTO*)NativeArrayUnsafeUtility.GetUnsafeReadOnlyPtr(inputs),
+                    TicketCapacity = inventoryTickets.Length,
+                    MonolithReady = _monolithReady
+                };
+                handle = inventoryJob.Schedule(handle);
+
+                var telemetryJob = new RecordDirectorTelemetryJob
+                {
+                    Selection = (DirectorSelectionDTO*)NativeArrayUnsafeUtility.GetUnsafeReadOnlyPtr(selection),
+                    Inputs = (DirectorInputDTO*)NativeArrayUnsafeUtility.GetUnsafeReadOnlyPtr(inputs),
+                    Tuning = (DirectorTuningDTO*)NativeArrayUnsafeUtility.GetUnsafeReadOnlyPtr(tuning),
+                    Telemetry = (DirectorTelemetryEntry*)NativeArrayUnsafeUtility.GetUnsafePtr(telemetry),
+                    Counters = (int*)NativeArrayUnsafeUtility.GetUnsafePtr(counters),
+                    SpawnDebug = (DirectorSpawnDebugDTO*)NativeArrayUnsafeUtility.GetUnsafePtr(spawnDebug),
+                    TelemetryCapacity = telemetry.Length
+                };
+                handle = telemetryJob.Schedule(handle);
+
+                _activeHandle = handle;
+                _jobScheduled = true;
+                keepGuardForScheduledJob = true;
             }
-
-            DirectorTuningDTO activeTuning = StressDrivenSpawnDirectorSanitizer.Sanitize(tuning[0], ResolveGlobalQualityWeight(vault));
-            if (_monolithReady == 0)
-                activeTuning.Flags |= TuningFlagMonolithLootMissing;
-            else
-                activeTuning.Flags &= ~TuningFlagMonolithLootMissing;
-            tuning[0] = activeTuning;
-
-            int ruleCount = math.min(math.max(counters[CounterRuleCount], 0), math.min(rules.Length, RuleCapacity));
-            _scheduleTicks = System.Diagnostics.Stopwatch.GetTimestamp();
-
-            JobHandle handle = default;
-            var mockJob = new GenerateMockTensionJob
+            finally
             {
-                Inputs = inputs,
-                Tuning = tuning,
-                Frame = inputs[0].SimulationTick,
-                WorldSeed = inputs[0].WorldSeed
-            };
-            handle = mockJob.Schedule(handle);
-
-            var evaluateJob = new EvaluateSpawnConditionsJob
-            {
-                Rules = (SpawnRuleDTO*)NativeArrayUnsafeUtility.GetUnsafeReadOnlyPtr(rules),
-                Links = (SpawnRuleLinkDTO*)NativeArrayUnsafeUtility.GetUnsafeReadOnlyPtr(links),
-                Candidates = (DirectorCandidateDTO*)NativeArrayUnsafeUtility.GetUnsafePtr(candidates),
-                Counters = (int*)NativeArrayUnsafeUtility.GetUnsafePtr(counters),
-                Inputs = (DirectorInputDTO*)NativeArrayUnsafeUtility.GetUnsafeReadOnlyPtr(inputs),
-                Tuning = (DirectorTuningDTO*)NativeArrayUnsafeUtility.GetUnsafeReadOnlyPtr(tuning),
-                RuleCount = ruleCount,
-                CandidateCapacity = candidates.Length
-            };
-            handle = evaluateJob.Schedule(handle);
-
-            var selectionJob = new AllocateThreatBudgetJob
-            {
-                Candidates = (DirectorCandidateDTO*)NativeArrayUnsafeUtility.GetUnsafePtr(candidates),
-                Selection = (DirectorSelectionDTO*)NativeArrayUnsafeUtility.GetUnsafePtr(selection),
-                Inputs = (DirectorInputDTO*)NativeArrayUnsafeUtility.GetUnsafeReadOnlyPtr(inputs),
-                Tuning = (DirectorTuningDTO*)NativeArrayUnsafeUtility.GetUnsafeReadOnlyPtr(tuning),
-                Counters = (int*)NativeArrayUnsafeUtility.GetUnsafePtr(counters),
-                CandidateCapacity = candidates.Length,
-                MonolithReady = _monolithReady
-            };
-            handle = selectionJob.Schedule(handle);
-
-            var hiddenJob = new CalculateHiddenSpawnAupJob
-            {
-                FrustumPlanes = (float4*)NativeArrayUnsafeUtility.GetUnsafeReadOnlyPtr(frustumPlanes),
-                Selection = (DirectorSelectionDTO*)NativeArrayUnsafeUtility.GetUnsafePtr(selection),
-                Inputs = (DirectorInputDTO*)NativeArrayUnsafeUtility.GetUnsafeReadOnlyPtr(inputs),
-                Tuning = (DirectorTuningDTO*)NativeArrayUnsafeUtility.GetUnsafeReadOnlyPtr(tuning),
-                PlaneCount = math.min(frustumPlanes.Length, 6),
-                ProbeCapacity = MaxHiddenProbeCapacity
-            };
-            handle = hiddenJob.Schedule(handle);
-
-            var cullJob = new CullDistantDirectorSlotsJob
-            {
-                OwnedSlots = (DirectorOwnedSlotDTO*)NativeArrayUnsafeUtility.GetUnsafePtr(ownedSlots),
-                Counters = (int*)NativeArrayUnsafeUtility.GetUnsafePtr(counters),
-                Inputs = (DirectorInputDTO*)NativeArrayUnsafeUtility.GetUnsafeReadOnlyPtr(inputs),
-                Tuning = (DirectorTuningDTO*)NativeArrayUnsafeUtility.GetUnsafeReadOnlyPtr(tuning),
-                OwnedSlotCapacity = ownedSlots.Length
-            };
-            handle = cullJob.Schedule(handle);
-
-            var inventoryJob = new AsyncInventoryPreloadTicketJob
-            {
-                Selection = (DirectorSelectionDTO*)NativeArrayUnsafeUtility.GetUnsafeReadOnlyPtr(selection),
-                Tickets = (InventoryPreloadTicketDTO*)NativeArrayUnsafeUtility.GetUnsafePtr(inventoryTickets),
-                Inputs = (DirectorInputDTO*)NativeArrayUnsafeUtility.GetUnsafeReadOnlyPtr(inputs),
-                TicketCapacity = inventoryTickets.Length,
-                MonolithReady = _monolithReady
-            };
-            handle = inventoryJob.Schedule(handle);
-
-            var telemetryJob = new RecordDirectorTelemetryJob
-            {
-                Selection = (DirectorSelectionDTO*)NativeArrayUnsafeUtility.GetUnsafeReadOnlyPtr(selection),
-                Inputs = (DirectorInputDTO*)NativeArrayUnsafeUtility.GetUnsafeReadOnlyPtr(inputs),
-                Tuning = (DirectorTuningDTO*)NativeArrayUnsafeUtility.GetUnsafeReadOnlyPtr(tuning),
-                Telemetry = (DirectorTelemetryEntry*)NativeArrayUnsafeUtility.GetUnsafePtr(telemetry),
-                Counters = (int*)NativeArrayUnsafeUtility.GetUnsafePtr(counters),
-                SpawnDebug = (DirectorSpawnDebugDTO*)NativeArrayUnsafeUtility.GetUnsafePtr(spawnDebug),
-                TelemetryCapacity = telemetry.Length
-            };
-            handle = telemetryJob.Schedule(handle);
-
-            _activeHandle = handle;
-            _lockedCount = locked;
-            _lockedVault = vault;
-            _jobScheduled = true;
+                if (!keepGuardForScheduledJob)
+                    ReleaseJobBufferPins();
+            }
         }
 
         public void LateFrameTick()
@@ -769,7 +792,7 @@ namespace Hecton8.AI
             if (!DispatcherJobFence.TryComplete(ref _activeHandle, forceComplete: false))
                 return;
 
-            IDataVault lockedVault = _lockedVault ?? _vault;
+            IDataVault lockedVault = _jobGuardVault ?? _vault;
             bool canCommit = lockedVault != null && ReferenceEquals(lockedVault, _vault);
             try
             {
@@ -791,11 +814,7 @@ namespace Hecton8.AI
             }
             finally
             {
-                if (lockedVault != null && _lockedCount > 0)
-                    UnlockJobBuffers(lockedVault, _lockedCount);
-
-                _lockedCount = 0;
-                _lockedVault = null;
+                ReleaseJobBufferPins();
                 _jobScheduled = false;
             }
         }
@@ -805,7 +824,7 @@ namespace Hecton8.AI
             _ = previousService;
             if (serviceSlot == GlobalRegistryServiceSlot.DataVault)
             {
-                RebindDataVaultForLifecycle(currentService as IDataVault);
+                RebindDataVaultForLifecycle(currentService is IDataVault currentVault ? currentVault : null);
             }
             else if (serviceSlot == GlobalRegistryServiceSlot.EcosystemDirector)
             {
@@ -846,14 +865,10 @@ namespace Hecton8.AI
             if (_jobScheduled)
                 DispatcherJobFence.TryComplete(ref _activeHandle, forceComplete: true);
 
-            IDataVault lockedVault = _lockedVault ?? _vault;
-            if (lockedVault != null && _lockedCount > 0)
-                UnlockJobBuffers(lockedVault, _lockedCount);
+            ReleaseJobBufferPins();
 
             _activeHandle = default;
-            _lockedVault = null;
             _jobScheduled = false;
-            _lockedCount = 0;
         }
 
         private void RebindDataVaultForLifecycle(IDataVault currentVault)
@@ -891,18 +906,18 @@ namespace Hecton8.AI
             _inventoryTicketsHandle = EnsureHandle(vault, _inventoryTicketsHandle, InventoryTicketsBufferId, RuleCapacity, SystemID.AIEcology);
             _spawnDebugHandle = EnsureHandle(vault, _spawnDebugHandle, SpawnDebugBufferId, 1, SystemID.AIEcology);
 
-            if (!TryResolve(vault, in _countersHandle, out NativeArray<int> counters) ||
-                !TryResolve(vault, in _tuningHandle, out NativeArray<DirectorTuningDTO> tuning) ||
-                !TryResolve(vault, in _frustumPlanesHandle, out NativeArray<float4> frustumPlanes) ||
-                !TryResolve(vault, in _rulesHandle, out NativeArray<SpawnRuleDTO> rules) ||
-                !TryResolve(vault, in _ruleLinksHandle, out NativeArray<SpawnRuleLinkDTO> links) ||
-                !TryResolve(vault, in _candidatesHandle, out NativeArray<DirectorCandidateDTO> candidates) ||
-                !TryResolve(vault, in _selectionHandle, out NativeArray<DirectorSelectionDTO> selection) ||
-                !TryResolve(vault, in _inputHandle, out NativeArray<DirectorInputDTO> inputs) ||
-                !TryResolve(vault, in _telemetryHandle, out NativeArray<DirectorTelemetryEntry> telemetry) ||
-                !TryResolve(vault, in _ownedSlotsHandle, out NativeArray<DirectorOwnedSlotDTO> ownedSlots) ||
-                !TryResolve(vault, in _inventoryTicketsHandle, out NativeArray<InventoryPreloadTicketDTO> inventoryTickets) ||
-                !TryResolve(vault, in _spawnDebugHandle, out NativeArray<DirectorSpawnDebugDTO> spawnDebug))
+            if (!TryResolve(vault, in _countersHandle, CountersBufferId, out NativeArray<int> counters) ||
+                !TryResolve(vault, in _tuningHandle, TuningBufferId, out NativeArray<DirectorTuningDTO> tuning) ||
+                !TryResolve(vault, in _frustumPlanesHandle, FrustumPlanesBufferId, out NativeArray<float4> frustumPlanes) ||
+                !TryResolve(vault, in _rulesHandle, RulesBufferId, out NativeArray<SpawnRuleDTO> rules) ||
+                !TryResolve(vault, in _ruleLinksHandle, RuleLinksBufferId, out NativeArray<SpawnRuleLinkDTO> links) ||
+                !TryResolve(vault, in _candidatesHandle, CandidatesBufferId, out NativeArray<DirectorCandidateDTO> candidates) ||
+                !TryResolve(vault, in _selectionHandle, SelectionBufferId, out NativeArray<DirectorSelectionDTO> selection) ||
+                !TryResolve(vault, in _inputHandle, InputBufferId, out NativeArray<DirectorInputDTO> inputs) ||
+                !TryResolve(vault, in _telemetryHandle, TelemetryBufferId, out NativeArray<DirectorTelemetryEntry> telemetry) ||
+                !TryResolve(vault, in _ownedSlotsHandle, OwnedSlotsBufferId, out NativeArray<DirectorOwnedSlotDTO> ownedSlots) ||
+                !TryResolve(vault, in _inventoryTicketsHandle, InventoryTicketsBufferId, out NativeArray<InventoryPreloadTicketDTO> inventoryTickets) ||
+                !TryResolve(vault, in _spawnDebugHandle, SpawnDebugBufferId, out NativeArray<DirectorSpawnDebugDTO> spawnDebug))
             {
                 return false;
             }
@@ -912,10 +927,23 @@ namespace Hecton8.AI
 
             if (counters[CounterInitialized] != CounterInitializedMagic)
             {
-                int locked = TryLockJobBuffers(vault);
-                if (locked < 12)
+                if (!TryPinJobBuffers(vault) ||
+                    !TryResolveJobBuffers(
+                        vault,
+                        out rules,
+                        out links,
+                        out candidates,
+                        out selection,
+                        out inputs,
+                        out tuning,
+                        out telemetry,
+                        out counters,
+                        out frustumPlanes,
+                        out ownedSlots,
+                        out inventoryTickets,
+                        out spawnDebug))
                 {
-                    UnlockJobBuffers(vault, locked);
+                    ReleaseJobBufferPins();
                     return false;
                 }
 
@@ -939,7 +967,7 @@ namespace Hecton8.AI
                 }
                 finally
                 {
-                    UnlockJobBuffers(vault, locked);
+                    ReleaseJobBufferPins();
                 }
             }
 
@@ -953,12 +981,13 @@ namespace Hecton8.AI
             if (vault == null)
                 return;
 
-            bool statesReady = TryRefreshBorrowedHandle(vault, MesofaunaStateDTOsBufferId, ref _mesofaunaStatesHandle);
-            bool targetsReady = TryRefreshBorrowedHandle(vault, MesofaunaMockPreyTargetsBufferId, ref _mesofaunaTargetsHandle);
-            bool visualsReady = TryRefreshBorrowedHandle(vault, MesofaunaVisualSyncBufferId, ref _mesofaunaVisualHandle);
-            bool inputsReady = TryRefreshBorrowedHandle(vault, BufferID.PredatorCognitionInputs, ref _cognitionInputsHandle);
+            bool statesReady = TryRefreshBorrowedHandle(vault, MesofaunaStateDTOsBufferId, SystemID.AICognition, ref _mesofaunaStatesHandle);
+            bool targetsReady = TryRefreshBorrowedHandle(vault, MesofaunaMockPreyTargetsBufferId, SystemID.AICognition, ref _mesofaunaTargetsHandle);
+            bool visualsReady = TryRefreshBorrowedHandle(vault, MesofaunaVisualSyncBufferId, SystemID.AICognition, ref _mesofaunaVisualHandle);
+            bool inputsReady = TryRefreshBorrowedHandle(vault, BufferID.PredatorCognitionInputs, SystemID.AICognition, ref _cognitionInputsHandle);
 
-            if (!vault.TryAcquireWriteLock(in _countersHandle, SystemID.AIEcology, out NativeArray<int> counters))
+            if (!IsOwnedVaultHandle(in _countersHandle, CountersBufferId, SystemID.AIEcology) ||
+                !vault.TryAcquireWriteLock(in _countersHandle, SystemID.AIEcology, out NativeArray<int> counters))
                 return;
 
             try
@@ -975,12 +1004,13 @@ namespace Hecton8.AI
         private static bool TryRefreshBorrowedHandle<T>(
             IDataVault vault,
             BufferID bufferId,
+            SystemID owner,
             ref VaultGenerationHandle<T> handle) where T : struct
         {
             if (vault == null)
                 return false;
 
-            if (handle.BufferID != 0u &&
+            if (IsOwnedVaultHandle(in handle, bufferId, owner) &&
                 vault.TryReadHandle(in handle, out NativeArray<T> existing) &&
                 existing.IsCreated &&
                 existing.Length > 0)
@@ -992,7 +1022,10 @@ namespace Hecton8.AI
                 return false;
 
             handle = refreshed;
-            return vault.TryReadHandle(in handle, out NativeArray<T> buffer) && buffer.IsCreated && buffer.Length > 0;
+            return IsOwnedVaultHandle(in handle, bufferId, owner) &&
+                   vault.TryReadHandle(in handle, out NativeArray<T> buffer) &&
+                   buffer.IsCreated &&
+                   buffer.Length > 0;
         }
 
         private static VaultGenerationHandle<T> EnsureHandle<T>(
@@ -1014,7 +1047,11 @@ namespace Hecton8.AI
             if (IsOwnedVaultHandle(in handle, bufferId, owner))
                 vault.ReleaseBuffer(in handle);
 
-            return vault.EnsureGenerationHandle<T>(bufferId, length, owner, options);
+            VaultGenerationHandle<T> acquired = vault.EnsureGenerationHandle<T>(bufferId, length, owner, options);
+            if (IsOwnedVaultHandle(in acquired, bufferId, owner))
+                return acquired;
+
+            return default;
         }
 
         private static bool IsOwnedVaultHandle<T>(in VaultGenerationHandle<T> handle, BufferID expectedBufferId, SystemID expectedOwner) where T : struct
@@ -1024,16 +1061,36 @@ namespace Hecton8.AI
                    handle.SystemID == (uint)expectedOwner;
         }
 
-        private bool TryResolve<T>(IDataVault vault, in VaultGenerationHandle<T> handle, out NativeArray<T> array) where T : struct
+        private static ulong StressDirectorMutationGuardBit(BufferID bufferId)
         {
-            array = default;
-            return vault != null && handle.BufferID != 0u && vault.TryResolveHandle(in handle, out array) && array.IsCreated;
+            return 1UL << (unchecked((int)(uint)(int)bufferId) & 31);
         }
 
-        private bool TryRead<T>(IDataVault vault, in VaultGenerationHandle<T> handle, out NativeArray<T> array) where T : struct
+        private bool TryResolve<T>(
+            IDataVault vault,
+            in VaultGenerationHandle<T> handle,
+            BufferID expectedBufferId,
+            out NativeArray<T> array) where T : struct
         {
             array = default;
-            return vault != null && handle.BufferID != 0u && vault.TryReadHandle(in handle, out array) && array.IsCreated;
+            return vault != null &&
+                   IsOwnedVaultHandle(in handle, expectedBufferId, SystemID.AIEcology) &&
+                   vault.TryResolveHandle(in handle, out array) &&
+                   array.IsCreated;
+        }
+
+        private bool TryRead<T>(
+            IDataVault vault,
+            in VaultGenerationHandle<T> handle,
+            BufferID expectedBufferId,
+            SystemID expectedOwner,
+            out NativeArray<T> array) where T : struct
+        {
+            array = default;
+            return vault != null &&
+                   IsOwnedVaultHandle(in handle, expectedBufferId, expectedOwner) &&
+                   vault.TryReadHandle(in handle, out array) &&
+                   array.IsCreated;
         }
 
         private void InitializeColdDefaults(
@@ -1164,7 +1221,8 @@ namespace Hecton8.AI
 
         private void RefreshColdInputs(IDataVault vault)
         {
-            if (!vault.TryAcquireWriteLock(in _inputHandle, SystemID.AIEcology, out NativeArray<DirectorInputDTO> inputs))
+            if (!IsOwnedVaultHandle(in _inputHandle, InputBufferId, SystemID.AIEcology) ||
+                !vault.TryAcquireWriteLock(in _inputHandle, SystemID.AIEcology, out NativeArray<DirectorInputDTO> inputs))
                 return;
 
             try
@@ -1208,8 +1266,8 @@ namespace Hecton8.AI
 
         private void RefreshWeatherInputs(IDataVault vault, ref DirectorInputDTO input)
         {
-            if (TryRefreshBorrowedHandle(vault, BufferID.ShinobuOceanWeatherState, ref _weatherStateHandle) &&
-                TryRead(vault, in _weatherStateHandle, out NativeArray<WeatherStateDTO> weather) &&
+            if (TryRefreshBorrowedHandle(vault, BufferID.ShinobuOceanWeatherState, SystemID.HabitatAtmosphere, ref _weatherStateHandle) &&
+                TryRead(vault, in _weatherStateHandle, BufferID.ShinobuOceanWeatherState, SystemID.HabitatAtmosphere, out NativeArray<WeatherStateDTO> weather) &&
                 weather.IsCreated &&
                 weather.Length > 0)
             {
@@ -1242,12 +1300,12 @@ namespace Hecton8.AI
 
         private bool TryApplyMacroEcosystemContractsSnapshot(IDataVault vault, ref DirectorInputDTO input)
         {
-            if (!TryRefreshBorrowedHandle(vault, BufferID.ShinobuMacroEcosystemSectorFront, ref _macroSectorSnapshotHandle) ||
-                !TryRefreshBorrowedHandle(vault, BufferID.ShinobuMacroEcosystemIndexEntries, ref _macroSectorIndexHandle) ||
-                !TryRefreshBorrowedHandle(vault, BufferID.ShinobuMacroEcosystemTuning, ref _macroTuningHandle) ||
-                !TryRead(vault, in _macroSectorSnapshotHandle, out NativeArray<EcosystemSectorDTO> sectors) ||
-                !TryRead(vault, in _macroSectorIndexHandle, out NativeArray<MacroEcosystemSectorIndexRecord> entries) ||
-                !TryRead(vault, in _macroTuningHandle, out NativeArray<MacroEcosystemTuningVaultRecord> tuning) ||
+            if (!TryRefreshBorrowedHandle(vault, BufferID.ShinobuMacroEcosystemSectorFront, SystemID.AIEcology, ref _macroSectorSnapshotHandle) ||
+                !TryRefreshBorrowedHandle(vault, BufferID.ShinobuMacroEcosystemIndexEntries, SystemID.AIEcology, ref _macroSectorIndexHandle) ||
+                !TryRefreshBorrowedHandle(vault, BufferID.ShinobuMacroEcosystemTuning, SystemID.AIEcology, ref _macroTuningHandle) ||
+                !TryRead(vault, in _macroSectorSnapshotHandle, BufferID.ShinobuMacroEcosystemSectorFront, SystemID.AIEcology, out NativeArray<EcosystemSectorDTO> sectors) ||
+                !TryRead(vault, in _macroSectorIndexHandle, BufferID.ShinobuMacroEcosystemIndexEntries, SystemID.AIEcology, out NativeArray<MacroEcosystemSectorIndexRecord> entries) ||
+                !TryRead(vault, in _macroTuningHandle, BufferID.ShinobuMacroEcosystemTuning, SystemID.AIEcology, out NativeArray<MacroEcosystemTuningVaultRecord> tuning) ||
                 tuning.Length <= 0)
             {
                 return false;
@@ -1314,8 +1372,8 @@ namespace Hecton8.AI
 
         private float ResolveGlobalQualityWeight(IDataVault vault)
         {
-            if (TryRefreshBorrowedHandle(vault, BufferID.ShinobuScalabilityState, ref _scalabilityStateHandle) &&
-                TryRead(vault, in _scalabilityStateHandle, out NativeArray<ScalabilityStateDTO> state) &&
+            if (TryRefreshBorrowedHandle(vault, BufferID.ShinobuScalabilityState, SystemID.GraphicsScalability, ref _scalabilityStateHandle) &&
+                TryRead(vault, in _scalabilityStateHandle, BufferID.ShinobuScalabilityState, SystemID.GraphicsScalability, out NativeArray<ScalabilityStateDTO> state) &&
                 state.IsCreated &&
                 state.Length > 0 &&
                 math.isfinite(state[0].GlobalQualityWeight))
@@ -1329,8 +1387,8 @@ namespace Hecton8.AI
 
         private float ResolveThermalPressure(IDataVault vault)
         {
-            if (TryRefreshBorrowedHandle(vault, BufferID.ShinobuScalabilityState, ref _scalabilityStateHandle) &&
-                TryRead(vault, in _scalabilityStateHandle, out NativeArray<ScalabilityStateDTO> state) &&
+            if (TryRefreshBorrowedHandle(vault, BufferID.ShinobuScalabilityState, SystemID.GraphicsScalability, ref _scalabilityStateHandle) &&
+                TryRead(vault, in _scalabilityStateHandle, BufferID.ShinobuScalabilityState, SystemID.GraphicsScalability, out NativeArray<ScalabilityStateDTO> state) &&
                 state.IsCreated &&
                 state.Length > 0 &&
                 math.isfinite(state[0].ThermalIndex))
@@ -1341,67 +1399,148 @@ namespace Hecton8.AI
             return 0f;
         }
 
-        private int TryLockJobBuffers(IDataVault vault)
+        private bool TryResolveJobBuffers(
+            IDataVault vault,
+            out NativeArray<SpawnRuleDTO> rules,
+            out NativeArray<SpawnRuleLinkDTO> links,
+            out NativeArray<DirectorCandidateDTO> candidates,
+            out NativeArray<DirectorSelectionDTO> selection,
+            out NativeArray<DirectorInputDTO> inputs,
+            out NativeArray<DirectorTuningDTO> tuning,
+            out NativeArray<DirectorTelemetryEntry> telemetry,
+            out NativeArray<int> counters,
+            out NativeArray<float4> frustumPlanes,
+            out NativeArray<DirectorOwnedSlotDTO> ownedSlots,
+            out NativeArray<InventoryPreloadTicketDTO> inventoryTickets,
+            out NativeArray<DirectorSpawnDebugDTO> spawnDebug)
         {
-            int locked = 0;
-            if (!TryLockBuffer(vault, RulesBufferId, ref locked)) return locked;
-            if (!TryLockBuffer(vault, RuleLinksBufferId, ref locked)) return locked;
-            if (!TryLockBuffer(vault, CandidatesBufferId, ref locked)) return locked;
-            if (!TryLockBuffer(vault, SelectionBufferId, ref locked)) return locked;
-            if (!TryLockBuffer(vault, InputBufferId, ref locked)) return locked;
-            if (!TryLockBuffer(vault, TuningBufferId, ref locked)) return locked;
-            if (!TryLockBuffer(vault, TelemetryBufferId, ref locked)) return locked;
-            if (!TryLockBuffer(vault, CountersBufferId, ref locked)) return locked;
-            if (!TryLockBuffer(vault, FrustumPlanesBufferId, ref locked)) return locked;
-            if (!TryLockBuffer(vault, OwnedSlotsBufferId, ref locked)) return locked;
-            if (!TryLockBuffer(vault, InventoryTicketsBufferId, ref locked)) return locked;
-            if (!TryLockBuffer(vault, SpawnDebugBufferId, ref locked)) return locked;
-            return locked;
+            rules = default;
+            links = default;
+            candidates = default;
+            selection = default;
+            inputs = default;
+            tuning = default;
+            telemetry = default;
+            counters = default;
+            frustumPlanes = default;
+            ownedSlots = default;
+            inventoryTickets = default;
+            spawnDebug = default;
+
+            return TryResolve(vault, in _rulesHandle, RulesBufferId, out rules) &&
+                   TryResolve(vault, in _ruleLinksHandle, RuleLinksBufferId, out links) &&
+                   TryResolve(vault, in _candidatesHandle, CandidatesBufferId, out candidates) &&
+                   TryResolve(vault, in _selectionHandle, SelectionBufferId, out selection) &&
+                   TryResolve(vault, in _inputHandle, InputBufferId, out inputs) &&
+                   TryResolve(vault, in _tuningHandle, TuningBufferId, out tuning) &&
+                   TryResolve(vault, in _telemetryHandle, TelemetryBufferId, out telemetry) &&
+                   TryResolve(vault, in _countersHandle, CountersBufferId, out counters) &&
+                   TryResolve(vault, in _frustumPlanesHandle, FrustumPlanesBufferId, out frustumPlanes) &&
+                   TryResolve(vault, in _ownedSlotsHandle, OwnedSlotsBufferId, out ownedSlots) &&
+                   TryResolve(vault, in _inventoryTicketsHandle, InventoryTicketsBufferId, out inventoryTickets) &&
+                   TryResolve(vault, in _spawnDebugHandle, SpawnDebugBufferId, out spawnDebug);
         }
 
-        private static bool TryLockBuffer(IDataVault vault, BufferID bufferId, ref int locked)
+        private bool TryValidateJobBuffers(IDataVault vault)
         {
-            if (!vault.TryLockBuffer(bufferId, SystemID.AIEcology))
+            return TryResolveJobBuffers(
+                vault,
+                out _,
+                out _,
+                out _,
+                out _,
+                out _,
+                out _,
+                out _,
+                out _,
+                out _,
+                out _,
+                out _,
+                out _);
+        }
+
+        private bool TryPinJobBuffers(IDataVault vault)
+        {
+            ReleaseJobBufferPins();
+            if (vault == null || vault.IsCompactionFenceActive || !TryValidateJobBuffers(vault))
                 return false;
-            locked++;
-            return true;
+
+            bool acquired = false;
+            try
+            {
+                if (!vault.TryAcquireMutationGuard(JobMutationGuardMask))
+                    return false;
+
+                acquired = true;
+                if (!TryValidateJobBuffers(vault))
+                    return false;
+
+                _jobGuardVault = vault;
+                _jobBuffersPinned = true;
+                acquired = false;
+                return true;
+            }
+            finally
+            {
+                if (acquired)
+                    vault.ReleaseMutationGuard(JobMutationGuardMask);
+            }
+        }
+
+        private void ReleaseJobBufferPins()
+        {
+            if (!_jobBuffersPinned)
+            {
+                _jobGuardVault = null;
+                return;
+            }
+
+            IDataVault vault = _jobGuardVault ?? _vault;
+            if (vault != null)
+                vault.ReleaseMutationGuard(JobMutationGuardMask);
+
+            _jobGuardVault = null;
+            _jobBuffersPinned = false;
         }
 
 #if UNITY_EDITOR
-        private static int TryLockReloadBuffers(IDataVault vault)
+        private bool TryPinReloadBuffers(IDataVault vault)
         {
-            int locked = 0;
-            if (!TryLockBuffer(vault, RulesBufferId, ref locked)) return locked;
-            if (!TryLockBuffer(vault, RuleLinksBufferId, ref locked)) return locked;
-            if (!TryLockBuffer(vault, CountersBufferId, ref locked)) return locked;
-            if (!TryLockBuffer(vault, CsvScratchBufferId, ref locked)) return locked;
-            return locked;
+            if (vault == null || vault.IsCompactionFenceActive || !TryValidateReloadBuffers(vault))
+                return false;
+
+            bool acquired = false;
+            try
+            {
+                if (!vault.TryAcquireMutationGuard(ReloadMutationGuardMask))
+                    return false;
+
+                acquired = true;
+                if (!TryValidateReloadBuffers(vault))
+                    return false;
+
+                acquired = false;
+                return true;
+            }
+            finally
+            {
+                if (acquired)
+                    vault.ReleaseMutationGuard(ReloadMutationGuardMask);
+            }
         }
 
-        private static void UnlockReloadBuffers(IDataVault vault, int locked)
+        private bool TryValidateReloadBuffers(IDataVault vault)
         {
-            if (locked >= 4) vault.TryUnlockBuffer(CsvScratchBufferId, SystemID.AIEcology);
-            if (locked >= 3) vault.TryUnlockBuffer(CountersBufferId, SystemID.AIEcology);
-            if (locked >= 2) vault.TryUnlockBuffer(RuleLinksBufferId, SystemID.AIEcology);
-            if (locked >= 1) vault.TryUnlockBuffer(RulesBufferId, SystemID.AIEcology);
+            return TryResolve(vault, in _rulesHandle, RulesBufferId, out NativeArray<SpawnRuleDTO> rules) &&
+                   TryResolve(vault, in _ruleLinksHandle, RuleLinksBufferId, out NativeArray<SpawnRuleLinkDTO> links) &&
+                   TryResolve(vault, in _countersHandle, CountersBufferId, out NativeArray<int> counters) &&
+                   TryResolve(vault, in _csvScratchHandle, CsvScratchBufferId, out NativeArray<byte> scratch) &&
+                   rules.IsCreated &&
+                   links.IsCreated &&
+                   counters.IsCreated &&
+                   scratch.IsCreated;
         }
 #endif
-
-        private void UnlockJobBuffers(IDataVault vault, int locked)
-        {
-            if (locked >= 12) vault.TryUnlockBuffer(SpawnDebugBufferId, SystemID.AIEcology);
-            if (locked >= 11) vault.TryUnlockBuffer(InventoryTicketsBufferId, SystemID.AIEcology);
-            if (locked >= 10) vault.TryUnlockBuffer(OwnedSlotsBufferId, SystemID.AIEcology);
-            if (locked >= 9) vault.TryUnlockBuffer(FrustumPlanesBufferId, SystemID.AIEcology);
-            if (locked >= 8) vault.TryUnlockBuffer(CountersBufferId, SystemID.AIEcology);
-            if (locked >= 7) vault.TryUnlockBuffer(TelemetryBufferId, SystemID.AIEcology);
-            if (locked >= 6) vault.TryUnlockBuffer(TuningBufferId, SystemID.AIEcology);
-            if (locked >= 5) vault.TryUnlockBuffer(InputBufferId, SystemID.AIEcology);
-            if (locked >= 4) vault.TryUnlockBuffer(SelectionBufferId, SystemID.AIEcology);
-            if (locked >= 3) vault.TryUnlockBuffer(CandidatesBufferId, SystemID.AIEcology);
-            if (locked >= 2) vault.TryUnlockBuffer(RuleLinksBufferId, SystemID.AIEcology);
-            if (locked >= 1) vault.TryUnlockBuffer(RulesBufferId, SystemID.AIEcology);
-        }
 
         private float ResolveElapsedMicroseconds()
         {
@@ -1414,8 +1553,8 @@ namespace Hecton8.AI
 
         private void PatchLatestTelemetryMicros(IDataVault vault, float micros)
         {
-            if (!TryResolve(vault, in _telemetryHandle, out NativeArray<DirectorTelemetryEntry> telemetry) ||
-                !TryResolve(vault, in _countersHandle, out NativeArray<int> counters) ||
+            if (!TryResolve(vault, in _telemetryHandle, TelemetryBufferId, out NativeArray<DirectorTelemetryEntry> telemetry) ||
+                !TryResolve(vault, in _countersHandle, CountersBufferId, out NativeArray<int> counters) ||
                 !telemetry.IsCreated ||
                 telemetry.Length <= 0)
             {
@@ -1435,8 +1574,8 @@ namespace Hecton8.AI
 
         private void PatchLatestTelemetryAfterApply(IDataVault vault, bool spawned, int slot)
         {
-            if (!TryResolve(vault, in _telemetryHandle, out NativeArray<DirectorTelemetryEntry> telemetry) ||
-                !TryResolve(vault, in _countersHandle, out NativeArray<int> counters) ||
+            if (!TryResolve(vault, in _telemetryHandle, TelemetryBufferId, out NativeArray<DirectorTelemetryEntry> telemetry) ||
+                !TryResolve(vault, in _countersHandle, CountersBufferId, out NativeArray<int> counters) ||
                 !telemetry.IsCreated ||
                 telemetry.Length <= 0)
             {
@@ -1458,8 +1597,8 @@ namespace Hecton8.AI
 
         private void ApplyCullRequests(IDataVault vault)
         {
-            if (!TryResolve(vault, in _ownedSlotsHandle, out NativeArray<DirectorOwnedSlotDTO> ownedSlots) ||
-                !TryResolve(vault, in _countersHandle, out NativeArray<int> counters) ||
+            if (!TryResolve(vault, in _ownedSlotsHandle, OwnedSlotsBufferId, out NativeArray<DirectorOwnedSlotDTO> ownedSlots) ||
+                !TryResolve(vault, in _countersHandle, CountersBufferId, out NativeArray<int> counters) ||
                 !ownedSlots.IsCreated ||
                 !counters.IsCreated ||
                 counters.Length <= CounterOwnedSlotCount)
@@ -1493,9 +1632,9 @@ namespace Hecton8.AI
 
         private void ApplyCompletedSelection(IDataVault vault)
         {
-            if (!TryResolve(vault, in _selectionHandle, out NativeArray<DirectorSelectionDTO> selectionArray) ||
-                !TryResolve(vault, in _ownedSlotsHandle, out NativeArray<DirectorOwnedSlotDTO> ownedSlots) ||
-                !TryResolve(vault, in _countersHandle, out NativeArray<int> counters) ||
+            if (!TryResolve(vault, in _selectionHandle, SelectionBufferId, out NativeArray<DirectorSelectionDTO> selectionArray) ||
+                !TryResolve(vault, in _ownedSlotsHandle, OwnedSlotsBufferId, out NativeArray<DirectorOwnedSlotDTO> ownedSlots) ||
+                !TryResolve(vault, in _countersHandle, CountersBufferId, out NativeArray<int> counters) ||
                 selectionArray.Length <= 0 ||
                 counters.Length <= CounterOwnedSlotCount)
             {
@@ -1861,7 +2000,7 @@ namespace Hecton8.AI
 #if UNITY_EDITOR
         private bool TryLoadRulesCsvCold(IDataVault vault, bool forceReload, bool locksHeld)
         {
-            if (!TryResolve(vault, in _countersHandle, out NativeArray<int> counters))
+            if (!TryResolve(vault, in _countersHandle, CountersBufferId, out NativeArray<int> counters))
                 return false;
 
             if (counters.Length <= CounterCsvLoaded)
@@ -1875,10 +2014,8 @@ namespace Hecton8.AI
                 if (vault == null || vault.IsAllocationLocked || vault.IsCompactionFenceActive)
                     return false;
 
-                int locked = TryLockReloadBuffers(vault);
-                if (locked != 4)
+                if (!TryPinReloadBuffers(vault))
                 {
-                    UnlockReloadBuffers(vault, locked);
                     return false;
                 }
 
@@ -1888,14 +2025,14 @@ namespace Hecton8.AI
                 }
                 finally
                 {
-                    UnlockReloadBuffers(vault, locked);
+                    vault.ReleaseMutationGuard(ReloadMutationGuardMask);
                 }
             }
 
-            if (!TryResolve(vault, in _csvScratchHandle, out NativeArray<byte> scratch) ||
-                !TryResolve(vault, in _rulesHandle, out NativeArray<SpawnRuleDTO> rules) ||
-                !TryResolve(vault, in _ruleLinksHandle, out NativeArray<SpawnRuleLinkDTO> links) ||
-                !TryResolve(vault, in _countersHandle, out counters))
+            if (!TryResolve(vault, in _csvScratchHandle, CsvScratchBufferId, out NativeArray<byte> scratch) ||
+                !TryResolve(vault, in _rulesHandle, RulesBufferId, out NativeArray<SpawnRuleDTO> rules) ||
+                !TryResolve(vault, in _ruleLinksHandle, RuleLinksBufferId, out NativeArray<SpawnRuleLinkDTO> links) ||
+                !TryResolve(vault, in _countersHandle, CountersBufferId, out counters))
             {
                 return false;
             }
@@ -2335,7 +2472,7 @@ namespace Hecton8.AI
 
         private void DumpBlackBoxCold(IDataVault vault, uint reasonHash)
         {
-            if (!TryResolve(vault, in _telemetryHandle, out NativeArray<DirectorTelemetryEntry> telemetry) ||
+            if (!TryResolve(vault, in _telemetryHandle, TelemetryBufferId, out NativeArray<DirectorTelemetryEntry> telemetry) ||
                 !telemetry.IsCreated ||
                 telemetry.Length <= 0)
             {

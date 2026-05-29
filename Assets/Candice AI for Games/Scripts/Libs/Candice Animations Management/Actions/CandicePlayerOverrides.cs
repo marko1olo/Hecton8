@@ -40,7 +40,7 @@ namespace CandiceAIforGames.AI
 
             if (attackCamera == null)
             {
-                attackCamera = Camera.main;
+                attackCamera = owner != null ? owner.GetComponentInChildren<Camera>() : null;
             }
 
             attackTarget.SetActive(false);
@@ -63,8 +63,8 @@ namespace CandiceAIforGames.AI
                 return;
             }
 
-            Camera currentCamera = attackCamera != null ? attackCamera : Camera.main;
-            if (currentAttackTarget != null && currentCamera != null)
+            Camera currentCamera = attackCamera;
+            if (currentCamera != null)
             {
                 //buffer mouse position z
                 mousePos.z = bufferMousePositionz;
@@ -109,8 +109,8 @@ namespace CandiceAIforGames.AI
                 return;
             }
 
-            Camera currentCamera = attackCamera != null ? attackCamera : Camera.main;
-            if (currentAttackTarget != null && currentCamera != null) {
+            Camera currentCamera = attackCamera;
+            if (currentCamera != null) {
                 //buffer mouse position z
                 mousePos.z = bufferMousePositionz;
                 //create new attack target from reticule position

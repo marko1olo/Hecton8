@@ -288,7 +288,7 @@ namespace Hecton8.Construction
     //
     // Scheduling invariant: each job writes disjoint row ranges by IJobParallelFor index, shared scalar lanes carry [NoAlias],
     // and external Power/Fluid inputs are either read-only snapshots or the single back-buffer mutation route guarded by
-    // DrainageRoomDrainLock64. No same-frame job reads these pointers after UnlockJobBuffers runs.
+    // DrainageRoomDrainLock64. No same-frame job reads these pointers after the drainage mutation guard is released.
     [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Deterministic, FloatPrecision = FloatPrecision.Standard)]
     public unsafe struct ApplyPumpPowerConstraintJob : IJobParallelFor
     {

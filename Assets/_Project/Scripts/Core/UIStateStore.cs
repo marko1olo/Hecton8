@@ -494,12 +494,25 @@ namespace Hecton8.Core
             DisposeNativeArray(ref _historyStates, ref disposeHandle);
             DisposeNativeArray(ref _pdaLogEventHashes, ref disposeHandle);
             DisposeNativeArray(ref _pdaLogEventTimestamps, ref disposeHandle);
-            DispatcherJobFence.TryComplete(ref disposeHandle, forceComplete: true);
+            ForceCompleteDisposeHandleInPostSimulationWindow(ref disposeHandle);
 
             _pdaLogWriteIndex = 0;
             _pdaLogCount = 0;
             _historyWriteIndex = 0;
             _historyCount = 0;
+        }
+
+        private static void ForceCompleteDisposeHandleInPostSimulationWindow(ref JobHandle disposeHandle)
+        {
+            DispatcherJobFence.BeginPostSimulationSwapWindow();
+            try
+            {
+                DispatcherJobFence.TryComplete(ref disposeHandle, forceComplete: true);
+            }
+            finally
+            {
+                DispatcherJobFence.EndPostSimulationSwapWindow();
+            }
         }
 
         private static void DisposeNativeArray<T>(ref NativeArray<T> array, ref JobHandle dependency) where T : struct

@@ -12,6 +12,7 @@ using Hecton8.Core.Contracts.Signals;
 using Hecton8.Core.Contracts;
 using Hecton8.Core.Contracts.Fluids;
 using Hecton8.Gameplay;
+using Hecton8.Inventory;
 using Hecton8.Tools;
 using Hecton8.World;
 using Unity.Burst;
@@ -679,6 +680,7 @@ namespace Hecton8.Physics
 
         private Rigidbody _cachedPlayerRigidbody;
         private IPlayerRuntimeContext _playerRuntime;
+        private IPlayerInventoryService _playerInventoryService;
         private ISubmarineRuntimeContext _submarineRuntime;
         private IAnalyticalFlowReadModel _fluidRuntime;
         private IPowerGridService _powerGridService;
@@ -1282,8 +1284,9 @@ namespace Hecton8.Physics
             if (HasActiveHydrodynamicsConfiguration())
             {
                 TryRegister();
+                TryRegisterLateFrameTickable();
                 TryRegisterOriginShiftListener();
-                SeedCargoMassFromRegistryCold();
+                SeedCargoMassFromCachedInventoryCold();
             }
             else
             {
@@ -1415,8 +1418,6 @@ namespace Hecton8.Physics
         {
             FlushQueuedCavitationFeedback();
             FlushQueuedBrineHullFeedback();
-            if (!_pendingCavitationFeedbackDirty && !_pendingBrineHullAcousticDirty)
-                TryUnregisterLateFrameTickable();
         }
 
         /// <inheritdoc />
@@ -1433,7 +1434,14 @@ namespace Hecton8.Physics
 
             if (serviceSlot == GlobalRegistryServiceSlot.Player)
             {
-                _playerRuntime = currentService as IPlayerRuntimeContext;
+                ApplyPlayerRuntimeContext(currentService as IPlayerRuntimeContext);
+                return;
+            }
+
+            if (serviceSlot == GlobalRegistryServiceSlot.PlayerInventory)
+            {
+                _playerInventoryService = currentService as IPlayerInventoryService;
+                SeedCargoMassFromCachedInventoryCold();
                 return;
             }
 
@@ -1488,6 +1496,7 @@ namespace Hecton8.Physics
                     HasActiveHydrodynamicsConfiguration())
                 {
                     TryRegister();
+                    TryRegisterLateFrameTickable();
                 }
 
                 return;
@@ -2132,6 +2141,8 @@ namespace Hecton8.Physics
                 _lastAppliedRigidbodyMass = _dryRigidbodyMass;
                 _baselineMassCached = true;
             }
+
+            RefreshPipeBindingsCold();
         }
 
         private void RefreshVaultNativeStateAfterRelocation()
@@ -2933,12 +2944,12 @@ namespace Hecton8.Physics
             return math.all(math.isfinite(flow)) ? flow : float3.zero;
         }
 
-        private void SeedCargoMassFromRegistryCold()
+        private void SeedCargoMassFromCachedInventoryCold()
         {
             if (!syncCargoMassFromInventorySignals)
                 return;
 
-            float cachedMass = GlobalRegistry.PlayerInventoryMassKg;
+            float cachedMass = ResolveCachedInventoryMassKilograms();
             if (!math.isfinite(cachedMass))
                 cachedMass = 0f;
 
@@ -2949,6 +2960,18 @@ namespace Hecton8.Physics
             }
 
             CommitCargoMassScalar(cachedMass);
+        }
+
+        private float ResolveCachedInventoryMassKilograms()
+        {
+            IPlayerInventoryService inventoryService = _playerInventoryService;
+            PlayerInventory inventory = inventoryService != null && inventoryService.IsInitialized
+                ? inventoryService.Inventory
+                : null;
+            if (inventory == null && _playerRuntime != null && _playerRuntime.IsInitialized)
+                inventory = _playerRuntime.Inventory;
+
+            return inventory != null ? inventory.TotalMassKg : 0f;
         }
 
         private void ConsumeInventoryMassSignals()
@@ -3463,7 +3486,6 @@ namespace Hecton8.Physics
             if (_atmosphereSystem == null || !_atmosphereSystem.IsAtmosphereRuntimeActive)
                 return;
 
-            RefreshPipeBindingsCold();
             int pipeCount = _pipeBindingBuffer.Count;
             for (int pipeIndex = 0; pipeIndex < pipeCount; pipeIndex++)
             {
@@ -3725,7 +3747,8 @@ namespace Hecton8.Physics
             for (int hitIndex = 0; hitIndex < hitCount; hitIndex++)
             {
                 SpatialQueryHit hit = _depressurizationContacts[hitIndex];
-                if (!TryResolveDynamicBody(hit.Owner, hit.Transform, out Rigidbody body) || body == null)
+                Rigidbody body = hit.Rigidbody;
+                if (body == null)
                     continue;
 
                 if (ReferenceEquals(body, _rigidbody) || ReferenceEquals(body, playerBody))
@@ -3852,17 +3875,8 @@ namespace Hecton8.Physics
 
         private static bool TryResolveDynamicBody(Component owner, Transform runtimeTransform, out Rigidbody body)
         {
-            body = null;
-            if (owner != null)
-            {
-                if (owner.TryGetComponent(out body))
-                    return true;
-            }
-
-            if (runtimeTransform == null)
-                return false;
-
-            return runtimeTransform.TryGetComponent(out body);
+            body = owner as Rigidbody;
+            return body != null;
         }
 
         private void FinalizeCompartmentState()
@@ -4519,14 +4533,12 @@ namespace Hecton8.Physics
         {
             _pendingBrineHullAcoustic = signal;
             _pendingBrineHullAcousticDirty = true;
-            TryRegisterLateFrameTickable();
         }
 
         private void QueueCavitationFeedback(in CavitationFeedbackRequest request)
         {
             _pendingCavitationFeedback = request;
             _pendingCavitationFeedbackDirty = true;
-            TryRegisterLateFrameTickable();
         }
 
         private void FlushQueuedCavitationFeedback()
@@ -4709,7 +4721,7 @@ namespace Hecton8.Physics
                 return;
             }
 
-            EnsurePlayerBindings();
+            RefreshPlayerBindingsFromCachedContext();
 
             for (int slotIndex = 0; slotIndex < ExteriorThermalAnomalyCapacity; slotIndex++)
             {
@@ -4817,9 +4829,12 @@ namespace Hecton8.Physics
             _cachedPlayerMovement.ApplyExternalThermalUpdraft(updraftVelocity);
         }
 
-        private void EnsurePlayerBindings()
+        private void RefreshPlayerBindingsFromCachedContext()
         {
-            Transform playerTransform = BootstrapState.CurrentPlayerTransform;
+            IPlayerRuntimeContext playerRuntime = _playerRuntime;
+            Transform playerTransform = playerRuntime != null && playerRuntime.IsInitialized
+                ? playerRuntime.PlayerTransform
+                : null;
             if (playerTransform == null)
             {
                 _cachedPlayerTransform = null;
@@ -4831,15 +4846,10 @@ namespace Hecton8.Physics
             if (_cachedPlayerTransform != playerTransform)
             {
                 _cachedPlayerTransform = playerTransform;
-                _cachedPlayerMovement = null;
-                _cachedPlayerRigidbody = null;
             }
 
-            if (_cachedPlayerMovement == null)
-                playerTransform.TryGetComponent(out _cachedPlayerMovement);
-
-            if (_cachedPlayerRigidbody == null)
-                playerTransform.TryGetComponent(out _cachedPlayerRigidbody);
+            _cachedPlayerMovement = playerRuntime.PlayerMovement;
+            _cachedPlayerRigidbody = playerRuntime.PlayerRigidbody;
         }
 
         private void ClearExteriorThermalAnomalies()
@@ -5477,6 +5487,12 @@ namespace Hecton8.Physics
             return math.max(Epsilon, hullImplosionDepthThresholdMeters);
         }
 
+        private void ApplyPlayerRuntimeContext(IPlayerRuntimeContext playerRuntime)
+        {
+            _playerRuntime = playerRuntime;
+            RefreshPlayerBindingsFromCachedContext();
+        }
+
         private IPlayerRuntimeContext ResolvePlayerRuntimeContext()
         {
             if (IsUnityObjectInvalid(_playerRuntime))
@@ -5546,6 +5562,10 @@ namespace Hecton8.Physics
         {
             if (_playerRuntime == null || IsUnityObjectInvalid(_playerRuntime))
                 _playerRuntime = GlobalRegistry.Player;
+            RefreshPlayerBindingsFromCachedContext();
+
+            if (_playerInventoryService == null || IsUnityObjectInvalid(_playerInventoryService))
+                _playerInventoryService = GlobalRegistry.PlayerInventory;
 
             if (_submarineRuntime == null || IsUnityObjectInvalid(_submarineRuntime))
                 _submarineRuntime = GlobalRegistry.Submarine;
@@ -5557,6 +5577,10 @@ namespace Hecton8.Physics
         private void ClearRuntimeServiceCaches()
         {
             _playerRuntime = null;
+            _playerInventoryService = null;
+            _cachedPlayerTransform = null;
+            _cachedPlayerMovement = null;
+            _cachedPlayerRigidbody = null;
             _submarineRuntime = null;
             _fluidRuntime = null;
             _powerGridService = null;

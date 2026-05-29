@@ -180,7 +180,7 @@ function Build-CleanGraphNode([object]$SnippetNode, [hashtable]$AllowedOpcodes) 
     $parameters = [pscustomobject][ordered]@{}
     $parametersProperty = $SnippetNode.PSObject.Properties['Parameters']
     if ($null -ne $parametersProperty -and $null -ne $parametersProperty.Value) {
-        if ($parametersProperty.Value.GetType().IsArray) {
+        if ($parametersProperty.Value.GetType().IsArray -or $parametersProperty.Value -isnot [System.Management.Automation.PSCustomObject]) {
             Fail 'Graph node Parameters must be a JSON object.'
         }
 

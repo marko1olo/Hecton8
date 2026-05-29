@@ -158,7 +158,7 @@ namespace Hecton8.EditorTools
 
         private void OnMaxNodesChanged(ChangeEvent<float> evt)
         {
-            _tuning.UltraTierSolveBudget = Mathf.Clamp(evt.newValue / 48f, 1f, 64f);
+            _tuning.OverkillSolveBudget = Mathf.Clamp(evt.newValue / 48f, 1f, 64f);
             ApplyTuning();
         }
 
@@ -201,7 +201,7 @@ namespace Hecton8.EditorTools
         private void RefreshUiFromTuning()
         {
             SetSliderValueWithoutNotify(_maxSpeedSlider, _tuning.MaxDroneSpeed);
-            SetSliderValueWithoutNotify(_maxNodesSlider, Mathf.Clamp(_tuning.UltraTierSolveBudget * 48f, 16f, 512f));
+            SetSliderValueWithoutNotify(_maxNodesSlider, Mathf.Clamp(_tuning.OverkillSolveBudget * 48f, 16f, 512f));
             float heuristicWeight = _tuning.Reserved0 > 0f
                 ? _tuning.Reserved0
                 : Mathf.Lerp(2.25f, 1.05f, Mathf.Clamp01(HomeostasisBrain.GlobalQualityWeight));

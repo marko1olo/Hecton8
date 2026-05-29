@@ -254,6 +254,7 @@ namespace Hecton8.Dev
         private int _sampleWindowStartFrame;
         private bool _sampleWindowUsedTickDrive;
         private bool _sampleWindowUsedFallbackDrive;
+        private bool _rendererOwnershipAuditPending;
 
 #if UNITY_EDITOR
         private static bool _editorHooksRegistered;
@@ -721,6 +722,7 @@ namespace Hecton8.Dev
 
             UpdateWorldDiagnostics();
             UpdateVRAMDiagnostics();
+            FlushPendingRendererOwnershipAudit();
             _debugPeakFrameTimeMs = _peakFrameTimeMs;
             _debugPeakMainThreadMs = _peakMainThreadMs;
             _debugPeakGcAllocBytes = _peakGcAllocBytes;
@@ -1136,9 +1138,18 @@ namespace Hecton8.Dev
             }
 
             if (traceRendererOwnershipOnSpike && RuntimeDiagnosticsTrace.IsActive && ShouldCaptureRendererOwnershipAudit())
-                CaptureRendererOwnershipAudit();
+                _rendererOwnershipAuditPending = true;
 
             ResetSampleWindow();
+        }
+
+        private void FlushPendingRendererOwnershipAudit()
+        {
+            if (!_rendererOwnershipAuditPending)
+                return;
+
+            _rendererOwnershipAuditPending = false;
+            CaptureRendererOwnershipAudit();
         }
 
         private void ResetSampleWindow()

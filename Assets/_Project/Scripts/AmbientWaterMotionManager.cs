@@ -95,8 +95,6 @@ namespace Hecton8.Physics
         private const float ObserverResolveCooldown = 2f;
         private static AmbientWaterMotionManager s_activeRuntime;
 
-        public static AmbientWaterMotionManager Instance => s_activeRuntime;
-
         //  LIFECYCLE
 
         private void Awake()

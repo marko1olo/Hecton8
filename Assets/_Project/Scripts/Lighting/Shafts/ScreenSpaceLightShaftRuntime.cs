@@ -65,6 +65,10 @@ namespace Hecton8.Lighting.Shafts
         private const byte TelemetryFlagLoadShed = 1 << 1;
         private const byte TelemetryFlagNoCamera = 1 << 2;
         private const byte TelemetryFlagNaN = 1 << 3;
+        private static readonly ulong FrameBufferMutationGuardMask =
+            LightShaftMutationGuardBit(BufferID.LightShaftTopContributions) |
+            LightShaftMutationGuardBit(BufferID.LightShaftHistoryContributions) |
+            LightShaftMutationGuardBit(BufferID.LightShaftTelemetryRing);
 
         private static readonly int _LightShaftParamsId = Shader.PropertyToID("_HectonLightShaftParams");
         private static readonly int _LightShaftQualityId = Shader.PropertyToID("_HectonLightShaftQuality");
@@ -119,6 +123,8 @@ namespace Hecton8.Lighting.Shafts
         private bool _ownsTopContributions;
         private bool _ownsHistoryContributions;
         private bool _ownsTelemetry;
+        private IDataVault _frameBufferGuardVault;
+        private bool _frameBufferGuardActive;
         private bool _shaderGlobalsCleared;
         private bool _disposed;
 
@@ -337,52 +343,60 @@ namespace Hecton8.Lighting.Shafts
             if (vault == null)
                 return false;
 
-            bool topLocked = vault.TryLockBuffer(BufferID.LightShaftTopContributions, SystemID.Vfx);
-            if (!topLocked)
+            if (_frameBufferGuardActive)
                 return false;
 
-            bool historyLocked = vault.TryLockBuffer(BufferID.LightShaftHistoryContributions, SystemID.Vfx);
-            if (!historyLocked)
+            bool mutationGuardAcquired = false;
+            try
             {
-                vault.TryUnlockBuffer(BufferID.LightShaftTopContributions, SystemID.Vfx);
+                if (!vault.TryAcquireMutationGuard(FrameBufferMutationGuardMask))
+                    return false;
+
+                mutationGuardAcquired = true;
+                if (!IsOwnedVaultHandle(in _topContributionsHandle, BufferID.LightShaftTopContributions) ||
+                    !IsOwnedVaultHandle(in _historyContributionsHandle, BufferID.LightShaftHistoryContributions) ||
+                    !IsOwnedVaultHandle(in _telemetryHandle, BufferID.LightShaftTelemetryRing))
+                {
+                    return false;
+                }
+
+                vault.TryResolveHandle(in _topContributionsHandle, out topContributions);
+                vault.TryResolveHandle(in _historyContributionsHandle, out historyContributions);
+                vault.TryResolveHandle(in _telemetryHandle, out telemetry);
+                if (topContributions.IsCreated &&
+                    topContributions.Length >= MaxTrackedSources &&
+                    historyContributions.IsCreated &&
+                    historyContributions.Length >= MaxTrackedSources &&
+                    telemetry.IsCreated &&
+                    telemetry.Length >= TelemetryCapacity)
+                {
+                    _frameBufferGuardVault = vault;
+                    _frameBufferGuardActive = true;
+                    mutationGuardAcquired = false;
+                    return true;
+                }
+
+                ClearVaultDescriptors();
                 return false;
             }
-
-            bool telemetryLocked = vault.TryLockBuffer(BufferID.LightShaftTelemetryRing, SystemID.Vfx);
-            if (!telemetryLocked)
+            finally
             {
-                vault.TryUnlockBuffer(BufferID.LightShaftHistoryContributions, SystemID.Vfx);
-                vault.TryUnlockBuffer(BufferID.LightShaftTopContributions, SystemID.Vfx);
-                return false;
+                if (mutationGuardAcquired)
+                    vault.ReleaseMutationGuard(FrameBufferMutationGuardMask);
             }
-
-            vault.TryResolveHandle(in _topContributionsHandle, out topContributions);
-            vault.TryResolveHandle(in _historyContributionsHandle, out historyContributions);
-            vault.TryResolveHandle(in _telemetryHandle, out telemetry);
-            if (topContributions.IsCreated &&
-                topContributions.Length >= MaxTrackedSources &&
-                historyContributions.IsCreated &&
-                historyContributions.Length >= MaxTrackedSources &&
-                telemetry.IsCreated &&
-                telemetry.Length >= TelemetryCapacity)
-            {
-                return true;
-            }
-
-            UnlockFrameBuffers();
-            ClearVaultDescriptors();
-            return false;
         }
 
         private void UnlockFrameBuffers()
         {
-            IDataVault vault = _dataVault;
-            if (vault == null)
+            if (!_frameBufferGuardActive)
                 return;
 
-            vault.TryUnlockBuffer(BufferID.LightShaftTelemetryRing, SystemID.Vfx);
-            vault.TryUnlockBuffer(BufferID.LightShaftHistoryContributions, SystemID.Vfx);
-            vault.TryUnlockBuffer(BufferID.LightShaftTopContributions, SystemID.Vfx);
+            IDataVault vault = _frameBufferGuardVault != null ? _frameBufferGuardVault : _dataVault;
+            if (vault != null)
+                vault.ReleaseMutationGuard(FrameBufferMutationGuardMask);
+
+            _frameBufferGuardVault = null;
+            _frameBufferGuardActive = false;
         }
 
         private void ReleaseBuffers()
@@ -483,6 +497,11 @@ namespace Hecton8.Lighting.Shafts
         private static bool IsVaultHandleCreated<T>(in VaultGenerationHandle<T> handle) where T : struct
         {
             return handle.BufferID != 0u && handle.Generation != 0u;
+        }
+
+        private static ulong LightShaftMutationGuardBit(BufferID bufferId)
+        {
+            return 1UL << (unchecked((int)(uint)(int)bufferId) & 31);
         }
 
         private void ResolveRenderCamera()

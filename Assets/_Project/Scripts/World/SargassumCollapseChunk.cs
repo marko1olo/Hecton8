@@ -829,7 +829,7 @@ namespace Hecton8.World
                 for (int i = 0; i < scrapPickupCount && i < ScrapEjectDirections.Length; i++)
                 {
                     GameObject scrap = poolManager.Spawn(scrapPickupPrefab, origin + (ScrapEjectDirections[i] * 0.18f), Quaternion.identity);
-                    if (scrap == null || !scrap.TryGetComponent(out Rigidbody scrapRigidbody))
+                    if (scrap == null || !poolManager.TryGetPooledRootRigidbody(scrap, out Rigidbody scrapRigidbody))
                         continue;
 
                     _physicsService?.QueueLinearVelocitySet(

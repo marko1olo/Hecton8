@@ -37,7 +37,6 @@
 
 using System;
 using System.Collections.Generic;
-using Hecton8.Bootstrap;
 using Hecton8.Core;
 using Hecton8.Core.Contracts.Signals;
 using Hecton8.Gameplay;
@@ -607,13 +606,6 @@ namespace Hecton8.World
                 _mainCamera = runtimeContext.PlayerCamera;
             }
 
-            if (_mainCamera == null &&
-                GameBootstrapper.TryGetCurrentPlayerTransform(out Transform playerTransform) &&
-                playerTransform != null)
-            {
-                playerTransform.TryGetComponent(out _mainCamera);
-            }
-
             if (_mainCamera == null)
                 return false;
 
@@ -645,7 +637,7 @@ namespace Hecton8.World
             if (billboard == null)
                 return;
 
-            TryResolveBillboardRenderer(billboard, out Renderer renderer);
+            TryResolveBillboardRenderer(billboard, pool, out Renderer renderer);
             if (renderer != null)
             {
                 renderer.sharedMaterial = data.ImpostorMaterial;
@@ -673,17 +665,17 @@ namespace Hecton8.World
             instance.IsActive = false;
         }
 
-        private bool TryResolveBillboardRenderer(GameObject billboard, out Renderer renderer)
+        private bool TryResolveBillboardRenderer(GameObject billboard, IObjectPoolService pool, out Renderer renderer)
         {
             renderer = null;
-            if (billboard == null)
+            if (billboard == null || pool == null)
                 return false;
 
             EntityId key = billboard.GetEntityId();
             if (_billboardRendererCache.TryGetValue(key, out renderer) && renderer != null)
                 return true;
 
-            if (!billboard.TryGetComponent(out renderer))
+            if (!pool.TryGetPooledRootRenderer(billboard, out renderer))
                 renderer = null;
 
             _billboardRendererCache[key] = renderer;
@@ -975,16 +967,9 @@ namespace Hecton8.World
             LODSystemManager lodSystemManager = _lodSystemManager;
             if (lodSystemManager != null)
             {
-                switch (lodSystemManager.QualityPreset)
-                {
-                    case LODQualityPreset.Low:
-                        qualityScale = Mathf.Max(0.1f, _lowQualityThresholdMultiplier);
-                        break;
-
-                    case LODQualityPreset.High:
-                        qualityScale = Mathf.Max(0.1f, _highQualityThresholdMultiplier);
-                        break;
-                }
+                float lowScale = math.max(0.1f, _lowQualityThresholdMultiplier);
+                float highScale = math.max(0.1f, _highQualityThresholdMultiplier);
+                qualityScale = math.lerp(lowScale, highScale, Smooth01(lodSystemManager.QualityWeight01));
             }
 
             if (!_enableAdaptiveThresholdScaling)
@@ -1001,6 +986,12 @@ namespace Hecton8.World
                 renderScale);
 
             return qualityScale * adaptiveScale;
+        }
+
+        private static float Smooth01(float value)
+        {
+            float t = math.saturate(value);
+            return t * t * (3f - 2f * t);
         }
 
         private bool TryResolvePrimaryMaterial(

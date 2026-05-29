@@ -58,8 +58,6 @@ namespace Hecton8.World
         /// Singleton instance. Null if not initialized.
         /// </summary>
         private static CullingManager s_activeRuntimeInstance;
-        public static CullingManager Instance => s_activeRuntimeInstance;
-
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
         private static void ResetStaticState()
         {
@@ -509,22 +507,10 @@ namespace Hecton8.World
         {
             if (obj == null) return;
 
-            // Calculate bounds to determine size
             Bounds bounds = renderer != null
                 ? CalculateSingleRendererBounds(obj, renderer)
-                : CalculateBounds(obj, null);
-            float sizeSq = bounds.size.sqrMagnitude;
-
-            // Assign cull distance based on object size
-            float cullDistance;
-            if (sizeSq < 1f)
-                cullDistance = _smallObjectCullDistance;
-            else if (sizeSq < 25f)
-                cullDistance = _mediumObjectCullDistance;
-            else
-                cullDistance = _largeObjectCullDistance;
-
-            RegisterCullableObject(obj, cullDistance, renderer);
+                : CalculateRegistrationBounds(obj);
+            RegisterCullableObject(obj, ResolveCullDistance(bounds), renderer);
         }
 
         /// <summary>
@@ -698,13 +684,6 @@ namespace Hecton8.World
                 return playerContext.PlayerCamera;
             }
 
-            if (GameBootstrapper.TryGetCurrentPlayerTransform(out Transform playerTransform) &&
-                playerTransform != null)
-            {
-                if (playerTransform.TryGetComponent(out Camera playerOwnedCamera))
-                    return playerOwnedCamera;
-            }
-
             return null;
         }
 
@@ -714,6 +693,46 @@ namespace Hecton8.World
                 return renderer.bounds;
 
             return CalculateBounds(obj, null);
+        }
+
+        private Bounds CalculateRegistrationBounds(GameObject obj)
+        {
+            ClearRendererScratch();
+            CollectRenderersNonAlloc(obj.transform);
+
+            if (_rendererScratchCount == 0)
+                return CalculateBounds(obj, null);
+
+            bool boundsInitialized = false;
+            Bounds combinedBounds = default;
+            for (int i = 0; i < _rendererScratchCount; i++)
+            {
+                Renderer renderer = _rendererScratch[i];
+                if (renderer == null)
+                    continue;
+
+                if (!boundsInitialized)
+                {
+                    combinedBounds = renderer.bounds;
+                    boundsInitialized = true;
+                    continue;
+                }
+
+                combinedBounds.Encapsulate(renderer.bounds);
+            }
+
+            return boundsInitialized ? combinedBounds : CalculateBounds(obj, null);
+        }
+
+        private float ResolveCullDistance(Bounds bounds)
+        {
+            float sizeSq = bounds.size.sqrMagnitude;
+            if (sizeSq < 1f)
+                return _smallObjectCullDistance;
+
+            return sizeSq < 25f
+                ? _mediumObjectCullDistance
+                : _largeObjectCullDistance;
         }
 
         private Bounds CalculateBounds(GameObject obj, Renderer[] renderers)

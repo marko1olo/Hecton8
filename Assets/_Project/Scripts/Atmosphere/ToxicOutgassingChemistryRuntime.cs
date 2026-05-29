@@ -43,6 +43,7 @@ namespace Hecton8.Atmosphere
 
         private const ushort RuntimeSourceId = 65;
         private const byte RuntimeChannel = 65;
+        private const SystemID OwnerSystemId = SystemID.HabitatAtmosphere;
         private const byte SignalFlagsActive = 1;
         private const byte SignalFlagsTrilinear = 2;
         private const byte SignalFlagsCorrosion = 4;
@@ -65,32 +66,32 @@ namespace Hecton8.Atmosphere
         private const string LegacyBinaryRelativePath = "Data/Precomputed/gas_toxicity_tables.h8bin";
         private const string DaltonBinaryRelativePath = "Data/Precomputed/dalton_gas_toxicity.bin";
 
-        private static readonly BufferID DensityFrontBufferId = (BufferID)70800;
-        private static readonly BufferID DensityBackBufferId = (BufferID)70801;
-        private static readonly BufferID FlowFieldBufferId = (BufferID)70802;
-        private static readonly BufferID WorldSamplerBufferId = (BufferID)70803;
-        private static readonly BufferID SourceBufferId = (BufferID)70804;
-        private static readonly BufferID SourceIdBufferId = (BufferID)70805;
-        private static readonly BufferID EntityAupBufferId = (BufferID)70806;
-        private static readonly BufferID EntityIdBufferId = (BufferID)70807;
-        private static readonly BufferID EntityCorrosionTimerBufferId = (BufferID)70808;
-        private static readonly BufferID EntityExposureAccumulatorBufferId = (BufferID)70809;
-        private static readonly BufferID ExposureSignalBufferId = (BufferID)70810;
-        private static readonly BufferID StatusSignalBufferId = (BufferID)70811;
-        private static readonly BufferID BiolumSignalBufferId = (BufferID)70812;
-        private static readonly BufferID SignalCounterBufferId = (BufferID)70813;
-        private static readonly BufferID TelemetryRingBufferId = (BufferID)70814;
-        private static readonly BufferID TelemetryScratchBufferId = (BufferID)70815;
-        private static readonly BufferID ConstantsBufferId = (BufferID)70816;
+        private static readonly BufferID DensityFrontBufferId = BufferID.ToxicOutgassingDensityFront;
+        private static readonly BufferID DensityBackBufferId = BufferID.ToxicOutgassingDensityBack;
+        private static readonly BufferID FlowFieldBufferId = BufferID.ToxicOutgassingFlowField;
+        private static readonly BufferID WorldSamplerBufferId = BufferID.ToxicOutgassingWorldSampler;
+        private static readonly BufferID SourceBufferId = BufferID.ToxicOutgassingSources;
+        private static readonly BufferID SourceIdBufferId = BufferID.ToxicOutgassingSourceIds;
+        private static readonly BufferID EntityAupBufferId = BufferID.ToxicOutgassingEntityAups;
+        private static readonly BufferID EntityIdBufferId = BufferID.ToxicOutgassingEntityIds;
+        private static readonly BufferID EntityCorrosionTimerBufferId = BufferID.ToxicOutgassingEntityCorrosionTimers;
+        private static readonly BufferID EntityExposureAccumulatorBufferId = BufferID.ToxicOutgassingEntityExposureAccumulators;
+        private static readonly BufferID ExposureSignalBufferId = BufferID.ToxicOutgassingExposureSignals;
+        private static readonly BufferID StatusSignalBufferId = BufferID.ToxicOutgassingStatusSignals;
+        private static readonly BufferID BiolumSignalBufferId = BufferID.ToxicOutgassingBiolumSignals;
+        private static readonly BufferID SignalCounterBufferId = BufferID.ToxicOutgassingSignalCounters;
+        private static readonly BufferID TelemetryRingBufferId = BufferID.ToxicOutgassingTelemetryRing;
+        private static readonly BufferID TelemetryScratchBufferId = BufferID.ToxicOutgassingTelemetryScratch;
+        private static readonly BufferID ConstantsBufferId = BufferID.ToxicOutgassingConstants;
 #if UNITY_EDITOR
-        private static readonly BufferID CsvByteBufferId = (BufferID)70817;
+        private static readonly BufferID CsvByteBufferId = BufferID.ToxicOutgassingCsvBytes;
 #endif
-        private static readonly BufferID BinaryProbeByteBufferId = (BufferID)70818;
-        private static readonly BufferID NanFlagBufferId = (BufferID)70819;
-        private static readonly BufferID DensityMirrorBufferId = (BufferID)70820;
-        private static readonly BufferID GridHeaderBufferId = (BufferID)70821;
-        private static readonly BufferID CellStateFrontBufferId = (BufferID)70822;
-        private static readonly BufferID CellStateBackBufferId = (BufferID)70823;
+        private static readonly BufferID BinaryProbeByteBufferId = BufferID.ToxicOutgassingBinaryProbeBytes;
+        private static readonly BufferID NanFlagBufferId = BufferID.ToxicOutgassingNanFlags;
+        private static readonly BufferID DensityMirrorBufferId = BufferID.ToxicOutgassingDensityMirror;
+        private static readonly BufferID GridHeaderBufferId = BufferID.ToxicOutgassingGridHeader;
+        private static readonly BufferID CellStateFrontBufferId = BufferID.ToxicOutgassingCellStatesFront;
+        private static readonly BufferID CellStateBackBufferId = BufferID.ToxicOutgassingCellStatesBack;
 
         private VaultGenerationHandle<float> _densityFront;
         private VaultGenerationHandle<float> _densityBack;
@@ -160,7 +161,7 @@ namespace Hecton8.Atmosphere
                 return false;
             }
 
-            if (!TryOpenBuffer(in _constants, out NativeArray<ToxicOutgassingConstants> constantsArray) ||
+            if (!TryOpenBuffer(in _constants, ConstantsBufferId, out NativeArray<ToxicOutgassingConstants> constantsArray) ||
                 constantsArray.Length == 0)
             {
                 constants = default;
@@ -178,7 +179,7 @@ namespace Hecton8.Atmosphere
                 return false;
             }
 
-            if (!TryOpenBuffer(in _constants, out NativeArray<ToxicOutgassingConstants> constantsArray) ||
+            if (!TryOpenBuffer(in _constants, ConstantsBufferId, out NativeArray<ToxicOutgassingConstants> constantsArray) ||
                 constantsArray.Length == 0)
             {
                 return false;
@@ -241,7 +242,8 @@ namespace Hecton8.Atmosphere
             if (ReferenceEquals(_vault, currentService))
                 return;
 
-            RebindDataVaultForLifecycle(currentService as IDataVault);
+            IDataVault nextVault = currentService is IDataVault dataVault ? dataVault : null;
+            RebindDataVaultForLifecycle(nextVault);
 
             if (isActiveAndEnabled && _vault != null)
                 EnsureNativeState();
@@ -327,8 +329,8 @@ namespace Hecton8.Atmosphere
                 return false;
             }
 
-            NativeArray<ToxicitySourceDTO> sources = OpenBuffer(in _sources);
-            NativeArray<uint> sourceIds = OpenBuffer(in _sourceIds);
+            NativeArray<ToxicitySourceDTO> sources = OpenBuffer(in _sources, SourceBufferId);
+            NativeArray<uint> sourceIds = OpenBuffer(in _sourceIds, SourceIdBufferId);
             int index = FindSourceIndex(sourceIds, sourceId, _sourceCount);
             if (index < 0)
             {
@@ -367,8 +369,8 @@ namespace Hecton8.Atmosphere
                 return false;
             }
 
-            NativeArray<ToxicitySourceDTO> sources = OpenBuffer(in _sources);
-            NativeArray<uint> sourceIds = OpenBuffer(in _sourceIds);
+            NativeArray<ToxicitySourceDTO> sources = OpenBuffer(in _sources, SourceBufferId);
+            NativeArray<uint> sourceIds = OpenBuffer(in _sourceIds, SourceIdBufferId);
             int index = FindSourceIndex(sourceIds, sourceId, _sourceCount);
             if (index < 0)
             {
@@ -406,8 +408,8 @@ namespace Hecton8.Atmosphere
                 return false;
             }
 
-            NativeArray<double3> entityAups = OpenBuffer(in _entityAups);
-            NativeArray<uint> entityIds = OpenBuffer(in _entityIds);
+            NativeArray<double3> entityAups = OpenBuffer(in _entityAups, EntityAupBufferId);
+            NativeArray<uint> entityIds = OpenBuffer(in _entityIds, EntityIdBufferId);
             int index = FindEntityIndex(entityIds, entityId, _entityCount);
             if (index < 0)
             {
@@ -438,10 +440,10 @@ namespace Hecton8.Atmosphere
                 return false;
             }
 
-            NativeArray<double3> entityAups = OpenBuffer(in _entityAups);
-            NativeArray<uint> entityIds = OpenBuffer(in _entityIds);
-            NativeArray<float> timers = OpenBuffer(in _entityCorrosionTimers);
-            NativeArray<float> accumulators = OpenBuffer(in _entityExposureAccumulators);
+            NativeArray<double3> entityAups = OpenBuffer(in _entityAups, EntityAupBufferId);
+            NativeArray<uint> entityIds = OpenBuffer(in _entityIds, EntityIdBufferId);
+            NativeArray<float> timers = OpenBuffer(in _entityCorrosionTimers, EntityCorrosionTimerBufferId);
+            NativeArray<float> accumulators = OpenBuffer(in _entityExposureAccumulators, EntityExposureAccumulatorBufferId);
             int index = FindEntityIndex(entityIds, entityId, _entityCount);
             if (index < 0)
             {
@@ -474,7 +476,7 @@ namespace Hecton8.Atmosphere
                 return false;
             }
 
-            NativeArray<float> front = OpenBuffer(in _densityFront);
+            NativeArray<float> front = OpenBuffer(in _densityFront, DensityFrontBufferId);
             float sampleBlend = Smooth01((ReadCachedQualityWeight() - 0.28f) * 1.6f);
             float nearest = SampleDensityNearest(front, _activeResolution, _gridOriginAup, _cellSizeMeters, aup);
             density = nearest;
@@ -498,7 +500,7 @@ namespace Hecton8.Atmosphere
                 return false;
             }
 
-            NativeArray<float> densityBuffer = OpenBuffer(in _densityFront);
+            NativeArray<float> densityBuffer = OpenBuffer(in _densityFront, DensityFrontBufferId);
             density = densityBuffer.AsReadOnly();
             resolution = _activeResolution;
             originAup = _gridOriginAup;
@@ -510,12 +512,12 @@ namespace Hecton8.Atmosphere
         public bool TryGetGridHeader(out ToxicOutgassingGridHeaderDTO header)
         {
             header = default;
-            if (!_nativeReady || !IsHandleCreated(in _gridHeader))
+            if (!_nativeReady || !IsOwnedVaultHandle(in _gridHeader, GridHeaderBufferId))
             {
                 return false;
             }
 
-            NativeArray<ToxicOutgassingGridHeaderDTO> headers = OpenBuffer(in _gridHeader);
+            NativeArray<ToxicOutgassingGridHeaderDTO> headers = OpenBuffer(in _gridHeader, GridHeaderBufferId);
             if (!headers.IsCreated || headers.Length == 0)
             {
                 return false;
@@ -528,12 +530,12 @@ namespace Hecton8.Atmosphere
         public bool TryGetCellStates(out NativeArray<ToxicityStateDTO>.ReadOnly states)
         {
             states = default;
-            if (!_nativeReady || !IsHandleCreated(in _cellStatesFront))
+            if (!_nativeReady || !IsOwnedVaultHandle(in _cellStatesFront, CellStateFrontBufferId))
             {
                 return false;
             }
 
-            NativeArray<ToxicityStateDTO> stateBuffer = OpenBuffer(in _cellStatesFront);
+            NativeArray<ToxicityStateDTO> stateBuffer = OpenBuffer(in _cellStatesFront, CellStateFrontBufferId);
             states = stateBuffer.AsReadOnly();
             return stateBuffer.IsCreated;
         }
@@ -584,7 +586,7 @@ namespace Hecton8.Atmosphere
                     return false;
                 }
 
-                NativeArray<byte> csvBytes = OpenBuffer(in _csvBytes);
+                NativeArray<byte> csvBytes = OpenBuffer(in _csvBytes, CsvByteBufferId);
                 int length = FillByteBufferFromFile(path, csvBytes);
                 if (length <= 0)
                 {
@@ -681,32 +683,32 @@ namespace Hecton8.Atmosphere
 
         private bool AreNativeHandlesReady()
         {
-            return IsHandleCreated(in _densityFront) &&
-                   IsHandleCreated(in _densityBack) &&
-                   IsHandleCreated(in _densityMirror) &&
-                   IsHandleCreated(in _flowField) &&
-                   IsHandleCreated(in _worldSampler) &&
-                   IsHandleCreated(in _sources) &&
-                   IsHandleCreated(in _sourceIds) &&
-                   IsHandleCreated(in _entityAups) &&
-                   IsHandleCreated(in _entityIds) &&
-                   IsHandleCreated(in _entityCorrosionTimers) &&
-                   IsHandleCreated(in _entityExposureAccumulators) &&
-                   IsHandleCreated(in _exposureSignals) &&
-                   IsHandleCreated(in _statusSignals) &&
-                   IsHandleCreated(in _biolumSignals) &&
-                   IsHandleCreated(in _signalCounters) &&
-                   IsHandleCreated(in _telemetryRing) &&
-                   IsHandleCreated(in _telemetryScratch) &&
-                   IsHandleCreated(in _constants) &&
+            return IsOwnedVaultHandle(in _densityFront, DensityFrontBufferId) &&
+                   IsOwnedVaultHandle(in _densityBack, DensityBackBufferId) &&
+                   IsOwnedVaultHandle(in _densityMirror, DensityMirrorBufferId) &&
+                   IsOwnedVaultHandle(in _flowField, FlowFieldBufferId) &&
+                   IsOwnedVaultHandle(in _worldSampler, WorldSamplerBufferId) &&
+                   IsOwnedVaultHandle(in _sources, SourceBufferId) &&
+                   IsOwnedVaultHandle(in _sourceIds, SourceIdBufferId) &&
+                   IsOwnedVaultHandle(in _entityAups, EntityAupBufferId) &&
+                   IsOwnedVaultHandle(in _entityIds, EntityIdBufferId) &&
+                   IsOwnedVaultHandle(in _entityCorrosionTimers, EntityCorrosionTimerBufferId) &&
+                   IsOwnedVaultHandle(in _entityExposureAccumulators, EntityExposureAccumulatorBufferId) &&
+                   IsOwnedVaultHandle(in _exposureSignals, ExposureSignalBufferId) &&
+                   IsOwnedVaultHandle(in _statusSignals, StatusSignalBufferId) &&
+                   IsOwnedVaultHandle(in _biolumSignals, BiolumSignalBufferId) &&
+                   IsOwnedVaultHandle(in _signalCounters, SignalCounterBufferId) &&
+                   IsOwnedVaultHandle(in _telemetryRing, TelemetryRingBufferId) &&
+                   IsOwnedVaultHandle(in _telemetryScratch, TelemetryScratchBufferId) &&
+                   IsOwnedVaultHandle(in _constants, ConstantsBufferId) &&
 #if UNITY_EDITOR
-                   IsHandleCreated(in _csvBytes) &&
+                   IsOwnedVaultHandle(in _csvBytes, CsvByteBufferId) &&
 #endif
-                   IsHandleCreated(in _binaryProbeBytes) &&
-                   IsHandleCreated(in _nanFlags) &&
-                   IsHandleCreated(in _gridHeader) &&
-                   IsHandleCreated(in _cellStatesFront) &&
-                   IsHandleCreated(in _cellStatesBack);
+                   IsOwnedVaultHandle(in _binaryProbeBytes, BinaryProbeByteBufferId) &&
+                   IsOwnedVaultHandle(in _nanFlags, NanFlagBufferId) &&
+                   IsOwnedVaultHandle(in _gridHeader, GridHeaderBufferId) &&
+                   IsOwnedVaultHandle(in _cellStatesFront, CellStateFrontBufferId) &&
+                   IsOwnedVaultHandle(in _cellStatesBack, CellStateBackBufferId);
         }
 
         private static double3 ResolveCurrentRuntimeOriginDouble3()
@@ -736,17 +738,21 @@ namespace Hecton8.Atmosphere
 
             if (vault.IsAllocationLocked)
             {
-                return vault.TryGetGenerationHandle(id, out VaultGenerationHandle<T> existing)
+                return vault.TryGetGenerationHandle(id, out VaultGenerationHandle<T> existing) &&
+                       IsOwnedVaultHandle(in existing, id)
                     ? existing
                     : default;
             }
 
-            return vault.EnsureGenerationHandle<T>(id, length, SystemID.External, NativeArrayOptions.UninitializedMemory);
+            VaultGenerationHandle<T> handle = vault.EnsureGenerationHandle<T>(id, length, OwnerSystemId, NativeArrayOptions.UninitializedMemory);
+            return IsOwnedVaultHandle(in handle, id) ? handle : default;
         }
 
-        private static bool IsHandleCreated<T>(in VaultGenerationHandle<T> handle) where T : struct
+        private static bool IsOwnedVaultHandle<T>(in VaultGenerationHandle<T> handle, BufferID expectedBufferId) where T : struct
         {
-            return handle.BufferID != 0u;
+            return handle.BufferID == (uint)expectedBufferId &&
+                   handle.SystemID == (uint)OwnerSystemId &&
+                   handle.Generation != 0u;
         }
 
         private void RebindDataVaultForLifecycle(IDataVault nextVault)
@@ -769,61 +775,59 @@ namespace Hecton8.Atmosphere
             _nativeReady = false;
         }
 
-        private bool TryOpenBuffer<T>(in VaultGenerationHandle<T> handle, out NativeArray<T> buffer) where T : struct
+        private bool TryOpenBuffer<T>(in VaultGenerationHandle<T> handle, BufferID expectedBufferId, out NativeArray<T> buffer) where T : struct
         {
             buffer = default;
             IDataVault vault = _vault;
-            return handle.BufferID != 0u &&
+            return IsOwnedVaultHandle(in handle, expectedBufferId) &&
                    vault != null &&
                    !vault.IsCompactionFenceActive &&
                    vault.TryResolveHandle(in handle, out buffer) &&
                    buffer.IsCreated;
         }
 
-        private NativeArray<T> OpenBuffer<T>(in VaultGenerationHandle<T> handle) where T : struct
+        private NativeArray<T> OpenBuffer<T>(in VaultGenerationHandle<T> handle, BufferID expectedBufferId) where T : struct
         {
-            return TryOpenBuffer(in handle, out NativeArray<T> buffer)
+            return TryOpenBuffer(in handle, expectedBufferId, out NativeArray<T> buffer)
                 ? buffer
                 : default;
         }
 
         private void ReleaseNativeHandleDescriptors(IDataVault vault)
         {
-            ReleaseNativeHandle(vault, ref _densityFront);
-            ReleaseNativeHandle(vault, ref _densityBack);
-            ReleaseNativeHandle(vault, ref _densityMirror);
-            ReleaseNativeHandle(vault, ref _flowField);
-            ReleaseNativeHandle(vault, ref _worldSampler);
-            ReleaseNativeHandle(vault, ref _sources);
-            ReleaseNativeHandle(vault, ref _sourceIds);
-            ReleaseNativeHandle(vault, ref _entityAups);
-            ReleaseNativeHandle(vault, ref _entityIds);
-            ReleaseNativeHandle(vault, ref _entityCorrosionTimers);
-            ReleaseNativeHandle(vault, ref _entityExposureAccumulators);
-            ReleaseNativeHandle(vault, ref _exposureSignals);
-            ReleaseNativeHandle(vault, ref _statusSignals);
-            ReleaseNativeHandle(vault, ref _biolumSignals);
-            ReleaseNativeHandle(vault, ref _signalCounters);
-            ReleaseNativeHandle(vault, ref _telemetryRing);
-            ReleaseNativeHandle(vault, ref _telemetryScratch);
-            ReleaseNativeHandle(vault, ref _constants);
+            ReleaseNativeHandle(vault, ref _densityFront, DensityFrontBufferId);
+            ReleaseNativeHandle(vault, ref _densityBack, DensityBackBufferId);
+            ReleaseNativeHandle(vault, ref _densityMirror, DensityMirrorBufferId);
+            ReleaseNativeHandle(vault, ref _flowField, FlowFieldBufferId);
+            ReleaseNativeHandle(vault, ref _worldSampler, WorldSamplerBufferId);
+            ReleaseNativeHandle(vault, ref _sources, SourceBufferId);
+            ReleaseNativeHandle(vault, ref _sourceIds, SourceIdBufferId);
+            ReleaseNativeHandle(vault, ref _entityAups, EntityAupBufferId);
+            ReleaseNativeHandle(vault, ref _entityIds, EntityIdBufferId);
+            ReleaseNativeHandle(vault, ref _entityCorrosionTimers, EntityCorrosionTimerBufferId);
+            ReleaseNativeHandle(vault, ref _entityExposureAccumulators, EntityExposureAccumulatorBufferId);
+            ReleaseNativeHandle(vault, ref _exposureSignals, ExposureSignalBufferId);
+            ReleaseNativeHandle(vault, ref _statusSignals, StatusSignalBufferId);
+            ReleaseNativeHandle(vault, ref _biolumSignals, BiolumSignalBufferId);
+            ReleaseNativeHandle(vault, ref _signalCounters, SignalCounterBufferId);
+            ReleaseNativeHandle(vault, ref _telemetryRing, TelemetryRingBufferId);
+            ReleaseNativeHandle(vault, ref _telemetryScratch, TelemetryScratchBufferId);
+            ReleaseNativeHandle(vault, ref _constants, ConstantsBufferId);
 #if UNITY_EDITOR
-            ReleaseNativeHandle(vault, ref _csvBytes);
+            ReleaseNativeHandle(vault, ref _csvBytes, CsvByteBufferId);
 #endif
-            ReleaseNativeHandle(vault, ref _binaryProbeBytes);
-            ReleaseNativeHandle(vault, ref _nanFlags);
-            ReleaseNativeHandle(vault, ref _gridHeader);
-            ReleaseNativeHandle(vault, ref _cellStatesFront);
-            ReleaseNativeHandle(vault, ref _cellStatesBack);
+            ReleaseNativeHandle(vault, ref _binaryProbeBytes, BinaryProbeByteBufferId);
+            ReleaseNativeHandle(vault, ref _nanFlags, NanFlagBufferId);
+            ReleaseNativeHandle(vault, ref _gridHeader, GridHeaderBufferId);
+            ReleaseNativeHandle(vault, ref _cellStatesFront, CellStateFrontBufferId);
+            ReleaseNativeHandle(vault, ref _cellStatesBack, CellStateBackBufferId);
         }
 
-        private static void ReleaseNativeHandle<T>(IDataVault vault, ref VaultGenerationHandle<T> handle)
+        private static void ReleaseNativeHandle<T>(IDataVault vault, ref VaultGenerationHandle<T> handle, BufferID expectedBufferId)
             where T : struct
         {
             if (vault != null &&
-                handle.BufferID != 0u &&
-                handle.Generation != 0u &&
-                handle.SystemID == (uint)SystemID.External)
+                IsOwnedVaultHandle(in handle, expectedBufferId))
             {
                 vault.ReleaseBuffer(in handle);
             }
@@ -903,32 +907,32 @@ namespace Hecton8.Atmosphere
 
         private void ClearAllNativeBuffersWithMemClear()
         {
-            MemClearArray(OpenBuffer(in _densityFront));
-            MemClearArray(OpenBuffer(in _densityBack));
-            MemClearArray(OpenBuffer(in _densityMirror));
-            MemClearArray(OpenBuffer(in _flowField));
-            MemClearArray(OpenBuffer(in _worldSampler));
-            MemClearArray(OpenBuffer(in _sources));
-            MemClearArray(OpenBuffer(in _sourceIds));
-            MemClearArray(OpenBuffer(in _entityAups));
-            MemClearArray(OpenBuffer(in _entityIds));
-            MemClearArray(OpenBuffer(in _entityCorrosionTimers));
-            MemClearArray(OpenBuffer(in _entityExposureAccumulators));
-            MemClearArray(OpenBuffer(in _exposureSignals));
-            MemClearArray(OpenBuffer(in _statusSignals));
-            MemClearArray(OpenBuffer(in _biolumSignals));
-            MemClearArray(OpenBuffer(in _signalCounters));
-            MemClearArray(OpenBuffer(in _telemetryRing));
-            MemClearArray(OpenBuffer(in _telemetryScratch));
-            MemClearArray(OpenBuffer(in _constants));
+            MemClearArray(OpenBuffer(in _densityFront, DensityFrontBufferId));
+            MemClearArray(OpenBuffer(in _densityBack, DensityBackBufferId));
+            MemClearArray(OpenBuffer(in _densityMirror, DensityMirrorBufferId));
+            MemClearArray(OpenBuffer(in _flowField, FlowFieldBufferId));
+            MemClearArray(OpenBuffer(in _worldSampler, WorldSamplerBufferId));
+            MemClearArray(OpenBuffer(in _sources, SourceBufferId));
+            MemClearArray(OpenBuffer(in _sourceIds, SourceIdBufferId));
+            MemClearArray(OpenBuffer(in _entityAups, EntityAupBufferId));
+            MemClearArray(OpenBuffer(in _entityIds, EntityIdBufferId));
+            MemClearArray(OpenBuffer(in _entityCorrosionTimers, EntityCorrosionTimerBufferId));
+            MemClearArray(OpenBuffer(in _entityExposureAccumulators, EntityExposureAccumulatorBufferId));
+            MemClearArray(OpenBuffer(in _exposureSignals, ExposureSignalBufferId));
+            MemClearArray(OpenBuffer(in _statusSignals, StatusSignalBufferId));
+            MemClearArray(OpenBuffer(in _biolumSignals, BiolumSignalBufferId));
+            MemClearArray(OpenBuffer(in _signalCounters, SignalCounterBufferId));
+            MemClearArray(OpenBuffer(in _telemetryRing, TelemetryRingBufferId));
+            MemClearArray(OpenBuffer(in _telemetryScratch, TelemetryScratchBufferId));
+            MemClearArray(OpenBuffer(in _constants, ConstantsBufferId));
 #if UNITY_EDITOR
-            MemClearArray(OpenBuffer(in _csvBytes));
+            MemClearArray(OpenBuffer(in _csvBytes, CsvByteBufferId));
 #endif
-            MemClearArray(OpenBuffer(in _binaryProbeBytes));
-            MemClearArray(OpenBuffer(in _nanFlags));
-            MemClearArray(OpenBuffer(in _gridHeader));
-            MemClearArray(OpenBuffer(in _cellStatesFront));
-            MemClearArray(OpenBuffer(in _cellStatesBack));
+            MemClearArray(OpenBuffer(in _binaryProbeBytes, BinaryProbeByteBufferId));
+            MemClearArray(OpenBuffer(in _nanFlags, NanFlagBufferId));
+            MemClearArray(OpenBuffer(in _gridHeader, GridHeaderBufferId));
+            MemClearArray(OpenBuffer(in _cellStatesFront, CellStateFrontBufferId));
+            MemClearArray(OpenBuffer(in _cellStatesBack, CellStateBackBufferId));
         }
 
         private static void MemClearArray<T>(NativeArray<T> array) where T : struct
@@ -952,14 +956,14 @@ namespace Hecton8.Atmosphere
 
             _activeResolution = targetResolution;
             _activeCellCount = targetResolution * targetResolution * targetResolution;
-            NativeArray<float> front = OpenBuffer(in _densityFront);
-            NativeArray<float> back = OpenBuffer(in _densityBack);
-            NativeArray<float> mirror = OpenBuffer(in _densityMirror);
-            NativeArray<MockFlowField> flow = OpenBuffer(in _flowField);
-            NativeArray<MockWorldSampler> world = OpenBuffer(in _worldSampler);
-            NativeArray<ToxicityStateDTO> stateFront = OpenBuffer(in _cellStatesFront);
-            NativeArray<ToxicityStateDTO> stateBack = OpenBuffer(in _cellStatesBack);
-            NativeArray<int> nan = OpenBuffer(in _nanFlags);
+            NativeArray<float> front = OpenBuffer(in _densityFront, DensityFrontBufferId);
+            NativeArray<float> back = OpenBuffer(in _densityBack, DensityBackBufferId);
+            NativeArray<float> mirror = OpenBuffer(in _densityMirror, DensityMirrorBufferId);
+            NativeArray<MockFlowField> flow = OpenBuffer(in _flowField, FlowFieldBufferId);
+            NativeArray<MockWorldSampler> world = OpenBuffer(in _worldSampler, WorldSamplerBufferId);
+            NativeArray<ToxicityStateDTO> stateFront = OpenBuffer(in _cellStatesFront, CellStateFrontBufferId);
+            NativeArray<ToxicityStateDTO> stateBack = OpenBuffer(in _cellStatesBack, CellStateBackBufferId);
+            NativeArray<int> nan = OpenBuffer(in _nanFlags, NanFlagBufferId);
 
             MemClearArray(front);
             MemClearArray(back);
@@ -977,24 +981,24 @@ namespace Hecton8.Atmosphere
         private void ScheduleSimulation(float simulationDelta, float qualityWeight)
         {
             _scheduledStartTicks = Stopwatch.GetTimestamp();
-            NativeArray<float> front = OpenBuffer(in _densityFront);
-            NativeArray<float> back = OpenBuffer(in _densityBack);
-            NativeArray<float> mirror = OpenBuffer(in _densityMirror);
-            NativeArray<MockFlowField> flow = OpenBuffer(in _flowField);
-            NativeArray<MockWorldSampler> world = OpenBuffer(in _worldSampler);
-            NativeArray<ToxicitySourceDTO> sources = OpenBuffer(in _sources);
-            NativeArray<uint> sourceIds = OpenBuffer(in _sourceIds);
-            NativeArray<double3> entityAups = OpenBuffer(in _entityAups);
-            NativeArray<uint> entityIds = OpenBuffer(in _entityIds);
-            NativeArray<float> corrosionTimers = OpenBuffer(in _entityCorrosionTimers);
-            NativeArray<float> exposureAccumulators = OpenBuffer(in _entityExposureAccumulators);
-            NativeArray<ToxicityExposureSignal> exposureSignals = OpenBuffer(in _exposureSignals);
-            NativeArray<ToxicityStatusSignal> statusSignals = OpenBuffer(in _statusSignals);
-            NativeArray<ToxicBioluminescenceSignal> biolumSignals = OpenBuffer(in _biolumSignals);
-            NativeArray<int> signalCounters = OpenBuffer(in _signalCounters);
-            NativeArray<int> nanFlags = OpenBuffer(in _nanFlags);
-            NativeArray<ToxicityStateDTO> cellStatesBack = OpenBuffer(in _cellStatesBack);
-            NativeArray<ToxicityGridTelemetryEntry> scratch = OpenBuffer(in _telemetryScratch);
+            NativeArray<float> front = OpenBuffer(in _densityFront, DensityFrontBufferId);
+            NativeArray<float> back = OpenBuffer(in _densityBack, DensityBackBufferId);
+            NativeArray<float> mirror = OpenBuffer(in _densityMirror, DensityMirrorBufferId);
+            NativeArray<MockFlowField> flow = OpenBuffer(in _flowField, FlowFieldBufferId);
+            NativeArray<MockWorldSampler> world = OpenBuffer(in _worldSampler, WorldSamplerBufferId);
+            NativeArray<ToxicitySourceDTO> sources = OpenBuffer(in _sources, SourceBufferId);
+            NativeArray<uint> sourceIds = OpenBuffer(in _sourceIds, SourceIdBufferId);
+            NativeArray<double3> entityAups = OpenBuffer(in _entityAups, EntityAupBufferId);
+            NativeArray<uint> entityIds = OpenBuffer(in _entityIds, EntityIdBufferId);
+            NativeArray<float> corrosionTimers = OpenBuffer(in _entityCorrosionTimers, EntityCorrosionTimerBufferId);
+            NativeArray<float> exposureAccumulators = OpenBuffer(in _entityExposureAccumulators, EntityExposureAccumulatorBufferId);
+            NativeArray<ToxicityExposureSignal> exposureSignals = OpenBuffer(in _exposureSignals, ExposureSignalBufferId);
+            NativeArray<ToxicityStatusSignal> statusSignals = OpenBuffer(in _statusSignals, StatusSignalBufferId);
+            NativeArray<ToxicBioluminescenceSignal> biolumSignals = OpenBuffer(in _biolumSignals, BiolumSignalBufferId);
+            NativeArray<int> signalCounters = OpenBuffer(in _signalCounters, SignalCounterBufferId);
+            NativeArray<int> nanFlags = OpenBuffer(in _nanFlags, NanFlagBufferId);
+            NativeArray<ToxicityStateDTO> cellStatesBack = OpenBuffer(in _cellStatesBack, CellStateBackBufferId);
+            NativeArray<ToxicityGridTelemetryEntry> scratch = OpenBuffer(in _telemetryScratch, TelemetryScratchBufferId);
 
             MemClearArray(signalCounters);
             MemClearArray(nanFlags);
@@ -1137,7 +1141,7 @@ namespace Hecton8.Atmosphere
 
             _scheduledHandle = dependency;
             _hasScheduledWork = true;
-            H8Memory.RegisterActiveJob(SystemID.External, dependency);
+            H8Memory.RegisterActiveJob(OwnerSystemId, dependency);
         }
 
         private bool TryFinalizeScheduledWorkNoWait()
@@ -1182,11 +1186,11 @@ namespace Hecton8.Atmosphere
             _scheduledStartTicks = 0L;
             _hasScheduledWork = false;
 
-            NativeArray<ToxicityExposureSignal> exposureSignals = OpenBuffer(in _exposureSignals);
-            NativeArray<ToxicityStatusSignal> statusSignals = OpenBuffer(in _statusSignals);
-            NativeArray<ToxicBioluminescenceSignal> biolumSignals = OpenBuffer(in _biolumSignals);
-            NativeArray<int> signalCounters = OpenBuffer(in _signalCounters);
-            NativeArray<ToxicityGridTelemetryEntry> scratch = OpenBuffer(in _telemetryScratch);
+            NativeArray<ToxicityExposureSignal> exposureSignals = OpenBuffer(in _exposureSignals, ExposureSignalBufferId);
+            NativeArray<ToxicityStatusSignal> statusSignals = OpenBuffer(in _statusSignals, StatusSignalBufferId);
+            NativeArray<ToxicBioluminescenceSignal> biolumSignals = OpenBuffer(in _biolumSignals, BiolumSignalBufferId);
+            NativeArray<int> signalCounters = OpenBuffer(in _signalCounters, SignalCounterBufferId);
+            NativeArray<ToxicityGridTelemetryEntry> scratch = OpenBuffer(in _telemetryScratch, TelemetryScratchBufferId);
 
             SwapDensityBuffers();
             _densityVersion++;
@@ -1274,7 +1278,7 @@ namespace Hecton8.Atmosphere
 
         private void UpdateGridHeader()
         {
-            if (!_nativeReady || !TryOpenBuffer(in _gridHeader, out NativeArray<ToxicOutgassingGridHeaderDTO> headers) ||
+            if (!_nativeReady || !TryOpenBuffer(in _gridHeader, GridHeaderBufferId, out NativeArray<ToxicOutgassingGridHeaderDTO> headers) ||
                 headers.Length == 0)
             {
                 return;
@@ -1309,7 +1313,7 @@ namespace Hecton8.Atmosphere
                 return;
             }
 
-            NativeArray<ToxicityGridTelemetryEntry> ring = OpenBuffer(in _telemetryRing);
+            NativeArray<ToxicityGridTelemetryEntry> ring = OpenBuffer(in _telemetryRing, TelemetryRingBufferId);
             if (!ring.IsCreated || ring.Length == 0)
             {
                 return;
@@ -1334,7 +1338,7 @@ namespace Hecton8.Atmosphere
                 return;
             }
 
-            NativeArray<ToxicityGridTelemetryEntry> ring = OpenBuffer(in _telemetryRing);
+            NativeArray<ToxicityGridTelemetryEntry> ring = OpenBuffer(in _telemetryRing, TelemetryRingBufferId);
             if (!ring.IsCreated || ring.Length == 0)
             {
                 return;
@@ -1375,7 +1379,7 @@ namespace Hecton8.Atmosphere
                     Directory.CreateDirectory(directory);
                 }
 
-                NativeArray<ToxicityGridTelemetryEntry> ring = OpenBuffer(in _telemetryRing);
+                NativeArray<ToxicityGridTelemetryEntry> ring = OpenBuffer(in _telemetryRing, TelemetryRingBufferId);
                 using (var stream = new FileStream(path, FileMode.Create, FileAccess.Write, FileShare.Read))
                 using (var writer = new BinaryWriter(stream))
                 {
@@ -1461,7 +1465,7 @@ namespace Hecton8.Atmosphere
 
         private void ReadBinaryProbe(string path)
         {
-            NativeArray<byte> bytes = OpenBuffer(in _binaryProbeBytes);
+            NativeArray<byte> bytes = OpenBuffer(in _binaryProbeBytes, BinaryProbeByteBufferId);
             int length = FillByteBufferFromFile(path, bytes);
             if (length >= 4)
             {

@@ -61,7 +61,7 @@ namespace Hecton8.Core
         }
 
         /// <inheritdoc />
-        public void ReportNonFiniteAdmissionState(JobAdmissionLane lane, uint jobHash, float value)
+        public void ReportNonFiniteAdmissionState(JobAdmissionLane lane, uint jobHash, float value, int criticalDebtFrames)
         {
             CpuStarvationSignal signal = new CpuStarvationSignal
             {
@@ -69,7 +69,7 @@ namespace Hecton8.Core
                 Frame = Hecton8.Core.SystemDispatcher.CurrentFrameId,
                 EstimatedCostMs = 0f,
                 RemainingBudgetMs = 0f,
-                CriticalDebtFrames = GlobalRegistry.JobAdmission != null ? GlobalRegistry.JobAdmission.CriticalDebtFrameCount : 0,
+                CriticalDebtFrames = criticalDebtFrames,
                 Lane = (byte)lane,
                 Flags = NonFiniteFlag
             };

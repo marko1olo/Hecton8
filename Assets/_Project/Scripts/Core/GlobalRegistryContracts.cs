@@ -1065,6 +1065,12 @@ namespace Hecton8.Core
 
         bool TryGetAvailableCountForPooledInstance(GameObject instance, out int availableCount);
 
+        bool TryGetPooledRootRenderer(GameObject instance, out Renderer renderer);
+
+        bool TryGetPooledRootRigidbody(GameObject instance, out Rigidbody rigidbody);
+
+        bool TryGetPooledComponent<T>(GameObject instance, out T component) where T : class;
+
         void TrimInactivePoolsForMemoryPressure(float releaseFraction);
 
         void FlushInactivePoolsForMemoryPressure();
@@ -2541,6 +2547,11 @@ namespace Hecton8.Core
         /// Player locomotion owner resolved from the current player root.
         /// </summary>
         HectonPlayerMovement PlayerMovement { get; }
+
+        /// <summary>
+        /// Cached dry-zone/air-state owner resolved from the current player root.
+        /// </summary>
+        IBuoyancyAirStateReadModel PlayerBuoyancyAirState { get; }
 
         /// <summary>
         /// Command/read facade for laser-cutter heavy salvage tension owned by player movement.
@@ -4567,6 +4578,12 @@ namespace Hecton8.Core
             out JobHandle handle);
 
         /// <summary>
+        /// Releases vault buffer pins held by a completed deterministic mock cable solve.
+        /// </summary>
+        /// <param name="vault">Vault owner that stores cable buffers.</param>
+        void ReleaseMockScheduleBufferPins(IDataVault vault);
+
+        /// <summary>
         /// Dumps the latest solver telemetry only when the solver reports a non-finite recovery or constraint fault.
         /// </summary>
         /// <param name="vault">Vault owner that stores cable telemetry.</param>
@@ -5115,7 +5132,7 @@ namespace Hecton8.Core
     }
 
     /// <summary>
-    /// Cold command route for forcing an immediate pressure sample without exposing the concrete optimization owner.
+    /// Cold command route for requesting the next late-frame pressure sample without exposing the concrete optimization owner.
     /// </summary>
     public interface IVramPressureSampleSink : ISystem
     {

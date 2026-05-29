@@ -3,17 +3,17 @@
   "agentId": "1304",
   "repoRoot": "C:\\hades\\Hecton8",
   "outputPath": "C:\\hades\\Hecton8\\Docs\\Reports\\VOXEL_RUNTIME_HOTPATH_AUDIT_1304.json",
-  "auditHashSha256": "62d3154585aac613c1dd75a7e1c2c7f74ea0d683d07bb3c440b9de9845264454",
+  "auditHashSha256": "427dbd70e74c20352c57f22812d9f8a25bf38de92dc9c4ad752438f74ba2a985",
   "summary": {
-    "scannedFiles": 4,
+    "scannedFiles": 8,
     "parseFailures": 0,
-    "totalFindings": 6,
-    "objectCreations": 6,
-    "valueTypeCreations": 1,
-    "managedRiskCreations": 5,
-    "nativeTempJobAllocations": 0,
-    "nativePersistentAllocations": 0,
-    "nativeOtherAllocations": 0,
+    "totalFindings": 281,
+    "objectCreations": 281,
+    "valueTypeCreations": 162,
+    "managedRiskCreations": 93,
+    "nativeTempJobAllocations": 10,
+    "nativePersistentAllocations": 15,
+    "nativeOtherAllocations": 1,
     "stringFormatCalls": 0,
     "toStringCalls": 0,
     "linqCalls": 0,
@@ -22,59 +22,2263 @@
     "stringConcatSuspects": 0
   },
   "files": [
-    "C:\\hades\\Hecton8\\Assets\\_Project\\Scripts\\TetherInstance.cs",
-    "C:\\hades\\Hecton8\\Assets\\_Project\\Scripts\\Physics\\TetherBlackBoxDumpWriter.cs",
-    "C:\\hades\\Hecton8\\Assets\\_Project\\Scripts\\Physics\\TetherVerletJobs.cs",
-    "C:\\hades\\Hecton8\\Assets\\_Project\\Scripts\\Physics\\VerletCableDTOs.cs"
+    "C:\\hades\\Hecton8\\Assets\\_Project\\Scripts\\HectonVoxelVolume.cs",
+    "C:\\hades\\Hecton8\\Assets\\_Project\\Scripts\\VoxelDeltaProcessor.cs",
+    "C:\\hades\\Hecton8\\Assets\\_Project\\Scripts\\VoxelDeformationSmokeTester.cs",
+    "C:\\hades\\Hecton8\\Assets\\_Project\\Scripts\\Core\\Contracts\\GroundRadarContracts.cs",
+    "C:\\hades\\Hecton8\\Assets\\_Project\\Scripts\\Core\\Memory\\H8Memory.cs",
+    "C:\\hades\\Hecton8\\Assets\\_Project\\Scripts\\World\\VoxelSurfaceNets\\VoxelSurfaceNetsContracts.cs",
+    "C:\\hades\\Hecton8\\Assets\\_Project\\Scripts\\World\\VoxelSurfaceNets\\VoxelSurfaceNetsVault.cs",
+    "C:\\hades\\Hecton8\\Assets\\_Project\\Scripts\\World\\VoxelSurfaceNets\\VoxelSurfaceNetsGpuUploadDispatcher.cs"
   ],
   "findings": [
     {
-      "path": "Assets/_Project/Scripts/TetherInstance.cs",
-      "line": 1009,
-      "owner": "EnsureVisualGraphicsBuffer",
+      "path": "Assets/_Project/Scripts/HectonVoxelVolume.cs",
+      "line": 100,
+      "owner": "Execute",
+      "kind": "value_type_creation",
+      "detail": "float3",
+      "snippet": "new float3(0f, 0f, 1f)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/HectonVoxelVolume.cs",
+      "line": 146,
+      "owner": "Execute",
+      "kind": "object_creation",
+      "detail": "VoxelSdfRaycastHit",
+      "snippet": "new VoxelSdfRaycastHit                      {                          Point = new Vector3(resolvedPoint.x, resolvedPoint.y, resolvedPoint.z),                          Normal = new Vector3(0f, 1f, 0f),                          Distance = ma"
+    },
+    {
+      "path": "Assets/_Project/Scripts/HectonVoxelVolume.cs",
+      "line": 148,
+      "owner": "Execute",
+      "kind": "object_creation",
+      "detail": "Vector3",
+      "snippet": "new Vector3(resolvedPoint.x, resolvedPoint.y, resolvedPoint.z)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/HectonVoxelVolume.cs",
+      "line": 149,
+      "owner": "Execute",
+      "kind": "object_creation",
+      "detail": "Vector3",
+      "snippet": "new Vector3(0f, 1f, 0f)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/HectonVoxelVolume.cs",
+      "line": 181,
+      "owner": "TryResolveRaymarchInterval",
+      "kind": "value_type_creation",
+      "detail": "float3",
+      "snippet": "new float3(0.0001f)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/HectonVoxelVolume.cs",
+      "line": 182,
+      "owner": "TryResolveRaymarchInterval",
+      "kind": "value_type_creation",
+      "detail": "int3",
+      "snippet": "new int3(1)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/HectonVoxelVolume.cs",
+      "line": 182,
+      "owner": "TryResolveRaymarchInterval",
+      "kind": "value_type_creation",
+      "detail": "float3",
+      "snippet": "new float3(1f)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/HectonVoxelVolume.cs",
+      "line": 249,
+      "owner": "Sample",
+      "kind": "value_type_creation",
+      "detail": "float3",
+      "snippet": "new float3(0.0001f)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/HectonVoxelVolume.cs",
+      "line": 251,
+      "owner": "Sample",
+      "kind": "value_type_creation",
+      "detail": "float3",
+      "snippet": "new float3(GridDimensions.x - 1.001f, GridDimensions.y - 1.001f, GridDimensions.z - 1.001f)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/HectonVoxelVolume.cs",
+      "line": 514,
+      "owner": "TryResolveNearestVoxelCorner",
+      "kind": "object_creation",
+      "detail": "Vector3",
+      "snippet": "new Vector3(                  cornerX * voxelStep,                  cornerY * voxelStep,                  cornerZ * voxelStep)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/HectonVoxelVolume.cs",
+      "line": 661,
+      "owner": "TryAcquireClosestPublishedSonarSdfPayloadReadLease",
+      "kind": "object_creation",
+      "detail": "Vector3",
+      "snippet": "new Vector3(                         candidateCellSize.x * math.max(0, candidateDimensions.x - 1) * 0.5f,                         candidateCellSize.y * math.max(0, candidateDimensions.y - 1) * 0.5f,                         candidateCellSize"
+    },
+    {
+      "path": "Assets/_Project/Scripts/HectonVoxelVolume.cs",
+      "line": 703,
+      "owner": "TryDepositAdditiveSdfSphere",
+      "kind": "value_type_creation",
+      "detail": "double3",
+      "snippet": "new double3(absoluteCenter.x, absoluteCenter.y, absoluteCenter.z)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/HectonVoxelVolume.cs",
+      "line": 942,
+      "owner": "TrySampleSonarSdf",
+      "kind": "object_creation",
+      "detail": "Vector3",
+      "snippet": "new Vector3(runtimePosition.x, runtimePosition.y, runtimePosition.z)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/HectonVoxelVolume.cs",
+      "line": 1095,
+      "owner": "TryRaymarchPublishedSdf",
+      "kind": "object_creation",
+      "detail": "VoxelSdfRaycastHit",
+      "snippet": "new VoxelSdfRaycastHit                         {                             Point = resolvedPoint,                             Normal = -direction,                             Distance = Mathf.Max(0f, resolvedDistance),                    "
+    },
+    {
+      "path": "Assets/_Project/Scripts/HectonVoxelVolume.cs",
+      "line": 1142,
+      "owner": "TryResolveLegacyRaymarchInterval",
+      "kind": "object_creation",
+      "detail": "Vector3",
+      "snippet": "new Vector3(                  Mathf.Max(0.0001f, Mathf.Abs(voxelCellSize.x)),                  Mathf.Max(0.0001f, Mathf.Abs(voxelCellSize.y)),                  Mathf.Max(0.0001f, Mathf.Abs(voxelCellSize.z)))"
+    },
+    {
+      "path": "Assets/_Project/Scripts/HectonVoxelVolume.cs",
+      "line": 1146,
+      "owner": "TryResolveLegacyRaymarchInterval",
+      "kind": "object_creation",
+      "detail": "Vector3",
+      "snippet": "new Vector3(                  safeCell.x * Mathf.Max(1, gridDimensions.x - 1),                  safeCell.y * Mathf.Max(1, gridDimensions.y - 1),                  safeCell.z * Mathf.Max(1, gridDimensions.z - 1))"
+    },
+    {
+      "path": "Assets/_Project/Scripts/HectonVoxelVolume.cs",
+      "line": 1268,
+      "owner": "TrySampleNearestPublishedGradient",
+      "kind": "object_creation",
+      "detail": "Vector3",
+      "snippet": "new Vector3(                     x < maxX                         ? (DecodePublishedDensityAt(encodedSdf, gridDimensions, sdfRange, x + 1, y, z) - center) / cellSizeX                         : (center - DecodePublishedDensityAt(encodedSdf, "
+    },
+    {
+      "path": "Assets/_Project/Scripts/HectonVoxelVolume.cs",
+      "line": 1354,
+      "owner": "TryResolveBurrowAmbushRoute",
+      "kind": "object_creation",
+      "detail": "Vector3",
+      "snippet": "new Vector3(0f, Mathf.Max(_voxelSize, breachOffsetMeters), 0f)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/HectonVoxelVolume.cs",
+      "line": 1381,
+      "owner": "ResolveDominantAxis",
+      "kind": "object_creation",
+      "detail": "Vector3",
+      "snippet": "new Vector3(Mathf.Abs(normal.x), Mathf.Abs(normal.y), Mathf.Abs(normal.z))"
+    },
+    {
+      "path": "Assets/_Project/Scripts/HectonVoxelVolume.cs",
+      "line": 1566,
+      "owner": "EnsureColliderChunkCapacity",
+      "kind": "object_creation",
+      "detail": "GameObject",
+      "snippet": "new GameObject(ColliderChunkRuntimeName)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/HectonVoxelVolume.cs",
+      "line": 1585,
+      "owner": "EnsureColliderChunkCapacity",
+      "kind": "object_creation",
+      "detail": "GameObject",
+      "snippet": "new GameObject(ColliderChunkProxyRuntimeName)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/HectonVoxelVolume.cs",
+      "line": 1668,
+      "owner": "ConfigureColliderChunkBakeProxy",
+      "kind": "object_creation",
+      "detail": "Vector3",
+      "snippet": "new Vector3(                  math.max(0.01f, size.x),                  math.max(0.01f, size.y),                  math.max(0.01f, size.z))"
+    },
+    {
+      "path": "Assets/_Project/Scripts/HectonVoxelVolume.cs",
+      "line": 2047,
+      "owner": "ConfigureRuntimeData",
+      "kind": "value_type_creation",
+      "detail": "double3",
+      "snippet": "new double3(worldCenter.x, worldCenter.y, worldCenter.z)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/HectonVoxelVolume.cs",
+      "line": 2268,
+      "owner": "TryPublishSonarSdfVaultPayloadAsync",
+      "kind": "value_type_creation",
+      "detail": "PublishedSonarSdfEncodeJob",
+      "snippet": "new PublishedSonarSdfEncodeJob                 {                     SmoothDensityField = smoothDensityField,                     EncodedSdf = vaultSdf,                     AudioMaterialIds = vaultAudioMaterialIds,                     Inver"
+    },
+    {
+      "path": "Assets/_Project/Scripts/HectonVoxelVolume.cs",
+      "line": 2307,
+      "owner": "TryPublishSonarSdfVaultPayloadAsync",
+      "kind": "value_type_creation",
+      "detail": "float3",
+      "snippet": "new float3(descriptorOrigin.x, descriptorOrigin.y, descriptorOrigin.z)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/HectonVoxelVolume.cs",
+      "line": 2308,
+      "owner": "TryPublishSonarSdfVaultPayloadAsync",
+      "kind": "value_type_creation",
+      "detail": "int3",
+      "snippet": "new int3(gridDimensions.x, gridDimensions.y, gridDimensions.z)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/HectonVoxelVolume.cs",
+      "line": 2309,
+      "owner": "TryPublishSonarSdfVaultPayloadAsync",
+      "kind": "value_type_creation",
+      "detail": "float3",
+      "snippet": "new float3(                              math.max(0.0001f, math.abs(voxelCellSize.x)),                              math.max(0.0001f, math.abs(voxelCellSize.y)),                              math.max(0.0001f, math.abs(voxelCellSize.z)))"
+    },
+    {
+      "path": "Assets/_Project/Scripts/HectonVoxelVolume.cs",
+      "line": 2578,
+      "owner": "TryReadPublishedSonarVaultPayload",
+      "kind": "object_creation",
+      "detail": "Vector3Int",
+      "snippet": "new Vector3Int(                     descriptor.GridDimensions.x,                     descriptor.GridDimensions.y,                     descriptor.GridDimensions.z)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/HectonVoxelVolume.cs",
+      "line": 2582,
+      "owner": "TryReadPublishedSonarVaultPayload",
+      "kind": "object_creation",
+      "detail": "Vector3",
+      "snippet": "new Vector3(                     descriptor.VolumeOrigin.x,                     descriptor.VolumeOrigin.y,                     descriptor.VolumeOrigin.z)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/HectonVoxelVolume.cs",
+      "line": 2586,
+      "owner": "TryReadPublishedSonarVaultPayload",
+      "kind": "object_creation",
+      "detail": "Vector3",
+      "snippet": "new Vector3(                     math.max(0.0001f, descriptor.VoxelCellSize.x),                     math.max(0.0001f, descriptor.VoxelCellSize.y),                     math.max(0.0001f, descriptor.VoxelCellSize.z))"
+    },
+    {
+      "path": "Assets/_Project/Scripts/HectonVoxelVolume.cs",
+      "line": 2612,
+      "owner": "TryResolvePublishedSonarDescriptorOrigin",
+      "kind": "value_type_creation",
+      "detail": "double3",
+      "snippet": "new double3(generationPosition.x, generationPosition.y, generationPosition.z)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/HectonVoxelVolume.cs",
+      "line": 2613,
+      "owner": "TryResolvePublishedSonarDescriptorOrigin",
+      "kind": "value_type_creation",
+      "detail": "double3",
+      "snippet": "new double3(capturedRuntimeOrigin.x, capturedRuntimeOrigin.y, capturedRuntimeOrigin.z)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/HectonVoxelVolume.cs",
+      "line": 2686,
+      "owner": "TryAcquirePublishedSonarSdfPayloadReadLease",
+      "kind": "object_creation",
+      "detail": "PublishedSonarSdfReadLease",
+      "snippet": "new PublishedSonarSdfReadLease(this, vault, version, sdfGeneration, 0u)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/HectonVoxelVolume.cs",
+      "line": 2752,
+      "owner": "TryAcquirePublishedSonarSdfPayloadReadLease",
+      "kind": "object_creation",
+      "detail": "PublishedSonarSdfReadLease",
+      "snippet": "new PublishedSonarSdfReadLease(this, vault, version, sdfGeneration, audioMaterialGeneration)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/HectonVoxelVolume.cs",
+      "line": 3004,
+      "owner": "ApplyParasiteCollapseBox",
+      "kind": "object_creation",
+      "detail": "Vector3",
+      "snippet": "new Vector3(                  Mathf.Max(_voxelSize, Mathf.Abs(halfExtents.x)),                  Mathf.Max(_voxelSize, Mathf.Abs(halfExtents.y)),                  Mathf.Max(_voxelSize, Mathf.Abs(halfExtents.z)))"
+    },
+    {
+      "path": "Assets/_Project/Scripts/HectonVoxelVolume.cs",
+      "line": 3131,
+      "owner": "ApplyMagmaVeinSpline",
+      "kind": "value_type_creation",
+      "detail": "float3",
+      "snippet": "new float3(segment.x, segment.y, segment.z)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/HectonVoxelVolume.cs",
+      "line": 3263,
+      "owner": "ResolveSeismicScatterDirection",
+      "kind": "value_type_creation",
+      "detail": "float2",
+      "snippet": "new float2(1f, 0f)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/HectonVoxelVolume.cs",
+      "line": 3264,
+      "owner": "ResolveSeismicScatterDirection",
+      "kind": "value_type_creation",
+      "detail": "float2",
+      "snippet": "new float2(0.70710677f, 0.70710677f)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/HectonVoxelVolume.cs",
+      "line": 3265,
+      "owner": "ResolveSeismicScatterDirection",
+      "kind": "value_type_creation",
+      "detail": "float2",
+      "snippet": "new float2(0f, 1f)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/HectonVoxelVolume.cs",
+      "line": 3266,
+      "owner": "ResolveSeismicScatterDirection",
+      "kind": "value_type_creation",
+      "detail": "float2",
+      "snippet": "new float2(-0.70710677f, 0.70710677f)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/HectonVoxelVolume.cs",
+      "line": 3267,
+      "owner": "ResolveSeismicScatterDirection",
+      "kind": "value_type_creation",
+      "detail": "float2",
+      "snippet": "new float2(-1f, 0f)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/HectonVoxelVolume.cs",
+      "line": 3268,
+      "owner": "ResolveSeismicScatterDirection",
+      "kind": "value_type_creation",
+      "detail": "float2",
+      "snippet": "new float2(-0.70710677f, -0.70710677f)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/HectonVoxelVolume.cs",
+      "line": 3269,
+      "owner": "ResolveSeismicScatterDirection",
+      "kind": "value_type_creation",
+      "detail": "float2",
+      "snippet": "new float2(0f, -1f)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/HectonVoxelVolume.cs",
+      "line": 3270,
+      "owner": "ResolveSeismicScatterDirection",
+      "kind": "value_type_creation",
+      "detail": "float2",
+      "snippet": "new float2(0.70710677f, -0.70710677f)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/HectonVoxelVolume.cs",
+      "line": 3325,
+      "owner": "ApplyPlasmaCutDda",
+      "kind": "value_type_creation",
+      "detail": "float3",
+      "snippet": "new float3(relative.x, relative.y, relative.z)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/HectonVoxelVolume.cs",
+      "line": 3329,
+      "owner": "ApplyPlasmaCutDda",
+      "kind": "value_type_creation",
+      "detail": "int3",
+      "snippet": "new int3(                  ResolveStep(localDirection.x),                  ResolveStep(localDirection.y),                  ResolveStep(localDirection.z))"
+    },
+    {
+      "path": "Assets/_Project/Scripts/HectonVoxelVolume.cs",
+      "line": 3333,
+      "owner": "ApplyPlasmaCutDda",
+      "kind": "value_type_creation",
+      "detail": "float3",
+      "snippet": "new float3(localStart.x, localStart.y, localStart.z)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/HectonVoxelVolume.cs",
+      "line": 3334,
+      "owner": "ApplyPlasmaCutDda",
+      "kind": "value_type_creation",
+      "detail": "float3",
+      "snippet": "new float3(localDirection.x, localDirection.y, localDirection.z)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/HectonVoxelVolume.cs",
+      "line": 3335,
+      "owner": "ApplyPlasmaCutDda",
+      "kind": "value_type_creation",
+      "detail": "float3",
+      "snippet": "new float3(                  ResolveBoundaryDistance(localBounds.min.x, start.x, dir.x, voxel.x, step.x, _voxelSize),                  ResolveBoundaryDistance(localBounds.min.y, start.y, dir.y, voxel.y, step.y, _voxelSize),                 "
+    },
+    {
+      "path": "Assets/_Project/Scripts/HectonVoxelVolume.cs",
+      "line": 3339,
+      "owner": "ApplyPlasmaCutDda",
+      "kind": "value_type_creation",
+      "detail": "float3",
+      "snippet": "new float3(                  ResolveDeltaDistance(dir.x, _voxelSize),                  ResolveDeltaDistance(dir.y, _voxelSize),                  ResolveDeltaDistance(dir.z, _voxelSize))"
+    },
+    {
+      "path": "Assets/_Project/Scripts/HectonVoxelVolume.cs",
+      "line": 3361,
+      "owner": "ApplyPlasmaCutDda",
+      "kind": "object_creation",
+      "detail": "Vector3",
+      "snippet": "new Vector3(                      (voxel.x + 0.5f) * _voxelSize,                      (voxel.y + 0.5f) * _voxelSize,                      (voxel.z + 0.5f) * _voxelSize)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/HectonVoxelVolume.cs",
+      "line": 3366,
+      "owner": "ApplyPlasmaCutDda",
+      "kind": "value_type_creation",
+      "detail": "double3",
+      "snippet": "new double3(worldCenter.x, worldCenter.y, worldCenter.z)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/HectonVoxelVolume.cs",
+      "line": 3459,
+      "owner": "ApplyRepairWeldDda",
+      "kind": "value_type_creation",
+      "detail": "float3",
+      "snippet": "new float3(relative.x, relative.y, relative.z)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/HectonVoxelVolume.cs",
+      "line": 3463,
+      "owner": "ApplyRepairWeldDda",
+      "kind": "value_type_creation",
+      "detail": "int3",
+      "snippet": "new int3(                  ResolveStep(localDirection.x),                  ResolveStep(localDirection.y),                  ResolveStep(localDirection.z))"
+    },
+    {
+      "path": "Assets/_Project/Scripts/HectonVoxelVolume.cs",
+      "line": 3467,
+      "owner": "ApplyRepairWeldDda",
+      "kind": "value_type_creation",
+      "detail": "float3",
+      "snippet": "new float3(localStart.x, localStart.y, localStart.z)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/HectonVoxelVolume.cs",
+      "line": 3468,
+      "owner": "ApplyRepairWeldDda",
+      "kind": "value_type_creation",
+      "detail": "float3",
+      "snippet": "new float3(localDirection.x, localDirection.y, localDirection.z)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/HectonVoxelVolume.cs",
+      "line": 3469,
+      "owner": "ApplyRepairWeldDda",
+      "kind": "value_type_creation",
+      "detail": "float3",
+      "snippet": "new float3(                  ResolveBoundaryDistance(localBounds.min.x, start.x, dir.x, voxel.x, step.x, _voxelSize),                  ResolveBoundaryDistance(localBounds.min.y, start.y, dir.y, voxel.y, step.y, _voxelSize),                 "
+    },
+    {
+      "path": "Assets/_Project/Scripts/HectonVoxelVolume.cs",
+      "line": 3473,
+      "owner": "ApplyRepairWeldDda",
+      "kind": "value_type_creation",
+      "detail": "float3",
+      "snippet": "new float3(                  ResolveDeltaDistance(dir.x, _voxelSize),                  ResolveDeltaDistance(dir.y, _voxelSize),                  ResolveDeltaDistance(dir.z, _voxelSize))"
+    },
+    {
+      "path": "Assets/_Project/Scripts/HectonVoxelVolume.cs",
+      "line": 3495,
+      "owner": "ApplyRepairWeldDda",
+      "kind": "object_creation",
+      "detail": "Vector3",
+      "snippet": "new Vector3(                      (voxel.x + 0.5f) * _voxelSize,                      (voxel.y + 0.5f) * _voxelSize,                      (voxel.z + 0.5f) * _voxelSize)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/HectonVoxelVolume.cs",
+      "line": 3500,
+      "owner": "ApplyRepairWeldDda",
+      "kind": "value_type_creation",
+      "detail": "double3",
+      "snippet": "new double3(worldCenter.x, worldCenter.y, worldCenter.z)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/HectonVoxelVolume.cs",
+      "line": 3666,
+      "owner": "GetOrCreateRuntimeRoot",
+      "kind": "object_creation",
+      "detail": "GameObject",
+      "snippet": "new GameObject(childName)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/HectonVoxelVolume.cs",
+      "line": 3970,
+      "owner": "TryClearSonarSdfVaultDescriptor",
+      "kind": "value_type_creation",
+      "detail": "float3",
+      "snippet": "new float3(                          expectedDescriptorOrigin.x,                          expectedDescriptorOrigin.y,                          expectedDescriptorOrigin.z)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/HectonVoxelVolume.cs",
+      "line": 4088,
+      "owner": "TryTriggerResourceCraterClusterCollapse",
+      "kind": "object_creation",
+      "detail": "VoxelCraterStamp",
+      "snippet": "new VoxelCraterStamp             {                 position = absolutePosition,                 radius = clampedRadius,                 blendRadius = Mathf.Max(_voxelSize, clampedRadius * 0.35f)             }"
+    },
+    {
+      "path": "Assets/_Project/Scripts/HectonVoxelVolume.cs",
+      "line": 4132,
+      "owner": "TryResolveResourceCraterCluster",
+      "kind": "value_type_creation",
+      "detail": "double3",
+      "snippet": "new double3(double.MaxValue, double.MaxValue, double.MaxValue)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/HectonVoxelVolume.cs",
+      "line": 4133,
+      "owner": "TryResolveResourceCraterCluster",
+      "kind": "value_type_creation",
+      "detail": "double3",
+      "snippet": "new double3(double.MinValue, double.MinValue, double.MinValue)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/HectonVoxelVolume.cs",
+      "line": 4145,
+      "owner": "TryResolveResourceCraterCluster",
+      "kind": "value_type_creation",
+      "detail": "double3",
+      "snippet": "new double3(stamp.radius, stamp.radius, stamp.radius)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/HectonVoxelVolume.cs",
+      "line": 4155,
+      "owner": "TryResolveResourceCraterCluster",
+      "kind": "object_creation",
+      "detail": "Vector3",
+      "snippet": "new Vector3(                 (float)math.max(6d, span.x * 0.5d + CollapseBoxHorizontalPaddingMeters),                 Mathf.Max(3f, largestRadius),                 (float)math.max(6d, span.z * 0.5d + CollapseBoxHorizontalPaddingMeters))"
+    },
+    {
+      "path": "Assets/_Project/Scripts/HectonVoxelVolume.cs",
+      "line": 4179,
+      "owner": "ExecuteResourceCraterClusterCollapse",
+      "kind": "value_type_creation",
+      "detail": "SeismicShockwaveEvent",
+      "snippet": "new SeismicShockwaveEvent(                  runtimeCenter,                  impulseRadius,                  impulseMagnitude,                  clusterCount)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/HectonVoxelVolume.cs",
+      "line": 4199,
+      "owner": "ResolveCollapseTrenchDirection",
+      "kind": "object_creation",
+      "detail": "Vector3",
+      "snippet": "new Vector3(direction.x, 0f, direction.y)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/HectonVoxelVolume.cs",
+      "line": 4209,
+      "owner": "ToVector3",
+      "kind": "object_creation",
+      "detail": "Vector3",
+      "snippet": "new Vector3((float)value.x, (float)value.y, (float)value.z)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/HectonVoxelVolume.cs",
+      "line": 4214,
+      "owner": "ToDouble3",
+      "kind": "value_type_creation",
+      "detail": "double3",
+      "snippet": "new double3(value.x, value.y, value.z)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/HectonVoxelVolume.cs",
+      "line": 4241,
+      "owner": "TryResolveRuntimeAbsoluteDouble",
+      "kind": "value_type_creation",
+      "detail": "double3",
+      "snippet": "new double3(runtimePosition.x, runtimePosition.y, runtimePosition.z)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/HectonVoxelVolume.cs",
+      "line": 4309,
+      "owner": "ApplyCollapseImpulse",
+      "kind": "value_type_creation",
+      "detail": "float3",
+      "snippet": "new float3(inward.x * invDistance, inward.y * invDistance, inward.z * invDistance)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/HectonVoxelVolume.cs",
+      "line": 4313,
+      "owner": "ApplyCollapseImpulse",
+      "kind": "value_type_creation",
+      "detail": "float3",
+      "snippet": "new float3(0f, -1f, 0f)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/HectonVoxelVolume.cs",
+      "line": 4319,
+      "owner": "ApplyCollapseImpulse",
+      "kind": "value_type_creation",
+      "detail": "float3",
+      "snippet": "new float3(0f, -1f, 0f)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/HectonVoxelVolume.cs",
+      "line": 4325,
+      "owner": "ApplyCollapseImpulse",
+      "kind": "object_creation",
+      "detail": "Vector3",
+      "snippet": "new Vector3(impulseDirection.x, impulseDirection.y, impulseDirection.z)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/HectonVoxelVolume.cs",
+      "line": 4387,
+      "owner": "BuildRuntimeSegmentAabb",
+      "kind": "object_creation",
+      "detail": "Bounds",
+      "snippet": "new Bounds((min + max) * 0.5f, max - min)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/HectonVoxelVolume.cs",
+      "line": 4396,
+      "owner": "BuildRuntimeAabb",
+      "kind": "object_creation",
+      "detail": "Bounds",
+      "snippet": "new Bounds(cachedTransform.TransformPoint(new Vector3(min.x, min.y, min.z)), Vector3.zero)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/HectonVoxelVolume.cs",
+      "line": 4396,
+      "owner": "BuildRuntimeAabb",
+      "kind": "object_creation",
+      "detail": "Vector3",
+      "snippet": "new Vector3(min.x, min.y, min.z)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/HectonVoxelVolume.cs",
+      "line": 4397,
+      "owner": "BuildRuntimeAabb",
+      "kind": "object_creation",
+      "detail": "Vector3",
+      "snippet": "new Vector3(max.x, min.y, min.z)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/HectonVoxelVolume.cs",
+      "line": 4398,
+      "owner": "BuildRuntimeAabb",
+      "kind": "object_creation",
+      "detail": "Vector3",
+      "snippet": "new Vector3(min.x, max.y, min.z)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/HectonVoxelVolume.cs",
+      "line": 4399,
+      "owner": "BuildRuntimeAabb",
+      "kind": "object_creation",
+      "detail": "Vector3",
+      "snippet": "new Vector3(max.x, max.y, min.z)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/HectonVoxelVolume.cs",
+      "line": 4400,
+      "owner": "BuildRuntimeAabb",
+      "kind": "object_creation",
+      "detail": "Vector3",
+      "snippet": "new Vector3(min.x, min.y, max.z)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/HectonVoxelVolume.cs",
+      "line": 4401,
+      "owner": "BuildRuntimeAabb",
+      "kind": "object_creation",
+      "detail": "Vector3",
+      "snippet": "new Vector3(max.x, min.y, max.z)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/HectonVoxelVolume.cs",
+      "line": 4402,
+      "owner": "BuildRuntimeAabb",
+      "kind": "object_creation",
+      "detail": "Vector3",
+      "snippet": "new Vector3(min.x, max.y, max.z)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/HectonVoxelVolume.cs",
+      "line": 4403,
+      "owner": "BuildRuntimeAabb",
+      "kind": "object_creation",
+      "detail": "Vector3",
+      "snippet": "new Vector3(max.x, max.y, max.z)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/HectonVoxelVolume.cs",
+      "line": 4448,
+      "owner": "AppendCraterStamp",
+      "kind": "object_creation",
+      "detail": "VoxelCraterStamp",
+      "snippet": "new VoxelCraterStamp             {                 position = absolutePosition,                 radius = clampedRadius,                 blendRadius = blendRadius             }"
+    },
+    {
+      "path": "Assets/_Project/Scripts/HectonVoxelVolume.cs",
+      "line": 4499,
+      "owner": "TryResolveSeismicCollapseAnchor",
+      "kind": "object_creation",
+      "detail": "Vector3",
+      "snippet": "new Vector3(localX, sampleY, localZ)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/HectonVoxelVolume.cs",
+      "line": 4520,
+      "owner": "TryResolveSeismicCollapseAnchor",
+      "kind": "object_creation",
+      "detail": "Vector3",
+      "snippet": "new Vector3(localX, anchorY, localZ)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/HectonVoxelVolume.cs",
+      "line": 4556,
+      "owner": "TryResolveTopSolidAnchor",
+      "kind": "object_creation",
+      "detail": "Vector3",
+      "snippet": "new Vector3(localX, sampleY, localZ)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/HectonVoxelVolume.cs",
+      "line": 4577,
+      "owner": "TryResolveTopSolidAnchor",
+      "kind": "object_creation",
+      "detail": "Vector3",
+      "snippet": "new Vector3(localX, anchorY, localZ)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/HectonVoxelVolume.cs",
+      "line": 4602,
+      "owner": "TryResolveNearestSolidDistance",
+      "kind": "object_creation",
+      "detail": "Vector3",
+      "snippet": "new Vector3(0f, offset, 0f)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/HectonVoxelVolume.cs",
+      "line": 4622,
+      "owner": "TryResolveNearestSolidDistance",
+      "kind": "object_creation",
+      "detail": "Vector3",
+      "snippet": "new Vector3(0f, offset, 0f)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/HectonVoxelVolume.cs",
+      "line": 4653,
+      "owner": "HasSolidDensityPath",
+      "kind": "value_type_creation",
+      "detail": "float3",
+      "snippet": "new float3(pathDelta.x, pathDelta.y, pathDelta.z)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/HectonVoxelVolume.cs",
+      "line": 4713,
+      "owner": "",
+      "kind": "object_creation",
+      "detail": "LeakSentinelLateFrameDriver",
+      "snippet": "new LeakSentinelLateFrameDriver()"
+    },
+    {
+      "path": "Assets/_Project/Scripts/VoxelDeltaProcessor.cs",
+      "line": 171,
+      "owner": "",
+      "kind": "object_creation",
+      "detail": "ProfilerMarker",
+      "snippet": "new ProfilerMarker(\"H8.VoxelDelta.ScheduleCarve\")"
+    },
+    {
+      "path": "Assets/_Project/Scripts/VoxelDeltaProcessor.cs",
+      "line": 172,
+      "owner": "",
+      "kind": "object_creation",
+      "detail": "ProfilerMarker",
+      "snippet": "new ProfilerMarker(\"H8.VoxelDelta.CommitCarve\")"
+    },
+    {
+      "path": "Assets/_Project/Scripts/VoxelDeltaProcessor.cs",
+      "line": 217,
+      "owner": "",
+      "kind": "object_creation",
+      "detail": "FixedVolumeRegistry",
+      "snippet": "new FixedVolumeRegistry(InitialVolumeRegistryCapacity, VolumeRegistryLane.Registered)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/VoxelDeltaProcessor.cs",
+      "line": 218,
+      "owner": "",
+      "kind": "object_creation",
+      "detail": "FixedVolumeRegistry",
+      "snippet": "new FixedVolumeRegistry(InitialVolumeRegistryCapacity, VolumeRegistryLane.PendingRebuild)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/VoxelDeltaProcessor.cs",
+      "line": 800,
+      "owner": "AcceptThermalMeltEvent",
+      "kind": "object_creation",
+      "detail": "ThermalMeltRuntime",
+      "snippet": "new ThermalMeltRuntime              {                  Volume = targetVolume,                  AbsoluteCenter = absolutePosition,                  RadiusMeters = radius,                  ElapsedSeconds = 0f,                  StepAccumulator"
+    },
+    {
+      "path": "Assets/_Project/Scripts/VoxelDeltaProcessor.cs",
+      "line": 898,
+      "owner": "TryStageThermalMeltStep",
+      "kind": "value_type_creation",
+      "detail": "PendingCarveRequest",
+      "snippet": "new PendingCarveRequest             {                 Volume = melt.Volume,                 AbsoluteHitPoint = melt.AbsoluteCenter,                  ExplicitRadiusMeters = radius,                  ExplicitBlendStrength = strength,          "
+    },
+    {
+      "path": "Assets/_Project/Scripts/VoxelDeltaProcessor.cs",
+      "line": 1460,
+      "owner": "ResolveQueuedCarveBucketHash",
+      "kind": "value_type_creation",
+      "detail": "uint4",
+      "snippet": "new uint4(volumeLo, volumeHi, packedFlags, 0xB4C0D4u)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/VoxelDeltaProcessor.cs",
+      "line": 1493,
+      "owner": "TryEnqueuePendingCarveFromEvent",
+      "kind": "value_type_creation",
+      "detail": "PendingCarveRequest",
+      "snippet": "new PendingCarveRequest              {                  Volume = volume,                  AbsoluteHitPoint = ResolveCarveHitPointDouble(in hydratedEvent),                  AbsoluteSegmentEnd = ResolveCarveSegmentEndDouble(in hydratedEvent),"
+    },
+    {
+      "path": "Assets/_Project/Scripts/VoxelDeltaProcessor.cs",
+      "line": 1528,
+      "owner": "ToVector3",
+      "kind": "object_creation",
+      "detail": "Vector3",
+      "snippet": "new Vector3(value.x, value.y, value.z)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/VoxelDeltaProcessor.cs",
+      "line": 1537,
+      "owner": "ToRuntimeFloat3",
+      "kind": "value_type_creation",
+      "detail": "double3",
+      "snippet": "new double3(-RuntimeAupLocalClampMeters)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/VoxelDeltaProcessor.cs",
+      "line": 1538,
+      "owner": "ToRuntimeFloat3",
+      "kind": "value_type_creation",
+      "detail": "double3",
+      "snippet": "new double3(RuntimeAupLocalClampMeters)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/VoxelDeltaProcessor.cs",
+      "line": 1549,
+      "owner": "ToRuntimeVector3",
+      "kind": "object_creation",
+      "detail": "Vector3",
+      "snippet": "new Vector3(runtimePosition.x, runtimePosition.y, runtimePosition.z)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/VoxelDeltaProcessor.cs",
+      "line": 1554,
+      "owner": "ToDouble3",
+      "kind": "value_type_creation",
+      "detail": "double3",
+      "snippet": "new double3(value.x, value.y, value.z)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/VoxelDeltaProcessor.cs",
+      "line": 1559,
+      "owner": "ToDouble3",
+      "kind": "value_type_creation",
+      "detail": "double3",
+      "snippet": "new double3(value.x, value.y, value.z)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/VoxelDeltaProcessor.cs",
+      "line": 1644,
+      "owner": "ClampQueuedCarveEventShapeBudget",
+      "kind": "value_type_creation",
+      "detail": "float3",
+      "snippet": "new float3(                     ClampCarveExtentMeters(carveEvent.AbsoluteHalfExtents.x, voxelSize),                     ClampCarveExtentMeters(carveEvent.AbsoluteHalfExtents.y, voxelSize),                     ClampCarveExtentMeters(carveEv"
+    },
+    {
+      "path": "Assets/_Project/Scripts/VoxelDeltaProcessor.cs",
+      "line": 1762,
+      "owner": "StagePlasmaCut",
+      "kind": "value_type_creation",
+      "detail": "PendingCarveRequest",
+      "snippet": "new PendingCarveRequest              {                  Volume = volume,                  AbsoluteHitPoint = absoluteHitPoint,                  AccumulatedDamage = damage,                  MaterialId = materialId,                  SourceFla"
+    },
+    {
+      "path": "Assets/_Project/Scripts/VoxelDeltaProcessor.cs",
+      "line": 1820,
+      "owner": "ApplyImmediateAbsoluteCrater",
+      "kind": "value_type_creation",
+      "detail": "VoxelCarveEvent",
+      "snippet": "new VoxelCarveEvent              {                  AbsoluteHitPoint = ToRuntimeFloat3(absoluteHitPoint),                 AbsoluteHitPointDouble = absoluteHitPoint,                  AbsoluteImpulseDirection = new float3(absoluteImpulseDirec"
+    },
+    {
+      "path": "Assets/_Project/Scripts/VoxelDeltaProcessor.cs",
+      "line": 1824,
+      "owner": "ApplyImmediateAbsoluteCrater",
+      "kind": "value_type_creation",
+      "detail": "float3",
+      "snippet": "new float3(absoluteImpulseDirection.x, absoluteImpulseDirection.y, absoluteImpulseDirection.z)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/VoxelDeltaProcessor.cs",
+      "line": 1887,
+      "owner": "ApplyImmediateAbsoluteBoxCrater",
+      "kind": "value_type_creation",
+      "detail": "float3",
+      "snippet": "new float3(                 ClampCarveExtentMeters(halfExtents.x, volume.VoxelSize),                 ClampCarveExtentMeters(halfExtents.y, volume.VoxelSize),                 ClampCarveExtentMeters(halfExtents.z, volume.VoxelSize))"
+    },
+    {
+      "path": "Assets/_Project/Scripts/VoxelDeltaProcessor.cs",
+      "line": 1891,
+      "owner": "ApplyImmediateAbsoluteBoxCrater",
+      "kind": "object_creation",
+      "detail": "Vector3",
+      "snippet": "new Vector3(                  resolvedHalfExtents3.x,                  resolvedHalfExtents3.y,                  resolvedHalfExtents3.z)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/VoxelDeltaProcessor.cs",
+      "line": 1898,
+      "owner": "ApplyImmediateAbsoluteBoxCrater",
+      "kind": "value_type_creation",
+      "detail": "VoxelCarveEvent",
+      "snippet": "new VoxelCarveEvent              {                  AbsoluteHitPoint = ToRuntimeFloat3(absoluteCenter),                 AbsoluteHitPointDouble = absoluteCenter,                  AbsoluteHalfExtents = resolvedHalfExtents3,                  B"
+    },
+    {
+      "path": "Assets/_Project/Scripts/VoxelDeltaProcessor.cs",
+      "line": 1929,
+      "owner": "ApplyImmediateAbsoluteWeld",
+      "kind": "value_type_creation",
+      "detail": "VoxelCarveEvent",
+      "snippet": "new VoxelCarveEvent              {                  AbsoluteHitPoint = ToRuntimeFloat3(absoluteHitPoint),                 AbsoluteHitPointDouble = absoluteHitPoint,                  RadiusMeters = radius,                  BlendStrengthMeter"
+    },
+    {
+      "path": "Assets/_Project/Scripts/VoxelDeltaProcessor.cs",
+      "line": 1979,
+      "owner": "ApplyImmediateAbsoluteCapsuleWeld",
+      "kind": "value_type_creation",
+      "detail": "VoxelCarveEvent",
+      "snippet": "new VoxelCarveEvent              {                  AbsoluteHitPoint = ToRuntimeFloat3(absoluteStart),                 AbsoluteSegmentEnd = ToRuntimeFloat3(absoluteEnd),                 AbsoluteHitPointDouble = absoluteStart,               "
+    },
+    {
+      "path": "Assets/_Project/Scripts/VoxelDeltaProcessor.cs",
+      "line": 2095,
+      "owner": "TryMeasureDeltaMapForVolume",
+      "kind": "object_creation",
+      "detail": "ChunkAddress",
+      "snippet": "new ChunkAddress(new int3(x, y, z), volume.VoxelSize)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/VoxelDeltaProcessor.cs",
+      "line": 2095,
+      "owner": "TryMeasureDeltaMapForVolume",
+      "kind": "value_type_creation",
+      "detail": "int3",
+      "snippet": "new int3(x, y, z)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/VoxelDeltaProcessor.cs",
+      "line": 2159,
+      "owner": "TryFillDeltaArrayForVolume",
+      "kind": "object_creation",
+      "detail": "ChunkAddress",
+      "snippet": "new ChunkAddress(new int3(x, y, z), volume.VoxelSize)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/VoxelDeltaProcessor.cs",
+      "line": 2159,
+      "owner": "TryFillDeltaArrayForVolume",
+      "kind": "value_type_creation",
+      "detail": "int3",
+      "snippet": "new int3(x, y, z)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/VoxelDeltaProcessor.cs",
+      "line": 2168,
+      "owner": "TryFillDeltaArrayForVolume",
+      "kind": "object_creation",
+      "detail": "VoxelModifiedCell",
+      "snippet": "new VoxelModifiedCell                                 {                                     Density = BitsToHalf(compactedState.GetSdfValueBits(flatIndex)),                                     MaterialId = compactedState.GetMaterialId(flatI"
+    },
+    {
+      "path": "Assets/_Project/Scripts/VoxelDeltaProcessor.cs",
+      "line": 2222,
+      "owner": "TryFillDeltaArrayForVolume",
+      "kind": "object_creation",
+      "detail": "VoxelModifiedCell",
+      "snippet": "new VoxelModifiedCell                                 {                                     Density = BitsToHalf(sdfValueBits[flatIndex]),                                     MaterialId = materialIds[flatIndex],                             "
+    },
+    {
+      "path": "Assets/_Project/Scripts/VoxelDeltaProcessor.cs",
+      "line": 2293,
+      "owner": "TryWriteModifiedCellEntry",
+      "kind": "value_type_creation",
+      "detail": "global::VoxelModifiedCellEntry",
+      "snippet": "new global::VoxelModifiedCellEntry             {                 AbsoluteCell = absoluteCell,                 Cell = cell             }"
+    },
+    {
+      "path": "Assets/_Project/Scripts/VoxelDeltaProcessor.cs",
+      "line": 2508,
+      "owner": "LoadFromSaveData",
+      "kind": "value_type_creation",
+      "detail": "int3",
+      "snippet": "new int3((int)chunk.chunkX, (int)chunk.chunkY, (int)chunk.chunkZ)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/VoxelDeltaProcessor.cs",
+      "line": 2509,
+      "owner": "LoadFromSaveData",
+      "kind": "object_creation",
+      "detail": "ChunkAddress",
+      "snippet": "new ChunkAddress(chunkCoord, chunk.voxelSize)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/VoxelDeltaProcessor.cs",
+      "line": 2513,
+      "owner": "LoadFromSaveData",
+      "kind": "value_type_creation",
+      "detail": "CompactedChunkState",
+      "snippet": "new CompactedChunkState(                          chunkCoord,                          chunk.voxelSize,                          chunk.uniformSdfValueBits,                          DefaultMaterialId,                          DeltaModeReplac"
+    },
+    {
+      "path": "Assets/_Project/Scripts/VoxelDeltaProcessor.cs",
+      "line": 2666,
+      "owner": "TryCopyNativeSnapshot",
+      "kind": "value_type_creation",
+      "detail": "NativeSnapshotHeader",
+      "snippet": "new NativeSnapshotHeader              {                  Version = NativeSnapshotDeltaRleAlignedMagic,                  ChunkCount = stats.ChunkCount,                  TotalDirtyCellCount = stats.TotalDirtyCellCount,                  Reserv"
+    },
+    {
+      "path": "Assets/_Project/Scripts/VoxelDeltaProcessor.cs",
+      "line": 2876,
+      "owner": "WriteUniformSdfRleNativeSnapshotChunk",
+      "kind": "object_creation",
+      "detail": "NativeSnapshotChunkHeaderDeltaRle",
+      "snippet": "new NativeSnapshotChunkHeaderDeltaRle              {                  ChunkX = address.ChunkCoord.x,                  ChunkY = address.ChunkCoord.y,                  ChunkZ = address.ChunkCoord.z,                  VoxelSize = address.VoxelS"
+    },
+    {
+      "path": "Assets/_Project/Scripts/VoxelDeltaProcessor.cs",
+      "line": 3017,
+      "owner": "WriteDirtySparseRleNativeSnapshotChunk",
+      "kind": "object_creation",
+      "detail": "SaveVoxelDeltaRun8",
+      "snippet": "new SaveVoxelDeltaRun8(                      (ushort)startIndex,                      (ushort)(cellIndex - startIndex),                      sdfValue,                      materialId,                      flags)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/VoxelDeltaProcessor.cs",
+      "line": 3036,
+      "owner": "WriteDirtySparseRleNativeSnapshotChunk",
+      "kind": "object_creation",
+      "detail": "NativeSnapshotChunkHeaderDeltaRle",
+      "snippet": "new NativeSnapshotChunkHeaderDeltaRle              {                  ChunkX = address.ChunkCoord.x,                  ChunkY = address.ChunkCoord.y,                  ChunkZ = address.ChunkCoord.z,                  VoxelSize = address.VoxelS"
+    },
+    {
+      "path": "Assets/_Project/Scripts/VoxelDeltaProcessor.cs",
+      "line": 3109,
+      "owner": "WriteDirtyDenseDeltaNativeSnapshotChunk",
+      "kind": "object_creation",
+      "detail": "NativeSnapshotChunkHeaderDeltaRle",
+      "snippet": "new NativeSnapshotChunkHeaderDeltaRle              {                  ChunkX = address.ChunkCoord.x,                  ChunkY = address.ChunkCoord.y,                  ChunkZ = address.ChunkCoord.z,                  VoxelSize = address.VoxelS"
+    },
+    {
+      "path": "Assets/_Project/Scripts/VoxelDeltaProcessor.cs",
+      "line": 3172,
+      "owner": "WriteCompactedDenseDeltaNativeSnapshotChunk",
+      "kind": "object_creation",
+      "detail": "NativeSnapshotChunkHeaderDeltaRle",
+      "snippet": "new NativeSnapshotChunkHeaderDeltaRle              {                  ChunkX = address.ChunkCoord.x,                  ChunkY = address.ChunkCoord.y,                  ChunkZ = address.ChunkCoord.z,                  VoxelSize = address.VoxelS"
+    },
+    {
+      "path": "Assets/_Project/Scripts/VoxelDeltaProcessor.cs",
+      "line": 3228,
+      "owner": "WriteCompactedSparseRleNativeSnapshotChunk",
+      "kind": "object_creation",
+      "detail": "SaveVoxelDeltaRun8",
+      "snippet": "new SaveVoxelDeltaRun8(                      (ushort)startIndex,                      (ushort)(cellIndex - startIndex),                      sdfValue,                      materialId,                      DeltaModeReplace)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/VoxelDeltaProcessor.cs",
+      "line": 3247,
+      "owner": "WriteCompactedSparseRleNativeSnapshotChunk",
+      "kind": "object_creation",
+      "detail": "NativeSnapshotChunkHeaderDeltaRle",
+      "snippet": "new NativeSnapshotChunkHeaderDeltaRle              {                  ChunkX = address.ChunkCoord.x,                  ChunkY = address.ChunkCoord.y,                  ChunkZ = address.ChunkCoord.z,                  VoxelSize = address.VoxelS"
+    },
+    {
+      "path": "Assets/_Project/Scripts/VoxelDeltaProcessor.cs",
+      "line": 3298,
+      "owner": "WriteCompactedNativeSnapshotChunk",
+      "kind": "object_creation",
+      "detail": "NativeSnapshotChunkHeaderRle",
+      "snippet": "new NativeSnapshotChunkHeaderRle              {                  ChunkX = address.ChunkCoord.x,                  ChunkY = address.ChunkCoord.y,                  ChunkZ = address.ChunkCoord.z,                  VoxelSize = address.VoxelSize, "
+    },
+    {
+      "path": "Assets/_Project/Scripts/VoxelDeltaProcessor.cs",
+      "line": 3401,
+      "owner": "TryLoadNativeSnapshot",
+      "kind": "value_type_creation",
+      "detail": "NativeSnapshotHeader",
+      "snippet": "new NativeSnapshotHeader                      {                          Version = snapshotVersion,                          ChunkCount = ReadInt32(snapshotPtr, 4),                          TotalDirtyCellCount = ReadInt32(snapshotPtr, 8),  "
+    },
+    {
+      "path": "Assets/_Project/Scripts/VoxelDeltaProcessor.cs",
+      "line": 3420,
+      "owner": "TryLoadNativeSnapshot",
+      "kind": "value_type_creation",
+      "detail": "NativeSnapshotHeader",
+      "snippet": "new NativeSnapshotHeader                  {                      Version = 1,                      ChunkCount = ReadInt32(snapshotPtr, 0),                      TotalDirtyCellCount = ReadInt32(snapshotPtr, 4),                      Reserved0 "
+    },
+    {
+      "path": "Assets/_Project/Scripts/VoxelDeltaProcessor.cs",
+      "line": 3472,
+      "owner": "TryLoadNativeSnapshot",
+      "kind": "value_type_creation",
+      "detail": "NativeSnapshotChunkHeader",
+      "snippet": "new NativeSnapshotChunkHeader                          {                              ChunkX = deltaHeader.ChunkX,                              ChunkY = deltaHeader.ChunkY,                              ChunkZ = deltaHeader.ChunkZ,          "
+    },
+    {
+      "path": "Assets/_Project/Scripts/VoxelDeltaProcessor.cs",
+      "line": 3525,
+      "owner": "TryLoadNativeSnapshot",
+      "kind": "value_type_creation",
+      "detail": "int3",
+      "snippet": "new int3(chunkHeader.ChunkX, chunkHeader.ChunkY, chunkHeader.ChunkZ)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/VoxelDeltaProcessor.cs",
+      "line": 3526,
+      "owner": "TryLoadNativeSnapshot",
+      "kind": "object_creation",
+      "detail": "ChunkAddress",
+      "snippet": "new ChunkAddress(chunkCoord, chunkHeader.VoxelSize)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/VoxelDeltaProcessor.cs",
+      "line": 3579,
+      "owner": "TryLoadNativeSnapshot",
+      "kind": "value_type_creation",
+      "detail": "CompactedChunkState",
+      "snippet": "new CompactedChunkState(                          chunkCoord,                          chunkHeader.VoxelSize,                          sdfBits,                          DefaultMaterialId,                          DeltaModeReplace)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/VoxelDeltaProcessor.cs",
+      "line": 3900,
+      "owner": "TrySchedulePendingCarve",
+      "kind": "value_type_creation",
+      "detail": "float3",
+      "snippet": "new float3(                     ClampCarveExtentMeters(request.AbsoluteHalfExtents.x, voxelSize),                     ClampCarveExtentMeters(request.AbsoluteHalfExtents.y, voxelSize),                     ClampCarveExtentMeters(request.Absol"
+    },
+    {
+      "path": "Assets/_Project/Scripts/VoxelDeltaProcessor.cs",
+      "line": 3904,
+      "owner": "TrySchedulePendingCarve",
+      "kind": "value_type_creation",
+      "detail": "float3",
+      "snippet": "new float3(radius)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/VoxelDeltaProcessor.cs",
+      "line": 3911,
+      "owner": "TrySchedulePendingCarve",
+      "kind": "value_type_creation",
+      "detail": "double3",
+      "snippet": "new double3(halfExtents.x, halfExtents.y, halfExtents.z)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/VoxelDeltaProcessor.cs",
+      "line": 3914,
+      "owner": "TrySchedulePendingCarve",
+      "kind": "value_type_creation",
+      "detail": "double3",
+      "snippet": "new double3(halfExtents.x, halfExtents.y, halfExtents.z)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/VoxelDeltaProcessor.cs",
+      "line": 3916,
+      "owner": "TrySchedulePendingCarve",
+      "kind": "value_type_creation",
+      "detail": "int3",
+      "snippet": "new int3(                  FastFloorToInt((boundsMin.x - boundsPadding) / voxelSize),                  FastFloorToInt((boundsMin.y - boundsPadding) / voxelSize),                  FastFloorToInt((boundsMin.z - boundsPadding) / voxelSize))"
+    },
+    {
+      "path": "Assets/_Project/Scripts/VoxelDeltaProcessor.cs",
+      "line": 3920,
+      "owner": "TrySchedulePendingCarve",
+      "kind": "value_type_creation",
+      "detail": "int3",
+      "snippet": "new int3(                  FastFloorToInt((boundsMax.x + boundsPadding) / voxelSize),                  FastFloorToInt((boundsMax.y + boundsPadding) / voxelSize),                  FastFloorToInt((boundsMax.z + boundsPadding) / voxelSize))"
+    },
+    {
+      "path": "Assets/_Project/Scripts/VoxelDeltaProcessor.cs",
+      "line": 4135,
+      "owner": "TryCommitScheduledCarve",
+      "kind": "object_creation",
+      "detail": "ChunkAddress",
+      "snippet": "new ChunkAddress(chunkCoord, voxelSize)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/VoxelDeltaProcessor.cs",
+      "line": 4340,
+      "owner": "HasOverlappingDelta",
+      "kind": "object_creation",
+      "detail": "ChunkAddress",
+      "snippet": "new ChunkAddress(new int3(x, y, z), volume.VoxelSize)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/VoxelDeltaProcessor.cs",
+      "line": 4340,
+      "owner": "HasOverlappingDelta",
+      "kind": "value_type_creation",
+      "detail": "int3",
+      "snippet": "new int3(x, y, z)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/VoxelDeltaProcessor.cs",
+      "line": 4364,
+      "owner": "ResolveVolumeCellBounds",
+      "kind": "value_type_creation",
+      "detail": "double3",
+      "snippet": "new double3(halfExtent, halfExtent, halfExtent)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/VoxelDeltaProcessor.cs",
+      "line": 4365,
+      "owner": "ResolveVolumeCellBounds",
+      "kind": "value_type_creation",
+      "detail": "double3",
+      "snippet": "new double3(halfExtent, halfExtent, halfExtent)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/VoxelDeltaProcessor.cs",
+      "line": 4367,
+      "owner": "ResolveVolumeCellBounds",
+      "kind": "value_type_creation",
+      "detail": "int3",
+      "snippet": "new int3(                  FastFloorToInt(minAbsolute.x / voxelSize),                  FastFloorToInt(minAbsolute.y / voxelSize),                  FastFloorToInt(minAbsolute.z / voxelSize))"
+    },
+    {
+      "path": "Assets/_Project/Scripts/VoxelDeltaProcessor.cs",
+      "line": 4371,
+      "owner": "ResolveVolumeCellBounds",
+      "kind": "value_type_creation",
+      "detail": "int3",
+      "snippet": "new int3(                  FastFloorToInt(maxAbsolute.x / voxelSize),                  FastFloorToInt(maxAbsolute.y / voxelSize),                  FastFloorToInt(maxAbsolute.z / voxelSize))"
+    },
+    {
+      "path": "Assets/_Project/Scripts/VoxelDeltaProcessor.cs",
+      "line": 4402,
+      "owner": "TryGetOrCreateChunkState",
+      "kind": "object_creation",
+      "detail": "ChunkAddress",
+      "snippet": "new ChunkAddress(chunkCoord, voxelSize)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/VoxelDeltaProcessor.cs",
+      "line": 4447,
+      "owner": "ResetScheduledCarveCommitProgress",
+      "kind": "value_type_creation",
+      "detail": "int3",
+      "snippet": "new int3(int.MaxValue)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/VoxelDeltaProcessor.cs",
+      "line": 4448,
+      "owner": "ResetScheduledCarveCommitProgress",
+      "kind": "value_type_creation",
+      "detail": "int3",
+      "snippet": "new int3(int.MinValue)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/VoxelDeltaProcessor.cs",
+      "line": 4505,
+      "owner": "TryQueueCompaction",
+      "kind": "value_type_creation",
+      "detail": "PendingCompactionRequest",
+      "snippet": "new PendingCompactionRequest              {                  Volume = volume,                  Address = address,                  RequiredSonarVersion = requiredSonarVersion,                  WriteVersion = writeVersion,                  D"
+    },
+    {
+      "path": "Assets/_Project/Scripts/VoxelDeltaProcessor.cs",
+      "line": 4646,
+      "owner": "TrySchedulePendingCompaction",
+      "kind": "value_type_creation",
+      "detail": "ScheduledCompactionRequest",
+      "snippet": "new ScheduledCompactionRequest                 {                     Volume = volume,                     Address = request.Address,                     RequiredSonarVersion = request.RequiredSonarVersion,                     SourceSonarVer"
+    },
+    {
+      "path": "Assets/_Project/Scripts/VoxelDeltaProcessor.cs",
+      "line": 4655,
+      "owner": "TrySchedulePendingCompaction",
+      "kind": "value_type_creation",
+      "detail": "VoxelDeltaCompactionJob",
+      "snippet": "new VoxelDeltaCompactionJob                  {                      ChunkCoord = request.Address.ChunkCoord,                      VoxelSize = math.max(request.Address.VoxelSize, MinRuntimeVoxelSize),                      GridDimensions = ne"
+    },
+    {
+      "path": "Assets/_Project/Scripts/VoxelDeltaProcessor.cs",
+      "line": 4659,
+      "owner": "TrySchedulePendingCompaction",
+      "kind": "value_type_creation",
+      "detail": "int3",
+      "snippet": "new int3(gridDimensions.x, gridDimensions.y, gridDimensions.z)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/VoxelDeltaProcessor.cs",
+      "line": 4662,
+      "owner": "TrySchedulePendingCompaction",
+      "kind": "value_type_creation",
+      "detail": "double3",
+      "snippet": "new double3(volumeOrigin.x, volumeOrigin.y, volumeOrigin.z)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/VoxelDeltaProcessor.cs",
+      "line": 4663,
+      "owner": "TrySchedulePendingCompaction",
+      "kind": "value_type_creation",
+      "detail": "float3",
+      "snippet": "new float3(                          1f / math.max(voxelCellSize.x, 0.0001f),                          1f / math.max(voxelCellSize.y, 0.0001f),                          1f / math.max(voxelCellSize.z, 0.0001f))"
+    },
+    {
+      "path": "Assets/_Project/Scripts/VoxelDeltaProcessor.cs",
+      "line": 4686,
+      "owner": "TrySchedulePendingCompaction",
+      "kind": "value_type_creation",
+      "detail": "VoxelDeltaCopyChunkStateJob",
+      "snippet": "new VoxelDeltaCopyChunkStateJob                 {                     SourceDirtyMaskWords = stateDirtyMaskWords,                     SourceSdfValueBits = stateSdfValueBits,                     SourceMaterialIds = stateMaterialIds,         "
+    },
+    {
+      "path": "Assets/_Project/Scripts/VoxelDeltaProcessor.cs",
+      "line": 4698,
+      "owner": "TrySchedulePendingCompaction",
+      "kind": "value_type_creation",
+      "detail": "VoxelDeltaUniformRunDetectJob",
+      "snippet": "new VoxelDeltaUniformRunDetectJob                 {                     SdfValueBits = outputSdf,                     MaterialIds = outputMaterials,                     CellFlags = outputFlags,                      UniformFlag = rleUniformF"
+    },
+    {
+      "path": "Assets/_Project/Scripts/VoxelDeltaProcessor.cs",
+      "line": 4816,
+      "owner": "TryCommitScheduledCompaction",
+      "kind": "value_type_creation",
+      "detail": "CompactedChunkState",
+      "snippet": "new CompactedChunkState(                      request.Address.ChunkCoord,                     request.Address.VoxelSize,                     outputSdf[0],                     outputMaterials[0],                     outputFlags[0])"
+    },
+    {
+      "path": "Assets/_Project/Scripts/VoxelDeltaProcessor.cs",
+      "line": 4866,
+      "owner": "TryResolveCurrentCellDensity",
+      "kind": "value_type_creation",
+      "detail": "double3",
+      "snippet": "new double3(absoluteCell.x, absoluteCell.y, absoluteCell.z)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/VoxelDeltaProcessor.cs",
+      "line": 4942,
+      "owner": "AbsoluteCellFromLocalIndex",
+      "kind": "value_type_creation",
+      "detail": "int3",
+      "snippet": "new int3(localX, localY, localZ)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/VoxelDeltaProcessor.cs",
+      "line": 5107,
+      "owner": "ResolveDominantAxisDirection",
+      "kind": "object_creation",
+      "detail": "Vector3",
+      "snippet": "new Vector3(value.x < 0f ? -1f : 1f, 0f, 0f)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/VoxelDeltaProcessor.cs",
+      "line": 5110,
+      "owner": "ResolveDominantAxisDirection",
+      "kind": "object_creation",
+      "detail": "Vector3",
+      "snippet": "new Vector3(0f, value.y < 0f ? -1f : 1f, 0f)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/VoxelDeltaProcessor.cs",
+      "line": 5112,
+      "owner": "ResolveDominantAxisDirection",
+      "kind": "object_creation",
+      "detail": "Vector3",
+      "snippet": "new Vector3(0f, 0f, value.z < 0f ? -1f : 1f)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/VoxelDeltaProcessor.cs",
+      "line": 5125,
+      "owner": "PublishDebrisSpawnSignal",
+      "kind": "value_type_creation",
+      "detail": "int4",
+      "snippet": "new int4(                  CastBiasInt(request.AbsoluteHitPoint.x * 8d),                  CastBiasInt(request.AbsoluteHitPoint.y * 8d),                  CastBiasInt(request.AbsoluteHitPoint.z * 8d),                  request.Shape | (request"
+    },
+    {
+      "path": "Assets/_Project/Scripts/VoxelDeltaProcessor.cs",
+      "line": 5130,
+      "owner": "PublishDebrisSpawnSignal",
+      "kind": "value_type_creation",
+      "detail": "DebrisSpawnSignal",
+      "snippet": "new DebrisSpawnSignal              {                  PositionAup = AbsoluteUniversePosition.FromAbsolutePosition(request.AbsoluteHitPoint),                  SpeciesHash = _VoxelDebrisSignalHash,                  SourceEntityId = sourceId, "
+    },
+    {
+      "path": "Assets/_Project/Scripts/VoxelDeltaProcessor.cs",
+      "line": 5150,
+      "owner": "PublishMaterialYieldIfNeeded",
+      "kind": "value_type_creation",
+      "detail": "ItemAcquiredSignal",
+      "snippet": "new ItemAcquiredSignal              {                  PositionAup = AbsoluteUniversePosition.FromAbsolutePosition(_scheduledCarveRequest.AbsoluteHitPoint),                  ItemHash = TitaniumScrapItemHash,                  OreHash = Titan"
+    },
+    {
+      "path": "Assets/_Project/Scripts/VoxelDeltaProcessor.cs",
+      "line": 5188,
+      "owner": "PublishVoxelChunkModifiedEvent",
+      "kind": "value_type_creation",
+      "detail": "VoxelChunkModifiedEvent",
+      "snippet": "new VoxelChunkModifiedEvent              {                  VolumeInstanceId = EntityId.ToULong(volume.GetEntityId()),                  MinAbsoluteCell = _scheduledCarveTouchedMinCell,                  MaxAbsoluteCell = _scheduledCarveTouch"
+    },
+    {
+      "path": "Assets/_Project/Scripts/VoxelDeltaProcessor.cs",
+      "line": 5425,
+      "owner": "PushRecentCutHeat",
+      "kind": "value_type_creation",
+      "detail": "float3",
+      "snippet": "new float3(runtimeHitPoint.x, runtimeHitPoint.y, runtimeHitPoint.z)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/VoxelDeltaProcessor.cs",
+      "line": 5433,
+      "owner": "PushRecentCutHeat",
+      "kind": "object_creation",
+      "detail": "Vector4",
+      "snippet": "new Vector4(                  runtimeHitPoint.x,                  runtimeHitPoint.y,                  runtimeHitPoint.z,                  shaderRadius)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/VoxelDeltaProcessor.cs",
+      "line": 5438,
+      "owner": "PushRecentCutHeat",
+      "kind": "object_creation",
+      "detail": "Vector4",
+      "snippet": "new Vector4(                  LaserCutHeatStrength,                  ResolveLaserCutHeatShaderClockSeconds(),                  LaserCutHeatLifetimeSeconds,                  0f)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/VoxelDeltaProcessor.cs",
+      "line": 5878,
+      "owner": "EnsureChunkStatePool",
+      "kind": "value_type_creation",
+      "detail": "ChunkDeltaState",
+      "snippet": "new ChunkDeltaState(                     default,                     MinRuntimeVoxelSize,                     i)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/VoxelDeltaProcessor.cs",
+      "line": 6477,
+      "owner": "TryResolveRuntimeAupDouble",
+      "kind": "value_type_creation",
+      "detail": "double3",
+      "snippet": "new double3(runtimePosition.x, runtimePosition.y, runtimePosition.z)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/VoxelDeltaProcessor.cs",
+      "line": 6741,
+      "owner": "FloorDiv",
+      "kind": "value_type_creation",
+      "detail": "int3",
+      "snippet": "new int3(FloorDiv(value.x, divisor), FloorDiv(value.y, divisor), FloorDiv(value.z, divisor))"
+    },
+    {
+      "path": "Assets/_Project/Scripts/VoxelDeltaProcessor.cs",
+      "line": 6760,
+      "owner": "ClampLocalizedLaserCarveBounds",
+      "kind": "value_type_creation",
+      "detail": "int3",
+      "snippet": "new int3(                  FastFloorToInt(center.x / safeVoxelSize),                  FastFloorToInt(center.y / safeVoxelSize),                  FastFloorToInt(center.z / safeVoxelSize))"
+    },
+    {
+      "path": "Assets/_Project/Scripts/VoxelDeltaProcessor.cs",
+      "line": 6768,
+      "owner": "ClampLocalizedLaserCarveBounds",
+      "kind": "value_type_creation",
+      "detail": "int3",
+      "snippet": "new int3(lowerHalf)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/VoxelDeltaProcessor.cs",
+      "line": 6769,
+      "owner": "ClampLocalizedLaserCarveBounds",
+      "kind": "value_type_creation",
+      "detail": "int3",
+      "snippet": "new int3(upperHalf)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/VoxelDeltaProcessor.cs",
+      "line": 6810,
+      "owner": "MortonDecodeSigned",
+      "kind": "value_type_creation",
+      "detail": "int3",
+      "snippet": "new int3(x, y, z)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/VoxelDeltaProcessor.cs",
+      "line": 6908,
+      "owner": "Execute",
+      "kind": "value_type_creation",
+      "detail": "int3",
+      "snippet": "new int3(localX, localY, localZ)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/VoxelDeltaProcessor.cs",
+      "line": 6909,
+      "owner": "Execute",
+      "kind": "value_type_creation",
+      "detail": "double3",
+      "snippet": "new double3(absoluteCell.x, absoluteCell.y, absoluteCell.z)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/VoxelDeltaProcessor.cs",
+      "line": 6921,
+      "owner": "Execute",
+      "kind": "object_creation",
+      "detail": "CarveCellWrite",
+      "snippet": "new CarveCellWrite                 {                     AbsoluteCellX = absoluteCell.x,                      AbsoluteCellY = absoluteCell.y,                      AbsoluteCellZ = absoluteCell.z,                      SdfValueBits = (ushort)m"
+    },
+    {
+      "path": "Assets/_Project/Scripts/VoxelDeltaProcessor.cs",
+      "line": 6936,
+      "owner": "BoxSdf",
+      "kind": "value_type_creation",
+      "detail": "double3",
+      "snippet": "new double3(                      math.max(halfExtents.x, 0.001f),                      math.max(halfExtents.y, 0.001f),                      math.max(halfExtents.z, 0.001f))"
+    },
+    {
+      "path": "Assets/_Project/Scripts/VoxelDeltaProcessor.cs",
+      "line": 6979,
+      "owner": "AbsoluteCell",
+      "kind": "value_type_creation",
+      "detail": "int3",
+      "snippet": "new int3(AbsoluteCellX, AbsoluteCellY, AbsoluteCellZ)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/VoxelDeltaProcessor.cs",
+      "line": 7089,
+      "owner": "Execute",
+      "kind": "value_type_creation",
+      "detail": "double3",
+      "snippet": "new double3(absoluteCell.x, absoluteCell.y, absoluteCell.z)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/VoxelDeltaProcessor.cs",
+      "line": 7125,
+      "owner": "AbsoluteCellFromFlatIndex",
+      "kind": "value_type_creation",
+      "detail": "int3",
+      "snippet": "new int3(localX, localY, localZ)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/VoxelDeltaProcessor.cs",
+      "line": 7332,
+      "owner": "ReadLegacyChunkHeader",
+      "kind": "value_type_creation",
+      "detail": "NativeSnapshotChunkHeader",
+      "snippet": "new NativeSnapshotChunkHeader              {                  ChunkX = ReadInt32(headerPtr, 0),                  ChunkY = ReadInt32(headerPtr, 4),                  ChunkZ = ReadInt32(headerPtr, 8),                  VoxelSize = ReadSingle(he"
+    },
+    {
+      "path": "Assets/_Project/Scripts/VoxelDeltaProcessor.cs",
+      "line": 7468,
+      "owner": "ChunkCoord",
+      "kind": "value_type_creation",
+      "detail": "int3",
+      "snippet": "new int3(                  DecodeCoord(_packedKey),                  DecodeCoord(_packedKey >> YShift),                  DecodeCoord(_packedKey >> ZShift))"
+    },
+    {
+      "path": "Assets/_Project/Scripts/VoxelDeformationSmokeTester.cs",
+      "line": 223,
+      "owner": "ValidatePureVoidNavGrid",
+      "kind": "native_tempjob_allocation",
+      "detail": "NativeArray<byte>",
+      "snippet": "new NativeArray<byte>(8, Allocator.TempJob, NativeArrayOptions.ClearMemory)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/VoxelDeformationSmokeTester.cs",
+      "line": 224,
+      "owner": "ValidatePureVoidNavGrid",
+      "kind": "native_tempjob_allocation",
+      "detail": "NativeArray<ushort>",
+      "snippet": "new NativeArray<ushort>(8, Allocator.TempJob, NativeArrayOptions.UninitializedMemory)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/VoxelDeformationSmokeTester.cs",
+      "line": 225,
+      "owner": "ValidatePureVoidNavGrid",
+      "kind": "native_tempjob_allocation",
+      "detail": "NativeArray<int>",
+      "snippet": "new NativeArray<int>(                      VoxelDynamicNavGridRuntime.ResolvePureVoidBlockCount(passability.Length),                      Allocator.TempJob,                      NativeArrayOptions.UninitializedMemory)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/VoxelDeformationSmokeTester.cs",
+      "line": 232,
+      "owner": "ValidatePureVoidNavGrid",
+      "kind": "value_type_creation",
+      "detail": "VoxelDynamicNavGridRuntime.ClearanceDilationJob",
+      "snippet": "new VoxelDynamicNavGridRuntime.ClearanceDilationJob                  {                      Passability = passability,                      DistanceMap = distance,                      Dimensions = new int3(2, 2, 2),                      Ag"
+    },
+    {
+      "path": "Assets/_Project/Scripts/VoxelDeformationSmokeTester.cs",
+      "line": 236,
+      "owner": "ValidatePureVoidNavGrid",
+      "kind": "value_type_creation",
+      "detail": "int3",
+      "snippet": "new int3(2, 2, 2)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/VoxelDeformationSmokeTester.cs",
+      "line": 273,
+      "owner": "ValidateVoidChunkBoundsEarlyExit",
+      "kind": "native_tempjob_allocation",
+      "detail": "NativeArray<float>",
+      "snippet": "new NativeArray<float>(8, Allocator.TempJob, NativeArrayOptions.UninitializedMemory)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/VoxelDeformationSmokeTester.cs",
+      "line": 274,
+      "owner": "ValidateVoidChunkBoundsEarlyExit",
+      "kind": "native_tempjob_allocation",
+      "detail": "NativeArray<int>",
+      "snippet": "new NativeArray<int>(1, Allocator.TempJob, NativeArrayOptions.ClearMemory)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/VoxelDeformationSmokeTester.cs",
+      "line": 278,
+      "owner": "ValidateVoidChunkBoundsEarlyExit",
+      "kind": "value_type_creation",
+      "detail": "global::VoxelChunkBoundsContentJob",
+      "snippet": "new global::VoxelChunkBoundsContentJob                  {                      ptsX = 2,                      ptsY = 2,                      ptsZ = 2,                      density = density,                      hasContent = hasContent     "
+    },
+    {
+      "path": "Assets/_Project/Scripts/VoxelDeformationSmokeTester.cs",
+      "line": 291,
+      "owner": "ValidateVoidChunkBoundsEarlyExit",
+      "kind": "value_type_creation",
+      "detail": "global::VoxelChunkBoundsContentJob",
+      "snippet": "new global::VoxelChunkBoundsContentJob                  {                      ptsX = 2,                      ptsY = 2,                      ptsZ = 2,                      density = density,                      hasContent = hasContent     "
+    },
+    {
+      "path": "Assets/_Project/Scripts/VoxelDeformationSmokeTester.cs",
+      "line": 321,
+      "owner": "ValidateVertexAmbientOcclusion",
+      "kind": "native_tempjob_allocation",
+      "detail": "NativeArray<sbyte>",
+      "snippet": "new NativeArray<sbyte>(27, Allocator.TempJob, NativeArrayOptions.UninitializedMemory)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/VoxelDeformationSmokeTester.cs",
+      "line": 322,
+      "owner": "ValidateVertexAmbientOcclusion",
+      "kind": "native_tempjob_allocation",
+      "detail": "NativeArray<float3>",
+      "snippet": "new NativeArray<float3>(1, Allocator.TempJob, NativeArrayOptions.UninitializedMemory)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/VoxelDeformationSmokeTester.cs",
+      "line": 323,
+      "owner": "ValidateVertexAmbientOcclusion",
+      "kind": "native_tempjob_allocation",
+      "detail": "NativeArray<float3>",
+      "snippet": "new NativeArray<float3>(1, Allocator.TempJob, NativeArrayOptions.UninitializedMemory)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/VoxelDeformationSmokeTester.cs",
+      "line": 324,
+      "owner": "ValidateVertexAmbientOcclusion",
+      "kind": "native_tempjob_allocation",
+      "detail": "NativeArray<float>",
+      "snippet": "new NativeArray<float>(1, Allocator.TempJob, NativeArrayOptions.UninitializedMemory)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/VoxelDeformationSmokeTester.cs",
+      "line": 325,
+      "owner": "ValidateVertexAmbientOcclusion",
+      "kind": "native_tempjob_allocation",
+      "detail": "NativeArray<float>",
+      "snippet": "new NativeArray<float>(1, Allocator.TempJob, NativeArrayOptions.UninitializedMemory)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/VoxelDeformationSmokeTester.cs",
+      "line": 336,
+      "owner": "ValidateVertexAmbientOcclusion",
+      "kind": "value_type_creation",
+      "detail": "float3",
+      "snippet": "new float3(1f, 1f, 1f)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/VoxelDeformationSmokeTester.cs",
+      "line": 337,
+      "owner": "ValidateVertexAmbientOcclusion",
+      "kind": "value_type_creation",
+      "detail": "global::VoxelNormalJob",
+      "snippet": "new global::VoxelNormalJob                  {                      ptsX = 3,                      ptsY = 3,                      ptsZ = 3,                      densityStrideY = 3,                      densityStrideZ = 9,                    "
+    },
+    {
+      "path": "Assets/_Project/Scripts/VoxelDeformationSmokeTester.cs",
+      "line": 393,
+      "owner": "ValidateNativeCarveQueue",
+      "kind": "value_type_creation",
+      "detail": "double3",
+      "snippet": "new double3(11d, -23d, 37d)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/VoxelDeformationSmokeTester.cs",
+      "line": 394,
+      "owner": "ValidateNativeCarveQueue",
+      "kind": "value_type_creation",
+      "detail": "double3",
+      "snippet": "new double3(12d, -23d, 37d)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/VoxelDeformationSmokeTester.cs",
+      "line": 397,
+      "owner": "ValidateNativeCarveQueue",
+      "kind": "value_type_creation",
+      "detail": "VoxelCarveEvent",
+      "snippet": "new VoxelCarveEvent             {                 VolumeInstanceId = 17ul,                 AbsoluteHitPoint = new float3((float)firstHitLocal.x, (float)firstHitLocal.y, (float)firstHitLocal.z),                 AbsoluteSegmentEnd = new float"
+    },
+    {
+      "path": "Assets/_Project/Scripts/VoxelDeformationSmokeTester.cs",
+      "line": 400,
+      "owner": "ValidateNativeCarveQueue",
+      "kind": "value_type_creation",
+      "detail": "float3",
+      "snippet": "new float3((float)firstHitLocal.x, (float)firstHitLocal.y, (float)firstHitLocal.z)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/VoxelDeformationSmokeTester.cs",
+      "line": 401,
+      "owner": "ValidateNativeCarveQueue",
+      "kind": "value_type_creation",
+      "detail": "float3",
+      "snippet": "new float3((float)firstEndLocal.x, (float)firstEndLocal.y, (float)firstEndLocal.z)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/VoxelDeformationSmokeTester.cs",
+      "line": 402,
+      "owner": "ValidateNativeCarveQueue",
+      "kind": "value_type_creation",
+      "detail": "float3",
+      "snippet": "new float3(1f, 2f, 3f)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/VoxelDeformationSmokeTester.cs",
+      "line": 403,
+      "owner": "ValidateNativeCarveQueue",
+      "kind": "value_type_creation",
+      "detail": "float3",
+      "snippet": "new float3(0f, 0f, 1f)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/VoxelDeformationSmokeTester.cs",
+      "line": 448,
+      "owner": "ValidateNativeCarveQueue",
+      "kind": "value_type_creation",
+      "detail": "double3",
+      "snippet": "new double3(19d, -23d, 37d)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/VoxelDeformationSmokeTester.cs",
+      "line": 449,
+      "owner": "ValidateNativeCarveQueue",
+      "kind": "value_type_creation",
+      "detail": "double3",
+      "snippet": "new double3(20d, -23d, 37d)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/VoxelDeformationSmokeTester.cs",
+      "line": 452,
+      "owner": "ValidateNativeCarveQueue",
+      "kind": "value_type_creation",
+      "detail": "float3",
+      "snippet": "new float3((float)newestHitLocal.x, (float)newestHitLocal.y, (float)newestHitLocal.z)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/VoxelDeformationSmokeTester.cs",
+      "line": 453,
+      "owner": "ValidateNativeCarveQueue",
+      "kind": "value_type_creation",
+      "detail": "float3",
+      "snippet": "new float3((float)newestEndLocal.x, (float)newestEndLocal.y, (float)newestEndLocal.z)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/VoxelDeformationSmokeTester.cs",
+      "line": 482,
+      "owner": "ValidateVoxelBlackBox",
+      "kind": "value_type_creation",
+      "detail": "double3",
+      "snippet": "new double3(1d, 2d, 3d)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/VoxelDeformationSmokeTester.cs",
+      "line": 483,
+      "owner": "ValidateVoxelBlackBox",
+      "kind": "value_type_creation",
+      "detail": "double3",
+      "snippet": "new double3(2d, 2d, 3d)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/VoxelDeformationSmokeTester.cs",
+      "line": 486,
+      "owner": "ValidateVoxelBlackBox",
+      "kind": "value_type_creation",
+      "detail": "VoxelCarveEvent",
+      "snippet": "new VoxelCarveEvent             {                 AbsoluteHitPoint = new float3((float)hitLocal.x, (float)hitLocal.y, (float)hitLocal.z),                 AbsoluteSegmentEnd = new float3((float)endLocal.x, (float)endLocal.y, (float)endLocal."
+    },
+    {
+      "path": "Assets/_Project/Scripts/VoxelDeformationSmokeTester.cs",
+      "line": 488,
+      "owner": "ValidateVoxelBlackBox",
+      "kind": "value_type_creation",
+      "detail": "float3",
+      "snippet": "new float3((float)hitLocal.x, (float)hitLocal.y, (float)hitLocal.z)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/VoxelDeformationSmokeTester.cs",
+      "line": 489,
+      "owner": "ValidateVoxelBlackBox",
+      "kind": "value_type_creation",
+      "detail": "float3",
+      "snippet": "new float3((float)endLocal.x, (float)endLocal.y, (float)endLocal.z)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/VoxelDeformationSmokeTester.cs",
+      "line": 490,
+      "owner": "ValidateVoxelBlackBox",
+      "kind": "value_type_creation",
+      "detail": "float3",
+      "snippet": "new float3(1f, 1f, 1f)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/VoxelDeformationSmokeTester.cs",
+      "line": 491,
+      "owner": "ValidateVoxelBlackBox",
+      "kind": "value_type_creation",
+      "detail": "float3",
+      "snippet": "new float3(0f, 1f, 0f)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/VoxelDeformationSmokeTester.cs",
+      "line": 530,
+      "owner": "ValidateVoxelChunkModifiedEvent",
+      "kind": "value_type_creation",
+      "detail": "VoxelChunkModifiedEvent",
+      "snippet": "new VoxelChunkModifiedEvent              {                  VolumeInstanceId = 99ul,                  MinAbsoluteCell = new int3(-2, 3, 5),                  MaxAbsoluteCell = new int3(4, 9, 11),                  VoxelSize = 0.5f,           "
+    },
+    {
+      "path": "Assets/_Project/Scripts/VoxelDeformationSmokeTester.cs",
+      "line": 533,
+      "owner": "ValidateVoxelChunkModifiedEvent",
+      "kind": "value_type_creation",
+      "detail": "int3",
+      "snippet": "new int3(-2, 3, 5)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/VoxelDeformationSmokeTester.cs",
+      "line": 534,
+      "owner": "ValidateVoxelChunkModifiedEvent",
+      "kind": "value_type_creation",
+      "detail": "int3",
+      "snippet": "new int3(4, 9, 11)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/Core/Contracts/GroundRadarContracts.cs",
+      "line": 390,
+      "owner": "TrySampleEncodedSdfTrilinear",
+      "kind": "value_type_creation",
+      "detail": "float3",
+      "snippet": "new float3(Epsilon)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/Core/Contracts/GroundRadarContracts.cs",
+      "line": 392,
+      "owner": "TrySampleEncodedSdfTrilinear",
+      "kind": "value_type_creation",
+      "detail": "float3",
+      "snippet": "new float3(gridDimensions.x - 1.001f, gridDimensions.y - 1.001f, gridDimensions.z - 1.001f)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/Core/Contracts/GroundRadarContracts.cs",
+      "line": 394,
+      "owner": "TrySampleEncodedSdfTrilinear",
+      "kind": "value_type_creation",
+      "detail": "int3",
+      "snippet": "new int3(1)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/Core/Contracts/GroundRadarContracts.cs",
+      "line": 394,
+      "owner": "TrySampleEncodedSdfTrilinear",
+      "kind": "value_type_creation",
+      "detail": "int3",
+      "snippet": "new int3(1)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/Core/Contracts/GroundRadarContracts.cs",
+      "line": 422,
+      "owner": "EstimateEncodedSdfNormal",
+      "kind": "value_type_creation",
+      "detail": "float3",
+      "snippet": "new float3(MinimumRaymarchStepMeters)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/Core/Contracts/GroundRadarContracts.cs",
+      "line": 423,
+      "owner": "EstimateEncodedSdfNormal",
+      "kind": "value_type_creation",
+      "detail": "float3",
+      "snippet": "new float3(step.x, 0f, 0f)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/Core/Contracts/GroundRadarContracts.cs",
+      "line": 424,
+      "owner": "EstimateEncodedSdfNormal",
+      "kind": "value_type_creation",
+      "detail": "float3",
+      "snippet": "new float3(step.x, 0f, 0f)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/Core/Contracts/GroundRadarContracts.cs",
+      "line": 425,
+      "owner": "EstimateEncodedSdfNormal",
+      "kind": "value_type_creation",
+      "detail": "float3",
+      "snippet": "new float3(0f, step.y, 0f)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/Core/Contracts/GroundRadarContracts.cs",
+      "line": 426,
+      "owner": "EstimateEncodedSdfNormal",
+      "kind": "value_type_creation",
+      "detail": "float3",
+      "snippet": "new float3(0f, step.y, 0f)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/Core/Contracts/GroundRadarContracts.cs",
+      "line": 427,
+      "owner": "EstimateEncodedSdfNormal",
+      "kind": "value_type_creation",
+      "detail": "float3",
+      "snippet": "new float3(0f, 0f, step.z)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/Core/Contracts/GroundRadarContracts.cs",
+      "line": 428,
+      "owner": "EstimateEncodedSdfNormal",
+      "kind": "value_type_creation",
+      "detail": "float3",
+      "snippet": "new float3(0f, 0f, step.z)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/Core/Contracts/GroundRadarContracts.cs",
+      "line": 429,
+      "owner": "EstimateEncodedSdfNormal",
+      "kind": "value_type_creation",
+      "detail": "float3",
+      "snippet": "new float3(px - nx, py - ny, pz - nz)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/Core/Contracts/GroundRadarContracts.cs",
+      "line": 437,
+      "owner": "EstimateEncodedSdfNormal",
+      "kind": "value_type_creation",
+      "detail": "float3",
+      "snippet": "new float3(0f, 1f, 0f)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/Core/Contracts/GroundRadarContracts.cs",
+      "line": 470,
+      "owner": "TryResolveRaymarchInterval",
+      "kind": "value_type_creation",
+      "detail": "float3",
+      "snippet": "new float3(Epsilon)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/Core/Contracts/GroundRadarContracts.cs",
+      "line": 471,
+      "owner": "TryResolveRaymarchInterval",
+      "kind": "value_type_creation",
+      "detail": "int3",
+      "snippet": "new int3(1)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/Core/Contracts/GroundRadarContracts.cs",
+      "line": 471,
+      "owner": "TryResolveRaymarchInterval",
+      "kind": "value_type_creation",
+      "detail": "float3",
+      "snippet": "new float3(1f)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/Core/Memory/H8Memory.cs",
+      "line": 2338,
+      "owner": "ThrowUnknownFreeOwner",
+      "kind": "object_creation",
+      "detail": "FatalMemoryException",
+      "snippet": "new FatalMemoryException(\"H8Memory free owner is unknown.\")"
+    },
+    {
+      "path": "Assets/_Project/Scripts/Core/Memory/H8Memory.cs",
+      "line": 2343,
+      "owner": "ThrowUnknownAllocationOwner",
+      "kind": "object_creation",
+      "detail": "FatalMemoryException",
+      "snippet": "new FatalMemoryException(\"H8Memory allocation owner is unknown.\")"
+    },
+    {
+      "path": "Assets/_Project/Scripts/Core/Memory/H8Memory.cs",
+      "line": 2348,
+      "owner": "ThrowUnknownAliasReader",
+      "kind": "object_creation",
+      "detail": "FatalMemoryException",
+      "snippet": "new FatalMemoryException(\"H8Memory alias reader is unknown.\")"
+    },
+    {
+      "path": "Assets/_Project/Scripts/Core/Memory/H8Memory.cs",
+      "line": 2353,
+      "owner": "ThrowWrongFreeOwner",
+      "kind": "object_creation",
+      "detail": "FatalMemoryException",
+      "snippet": "new FatalMemoryException(\"H8Memory free owner mismatch.\")"
+    },
+    {
+      "path": "Assets/_Project/Scripts/Core/Memory/H8Memory.cs",
+      "line": 2358,
+      "owner": "ThrowUntrackedPointer",
+      "kind": "object_creation",
+      "detail": "FatalMemoryException",
+      "snippet": "new FatalMemoryException(\"H8Memory free pointer is untracked.\")"
+    },
+    {
+      "path": "Assets/_Project/Scripts/Core/Memory/H8Memory.cs",
+      "line": 2363,
+      "owner": "ThrowStaleVaultHandle",
+      "kind": "object_creation",
+      "detail": "FatalMemoryException",
+      "snippet": "new FatalMemoryException(\"GlobalDataVault handle generation mismatch.\")"
+    },
+    {
+      "path": "Assets/_Project/Scripts/Core/Memory/H8Memory.cs",
+      "line": 2368,
+      "owner": "ThrowVaultTypeMismatch",
+      "kind": "object_creation",
+      "detail": "FatalMemoryException",
+      "snippet": "new FatalMemoryException(\"GlobalDataVault buffer type mismatch.\")"
+    },
+    {
+      "path": "Assets/_Project/Scripts/Core/Memory/H8Memory.cs",
+      "line": 2373,
+      "owner": "ThrowAllocationSizeMismatch",
+      "kind": "object_creation",
+      "detail": "FatalMemoryException",
+      "snippet": "new FatalMemoryException(\"H8Memory reallocation size mismatch.\")"
+    },
+    {
+      "path": "Assets/_Project/Scripts/Core/Memory/H8Memory.cs",
+      "line": 2378,
+      "owner": "ThrowAllocationTrackingFailed",
+      "kind": "object_creation",
+      "detail": "FatalMemoryException",
+      "snippet": "new FatalMemoryException(\"H8Memory allocation tracking failed.\")"
+    },
+    {
+      "path": "Assets/_Project/Scripts/Core/Memory/H8Memory.cs",
+      "line": 2383,
+      "owner": "ThrowAbiLayoutMismatch",
+      "kind": "object_creation",
+      "detail": "FatalMemoryException",
+      "snippet": "new FatalMemoryException(\"H8Memory ABI layout mismatch.\")"
+    },
+    {
+      "path": "Assets/_Project/Scripts/Core/Memory/H8Memory.cs",
+      "line": 2388,
+      "owner": "ThrowNonBlittableAllocation",
+      "kind": "object_creation",
+      "detail": "FatalMemoryException",
+      "snippet": "new FatalMemoryException(\"H8Memory allocation element type is not blittable.\")"
+    },
+    {
+      "path": "Assets/_Project/Scripts/Core/Memory/H8Memory.cs",
+      "line": 2560,
+      "owner": "Initialize",
+      "kind": "native_persistent_allocation",
+      "detail": "NativeParallelHashMap<long, SystemID>",
+      "snippet": "new NativeParallelHashMap<long, SystemID>(safeCapacity, Allocator.Persistent)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/Core/Memory/H8Memory.cs",
+      "line": 2562,
+      "owner": "Initialize",
+      "kind": "native_persistent_allocation",
+      "detail": "NativeParallelHashMap<long, int>",
+      "snippet": "new NativeParallelHashMap<long, int>(safeCapacity, Allocator.Persistent)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/Core/Memory/H8Memory.cs",
+      "line": 2564,
+      "owner": "Initialize",
+      "kind": "native_persistent_allocation",
+      "detail": "NativeParallelHashMap<ushort, NativeList<IntPtr>>",
+      "snippet": "new NativeParallelHashMap<ushort, NativeList<IntPtr>>(OwnerRegistryCapacity, Allocator.Persistent)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/Core/Memory/H8Memory.cs",
+      "line": 2566,
+      "owner": "Initialize",
+      "kind": "native_persistent_allocation",
+      "detail": "NativeParallelHashMap<ushort, JobHandle>",
+      "snippet": "new NativeParallelHashMap<ushort, JobHandle>(OwnerRegistryCapacity, Allocator.Persistent)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/Core/Memory/H8Memory.cs",
+      "line": 2568,
+      "owner": "Initialize",
+      "kind": "native_persistent_allocation",
+      "detail": "NativeList<ushort>",
+      "snippet": "new NativeList<ushort>(OwnerRegistryCapacity, Allocator.Persistent)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/Core/Memory/H8Memory.cs",
+      "line": 2570,
+      "owner": "Initialize",
+      "kind": "native_persistent_allocation",
+      "detail": "NativeList<ushort>",
+      "snippet": "new NativeList<ushort>(OwnerRegistryCapacity, Allocator.Persistent)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/Core/Memory/H8Memory.cs",
+      "line": 2572,
+      "owner": "Initialize",
+      "kind": "native_persistent_allocation",
+      "detail": "NativeArray<H8AllocationRecord>",
+      "snippet": "new NativeArray<H8AllocationRecord>(safeCapacity, Allocator.Persistent, NativeArrayOptions.ClearMemory)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/Core/Memory/H8Memory.cs",
+      "line": 2574,
+      "owner": "Initialize",
+      "kind": "native_persistent_allocation",
+      "detail": "NativeArray<long>",
+      "snippet": "new NativeArray<long>(OwnerByteSlots, Allocator.Persistent, NativeArrayOptions.ClearMemory)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/Core/Memory/H8Memory.cs",
+      "line": 2576,
+      "owner": "Initialize",
+      "kind": "native_persistent_allocation",
+      "detail": "NativeList<BlockDescriptor>",
+      "snippet": "new NativeList<BlockDescriptor>(safeCapacity, Allocator.Persistent)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/Core/Memory/H8Memory.cs",
+      "line": 2578,
+      "owner": "Initialize",
+      "kind": "native_persistent_allocation",
+      "detail": "NativeArray<H8MemoryTelemetryEntry>",
+      "snippet": "new NativeArray<H8MemoryTelemetryEntry>(BlackBoxFrameCount, Allocator.Persistent, NativeArrayOptions.ClearMemory)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/Core/Memory/H8Memory.cs",
+      "line": 2580,
+      "owner": "Initialize",
+      "kind": "native_persistent_allocation",
+      "detail": "NativeArray<H8MemoryTelemetryEntry>",
+      "snippet": "new NativeArray<H8MemoryTelemetryEntry>(BlackBoxFrameCount, Allocator.Persistent, NativeArrayOptions.ClearMemory)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/Core/Memory/H8Memory.cs",
+      "line": 2739,
+      "owner": "Allocate",
+      "kind": "native_allocation",
+      "detail": "NativeArray<T>",
+      "snippet": "new NativeArray<T>(length, allocator, options)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/Core/Memory/H8Memory.cs",
+      "line": 3172,
+      "owner": "DumpAllocationTableText",
+      "kind": "object_creation",
+      "detail": "StreamWriter",
+      "snippet": "new StreamWriter(path, false)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/Core/Memory/H8Memory.cs",
+      "line": 3775,
+      "owner": "RegisterOwnerPointer",
+      "kind": "native_persistent_allocation",
+      "detail": "NativeList<IntPtr>",
+      "snippet": "new NativeList<IntPtr>(DefaultOwnerPointerCapacity, Allocator.Persistent)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/Core/Memory/H8Memory.cs",
+      "line": 3910,
+      "owner": "WriteFatalLeakBlackBoxFile",
+      "kind": "object_creation",
+      "detail": "FileStream",
+      "snippet": "new FileStream(path, FileMode.Append, FileAccess.Write, FileShare.Read)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/Core/Memory/H8Memory.cs",
+      "line": 4214,
+      "owner": "EnsureTrackingCapacity",
+      "kind": "native_persistent_allocation",
+      "detail": "NativeArray<H8AllocationRecord>",
+      "snippet": "new NativeArray<H8AllocationRecord>(newCapacity, Allocator.Persistent, NativeArrayOptions.ClearMemory)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/Core/Memory/H8Memory.cs",
+      "line": 4216,
+      "owner": "EnsureTrackingCapacity",
+      "kind": "native_persistent_allocation",
+      "detail": "NativeParallelHashMap<long, SystemID>",
+      "snippet": "new NativeParallelHashMap<long, SystemID>(newCapacity, Allocator.Persistent)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/Core/Memory/H8Memory.cs",
+      "line": 4218,
+      "owner": "EnsureTrackingCapacity",
+      "kind": "native_persistent_allocation",
+      "detail": "NativeParallelHashMap<long, int>",
+      "snippet": "new NativeParallelHashMap<long, int>(newCapacity, Allocator.Persistent)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/World/VoxelSurfaceNets/VoxelSurfaceNetsVault.cs",
+      "line": 1393,
+      "owner": "SanitizeMockDensity",
+      "kind": "value_type_creation",
+      "detail": "int3",
+      "snippet": "new int3(                 VoxelSurfaceNetsConstants.DensityResolution,                 VoxelSurfaceNetsConstants.DensityResolution,                 VoxelSurfaceNetsConstants.DensityResolution)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/World/VoxelSurfaceNets/VoxelSurfaceNetsVault.cs",
+      "line": 1622,
+      "owner": "TryWriteDumpFile",
+      "kind": "object_creation",
+      "detail": "ReadOnlySpan<byte>",
+      "snippet": "new ReadOnlySpan<byte>(ptr, byteLength)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/World/VoxelSurfaceNets/VoxelSurfaceNetsGpuUploadDispatcher.cs",
+      "line": 72,
+      "owner": "CreateLockBuffer",
       "kind": "object_creation",
       "detail": "GraphicsBuffer",
-      "snippet": "new GraphicsBuffer(                 GraphicsBuffer.Target.Structured,                 GraphicsBuffer.UsageFlags.LockBufferForWrite,                 count,                 stride)"
-    },
-    {
-      "path": "Assets/_Project/Scripts/Physics/TetherBlackBoxDumpWriter.cs",
-      "line": 167,
-      "owner": "TryWritePrimaryH8Dump",
-      "kind": "object_creation",
-      "detail": "FileStream",
-      "snippet": "new FileStream(                     path,                     FileMode.Create,                     FileAccess.ReadWrite,                     FileShare.Read,                     4096,                     FileOptions.WriteThrough)"
-    },
-    {
-      "path": "Assets/_Project/Scripts/Physics/TetherBlackBoxDumpWriter.cs",
-      "line": 213,
-      "owner": "TryWriteLegacyMirror",
-      "kind": "object_creation",
-      "detail": "FileStream",
-      "snippet": "new FileStream(                     path,                     FileMode.Append,                     FileAccess.Write,                     FileShare.Read,                     4096,                     FileOptions.WriteThrough)"
-    },
-    {
-      "path": "Assets/_Project/Scripts/Physics/TetherBlackBoxDumpWriter.cs",
-      "line": 256,
-      "owner": "EnsureDumpWorker",
-      "kind": "value_type_creation",
-      "detail": "AutoResetEvent",
-      "snippet": "new AutoResetEvent(false)"
-    },
-    {
-      "path": "Assets/_Project/Scripts/Physics/TetherBlackBoxDumpWriter.cs",
-      "line": 263,
-      "owner": "EnsureDumpWorker",
-      "kind": "object_creation",
-      "detail": "Thread",
-      "snippet": "new Thread(DumpWorkerLoop)                     {                         IsBackground = true,                         Name = \"H8.Physics.TetherDump1303\"                     }"
-    },
-    {
-      "path": "Assets/_Project/Scripts/Physics/TetherBlackBoxDumpWriter.cs",
-      "line": 478,
-      "owner": "TryWriteQueuedDumpFile",
-      "kind": "object_creation",
-      "detail": "FileStream",
-      "snippet": "new FileStream(                     path,                     mode,                     FileAccess.Write,                     FileShare.Read,                     4096,                     FileOptions.WriteThrough)"
+      "snippet": "new GraphicsBuffer(                 target,                 GraphicsBuffer.UsageFlags.LockBufferForWrite,                 count,                 stride)"
     }
   ],
   "parseFailures": [

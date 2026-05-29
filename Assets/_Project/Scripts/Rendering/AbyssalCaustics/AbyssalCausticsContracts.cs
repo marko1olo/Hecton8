@@ -330,6 +330,16 @@ namespace Hecton8.Rendering
             return outputIndex > maxIndex ? maxIndex : outputIndex;
         }
 
+        internal static uint ResolveTelemetryStateHash(in CausticsParametersDTO dto, uint flags)
+        {
+            return ResolveStateHash(in dto, flags);
+        }
+
+        internal static float EstimateTelemetryGpuMicros(float quality, float activeOctaves, float maxDepth)
+        {
+            return EstimateGpuMicros(quality, activeOctaves, maxDepth);
+        }
+
         private static uint ResolveStateHash(in CausticsParametersDTO dto, uint flags)
         {
             unchecked

@@ -891,6 +891,8 @@ namespace Hecton8.World
         private Material _fallbackScavengerMaterial;
         private Shader _fallbackLitShader;
         private SargassumCutManager _cutManager;
+        private IObjectPoolService _objectPoolService;
+        private IPhysicsService _physicsService;
         private Bounds _scavengerDrawBounds;
         private Bounds _registeredScavengerDrawBounds;
         private bool _scavengerDrawBoundsRegistered;
@@ -1628,6 +1630,7 @@ namespace Hecton8.World
         /// </summary>
         public void SlowTick()
         {
+            RefreshColdRegistryDependencies();
             RefreshRenderLayerCache();
             ResolveBridge();
             RebuildDensityField();
@@ -2282,7 +2285,7 @@ namespace Hecton8.World
             int requiredLength,
             NativeArrayOptions options) where T : struct
         {
-            IDataVault vault = CacheDataVaultCold();
+            IDataVault vault = _dataVault;
             if (vault == null || vault.IsCompactionFenceActive || requiredLength <= 0)
                 return false;
 
@@ -2314,30 +2317,6 @@ namespace Hecton8.World
                    resolved.IsCreated &&
                    resolved.Length >= requiredLength &&
                    !vault.IsCompactionFenceActive;
-        }
-
-        private bool TryAcquireVaultBuffer<T>(
-            in VaultGenerationHandle<T> handle,
-            int requiredLength,
-            out NativeArray<T> buffer) where T : struct
-        {
-            buffer = default;
-            IDataVault vault = _dataVault;
-            if (vault == null ||
-                vault.IsCompactionFenceActive ||
-                requiredLength <= 0 ||
-                !IsVaultHandleCreated(in handle) ||
-                !vault.TryAcquireWriteLock(in handle, VaultOwnerSystemId, out buffer))
-            {
-                return false;
-            }
-
-            if (!vault.IsCompactionFenceActive && buffer.IsCreated && buffer.Length >= requiredLength)
-                return true;
-
-            vault.ReleaseWriteLock(in handle, VaultOwnerSystemId);
-            buffer = default;
-            return false;
         }
 
         private void ReleaseDensityBuildSourceWrite()
@@ -2586,7 +2565,7 @@ namespace Hecton8.World
             if (accumulatedCutAreaWS < catastrophicAreaThreshold)
                 return;
 
-            IObjectPoolService poolManager = GlobalRegistry.ObjectPoolService;
+            IObjectPoolService poolManager = _objectPoolService;
             if (poolManager == null)
                 return;
 
@@ -2631,15 +2610,15 @@ namespace Hecton8.World
                 if (chunkInstance == null)
                     continue;
 
-                if (chunkInstance.TryGetComponent(out SargassumCollapseChunk collapseChunk))
+                if (poolManager.TryGetPooledComponent(chunkInstance, out SargassumCollapseChunk collapseChunk))
                 {
                     collapseChunk.ActivateChunk(linearVelocity, angularVelocity, uniformScale, collapseChunkLifetime, 0);
-                    if (chunkInstance.TryGetComponent(out Rigidbody chunkRigidbody))
+                    if (poolManager.TryGetPooledRootRigidbody(chunkInstance, out Rigidbody chunkRigidbody))
                         ScheduleDebrisPetrification(chunkRigidbody);
                 }
                 else
                 {
-                    if (chunkInstance.TryGetComponent(out Rigidbody chunkRigidbody))
+                    if (poolManager.TryGetPooledRootRigidbody(chunkInstance, out Rigidbody chunkRigidbody))
                     {
                         chunkRigidbody.detectCollisions = true;
                         chunkRigidbody.isKinematic = false;
@@ -2666,7 +2645,7 @@ namespace Hecton8.World
                 return;
             }
 
-            IObjectPoolService poolManager = GlobalRegistry.ObjectPoolService;
+            IObjectPoolService poolManager = _objectPoolService;
             if (poolManager == null)
                 return;
 
@@ -2723,16 +2702,16 @@ namespace Hecton8.World
                 if (chunkInstance == null)
                     continue;
 
-                if (chunkInstance.TryGetComponent(out SargassumCollapseChunk collapseChunk))
+                if (poolManager.TryGetPooledComponent(chunkInstance, out SargassumCollapseChunk collapseChunk))
                 {
                     collapseChunk.ActivateChunk(linearVelocity, angularVelocity, uniformScale, collapseChunkLifetime * 0.7f, fragmentDepth);
-                    if (chunkInstance.TryGetComponent(out Rigidbody chunkRigidbody))
+                    if (poolManager.TryGetPooledRootRigidbody(chunkInstance, out Rigidbody chunkRigidbody))
                         ScheduleDebrisPetrification(chunkRigidbody);
                 }
                 else
                 {
                     chunkInstance.transform.localScale = chunkInstance.transform.localScale * uniformScale;
-                    if (chunkInstance.TryGetComponent(out Rigidbody chunkRigidbody))
+                    if (poolManager.TryGetPooledRootRigidbody(chunkInstance, out Rigidbody chunkRigidbody))
                     {
                         chunkRigidbody.detectCollisions = true;
                         chunkRigidbody.isKinematic = false;
@@ -3376,22 +3355,33 @@ namespace Hecton8.World
                     userContext = IntPtr.Zero
                 });
 
+                IDataVault vault = _dataVault;
                 if (!EnsureScavengerBatchMetadataCapacity() ||
-                    !TryAcquireVaultBuffer(in _scavengerBatchMetadataHandle, ScavengerBrgMetadataPlaceholderCount, out NativeArray<MetadataValue> batchMetadata))
+                    vault == null ||
+                    vault.IsCompactionFenceActive ||
+                    !IsVaultHandleCreated(in _scavengerBatchMetadataHandle) ||
+                    !vault.TryAcquireWriteLock(in _scavengerBatchMetadataHandle, VaultOwnerSystemId, out NativeArray<MetadataValue> batchMetadata))
                 {
                     _scavengerBatchRendererGroup.Dispose();
                     _scavengerBatchRendererGroup = null;
                     return;
                 }
 
-                _scavengerBatchHandleBuffer = HectonBatchRendererGroupUtility.CreateBatchHandleBuffer(); // COLD ALLOC: GraphicsBuffer[1] - BRG registration handle buffer for scavenger scatter - owner: SargassumGlobalDragManager
                 try
                 {
+                    if (!batchMetadata.IsCreated || batchMetadata.Length < ScavengerBrgMetadataPlaceholderCount)
+                    {
+                        _scavengerBatchRendererGroup.Dispose();
+                        _scavengerBatchRendererGroup = null;
+                        return;
+                    }
+
+                    _scavengerBatchHandleBuffer = HectonBatchRendererGroupUtility.CreateBatchHandleBuffer(); // COLD ALLOC: GraphicsBuffer[1] - BRG registration handle buffer for scavenger scatter - owner: SargassumGlobalDragManager
                     _scavengerBatchId = _scavengerBatchRendererGroup.AddBatch(batchMetadata, _scavengerBatchHandleBuffer.bufferHandle);
                 }
                 finally
                 {
-                    ReleaseVaultWrite(in _scavengerBatchMetadataHandle);
+                    vault.ReleaseWriteLock(in _scavengerBatchMetadataHandle, VaultOwnerSystemId);
                 }
             }
         }
@@ -3520,7 +3510,11 @@ namespace Hecton8.World
             float externalSiteDurationInv = 1f / math.max(0.1f, externalScavengerSiteDuration);
             int maxScavengersPerHost = math.max(1, scavengersPerHost);
 
-            if (!TryAcquireVaultBuffer(in _scavengerMatricesHandle, _scavengerInstanceCapacity, out NativeArray<Matrix4x4> scavengerMatrices))
+            IDataVault vault = _dataVault;
+            if (vault == null ||
+                vault.IsCompactionFenceActive ||
+                !IsVaultHandleCreated(in _scavengerMatricesHandle) ||
+                !vault.TryAcquireWriteLock(in _scavengerMatricesHandle, VaultOwnerSystemId, out NativeArray<Matrix4x4> scavengerMatrices))
             {
                 _debugScavengerHostCount = 0;
                 _debugScavengerInstanceCount = 0;
@@ -3531,6 +3525,15 @@ namespace Hecton8.World
 
             try
             {
+            if (!scavengerMatrices.IsCreated || scavengerMatrices.Length < _scavengerInstanceCapacity)
+            {
+                _debugScavengerHostCount = 0;
+                _debugScavengerInstanceCount = 0;
+                _debugScavengerBounds = default;
+                UploadScavengerInstances(0);
+                return;
+            }
+
             for (int readHostIndex = 0; readHostIndex < _activeScavengerHostCount; readHostIndex++)
             {
                 ScavengerHostState host = _scavengerHosts[readHostIndex];
@@ -3645,7 +3648,7 @@ namespace Hecton8.World
             }
             finally
             {
-                ReleaseVaultWrite(in _scavengerMatricesHandle);
+                vault.ReleaseWriteLock(in _scavengerMatricesHandle, VaultOwnerSystemId);
             }
         }
 
@@ -4179,6 +4182,12 @@ namespace Hecton8.World
                     if (Application.isPlaying && isActiveAndEnabled)
                         TryRegisterSaveOwner();
                     break;
+                case GlobalRegistryServiceSlot.ObjectPool:
+                    _objectPoolService = currentService as IObjectPoolService;
+                    break;
+                case GlobalRegistryServiceSlot.Physics:
+                    _physicsService = currentService as IPhysicsService;
+                    break;
                 case GlobalRegistryServiceSlot.DataVault:
                     if (_densityBuildSourcesLocked)
                     {
@@ -4201,7 +4210,9 @@ namespace Hecton8.World
         private void RefreshColdRegistryDependencies()
         {
             _dataVault = GlobalRegistry.DataVault;
-            _cutManager = SargassumCutManager.Instance;
+            _cutManager = GlobalRegistry.SargassumCut;
+            _objectPoolService = GlobalRegistry.ObjectPoolService;
+            _physicsService = GlobalRegistry.Physics;
             _saveService = GlobalRegistry.Save;
         }
 
@@ -4889,15 +4900,16 @@ namespace Hecton8.World
             return mesh;
         }
 
-        private static void WriteSafeVelocities(Rigidbody body, Vector3 linearVelocity, Vector3 angularVelocity)
+        private void WriteSafeVelocities(Rigidbody body, Vector3 linearVelocity, Vector3 angularVelocity)
         {
             if (body == null)
                 return;
 
-            GlobalRegistry.Physics?.QueueLinearVelocitySet(
+            IPhysicsService physicsService = _physicsService;
+            physicsService?.QueueLinearVelocitySet(
                 body,
                 HectonPlayerMotor.SafeVelocity(linearVelocity, body.linearVelocity));
-            GlobalRegistry.Physics?.QueueAngularVelocitySet(
+            physicsService?.QueueAngularVelocitySet(
                 body,
                 HectonPlayerMotor.SafeVelocity(angularVelocity, body.angularVelocity));
         }
@@ -5021,13 +5033,14 @@ namespace Hecton8.World
             }
         }
 
-        private static void ApplyDebrisPetrification(Rigidbody body)
+        private void ApplyDebrisPetrification(Rigidbody body)
         {
             if (body == null)
                 return;
 
-            GlobalRegistry.Physics?.QueueLinearVelocitySet(body, Vector3.zero, wake: false);
-            GlobalRegistry.Physics?.QueueAngularVelocitySet(body, Vector3.zero, wake: false);
+            IPhysicsService physicsService = _physicsService;
+            physicsService?.QueueLinearVelocitySet(body, Vector3.zero, wake: false);
+            physicsService?.QueueAngularVelocitySet(body, Vector3.zero, wake: false);
             body.isKinematic = true;
             body.detectCollisions = false;
             body.Sleep();

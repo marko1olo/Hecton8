@@ -13,7 +13,7 @@ namespace Hecton8.Optimization
     /// </summary>
     [DisallowMultipleComponent]
     [DefaultExecutionOrder(-8011)]
-    public sealed class AssetLoadDispatcher : MonoBehaviour, ITickable, IUpdatable, IGlobalRegistryHotSwapListener
+    public sealed class AssetLoadDispatcher : MonoBehaviour, ITickable, IUpdatable, ILateFrameTickable, IGlobalRegistryHotSwapListener
     {
         private const int Tier01Slots = 8;
         private const int Tier2Slots = 6;
@@ -43,6 +43,7 @@ namespace Hecton8.Optimization
         [SerializeField] private int maxReadyTicketCount = 32;
 
         private bool _registeredTick;
+        private bool _registeredLateFrame;
         private bool _registeredService;
         private bool _registeredHotSwap;
         private int _nextRequestId = 1;
@@ -65,6 +66,7 @@ namespace Hecton8.Optimization
         private long _lastObservedVramBytes;
         private long _graphicsBudgetBytes;
         private bool _uiMipBiasGateActive;
+        private bool _uiMipBiasGateEvaluationQueued;
         private IVramBudgetReadModel _vramMonitor;
         private IVramPressureReadModel _vramPressure;
         private IVramPressureMipBiasSink _vramPressureMipBias;
@@ -97,7 +99,7 @@ namespace Hecton8.Optimization
         {
             AssetLoadDispatcher dispatcher = s_registeredInstance;
             if (dispatcher != null)
-                dispatcher.EvaluateUiMipBiasGate();
+                dispatcher.QueueUiMipBiasGateEvaluation();
         }
 
         internal static void RegisterAddressableGroup(uint assetKey, AddressableAssetGroupKind group)
@@ -168,16 +170,25 @@ namespace Hecton8.Optimization
         /// <inheritdoc />
         public void Tick(float deltaTime)
         {
-            EvaluateUiMipBiasGate();
             AgeQueuedRequests();
             DispatchWithinBudget();
+        }
+
+        /// <inheritdoc />
+        public void LateFrameTick()
+        {
+            if (!_uiMipBiasGateEvaluationQueued && !_uiMipBiasGateActive)
+                return;
+
+            _uiMipBiasGateEvaluationQueued = false;
+            EvaluateUiMipBiasGate();
         }
 
         internal bool Enqueue(uint assetKey, AssetPriorityTier priority, bool isDistantHlod, out int requestId)
         {
             requestId = 0;
             if (IsUiIconGroup(assetKey))
-                EvaluateUiMipBiasGate();
+                QueueUiMipBiasGateEvaluation();
 
             for (int i = 0; i < _queuedRequestCount; i++)
             {
@@ -370,10 +381,9 @@ namespace Hecton8.Optimization
             monitor.GetVRAMBreakdown(out _, out _, out long totalVramBytes);
             _lastObservedVramBytes = totalVramBytes;
 
-            if (_graphicsBudgetBytes <= 0L)
-                RefreshGraphicsBudgetBytes();
-
-            long graphicsBudgetBytes = _graphicsBudgetBytes;
+            long graphicsBudgetBytes = _graphicsBudgetBytes > 0L
+                ? _graphicsBudgetBytes
+                : ResolveGraphicsBudgetBytes(0);
             float vramPressure = ResolveVramPressureFactor(totalVramBytes, graphicsBudgetBytes);
             float gateResponse = ResolveUiMipGateResponse(vramPressure);
             int mipDelta = ResolveUiMipGateDelta(gateResponse);
@@ -392,6 +402,11 @@ namespace Hecton8.Optimization
 
             if (_uiMipBiasGateActive)
                 pressureMipBias.SetExternalMipPressureResponse(gateResponse, totalVramBytes);
+        }
+
+        private void QueueUiMipBiasGateEvaluation()
+        {
+            _uiMipBiasGateEvaluationQueued = true;
         }
 
         private void ApplyUiMipBiasGate(IVramPressureMipBiasSink pressureMonitor, long observedVramBytes, float gateResponse)
@@ -414,6 +429,7 @@ namespace Hecton8.Optimization
 
         private void ClearUiMipBiasGate()
         {
+            _uiMipBiasGateEvaluationQueued = false;
             if (!_uiMipBiasGateActive)
                 return;
 
@@ -426,7 +442,7 @@ namespace Hecton8.Optimization
 
         private void TryRegister()
         {
-            if (_registeredTick)
+            if (_registeredTick && _registeredLateFrame)
                 return;
             if (!Application.isPlaying || GlobalRegistry.Dispatcher == null)
                 return;
@@ -434,7 +450,10 @@ namespace Hecton8.Optimization
                 return;
 
             CacheDependencies();
-            _registeredTick = GlobalRegistry.TryRegisterUpdatable(this, PriorityLayer.Core);
+            if (!_registeredTick)
+                _registeredTick = GlobalRegistry.TryRegisterUpdatable(this, PriorityLayer.Core);
+            if (!_registeredLateFrame)
+                _registeredLateFrame = GlobalRegistry.TryRegisterLateFrameTickable(this, PriorityLayer.Core);
         }
 
         private bool TryRegisterService()
@@ -464,11 +483,17 @@ namespace Hecton8.Optimization
 
         private void TryUnregister()
         {
-            if (!_registeredTick)
-                return;
+            if (_registeredTick)
+            {
+                GlobalRegistry.UnregisterUpdatable(this, PriorityLayer.Core);
+                _registeredTick = false;
+            }
 
-            GlobalRegistry.UnregisterUpdatable(this, PriorityLayer.Core);
-            _registeredTick = false;
+            if (_registeredLateFrame)
+            {
+                GlobalRegistry.UnregisterLateFrameTickable(this, PriorityLayer.Core);
+                _registeredLateFrame = false;
+            }
         }
 
         private void TryRegisterHotSwap()

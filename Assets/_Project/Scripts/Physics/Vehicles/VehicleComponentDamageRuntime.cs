@@ -25,6 +25,27 @@ namespace Hecton8.Physics.Vehicles
         private const uint HazardLaneHash = 0x565A4844u; // VZHD
         private const uint VehicleFaultEventHash = 0x56444654u; // VDFT
         private const uint VehicleFaultDumpHash = 0x56534654u; // VSFT
+        private static readonly ulong DamageMutationGuardMask =
+            MutationGuardBit(VehicleDamageConstants.GridWriteBuffer) |
+            MutationGuardBit(VehicleDamageConstants.GridReadBuffer) |
+            MutationGuardBit(VehicleDamageConstants.SignalBuffer) |
+            MutationGuardBit(VehicleDamageConstants.MockSignalBuffer) |
+            MutationGuardBit(VehicleDamageConstants.StateWriteBuffer) |
+            MutationGuardBit(VehicleDamageConstants.StateReadBuffer) |
+            MutationGuardBit(VehicleDamageConstants.TuningBuffer) |
+            MutationGuardBit(VehicleDamageConstants.TelemetryRingBuffer) |
+            MutationGuardBit(VehicleDamageConstants.TelemetryCursorBuffer);
+#if UNITY_EDITOR
+        private static readonly ulong CsvImportMutationGuardMask =
+            MutationGuardBit(VehicleDamageConstants.CsvScratchBuffer) |
+            MutationGuardBit(VehicleDamageConstants.GridWriteBuffer) |
+            MutationGuardBit(VehicleDamageConstants.GridReadBuffer) |
+            MutationGuardBit(VehicleDamageConstants.TuningBuffer);
+#endif
+        private static readonly ulong EditorTuningMutationGuardMask = MutationGuardBit(VehicleDamageConstants.TuningBuffer);
+        private static readonly ulong BlackboxReadMutationGuardMask =
+            MutationGuardBit(VehicleDamageConstants.StateReadBuffer) |
+            MutationGuardBit(VehicleDamageConstants.TelemetryRingBuffer);
 
         [Header("Damage Grid")]
         [SerializeField, Range(2, MaxGridWidth)] private int gridWidth = VehicleDamageConstants.DefaultGridWidth;
@@ -95,6 +116,11 @@ namespace Hecton8.Physics.Vehicles
         private string _csvPath;
 #endif
 
+        private static ulong MutationGuardBit(BufferID bufferId)
+        {
+            return 1UL << (unchecked((int)(uint)(int)bufferId) & 63);
+        }
+
         private void OnEnable()
         {
 #if UNITY_EDITOR
@@ -119,11 +145,7 @@ namespace Hecton8.Physics.Vehicles
 
         private void OnDisable()
         {
-            if (_damagePending)
-                DispatcherJobFence.TryComplete(ref _damageHandle, forceComplete: true);
-
-            _damagePending = false;
-            UnlockDamageBuffers();
+            CompleteDamageForLifecycle();
             DumpBlackBoxIfFaulted();
 
             TryUnregisterHotSwapListener();
@@ -174,136 +196,142 @@ namespace Hecton8.Physics.Vehicles
             if (!LockDamageBuffers())
                 return;
 
-            if (!TryReadWritablePointers(
-                    out VehicleGridCellDTO* gridWrite,
-                    out VehicleGridCellDTO* gridRead,
-                    out VehicleDamageSignalDTO* signals,
-                    out VehicleDamageSignalDTO* mockSignals,
-                    out VehicleDamageStateDTO* stateWrite,
-                    out VehicleDamageStateDTO* stateRead,
-                    out NativeArray<VehicleDamageTelemetryEntry> telemetry,
-                    out NativeArray<uint> telemetryCursor,
-                    out NativeArray<VehicleDamageTuningDTO> tuningArray,
-                    out NativeArray<VehicleDamageSignalDTO> signalArray))
+            bool keepDamageGuard = false;
+            try
             {
-                _buffersReady = false;
-                UnlockDamageBuffers();
-                return;
-            }
-
-            VehicleDamageTuningDTO tuning = UpdateTuningSnapshot(tuningArray);
-            int realSignalCount = GatherCombatDamageSignals(signalArray, in tuning);
-            int mockCount = ResolveMockSignalCount();
-            int totalSignalCount = math.min(realSignalCount + mockCount, VehicleDamageConstants.MaxDamageSignals);
-
-            Transform root = transform;
-            if (!TryReadAuthoritativeRootPose(root, out double3 rootAup, out quaternion rootRotation))
-            {
-                UnlockDamageBuffers();
-                return;
-            }
-
-            quaternion inverseRotation = math.conjugate(rootRotation);
-            uint frame = ++_frameCounter;
-            float quality = ResolveQualityWeight();
-            uint vehicleHash = _resolvedVehicleHash;
-            float depthMeters = ResolveDepthMeters(rootAup);
-
-            JobHandle dependency = default;
-            if (mockCount > 0)
-            {
-                GenerateMockVehicleDamageJob mockJob = new GenerateMockVehicleDamageJob
+                if (!TryReadWritablePointers(
+                        out VehicleGridCellDTO* gridWrite,
+                        out VehicleGridCellDTO* gridRead,
+                        out VehicleDamageSignalDTO* signals,
+                        out VehicleDamageSignalDTO* mockSignals,
+                        out VehicleDamageStateDTO* stateWrite,
+                        out VehicleDamageStateDTO* stateRead,
+                        out NativeArray<VehicleDamageTelemetryEntry> telemetry,
+                        out NativeArray<uint> telemetryCursor,
+                        out NativeArray<VehicleDamageTuningDTO> tuningArray,
+                        out NativeArray<VehicleDamageSignalDTO> signalArray))
                 {
-                    Signals = mockSignals,
-                    SignalCount = mockCount,
-                    RootAup = rootAup,
-                    Frame = frame,
-                    RadiusMeters = explosiveRadiusMeters,
-                    Magnitude = mockMagnitude
-                };
+                    _buffersReady = false;
+                    return;
+                }
 
-                JobHandle mockHandle = mockJob.Schedule(mockCount, VehicleDamageConstants.JobBatchSize, dependency);
-                CopyVehicleDamageSignalsJob copyJob = new CopyVehicleDamageSignalsJob
+                VehicleDamageTuningDTO tuning = UpdateTuningSnapshot(tuningArray);
+                int realSignalCount = GatherCombatDamageSignals(signalArray, in tuning);
+                int mockCount = ResolveMockSignalCount();
+                int totalSignalCount = math.min(realSignalCount + mockCount, VehicleDamageConstants.MaxDamageSignals);
+
+                Transform root = transform;
+                if (!TryReadAuthoritativeRootPose(root, out double3 rootAup, out quaternion rootRotation))
+                    return;
+
+                quaternion inverseRotation = math.conjugate(rootRotation);
+                uint frame = ++_frameCounter;
+                float quality = ResolveQualityWeight();
+                uint vehicleHash = _resolvedVehicleHash;
+                float depthMeters = ResolveDepthMeters(rootAup);
+
+                JobHandle dependency = default;
+                if (mockCount > 0)
                 {
-                    Source = mockSignals,
-                    Destination = signals,
-                    SourceCount = mockCount,
-                    DestinationOffset = realSignalCount,
-                    DestinationCapacity = VehicleDamageConstants.MaxDamageSignals
-                };
-                dependency = copyJob.Schedule(mockCount, VehicleDamageConstants.JobBatchSize, mockHandle);
-            }
+                    GenerateMockVehicleDamageJob mockJob = new GenerateMockVehicleDamageJob
+                    {
+                        Signals = mockSignals,
+                        SignalCount = mockCount,
+                        RootAup = rootAup,
+                        Frame = frame,
+                        RadiusMeters = explosiveRadiusMeters,
+                        Magnitude = mockMagnitude
+                    };
 
-            if (totalSignalCount > 0)
-            {
-                MapImpactToGridJob mapJob = new MapImpactToGridJob
+                    JobHandle mockHandle = mockJob.Schedule(mockCount, VehicleDamageConstants.JobBatchSize, dependency);
+                    CopyVehicleDamageSignalsJob copyJob = new CopyVehicleDamageSignalsJob
+                    {
+                        Source = mockSignals,
+                        Destination = signals,
+                        SourceCount = mockCount,
+                        DestinationOffset = realSignalCount,
+                        DestinationCapacity = VehicleDamageConstants.MaxDamageSignals
+                    };
+                    dependency = copyJob.Schedule(mockCount, VehicleDamageConstants.JobBatchSize, mockHandle);
+                }
+
+                if (totalSignalCount > 0)
+                {
+                    MapImpactToGridJob mapJob = new MapImpactToGridJob
+                    {
+                        Cells = gridWrite,
+                        Signals = signals,
+                        SignalCount = totalSignalCount,
+                        GridWidth = tuning.GridWidth,
+                        GridHeight = tuning.GridHeight,
+                        GridDepth = tuning.GridDepth,
+                        RootAup = rootAup,
+                        InverseRootRotation = inverseRotation,
+                        GridCenterLocal = tuning.GridCenterLocal,
+                        GridSizeLocal = tuning.GridSizeLocal,
+                        DirectDamageScale = tuning.DirectDamageScale
+                    };
+
+                    dependency = mapJob.Schedule(totalSignalCount, VehicleDamageConstants.JobBatchSize, dependency);
+
+                    ApplyVehicleDamageReductionJob reductionJob = new ApplyVehicleDamageReductionJob
+                    {
+                        Cells = gridWrite,
+                        Signals = signals,
+                        SignalCount = totalSignalCount,
+                        CellCount = _cellCount,
+                        GridWidth = tuning.GridWidth,
+                        GridHeight = tuning.GridHeight,
+                        GridDepth = tuning.GridDepth,
+                        GridSizeLocal = tuning.GridSizeLocal,
+                        DirectDamageScale = tuning.DirectDamageScale,
+                        ExplosionFalloff = tuning.ExplosionFalloff
+                    };
+
+                    dependency = reductionJob.Schedule(_cellCount, VehicleDamageConstants.JobBatchSize, dependency);
+                }
+
+                EvaluateVehicleSystemsJob evaluateJob = new EvaluateVehicleSystemsJob
                 {
                     Cells = gridWrite,
                     Signals = signals,
-                    SignalCount = totalSignalCount,
-                    GridWidth = tuning.GridWidth,
-                    GridHeight = tuning.GridHeight,
-                    GridDepth = tuning.GridDepth,
-                    RootAup = rootAup,
-                    InverseRootRotation = inverseRotation,
-                    GridCenterLocal = tuning.GridCenterLocal,
-                    GridSizeLocal = tuning.GridSizeLocal,
-                    DirectDamageScale = tuning.DirectDamageScale
-                };
-
-                dependency = mapJob.Schedule(totalSignalCount, VehicleDamageConstants.JobBatchSize, dependency);
-
-                ApplyVehicleDamageReductionJob reductionJob = new ApplyVehicleDamageReductionJob
-                {
-                    Cells = gridWrite,
-                    Signals = signals,
-                    SignalCount = totalSignalCount,
+                    StateWrite = stateWrite,
+                    Telemetry = telemetry,
+                    TelemetryCursor = telemetryCursor,
+                    HazardWriter = SignalBus<VehicleHazardSignal>.ParallelWriter,
+                    HazardWriterBudget = SignalBus<VehicleHazardSignal>.ParallelWriterBudget,
                     CellCount = _cellCount,
-                    GridWidth = tuning.GridWidth,
-                    GridHeight = tuning.GridHeight,
-                    GridDepth = tuning.GridDepth,
-                    GridSizeLocal = tuning.GridSizeLocal,
-                    DirectDamageScale = tuning.DirectDamageScale,
-                    ExplosionFalloff = tuning.ExplosionFalloff
+                    SignalCount = totalSignalCount,
+                    Frame = frame,
+                    VehicleHash = vehicleHash,
+                    RootAup = rootAup,
+                    FixedDeltaTime = fixedDeltaTime,
+                    RootDepthMeters = depthMeters,
+                    GlobalQualityWeight = quality,
+                    Tuning = tuning
                 };
 
-                dependency = reductionJob.Schedule(_cellCount, VehicleDamageConstants.JobBatchSize, dependency);
+                dependency = evaluateJob.Schedule(dependency);
+
+                PublishVehicleDamageStateJob publishJob = new PublishVehicleDamageStateJob
+                {
+                    GridWrite = gridWrite,
+                    GridRead = gridRead,
+                    StateWrite = stateWrite,
+                    StateRead = stateRead,
+                    CellCount = _cellCount
+                };
+
+                _damageHandle = publishJob.Schedule(dependency);
+                H8Memory.RegisterActiveJob(SystemID.VehiclesPhysics, _damageHandle);
+                _damagePending = true;
+                keepDamageGuard = true;
             }
-
-            EvaluateVehicleSystemsJob evaluateJob = new EvaluateVehicleSystemsJob
+            finally
             {
-                Cells = gridWrite,
-                Signals = signals,
-                StateWrite = stateWrite,
-                Telemetry = telemetry,
-                TelemetryCursor = telemetryCursor,
-                HazardWriter = SignalBus<VehicleHazardSignal>.ParallelWriter,
-                HazardWriterBudget = SignalBus<VehicleHazardSignal>.ParallelWriterBudget,
-                CellCount = _cellCount,
-                SignalCount = totalSignalCount,
-                Frame = frame,
-                VehicleHash = vehicleHash,
-                RootAup = rootAup,
-                FixedDeltaTime = fixedDeltaTime,
-                RootDepthMeters = depthMeters,
-                GlobalQualityWeight = quality,
-                Tuning = tuning
-            };
-
-            dependency = evaluateJob.Schedule(dependency);
-
-            PublishVehicleDamageStateJob publishJob = new PublishVehicleDamageStateJob
-            {
-                GridWrite = gridWrite,
-                GridRead = gridRead,
-                StateWrite = stateWrite,
-                StateRead = stateRead,
-                CellCount = _cellCount
-            };
-
-            _damageHandle = publishJob.Schedule(dependency);
-            H8Memory.RegisterActiveJob(SystemID.VehiclesPhysics, _damageHandle);
-            _damagePending = true;
+                if (!keepDamageGuard)
+                    UnlockDamageBuffers();
+            }
         }
 
         public void PostFixedTick(float fixedDeltaTime)
@@ -415,10 +443,23 @@ namespace Hecton8.Physics.Vehicles
         private void CompleteDamageForLifecycle()
         {
             if (_damagePending)
-                DispatcherJobFence.TryComplete(ref _damageHandle, forceComplete: true);
+                ForceCompleteDamageInPostFixedWindow();
 
             _damagePending = false;
             UnlockDamageBuffers();
+        }
+
+        private void ForceCompleteDamageInPostFixedWindow()
+        {
+            DispatcherJobFence.BeginPostFixedSwapWindow();
+            try
+            {
+                DispatcherJobFence.TryComplete(ref _damageHandle, forceComplete: true);
+            }
+            finally
+            {
+                DispatcherJobFence.EndPostFixedSwapWindow();
+            }
         }
 
         private void RebindDataVaultForLifecycle(IDataVault nextVault)
@@ -581,7 +622,15 @@ namespace Hecton8.Physics.Vehicles
                 initRead.Cells = read;
                 JobHandle writeHandle = initWrite.Schedule(_cellCount, VehicleDamageConstants.JobBatchSize);
                 JobHandle readHandle = initRead.Schedule(_cellCount, VehicleDamageConstants.JobBatchSize, writeHandle);
-                DispatcherJobFence.TryComplete(ref readHandle, forceComplete: true);
+                DispatcherJobFence.BeginPostFixedSwapWindow();
+                try
+                {
+                    DispatcherJobFence.TryComplete(ref readHandle, forceComplete: true);
+                }
+                finally
+                {
+                    DispatcherJobFence.EndPostFixedSwapWindow();
+                }
 
                 TryResolveArray(in _stateWriteHandle, out NativeArray<VehicleDamageStateDTO> stateWrite);
                 TryResolveArray(in _stateReadHandle, out NativeArray<VehicleDamageStateDTO> stateRead);
@@ -816,22 +865,8 @@ namespace Hecton8.Physics.Vehicles
             if (_buffersLocked || _dataVault == null)
                 return _buffersLocked;
 
-            if (!_dataVault.TryLockBuffer(VehicleDamageConstants.GridWriteBuffer, SystemID.VehiclesPhysics))
+            if (!_dataVault.TryAcquireMutationGuard(DamageMutationGuardMask))
                 return false;
-
-            if (!_dataVault.TryLockBuffer(VehicleDamageConstants.GridReadBuffer, SystemID.VehiclesPhysics) ||
-                !_dataVault.TryLockBuffer(VehicleDamageConstants.SignalBuffer, SystemID.VehiclesPhysics) ||
-                !_dataVault.TryLockBuffer(VehicleDamageConstants.MockSignalBuffer, SystemID.VehiclesPhysics) ||
-                !_dataVault.TryLockBuffer(VehicleDamageConstants.StateWriteBuffer, SystemID.VehiclesPhysics) ||
-                !_dataVault.TryLockBuffer(VehicleDamageConstants.StateReadBuffer, SystemID.VehiclesPhysics) ||
-                !_dataVault.TryLockBuffer(VehicleDamageConstants.TuningBuffer, SystemID.VehiclesPhysics) ||
-                !_dataVault.TryLockBuffer(VehicleDamageConstants.TelemetryRingBuffer, SystemID.VehiclesPhysics) ||
-                !_dataVault.TryLockBuffer(VehicleDamageConstants.TelemetryCursorBuffer, SystemID.VehiclesPhysics))
-            {
-                _buffersLocked = true;
-                UnlockDamageBuffers();
-                return false;
-            }
 
             _buffersLocked = true;
             return true;
@@ -842,15 +877,7 @@ namespace Hecton8.Physics.Vehicles
             if (!_buffersLocked || _dataVault == null)
                 return;
 
-            _dataVault.TryUnlockBuffer(VehicleDamageConstants.GridWriteBuffer, SystemID.VehiclesPhysics);
-            _dataVault.TryUnlockBuffer(VehicleDamageConstants.GridReadBuffer, SystemID.VehiclesPhysics);
-            _dataVault.TryUnlockBuffer(VehicleDamageConstants.SignalBuffer, SystemID.VehiclesPhysics);
-            _dataVault.TryUnlockBuffer(VehicleDamageConstants.MockSignalBuffer, SystemID.VehiclesPhysics);
-            _dataVault.TryUnlockBuffer(VehicleDamageConstants.StateWriteBuffer, SystemID.VehiclesPhysics);
-            _dataVault.TryUnlockBuffer(VehicleDamageConstants.StateReadBuffer, SystemID.VehiclesPhysics);
-            _dataVault.TryUnlockBuffer(VehicleDamageConstants.TuningBuffer, SystemID.VehiclesPhysics);
-            _dataVault.TryUnlockBuffer(VehicleDamageConstants.TelemetryRingBuffer, SystemID.VehiclesPhysics);
-            _dataVault.TryUnlockBuffer(VehicleDamageConstants.TelemetryCursorBuffer, SystemID.VehiclesPhysics);
+            _dataVault.ReleaseMutationGuard(DamageMutationGuardMask);
             _buffersLocked = false;
         }
 
@@ -860,10 +887,7 @@ namespace Hecton8.Physics.Vehicles
             if (!_buffersReady || _dataVault == null || !File.Exists(_csvPath))
                 return false;
 
-            bool scratchLocked = false;
-            bool writeLocked = false;
-            bool readLocked = false;
-            bool tuningLocked = false;
+            bool guardAcquired = false;
             try
             {
                 FileInfo info = new FileInfo(_csvPath);
@@ -874,18 +898,9 @@ namespace Hecton8.Physics.Vehicles
                 if (info.Length <= 0L || info.Length > VehicleDamageConstants.CsvScratchBytes)
                     return false;
 
-                if (!_dataVault.TryLockBuffer(VehicleDamageConstants.CsvScratchBuffer, SystemID.VehiclesPhysics))
+                if (!_dataVault.TryAcquireMutationGuard(CsvImportMutationGuardMask))
                     return false;
-                scratchLocked = true;
-                if (!_dataVault.TryLockBuffer(VehicleDamageConstants.GridWriteBuffer, SystemID.VehiclesPhysics))
-                    return false;
-                writeLocked = true;
-                if (!_dataVault.TryLockBuffer(VehicleDamageConstants.GridReadBuffer, SystemID.VehiclesPhysics))
-                    return false;
-                readLocked = true;
-                if (!_dataVault.TryLockBuffer(VehicleDamageConstants.TuningBuffer, SystemID.VehiclesPhysics))
-                    return false;
-                tuningLocked = true;
+                guardAcquired = true;
 
                 TryResolveArray(in _csvScratchHandle, out NativeArray<byte> scratch);
                 TryResolveArray(in _gridWriteHandle, out NativeArray<VehicleGridCellDTO> gridWrite);
@@ -927,14 +942,8 @@ namespace Hecton8.Physics.Vehicles
             }
             finally
             {
-                if (tuningLocked)
-                    _dataVault.TryUnlockBuffer(VehicleDamageConstants.TuningBuffer, SystemID.VehiclesPhysics);
-                if (readLocked)
-                    _dataVault.TryUnlockBuffer(VehicleDamageConstants.GridReadBuffer, SystemID.VehiclesPhysics);
-                if (writeLocked)
-                    _dataVault.TryUnlockBuffer(VehicleDamageConstants.GridWriteBuffer, SystemID.VehiclesPhysics);
-                if (scratchLocked)
-                    _dataVault.TryUnlockBuffer(VehicleDamageConstants.CsvScratchBuffer, SystemID.VehiclesPhysics);
+                if (guardAcquired)
+                    _dataVault.ReleaseMutationGuard(CsvImportMutationGuardMask);
             }
         }
 #endif
@@ -947,16 +956,15 @@ namespace Hecton8.Physics.Vehicles
             if (!_coreBlackboxWarmed || GlobalTelemetryBus.BlackboxActiveFrameCount <= 0)
                 return false;
 
-            bool stateLocked = false;
-            bool telemetryLocked = false;
+            bool guardAcquired = false;
+            bool faulted = false;
+            float structuralIntegrity01 = 0f;
+            uint stateHash = 0u;
             try
             {
-                if (!_dataVault.TryLockBuffer(VehicleDamageConstants.StateReadBuffer, SystemID.VehiclesPhysics))
+                if (!_dataVault.TryAcquireMutationGuard(BlackboxReadMutationGuardMask))
                     return false;
-                stateLocked = true;
-                if (!_dataVault.TryLockBuffer(VehicleDamageConstants.TelemetryRingBuffer, SystemID.VehiclesPhysics))
-                    return false;
-                telemetryLocked = true;
+                guardAcquired = true;
 
                 if (!TryResolveArray(in _stateReadHandle, out NativeArray<VehicleDamageStateDTO> stateRead) ||
                     stateRead.Length <= 0 ||
@@ -972,18 +980,23 @@ namespace Hecton8.Physics.Vehicles
                 if (!telemetry.IsCreated)
                     return false;
 
-                GlobalTelemetryBus.PushEvent(VehicleFaultEventHash, state.StructuralIntegrity01, state.StateHash);
-                bool written = GlobalTelemetryBus.TryDumpBlackboxNow(VehicleFaultDumpHash);
-                _dumpWritten |= written;
-                return written;
+                faulted = true;
+                structuralIntegrity01 = state.StructuralIntegrity01;
+                stateHash = state.StateHash;
             }
             finally
             {
-                if (telemetryLocked)
-                    _dataVault.TryUnlockBuffer(VehicleDamageConstants.TelemetryRingBuffer, SystemID.VehiclesPhysics);
-                if (stateLocked)
-                    _dataVault.TryUnlockBuffer(VehicleDamageConstants.StateReadBuffer, SystemID.VehiclesPhysics);
+                if (guardAcquired)
+                    _dataVault.ReleaseMutationGuard(BlackboxReadMutationGuardMask);
             }
+
+            if (!faulted)
+                return false;
+
+            GlobalTelemetryBus.PushEvent(VehicleFaultEventHash, structuralIntegrity01, stateHash);
+            bool written = GlobalTelemetryBus.TryDumpBlackboxNow(VehicleFaultDumpHash);
+            _dumpWritten |= written;
+            return written;
         }
 
         private void WarmCoreBlackboxRoute()
@@ -1034,31 +1047,21 @@ namespace Hecton8.Physics.Vehicles
                     _dataVault.TryGetGenerationHandle(BufferID.SubmarineKinematicConfig, out _kinematicConfigHandle);
 
                 if (IsHandleValid(in _kinematicConfigHandle) &&
-                    _dataVault.TryLockBuffer(BufferID.SubmarineKinematicConfig, SystemID.VehiclesPhysics))
+                    _dataVault.TryReadOnlyHandle(in _kinematicConfigHandle, out NativeArray<SubmarineKinematicConfig>.ReadOnly kinematicConfig) &&
+                    kinematicConfig.Length > 0)
                 {
-                    try
+                    SubmarineKinematicConfig config = kinematicConfig[0];
+                    Vector3 localPosition = root.position;
+                    Quaternion localRotation = root.rotation;
+                    double3 origin = config.LocalOriginAup;
+                    double3 resolvedAup = origin + new double3(localPosition.x, localPosition.y, localPosition.z);
+                    quaternion resolvedRotation = NormalizeOrIdentity(new quaternion(localRotation.x, localRotation.y, localRotation.z, localRotation.w));
+                    if (math.all(math.isfinite(resolvedAup)) && math.all(math.isfinite(resolvedRotation.value)))
                     {
-                        if (TryResolveArray(in _kinematicConfigHandle, out NativeArray<SubmarineKinematicConfig> kinematicConfig) &&
-                            kinematicConfig.Length > 0)
-                        {
-                            SubmarineKinematicConfig config = ElementReadOnlyRef(kinematicConfig, 0);
-                            Vector3 localPosition = root.position;
-                            Quaternion localRotation = root.rotation;
-                            double3 origin = config.LocalOriginAup;
-                            double3 resolvedAup = origin + new double3(localPosition.x, localPosition.y, localPosition.z);
-                            quaternion resolvedRotation = NormalizeOrIdentity(new quaternion(localRotation.x, localRotation.y, localRotation.z, localRotation.w));
-                            if (math.all(math.isfinite(resolvedAup)) && math.all(math.isfinite(resolvedRotation.value)))
-                            {
-                                _cachedRootAup = resolvedAup;
-                                _cachedRootRotation = resolvedRotation;
-                                _hasRootPoseSnapshot = true;
-                                return true;
-                            }
-                        }
-                    }
-                    finally
-                    {
-                        _dataVault.TryUnlockBuffer(BufferID.SubmarineKinematicConfig, SystemID.VehiclesPhysics);
+                        _cachedRootAup = resolvedAup;
+                        _cachedRootRotation = resolvedRotation;
+                        _hasRootPoseSnapshot = true;
+                        return true;
                     }
                 }
             }
@@ -1123,25 +1126,14 @@ namespace Hecton8.Physics.Vehicles
             if (_damagePending || _buffersLocked || _dataVault == null || !IsHandleValid(in _tuningHandle))
                 return false;
 
-            bool locked = false;
-            try
+            if (!_dataVault.TryReadOnlyHandle(in _tuningHandle, out NativeArray<VehicleDamageTuningDTO>.ReadOnly tuningArray) ||
+                tuningArray.Length <= 0)
             {
-                if (!_dataVault.TryLockBuffer(VehicleDamageConstants.TuningBuffer, SystemID.VehiclesPhysics))
-                    return false;
-                locked = true;
-
-                if (!TryResolveArray(in _tuningHandle, out NativeArray<VehicleDamageTuningDTO> tuningArray) ||
-                    tuningArray.Length <= 0)
-                    return false;
-
-                tuning = ElementReadOnlyRef(tuningArray, 0);
-                return tuning.SourceHash != 0u;
+                return false;
             }
-            finally
-            {
-                if (locked)
-                    _dataVault.TryUnlockBuffer(VehicleDamageConstants.TuningBuffer, SystemID.VehiclesPhysics);
-            }
+
+            tuning = tuningArray[0];
+            return tuning.SourceHash != 0u;
         }
 
         /// <summary>
@@ -1152,12 +1144,12 @@ namespace Hecton8.Physics.Vehicles
             if (_damagePending || _buffersLocked || _dataVault == null || !IsHandleValid(in _tuningHandle))
                 return false;
 
-            bool locked = false;
+            bool guardAcquired = false;
             try
             {
-                if (!_dataVault.TryLockBuffer(VehicleDamageConstants.TuningBuffer, SystemID.VehiclesPhysics))
+                if (!_dataVault.TryAcquireMutationGuard(EditorTuningMutationGuardMask))
                     return false;
-                locked = true;
+                guardAcquired = true;
 
                 if (!TryResolveArray(in _tuningHandle, out NativeArray<VehicleDamageTuningDTO> tuningArray) ||
                     tuningArray.Length <= 0)
@@ -1198,8 +1190,8 @@ namespace Hecton8.Physics.Vehicles
             }
             finally
             {
-                if (locked)
-                    _dataVault.TryUnlockBuffer(VehicleDamageConstants.TuningBuffer, SystemID.VehiclesPhysics);
+                if (guardAcquired)
+                    _dataVault.ReleaseMutationGuard(EditorTuningMutationGuardMask);
             }
         }
 
@@ -1218,56 +1210,30 @@ namespace Hecton8.Physics.Vehicles
             if (_damagePending || _buffersLocked || _dataVault == null || !IsHandleValid(in _stateReadHandle))
                 return false;
 
-            bool stateLocked = false;
-            bool telemetryLocked = false;
-            bool cursorLocked = false;
-            try
+            if (!_dataVault.TryReadOnlyHandle(in _stateReadHandle, out NativeArray<VehicleDamageStateDTO>.ReadOnly stateArray) ||
+                stateArray.Length <= 0)
+                return false;
+
+            state = stateArray[0];
+
+            if (!IsHandleValid(in _telemetryHandle) || !IsHandleValid(in _telemetryCursorHandle))
+                return true;
+            if (!_dataVault.TryReadOnlyHandle(in _telemetryHandle, out NativeArray<VehicleDamageTelemetryEntry>.ReadOnly telemetryArray) ||
+                !_dataVault.TryReadOnlyHandle(in _telemetryCursorHandle, out NativeArray<uint>.ReadOnly telemetryCursorArray) ||
+                telemetryArray.Length <= 0 ||
+                telemetryCursorArray.Length <= 0)
             {
-                if (!_dataVault.TryLockBuffer(VehicleDamageConstants.StateReadBuffer, SystemID.VehiclesPhysics))
-                    return false;
-                stateLocked = true;
-
-                if (!TryResolveArray(in _stateReadHandle, out NativeArray<VehicleDamageStateDTO> stateArray) ||
-                    stateArray.Length <= 0)
-                    return false;
-
-                state = ElementReadOnlyRef(stateArray, 0);
-
-                if (!IsHandleValid(in _telemetryHandle) || !IsHandleValid(in _telemetryCursorHandle))
-                    return true;
-                if (!_dataVault.TryLockBuffer(VehicleDamageConstants.TelemetryRingBuffer, SystemID.VehiclesPhysics))
-                    return true;
-                telemetryLocked = true;
-                if (!_dataVault.TryLockBuffer(VehicleDamageConstants.TelemetryCursorBuffer, SystemID.VehiclesPhysics))
-                    return true;
-                cursorLocked = true;
-
-                if (!TryResolveArray(in _telemetryHandle, out NativeArray<VehicleDamageTelemetryEntry> telemetryArray) ||
-                    !TryResolveArray(in _telemetryCursorHandle, out NativeArray<uint> telemetryCursorArray) ||
-                    telemetryArray.Length <= 0 ||
-                    telemetryCursorArray.Length <= 0)
-                {
-                    return true;
-                }
-
-                uint cursor = ElementReadOnlyRef(telemetryCursorArray, 0);
-                if (cursor == 0u)
-                    return true;
-
-                int index = (int)((cursor - 1u) % (uint)math.min(telemetryArray.Length, VehicleDamageConstants.TelemetryCapacity));
-                telemetry = ElementReadOnlyRef(telemetryArray, index);
-                hasTelemetry = true;
                 return true;
             }
-            finally
-            {
-                if (cursorLocked)
-                    _dataVault.TryUnlockBuffer(VehicleDamageConstants.TelemetryCursorBuffer, SystemID.VehiclesPhysics);
-                if (telemetryLocked)
-                    _dataVault.TryUnlockBuffer(VehicleDamageConstants.TelemetryRingBuffer, SystemID.VehiclesPhysics);
-                if (stateLocked)
-                    _dataVault.TryUnlockBuffer(VehicleDamageConstants.StateReadBuffer, SystemID.VehiclesPhysics);
-            }
+
+            uint cursor = telemetryCursorArray[0];
+            if (cursor == 0u)
+                return true;
+
+            int index = (int)((cursor - 1u) % (uint)math.min(telemetryArray.Length, VehicleDamageConstants.TelemetryCapacity));
+            telemetry = telemetryArray[index];
+            hasTelemetry = true;
+            return true;
         }
 
         private void OnValidate()

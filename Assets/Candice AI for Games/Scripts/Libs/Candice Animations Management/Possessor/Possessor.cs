@@ -15,6 +15,9 @@ public class Possessor : MonoBehaviour
     private Transform vsfx;
     private const string ProjectileTag = "Projectile";
     private const string CandiceVsfxTag = "CandiceVSFX";
+    private CandiceProjectile[] possessableProjectiles;
+    private Transform[] possessableCameraParents;
+    private Transform[] possessableVsfxRoots;
     
 
     // Start is called before the first frame update
@@ -25,6 +28,7 @@ public class Possessor : MonoBehaviour
         }
         EnsurePossessableCapacity();
         vsfx = transform.Find("VSFX");
+        RefreshPossessableCache();
         if (vsfx != null)
         {
             for (int i = 0; i < vsfx.childCount; i++)
@@ -43,8 +47,8 @@ public class Possessor : MonoBehaviour
         if (animationManager.EvaluateInput("Possess", false, true, false)) {
             //if can possess nearest projectile
             if (PlayerCanPossessProjectile) {
-                GameObject projectile;
-                if (CandiceProjectile.TryGetActiveProjectile(out projectile))
+                CandiceProjectile projectile;
+                if (CandiceProjectile.TryGetActiveProjectileComponent(out projectile))
                 {
                     TryAddPossessable(projectile);
                 }
@@ -59,7 +63,7 @@ public class Possessor : MonoBehaviour
                     {
                         //in case you are not active, set yourself active                        
                         possessed.SetActive(true);
-                        Transform camParent = possessed.transform.Find("CameraParent");                        
+                        Transform camParent = possessableCameraParents[i];
                         if (camParent != null)
                         {
                             if (!camParent.gameObject.activeSelf)
@@ -68,15 +72,12 @@ public class Possessor : MonoBehaviour
 
                             }
                         }
-                        if (vsfx == null)
+                        Transform activeVsfx = possessableVsfxRoots[i] == null ? vsfx : possessableVsfxRoots[i];
+                        if (activeVsfx != null)
                         {
-                            vsfx = possessed.transform.Find("VSFX");
-                        }
-                        if (vsfx != null)
-                        {
-                            for (int fxIndex = 0; fxIndex < vsfx.childCount; fxIndex++)
+                            for (int fxIndex = 0; fxIndex < activeVsfx.childCount; fxIndex++)
                             {
-                                Transform fx = vsfx.GetChild(fxIndex);
+                                Transform fx = activeVsfx.GetChild(fxIndex);
                                 if (fx.CompareTag(CandiceVsfxTag))
                                 {
                                     fx.position = possessed.transform.position;
@@ -92,7 +93,8 @@ public class Possessor : MonoBehaviour
                         possessed.SetActive(false);
                         if (possessed.CompareTag(ProjectileTag))
                         {
-                            if (possessed.TryGetComponent(out CandiceProjectile projectileComponent))
+                            CandiceProjectile projectileComponent = possessableProjectiles[i];
+                            if (projectileComponent != null)
                             {
                                 projectileComponent.ScheduleDeactivate(ProjectilePossessionTimer);
                             }
@@ -101,7 +103,7 @@ public class Possessor : MonoBehaviour
                 }
                 else {
                     //ensure any projectile possessables have been discarded
-                    PossessableObjects[i] = null;
+                    ClearPossessableSlot(i);
                 }
 
 
@@ -115,7 +117,24 @@ public class Possessor : MonoBehaviour
         {
             // COLD ALLOC: GameObject[3] - fixed possession slots - owner: Possessor
             PossessableObjects = new GameObject[MaxPossessableObjects];
-            return;
+        }
+
+        if (possessableProjectiles == null || possessableProjectiles.Length != MaxPossessableObjects)
+        {
+            // COLD ALLOC: CandiceProjectile[3] - cached possession components - owner: Possessor
+            possessableProjectiles = new CandiceProjectile[MaxPossessableObjects];
+        }
+
+        if (possessableCameraParents == null || possessableCameraParents.Length != MaxPossessableObjects)
+        {
+            // COLD ALLOC: Transform[3] - cached possession camera parents - owner: Possessor
+            possessableCameraParents = new Transform[MaxPossessableObjects];
+        }
+
+        if (possessableVsfxRoots == null || possessableVsfxRoots.Length != MaxPossessableObjects)
+        {
+            // COLD ALLOC: Transform[3] - cached possession VFX roots - owner: Possessor
+            possessableVsfxRoots = new Transform[MaxPossessableObjects];
         }
 
         if (PossessableObjects.Length == MaxPossessableObjects)
@@ -134,11 +153,28 @@ public class Possessor : MonoBehaviour
         PossessableObjects = normalized;
     }
 
-    private void TryAddPossessable(GameObject projectile)
+    public void RefreshPossessableCache()
     {
+        EnsurePossessableCapacity();
+
         for (int i = 0; i < PossessableObjects.Length; i++)
         {
-            if (ReferenceEquals(PossessableObjects[i], projectile))
+            GameObject possessable = PossessableObjects[i];
+            CachePossessableSlot(i, possessable);
+        }
+    }
+
+    private void TryAddPossessable(CandiceProjectile projectile)
+    {
+        if (projectile == null)
+        {
+            return;
+        }
+
+        GameObject projectileObject = projectile.gameObject;
+        for (int i = 0; i < PossessableObjects.Length; i++)
+        {
+            if (ReferenceEquals(PossessableObjects[i], projectileObject))
             {
                 return;
             }
@@ -148,9 +184,52 @@ public class Possessor : MonoBehaviour
         {
             if (PossessableObjects[i] == null)
             {
-                PossessableObjects[i] = projectile;
+                PossessableObjects[i] = projectileObject;
+                possessableProjectiles[i] = projectile;
+                possessableCameraParents[i] = projectile.CachedCameraParent;
+                possessableVsfxRoots[i] = projectile.CachedVsfxRoot;
                 return;
             }
         }
+    }
+
+    private void CachePossessableSlot(int slot, GameObject possessable)
+    {
+        ClearPossessableCache(slot);
+
+        if (possessable == null)
+        {
+            return;
+        }
+
+        Transform possessableTransform = possessable.transform;
+        possessableCameraParents[slot] = possessableTransform.Find("CameraParent");
+        possessableVsfxRoots[slot] = possessableTransform.Find("VSFX");
+
+        if (possessable.TryGetComponent(out CandiceProjectile projectile))
+        {
+            possessableProjectiles[slot] = projectile;
+            if (possessableCameraParents[slot] == null)
+            {
+                possessableCameraParents[slot] = projectile.CachedCameraParent;
+            }
+            if (possessableVsfxRoots[slot] == null)
+            {
+                possessableVsfxRoots[slot] = projectile.CachedVsfxRoot;
+            }
+        }
+    }
+
+    private void ClearPossessableSlot(int slot)
+    {
+        PossessableObjects[slot] = null;
+        ClearPossessableCache(slot);
+    }
+
+    private void ClearPossessableCache(int slot)
+    {
+        possessableProjectiles[slot] = null;
+        possessableCameraParents[slot] = null;
+        possessableVsfxRoots[slot] = null;
     }
 }

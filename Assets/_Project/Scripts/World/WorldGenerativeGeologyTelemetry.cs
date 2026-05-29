@@ -120,20 +120,20 @@ namespace Hecton8.World
         internal static void PublishTerrainSeamsBlended(
             int patchSampleCount,
             int planCount,
-            bool lowTierVisualOnly)
+            bool visualSamplingSuppressed)
         {
-            TryPublishTerrainSeamsBlended(patchSampleCount, planCount, lowTierVisualOnly);
+            TryPublishTerrainSeamsBlended(patchSampleCount, planCount, visualSamplingSuppressed);
         }
 
         internal static bool TryPublishTerrainSeamsBlended(
             int patchSampleCount,
             int planCount,
-            bool lowTierVisualOnly)
+            bool visualSamplingSuppressed)
         {
             return TryPublishTerrainSeamsBlended(
                 patchSampleCount,
                 planCount,
-                lowTierVisualOnly ? 0f : 1f);
+                visualSamplingSuppressed ? 0f : 1f);
         }
 
         internal static bool TryPublishTerrainSeamsBlended(

@@ -26,8 +26,8 @@ namespace Hecton8.SaveSystem
         private const int Height = 144;
         private const string Extension = ".jpg";
         private const string LegacyExtension = ".png";
-        private const int JpegQuality = 82;
-        private const float ThumbnailCaptureQualityThreshold01 = 0.25f;
+        private const int ThumbnailJpegQualitySurvival = 48;
+        private const int ThumbnailJpegQualityVisualOverkill = 82;
         private const int MaxCachedTextures = 12;
         private const int MaxCaptureWaitFrames = 90;
         private const int CompletionHistoryCapacity = 8;
@@ -42,7 +42,7 @@ namespace Hecton8.SaveSystem
             None = 0,
             Queued = 1,
             Completed = 2,
-            LowTierSkipped = 3,
+            QualityDeferred = 3,
             ReusedExisting = 4,
             Failed = 5,
             TimedOut = 6,
@@ -89,7 +89,7 @@ namespace Hecton8.SaveSystem
                 ByteLength = byteLength;
                 ByteHash = byteHash;
                 Status = status;
-                Succeeded = status == CaptureStatus.Completed || status == CaptureStatus.LowTierSkipped || status == CaptureStatus.ReusedExisting
+                Succeeded = status == CaptureStatus.Completed || status == CaptureStatus.QualityDeferred || status == CaptureStatus.ReusedExisting
                     ? (byte)1
                     : (byte)0;
             }
@@ -209,13 +209,6 @@ namespace Hecton8.SaveSystem
             }
 
             slotHash = ResolveSlotHash(slotName, slotIndex);
-
-            if (ShouldSkipScreenshotForCurrentTier())
-            {
-                TryDeleteThumbnailNoThrow(slotName);
-                CompleteRequest(new CaptureCompletion(sequenceId, operationId, slotHash, 0, 0u, CaptureStatus.LowTierSkipped));
-                return new CaptureTicket(sequenceId, operationId, slotHash, CaptureStatus.LowTierSkipped);
-            }
 
             if (_thumbnailWriteInProgress ||
                 !TryResolveCaptureCamera(overrideCamera, out Camera captureCamera))
@@ -505,20 +498,6 @@ namespace Hecton8.SaveSystem
                 File.Delete(legacyPath);
         }
 
-        private static void TryDeleteThumbnailNoThrow(string slotName)
-        {
-            try
-            {
-                DeleteThumbnail(slotName);
-            }
-            catch (Exception)
-            {
-#if UNITY_EDITOR || DEVELOPMENT_BUILD
-                Hecton8.Core.H8Debug.LogWarning("[SaveThumbnailSystem] Low-tier thumbnail purge failed.");
-#endif
-            }
-        }
-
         /// <summary>
         /// Purges cached runtime thumbnails to free memory.
         /// </summary>
@@ -674,7 +653,7 @@ namespace Hecton8.SaveSystem
                         (uint)width,
                         (uint)height,
                         0u,
-                        JpegQuality);
+                        ResolveThumbnailJpegQuality());
 
                     if (!encodedJpg.IsCreated || encodedJpg.Length <= 0)
                         throw new IOException("JPG encoder returned no thumbnail bytes.");
@@ -836,15 +815,20 @@ namespace Hecton8.SaveSystem
             }
         }
 
-        private static bool ShouldSkipScreenshotForCurrentTier()
-        {
-            return ResolveThumbnailCaptureQualityWeight01() < ThumbnailCaptureQualityThreshold01;
-        }
-
         private static float ResolveThumbnailCaptureQualityWeight01()
         {
             float qualityWeight = HomeostasisBrain.GlobalQualityWeight;
             return math.saturate(math.select(1f, qualityWeight, math.isfinite(qualityWeight)));
+        }
+
+        private static int ResolveThumbnailJpegQuality()
+        {
+            float quality = ResolveThumbnailCaptureQualityWeight01();
+            float curve = quality * quality * (3f - 2f * quality);
+            return math.clamp(
+                (int)math.round(math.lerp(ThumbnailJpegQualitySurvival, ThumbnailJpegQualityVisualOverkill, curve)),
+                ThumbnailJpegQualitySurvival,
+                ThumbnailJpegQualityVisualOverkill);
         }
 
         private static uint ResolveSlotHash(string slotName, byte slotIndex)
@@ -984,8 +968,8 @@ namespace Hecton8.SaveSystem
             {
                 case CaptureStatus.Completed:
                     return SaveMetadataReadySignal.Completed;
-                case CaptureStatus.LowTierSkipped:
-                    return SaveMetadataReadySignal.SkippedLowTier;
+                case CaptureStatus.QualityDeferred:
+                    return SaveMetadataReadySignal.DeferredByQuality;
                 case CaptureStatus.ReusedExisting:
                     return SaveMetadataReadySignal.ReusedExisting;
                 case CaptureStatus.TimedOut:
@@ -999,8 +983,8 @@ namespace Hecton8.SaveSystem
         {
             switch (status)
             {
-                case CaptureStatus.LowTierSkipped:
-                    return SaveMetadataReadySignal.LowTierFlag;
+                case CaptureStatus.QualityDeferred:
+                    return SaveMetadataReadySignal.QualityDeferredFlag;
                 case CaptureStatus.ReusedExisting:
                     return SaveMetadataReadySignal.ReusedExistingFlag;
                 case CaptureStatus.Completed:

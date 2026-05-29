@@ -651,7 +651,7 @@ namespace Hecton8.Physics
 
         private void DisableUnsupportedHighResourceCrestCompute()
         {
-            if (Hecton8.Core.HardwareTierDetector.AllowHighResourceComputeShaders)
+            if (SystemInfo.supportsComputeShaders)
                 return;
 
             if (TryGetComponent(out global::Crest.ShapeFFT shapeFft))

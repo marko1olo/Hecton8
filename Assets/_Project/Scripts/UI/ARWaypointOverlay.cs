@@ -269,7 +269,7 @@ namespace Hecton8.UI
         /// </summary>
         public static void SetWaypoint(int id, Transform target, string label, Color color)
         {
-            IARWaypointService service = ResolveWaypointServiceCold();
+            IARWaypointService service = CacheWaypointServiceCold();
             if (service == null)
                 return;
 
@@ -281,7 +281,7 @@ namespace Hecton8.UI
         /// </summary>
         public static void SetWaypoint(int id, Vector3 worldPosition, string label, Color color)
         {
-            IARWaypointService service = ResolveWaypointServiceCold();
+            IARWaypointService service = CacheWaypointServiceCold();
             if (service == null)
                 return;
 
@@ -293,14 +293,14 @@ namespace Hecton8.UI
         /// </summary>
         public static void ClearWaypoint(int id)
         {
-            IARWaypointService service = ResolveWaypointServiceCold();
+            IARWaypointService service = CacheWaypointServiceCold();
             if (service == null)
                 return;
 
             service.ClearWaypoint(id);
         }
 
-        private static IARWaypointService ResolveWaypointServiceCold()
+        private static IARWaypointService CacheWaypointServiceCold()
         {
             IARWaypointService service = s_cachedWaypointService;
             if (service != null)
@@ -366,7 +366,6 @@ namespace Hecton8.UI
         {
             bool sampleSolveCost = ShouldSampleWaypointSolveCost();
             long solveStartTimestamp = sampleSolveCost ? Stopwatch.GetTimestamp() : 0L;
-            ResolveOwners(allowHierarchySearch: false);
             if (s_stencilRenderGraphActive)
             {
                 CollectRuntimeWaypoints();
@@ -375,7 +374,7 @@ namespace Hecton8.UI
                 return;
             }
 
-            if (!EnsureUiBuilt(allowCreate: false))
+            if (!_uiBuilt || _root == null || _targetCanvas == null)
             {
                 HideRenderedSlots();
                 return;
@@ -390,7 +389,6 @@ namespace Hecton8.UI
         public void SlowTick()
         {
             long solveStartTimestamp = Stopwatch.GetTimestamp();
-            ResolveOwners(allowHierarchySearch: false);
             CollectRuntimeWaypoints();
             RefreshOcclusionStates();
             PublishWaypointSolveWarningIfNeeded(true, solveStartTimestamp);
@@ -484,7 +482,7 @@ namespace Hecton8.UI
                 }
             }
 
-            if (_playerTransform == null)
+            if (_playerTransform == null && allowHierarchySearch)
                 GameBootstrapper.TryGetCurrentPlayerTransform(out _playerTransform);
         }
 
@@ -497,7 +495,7 @@ namespace Hecton8.UI
             {
                 _cachedPlayerContext = currentService as IPlayerRuntimeContext;
                 _playerTransform = _cachedPlayerContext != null ? _cachedPlayerContext.PlayerTransform : null;
-                _viewCamera = null;
+                _viewCamera = _cachedPlayerContext != null ? _cachedPlayerContext.PlayerCamera : null;
                 return;
             }
 

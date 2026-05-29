@@ -36,7 +36,34 @@ namespace Hecton8.Gameplay
         private const BufferID CombatDamageCountersBufferId = (BufferID)1417022;
         private const BufferID CombatDamageTelemetryRingBufferId = (BufferID)1417023;
         private const BufferID CombatDamageTelemetryStateBufferId = (BufferID)1417024;
-        private const int CombatDamageVaultJobLockCount = 25;
+        private static readonly ulong CombatDamageJobMutationGuardMask =
+            CombatVaultMutationGuardBit(CombatDamageSignalsBufferId) |
+            CombatVaultMutationGuardBit(CombatDamageSignalDetailsBufferId) |
+            CombatVaultMutationGuardBit(CombatDamageTargetLookupKeysBufferId) |
+            CombatVaultMutationGuardBit(CombatDamageTargetLookupSlotsBufferId) |
+            CombatVaultMutationGuardBit(CombatDamageInstanceIdsBufferId) |
+            CombatVaultMutationGuardBit(CombatDamageHealthBufferId) |
+            CombatVaultMutationGuardBit(CombatDamageMaxHealthBufferId) |
+            CombatVaultMutationGuardBit(CombatDamageInvMaxHealthBufferId) |
+            CombatVaultMutationGuardBit(CombatDamageArmorValuesBufferId) |
+            CombatVaultMutationGuardBit(CombatDamageShieldValuesBufferId) |
+            CombatVaultMutationGuardBit(CombatDamageMinorAccumulatorsBufferId) |
+            CombatVaultMutationGuardBit(CombatDamageTargetForwardBufferId) |
+            CombatVaultMutationGuardBit(CombatDamageTargetHeightsBufferId) |
+            CombatVaultMutationGuardBit(CombatDamageTargetFlagsBufferId) |
+            CombatVaultMutationGuardBit(CombatDamageStatusMasksBufferId) |
+            CombatVaultMutationGuardBit(CombatDamageStatusDurations0123BufferId) |
+            CombatVaultMutationGuardBit(CombatDamageLegacyStatusDurations4567BufferId) |
+            CombatVaultMutationGuardBit(CombatDamageBrittleDurationsBufferId) |
+            CombatVaultMutationGuardBit(CombatDamageArmorLutBufferId) |
+            CombatVaultMutationGuardBit(CombatDamageResultsBufferId) |
+            CombatVaultMutationGuardBit(CombatDamageStatusResultsBufferId) |
+            CombatVaultMutationGuardBit(CombatDamageStatusResultActiveBufferId) |
+            CombatVaultMutationGuardBit(CombatDamageCountersBufferId) |
+            CombatVaultMutationGuardBit(CombatDamageTelemetryRingBufferId) |
+            CombatVaultMutationGuardBit(CombatDamageTelemetryStateBufferId);
+        private static readonly ulong CombatDamageCounterMutationGuardMask =
+            CombatVaultMutationGuardBit(CombatDamageCountersBufferId);
 
         private static VaultGenerationHandle<CombatDamageRequest> _damageSignalsHandle;
         private static VaultGenerationHandle<CombatDamageSignalDetail> _signalDetailsHandle;
@@ -100,6 +127,144 @@ namespace Hecton8.Gameplay
             public NativeArray<float>.ReadOnly Health;
             public NativeArray<float>.ReadOnly InvMaxHealth;
             public NativeArray<int>.ReadOnly InstanceIds;
+        }
+
+        private struct CombatVaultMutationGuardLease
+        {
+            private IDataVault _vault;
+            private ulong _mask;
+            private bool _acquired;
+
+            public bool Add(IDataVault vault, ulong mask)
+            {
+                if (vault == null || mask == 0UL || vault.IsCompactionFenceActive)
+                    return false;
+
+                if (_vault == null)
+                {
+                    _vault = vault;
+                    _mask = mask;
+                    return true;
+                }
+
+                if (object.ReferenceEquals(_vault, vault))
+                {
+                    _mask |= mask;
+                    return true;
+                }
+
+                return false;
+            }
+
+            public bool TryAcquire()
+            {
+                if (_vault == null || _mask == 0UL)
+                    return false;
+
+                if (!_vault.TryAcquireMutationGuard(_mask))
+                    return false;
+
+                _acquired = true;
+                return true;
+            }
+
+            public void Release()
+            {
+                IDataVault vault = _vault;
+                ulong mask = _mask;
+                bool acquired = _acquired;
+
+                _vault = null;
+                _mask = 0UL;
+                _acquired = false;
+
+                if (acquired)
+                    vault.ReleaseMutationGuard(mask);
+            }
+        }
+
+        private static ulong CombatVaultMutationGuardBit(BufferID bufferId)
+        {
+            return 1UL << (unchecked((int)(uint)(int)bufferId) & 31);
+        }
+
+        private static bool TryAcquireDamageJobMutationGuardLease(out CombatVaultMutationGuardLease lease)
+        {
+            lease = default;
+            if (!lease.Add(OpenCombatDataVault(allowColdBootstrap: false), CombatDamageJobMutationGuardMask) ||
+                !lease.Add(_statusEffectVault, StatusEffectJobMutationGuardMask) ||
+                !lease.Add(_armorDataVault, ArmorPenetrationJobMutationGuardMask))
+            {
+                lease.Release();
+                return false;
+            }
+
+            if (lease.TryAcquire())
+                return true;
+
+            lease.Release();
+            return false;
+        }
+
+        private static bool TryAcquireCombatDispatchMutationGuardLease(out CombatVaultMutationGuardLease lease)
+        {
+            lease = default;
+            if (!lease.Add(OpenCombatDataVault(allowColdBootstrap: false), CombatDamageJobMutationGuardMask))
+            {
+                lease.Release();
+                return false;
+            }
+
+            if (lease.TryAcquire())
+                return true;
+
+            lease.Release();
+            return false;
+        }
+
+        private static bool TryAcquireCombatCounterMutationGuardLease(out CombatVaultMutationGuardLease lease)
+        {
+            lease = default;
+            if (!lease.Add(OpenCombatDataVault(allowColdBootstrap: false), CombatDamageCounterMutationGuardMask))
+            {
+                lease.Release();
+                return false;
+            }
+
+            if (lease.TryAcquire())
+                return true;
+
+            lease.Release();
+            return false;
+        }
+
+        private static bool TryAcquireStatusEffectJobMutationGuardLease(
+            bool includeSimulationBuffers,
+            out CombatVaultMutationGuardLease lease)
+        {
+            lease = default;
+            ulong statusMask = includeSimulationBuffers
+                ? StatusEffectJobMutationGuardMask
+                : StatusEffectRequestJobMutationGuardMask;
+
+            if (!lease.Add(OpenCombatDataVault(allowColdBootstrap: false), CombatDamageJobMutationGuardMask) ||
+                !lease.Add(_statusEffectVault, statusMask))
+            {
+                lease.Release();
+                return false;
+            }
+
+            if (includeSimulationBuffers && !lease.Add(_armorDataVault, ArmorPenetrationJobMutationGuardMask))
+            {
+                lease.Release();
+                return false;
+            }
+
+            if (lease.TryAcquire())
+                return true;
+
+            lease.Release();
+            return false;
         }
 
         private static bool IsCombatDamageVaultInitialized()
@@ -316,190 +481,49 @@ namespace Hecton8.Gameplay
             _telemetryStateHandle = default;
         }
 
-        private static bool TryLockCombatDamageVaultBuffersForJobs(out int lockedCount)
-        {
-            lockedCount = 0;
-            IDataVault vault = OpenCombatDataVault(allowColdBootstrap: false);
-            if (vault == null || vault.IsCompactionFenceActive)
-                return false;
-
-            bool success = false;
-            try
-            {
-                if (!vault.TryLockBuffer(CombatDamageSignalsBufferId, CombatDamageMemoryOwner)) return false;
-                lockedCount++;
-                if (!vault.TryLockBuffer(CombatDamageSignalDetailsBufferId, CombatDamageMemoryOwner)) return false;
-                lockedCount++;
-                if (!vault.TryLockBuffer(CombatDamageTargetLookupKeysBufferId, CombatDamageMemoryOwner)) return false;
-                lockedCount++;
-                if (!vault.TryLockBuffer(CombatDamageTargetLookupSlotsBufferId, CombatDamageMemoryOwner)) return false;
-                lockedCount++;
-                if (!vault.TryLockBuffer(CombatDamageInstanceIdsBufferId, CombatDamageMemoryOwner)) return false;
-                lockedCount++;
-                if (!vault.TryLockBuffer(CombatDamageHealthBufferId, CombatDamageMemoryOwner)) return false;
-                lockedCount++;
-                if (!vault.TryLockBuffer(CombatDamageMaxHealthBufferId, CombatDamageMemoryOwner)) return false;
-                lockedCount++;
-                if (!vault.TryLockBuffer(CombatDamageInvMaxHealthBufferId, CombatDamageMemoryOwner)) return false;
-                lockedCount++;
-                if (!vault.TryLockBuffer(CombatDamageArmorValuesBufferId, CombatDamageMemoryOwner)) return false;
-                lockedCount++;
-                if (!vault.TryLockBuffer(CombatDamageShieldValuesBufferId, CombatDamageMemoryOwner)) return false;
-                lockedCount++;
-                if (!vault.TryLockBuffer(CombatDamageMinorAccumulatorsBufferId, CombatDamageMemoryOwner)) return false;
-                lockedCount++;
-                if (!vault.TryLockBuffer(CombatDamageTargetForwardBufferId, CombatDamageMemoryOwner)) return false;
-                lockedCount++;
-                if (!vault.TryLockBuffer(CombatDamageTargetHeightsBufferId, CombatDamageMemoryOwner)) return false;
-                lockedCount++;
-                if (!vault.TryLockBuffer(CombatDamageTargetFlagsBufferId, CombatDamageMemoryOwner)) return false;
-                lockedCount++;
-                if (!vault.TryLockBuffer(CombatDamageStatusMasksBufferId, CombatDamageMemoryOwner)) return false;
-                lockedCount++;
-                if (!vault.TryLockBuffer(CombatDamageStatusDurations0123BufferId, CombatDamageMemoryOwner)) return false;
-                lockedCount++;
-                if (!vault.TryLockBuffer(CombatDamageLegacyStatusDurations4567BufferId, CombatDamageMemoryOwner)) return false;
-                lockedCount++;
-                if (!vault.TryLockBuffer(CombatDamageBrittleDurationsBufferId, CombatDamageMemoryOwner)) return false;
-                lockedCount++;
-                if (!vault.TryLockBuffer(CombatDamageArmorLutBufferId, CombatDamageMemoryOwner)) return false;
-                lockedCount++;
-                if (!vault.TryLockBuffer(CombatDamageResultsBufferId, CombatDamageMemoryOwner)) return false;
-                lockedCount++;
-                if (!vault.TryLockBuffer(CombatDamageStatusResultsBufferId, CombatDamageMemoryOwner)) return false;
-                lockedCount++;
-                if (!vault.TryLockBuffer(CombatDamageStatusResultActiveBufferId, CombatDamageMemoryOwner)) return false;
-                lockedCount++;
-                if (!vault.TryLockBuffer(CombatDamageCountersBufferId, CombatDamageMemoryOwner)) return false;
-                lockedCount++;
-                if (!vault.TryLockBuffer(CombatDamageTelemetryRingBufferId, CombatDamageMemoryOwner)) return false;
-                lockedCount++;
-                if (!vault.TryLockBuffer(CombatDamageTelemetryStateBufferId, CombatDamageMemoryOwner)) return false;
-                lockedCount++;
-                success = true;
-                return true;
-            }
-            finally
-            {
-                if (!success)
-                    UnlockCombatDamageVaultBuffersForJobs(lockedCount);
-            }
-        }
-
-        private static void UnlockCombatDamageVaultBuffersForJobs(int lockedCount)
-        {
-            IDataVault vault = OpenCombatDataVault(allowColdBootstrap: false);
-            if (vault == null)
-                return;
-
-            if (lockedCount >= 25) vault.TryUnlockBuffer(CombatDamageTelemetryStateBufferId, CombatDamageMemoryOwner);
-            if (lockedCount >= 24) vault.TryUnlockBuffer(CombatDamageTelemetryRingBufferId, CombatDamageMemoryOwner);
-            if (lockedCount >= 23) vault.TryUnlockBuffer(CombatDamageCountersBufferId, CombatDamageMemoryOwner);
-            if (lockedCount >= 22) vault.TryUnlockBuffer(CombatDamageStatusResultActiveBufferId, CombatDamageMemoryOwner);
-            if (lockedCount >= 21) vault.TryUnlockBuffer(CombatDamageStatusResultsBufferId, CombatDamageMemoryOwner);
-            if (lockedCount >= 20) vault.TryUnlockBuffer(CombatDamageResultsBufferId, CombatDamageMemoryOwner);
-            if (lockedCount >= 19) vault.TryUnlockBuffer(CombatDamageArmorLutBufferId, CombatDamageMemoryOwner);
-            if (lockedCount >= 18) vault.TryUnlockBuffer(CombatDamageBrittleDurationsBufferId, CombatDamageMemoryOwner);
-            if (lockedCount >= 17) vault.TryUnlockBuffer(CombatDamageLegacyStatusDurations4567BufferId, CombatDamageMemoryOwner);
-            if (lockedCount >= 16) vault.TryUnlockBuffer(CombatDamageStatusDurations0123BufferId, CombatDamageMemoryOwner);
-            if (lockedCount >= 15) vault.TryUnlockBuffer(CombatDamageStatusMasksBufferId, CombatDamageMemoryOwner);
-            if (lockedCount >= 14) vault.TryUnlockBuffer(CombatDamageTargetFlagsBufferId, CombatDamageMemoryOwner);
-            if (lockedCount >= 13) vault.TryUnlockBuffer(CombatDamageTargetHeightsBufferId, CombatDamageMemoryOwner);
-            if (lockedCount >= 12) vault.TryUnlockBuffer(CombatDamageTargetForwardBufferId, CombatDamageMemoryOwner);
-            if (lockedCount >= 11) vault.TryUnlockBuffer(CombatDamageMinorAccumulatorsBufferId, CombatDamageMemoryOwner);
-            if (lockedCount >= 10) vault.TryUnlockBuffer(CombatDamageShieldValuesBufferId, CombatDamageMemoryOwner);
-            if (lockedCount >= 9) vault.TryUnlockBuffer(CombatDamageArmorValuesBufferId, CombatDamageMemoryOwner);
-            if (lockedCount >= 8) vault.TryUnlockBuffer(CombatDamageInvMaxHealthBufferId, CombatDamageMemoryOwner);
-            if (lockedCount >= 7) vault.TryUnlockBuffer(CombatDamageMaxHealthBufferId, CombatDamageMemoryOwner);
-            if (lockedCount >= 6) vault.TryUnlockBuffer(CombatDamageHealthBufferId, CombatDamageMemoryOwner);
-            if (lockedCount >= 5) vault.TryUnlockBuffer(CombatDamageInstanceIdsBufferId, CombatDamageMemoryOwner);
-            if (lockedCount >= 4) vault.TryUnlockBuffer(CombatDamageTargetLookupSlotsBufferId, CombatDamageMemoryOwner);
-            if (lockedCount >= 3) vault.TryUnlockBuffer(CombatDamageTargetLookupKeysBufferId, CombatDamageMemoryOwner);
-            if (lockedCount >= 2) vault.TryUnlockBuffer(CombatDamageSignalDetailsBufferId, CombatDamageMemoryOwner);
-            if (lockedCount >= 1) vault.TryUnlockBuffer(CombatDamageSignalsBufferId, CombatDamageMemoryOwner);
-        }
-
-        private static bool TryAcquireCombatTargetWriteLocks(out CombatDamageVaultViews views, out int lockedCount)
+        private static bool TryResolveCombatTargetOwnerViews(out CombatDamageVaultViews views)
         {
             views = default;
-            lockedCount = 0;
             IDataVault vault = OpenCombatDataVault(allowColdBootstrap: false);
             if (vault == null || vault.IsCompactionFenceActive)
                 return false;
 
-            bool success = false;
-            try
-            {
-                if (!vault.TryAcquireWriteLock(in _targetLookupKeysHandle, CombatDamageMemoryOwner, out views.TargetLookupKeys)) return false;
-                lockedCount++;
-                if (!vault.TryAcquireWriteLock(in _targetLookupSlotsHandle, CombatDamageMemoryOwner, out views.TargetLookupSlots)) return false;
-                lockedCount++;
-                if (!vault.TryAcquireWriteLock(in _instanceIdsHandle, CombatDamageMemoryOwner, out views.InstanceIds)) return false;
-                lockedCount++;
-                if (!vault.TryAcquireWriteLock(in _healthHandle, CombatDamageMemoryOwner, out views.Health)) return false;
-                lockedCount++;
-                if (!vault.TryAcquireWriteLock(in _maxHealthHandle, CombatDamageMemoryOwner, out views.MaxHealth)) return false;
-                lockedCount++;
-                if (!vault.TryAcquireWriteLock(in _invMaxHealthHandle, CombatDamageMemoryOwner, out views.InvMaxHealth)) return false;
-                lockedCount++;
-                if (!vault.TryAcquireWriteLock(in _armorValuesHandle, CombatDamageMemoryOwner, out views.ArmorValues)) return false;
-                lockedCount++;
-                if (!vault.TryAcquireWriteLock(in _shieldValuesHandle, CombatDamageMemoryOwner, out views.ShieldValues)) return false;
-                lockedCount++;
-                if (!vault.TryAcquireWriteLock(in _minorDamageAccumulatorsHandle, CombatDamageMemoryOwner, out views.MinorDamageAccumulators)) return false;
-                lockedCount++;
-                if (!vault.TryAcquireWriteLock(in _targetForwardVectorsHandle, CombatDamageMemoryOwner, out views.TargetForwardVectors)) return false;
-                lockedCount++;
-                if (!vault.TryAcquireWriteLock(in _targetHeightsHandle, CombatDamageMemoryOwner, out views.TargetHeights)) return false;
-                lockedCount++;
-                if (!vault.TryAcquireWriteLock(in _targetFlagsHandle, CombatDamageMemoryOwner, out views.TargetFlags)) return false;
-                lockedCount++;
-                if (!vault.TryAcquireWriteLock(in _statusMasksHandle, CombatDamageMemoryOwner, out views.StatusMasks)) return false;
-                lockedCount++;
-                if (!vault.TryAcquireWriteLock(in _statusDurations0123Handle, CombatDamageMemoryOwner, out views.StatusDurations0123)) return false;
-                lockedCount++;
-                if (!vault.TryAcquireWriteLock(in _legacyStatusDurations4567Handle, CombatDamageMemoryOwner, out views.LegacyStatusDurations4567)) return false;
-                lockedCount++;
-                if (!vault.TryAcquireWriteLock(in _brittleDurationsHandle, CombatDamageMemoryOwner, out views.BrittleDurations)) return false;
-                lockedCount++;
-                if (!vault.TryAcquireWriteLock(in _statusResultsHandle, CombatDamageMemoryOwner, out views.StatusResults)) return false;
-                lockedCount++;
-                if (!vault.TryAcquireWriteLock(in _statusResultActiveHandle, CombatDamageMemoryOwner, out views.StatusResultActive)) return false;
-                lockedCount++;
-                success = true;
-                return true;
-            }
-            finally
-            {
-                if (!success)
-                    ReleaseCombatTargetWriteLocks(lockedCount);
-            }
-        }
-
-        private static void ReleaseCombatTargetWriteLocks(int lockedCount)
-        {
-            IDataVault vault = OpenCombatDataVault(allowColdBootstrap: false);
-            if (vault == null)
-                return;
-
-            if (lockedCount >= 18) vault.ReleaseWriteLock(in _statusResultActiveHandle, CombatDamageMemoryOwner);
-            if (lockedCount >= 17) vault.ReleaseWriteLock(in _statusResultsHandle, CombatDamageMemoryOwner);
-            if (lockedCount >= 16) vault.ReleaseWriteLock(in _brittleDurationsHandle, CombatDamageMemoryOwner);
-            if (lockedCount >= 15) vault.ReleaseWriteLock(in _legacyStatusDurations4567Handle, CombatDamageMemoryOwner);
-            if (lockedCount >= 14) vault.ReleaseWriteLock(in _statusDurations0123Handle, CombatDamageMemoryOwner);
-            if (lockedCount >= 13) vault.ReleaseWriteLock(in _statusMasksHandle, CombatDamageMemoryOwner);
-            if (lockedCount >= 12) vault.ReleaseWriteLock(in _targetFlagsHandle, CombatDamageMemoryOwner);
-            if (lockedCount >= 11) vault.ReleaseWriteLock(in _targetHeightsHandle, CombatDamageMemoryOwner);
-            if (lockedCount >= 10) vault.ReleaseWriteLock(in _targetForwardVectorsHandle, CombatDamageMemoryOwner);
-            if (lockedCount >= 9) vault.ReleaseWriteLock(in _minorDamageAccumulatorsHandle, CombatDamageMemoryOwner);
-            if (lockedCount >= 8) vault.ReleaseWriteLock(in _shieldValuesHandle, CombatDamageMemoryOwner);
-            if (lockedCount >= 7) vault.ReleaseWriteLock(in _armorValuesHandle, CombatDamageMemoryOwner);
-            if (lockedCount >= 6) vault.ReleaseWriteLock(in _invMaxHealthHandle, CombatDamageMemoryOwner);
-            if (lockedCount >= 5) vault.ReleaseWriteLock(in _maxHealthHandle, CombatDamageMemoryOwner);
-            if (lockedCount >= 4) vault.ReleaseWriteLock(in _healthHandle, CombatDamageMemoryOwner);
-            if (lockedCount >= 3) vault.ReleaseWriteLock(in _instanceIdsHandle, CombatDamageMemoryOwner);
-            if (lockedCount >= 2) vault.ReleaseWriteLock(in _targetLookupSlotsHandle, CombatDamageMemoryOwner);
-            if (lockedCount >= 1) vault.ReleaseWriteLock(in _targetLookupKeysHandle, CombatDamageMemoryOwner);
+            return vault.TryResolveHandle(in _targetLookupKeysHandle, out views.TargetLookupKeys) &&
+                   vault.TryResolveHandle(in _targetLookupSlotsHandle, out views.TargetLookupSlots) &&
+                   vault.TryResolveHandle(in _instanceIdsHandle, out views.InstanceIds) &&
+                   vault.TryResolveHandle(in _healthHandle, out views.Health) &&
+                   vault.TryResolveHandle(in _maxHealthHandle, out views.MaxHealth) &&
+                   vault.TryResolveHandle(in _invMaxHealthHandle, out views.InvMaxHealth) &&
+                   vault.TryResolveHandle(in _armorValuesHandle, out views.ArmorValues) &&
+                   vault.TryResolveHandle(in _shieldValuesHandle, out views.ShieldValues) &&
+                   vault.TryResolveHandle(in _minorDamageAccumulatorsHandle, out views.MinorDamageAccumulators) &&
+                   vault.TryResolveHandle(in _targetForwardVectorsHandle, out views.TargetForwardVectors) &&
+                   vault.TryResolveHandle(in _targetHeightsHandle, out views.TargetHeights) &&
+                   vault.TryResolveHandle(in _targetFlagsHandle, out views.TargetFlags) &&
+                   vault.TryResolveHandle(in _statusMasksHandle, out views.StatusMasks) &&
+                   vault.TryResolveHandle(in _statusDurations0123Handle, out views.StatusDurations0123) &&
+                   vault.TryResolveHandle(in _legacyStatusDurations4567Handle, out views.LegacyStatusDurations4567) &&
+                   vault.TryResolveHandle(in _brittleDurationsHandle, out views.BrittleDurations) &&
+                   vault.TryResolveHandle(in _statusResultsHandle, out views.StatusResults) &&
+                   vault.TryResolveHandle(in _statusResultActiveHandle, out views.StatusResultActive) &&
+                   views.TargetLookupKeys.IsCreated &&
+                   views.TargetLookupSlots.IsCreated &&
+                   views.InstanceIds.IsCreated &&
+                   views.Health.IsCreated &&
+                   views.MaxHealth.IsCreated &&
+                   views.InvMaxHealth.IsCreated &&
+                   views.ArmorValues.IsCreated &&
+                   views.ShieldValues.IsCreated &&
+                   views.MinorDamageAccumulators.IsCreated &&
+                   views.TargetForwardVectors.IsCreated &&
+                   views.TargetHeights.IsCreated &&
+                   views.TargetFlags.IsCreated &&
+                   views.StatusMasks.IsCreated &&
+                   views.StatusDurations0123.IsCreated &&
+                   views.LegacyStatusDurations4567.IsCreated &&
+                   views.BrittleDurations.IsCreated &&
+                   views.StatusResults.IsCreated &&
+                   views.StatusResultActive.IsCreated;
         }
 
         private static bool TryResolveCombatTargetSlotReadOnly(int targetId, out int slot)

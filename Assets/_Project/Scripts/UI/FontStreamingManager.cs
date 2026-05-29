@@ -2,10 +2,7 @@ using System;
 using Hecton.Localization;
 using Hecton8.Core;
 using Hecton8.Core.Contracts.Signals;
-using Hecton8.Core.Memory;
 using TMPro;
-using Unity.Collections;
-using Unity.Jobs;
 using Unity.Mathematics;
 using UnityEngine;
 using UnityEngine.UI;
@@ -28,10 +25,6 @@ namespace Hecton8.UI
         private const float StatusFadeOutSpeed = 6f;
         private const int FontReadinessTimeoutFrames = 2;
         private const ushort UIRescaleReasonLocalizedFontSwap = 1;
-        private const SystemID VaultOwnerSystemId = SystemID.UI;
-        private const BufferID VisibleHashPrefetchBufferId = BufferID.FontStreamingVisibleHashPrefetch;
-        private const BufferID VisibleSlicePrefetchBufferId = BufferID.FontStreamingVisibleSlicePrefetch;
-
         private static readonly Color StatusTextColor = new Color(0.82f, 0.96f, 0.92f, 0.96f);
         private static readonly Color StatusBackgroundColor = new Color(0.02f, 0.08f, 0.10f, 0.82f);
         private static readonly uint _fontSwapRescaleHash = unchecked((uint)LocHash.Compute("FontStreamingManager.UIRescale"));
@@ -39,16 +32,6 @@ namespace Hecton8.UI
         private readonly LabelSwapScheduler _swapScheduler = new LabelSwapScheduler();
         // COLD ALLOC: char[96] â€” status label assembly for staged font streaming â€” owner: FontStreamingManager
         private char[] _statusBuffer = new char[96];
-        private VaultGenerationHandle<uint> _visibleHashPrefetchHandle;
-        private VaultGenerationHandle<int2> _visibleSlicePrefetchHandle;
-        private IDataVault _dataVault;
-        private JobHandle _visiblePrefetchHandle;
-        private int _visiblePrefetchCapacity;
-        private int _visiblePrefetchCount;
-        private bool _visiblePrefetchApplyToQueue;
-        private bool _visiblePrefetchInFlight;
-        private bool _visiblePrefetchBuffersLocked;
-
         private bool _registered;
         private bool _hotSwapListenerRegistered;
         private bool _uiBuilt;
@@ -92,7 +75,6 @@ namespace Hecton8.UI
             UnregisterFromTickManager();
             TryUnregisterHotSwapListener();
             ResetSwapState();
-            DisposePrefetchBuffers();
             ReleaseTrackedFontData();
         }
 
@@ -102,18 +84,16 @@ namespace Hecton8.UI
             SceneManager.sceneLoaded -= HandleSceneLoaded;
             UnregisterFromTickManager();
             TryUnregisterHotSwapListener();
-            DisposePrefetchBuffers();
             ReleaseTrackedFontData();
         }
 
         /// <inheritdoc />
         public void LateFrameTick()
         {
-            if (!EnsureUiBuilt(allowCreate: false))
+            if (!_uiBuilt || _group == null || _statusLabel == null)
                 return;
 
             float dt = math.max(0f, SystemDispatcher.CurrentFrameDeltaTime);
-            TryCompleteVisibleHashPrefetch();
 
             if (_awaitingPrimaryFontReadiness)
                 EvaluatePendingFontReadiness();
@@ -149,7 +129,17 @@ namespace Hecton8.UI
             TMP_FontAsset targetFont = LocalizedFontResolver.ResolveReadableFontForLanguage(null, language);
             if (targetFont == null)
             {
-                ResetSwapState();
+                _primaryFont = null;
+                _targetFont = null;
+                _targetFontMaterial = null;
+                _streaming = false;
+                _biosFallbackActive = false;
+                _awaitingPrimaryFontReadiness = false;
+                _fontReadinessStartFrame = -1;
+                _queueCount = 0;
+                _queueIndex = 0;
+                _lastStatusPercent = int.MinValue;
+                _swapScheduler.Clear();
                 return;
             }
 
@@ -161,67 +151,44 @@ namespace Hecton8.UI
             _fontReadinessStartFrame = Hecton8.Core.SystemDispatcher.CurrentFrameIndex;
             _queueCount = 0;
             _queueIndex = 0;
-            AbandonVisibleHashPrefetchResults();
             _swapScheduler.Clear();
             _lastStatusPercent = int.MinValue;
-            UpdateStatusLabel();
-            ApplyVisibleAlpha(1f);
         }
 
         private void CollectSwapQueue(TMP_FontAsset targetFont)
         {
-            AbandonVisibleHashPrefetchResults();
             _swapScheduler.Clear();
             _queueCount = 0;
             int registeredCount = TMP_TextRegistry.Count;
-            bool canPrefetch = !_visiblePrefetchInFlight || TryCompleteVisibleHashPrefetch();
-            if (canPrefetch)
-                EnsurePrefetchCapacity(registeredCount);
-
-            int visibleHashCount = 0;
-            NativeArray<uint> visibleHashes = default;
-            bool hashWriteLocked = canPrefetch &&
-                                   TryAcquireVisibleHashPrefetchWriteBuffer(registeredCount, out visibleHashes);
-            try
+            int prefetchBudget = LocRegistry.ResolveVisibleTextOffsetPrefetchBudget(registeredCount);
+            int prefetchedCount = 0;
+            for (int i = 0; i < registeredCount; i++)
             {
-                for (int i = 0; i < registeredCount; i++)
+                TMP_TextEntry entry = TMP_TextRegistry.GetEntryAt(i);
+                TMP_Text text = entry.Text;
+                if (!IsSwapCandidate(text, targetFont))
+                    continue;
+
+                int2 prefetchedSlice = new int2(-1, 0);
+                bool hasPrefetchedSlice = false;
+                if (!entry.IsUserInput &&
+                    entry.HasLocalizationKey &&
+                    prefetchedCount < prefetchBudget)
                 {
-                    TMP_TextEntry entry = TMP_TextRegistry.GetEntryAt(i);
-                    TMP_Text text = entry.Text;
-                    if (!IsSwapCandidate(text, targetFont))
-                        continue;
-
-                    if (!_swapScheduler.Enqueue(entry))
-                        break;
-
-                    if (hashWriteLocked && visibleHashCount < visibleHashes.Length)
-                    {
-                        visibleHashes[visibleHashCount++] = !entry.IsUserInput && entry.HasLocalizationKey
-                            ? unchecked((uint)entry.LocalizationKeyHash)
-                            : 0u;
-                    }
+                    uint keyHash = unchecked((uint)entry.LocalizationKeyHash);
+                    hasPrefetchedSlice = LocRegistry.TryResolveVisibleTextOffsetSlice(keyHash, out prefetchedSlice);
+                    prefetchedCount++;
                 }
-            }
-            finally
-            {
-                if (hashWriteLocked)
-                    ReleaseVisibleHashPrefetchWriteBuffer();
+
+                if (!_swapScheduler.Enqueue(entry, prefetchedSlice, hasPrefetchedSlice))
+                    break;
             }
 
-            DispatchVisibleHashPrefetch(visibleHashCount);
             _queueCount = _swapScheduler.PendingCount;
         }
 
         private void ProcessSwapBatch()
         {
-            if (_visiblePrefetchInFlight &&
-                !TryCompleteVisibleHashPrefetch() &&
-                _visiblePrefetchApplyToQueue)
-            {
-                ApplyVisibleAlpha(1f);
-                return;
-            }
-
             int processed = _swapScheduler.DrainTick(_targetFont, _targetFontMaterial);
             _queueIndex += processed;
 
@@ -254,308 +221,6 @@ namespace Hecton8.UI
             };
             SignalBus<UIRescaleRequestSignal>.TryPushTracked(in signal, ref s_x001FontStreamingManagerSignalPushDropCount);
             DiegeticHudManualLayout.FlushGlobalRescaleRequests();
-        }
-
-        private void EnsurePrefetchCapacity(int requiredCapacity)
-        {
-            if (requiredCapacity <= 0)
-                return;
-
-            IDataVault vault = CacheDataVaultCold();
-            if (vault == null)
-                return;
-
-            if (HasPrefetchCapacity(requiredCapacity))
-            {
-                return;
-            }
-
-            DisposePrefetchBuffers();
-
-            bool hashReady = EnsurePrefetchBuffer(
-                ref _visibleHashPrefetchHandle,
-                VisibleHashPrefetchBufferId,
-                requiredCapacity,
-                NativeArrayOptions.UninitializedMemory);
-            bool sliceReady = EnsurePrefetchBuffer(
-                ref _visibleSlicePrefetchHandle,
-                VisibleSlicePrefetchBufferId,
-                requiredCapacity,
-                NativeArrayOptions.UninitializedMemory);
-
-            if (hashReady && sliceReady)
-            {
-                _visiblePrefetchCapacity = requiredCapacity;
-                return;
-            }
-
-            ReleasePrefetchHandle(ref _visibleHashPrefetchHandle, VisibleHashPrefetchBufferId, _dataVault);
-            ReleasePrefetchHandle(ref _visibleSlicePrefetchHandle, VisibleSlicePrefetchBufferId, _dataVault);
-            _visiblePrefetchCapacity = 0;
-        }
-
-        private void DispatchVisibleHashPrefetch(int visibleHashCount)
-        {
-            if (visibleHashCount <= 0 || _visiblePrefetchInFlight)
-                return;
-
-            if (!TryAcquireVisiblePrefetchJobBuffers(
-                    visibleHashCount,
-                    out NativeArray<uint> visibleHashes,
-                    out NativeArray<int2> outputSlices))
-            {
-                return;
-            }
-
-            if (LocRegistry.TryScheduleVisibleTextOffsetPrefetch(
-                    visibleHashes,
-                    outputSlices,
-                    visibleHashCount,
-                    default,
-                    out JobHandle prefetchHandle))
-            {
-                _visiblePrefetchHandle = prefetchHandle;
-                _visiblePrefetchCount = visibleHashCount;
-                _visiblePrefetchApplyToQueue = true;
-                _visiblePrefetchInFlight = true;
-                return;
-            }
-
-            ReleaseVisiblePrefetchJobBufferLocks();
-        }
-
-        private bool TryCompleteVisibleHashPrefetch()
-        {
-            if (!_visiblePrefetchInFlight)
-                return true;
-
-            if (!_visiblePrefetchHandle.IsCompleted)
-                return false;
-
-            if (!DispatcherJobFence.TryFinalizeCompleted(ref _visiblePrefetchHandle))
-                return false;
-
-            LocRegistry.MarkVisibleTextOffsetPrefetchComplete();
-            bool applyToQueue = _visiblePrefetchApplyToQueue && _visiblePrefetchCount > 0;
-            int prefetchCount = _visiblePrefetchCount;
-            ReleaseVisiblePrefetchJobBufferLocks();
-            if (applyToQueue &&
-                TryReadVisibleSlicePrefetch(prefetchCount, out NativeArray<int2>.ReadOnly slices))
-            {
-                _swapScheduler.ApplyPrefetchSlices(slices, prefetchCount);
-            }
-
-            _visiblePrefetchCount = 0;
-            _visiblePrefetchApplyToQueue = false;
-            _visiblePrefetchInFlight = false;
-            return true;
-        }
-
-        private void AbandonVisibleHashPrefetchResults()
-        {
-            _visiblePrefetchCount = 0;
-            _visiblePrefetchApplyToQueue = false;
-        }
-
-        private void CompleteVisibleHashPrefetchForTeardown()
-        {
-            if (!_visiblePrefetchInFlight)
-                return;
-
-            DispatcherJobFence.TryComplete(ref _visiblePrefetchHandle, forceComplete: true);
-            LocRegistry.MarkVisibleTextOffsetPrefetchComplete();
-            ReleaseVisiblePrefetchJobBufferLocks();
-            _visiblePrefetchCount = 0;
-            _visiblePrefetchApplyToQueue = false;
-            _visiblePrefetchInFlight = false;
-        }
-
-        private void DisposePrefetchBuffers()
-        {
-            CompleteVisibleHashPrefetchForTeardown();
-            ReleaseVisiblePrefetchJobBufferLocks();
-            ReleasePrefetchHandle(ref _visibleHashPrefetchHandle, VisibleHashPrefetchBufferId, _dataVault);
-            ReleasePrefetchHandle(ref _visibleSlicePrefetchHandle, VisibleSlicePrefetchBufferId, _dataVault);
-            _visiblePrefetchCapacity = 0;
-        }
-
-        private IDataVault CacheDataVaultCold()
-        {
-            IDataVault registryVault = GlobalRegistry.DataVault;
-            if (!ReferenceEquals(_dataVault, registryVault))
-                BindDataVaultForLifecycle(registryVault);
-
-            return _dataVault;
-        }
-
-        private void BindDataVaultForLifecycle(IDataVault nextVault)
-        {
-            if (ReferenceEquals(_dataVault, nextVault))
-                return;
-
-            DisposePrefetchBuffers();
-            _dataVault = nextVault;
-        }
-
-        private bool HasPrefetchCapacity(int requiredCapacity)
-        {
-            if (_visiblePrefetchCapacity < requiredCapacity)
-                return false;
-
-            return TryReadVisibleHashPrefetch(requiredCapacity, out _) &&
-                   TryReadVisibleSlicePrefetch(requiredCapacity, out _);
-        }
-
-        private bool EnsurePrefetchBuffer<T>(
-            ref VaultGenerationHandle<T> handle,
-            BufferID bufferId,
-            int requiredCapacity,
-            NativeArrayOptions options) where T : unmanaged
-        {
-            IDataVault vault = _dataVault;
-            if (vault == null)
-                return false;
-
-            if (IsExactVaultHandle(in handle, bufferId) &&
-                vault.TryReadOnlyHandle(in handle, out NativeArray<T>.ReadOnly existing) &&
-                existing.IsCreated &&
-                existing.Length >= requiredCapacity)
-            {
-                return true;
-            }
-
-            ReleasePrefetchHandle(ref handle, bufferId, vault);
-
-            handle = vault.EnsureGenerationHandle<T>(
-                bufferId,
-                requiredCapacity,
-                VaultOwnerSystemId,
-                options);
-
-            return IsExactVaultHandle(in handle, bufferId) &&
-                   vault.TryReadOnlyHandle(in handle, out NativeArray<T>.ReadOnly resolved) &&
-                   resolved.IsCreated &&
-                   resolved.Length >= requiredCapacity;
-        }
-
-        private bool TryAcquireVisibleHashPrefetchWriteBuffer(int requiredCapacity, out NativeArray<uint> visibleHashes)
-        {
-            visibleHashes = default;
-            IDataVault vault = _dataVault;
-            if (vault == null ||
-                !IsExactVaultHandle(in _visibleHashPrefetchHandle, VisibleHashPrefetchBufferId) ||
-                !vault.TryAcquireWriteLock(in _visibleHashPrefetchHandle, VaultOwnerSystemId, out visibleHashes))
-            {
-                return false;
-            }
-
-            if (visibleHashes.IsCreated && visibleHashes.Length >= requiredCapacity)
-                return true;
-
-            vault.ReleaseWriteLock(in _visibleHashPrefetchHandle, VaultOwnerSystemId);
-            visibleHashes = default;
-            return false;
-        }
-
-        private void ReleaseVisibleHashPrefetchWriteBuffer()
-        {
-            IDataVault vault = _dataVault;
-            if (vault != null && IsExactVaultHandle(in _visibleHashPrefetchHandle, VisibleHashPrefetchBufferId))
-                vault.ReleaseWriteLock(in _visibleHashPrefetchHandle, VaultOwnerSystemId);
-        }
-
-        private bool TryAcquireVisiblePrefetchJobBuffers(
-            int requiredCapacity,
-            out NativeArray<uint> visibleHashes,
-            out NativeArray<int2> outputSlices)
-        {
-            visibleHashes = default;
-            outputSlices = default;
-            IDataVault vault = _dataVault;
-            if (vault == null ||
-                _visiblePrefetchBuffersLocked ||
-                !TryAcquireVisibleHashPrefetchWriteBuffer(requiredCapacity, out visibleHashes))
-            {
-                return false;
-            }
-
-            if (!IsExactVaultHandle(in _visibleSlicePrefetchHandle, VisibleSlicePrefetchBufferId) ||
-                !vault.TryAcquireWriteLock(in _visibleSlicePrefetchHandle, VaultOwnerSystemId, out outputSlices))
-            {
-                vault.ReleaseWriteLock(in _visibleHashPrefetchHandle, VaultOwnerSystemId);
-                visibleHashes = default;
-                return false;
-            }
-
-            if (outputSlices.IsCreated && outputSlices.Length >= requiredCapacity)
-            {
-                _visiblePrefetchBuffersLocked = true;
-                return true;
-            }
-
-            vault.ReleaseWriteLock(in _visibleSlicePrefetchHandle, VaultOwnerSystemId);
-            vault.ReleaseWriteLock(in _visibleHashPrefetchHandle, VaultOwnerSystemId);
-            visibleHashes = default;
-            outputSlices = default;
-            return false;
-        }
-
-        private bool TryReadVisibleHashPrefetch(int requiredCapacity, out NativeArray<uint>.ReadOnly visibleHashes)
-        {
-            visibleHashes = default;
-            IDataVault vault = _dataVault;
-            return vault != null &&
-                   IsExactVaultHandle(in _visibleHashPrefetchHandle, VisibleHashPrefetchBufferId) &&
-                   vault.TryReadOnlyHandle(in _visibleHashPrefetchHandle, out visibleHashes) &&
-                   visibleHashes.IsCreated &&
-                   visibleHashes.Length >= requiredCapacity;
-        }
-
-        private bool TryReadVisibleSlicePrefetch(int requiredCapacity, out NativeArray<int2>.ReadOnly outputSlices)
-        {
-            outputSlices = default;
-            IDataVault vault = _dataVault;
-            return vault != null &&
-                   IsExactVaultHandle(in _visibleSlicePrefetchHandle, VisibleSlicePrefetchBufferId) &&
-                   vault.TryReadOnlyHandle(in _visibleSlicePrefetchHandle, out outputSlices) &&
-                   outputSlices.IsCreated &&
-                   outputSlices.Length >= requiredCapacity;
-        }
-
-        private void ReleaseVisiblePrefetchJobBufferLocks()
-        {
-            if (!_visiblePrefetchBuffersLocked)
-                return;
-
-            IDataVault vault = _dataVault;
-            if (vault != null)
-            {
-                if (IsExactVaultHandle(in _visibleSlicePrefetchHandle, VisibleSlicePrefetchBufferId))
-                    vault.ReleaseWriteLock(in _visibleSlicePrefetchHandle, VaultOwnerSystemId);
-
-                if (IsExactVaultHandle(in _visibleHashPrefetchHandle, VisibleHashPrefetchBufferId))
-                    vault.ReleaseWriteLock(in _visibleHashPrefetchHandle, VaultOwnerSystemId);
-            }
-
-            _visiblePrefetchBuffersLocked = false;
-        }
-
-        private void ReleasePrefetchHandle<T>(
-            ref VaultGenerationHandle<T> handle,
-            BufferID expectedBufferId,
-            IDataVault vault) where T : unmanaged
-        {
-            if (vault != null && IsExactVaultHandle(in handle, expectedBufferId))
-                vault.ReleaseBuffer(in handle);
-
-            handle = default;
-        }
-
-        private static bool IsExactVaultHandle<T>(in VaultGenerationHandle<T> handle, BufferID expectedBufferId) where T : unmanaged
-        {
-            return handle.BufferID == (uint)expectedBufferId &&
-                   handle.SystemID == (uint)VaultOwnerSystemId &&
-                   handle.Generation != 0u;
         }
 
         private void EvaluatePendingFontReadiness()
@@ -753,7 +418,6 @@ namespace Hecton8.UI
             _queueIndex = 0;
             _fontReadinessStartFrame = -1;
             _lastStatusPercent = int.MinValue;
-            AbandonVisibleHashPrefetchResults();
             _swapScheduler.Clear();
             ApplyVisibleAlpha(0f);
         }
@@ -793,13 +457,6 @@ namespace Hecton8.UI
             object previousService,
             object currentService)
         {
-            if (serviceSlot == GlobalRegistryServiceSlot.DataVault)
-            {
-                IDataVault nextVault = currentService is IDataVault vault ? vault : null;
-                BindDataVaultForLifecycle(nextVault);
-                return;
-            }
-
             if (serviceSlot == GlobalRegistryServiceSlot.Dispatcher && currentService != null && isActiveAndEnabled)
             {
                 UnregisterFromTickManager();

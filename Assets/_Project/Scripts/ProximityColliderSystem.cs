@@ -89,12 +89,17 @@ namespace Hecton8.Core
         private const BufferID PositionsBufferId = BufferID.ProximityColliderPositions;
         private const BufferID JobResultsBufferId = BufferID.ProximityColliderJobResults;
         private const BufferID PrevStatusBufferId = BufferID.ProximityColliderPrevStatus;
+        private static readonly ulong _jobMutationGuardMask =
+            ProximityMutationGuardBit(PositionsBufferId) |
+            ProximityMutationGuardBit(JobResultsBufferId) |
+            ProximityMutationGuardBit(PrevStatusBufferId);
 
         // ── Job I/O (DataVault descriptors only; native views stay phase-local) ──
         private VaultGenerationHandle<float3> _positionsHandle;
         private VaultGenerationHandle<byte> _jobResultsHandle;
         private VaultGenerationHandle<byte> _prevStatusHandle;
         private IDataVault _dataVault;
+        private IDataVault _jobBufferGuardVault;
         private IObjectPoolService _objectPool;
 
         // ── Main-thread cached arrays (zero GC) ──
@@ -607,30 +612,37 @@ namespace Hecton8.Core
                 return;
             }
 
-            // Copy the active logical range; DataVault may legally reuse a larger buffer.
-            NativeArray<byte>.Copy(_prevStatus, 0, prevStatus, 0, _pointCount);
-
             // ── Sozdaem i planiruem Job ──
-            var job = new DistanceCalcJob
+            bool scheduled = false;
+            try
             {
-                playerPos          = new float3(
-                    playerTransform.position.x,
-                    playerTransform.position.y,
-                    playerTransform.position.z),
-                activateRadiusSq   = _activateRadiusSq,
-                deactivateRadiusSq = _deactivateRadiusSq,
-                positions          = positions,
-                prevStatus         = prevStatus,
-                results            = results
-            };
+                var job = new DistanceCalcJob
+                {
+                    playerPos          = new float3(
+                        playerTransform.position.x,
+                        playerTransform.position.y,
+                        playerTransform.position.z),
+                    activateRadiusSq   = _activateRadiusSq,
+                    deactivateRadiusSq = _deactivateRadiusSq,
+                    positions          = positions,
+                    prevStatus         = prevStatus,
+                    results            = results
+                };
 
             // ── innerloopBatchCount = 256 ──
             // Kazhdyy worker thread obrabatyvaet pachku po 256 tochek.
             // Dlya 10,000 tochek = ~39 batchey. Na 4-yadernom CPU =
             // ~10 batchey na yadro. Otlichnyy balans overhead/parallelism.
-            _jobHandle  = job.Schedule(_pointCount, 256);
-            _jobScheduled = true;
-            _jobPendingFrameCount = 0;
+                _jobHandle  = job.Schedule(_pointCount, 256);
+                _jobScheduled = true;
+                _jobPendingFrameCount = 0;
+                scheduled = true;
+            }
+            finally
+            {
+                if (!scheduled)
+                    ReleaseJobBufferLocks();
+            }
         }
 
         // ══════════════════════════════════════════════════════════
@@ -926,41 +938,55 @@ namespace Hecton8.Core
             IDataVault vault = _dataVault;
             if (vault == null)
                 return false;
+            if (!IsExactVaultHandle(in _positionsHandle, PositionsBufferId) ||
+                !IsExactVaultHandle(in _prevStatusHandle, PrevStatusBufferId) ||
+                !IsExactVaultHandle(in _jobResultsHandle, JobResultsBufferId))
+            {
+                return false;
+            }
 
-            bool positionsLocked = false;
-            bool prevLocked = false;
-            bool resultsLocked = false;
+            bool prevWriteLocked = false;
+            bool guardAcquired = false;
             bool success = false;
             try
             {
-                if (!IsExactVaultHandle(in _positionsHandle, PositionsBufferId) ||
-                    !vault.TryAcquireWriteLock(in _positionsHandle, VaultOwnerSystemId, out positions))
+                if (!vault.TryAcquireWriteLock(in _prevStatusHandle, VaultOwnerSystemId, out NativeArray<byte> prevStatusWrite))
                 {
                     return false;
                 }
-                positionsLocked = true;
+                prevWriteLocked = true;
 
-                if (!IsExactVaultHandle(in _prevStatusHandle, PrevStatusBufferId) ||
-                    !vault.TryAcquireWriteLock(in _prevStatusHandle, VaultOwnerSystemId, out prevStatus))
+                if (!prevStatusWrite.IsCreated || prevStatusWrite.Length < _pointCount)
                 {
                     return false;
                 }
-                prevLocked = true;
 
-                if (!IsExactVaultHandle(in _jobResultsHandle, JobResultsBufferId) ||
-                    !vault.TryAcquireWriteLock(in _jobResultsHandle, VaultOwnerSystemId, out results))
+                // Copy the active logical range while exactly one writer fence is held.
+                NativeArray<byte>.Copy(_prevStatus, 0, prevStatusWrite, 0, _pointCount);
+                vault.ReleaseWriteLock(in _prevStatusHandle, VaultOwnerSystemId);
+                prevWriteLocked = false;
+
+                if (!vault.TryAcquireMutationGuard(_jobMutationGuardMask))
+                    return false;
+                guardAcquired = true;
+
+                if (!vault.TryResolveHandle(in _positionsHandle, out positions) ||
+                    !vault.TryResolveHandle(in _prevStatusHandle, out prevStatus) ||
+                    !vault.TryResolveHandle(in _jobResultsHandle, out results))
                 {
                     return false;
                 }
-                resultsLocked = true;
 
-                if (!positions.IsCreated || positions.Length < _pointCount ||
-                    !prevStatus.IsCreated || prevStatus.Length < _pointCount ||
+                if (!positions.IsCreated ||
+                    positions.Length < _pointCount ||
+                    !prevStatus.IsCreated ||
+                    prevStatus.Length < _pointCount ||
                     !results.IsCreated || results.Length < _pointCount)
                 {
                     return false;
                 }
 
+                _jobBufferGuardVault = vault;
                 _jobBuffersLocked = true;
                 success = true;
                 return true;
@@ -969,12 +995,10 @@ namespace Hecton8.Core
             {
                 if (!success)
                 {
-                    if (resultsLocked)
-                        vault.ReleaseWriteLock(in _jobResultsHandle, VaultOwnerSystemId);
-                    if (prevLocked)
+                    if (guardAcquired)
+                        vault.ReleaseMutationGuard(_jobMutationGuardMask);
+                    if (prevWriteLocked)
                         vault.ReleaseWriteLock(in _prevStatusHandle, VaultOwnerSystemId);
-                    if (positionsLocked)
-                        vault.ReleaseWriteLock(in _positionsHandle, VaultOwnerSystemId);
                     positions = default;
                     prevStatus = default;
                     results = default;
@@ -1013,17 +1037,9 @@ namespace Hecton8.Core
             if (!_jobBuffersLocked)
                 return;
 
-            IDataVault vault = _dataVault;
-            if (vault != null)
-            {
-                if (IsExactVaultHandle(in _jobResultsHandle, JobResultsBufferId))
-                    vault.ReleaseWriteLock(in _jobResultsHandle, VaultOwnerSystemId);
-                if (IsExactVaultHandle(in _prevStatusHandle, PrevStatusBufferId))
-                    vault.ReleaseWriteLock(in _prevStatusHandle, VaultOwnerSystemId);
-                if (IsExactVaultHandle(in _positionsHandle, PositionsBufferId))
-                    vault.ReleaseWriteLock(in _positionsHandle, VaultOwnerSystemId);
-            }
-
+            IDataVault vault = _jobBufferGuardVault ?? _dataVault;
+            vault?.ReleaseMutationGuard(_jobMutationGuardMask);
+            _jobBufferGuardVault = null;
             _jobBuffersLocked = false;
         }
 
@@ -1057,6 +1073,11 @@ namespace Hecton8.Core
             return handle.BufferID == (uint)bufferId &&
                    handle.SystemID == (uint)VaultOwnerSystemId &&
                    handle.Generation != 0u;
+        }
+
+        private static ulong ProximityMutationGuardBit(BufferID bufferId)
+        {
+            return 1UL << (unchecked((int)(uint)(int)bufferId) & 31);
         }
 
         // ══════════════════════════════════════════════════════════

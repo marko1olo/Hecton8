@@ -175,12 +175,14 @@ namespace Hecton8.UI
         private void OnEnable()
         {
             TryRegisterHotSwapListener();
+            CacheRegistryServicesCold();
             RefreshAllBindingsIfActive();
         }
 
         private void Start()
         {
             TryRegisterHotSwapListener();
+            CacheRegistryServicesCold();
             RefreshAllBindingsIfActive();
         }
 
@@ -326,7 +328,16 @@ namespace Hecton8.UI
             if (!isActiveAndEnabled)
                 return;
 
+            CacheRegistryServicesCold();
             RefreshAllBindingsIfActive();
+        }
+
+        private void CacheRegistryServicesCold()
+        {
+            if (_subscribedInput == null)
+                _subscribedInput = GlobalRegistry.NativeInputRuntime;
+            if (_subscribedRebindingService == null)
+                _subscribedRebindingService = GlobalRegistry.InputBinding;
         }
 
         private void RefreshAllBindingsIfActive()
@@ -1163,16 +1174,12 @@ namespace Hecton8.UI
 
         private IInputBindingService ResolveRebindingService()
         {
-            return _subscribedRebindingService != null
-                ? _subscribedRebindingService
-                : GlobalRegistry.InputBinding;
+            return _subscribedRebindingService;
         }
 
         private INativeInputManagerRuntime ResolveInputManager()
         {
-            return _subscribedInput != null
-                ? _subscribedInput
-                : GlobalRegistry.NativeInputRuntime;
+            return _subscribedInput;
         }
 
         private static RebindRow[] BuildDefaultRows()

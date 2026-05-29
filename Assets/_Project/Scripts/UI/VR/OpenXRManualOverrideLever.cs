@@ -14,7 +14,6 @@ using Unity.Collections;
 using Unity.Mathematics;
 using UnityEngine;
 using UnityEngine.Serialization;
-using UnityEngine.XR;
 
 namespace Hecton8.UI.VR
 {
@@ -200,7 +199,7 @@ namespace Hecton8.UI.VR
             RefreshQualityPolicy();
             _lastInputSignal = BuildUniversalInputSignal();
             bool gripHeld = (_lastInputSignal.ActionsBitmask & GripActionMask) != 0u;
-            _xrActiveThisFrame = XRSettings.enabled && XRSettings.isDeviceActive;
+            _xrActiveThisFrame = HectonXRRuntimeState.IsXRActive;
             int handAgeFrames = _frameThisTick - _lastHandFrame;
 
             if (_latched)
@@ -252,9 +251,6 @@ namespace Hecton8.UI.VR
             if (_pendingLatchShutdown)
             {
                 _pendingLatchShutdown = false;
-                TryUnregisterReceiver();
-                TryUnregisterTick();
-                TryUnregisterHotSwapListener();
             }
         }
 
@@ -933,12 +929,25 @@ namespace Hecton8.UI.VR
                 return false;
             }
 
-            if (!vault.IsCompactionFenceActive && blackBox.IsCreated && blackBox.Length >= BlackBoxFrameCount)
-                return true;
+            bool releaseOnExit = true;
+            try
+            {
+                if (!vault.IsCompactionFenceActive && blackBox.IsCreated && blackBox.Length >= BlackBoxFrameCount)
+                {
+                    releaseOnExit = false;
+                    return true;
+                }
 
-            vault.ReleaseWriteLock(in _blackBoxHandle, VaultOwnerSystemId);
-            blackBox = default;
-            return false;
+                return false;
+            }
+            finally
+            {
+                if (releaseOnExit)
+                {
+                    vault.ReleaseWriteLock(in _blackBoxHandle, VaultOwnerSystemId);
+                    blackBox = default;
+                }
+            }
         }
 
         private void ReleaseBlackBoxWriteBuffer()

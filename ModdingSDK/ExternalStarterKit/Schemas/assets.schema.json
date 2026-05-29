@@ -9,14 +9,17 @@
     "Schema": { "const": "hecton8.assets.draft.v1" },
     "Assets": {
       "type": "array",
+      "maxItems": 512,
       "items": {
         "type": "object",
-        "additionalProperties": true,
+        "additionalProperties": false,
+        "required": ["Id", "Kind", "Path", "Crc32", "Bytes"],
         "properties": {
           "Id": { "type": "string", "pattern": "^[a-z0-9]+([._-][a-z0-9]+)*$" },
-          "Path": { "type": "string" },
-          "Kind": { "type": "string" },
-          "Crc32": { "type": "string", "pattern": "^[0-9A-Fa-f]{8}$" }
+          "Kind": { "type": "string", "enum": ["raw_texture", "audio_clip", "data_blob"] },
+          "Path": { "type": "string", "pattern": "^Content/Assets/[^.].*$" },
+          "Crc32": { "type": "string", "pattern": "^[0-9A-Fa-f]{8}$" },
+          "Bytes": { "type": "integer", "minimum": 0, "maximum": 4194304 }
         }
       }
     }

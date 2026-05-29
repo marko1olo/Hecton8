@@ -62,10 +62,9 @@ public class CandiceAIPlayerController : MonoBehaviour
         }        
 
         //get attached camera if any
-        playerCamera = playerCameraParent.transform.Find("PlayerCamera");
-        if (playerCamera == null) {
-            //if none attached, set whatever camera is set as Main
-            playerCamera = Camera.main.transform;
+        if (playerCameraParent != null)
+        {
+            playerCamera = playerCameraParent.Find("PlayerCamera");
         }
         //if player camera is not null (if attached)
         if (playerCameraParent != null) {
@@ -87,7 +86,7 @@ public class CandiceAIPlayerController : MonoBehaviour
         //Late update for mecha only currently
         //MechaOnly();       
         //camera rotation on lateUpdate
-        if (canRotateCamera) {
+        if (canRotateCamera && playerCamera != null) {
             if (Input.GetButton("Rotate Camera"))
             {
                 if (rotateVelocity == 0.0f) {
@@ -116,8 +115,7 @@ public class CandiceAIPlayerController : MonoBehaviour
 
         if (playerCamera == null)
         {
-            //if none attached, set whatever camera is set as Main
-            playerCamera = Camera.main.transform;
+            return;
         }
 
         if (characterController.isGrounded)

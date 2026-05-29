@@ -63,6 +63,10 @@ namespace Hecton8.SaveSystem
         private const int NativeUnixOpenCreate = 0x0040;
         private const int NativeUnixOpenTruncate = 0x0200;
 #endif
+        private unsafe struct NativeUnixPathBuffer
+        {
+            public fixed byte Bytes[NativeUnixPathCapacity];
+        }
 #endif
 
         private static readonly object s_flushLock = new object();
@@ -85,7 +89,7 @@ namespace Hecton8.SaveSystem
         private static int s_readPrefetchWorkerStarted;
 #if UNITY_STANDALONE_LINUX || UNITY_EDITOR_LINUX || UNITY_STANDALONE_OSX || UNITY_EDITOR_OSX || UNITY_ANDROID
         private static readonly object s_nativeUnixPathLock = new object();
-        private static readonly byte[] s_nativeUnixPathUtf8 = new byte[NativeUnixPathCapacity];
+        private static NativeUnixPathBuffer s_nativeUnixPathUtf8;
 #endif
 
         private struct DiskFlushRequest
@@ -1046,14 +1050,14 @@ namespace Hecton8.SaveSystem
             int fd = -1;
             lock (s_nativeUnixPathLock)
             {
-                if (!TryEncodePathUtf8(absolutePath, s_nativeUnixPathUtf8, out _))
+                fixed (byte* path = s_nativeUnixPathUtf8.Bytes)
                 {
-                    error = "Native write path encoding failed.";
-                    return false;
-                }
+                    if (!TryEncodePathUtf8(absolutePath, path, NativeUnixPathCapacity, out _))
+                    {
+                        error = "Native write path encoding failed.";
+                        return false;
+                    }
 
-                fixed (byte* path = s_nativeUnixPathUtf8)
-                {
                     int flags = NativeUnixOpenWriteOnly;
                     if (createAlways)
                         flags |= NativeUnixOpenCreate | NativeUnixOpenTruncate;
@@ -1147,11 +1151,11 @@ namespace Hecton8.SaveSystem
             int fd = -1;
             lock (s_nativeUnixPathLock)
             {
-                if (!TryEncodePathUtf8(absolutePath, s_nativeUnixPathUtf8, out _))
-                    return false;
-
-                fixed (byte* path = s_nativeUnixPathUtf8)
+                fixed (byte* path = s_nativeUnixPathUtf8.Bytes)
                 {
+                    if (!TryEncodePathUtf8(absolutePath, path, NativeUnixPathCapacity, out _))
+                        return false;
+
                     fd = OpenUnix(path, NativeUnixOpenWriteOnly);
                 }
             }
@@ -1235,14 +1239,14 @@ namespace Hecton8.SaveSystem
             int fd = -1;
             lock (s_nativeUnixPathLock)
             {
-                if (!TryEncodePathUtf8(absolutePath, s_nativeUnixPathUtf8, out _))
+                fixed (byte* path = s_nativeUnixPathUtf8.Bytes)
                 {
-                    error = "Native file range read path encoding failed.";
-                    return false;
-                }
+                    if (!TryEncodePathUtf8(absolutePath, path, NativeUnixPathCapacity, out _))
+                    {
+                        error = "Native file range read path encoding failed.";
+                        return false;
+                    }
 
-                fixed (byte* path = s_nativeUnixPathUtf8)
-                {
                     fd = OpenUnix(path, NativeUnixOpenReadOnly);
                 }
             }
@@ -1376,14 +1380,14 @@ namespace Hecton8.SaveSystem
             error = string.Empty;
             lock (s_nativeUnixPathLock)
             {
-                if (!TryEncodePathUtf8(absolutePath, s_nativeUnixPathUtf8, out _))
+                fixed (byte* path = s_nativeUnixPathUtf8.Bytes)
                 {
-                    error = "Native file length path encoding failed.";
-                    return false;
-                }
+                    if (!TryEncodePathUtf8(absolutePath, path, NativeUnixPathCapacity, out _))
+                    {
+                        error = "Native file length path encoding failed.";
+                        return false;
+                    }
 
-                fixed (byte* path = s_nativeUnixPathUtf8)
-                {
                     int fd = OpenUnix(path, NativeUnixOpenReadOnly);
                     if (fd < 0)
                     {
@@ -1411,10 +1415,10 @@ namespace Hecton8.SaveSystem
             }
         }
 
-        private static bool TryEncodePathUtf8(string source, byte[] destination, out int byteCount)
+        private static bool TryEncodePathUtf8(string source, byte* destination, int destinationCapacity, out int byteCount)
         {
             byteCount = 0;
-            if (string.IsNullOrEmpty(source) || destination == null)
+            if (string.IsNullOrEmpty(source) || destination == null || destinationCapacity <= 0)
                 return false;
 
             for (int i = 0; i < source.Length; i++)
@@ -1434,14 +1438,14 @@ namespace Hecton8.SaveSystem
 
                 if (code <= 0x7F)
                 {
-                    if (byteCount + 1 >= destination.Length)
+                    if (byteCount + 1 >= destinationCapacity)
                         return false;
 
                     destination[byteCount++] = (byte)code;
                 }
                 else if (code <= 0x7FF)
                 {
-                    if (byteCount + 2 >= destination.Length)
+                    if (byteCount + 2 >= destinationCapacity)
                         return false;
 
                     destination[byteCount++] = (byte)(0xC0 | (code >> 6));
@@ -1449,7 +1453,7 @@ namespace Hecton8.SaveSystem
                 }
                 else if (code <= 0xFFFF)
                 {
-                    if (byteCount + 3 >= destination.Length)
+                    if (byteCount + 3 >= destinationCapacity)
                         return false;
 
                     destination[byteCount++] = (byte)(0xE0 | (code >> 12));
@@ -1458,7 +1462,7 @@ namespace Hecton8.SaveSystem
                 }
                 else
                 {
-                    if (byteCount + 4 >= destination.Length)
+                    if (byteCount + 4 >= destinationCapacity)
                         return false;
 
                     destination[byteCount++] = (byte)(0xF0 | (code >> 18));
@@ -1569,14 +1573,14 @@ namespace Hecton8.SaveSystem
 #elif UNITY_STANDALONE_LINUX || UNITY_EDITOR_LINUX || UNITY_STANDALONE_OSX || UNITY_EDITOR_OSX || UNITY_ANDROID
             lock (s_nativeUnixPathLock)
             {
-                if (!TryEncodePathUtf8(absolutePath, s_nativeUnixPathUtf8, out _))
+                fixed (byte* path = s_nativeUnixPathUtf8.Bytes)
                 {
-                    error = "Native read path encoding failed.";
-                    return false;
-                }
+                    if (!TryEncodePathUtf8(absolutePath, path, NativeUnixPathCapacity, out _))
+                    {
+                        error = "Native read path encoding failed.";
+                        return false;
+                    }
 
-                fixed (byte* path = s_nativeUnixPathUtf8)
-                {
                     int fd = OpenUnix(path, NativeUnixOpenReadOnly);
                     if (fd < 0)
                     {
@@ -1852,7 +1856,7 @@ namespace Hecton8.SaveSystem
         private const ulong ModPayloadSectorMask = 0xFFFF000000000000UL;
         private const int ProtectedLz4BlockSizeShift = 14;
         private const int ProtectedLz4BlockSizeMask = ModPayloadSubBlockSizeBytes - 1;
-        private const int ManagedCompressionScratchBytes = 64 * 1024;
+        private const int ManagedCompressionStackScratchBytes = 16 * 1024;
         internal const int IndexedSectorQuarantineHashCapacity = 16;
         private const string Lz4DllName = "liblz4";
         private const string NativeMemoryOwner = nameof(SaveBinaryStorage);
@@ -1888,8 +1892,6 @@ namespace Hecton8.SaveSystem
         private static readonly object s_indexedSectorQuarantineLock = new object();
         // COLD ALLOC: object[1] - serialized managed compression fallback scratch guard - owner: SaveBinaryStorage
         private static readonly object s_managedCompressionLock = new object();
-        // COLD ALLOC: byte[65536] - managed Deflate fallback stream copy scratch for non-Windows builds without liblz4 - owner: SaveBinaryStorage
-        private static readonly byte[] s_managedCompressionScratch = new byte[ManagedCompressionScratchBytes];
         private static int s_indexedSectorQuarantineHashCount;
         private static readonly uint _indexedSectorQuarantineWarningHash = unchecked((uint)Hecton.Localization.LocHash.Compute("Save.IndexedSectorQuarantine"));
         private static int s_lastReadErrorCode;
@@ -7696,7 +7698,7 @@ namespace Hecton8.SaveSystem
                     return 0;
                 }
 
-                int encodedBlockCompressedLength = EncodeCompressedBlockLength(blockCompressedLength, usedManagedFallback: false);
+                int encodedBlockCompressedLength = EncodeCompressedBlockLength(blockCompressedLength);
                 if (encodedBlockCompressedLength == 0)
                     return 0;
 
@@ -7737,13 +7739,12 @@ namespace Hecton8.SaveSystem
                         rawBlockLength,
                         blockDestination,
                         blockDestinationCapacity,
-                        out int blockCompressedLength,
-                        out bool usedManagedFallback))
+                        out int blockCompressedLength))
                 {
                     return 0;
                 }
 
-                int encodedBlockCompressedLength = EncodeCompressedBlockLength(blockCompressedLength, usedManagedFallback);
+                int encodedBlockCompressedLength = EncodeCompressedBlockLength(blockCompressedLength);
                 if (encodedBlockCompressedLength == 0)
                     return 0;
 
@@ -7794,13 +7795,12 @@ namespace Hecton8.SaveSystem
                         rawBlockLength,
                         blockDestination,
                         blockDestinationCapacity,
-                        out int blockCompressedLength,
-                        out bool usedManagedFallback))
+                        out int blockCompressedLength))
                 {
                     return 0;
                 }
 
-                int encodedBlockCompressedLength = EncodeCompressedBlockLength(blockCompressedLength, usedManagedFallback);
+                int encodedBlockCompressedLength = EncodeCompressedBlockLength(blockCompressedLength);
                 if (encodedBlockCompressedLength == 0)
                     return 0;
 
@@ -9662,11 +9662,9 @@ namespace Hecton8.SaveSystem
             int sourceLength,
             byte* destination,
             int destinationCapacity,
-            out int compressedLength,
-            out bool usedManagedFallback)
+            out int compressedLength)
         {
             compressedLength = 0;
-            usedManagedFallback = false;
             if (source == null || destination == null || sourceLength <= 0 || destinationCapacity <= 0)
                 return false;
 
@@ -9687,9 +9685,7 @@ namespace Hecton8.SaveSystem
                 }
             }
 
-            compressedLength = DeflateBlockCompressManaged(source, sourceLength, destination, destinationCapacity);
-            usedManagedFallback = compressedLength > 0;
-            return compressedLength > 0;
+            return false;
         }
 
         private static bool TryCompressBlockNativeOnly(
@@ -9739,18 +9735,19 @@ namespace Hecton8.SaveSystem
                 }
             }
 
+            if (!forceManagedDeflate)
+                return false;
+
             actualLength = DeflateBlockDecompressManaged(source, compressedLength, destination, rawLength);
             return actualLength == rawLength;
         }
 
-        private static int EncodeCompressedBlockLength(int compressedLength, bool usedManagedFallback)
+        private static int EncodeCompressedBlockLength(int compressedLength)
         {
             if (compressedLength <= 0 || compressedLength > CompressedBlockLengthMask)
                 return 0;
 
-            return usedManagedFallback
-                ? compressedLength | ManagedDeflateBlockLengthFlag
-                : compressedLength;
+            return compressedLength;
         }
 
         private static int DecodeCompressedBlockLength(int encodedCompressedLength)
@@ -9761,51 +9758,6 @@ namespace Hecton8.SaveSystem
         private static bool IsManagedDeflateBlock(int encodedCompressedLength)
         {
             return (encodedCompressedLength & ManagedDeflateBlockLengthFlag) != 0;
-        }
-
-        private static int DeflateBlockCompressManaged(
-            byte* source,
-            int sourceLength,
-            byte* destination,
-            int destinationCapacity)
-        {
-            try
-            {
-                lock (s_managedCompressionLock)
-                {
-                    using (UnmanagedMemoryStream input = new UnmanagedMemoryStream(source, sourceLength))
-                    using (UnmanagedMemoryStream output = new UnmanagedMemoryStream(destination, destinationCapacity, destinationCapacity, FileAccess.Write))
-                    {
-                        using (DeflateStream deflate = new DeflateStream(output, System.IO.Compression.CompressionLevel.Fastest, true))
-                        {
-                            CopyStreamWithManagedCompressionScratch(input, deflate);
-                        }
-
-                        long written = output.Position;
-                        return written > 0L && written <= destinationCapacity ? (int)written : 0;
-                    }
-                }
-            }
-            catch (InvalidDataException)
-            {
-                return 0;
-            }
-            catch (IOException)
-            {
-                return 0;
-            }
-            catch (ArgumentException)
-            {
-                return 0;
-            }
-            catch (NotSupportedException)
-            {
-                return 0;
-            }
-            catch (ObjectDisposedException)
-            {
-                return 0;
-            }
         }
 
         private static int DeflateBlockDecompressManaged(
@@ -9852,10 +9804,10 @@ namespace Hecton8.SaveSystem
 
         private static void CopyStreamWithManagedCompressionScratch(Stream source, Stream destination)
         {
-            byte[] scratch = s_managedCompressionScratch;
+            Span<byte> scratch = stackalloc byte[ManagedCompressionStackScratchBytes];
             int bytesRead;
-            while ((bytesRead = source.Read(scratch, 0, scratch.Length)) > 0)
-                destination.Write(scratch, 0, bytesRead);
+            while ((bytesRead = source.Read(scratch)) > 0)
+                destination.Write(scratch.Slice(0, bytesRead));
         }
 
         [DllImport(Lz4DllName, EntryPoint = "LZ4_compress_default")]

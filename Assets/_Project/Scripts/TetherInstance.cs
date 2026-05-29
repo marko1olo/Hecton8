@@ -114,6 +114,36 @@ namespace Hecton8.Physics
         private const uint TetherTelemetryFailureLength = 3u;
         private const uint TetherTelemetryFailureState = 4u;
         private const int TetherTelemetryFailureDumpThreshold = 3;
+        private const ulong VisualFallbackMutationGuardMask =
+            (1UL << (((int)BufferID.TetherVisualSegmentPositions) & 31)) |
+            (1UL << (((int)BufferID.TetherVisualAnchorPositions) & 31)) |
+            (1UL << (((int)BufferID.TetherVisualSegmentLengths) & 31));
+        private const ulong CableStateMutationGuardMask =
+            (1UL << (((int)BufferID.TetherCablePositions) & 31)) |
+            (1UL << (((int)BufferID.TetherCablePreviousPositions) & 31)) |
+            (1UL << (((int)BufferID.TetherCableVelocities) & 31)) |
+            (1UL << (((int)BufferID.TetherCableMasses) & 31)) |
+            (1UL << (((int)BufferID.TetherCableSegmentTensions) & 31)) |
+            (1UL << (((int)BufferID.VerletCableTensionForces) & 31));
+        private const ulong TelemetryMutationGuardMask =
+            (1UL << (((int)BufferID.TetherCableBlackBox) & 31)) |
+            (1UL << (((int)BufferID.TetherCableBlackBoxHead) & 31));
+        private const ulong VerletBootstrapMutationGuardMask =
+            (1UL << (((int)BufferID.TetherVerletPositions) & 31)) |
+            (1UL << (((int)BufferID.TetherVerletPreviousPositions) & 31)) |
+            (1UL << (((int)BufferID.TetherVerletVelocities) & 31)) |
+            (1UL << (((int)BufferID.TetherVerletPinnedPositions) & 31)) |
+            (1UL << (((int)BufferID.TetherVerletPinnedMask) & 31)) |
+            (1UL << (((int)BufferID.TetherVerletSegmentRestLengths) & 31)) |
+            (1UL << (((int)BufferID.TetherVerletSegmentTensions) & 31)) |
+            (1UL << (((int)BufferID.TetherVerletSolverStats) & 31)) |
+            (1UL << (((int)BufferID.TetherVerletSolverFlags) & 31)) |
+            (1UL << (((int)BufferID.TetherVerletNodeFaultFlags) & 31));
+        private const ulong VerletSolveMutationGuardMask =
+            VerletBootstrapMutationGuardMask |
+            (1UL << (((int)BufferID.TetherVerletCorrections) & 31)) |
+            (1UL << (((int)BufferID.TetherVerletCorrectionWeights) & 31)) |
+            TelemetryMutationGuardMask;
 
         private static long s_dataVaultSlotReservationMask;
 
@@ -315,6 +345,8 @@ namespace Hecton8.Physics
         private HectonQualityTier _qualityTier = HectonQualityTier.Unknown;
         private JobHandle _pendingVerletSolveHandle;
         private bool _pendingVerletSolveActive;
+        private IDataVault _pendingVerletSolveGuardVault;
+        private bool _pendingVerletSolveGuardHeld;
         private Vector3 _pendingVerletAnchorPosition;
         private Vector3 _pendingVerletPayloadPosition;
         private float _pendingVerletFixedDeltaTime;
@@ -652,40 +684,53 @@ namespace Hecton8.Physics
                 return;
             }
 
-            bool visualPositionsLocked = false;
-            bool visualAnchorsLocked = false;
-            bool visualLengthsLocked = false;
+            bool visualGuardHeld = false;
+            IDataVault visualGuardVault = null;
             try
             {
-                visualPositionsLocked = TryAcquireDataVaultCableSlice(
+                visualGuardVault = _dataVault;
+                if (visualGuardVault == null ||
+                    !visualGuardVault.TryAcquireMutationGuard(VisualFallbackMutationGuardMask))
+                {
+                    RecordVaultAccessFailure(BufferID.TetherVisualSegmentPositions, in _visualSegmentPositionsHandle, TetherTelemetryFailureLock, 0u);
+                    RecordVaultAccessFailure(BufferID.TetherVisualAnchorPositions, in _visualAnchorPositionsHandle, TetherTelemetryFailureLock, 0u);
+                    RecordVaultAccessFailure(BufferID.TetherVisualSegmentLengths, in _visualSegmentLengthsHandle, TetherTelemetryFailureLock, 0u);
+                    return;
+                }
+
+                visualGuardHeld = true;
+                bool visualPositionsResolved = TryResolveDataVaultCableSlice(
+                    visualGuardVault,
                     in _visualSegmentPositionsHandle,
                     BufferID.TetherVisualSegmentPositions,
                     DataVaultScratchNodeCapacity,
                     _dataVaultSlot * DataVaultCablePointCount,
                     nodeCount,
                     out NativeArray<float3> _visualSegmentPositions);
-                visualAnchorsLocked = TryAcquireDataVaultCableSlice(
+                bool visualAnchorsResolved = TryResolveDataVaultCableSlice(
+                    visualGuardVault,
                     in _visualAnchorPositionsHandle,
                     BufferID.TetherVisualAnchorPositions,
                     DataVaultVisualAnchorCapacity,
                     _dataVaultSlot * MaxAnchors,
                     MaxAnchors,
                     out NativeArray<float3> _visualAnchorPositions);
-                visualLengthsLocked = TryAcquireDataVaultCableSlice(
+                bool visualLengthsResolved = TryResolveDataVaultCableSlice(
+                    visualGuardVault,
                     in _visualSegmentLengthsHandle,
                     BufferID.TetherVisualSegmentLengths,
                     DataVaultVisualSegmentLengthCapacity,
                     _dataVaultSlot * MaxSegments,
                     MaxSegments,
                     out NativeArray<float> _visualSegmentLengths);
-                if (!visualPositionsLocked || !visualAnchorsLocked || !visualLengthsLocked)
+                if (!visualPositionsResolved || !visualAnchorsResolved || !visualLengthsResolved)
                 {
-                    if (!visualPositionsLocked)
-                        RecordVaultAccessFailure(BufferID.TetherVisualSegmentPositions, in _visualSegmentPositionsHandle, TetherTelemetryFailureLock, 0u);
-                    if (!visualAnchorsLocked)
-                        RecordVaultAccessFailure(BufferID.TetherVisualAnchorPositions, in _visualAnchorPositionsHandle, TetherTelemetryFailureLock, 0u);
-                    if (!visualLengthsLocked)
-                        RecordVaultAccessFailure(BufferID.TetherVisualSegmentLengths, in _visualSegmentLengthsHandle, TetherTelemetryFailureLock, 0u);
+                    if (!visualPositionsResolved)
+                        RecordVaultAccessFailure(BufferID.TetherVisualSegmentPositions, in _visualSegmentPositionsHandle, TetherTelemetryFailureResolve, 0u);
+                    if (!visualAnchorsResolved)
+                        RecordVaultAccessFailure(BufferID.TetherVisualAnchorPositions, in _visualAnchorPositionsHandle, TetherTelemetryFailureResolve, 0u);
+                    if (!visualLengthsResolved)
+                        RecordVaultAccessFailure(BufferID.TetherVisualSegmentLengths, in _visualSegmentLengthsHandle, TetherTelemetryFailureResolve, 0u);
                     return;
                 }
 
@@ -731,12 +776,8 @@ namespace Hecton8.Physics
             }
             finally
             {
-                if (visualLengthsLocked)
-                    ReleaseDataVaultCableWriteLock(in _visualSegmentLengthsHandle, BufferID.TetherVisualSegmentLengths);
-                if (visualAnchorsLocked)
-                    ReleaseDataVaultCableWriteLock(in _visualAnchorPositionsHandle, BufferID.TetherVisualAnchorPositions);
-                if (visualPositionsLocked)
-                    ReleaseDataVaultCableWriteLock(in _visualSegmentPositionsHandle, BufferID.TetherVisualSegmentPositions);
+                if (visualGuardHeld && visualGuardVault != null)
+                    visualGuardVault.ReleaseMutationGuard(VisualFallbackMutationGuardMask);
             }
         }
 
@@ -1186,84 +1227,93 @@ namespace Hecton8.Physics
             int nodeOffset = _dataVaultSlot * DataVaultCablePointCount;
             int segmentOffset = _dataVaultSlot * DataVaultCableSegmentCount;
             int scalarOffset = _dataVaultSlot;
-            bool positionsLocked = false;
-            bool previousLocked = false;
-            bool velocitiesLocked = false;
-            bool pinnedPositionsLocked = false;
-            bool pinnedMaskLocked = false;
-            bool nodeFaultFlagsLocked = false;
-            bool restLengthsLocked = false;
-            bool segmentTensionsLocked = false;
-            bool solverStatsLocked = false;
-            bool solverFlagsLocked = false;
-            bool telemetryHeadLocked = false;
+            bool verletBootstrapGuardHeld = false;
+            IDataVault verletBootstrapGuardVault = null;
 
             try
             {
-                positionsLocked = TryAcquireDataVaultCableSlice(
+                verletBootstrapGuardVault = _dataVault;
+                if (verletBootstrapGuardVault == null ||
+                    !verletBootstrapGuardVault.TryAcquireMutationGuard(VerletBootstrapMutationGuardMask))
+                {
+                    return;
+                }
+
+                verletBootstrapGuardHeld = true;
+                bool positionsResolved = TryResolveDataVaultCableSlice(
+                    verletBootstrapGuardVault,
                     in _verletPositionsHandle,
                     BufferID.TetherVerletPositions,
                     DataVaultScratchNodeCapacity,
                     nodeOffset,
                     nodeCount,
                     out NativeArray<float3> _verletPositions);
-                previousLocked = TryAcquireDataVaultCableSlice(
+                bool previousResolved = TryResolveDataVaultCableSlice(
+                    verletBootstrapGuardVault,
                     in _verletPreviousPositionsHandle,
                     BufferID.TetherVerletPreviousPositions,
                     DataVaultScratchNodeCapacity,
                     nodeOffset,
                     nodeCount,
                     out NativeArray<float3> _verletPreviousPositions);
-                velocitiesLocked = TryAcquireDataVaultCableSlice(
+                bool velocitiesResolved = TryResolveDataVaultCableSlice(
+                    verletBootstrapGuardVault,
                     in _verletVelocitiesHandle,
                     BufferID.TetherVerletVelocities,
                     DataVaultScratchNodeCapacity,
                     nodeOffset,
                     nodeCount,
                     out NativeArray<float3> _verletVelocities);
-                pinnedPositionsLocked = TryAcquireDataVaultCableSlice(
+                bool pinnedPositionsResolved = TryResolveDataVaultCableSlice(
+                    verletBootstrapGuardVault,
                     in _verletPinnedPositionsHandle,
                     BufferID.TetherVerletPinnedPositions,
                     DataVaultScratchNodeCapacity,
                     nodeOffset,
                     nodeCount,
                     out NativeArray<float3> _verletPinnedPositions);
-                pinnedMaskLocked = TryAcquireDataVaultCableSlice(
+                bool pinnedMaskResolved = TryResolveDataVaultCableSlice(
+                    verletBootstrapGuardVault,
                     in _verletPinnedMaskHandle,
                     BufferID.TetherVerletPinnedMask,
                     DataVaultScratchNodeCapacity,
                     nodeOffset,
                     nodeCount,
                     out NativeArray<byte> _verletPinnedMask);
-                nodeFaultFlagsLocked = TryAcquireDataVaultCableSlice(
+                bool nodeFaultFlagsResolved = TryResolveDataVaultCableSlice(
+                    verletBootstrapGuardVault,
                     in _verletNodeFaultFlagsHandle,
                     BufferID.TetherVerletNodeFaultFlags,
                     DataVaultScratchNodeCapacity,
                     nodeOffset,
                     nodeCount,
                     out NativeArray<byte> _verletNodeFaultFlags);
-                restLengthsLocked = TryAcquireDataVaultCableSlice(
+                bool restLengthsResolved = TryResolveDataVaultCableSlice(
+                    verletBootstrapGuardVault,
                     in _verletSegmentRestLengthsHandle,
                     BufferID.TetherVerletSegmentRestLengths,
                     DataVaultScratchSegmentCapacity,
                     segmentOffset,
                     segmentCount,
                     out NativeArray<float> _verletSegmentRestLengths);
-                segmentTensionsLocked = TryAcquireDataVaultCableSlice(
+                bool segmentTensionsResolved = TryResolveDataVaultCableSlice(
+                    verletBootstrapGuardVault,
                     in _verletSegmentTensionsHandle,
                     BufferID.TetherVerletSegmentTensions,
                     DataVaultScratchSegmentCapacity,
                     segmentOffset,
                     segmentCount,
                     out NativeArray<float> _verletSegmentTensions);
-                solverStatsLocked = TryAcquireDataVaultCableSlice(
+                bool solverStatsResolved = TryResolveDataVaultCableSlice(
+                    verletBootstrapGuardVault,
                     in _verletSolverStatsHandle,
                     BufferID.TetherVerletSolverStats,
                     DataVaultScratchScalarCapacity,
                     scalarOffset,
                     1,
                     out NativeArray<float> _verletSolverStats);
-                solverFlagsLocked = TryAcquireDataVaultCableSlice(
+                bool solverFlagsResolved = TryResolveDataVaultCableSlice(
+                    verletBootstrapGuardVault,
                     in _verletSolverFlagsHandle,
                     BufferID.TetherVerletSolverFlags,
                     DataVaultScratchScalarCapacity,
@@ -1271,16 +1321,16 @@ namespace Hecton8.Physics
                     1,
                     out NativeArray<int> _verletSolverFlags);
 
-                if (!positionsLocked ||
-                    !previousLocked ||
-                    !velocitiesLocked ||
-                    !pinnedPositionsLocked ||
-                    !pinnedMaskLocked ||
-                    !nodeFaultFlagsLocked ||
-                    !restLengthsLocked ||
-                    !segmentTensionsLocked ||
-                    !solverStatsLocked ||
-                    !solverFlagsLocked ||
+                if (!positionsResolved ||
+                    !previousResolved ||
+                    !velocitiesResolved ||
+                    !pinnedPositionsResolved ||
+                    !pinnedMaskResolved ||
+                    !nodeFaultFlagsResolved ||
+                    !restLengthsResolved ||
+                    !segmentTensionsResolved ||
+                    !solverStatsResolved ||
+                    !solverFlagsResolved ||
                     _verletPositions.Length < 2)
                 {
                     return;
@@ -1320,44 +1370,35 @@ namespace Hecton8.Physics
 
                 _verletSolverStats[0] = 0f;
                 _verletSolverFlags[0] = TetherVerletFaultFlags.None;
-                ClearDataVaultTelemetrySlot();
-                int telemetryHeadIndex = ResolveTelemetryHeadIndex();
-                telemetryHeadLocked = TryAcquireDataVaultCableSlice(
-                    in _verletTelemetryHeadHandle,
-                    BufferID.TetherCableBlackBoxHead,
-                    DataVaultTelemetryHeadCapacity,
-                    telemetryHeadIndex,
-                    1,
-                    out NativeArray<int> _verletTelemetryHead);
-                if (telemetryHeadLocked)
-                    _verletTelemetryHead[0] = 0;
-                _verletRuntimeInitialized = true;
             }
             finally
             {
-                if (telemetryHeadLocked)
-                    ReleaseDataVaultCableWriteLock(in _verletTelemetryHeadHandle, BufferID.TetherCableBlackBoxHead);
-                if (solverFlagsLocked)
-                    ReleaseDataVaultCableWriteLock(in _verletSolverFlagsHandle, BufferID.TetherVerletSolverFlags);
-                if (solverStatsLocked)
-                    ReleaseDataVaultCableWriteLock(in _verletSolverStatsHandle, BufferID.TetherVerletSolverStats);
-                if (segmentTensionsLocked)
-                    ReleaseDataVaultCableWriteLock(in _verletSegmentTensionsHandle, BufferID.TetherVerletSegmentTensions);
-                if (restLengthsLocked)
-                    ReleaseDataVaultCableWriteLock(in _verletSegmentRestLengthsHandle, BufferID.TetherVerletSegmentRestLengths);
-                if (nodeFaultFlagsLocked)
-                    ReleaseDataVaultCableWriteLock(in _verletNodeFaultFlagsHandle, BufferID.TetherVerletNodeFaultFlags);
-                if (pinnedMaskLocked)
-                    ReleaseDataVaultCableWriteLock(in _verletPinnedMaskHandle, BufferID.TetherVerletPinnedMask);
-                if (pinnedPositionsLocked)
-                    ReleaseDataVaultCableWriteLock(in _verletPinnedPositionsHandle, BufferID.TetherVerletPinnedPositions);
-                if (velocitiesLocked)
-                    ReleaseDataVaultCableWriteLock(in _verletVelocitiesHandle, BufferID.TetherVerletVelocities);
-                if (previousLocked)
-                    ReleaseDataVaultCableWriteLock(in _verletPreviousPositionsHandle, BufferID.TetherVerletPreviousPositions);
-                if (positionsLocked)
-                    ReleaseDataVaultCableWriteLock(in _verletPositionsHandle, BufferID.TetherVerletPositions);
+                if (verletBootstrapGuardHeld && verletBootstrapGuardVault != null)
+                    verletBootstrapGuardVault.ReleaseMutationGuard(VerletBootstrapMutationGuardMask);
             }
+
+            ClearDataVaultTelemetrySlot();
+            int telemetryHeadIndex = ResolveTelemetryHeadIndex();
+            bool telemetryHeadLocked = TryAcquireDataVaultCableSlice(
+                in _verletTelemetryHeadHandle,
+                BufferID.TetherCableBlackBoxHead,
+                DataVaultTelemetryHeadCapacity,
+                telemetryHeadIndex,
+                1,
+                out NativeArray<int> _verletTelemetryHead);
+            if (telemetryHeadLocked)
+            {
+                try
+                {
+                    _verletTelemetryHead[0] = 0;
+                }
+                finally
+                {
+                    ReleaseDataVaultCableWriteLock(in _verletTelemetryHeadHandle, BufferID.TetherCableBlackBoxHead);
+                }
+            }
+
+            _verletRuntimeInitialized = true;
         }
 
         private void RebaseVerletSolverOrigin(
@@ -1761,8 +1802,18 @@ namespace Hecton8.Physics
             out NativeArray<T> buffer)
             where T : struct
         {
+            return TryResolveDataVaultCableArray(_dataVault, in handle, bufferId, requiredLength, out buffer);
+        }
+
+        private static bool TryResolveDataVaultCableArray<T>(
+            IDataVault vault,
+            in VaultGenerationHandle<T> handle,
+            BufferID bufferId,
+            int requiredLength,
+            out NativeArray<T> buffer)
+            where T : struct
+        {
             buffer = default;
-            IDataVault vault = _dataVault;
             return vault != null &&
                    requiredLength > 0 &&
                    IsDataVaultCableHandle(in handle, bufferId) &&
@@ -1780,6 +1831,19 @@ namespace Hecton8.Physics
             out NativeArray<T> slice)
             where T : struct
         {
+            return TryResolveDataVaultCableSlice(_dataVault, in handle, bufferId, totalLength, offset, length, out slice);
+        }
+
+        private static bool TryResolveDataVaultCableSlice<T>(
+            IDataVault vault,
+            in VaultGenerationHandle<T> handle,
+            BufferID bufferId,
+            int totalLength,
+            int offset,
+            int length,
+            out NativeArray<T> slice)
+            where T : struct
+        {
             slice = default;
             if (totalLength <= 0 ||
                 offset < 0 ||
@@ -1788,7 +1852,7 @@ namespace Hecton8.Physics
                 length > totalLength - offset)
                 return false;
 
-            if (!TryResolveDataVaultCableArray(in handle, bufferId, totalLength, out NativeArray<T> buffer) ||
+            if (!TryResolveDataVaultCableArray(vault, in handle, bufferId, totalLength, out NativeArray<T> buffer) ||
                 offset > buffer.Length ||
                 length > buffer.Length - offset)
             {
@@ -1942,21 +2006,29 @@ namespace Hecton8.Physics
             if (_dataVaultSlot < 0)
                 return false;
 
-            bool telemetryRingLocked = false;
-            bool telemetryHeadLocked = false;
+            bool telemetryGuardHeld = false;
+            IDataVault telemetryGuardVault = null;
             try
             {
-                telemetryRingLocked = TryAcquireDataVaultCableArray(
+                telemetryGuardVault = _dataVault;
+                if (telemetryGuardVault == null ||
+                    !telemetryGuardVault.TryAcquireMutationGuard(TelemetryMutationGuardMask))
+                    return false;
+
+                telemetryGuardHeld = true;
+                bool telemetryRingResolved = TryResolveDataVaultCableArray(
+                    telemetryGuardVault,
                     in _verletTelemetryRingHandle,
                     BufferID.TetherCableBlackBox,
                     DataVaultTelemetryCapacity,
                     out NativeArray<TetherVerletTelemetryEntry> telemetryRing);
-                telemetryHeadLocked = TryAcquireDataVaultCableArray(
+                bool telemetryHeadResolved = TryResolveDataVaultCableArray(
+                    telemetryGuardVault,
                     in _verletTelemetryHeadHandle,
                     BufferID.TetherCableBlackBoxHead,
                     DataVaultTelemetryHeadCapacity,
                     out NativeArray<int> telemetryHead);
-                if (!telemetryRingLocked || !telemetryHeadLocked)
+                if (!telemetryRingResolved || !telemetryHeadResolved)
                     return false;
 
                 return TryWriteVaultFailureTelemetryDirect(
@@ -1970,10 +2042,8 @@ namespace Hecton8.Physics
             }
             finally
             {
-                if (telemetryHeadLocked)
-                    ReleaseDataVaultCableWriteLock(in _verletTelemetryHeadHandle, BufferID.TetherCableBlackBoxHead);
-                if (telemetryRingLocked)
-                    ReleaseDataVaultCableWriteLock(in _verletTelemetryRingHandle, BufferID.TetherCableBlackBox);
+                if (telemetryGuardHeld && telemetryGuardVault != null)
+                    telemetryGuardVault.ReleaseMutationGuard(TelemetryMutationGuardMask);
             }
         }
 
@@ -2471,47 +2541,56 @@ namespace Hecton8.Physics
                 return;
             }
 
-            bool positionsLocked = false;
-            bool previousLocked = false;
-            bool velocitiesLocked = false;
-            bool massesLocked = false;
-            bool segmentTensionsLocked = false;
-            bool tensionForcesLocked = false;
+            bool cableStateGuardHeld = false;
+            IDataVault cableStateGuardVault = null;
             bool clearAfterRelease = false;
 
             try
             {
-                positionsLocked = TryAcquireDataVaultCableArray(
+                cableStateGuardVault = _dataVault;
+                if (cableStateGuardVault == null ||
+                    !cableStateGuardVault.TryAcquireMutationGuard(CableStateMutationGuardMask))
+                {
+                    return;
+                }
+
+                cableStateGuardHeld = true;
+                bool positionsResolved = TryResolveDataVaultCableArray(
+                    cableStateGuardVault,
                     in _dataVaultCablePositionsHandle,
                     BufferID.TetherCablePositions,
                     DataVaultCablePointCapacity,
                     out NativeArray<float3> _dataVaultCablePositions);
-                previousLocked = TryAcquireDataVaultCableArray(
+                bool previousResolved = TryResolveDataVaultCableArray(
+                    cableStateGuardVault,
                     in _dataVaultCablePreviousPositionsHandle,
                     BufferID.TetherCablePreviousPositions,
                     DataVaultCablePointCapacity,
                     out NativeArray<float3> _dataVaultCablePreviousPositions);
-                velocitiesLocked = TryAcquireDataVaultCableArray(
+                bool velocitiesResolved = TryResolveDataVaultCableArray(
+                    cableStateGuardVault,
                     in _dataVaultCableVelocitiesHandle,
                     BufferID.TetherCableVelocities,
                     DataVaultCablePointCapacity,
                     out NativeArray<float3> _dataVaultCableVelocities);
-                massesLocked = TryAcquireDataVaultCableArray(
+                bool massesResolved = TryResolveDataVaultCableArray(
+                    cableStateGuardVault,
                     in _dataVaultCableMassesHandle,
                     BufferID.TetherCableMasses,
                     DataVaultCablePointCapacity,
                     out NativeArray<float> _dataVaultCableMasses);
-                segmentTensionsLocked = TryAcquireDataVaultCableArray(
+                bool segmentTensionsResolved = TryResolveDataVaultCableArray(
+                    cableStateGuardVault,
                     in _dataVaultCableSegmentTensionsHandle,
                     BufferID.TetherCableSegmentTensions,
                     DataVaultCableSegmentCapacity,
                     out NativeArray<float> _dataVaultCableSegmentTensions);
 
-                if (!positionsLocked ||
-                    !previousLocked ||
-                    !velocitiesLocked ||
-                    !massesLocked ||
-                    !segmentTensionsLocked)
+                if (!positionsResolved ||
+                    !previousResolved ||
+                    !velocitiesResolved ||
+                    !massesResolved ||
+                    !segmentTensionsResolved)
                 {
                     return;
                 }
@@ -2551,12 +2630,13 @@ namespace Hecton8.Physics
                     _dataVaultCableSegmentTensions[segmentOffset + i] = math.max(0f, stretch * math.max(0f, _springStiffness));
                 }
 
-                tensionForcesLocked = TryAcquireDataVaultCableArray(
+                bool tensionForcesResolved = TryResolveDataVaultCableArray(
+                    cableStateGuardVault,
                     in _verletTensionForcesHandle,
                     BufferID.VerletCableTensionForces,
                     DataVaultMaxTetherSlots,
                     out NativeArray<CableTensionForceDTO> _verletTensionForces);
-                if (tensionForcesLocked && (uint)_dataVaultSlot < (uint)_verletTensionForces.Length)
+                if (tensionForcesResolved && (uint)_dataVaultSlot < (uint)_verletTensionForces.Length)
                 {
                     float3 anchor = _verletSolverOrigin;
                     float3 payload = _verletSolverOrigin + SampleCanonicalCablePoint(_verletPositions, DataVaultCablePointCount - 1);
@@ -2578,18 +2658,8 @@ namespace Hecton8.Physics
             }
             finally
             {
-                if (tensionForcesLocked)
-                    ReleaseDataVaultCableWriteLock(in _verletTensionForcesHandle, BufferID.VerletCableTensionForces);
-                if (segmentTensionsLocked)
-                    ReleaseDataVaultCableWriteLock(in _dataVaultCableSegmentTensionsHandle, BufferID.TetherCableSegmentTensions);
-                if (massesLocked)
-                    ReleaseDataVaultCableWriteLock(in _dataVaultCableMassesHandle, BufferID.TetherCableMasses);
-                if (velocitiesLocked)
-                    ReleaseDataVaultCableWriteLock(in _dataVaultCableVelocitiesHandle, BufferID.TetherCableVelocities);
-                if (previousLocked)
-                    ReleaseDataVaultCableWriteLock(in _dataVaultCablePreviousPositionsHandle, BufferID.TetherCablePreviousPositions);
-                if (positionsLocked)
-                    ReleaseDataVaultCableWriteLock(in _dataVaultCablePositionsHandle, BufferID.TetherCablePositions);
+                if (cableStateGuardHeld && cableStateGuardVault != null)
+                    cableStateGuardVault.ReleaseMutationGuard(CableStateMutationGuardMask);
             }
 
             if (clearAfterRelease)
@@ -2649,46 +2719,55 @@ namespace Hecton8.Physics
             if (_dataVaultSlot < 0)
                 return;
 
-            bool positionsLocked = false;
-            bool previousLocked = false;
-            bool velocitiesLocked = false;
-            bool massesLocked = false;
-            bool segmentTensionsLocked = false;
-            bool tensionForcesLocked = false;
+            bool cableStateGuardHeld = false;
+            IDataVault cableStateGuardVault = null;
 
             try
             {
-                positionsLocked = TryAcquireDataVaultCableArray(
+                cableStateGuardVault = _dataVault;
+                if (cableStateGuardVault == null ||
+                    !cableStateGuardVault.TryAcquireMutationGuard(CableStateMutationGuardMask))
+                {
+                    return;
+                }
+
+                cableStateGuardHeld = true;
+                bool positionsResolved = TryResolveDataVaultCableArray(
+                    cableStateGuardVault,
                     in _dataVaultCablePositionsHandle,
                     BufferID.TetherCablePositions,
                     DataVaultCablePointCapacity,
                     out NativeArray<float3> _dataVaultCablePositions);
-                previousLocked = TryAcquireDataVaultCableArray(
+                bool previousResolved = TryResolveDataVaultCableArray(
+                    cableStateGuardVault,
                     in _dataVaultCablePreviousPositionsHandle,
                     BufferID.TetherCablePreviousPositions,
                     DataVaultCablePointCapacity,
                     out NativeArray<float3> _dataVaultCablePreviousPositions);
-                velocitiesLocked = TryAcquireDataVaultCableArray(
+                bool velocitiesResolved = TryResolveDataVaultCableArray(
+                    cableStateGuardVault,
                     in _dataVaultCableVelocitiesHandle,
                     BufferID.TetherCableVelocities,
                     DataVaultCablePointCapacity,
                     out NativeArray<float3> _dataVaultCableVelocities);
-                massesLocked = TryAcquireDataVaultCableArray(
+                bool massesResolved = TryResolveDataVaultCableArray(
+                    cableStateGuardVault,
                     in _dataVaultCableMassesHandle,
                     BufferID.TetherCableMasses,
                     DataVaultCablePointCapacity,
                     out NativeArray<float> _dataVaultCableMasses);
-                segmentTensionsLocked = TryAcquireDataVaultCableArray(
+                bool segmentTensionsResolved = TryResolveDataVaultCableArray(
+                    cableStateGuardVault,
                     in _dataVaultCableSegmentTensionsHandle,
                     BufferID.TetherCableSegmentTensions,
                     DataVaultCableSegmentCapacity,
                     out NativeArray<float> _dataVaultCableSegmentTensions);
 
-                if (!positionsLocked ||
-                    !previousLocked ||
-                    !velocitiesLocked ||
-                    !massesLocked ||
-                    !segmentTensionsLocked)
+                if (!positionsResolved ||
+                    !previousResolved ||
+                    !velocitiesResolved ||
+                    !massesResolved ||
+                    !segmentTensionsResolved)
                 {
                     return;
                 }
@@ -2713,28 +2792,19 @@ namespace Hecton8.Physics
                         _dataVaultCableSegmentTensions[segmentOffset + i] = 0f;
                 }
 
-                tensionForcesLocked = TryAcquireDataVaultCableArray(
+                bool tensionForcesResolved = TryResolveDataVaultCableArray(
+                    cableStateGuardVault,
                     in _verletTensionForcesHandle,
                     BufferID.VerletCableTensionForces,
                     DataVaultMaxTetherSlots,
                     out NativeArray<CableTensionForceDTO> _verletTensionForces);
-                if (tensionForcesLocked && (uint)_dataVaultSlot < (uint)_verletTensionForces.Length)
+                if (tensionForcesResolved && (uint)_dataVaultSlot < (uint)_verletTensionForces.Length)
                     _verletTensionForces[_dataVaultSlot] = default;
             }
             finally
             {
-                if (tensionForcesLocked)
-                    ReleaseDataVaultCableWriteLock(in _verletTensionForcesHandle, BufferID.VerletCableTensionForces);
-                if (segmentTensionsLocked)
-                    ReleaseDataVaultCableWriteLock(in _dataVaultCableSegmentTensionsHandle, BufferID.TetherCableSegmentTensions);
-                if (massesLocked)
-                    ReleaseDataVaultCableWriteLock(in _dataVaultCableMassesHandle, BufferID.TetherCableMasses);
-                if (velocitiesLocked)
-                    ReleaseDataVaultCableWriteLock(in _dataVaultCableVelocitiesHandle, BufferID.TetherCableVelocities);
-                if (previousLocked)
-                    ReleaseDataVaultCableWriteLock(in _dataVaultCablePreviousPositionsHandle, BufferID.TetherCablePreviousPositions);
-                if (positionsLocked)
-                    ReleaseDataVaultCableWriteLock(in _dataVaultCablePositionsHandle, BufferID.TetherCablePositions);
+                if (cableStateGuardHeld && cableStateGuardVault != null)
+                    cableStateGuardVault.ReleaseMutationGuard(CableStateMutationGuardMask);
             }
         }
 
@@ -2798,161 +2868,183 @@ namespace Hecton8.Physics
             int nodeOffset = _dataVaultSlot * DataVaultCablePointCount;
             int segmentOffset = _dataVaultSlot * DataVaultCableSegmentCount;
             int scalarOffset = _dataVaultSlot;
-            bool positionsLocked = false;
-            bool previousLocked = false;
-            bool velocitiesLocked = false;
-            bool pinnedPositionsLocked = false;
-            bool pinnedMaskLocked = false;
-            bool nodeFaultFlagsLocked = false;
-            bool restLengthsLocked = false;
-            bool segmentTensionsLocked = false;
-            bool correctionsLocked = false;
-            bool correctionWeightsLocked = false;
-            bool solverStatsLocked = false;
-            bool solverFlagsLocked = false;
-            bool telemetryRingLocked = false;
-            bool telemetryHeadLocked = false;
+            bool solveGuardHeld = false;
+            bool solveGuardTransferred = false;
+            IDataVault solveGuardVault = null;
 
             try
             {
-                positionsLocked = TryAcquireDataVaultCableSlice(
+                solveGuardVault = _dataVault;
+                if (solveGuardVault == null ||
+                    !solveGuardVault.TryAcquireMutationGuard(VerletSolveMutationGuardMask))
+                {
+                    RecordVaultAccessFailure(BufferID.TetherVerletPositions, in _verletPositionsHandle, TetherTelemetryFailureLock, 0u);
+                    SyncPrimaryConstraint(anchorPosition, payloadPosition);
+                    return ResolvePrimaryConstraintForceMagnitude();
+                }
+
+                solveGuardHeld = true;
+                bool positionsResolved = TryResolveDataVaultCableSlice(
+                    solveGuardVault,
                     in _verletPositionsHandle,
                     BufferID.TetherVerletPositions,
                     DataVaultScratchNodeCapacity,
                     nodeOffset,
                     nodeCount,
                     out _verletPositions);
-                previousLocked = TryAcquireDataVaultCableSlice(
+                bool previousResolved = TryResolveDataVaultCableSlice(
+                    solveGuardVault,
                     in _verletPreviousPositionsHandle,
                     BufferID.TetherVerletPreviousPositions,
                     DataVaultScratchNodeCapacity,
                     nodeOffset,
                     nodeCount,
                     out NativeArray<float3> _verletPreviousPositions);
-                velocitiesLocked = TryAcquireDataVaultCableSlice(
+                bool velocitiesResolved = TryResolveDataVaultCableSlice(
+                    solveGuardVault,
                     in _verletVelocitiesHandle,
                     BufferID.TetherVerletVelocities,
                     DataVaultScratchNodeCapacity,
                     nodeOffset,
                     nodeCount,
                     out NativeArray<float3> _verletVelocities);
-                pinnedPositionsLocked = TryAcquireDataVaultCableSlice(
+                bool pinnedPositionsResolved = TryResolveDataVaultCableSlice(
+                    solveGuardVault,
                     in _verletPinnedPositionsHandle,
                     BufferID.TetherVerletPinnedPositions,
                     DataVaultScratchNodeCapacity,
                     nodeOffset,
                     nodeCount,
                     out NativeArray<float3> _verletPinnedPositions);
-                pinnedMaskLocked = TryAcquireDataVaultCableSlice(
+                bool pinnedMaskResolved = TryResolveDataVaultCableSlice(
+                    solveGuardVault,
                     in _verletPinnedMaskHandle,
                     BufferID.TetherVerletPinnedMask,
                     DataVaultScratchNodeCapacity,
                     nodeOffset,
                     nodeCount,
                     out NativeArray<byte> _verletPinnedMask);
-                nodeFaultFlagsLocked = TryAcquireDataVaultCableSlice(
+                bool nodeFaultFlagsResolved = TryResolveDataVaultCableSlice(
+                    solveGuardVault,
                     in _verletNodeFaultFlagsHandle,
                     BufferID.TetherVerletNodeFaultFlags,
                     DataVaultScratchNodeCapacity,
                     nodeOffset,
                     nodeCount,
                     out NativeArray<byte> _verletNodeFaultFlags);
-                restLengthsLocked = TryAcquireDataVaultCableSlice(
+                bool restLengthsResolved = TryResolveDataVaultCableSlice(
+                    solveGuardVault,
                     in _verletSegmentRestLengthsHandle,
                     BufferID.TetherVerletSegmentRestLengths,
                     DataVaultScratchSegmentCapacity,
                     segmentOffset,
                     segmentCount,
                     out NativeArray<float> _verletSegmentRestLengths);
-                segmentTensionsLocked = TryAcquireDataVaultCableSlice(
+                bool segmentTensionsResolved = TryResolveDataVaultCableSlice(
+                    solveGuardVault,
                     in _verletSegmentTensionsHandle,
                     BufferID.TetherVerletSegmentTensions,
                     DataVaultScratchSegmentCapacity,
                     segmentOffset,
                     segmentCount,
                     out NativeArray<float> _verletSegmentTensions);
-                correctionsLocked = TryAcquireDataVaultCableSlice(
+                bool correctionsResolved = TryResolveDataVaultCableSlice(
+                    solveGuardVault,
                     in _verletCorrectionsHandle,
                     BufferID.TetherVerletCorrections,
                     DataVaultScratchNodeCapacity,
                     nodeOffset,
                     nodeCount,
                     out NativeArray<float3> _verletCorrections);
-                correctionWeightsLocked = TryAcquireDataVaultCableSlice(
+                bool correctionWeightsResolved = TryResolveDataVaultCableSlice(
+                    solveGuardVault,
                     in _verletCorrectionWeightsHandle,
                     BufferID.TetherVerletCorrectionWeights,
                     DataVaultScratchNodeCapacity,
                     nodeOffset,
                     nodeCount,
                     out NativeArray<float> _verletCorrectionWeights);
-                solverStatsLocked = TryAcquireDataVaultCableSlice(
+                bool solverStatsResolved = TryResolveDataVaultCableSlice(
+                    solveGuardVault,
                     in _verletSolverStatsHandle,
                     BufferID.TetherVerletSolverStats,
                     DataVaultScratchScalarCapacity,
                     scalarOffset,
                     1,
                     out NativeArray<float> _verletSolverStats);
-                solverFlagsLocked = TryAcquireDataVaultCableSlice(
+                bool solverFlagsResolved = TryResolveDataVaultCableSlice(
+                    solveGuardVault,
                     in _verletSolverFlagsHandle,
                     BufferID.TetherVerletSolverFlags,
                     DataVaultScratchScalarCapacity,
                     scalarOffset,
                     1,
                     out NativeArray<int> _verletSolverFlags);
-                telemetryRingLocked = TryAcquireDataVaultCableArray(
+                bool telemetryRingResolved = TryResolveDataVaultCableArray(
+                    solveGuardVault,
                     in _verletTelemetryRingHandle,
                     BufferID.TetherCableBlackBox,
                     DataVaultTelemetryCapacity,
                     out NativeArray<TetherVerletTelemetryEntry> _verletTelemetryRing);
-                telemetryHeadLocked = TryAcquireDataVaultCableArray(
+                bool telemetryHeadResolved = TryResolveDataVaultCableArray(
+                    solveGuardVault,
                     in _verletTelemetryHeadHandle,
                     BufferID.TetherCableBlackBoxHead,
                     DataVaultTelemetryHeadCapacity,
                     out NativeArray<int> _verletTelemetryHead);
 
-                if (!positionsLocked ||
-                    !previousLocked ||
-                    !velocitiesLocked ||
-                    !pinnedPositionsLocked ||
-                    !pinnedMaskLocked ||
-                    !nodeFaultFlagsLocked ||
-                    !restLengthsLocked ||
-                    !segmentTensionsLocked ||
-                    !correctionsLocked ||
-                    !correctionWeightsLocked ||
-                    !solverStatsLocked ||
-                    !solverFlagsLocked ||
-                    !telemetryRingLocked ||
-                    !telemetryHeadLocked)
+                if (!positionsResolved ||
+                    !previousResolved ||
+                    !velocitiesResolved ||
+                    !pinnedPositionsResolved ||
+                    !pinnedMaskResolved ||
+                    !nodeFaultFlagsResolved ||
+                    !restLengthsResolved ||
+                    !segmentTensionsResolved ||
+                    !correctionsResolved ||
+                    !correctionWeightsResolved ||
+                    !solverStatsResolved ||
+                    !solverFlagsResolved ||
+                    !telemetryRingResolved ||
+                    !telemetryHeadResolved)
                 {
-                    if (!positionsLocked)
-                        RecordSolverVaultAccessFailure(BufferID.TetherVerletPositions, in _verletPositionsHandle, TetherTelemetryFailureLock, telemetryRingLocked, telemetryHeadLocked, _verletTelemetryRing, _verletTelemetryHead);
-                    if (!previousLocked)
-                        RecordSolverVaultAccessFailure(BufferID.TetherVerletPreviousPositions, in _verletPreviousPositionsHandle, TetherTelemetryFailureLock, telemetryRingLocked, telemetryHeadLocked, _verletTelemetryRing, _verletTelemetryHead);
-                    if (!velocitiesLocked)
-                        RecordSolverVaultAccessFailure(BufferID.TetherVerletVelocities, in _verletVelocitiesHandle, TetherTelemetryFailureLock, telemetryRingLocked, telemetryHeadLocked, _verletTelemetryRing, _verletTelemetryHead);
-                    if (!pinnedPositionsLocked)
-                        RecordSolverVaultAccessFailure(BufferID.TetherVerletPinnedPositions, in _verletPinnedPositionsHandle, TetherTelemetryFailureLock, telemetryRingLocked, telemetryHeadLocked, _verletTelemetryRing, _verletTelemetryHead);
-                    if (!pinnedMaskLocked)
-                        RecordSolverVaultAccessFailure(BufferID.TetherVerletPinnedMask, in _verletPinnedMaskHandle, TetherTelemetryFailureLock, telemetryRingLocked, telemetryHeadLocked, _verletTelemetryRing, _verletTelemetryHead);
-                    if (!nodeFaultFlagsLocked)
-                        RecordSolverVaultAccessFailure(BufferID.TetherVerletNodeFaultFlags, in _verletNodeFaultFlagsHandle, TetherTelemetryFailureLock, telemetryRingLocked, telemetryHeadLocked, _verletTelemetryRing, _verletTelemetryHead);
-                    if (!restLengthsLocked)
-                        RecordSolverVaultAccessFailure(BufferID.TetherVerletSegmentRestLengths, in _verletSegmentRestLengthsHandle, TetherTelemetryFailureLock, telemetryRingLocked, telemetryHeadLocked, _verletTelemetryRing, _verletTelemetryHead);
-                    if (!segmentTensionsLocked)
-                        RecordSolverVaultAccessFailure(BufferID.TetherVerletSegmentTensions, in _verletSegmentTensionsHandle, TetherTelemetryFailureLock, telemetryRingLocked, telemetryHeadLocked, _verletTelemetryRing, _verletTelemetryHead);
-                    if (!correctionsLocked)
-                        RecordSolverVaultAccessFailure(BufferID.TetherVerletCorrections, in _verletCorrectionsHandle, TetherTelemetryFailureLock, telemetryRingLocked, telemetryHeadLocked, _verletTelemetryRing, _verletTelemetryHead);
-                    if (!correctionWeightsLocked)
-                        RecordSolverVaultAccessFailure(BufferID.TetherVerletCorrectionWeights, in _verletCorrectionWeightsHandle, TetherTelemetryFailureLock, telemetryRingLocked, telemetryHeadLocked, _verletTelemetryRing, _verletTelemetryHead);
-                    if (!solverStatsLocked)
-                        RecordSolverVaultAccessFailure(BufferID.TetherVerletSolverStats, in _verletSolverStatsHandle, TetherTelemetryFailureLock, telemetryRingLocked, telemetryHeadLocked, _verletTelemetryRing, _verletTelemetryHead);
-                    if (!solverFlagsLocked)
-                        RecordSolverVaultAccessFailure(BufferID.TetherVerletSolverFlags, in _verletSolverFlagsHandle, TetherTelemetryFailureLock, telemetryRingLocked, telemetryHeadLocked, _verletTelemetryRing, _verletTelemetryHead);
-                    if (!telemetryRingLocked)
-                        RecordVaultAccessFailure(BufferID.TetherCableBlackBox, in _verletTelemetryRingHandle, TetherTelemetryFailureLock, 0u);
-                    if (!telemetryHeadLocked)
-                        RecordVaultAccessFailure(BufferID.TetherCableBlackBoxHead, in _verletTelemetryHeadHandle, TetherTelemetryFailureLock, 0u);
+                    if (telemetryRingResolved && telemetryHeadResolved)
+                    {
+                        if (!positionsResolved)
+                            RecordSolverVaultAccessFailure(BufferID.TetherVerletPositions, in _verletPositionsHandle, TetherTelemetryFailureResolve, true, true, _verletTelemetryRing, _verletTelemetryHead);
+                        if (!previousResolved)
+                            RecordSolverVaultAccessFailure(BufferID.TetherVerletPreviousPositions, in _verletPreviousPositionsHandle, TetherTelemetryFailureResolve, true, true, _verletTelemetryRing, _verletTelemetryHead);
+                        if (!velocitiesResolved)
+                            RecordSolverVaultAccessFailure(BufferID.TetherVerletVelocities, in _verletVelocitiesHandle, TetherTelemetryFailureResolve, true, true, _verletTelemetryRing, _verletTelemetryHead);
+                        if (!pinnedPositionsResolved)
+                            RecordSolverVaultAccessFailure(BufferID.TetherVerletPinnedPositions, in _verletPinnedPositionsHandle, TetherTelemetryFailureResolve, true, true, _verletTelemetryRing, _verletTelemetryHead);
+                        if (!pinnedMaskResolved)
+                            RecordSolverVaultAccessFailure(BufferID.TetherVerletPinnedMask, in _verletPinnedMaskHandle, TetherTelemetryFailureResolve, true, true, _verletTelemetryRing, _verletTelemetryHead);
+                        if (!nodeFaultFlagsResolved)
+                            RecordSolverVaultAccessFailure(BufferID.TetherVerletNodeFaultFlags, in _verletNodeFaultFlagsHandle, TetherTelemetryFailureResolve, true, true, _verletTelemetryRing, _verletTelemetryHead);
+                        if (!restLengthsResolved)
+                            RecordSolverVaultAccessFailure(BufferID.TetherVerletSegmentRestLengths, in _verletSegmentRestLengthsHandle, TetherTelemetryFailureResolve, true, true, _verletTelemetryRing, _verletTelemetryHead);
+                        if (!segmentTensionsResolved)
+                            RecordSolverVaultAccessFailure(BufferID.TetherVerletSegmentTensions, in _verletSegmentTensionsHandle, TetherTelemetryFailureResolve, true, true, _verletTelemetryRing, _verletTelemetryHead);
+                        if (!correctionsResolved)
+                            RecordSolverVaultAccessFailure(BufferID.TetherVerletCorrections, in _verletCorrectionsHandle, TetherTelemetryFailureResolve, true, true, _verletTelemetryRing, _verletTelemetryHead);
+                        if (!correctionWeightsResolved)
+                            RecordSolverVaultAccessFailure(BufferID.TetherVerletCorrectionWeights, in _verletCorrectionWeightsHandle, TetherTelemetryFailureResolve, true, true, _verletTelemetryRing, _verletTelemetryHead);
+                        if (!solverStatsResolved)
+                            RecordSolverVaultAccessFailure(BufferID.TetherVerletSolverStats, in _verletSolverStatsHandle, TetherTelemetryFailureResolve, true, true, _verletTelemetryRing, _verletTelemetryHead);
+                        if (!solverFlagsResolved)
+                            RecordSolverVaultAccessFailure(BufferID.TetherVerletSolverFlags, in _verletSolverFlagsHandle, TetherTelemetryFailureResolve, true, true, _verletTelemetryRing, _verletTelemetryHead);
+                    }
+                    else
+                    {
+                        solveGuardVault.ReleaseMutationGuard(VerletSolveMutationGuardMask);
+                        solveGuardHeld = false;
+                        if (!telemetryRingResolved)
+                            RecordVaultAccessFailure(BufferID.TetherCableBlackBox, in _verletTelemetryRingHandle, TetherTelemetryFailureResolve, 0u);
+                        if (!telemetryHeadResolved)
+                            RecordVaultAccessFailure(BufferID.TetherCableBlackBoxHead, in _verletTelemetryHeadHandle, TetherTelemetryFailureResolve, 0u);
+                    }
+
                     SyncPrimaryConstraint(anchorPosition, payloadPosition);
                     return ResolvePrimaryConstraintForceMagnitude();
                 }
@@ -3059,40 +3151,17 @@ namespace Hecton8.Physics
                 _pendingVerletFixedDeltaTime = fixedDeltaTime;
                 _pendingVerletStretchThreshold01 = tuning.StretchThreshold01;
                 _pendingVerletFrameIndex = _currentSimulationFrameIndex;
+                _pendingVerletSolveGuardVault = solveGuardVault;
+                _pendingVerletSolveGuardHeld = true;
+                solveGuardTransferred = true;
                 JobHandle.ScheduleBatchedJobs();
                 ResetVaultFailureStreak();
                 return ResolvePrimaryConstraintForceMagnitude();
             }
             finally
             {
-                if (telemetryHeadLocked)
-                    ReleaseDataVaultCableWriteLock(in _verletTelemetryHeadHandle, BufferID.TetherCableBlackBoxHead);
-                if (telemetryRingLocked)
-                    ReleaseDataVaultCableWriteLock(in _verletTelemetryRingHandle, BufferID.TetherCableBlackBox);
-                if (solverFlagsLocked)
-                    ReleaseDataVaultCableWriteLock(in _verletSolverFlagsHandle, BufferID.TetherVerletSolverFlags);
-                if (solverStatsLocked)
-                    ReleaseDataVaultCableWriteLock(in _verletSolverStatsHandle, BufferID.TetherVerletSolverStats);
-                if (correctionWeightsLocked)
-                    ReleaseDataVaultCableWriteLock(in _verletCorrectionWeightsHandle, BufferID.TetherVerletCorrectionWeights);
-                if (correctionsLocked)
-                    ReleaseDataVaultCableWriteLock(in _verletCorrectionsHandle, BufferID.TetherVerletCorrections);
-                if (segmentTensionsLocked)
-                    ReleaseDataVaultCableWriteLock(in _verletSegmentTensionsHandle, BufferID.TetherVerletSegmentTensions);
-                if (restLengthsLocked)
-                    ReleaseDataVaultCableWriteLock(in _verletSegmentRestLengthsHandle, BufferID.TetherVerletSegmentRestLengths);
-                if (nodeFaultFlagsLocked)
-                    ReleaseDataVaultCableWriteLock(in _verletNodeFaultFlagsHandle, BufferID.TetherVerletNodeFaultFlags);
-                if (pinnedMaskLocked)
-                    ReleaseDataVaultCableWriteLock(in _verletPinnedMaskHandle, BufferID.TetherVerletPinnedMask);
-                if (pinnedPositionsLocked)
-                    ReleaseDataVaultCableWriteLock(in _verletPinnedPositionsHandle, BufferID.TetherVerletPinnedPositions);
-                if (velocitiesLocked)
-                    ReleaseDataVaultCableWriteLock(in _verletVelocitiesHandle, BufferID.TetherVerletVelocities);
-                if (previousLocked)
-                    ReleaseDataVaultCableWriteLock(in _verletPreviousPositionsHandle, BufferID.TetherVerletPreviousPositions);
-                if (positionsLocked)
-                    ReleaseDataVaultCableWriteLock(in _verletPositionsHandle, BufferID.TetherVerletPositions);
+                if (solveGuardHeld && !solveGuardTransferred && solveGuardVault != null)
+                    solveGuardVault.ReleaseMutationGuard(VerletSolveMutationGuardMask);
             }
         }
 
@@ -3124,6 +3193,7 @@ namespace Hecton8.Physics
         {
             _pendingVerletSolveHandle = default;
             _pendingVerletSolveActive = false;
+            ReleasePendingVerletSolveGuard();
             if (!publishResults)
                 return true;
 
@@ -3136,6 +3206,18 @@ namespace Hecton8.Physics
                 _pendingVerletStretchThreshold01);
             _currentSimulationFrameIndex = previousFrameIndex;
             return true;
+        }
+
+        private void ReleasePendingVerletSolveGuard()
+        {
+            if (!_pendingVerletSolveGuardHeld)
+                return;
+
+            IDataVault vault = _pendingVerletSolveGuardVault;
+            _pendingVerletSolveGuardVault = null;
+            _pendingVerletSolveGuardHeld = false;
+            if (vault != null)
+                vault.ReleaseMutationGuard(VerletSolveMutationGuardMask);
         }
 
         private void FinalizeVerletSolveResults(
@@ -3314,21 +3396,29 @@ namespace Hecton8.Physics
             if (_verletFaultDumpedThisActivation)
                 return;
 
-            bool telemetryRingLocked = false;
-            bool telemetryHeadLocked = false;
+            bool telemetryGuardHeld = false;
+            IDataVault telemetryGuardVault = null;
             try
             {
-                telemetryRingLocked = TryAcquireDataVaultCableArray(
+                telemetryGuardVault = _dataVault;
+                if (telemetryGuardVault == null ||
+                    !telemetryGuardVault.TryAcquireMutationGuard(TelemetryMutationGuardMask))
+                    return;
+
+                telemetryGuardHeld = true;
+                bool telemetryRingResolved = TryResolveDataVaultCableArray(
+                    telemetryGuardVault,
                     in _verletTelemetryRingHandle,
                     BufferID.TetherCableBlackBox,
                     DataVaultTelemetryCapacity,
                     out NativeArray<TetherVerletTelemetryEntry> _verletTelemetryRing);
-                telemetryHeadLocked = TryAcquireDataVaultCableArray(
+                bool telemetryHeadResolved = TryResolveDataVaultCableArray(
+                    telemetryGuardVault,
                     in _verletTelemetryHeadHandle,
                     BufferID.TetherCableBlackBoxHead,
                     DataVaultTelemetryHeadCapacity,
                     out NativeArray<int> _verletTelemetryHead);
-                if (!telemetryRingLocked || !telemetryHeadLocked)
+                if (!telemetryRingResolved || !telemetryHeadResolved)
                     return;
 
                 int capacity = ResolveTelemetryCapacity();
@@ -3371,10 +3461,8 @@ namespace Hecton8.Physics
             }
             finally
             {
-                if (telemetryHeadLocked)
-                    ReleaseDataVaultCableWriteLock(in _verletTelemetryHeadHandle, BufferID.TetherCableBlackBoxHead);
-                if (telemetryRingLocked)
-                    ReleaseDataVaultCableWriteLock(in _verletTelemetryRingHandle, BufferID.TetherCableBlackBox);
+                if (telemetryGuardHeld && telemetryGuardVault != null)
+                    telemetryGuardVault.ReleaseMutationGuard(TelemetryMutationGuardMask);
             }
         }
 

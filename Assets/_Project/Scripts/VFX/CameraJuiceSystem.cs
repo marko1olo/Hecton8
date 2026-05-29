@@ -1387,7 +1387,7 @@ namespace Hecton8.VFX
             bool ownsAcquiredHandle = true;
 
             if (!IsCameraJuiceTelemetryHandle(in acquiredHandle) ||
-                !TryAcquireCameraJuiceTelemetryWriteBuffer(vault, in acquiredHandle, out NativeArray<CameraJuiceTelemetryEntry> telemetry))
+                !TryResolveCameraJuiceTelemetryWriteBuffer(vault, in acquiredHandle, out NativeArray<CameraJuiceTelemetryEntry> telemetry))
             {
                 if (IsCameraJuiceTelemetryHandle(in acquiredHandle) && ownsAcquiredHandle)
                     vault.ReleaseBuffer(in acquiredHandle);
@@ -1396,14 +1396,7 @@ namespace Hecton8.VFX
                 return false;
             }
 
-            try
-            {
-                InitializeCameraJuiceTelemetryRing(telemetry);
-            }
-            finally
-            {
-                vault.ReleaseWriteLock(in acquiredHandle, CameraJuiceOwnerSystemId);
-            }
+            InitializeCameraJuiceTelemetryRing(telemetry);
 
             _cameraJuiceTelemetryHandle = acquiredHandle;
             _ownsCameraJuiceTelemetryBuffer = ownsAcquiredHandle;
@@ -1411,7 +1404,7 @@ namespace Hecton8.VFX
             return true;
         }
 
-        private static bool TryAcquireCameraJuiceTelemetryWriteBuffer(
+        private static bool TryResolveCameraJuiceTelemetryWriteBuffer(
             IDataVault vault,
             in VaultGenerationHandle<CameraJuiceTelemetryEntry> handle,
             out NativeArray<CameraJuiceTelemetryEntry> telemetry)
@@ -1420,7 +1413,7 @@ namespace Hecton8.VFX
             if (vault == null ||
                 vault.IsCompactionFenceActive ||
                 !IsCameraJuiceTelemetryHandle(in handle) ||
-                !vault.TryAcquireWriteLock(in handle, CameraJuiceOwnerSystemId, out telemetry))
+                !vault.TryResolveHandle(in handle, out telemetry))
             {
                 return false;
             }
@@ -1429,7 +1422,6 @@ namespace Hecton8.VFX
                 !telemetry.IsCreated ||
                 telemetry.Length < CAMERA_JUICE_TELEMETRY_CAPACITY)
             {
-                vault.ReleaseWriteLock(in handle, CameraJuiceOwnerSystemId);
                 telemetry = default;
                 return false;
             }
@@ -1505,33 +1497,26 @@ namespace Hecton8.VFX
         private void RecordCameraJuiceTelemetry()
         {
             IDataVault vault = _dataVault;
-            if (!TryAcquireCameraJuiceTelemetryWriteBuffer(vault, in _cameraJuiceTelemetryHandle, out NativeArray<CameraJuiceTelemetryEntry> telemetry))
+            if (!TryResolveCameraJuiceTelemetryWriteBuffer(vault, in _cameraJuiceTelemetryHandle, out NativeArray<CameraJuiceTelemetryEntry> telemetry))
                 return;
 
-            try
+            int index = (int)(_cameraJuiceTelemetryCursor % (uint)CAMERA_JUICE_TELEMETRY_CAPACITY);
+            telemetry[index] = new CameraJuiceTelemetryEntry
             {
-                int index = (int)(_cameraJuiceTelemetryCursor % (uint)CAMERA_JUICE_TELEMETRY_CAPACITY);
-                telemetry[index] = new CameraJuiceTelemetryEntry
-                {
-                    Frame = _cameraJuiceTelemetryCursor,
-                    Flags = ResolveCameraJuiceTelemetryFlags(),
-                    TraumaScalar = _cameraJuiceLastTraumaScalar,
-                    MaxTranslationalOffsetMagnitude = _cameraJuiceLastMaxTranslationMagnitude,
-                    Offset = _proceduralShakeTranslation,
-                    RotationDegrees = _proceduralShakeRotationDegrees,
-                    IncomingSignalCount = _cameraJuiceLastIncomingSignalCount,
-                    BurstExecutionMicroseconds = _cameraJuiceLastBurstExecutionMicros,
-                    GlobalQualityWeight01 = _cameraJuiceLastQualityWeight,
-                    DirectionalImpulseMagnitude = _cameraJuiceLastDirectionalImpulseMagnitude,
-                    StateHash = _cameraJuiceLastStateHash,
-                    Sequence = _cameraJuiceTelemetryCursor
-                };
-                _cameraJuiceTelemetryCursor++;
-            }
-            finally
-            {
-                vault.ReleaseWriteLock(in _cameraJuiceTelemetryHandle, CameraJuiceOwnerSystemId);
-            }
+                Frame = _cameraJuiceTelemetryCursor,
+                Flags = ResolveCameraJuiceTelemetryFlags(),
+                TraumaScalar = _cameraJuiceLastTraumaScalar,
+                MaxTranslationalOffsetMagnitude = _cameraJuiceLastMaxTranslationMagnitude,
+                Offset = _proceduralShakeTranslation,
+                RotationDegrees = _proceduralShakeRotationDegrees,
+                IncomingSignalCount = _cameraJuiceLastIncomingSignalCount,
+                BurstExecutionMicroseconds = _cameraJuiceLastBurstExecutionMicros,
+                GlobalQualityWeight01 = _cameraJuiceLastQualityWeight,
+                DirectionalImpulseMagnitude = _cameraJuiceLastDirectionalImpulseMagnitude,
+                StateHash = _cameraJuiceLastStateHash,
+                Sequence = _cameraJuiceTelemetryCursor
+            };
+            _cameraJuiceTelemetryCursor++;
 
             if (_cameraJuiceTelemetryDumpRequested)
             {

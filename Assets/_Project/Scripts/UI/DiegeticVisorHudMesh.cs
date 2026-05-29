@@ -166,7 +166,6 @@ namespace Hecton8.UI
             if (_meshRebuildDirty)
             {
                 _meshRebuildDirty = false;
-                RebuildMesh();
                 _materialStateDirty = true;
             }
 

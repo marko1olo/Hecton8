@@ -260,28 +260,33 @@ namespace Hecton8.Thermodynamics
             }
 
             IDataVault vault = EnsureVault();
-            if (!vault.TryAcquireWriteLock(in handle, MemoryOwner, out bytes) ||
-                !bytes.IsCreated ||
-                bytes.Length < requiredCapacity)
+            if (!vault.TryAcquireWriteLock(in handle, MemoryOwner, out bytes))
+                return false;
+
+            bool handedOff = false;
+            try
             {
-                if (bytes.IsCreated)
+                if (!bytes.IsCreated || bytes.Length < requiredCapacity)
+                    return false;
+
+                int copyCount = math.min(math.min(sourceCount, requiredCapacity), math.min(source.Length, bytes.Length));
+                if (copyCount <= 0)
+                    return false;
+
+                for (int i = 0; i < copyCount; i++)
+                    bytes[i] = source[i];
+
+                handedOff = true;
+                return true;
+            }
+            finally
+            {
+                if (!handedOff)
+                {
                     vault.ReleaseWriteLock(in handle, MemoryOwner);
-                bytes = default;
-                return false;
+                    bytes = default;
+                }
             }
-
-            int copyCount = math.min(math.min(sourceCount, requiredCapacity), math.min(source.Length, bytes.Length));
-            if (copyCount <= 0)
-            {
-                vault.ReleaseWriteLock(in handle, MemoryOwner);
-                bytes = default;
-                return false;
-            }
-
-            for (int i = 0; i < copyCount; i++)
-                bytes[i] = source[i];
-
-            return true;
         }
 
         private static int ReadConfigFile(string path, byte[] destination, int capacity, long skipWriteTicks, out long writeTicks)

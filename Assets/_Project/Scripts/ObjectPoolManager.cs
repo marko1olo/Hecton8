@@ -35,6 +35,8 @@ namespace Hecton8.Core
         private static readonly List<IPoolable> s_poolableCache = new List<IPoolable>(8);
 
         private Dictionary<int, Pool> _pools;
+        // COLD ALLOC: Dictionary<GameObject, PoolItemMarker>[256] - pooled instance metadata cache - owner: ObjectPoolManager
+        private readonly Dictionary<GameObject, PoolItemMarker> _poolMarkerCache = new Dictionary<GameObject, PoolItemMarker>(256);
         private bool _serviceRegistered;
         private bool _warmupPresetsStarted;
         private bool _warmupPresetsCompleted;
@@ -134,6 +136,8 @@ namespace Hecton8.Core
                 if (releasePoolLookup)
                     _pools = null;
             }
+
+            _poolMarkerCache.Clear();
 
             if (_serviceRegistered && ReferenceEquals(GlobalRegistry.ObjectPool, this))
                 GlobalRegistry.UnregisterObjectPoolService(this);
@@ -406,11 +410,20 @@ namespace Hecton8.Core
                 if (instance == null)
                     continue;
 
+                if (!_poolMarkerCache.TryGetValue(instance, out PoolItemMarker marker) || marker == null)
+                {
+                    LogSpawnMissingMarker(instance);
+                    _poolMarkerCache.Remove(instance);
+                    pool.capacity = Mathf.Max(0, pool.capacity - 1);
+                    Destroy(instance);
+                    continue;
+                }
+
                 Transform instanceTransform = instance.transform;
                 instanceTransform.SetParent(null, false);
                 instanceTransform.SetPositionAndRotation(position, rotation);
                 instance.SetActive(true);
-                NotifySpawn(instance);
+                NotifySpawn(marker);
                 return instance;
             }
 
@@ -465,7 +478,8 @@ namespace Hecton8.Core
         {
             return instance != null &&
                    _pools != null &&
-                   instance.TryGetComponent(out PoolItemMarker marker) &&
+                   _poolMarkerCache.TryGetValue(instance, out PoolItemMarker marker) &&
+                   marker != null &&
                    _pools.ContainsKey(marker.PrefabId);
         }
 
@@ -480,7 +494,7 @@ namespace Hecton8.Core
             if (instance == null)
                 return;
 
-            if (!instance.TryGetComponent(out PoolItemMarker marker))
+            if (!_poolMarkerCache.TryGetValue(instance, out PoolItemMarker marker) || marker == null)
             {
                 LogDespawnMissingMarker(instance);
                 Destroy(instance);
@@ -491,11 +505,12 @@ namespace Hecton8.Core
             if (!_pools.TryGetValue(prefabId, out Pool pool))
             {
                 LogDespawnMissingPool(instance);
+                _poolMarkerCache.Remove(instance);
                 Destroy(instance);
                 return;
             }
 
-            NotifyDespawn(instance);
+            NotifyDespawn(marker);
             instance.SetActive(false);
 
             Transform instanceTransform = instance.transform;
@@ -505,6 +520,8 @@ namespace Hecton8.Core
 
             if (pool.available.Count >= pool.capacity)
             {
+                _poolMarkerCache.Remove(instance);
+                Destroy(instance);
                 return;
             }
 
@@ -533,8 +550,11 @@ namespace Hecton8.Core
                 return;
             }
 
-            if (instance.TryGetComponent(out DespawnTimer timer))
+            if (_poolMarkerCache.TryGetValue(instance, out PoolItemMarker marker) &&
+                marker != null &&
+                marker.RootDespawnTimer != null)
             {
+                DespawnTimer timer = marker.RootDespawnTimer;
                 timer.StartTimer(delaySeconds);
                 return;
             }
@@ -620,11 +640,43 @@ namespace Hecton8.Core
         {
             availableCount = 0;
 
-            if (instance == null || !instance.TryGetComponent(out PoolItemMarker marker))
+            if (instance == null || !_poolMarkerCache.TryGetValue(instance, out PoolItemMarker marker) || marker == null)
                 return false;
 
             availableCount = GetAvailableCountByPrefabId(marker.PrefabId);
             return true;
+        }
+
+        /// <summary>
+        /// Reads the renderer cached during pool instantiation. This avoids component probing during spawn users' hot paths.
+        /// </summary>
+        public bool TryGetPooledRootRenderer(GameObject instance, out Renderer renderer)
+        {
+            renderer = null;
+            if (instance == null || !_poolMarkerCache.TryGetValue(instance, out PoolItemMarker marker) || marker == null)
+                return false;
+
+            renderer = marker.RootRenderer;
+            return renderer != null;
+        }
+
+        public bool TryGetPooledRootRigidbody(GameObject instance, out Rigidbody rigidbody)
+        {
+            rigidbody = null;
+            if (instance == null || !_poolMarkerCache.TryGetValue(instance, out PoolItemMarker marker) || marker == null)
+                return false;
+
+            rigidbody = marker.RootRigidbody;
+            return rigidbody != null;
+        }
+
+        public bool TryGetPooledComponent<T>(GameObject instance, out T component) where T : class
+        {
+            component = null;
+            if (instance == null || !_poolMarkerCache.TryGetValue(instance, out PoolItemMarker marker) || marker == null)
+                return false;
+
+            return marker.TryGetPoolable(out component);
         }
 
         /// <summary>
@@ -671,7 +723,10 @@ namespace Hecton8.Core
             {
                 GameObject instance = pool.available.Dequeue();
                 if (instance != null)
+                {
+                    _poolMarkerCache.Remove(instance);
                     Destroy(instance);
+                }
             }
 
             if (pool.container != null)
@@ -702,13 +757,17 @@ namespace Hecton8.Core
                 {
                     GameObject instance = pool.available.Dequeue();
                     if (instance != null)
+                    {
+                        _poolMarkerCache.Remove(instance);
                         Destroy(instance);
+                    }
                 }
 
                 if (pool.container != null)
                     Destroy(pool.container.gameObject);
             }
 
+            _poolMarkerCache.Clear();
             _pools.Clear();
             UpdateDiagnostics();
         }
@@ -744,6 +803,7 @@ namespace Hecton8.Core
                     GameObject instance = pool.available.Dequeue();
                     if (instance != null)
                     {
+                        _poolMarkerCache.Remove(instance);
                         Destroy(instance);
                         pool.capacity = Mathf.Max(0, pool.capacity - 1);
                     }
@@ -836,27 +896,46 @@ namespace Hecton8.Core
             if (!instance.TryGetComponent(out PoolItemMarker marker))
                 marker = instance.AddComponent<PoolItemMarker>();
 
-            marker.Initialize(prefabId);
+            instance.TryGetComponent(out Renderer rootRenderer);
+            instance.TryGetComponent(out Rigidbody rootRigidbody);
+            instance.TryGetComponent(out DespawnTimer rootDespawnTimer);
+            instance.GetComponents(s_poolableCache);
+            marker.Initialize(prefabId, rootRenderer, rootRigidbody, rootDespawnTimer, s_poolableCache);
+            s_poolableCache.Clear();
+            _poolMarkerCache[instance] = marker;
             pool.capacity++;
             return instance;
         }
 
-        private static void NotifySpawn(GameObject instance)
+        private static void NotifySpawn(PoolItemMarker marker)
         {
-            instance.GetComponents(s_poolableCache);
-            int count = s_poolableCache.Count;
+            int count = marker.PoolableCount;
             for (int i = 0; i < count; i++)
-                s_poolableCache[i].OnSpawn();
-            s_poolableCache.Clear();
+            {
+                IPoolable poolable = marker.GetPoolable(i);
+                if (IsValidPoolable(poolable))
+                    poolable.OnSpawn();
+            }
         }
 
-        private static void NotifyDespawn(GameObject instance)
+        private static void NotifyDespawn(PoolItemMarker marker)
         {
-            instance.GetComponents(s_poolableCache);
-            int count = s_poolableCache.Count;
+            int count = marker.PoolableCount;
             for (int i = 0; i < count; i++)
-                s_poolableCache[i].OnDespawn();
-            s_poolableCache.Clear();
+            {
+                IPoolable poolable = marker.GetPoolable(i);
+                if (IsValidPoolable(poolable))
+                    poolable.OnDespawn();
+            }
+        }
+
+        private static bool IsValidPoolable(IPoolable poolable)
+        {
+            if (poolable == null)
+                return false;
+
+            UnityEngine.Object unityObject = poolable as UnityEngine.Object;
+            return unityObject == null ? !(poolable is UnityEngine.Object) : true;
         }
 
         [System.Diagnostics.Conditional("UNITY_EDITOR")]
@@ -895,6 +974,16 @@ namespace Hecton8.Core
         }
 
         [System.Diagnostics.Conditional("UNITY_EDITOR"), System.Diagnostics.Conditional("DEVELOPMENT_BUILD")]
+        private static void LogSpawnMissingMarker(GameObject instance)
+        {
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+            string instanceName = instance != null ? instance.name : "<null>";
+            Hecton8.Core.H8Debug.LogWarning(
+                $"[ObjectPoolManager] Spawn: '{instanceName}' has no cached PoolItemMarker. Destroying instead.");
+#endif
+        }
+
+        [System.Diagnostics.Conditional("UNITY_EDITOR"), System.Diagnostics.Conditional("DEVELOPMENT_BUILD")]
         private static void LogPoolExhausted(GameObject prefab, string reason)
         {
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
@@ -914,6 +1003,10 @@ namespace Hecton8.Core
         {
             private int _prefabId;
             private bool _initialized;
+            private Renderer _rootRenderer;
+            private Rigidbody _rootRigidbody;
+            private DespawnTimer _rootDespawnTimer;
+            private IPoolable[] _poolables = Array.Empty<IPoolable>();
 
             /// <summary>
             /// Registered prefab identifier.
@@ -921,15 +1014,71 @@ namespace Hecton8.Core
             public int PrefabId => _prefabId;
 
             /// <summary>
+            /// Root renderer captured during pool warmup/instantiation.
+            /// </summary>
+            public Renderer RootRenderer => _rootRenderer;
+
+            public Rigidbody RootRigidbody => _rootRigidbody;
+
+            /// <summary>
+            /// Root delayed-despawn timer captured during pool warmup/instantiation.
+            /// </summary>
+            public DespawnTimer RootDespawnTimer => _rootDespawnTimer;
+
+            public int PoolableCount => _poolables.Length;
+
+            public IPoolable GetPoolable(int index)
+            {
+                return _poolables[index];
+            }
+
+            public bool TryGetPoolable<T>(out T poolable) where T : class
+            {
+                int count = _poolables.Length;
+                for (int i = 0; i < count; i++)
+                {
+                    IPoolable candidate = _poolables[i];
+                    if (!IsValidPoolable(candidate))
+                        continue;
+
+                    if (candidate is T typed)
+                    {
+                        poolable = typed;
+                        return true;
+                    }
+                }
+
+                poolable = null;
+                return false;
+            }
+
+            /// <summary>
             /// Assigns the prefab id once for the pooled instance.
             /// </summary>
-            public void Initialize(int prefabId)
+            public void Initialize(
+                int prefabId,
+                Renderer rootRenderer,
+                Rigidbody rootRigidbody,
+                DespawnTimer rootDespawnTimer,
+                List<IPoolable> poolables)
             {
-                if (_initialized)
-                    return;
+                if (!_initialized)
+                {
+                    _prefabId = prefabId;
+                    _initialized = true;
 
-                _prefabId = prefabId;
-                _initialized = true;
+                    int count = poolables != null ? poolables.Count : 0;
+                    _poolables = count > 0 ? new IPoolable[count] : Array.Empty<IPoolable>();
+                    for (int i = 0; i < count; i++)
+                        _poolables[i] = poolables[i];
+                }
+
+                if (_rootRenderer == null)
+                    _rootRenderer = rootRenderer;
+                if (_rootRigidbody == null)
+                    _rootRigidbody = rootRigidbody;
+                if (_rootDespawnTimer == null)
+                    _rootDespawnTimer = rootDespawnTimer;
             }
         }
 

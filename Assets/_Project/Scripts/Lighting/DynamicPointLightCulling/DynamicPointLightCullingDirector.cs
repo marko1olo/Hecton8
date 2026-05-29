@@ -36,6 +36,22 @@ namespace Hecton8.Lighting
         private static readonly int _DynamicLightBufferId = Shader.PropertyToID("_H8DynamicPointLightBuffer");
         private static readonly int _DynamicLightStateId = Shader.PropertyToID("_H8DynamicPointLightState");
         private static readonly int _DynamicLightCameraAupId = Shader.PropertyToID("_H8DynamicPointLightCameraAup");
+        private static readonly ulong JobMutationGuardMask =
+            MutationGuardBit(DynamicPointLightCullingVaultIds.Sources) |
+            MutationGuardBit(DynamicPointLightCullingVaultIds.States) |
+            MutationGuardBit(DynamicPointLightCullingVaultIds.GpuPayloadFront) |
+            MutationGuardBit(DynamicPointLightCullingVaultIds.GpuPayloadBack) |
+            MutationGuardBit(DynamicPointLightCullingVaultIds.ImportanceKeys) |
+            MutationGuardBit(DynamicPointLightCullingVaultIds.ImportanceIndices) |
+            MutationGuardBit(DynamicPointLightCullingVaultIds.SortScratchKeys) |
+            MutationGuardBit(DynamicPointLightCullingVaultIds.SortScratchIndices) |
+            MutationGuardBit(DynamicPointLightCullingVaultIds.RuntimeCounters) |
+            MutationGuardBit(DynamicPointLightCullingVaultIds.DynamicProbeLights);
+        private static readonly ulong MockSeedMutationGuardMask =
+            MutationGuardBit(DynamicPointLightCullingVaultIds.Sources) |
+            MutationGuardBit(DynamicPointLightCullingVaultIds.States);
+        private static readonly ulong MockSdfMutationGuardMask = MutationGuardBit(DynamicPointLightCullingVaultIds.MockSdfSamples);
+        private static readonly ulong SourceManifestMutationGuardMask = MutationGuardBit(DynamicPointLightCullingVaultIds.SourceManifest);
 
         [Header("Source Capacity")]
         [Tooltip("Maximum mathematical light sources stored in the Vault.")]
@@ -130,20 +146,10 @@ namespace Hecton8.Lighting
         private bool _sourceBufferSeeded;
         private bool _mockSdfSeeded;
         private bool _timeoutFaultPending;
-        private bool _lockedSources;
-        private bool _lockedStates;
-        private bool _lockedGpuFront;
-        private bool _lockedGpuBack;
-        private bool _lockedKeys;
-        private bool _lockedIndices;
-        private bool _lockedScratchKeys;
-        private bool _lockedScratchIndices;
-        private bool _lockedCounters;
-        private bool _lockedProbeLights;
-        private bool _lockedMockSources;
-        private bool _lockedMockStates;
-        private bool _lockedMockSdf;
-        private bool _lockedSourceManifest;
+        private bool _jobGuardHeld;
+        private bool _mockSeedGuardHeld;
+        private bool _mockSdfGuardHeld;
+        private bool _sourceManifestGuardHeld;
 
         /// <summary>True when Vault buffers and GPU buffers can be used.</summary>
         public bool IsInitialized => _nativeStorageReady;
@@ -156,6 +162,11 @@ namespace Hecton8.Lighting
 
         /// <summary>Dispatcher heartbeat count.</summary>
         public int TickCount => unchecked((int)_frameSequence);
+
+        private static ulong MutationGuardBit(BufferID bufferId)
+        {
+            return 1UL << (unchecked((int)(uint)(int)bufferId) & 31);
+        }
 
         private void Awake()
         {
@@ -314,16 +325,16 @@ namespace Hecton8.Lighting
 
             settings.ActiveSourceCount = targetCount;
 
-            NativeArray<DynamicPointLightSourceDTO> sources = ResolveArray(ref _sources);
-            NativeArray<LightCullStateDTO> states = ResolveArray(ref _states);
-            if (!sources.IsCreated || !states.IsCreated)
-                return false;
-
             if (!TryLockMockSeedBuffers())
                 return false;
 
             try
             {
+                NativeArray<DynamicPointLightSourceDTO> sources = ResolveArray(ref _sources);
+                NativeArray<LightCullStateDTO> states = ResolveArray(ref _states);
+                if (!sources.IsCreated || !states.IsCreated)
+                    return false;
+
                 JobHandle handle = new GenerateMockLightCullingDataJob
                 {
                     Sources = sources,
@@ -333,7 +344,7 @@ namespace Hecton8.Lighting
                 }.Schedule(targetCount, 64);
                 H8Memory.RegisterActiveJob(MemoryOwner, handle);
                 // COLD SYNC JOB: mock seed fence; source manifest commits only after data is written.
-                DispatcherJobFence.TryComplete(ref handle, forceComplete: true);
+                ForceCompleteJobInPostSimulationWindow(ref handle);
             }
             finally
             {
@@ -609,7 +620,7 @@ namespace Hecton8.Lighting
 
             if (_jobActive)
             {
-                DispatcherJobFence.TryComplete(ref _pendingCullHandle, forceComplete: true);
+                ForceCompleteJobInPostSimulationWindow(ref _pendingCullHandle);
                 UnlockJobBuffers();
                 _jobActive = false;
             }
@@ -621,6 +632,19 @@ namespace Hecton8.Lighting
 
             _vault = vault;
             ResetNativeEpochState();
+        }
+
+        private static bool ForceCompleteJobInPostSimulationWindow(ref JobHandle handle)
+        {
+            DispatcherJobFence.BeginPostSimulationSwapWindow();
+            try
+            {
+                return DispatcherJobFence.TryComplete(ref handle, forceComplete: true);
+            }
+            finally
+            {
+                DispatcherJobFence.EndPostSimulationSwapWindow();
+            }
         }
 
         private void ResetNativeEpochState()
@@ -878,7 +902,7 @@ namespace Hecton8.Lighting
             if (_jobActive)
             {
                 // Teardown drain: release Vault locks before unregistering this owner.
-                DispatcherJobFence.TryComplete(ref _pendingCullHandle, forceComplete: true);
+                ForceCompleteJobInPostSimulationWindow(ref _pendingCullHandle);
                 UnlockJobBuffers();
                 _jobActive = false;
             }
@@ -1139,6 +1163,12 @@ namespace Hecton8.Lighting
 
         private void ScheduleCullingPipeline(DynamicPointLightCullingSettingsDTO settings)
         {
+            if (!TryLockJobBuffers())
+                return;
+
+            bool keepJobGuard = false;
+            try
+            {
             NativeArray<DynamicPointLightSourceDTO> sources = ResolveArray(ref _sources);
             NativeArray<LightCullStateDTO> states = ResolveArray(ref _states);
             NativeArray<float4> planes = ResolveArray(ref _frustumPlanes);
@@ -1170,49 +1200,53 @@ namespace Hecton8.Lighting
             if (count <= 0)
                 return;
 
-            if (!TryLockJobBuffers())
-                return;
+                _scheduledPayloadIndex = _payloadWriteIndex;
+                _pendingScheduleTicks = Stopwatch.GetTimestamp();
+                _blackBoxDumped = false;
+                JobHandle eval = new EvaluateLightCullingJob
+                {
+                    Sources = sources,
+                    FrustumPlanes = planes,
+                    SdfSamples = sdf,
+                    ProfileRules = rules,
+                    States = states,
+                    ImportanceKeys = keys,
+                    ImportanceIndices = indices,
+                    Settings = settings,
+                    ProfileRuleCount = _profileRuleCount
+                }.Schedule(count, 64);
 
-            _scheduledPayloadIndex = _payloadWriteIndex;
-            _pendingScheduleTicks = Stopwatch.GetTimestamp();
-            _blackBoxDumped = false;
-            JobHandle eval = new EvaluateLightCullingJob
+                JobHandle sort = new SortLightImportanceJob
+                {
+                    Keys = keys,
+                    Indices = indices,
+                    ScratchKeys = scratchKeys,
+                    ScratchIndices = scratchIndices,
+                    Count = count
+                }.Schedule(eval);
+
+                _pendingCullHandle = new BuildLightGpuPayloadJob
+                {
+                    Sources = sources,
+                    States = states,
+                    SortedIndices = indices,
+                    GpuPayload = gpu,
+                    DynamicProbeLights = probeLights,
+                    Counters = counters,
+                    Settings = settings,
+                    Count = count,
+                    GpuCapacity = DynamicPointLightCullingMath.MaximumActiveLights
+                }.Schedule(sort);
+
+                H8Memory.RegisterActiveJob(MemoryOwner, _pendingCullHandle);
+                _jobActive = true;
+                keepJobGuard = true;
+            }
+            finally
             {
-                Sources = sources,
-                FrustumPlanes = planes,
-                SdfSamples = sdf,
-                ProfileRules = rules,
-                States = states,
-                ImportanceKeys = keys,
-                ImportanceIndices = indices,
-                Settings = settings,
-                ProfileRuleCount = _profileRuleCount
-            }.Schedule(count, 64);
-
-            JobHandle sort = new SortLightImportanceJob
-            {
-                Keys = keys,
-                Indices = indices,
-                ScratchKeys = scratchKeys,
-                ScratchIndices = scratchIndices,
-                Count = count
-            }.Schedule(eval);
-
-            _pendingCullHandle = new BuildLightGpuPayloadJob
-            {
-                Sources = sources,
-                States = states,
-                SortedIndices = indices,
-                GpuPayload = gpu,
-                DynamicProbeLights = probeLights,
-                Counters = counters,
-                Settings = settings,
-                Count = count,
-                GpuCapacity = DynamicPointLightCullingMath.MaximumActiveLights
-            }.Schedule(sort);
-
-            H8Memory.RegisterActiveJob(MemoryOwner, _pendingCullHandle);
-            _jobActive = true;
+                if (!keepJobGuard)
+                    UnlockJobBuffers();
+            }
         }
 
         private NativeArray<DynamicPointLightGpuDTO> ResolveScheduledGpuPayload()
@@ -1235,53 +1269,24 @@ namespace Hecton8.Lighting
             if (vault == null)
                 return false;
 
-            bool ok = true;
-            ok &= _lockedSources = vault.TryLockBuffer(DynamicPointLightCullingVaultIds.Sources, MemoryOwner);
-            ok &= _lockedStates = vault.TryLockBuffer(DynamicPointLightCullingVaultIds.States, MemoryOwner);
-            if (_payloadWriteIndex == 0)
-                ok &= _lockedGpuFront = vault.TryLockBuffer(DynamicPointLightCullingVaultIds.GpuPayloadFront, MemoryOwner);
-            else
-                ok &= _lockedGpuBack = vault.TryLockBuffer(DynamicPointLightCullingVaultIds.GpuPayloadBack, MemoryOwner);
-            ok &= _lockedKeys = vault.TryLockBuffer(DynamicPointLightCullingVaultIds.ImportanceKeys, MemoryOwner);
-            ok &= _lockedIndices = vault.TryLockBuffer(DynamicPointLightCullingVaultIds.ImportanceIndices, MemoryOwner);
-            ok &= _lockedScratchKeys = vault.TryLockBuffer(DynamicPointLightCullingVaultIds.SortScratchKeys, MemoryOwner);
-            ok &= _lockedScratchIndices = vault.TryLockBuffer(DynamicPointLightCullingVaultIds.SortScratchIndices, MemoryOwner);
-            ok &= _lockedCounters = vault.TryLockBuffer(DynamicPointLightCullingVaultIds.RuntimeCounters, MemoryOwner);
-            ok &= _lockedProbeLights = vault.TryLockBuffer(DynamicPointLightCullingVaultIds.DynamicProbeLights, MemoryOwner);
+            if (_jobGuardHeld)
+                return true;
+            if (!vault.TryAcquireMutationGuard(JobMutationGuardMask))
+                return false;
 
-            if (!ok)
-                UnlockJobBuffers();
-
-            return ok;
+            _jobGuardHeld = true;
+            return true;
         }
 
         private void UnlockJobBuffers()
         {
             IDataVault vault = _vault;
-            if (vault != null)
+            if (vault != null && _jobGuardHeld)
             {
-                if (_lockedSources) vault.TryUnlockBuffer(DynamicPointLightCullingVaultIds.Sources, MemoryOwner);
-                if (_lockedStates) vault.TryUnlockBuffer(DynamicPointLightCullingVaultIds.States, MemoryOwner);
-                if (_lockedGpuFront) vault.TryUnlockBuffer(DynamicPointLightCullingVaultIds.GpuPayloadFront, MemoryOwner);
-                if (_lockedGpuBack) vault.TryUnlockBuffer(DynamicPointLightCullingVaultIds.GpuPayloadBack, MemoryOwner);
-                if (_lockedKeys) vault.TryUnlockBuffer(DynamicPointLightCullingVaultIds.ImportanceKeys, MemoryOwner);
-                if (_lockedIndices) vault.TryUnlockBuffer(DynamicPointLightCullingVaultIds.ImportanceIndices, MemoryOwner);
-                if (_lockedScratchKeys) vault.TryUnlockBuffer(DynamicPointLightCullingVaultIds.SortScratchKeys, MemoryOwner);
-                if (_lockedScratchIndices) vault.TryUnlockBuffer(DynamicPointLightCullingVaultIds.SortScratchIndices, MemoryOwner);
-                if (_lockedCounters) vault.TryUnlockBuffer(DynamicPointLightCullingVaultIds.RuntimeCounters, MemoryOwner);
-                if (_lockedProbeLights) vault.TryUnlockBuffer(DynamicPointLightCullingVaultIds.DynamicProbeLights, MemoryOwner);
+                vault.ReleaseMutationGuard(JobMutationGuardMask);
             }
 
-            _lockedSources = false;
-            _lockedStates = false;
-            _lockedGpuFront = false;
-            _lockedGpuBack = false;
-            _lockedKeys = false;
-            _lockedIndices = false;
-            _lockedScratchKeys = false;
-            _lockedScratchIndices = false;
-            _lockedCounters = false;
-            _lockedProbeLights = false;
+            _jobGuardHeld = false;
         }
 
         private bool TryLockMockSeedBuffers()
@@ -1290,29 +1295,22 @@ namespace Hecton8.Lighting
             if (vault == null)
                 return false;
 
-            bool ok = true;
-            ok &= _lockedMockSources = vault.TryLockBuffer(DynamicPointLightCullingVaultIds.Sources, MemoryOwner);
-            ok &= _lockedMockStates = vault.TryLockBuffer(DynamicPointLightCullingVaultIds.States, MemoryOwner);
+            if (_mockSeedGuardHeld)
+                return true;
+            if (!vault.TryAcquireMutationGuard(MockSeedMutationGuardMask))
+                return false;
 
-            if (!ok)
-                UnlockMockSeedBuffers();
-
-            return ok;
+            _mockSeedGuardHeld = true;
+            return true;
         }
 
         private void UnlockMockSeedBuffers()
         {
             IDataVault vault = _vault;
-            if (vault != null)
-            {
-                if (_lockedMockSources) vault.TryUnlockBuffer(DynamicPointLightCullingVaultIds.Sources, MemoryOwner);
-                if (_lockedMockStates) vault.TryUnlockBuffer(DynamicPointLightCullingVaultIds.States, MemoryOwner);
-                if (_lockedMockSdf) vault.TryUnlockBuffer(DynamicPointLightCullingVaultIds.MockSdfSamples, MemoryOwner);
-            }
+            if (vault != null && _mockSeedGuardHeld)
+                vault.ReleaseMutationGuard(MockSeedMutationGuardMask);
 
-            _lockedMockSources = false;
-            _lockedMockStates = false;
-            _lockedMockSdf = false;
+            _mockSeedGuardHeld = false;
         }
 
         private bool TryLockMockSdfBuffer()
@@ -1321,17 +1319,22 @@ namespace Hecton8.Lighting
             if (vault == null)
                 return false;
 
-            _lockedMockSdf = vault.TryLockBuffer(DynamicPointLightCullingVaultIds.MockSdfSamples, MemoryOwner);
-            return _lockedMockSdf;
+            if (_mockSdfGuardHeld)
+                return true;
+            if (!vault.TryAcquireMutationGuard(MockSdfMutationGuardMask))
+                return false;
+
+            _mockSdfGuardHeld = true;
+            return true;
         }
 
         private void UnlockMockSdfBuffer()
         {
             IDataVault vault = _vault;
-            if (vault != null && _lockedMockSdf)
-                vault.TryUnlockBuffer(DynamicPointLightCullingVaultIds.MockSdfSamples, MemoryOwner);
+            if (vault != null && _mockSdfGuardHeld)
+                vault.ReleaseMutationGuard(MockSdfMutationGuardMask);
 
-            _lockedMockSdf = false;
+            _mockSdfGuardHeld = false;
         }
 
         private bool TryLockSourceManifestBuffer()
@@ -1340,17 +1343,22 @@ namespace Hecton8.Lighting
             if (vault == null)
                 return false;
 
-            _lockedSourceManifest = vault.TryLockBuffer(DynamicPointLightCullingVaultIds.SourceManifest, MemoryOwner);
-            return _lockedSourceManifest;
+            if (_sourceManifestGuardHeld)
+                return true;
+            if (!vault.TryAcquireMutationGuard(SourceManifestMutationGuardMask))
+                return false;
+
+            _sourceManifestGuardHeld = true;
+            return true;
         }
 
         private void UnlockSourceManifestBuffer()
         {
             IDataVault vault = _vault;
-            if (vault != null && _lockedSourceManifest)
-                vault.TryUnlockBuffer(DynamicPointLightCullingVaultIds.SourceManifest, MemoryOwner);
+            if (vault != null && _sourceManifestGuardHeld)
+                vault.ReleaseMutationGuard(SourceManifestMutationGuardMask);
 
-            _lockedSourceManifest = false;
+            _sourceManifestGuardHeld = false;
         }
 
         private void UploadScheduledPayload()
@@ -1502,15 +1510,15 @@ namespace Hecton8.Lighting
 
         private bool GenerateMockSdfSamples(DynamicPointLightCullingSettingsDTO settings)
         {
-            NativeArray<float> samples = ResolveArray(ref _mockSdfSamples);
-            if (!samples.IsCreated || samples.Length == 0)
-                return false;
-
             if (!TryLockMockSdfBuffer())
                 return false;
 
             try
             {
+                NativeArray<float> samples = ResolveArray(ref _mockSdfSamples);
+                if (!samples.IsCreated || samples.Length == 0)
+                    return false;
+
                 JobHandle handle = new GenerateMockLightSdfSamplesJob
                 {
                     Samples = samples,
@@ -1519,7 +1527,7 @@ namespace Hecton8.Lighting
                 }.Schedule(samples.Length, 64);
                 H8Memory.RegisterActiveJob(MemoryOwner, handle);
                 // COLD SYNC JOB: editor SDF seed fence; gameplay culling treats unseeded SDF as absent.
-                DispatcherJobFence.TryComplete(ref handle, forceComplete: true);
+                ForceCompleteJobInPostSimulationWindow(ref handle);
                 return true;
             }
             finally

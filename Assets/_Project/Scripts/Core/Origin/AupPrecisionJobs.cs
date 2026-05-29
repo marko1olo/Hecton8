@@ -31,11 +31,17 @@ namespace Hecton8.Core
         public const BufferID MockExtremeAupsBuffer = (BufferID)73207;
         public const BufferID FaultCounterBuffer = (BufferID)73208;
         public const SystemID OwnerSystemId = SystemID.CoreDeterminism;
+        private const uint SchedulePinTargetAups = 1u << 0;
+        private const uint SchedulePinRuntimeState = 1u << 1;
+        private const uint SchedulePinLocalOffsets = 1u << 2;
+        private const uint SchedulePinResultFlags = 1u << 3;
+        private const uint SchedulePinTelemetryRing = 1u << 4;
+        private const uint SchedulePinFaultCounters = 1u << 5;
 
         /// <summary>
-        /// Ensures owner-local Vault buffers exist and resolves transient job views.
+        /// Opens or acquires owner-local Vault buffers and resolves transient owner-route views.
         /// </summary>
-        internal static bool EnsureBuffers(IDataVault vault, int requestedCapacity, out AupPrecisionVaultViews views)
+        internal static bool OpenOrAcquireBuffersForOwnerRoute(IDataVault vault, int requestedCapacity, out AupPrecisionVaultViews views)
         {
             views = default;
             if (vault == null)
@@ -44,11 +50,10 @@ namespace Hecton8.Core
             int capacity = ResolveCapacity(requestedCapacity);
             if (vault.IsAllocationLocked)
             {
-                if (!TryResolveExisting(vault, capacity, out views))
+                if (!TryResolveExistingBuffers(vault, capacity, out views))
                     return false;
 
-                EnsureRuntimeDefaults(views);
-                return true;
+                return EnsureRuntimeDefaults(vault);
             }
 
             VaultGenerationHandle<double3> targetAups = vault.EnsureGenerationHandle<double3>(
@@ -117,9 +122,24 @@ namespace Hecton8.Core
                 return false;
             }
 
-            EnsureRuntimeDefaults(views);
+            return EnsureRuntimeDefaults(vault);
+        }
 
-            return true;
+        /// <summary>
+        /// Legacy fail-closed overload. Use the lease overload so DataVault pins survive until the returned handle completes.
+        /// </summary>
+        [Obsolete("Use TryScheduleLocalization(..., out JobHandle handle, out AupPrecisionScheduleLease lease) and release the lease after the handle completes.", false)]
+        public static bool TryScheduleLocalization(
+            IDataVault vault,
+            int activeCount,
+            double3 observerAup,
+            float globalQualityWeight,
+            uint frame,
+            JobHandle dependency,
+            out JobHandle handle)
+        {
+            handle = dependency;
+            return false;
         }
 
         /// <summary>
@@ -132,10 +152,12 @@ namespace Hecton8.Core
             float globalQualityWeight,
             uint frame,
             JobHandle dependency,
-            out JobHandle handle)
+            out JobHandle handle,
+            out AupPrecisionScheduleLease lease)
         {
             handle = dependency;
-            if (!EnsureBuffers(vault, activeCount, out AupPrecisionVaultViews views))
+            lease = default;
+            if (!TryResolveExistingBuffers(vault, activeCount, out AupPrecisionVaultViews views))
                 return false;
 
             int count = math.clamp(activeCount, 0, views.TargetAups.Length);
@@ -143,45 +165,83 @@ namespace Hecton8.Core
                 return false;
 
             float gate = AupPrecisionMath.ResolveGateDistanceMeters(globalQualityWeight);
-            AupPrecisionRuntimeStateDTO state = views.RuntimeState[0];
-            state.ObserverAup = math.all(math.isfinite(observerAup)) ? observerAup : double3.zero;
-            state.Frame = frame;
-            state.ActiveCount = count;
-            state.GlobalQualityWeight = math.saturate(math.select(1f, globalQualityWeight, math.isfinite(globalQualityWeight)));
-            state.GateDistanceMeters = gate;
-            state.MaxLocalCastMeters = math.max(1f, state.MaxLocalCastMeters <= 0f ? AupPrecisionMath.DefaultMaxLocalCastMeters : state.MaxLocalCastMeters);
-            state.Flags = AupPrecisionJobs.ResultFlagValid;
-            views.RuntimeState[0] = state;
-
-            JobHandle localization = new LocalizeAupCoordinatesJob
+            if (!TryAcquireExistingWriteLane(
+                    vault,
+                    RuntimeStateBuffer,
+                    1,
+                    out VaultGenerationHandle<AupPrecisionRuntimeStateDTO> runtimeStateHandle,
+                    out NativeArray<AupPrecisionRuntimeStateDTO> runtimeState))
             {
-                TargetAups = views.TargetAups,
-                LocalOffsets = views.LocalOffsets,
-                ResultFlags = views.ResultFlags,
-                ObserverAup = state.ObserverAup,
-                GlobalQualityWeight = state.GlobalQualityWeight,
-                GateMinMeters = AupPrecisionMath.DefaultGateMinMeters,
-                GateMaxMeters = AupPrecisionMath.DefaultGateMaxMeters,
-                MaxLocalCastMeters = state.MaxLocalCastMeters,
-                OutOfBoundsSentinel = AupPrecisionMath.CreateOutOfBoundsSentinel()
-            }.Schedule(count, 64, dependency);
+                return false;
+            }
 
-            handle = new AupPrecisionTelemetryFoldJob
+            AupPrecisionRuntimeStateDTO state = default;
+            try
             {
-                TargetAups = views.TargetAups,
-                LocalOffsets = views.LocalOffsets,
-                ResultFlags = views.ResultFlags,
-                RuntimeState = views.RuntimeState,
-                TelemetryRing = views.TelemetryRing,
-                FaultCounters = views.FaultCounters,
-                ActiveCount = count,
-                TelemetryCursor = math.clamp(state.TelemetryCursor, 0, views.TelemetryRing.Length - 1),
-                Frame = frame,
-                GlobalQualityWeight = state.GlobalQualityWeight,
-                GateDistanceMeters = gate,
-                KernelMicrosecondsEstimate = EstimateLocalizationMicroseconds(count, state.GlobalQualityWeight)
-            }.Schedule(localization);
-            return true;
+                state = runtimeState[0];
+                state.ObserverAup = math.all(math.isfinite(observerAup)) ? observerAup : double3.zero;
+                state.Frame = frame;
+                state.ActiveCount = count;
+                state.GlobalQualityWeight = math.saturate(math.select(1f, globalQualityWeight, math.isfinite(globalQualityWeight)));
+                state.GateDistanceMeters = gate;
+                state.MaxLocalCastMeters = math.max(1f, state.MaxLocalCastMeters <= 0f ? AupPrecisionMath.DefaultMaxLocalCastMeters : state.MaxLocalCastMeters);
+                state.Flags = AupPrecisionJobs.ResultFlagValid;
+                runtimeState[0] = state;
+            }
+            finally
+            {
+                vault.ReleaseWriteLock(in runtimeStateHandle, OwnerSystemId);
+            }
+
+            if (!TryPinScheduledLocalizationBuffers(vault, out uint pinMask))
+                return false;
+
+            if (!TryResolveExistingBuffers(vault, count, out views))
+            {
+                ReleaseScheduledLocalizationBuffers(vault, pinMask);
+                return false;
+            }
+
+            bool scheduled = false;
+            try
+            {
+                JobHandle localization = new LocalizeAupCoordinatesJob
+                {
+                    TargetAups = views.TargetAups,
+                    LocalOffsets = views.LocalOffsets,
+                    ResultFlags = views.ResultFlags,
+                    ObserverAup = state.ObserverAup,
+                    GlobalQualityWeight = state.GlobalQualityWeight,
+                    GateMinMeters = AupPrecisionMath.DefaultGateMinMeters,
+                    GateMaxMeters = AupPrecisionMath.DefaultGateMaxMeters,
+                    MaxLocalCastMeters = state.MaxLocalCastMeters,
+                    OutOfBoundsSentinel = AupPrecisionMath.CreateOutOfBoundsSentinel()
+                }.Schedule(count, 64, dependency);
+
+                handle = new AupPrecisionTelemetryFoldJob
+                {
+                    TargetAups = views.TargetAups,
+                    LocalOffsets = views.LocalOffsets,
+                    ResultFlags = views.ResultFlags,
+                    RuntimeState = views.RuntimeState,
+                    TelemetryRing = views.TelemetryRing,
+                    FaultCounters = views.FaultCounters,
+                    ActiveCount = count,
+                    TelemetryCursor = math.clamp(state.TelemetryCursor, 0, views.TelemetryRing.Length - 1),
+                    Frame = frame,
+                    GlobalQualityWeight = state.GlobalQualityWeight,
+                    GateDistanceMeters = gate,
+                    KernelMicrosecondsEstimate = EstimateLocalizationMicroseconds(count, state.GlobalQualityWeight)
+                }.Schedule(localization);
+                lease = AupPrecisionScheduleLease.FromPinMask(pinMask);
+                scheduled = true;
+                return true;
+            }
+            finally
+            {
+                if (!scheduled)
+                    ReleaseScheduledLocalizationBuffers(vault, pinMask);
+            }
         }
 
 #if UNITY_EDITOR
@@ -190,26 +250,42 @@ namespace Hecton8.Core
         /// </summary>
         public static int LoadToleranceProfilesFromBytes(IDataVault vault, ReadOnlySpan<byte> csvBytes)
         {
-            if (csvBytes.Length <= 0 || !EnsureBuffers(vault, DefaultCapacity, out AupPrecisionVaultViews views))
+            if (csvBytes.Length <= 0 ||
+                !OpenOrAcquireBuffersForOwnerRoute(vault, DefaultCapacity, out _) ||
+                !TryAcquireExistingWriteLane(
+                    vault,
+                    ToleranceProfilesBuffer,
+                    ToleranceProfileCapacity,
+                    out VaultGenerationHandle<AupToleranceProfileDTO> toleranceProfilesHandle,
+                    out NativeArray<AupToleranceProfileDTO> toleranceProfiles))
+            {
                 return 0;
+            }
 
             int written = 0;
-            int cursor = 0;
-            while (cursor < csvBytes.Length && written < views.ToleranceProfiles.Length)
+            try
             {
-                int start = cursor;
-                while (cursor < csvBytes.Length && csvBytes[cursor] != (byte)'\n')
-                    cursor++;
-
-                ReadOnlySpan<byte> row = csvBytes.Slice(start, cursor - start);
-                if (AupPrecisionMath.TryParseToleranceProfileRow(row, out AupToleranceProfileDTO profile))
+                int cursor = 0;
+                while (cursor < csvBytes.Length && written < toleranceProfiles.Length)
                 {
-                    views.ToleranceProfiles[written] = profile;
-                    written++;
-                }
+                    int start = cursor;
+                    while (cursor < csvBytes.Length && csvBytes[cursor] != (byte)'\n')
+                        cursor++;
 
-                if (cursor < csvBytes.Length)
-                    cursor++;
+                    ReadOnlySpan<byte> row = csvBytes.Slice(start, cursor - start);
+                    if (AupPrecisionMath.TryParseToleranceProfileRow(row, out AupToleranceProfileDTO profile))
+                    {
+                        toleranceProfiles[written] = profile;
+                        written++;
+                    }
+
+                    if (cursor < csvBytes.Length)
+                        cursor++;
+                }
+            }
+            finally
+            {
+                vault.ReleaseWriteLock(in toleranceProfilesHandle, OwnerSystemId);
             }
 
             return written;
@@ -222,25 +298,25 @@ namespace Hecton8.Core
         public static bool TryDumpFaultTelemetry(IDataVault vault)
         {
             if (vault == null ||
-                !TryOpenExistingLane(
+                !TryOpenExistingReadOnlyLane(
                     vault,
                     TelemetryRingBuffer,
                     AupPrecisionMath.TelemetryCapacity,
-                    out NativeArray<AupPrecisionTelemetryEntry> ring) ||
-                !TryOpenExistingLane(
+                    out NativeArray<AupPrecisionTelemetryEntry>.ReadOnly ring) ||
+                !TryOpenExistingReadOnlyLane(
                     vault,
                     RuntimeStateBuffer,
                     1,
-                    out NativeArray<AupPrecisionRuntimeStateDTO> runtimeState))
+                    out NativeArray<AupPrecisionRuntimeStateDTO>.ReadOnly runtimeState))
             {
                 return false;
             }
 
-            if (TryOpenExistingLane(
+            if (TryOpenExistingReadOnlyLane(
                     vault,
                     FaultCounterBuffer,
                     1,
-                    out NativeArray<AupPrecisionFaultCounter64> counters))
+                    out NativeArray<AupPrecisionFaultCounter64>.ReadOnly counters))
             {
                 AupPrecisionFaultCounter64 counter = counters[0];
                 if (counter.NonFiniteCount <= 0 && counter.ClampedCount <= 0)
@@ -250,7 +326,7 @@ namespace Hecton8.Core
             return AupPrecisionJobs.TryDumpTelemetry(ring, runtimeState[0].TelemetryCursor);
         }
 
-        private static bool TryResolveExisting(IDataVault vault, int capacity, out AupPrecisionVaultViews views)
+        private static bool TryResolveExistingBuffers(IDataVault vault, int capacity, out AupPrecisionVaultViews views)
         {
             views = default;
             if (!TryOpenExistingLane(vault, TargetAupsBuffer, capacity, out views.TargetAups) ||
@@ -268,6 +344,46 @@ namespace Hecton8.Core
             }
 
             return views.IsValidForCapacity(capacity);
+        }
+
+        private static bool TryAcquireExistingWriteLane<T>(
+            IDataVault vault,
+            BufferID bufferId,
+            int requiredLength,
+            out VaultGenerationHandle<T> handle,
+            out NativeArray<T> buffer)
+            where T : struct
+        {
+            handle = default;
+            buffer = default;
+            if (vault == null || requiredLength <= 0)
+                return false;
+
+            if (!vault.TryGetGenerationHandle<T>(bufferId, out handle) ||
+                handle.BufferID != unchecked((uint)(int)bufferId) ||
+                handle.Generation == 0u ||
+                !vault.TryAcquireWriteLock(in handle, OwnerSystemId, out buffer))
+            {
+                return false;
+            }
+
+            bool handedOff = false;
+            try
+            {
+                if (buffer.IsCreated && buffer.Length >= requiredLength)
+                {
+                    handedOff = true;
+                    return true;
+                }
+
+                buffer = default;
+                return false;
+            }
+            finally
+            {
+                if (!handedOff)
+                    vault.ReleaseWriteLock(in handle, OwnerSystemId);
+            }
         }
 
         private static bool TryOpenExistingLane<T>(
@@ -297,6 +413,87 @@ namespace Hecton8.Core
             return true;
         }
 
+        private static bool TryOpenExistingReadOnlyLane<T>(
+            IDataVault vault,
+            BufferID bufferId,
+            int requiredLength,
+            out NativeArray<T>.ReadOnly buffer)
+            where T : struct
+        {
+            buffer = default;
+            if (vault == null || requiredLength <= 0)
+                return false;
+
+            if (!vault.TryGetGenerationHandle<T>(bufferId, out VaultGenerationHandle<T> handle) ||
+                handle.BufferID != unchecked((uint)(int)bufferId) ||
+                handle.Generation == 0u)
+            {
+                return false;
+            }
+
+            if (!vault.TryReadOnlyHandle(in handle, out buffer) || !buffer.IsCreated || buffer.Length < requiredLength)
+            {
+                buffer = default;
+                return false;
+            }
+
+            return true;
+        }
+
+        private static bool TryPinScheduledLocalizationBuffers(IDataVault vault, out uint pinMask)
+        {
+            pinMask = 0u;
+            bool pinned = false;
+            try
+            {
+                if (!TryPinScheduledLocalizationBuffer(vault, TargetAupsBuffer, SchedulePinTargetAups, ref pinMask) ||
+                    !TryPinScheduledLocalizationBuffer(vault, RuntimeStateBuffer, SchedulePinRuntimeState, ref pinMask) ||
+                    !TryPinScheduledLocalizationBuffer(vault, LocalOffsetsBuffer, SchedulePinLocalOffsets, ref pinMask) ||
+                    !TryPinScheduledLocalizationBuffer(vault, ResultFlagsBuffer, SchedulePinResultFlags, ref pinMask) ||
+                    !TryPinScheduledLocalizationBuffer(vault, TelemetryRingBuffer, SchedulePinTelemetryRing, ref pinMask) ||
+                    !TryPinScheduledLocalizationBuffer(vault, FaultCounterBuffer, SchedulePinFaultCounters, ref pinMask))
+                {
+                    return false;
+                }
+
+                pinned = true;
+                return true;
+            }
+            finally
+            {
+                if (!pinned)
+                    ReleaseScheduledLocalizationBuffers(vault, pinMask);
+            }
+        }
+
+        private static bool TryPinScheduledLocalizationBuffer(IDataVault vault, BufferID bufferId, uint pinBit, ref uint pinMask)
+        {
+            if (vault == null || !vault.TryLockBuffer(bufferId, OwnerSystemId))
+                return false;
+
+            pinMask |= pinBit;
+            return true;
+        }
+
+        internal static void ReleaseScheduledLocalizationBuffers(IDataVault vault, uint pinMask)
+        {
+            if (vault == null || pinMask == 0u)
+                return;
+
+            ReleaseScheduledLocalizationBuffer(vault, pinMask, SchedulePinFaultCounters, FaultCounterBuffer);
+            ReleaseScheduledLocalizationBuffer(vault, pinMask, SchedulePinTelemetryRing, TelemetryRingBuffer);
+            ReleaseScheduledLocalizationBuffer(vault, pinMask, SchedulePinResultFlags, ResultFlagsBuffer);
+            ReleaseScheduledLocalizationBuffer(vault, pinMask, SchedulePinLocalOffsets, LocalOffsetsBuffer);
+            ReleaseScheduledLocalizationBuffer(vault, pinMask, SchedulePinRuntimeState, RuntimeStateBuffer);
+            ReleaseScheduledLocalizationBuffer(vault, pinMask, SchedulePinTargetAups, TargetAupsBuffer);
+        }
+
+        private static void ReleaseScheduledLocalizationBuffer(IDataVault vault, uint pinMask, uint pinBit, BufferID bufferId)
+        {
+            if ((pinMask & pinBit) != 0u)
+                vault.TryUnlockBuffer(bufferId, OwnerSystemId);
+        }
+
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         private static int ResolveCapacity(int requestedCapacity)
         {
@@ -304,17 +501,48 @@ namespace Hecton8.Core
             return math.clamp(requested, 1, MaxCapacity);
         }
 
-        private static void EnsureRuntimeDefaults(AupPrecisionVaultViews views)
+        private static bool EnsureRuntimeDefaults(IDataVault vault)
         {
-            AupPrecisionRuntimeStateDTO state = views.RuntimeState[0];
-            if (state.Flags != 0u)
-                return;
+            if (!TryOpenExistingReadOnlyLane(
+                    vault,
+                    RuntimeStateBuffer,
+                    1,
+                    out NativeArray<AupPrecisionRuntimeStateDTO>.ReadOnly currentState))
+            {
+                return false;
+            }
 
-            state.GlobalQualityWeight = 1f;
-            state.GateDistanceMeters = AupPrecisionMath.ResolveGateDistanceMeters(1f);
-            state.MaxLocalCastMeters = AupPrecisionMath.DefaultMaxLocalCastMeters;
-            state.Flags = AupPrecisionJobs.ResultFlagValid;
-            views.RuntimeState[0] = state;
+            AupPrecisionRuntimeStateDTO state = currentState[0];
+            if (state.Flags != 0u)
+                return true;
+
+            if (!TryAcquireExistingWriteLane(
+                    vault,
+                    RuntimeStateBuffer,
+                    1,
+                    out VaultGenerationHandle<AupPrecisionRuntimeStateDTO> runtimeStateHandle,
+                    out NativeArray<AupPrecisionRuntimeStateDTO> runtimeState))
+            {
+                return false;
+            }
+
+            try
+            {
+                state = runtimeState[0];
+                if (state.Flags != 0u)
+                    return true;
+
+                state.GlobalQualityWeight = 1f;
+                state.GateDistanceMeters = AupPrecisionMath.ResolveGateDistanceMeters(1f);
+                state.MaxLocalCastMeters = AupPrecisionMath.DefaultMaxLocalCastMeters;
+                state.Flags = AupPrecisionJobs.ResultFlagValid;
+                runtimeState[0] = state;
+                return true;
+            }
+            finally
+            {
+                vault.ReleaseWriteLock(in runtimeStateHandle, OwnerSystemId);
+            }
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -322,6 +550,37 @@ namespace Hecton8.Core
         {
             float q = math.saturate(math.select(1f, quality, math.isfinite(quality)));
             return math.max(0f, count * math.lerp(0.018f, 0.036f, q));
+        }
+    }
+
+    /// <summary>
+    /// Value-type release token for DataVault buffers pinned by AUP precision jobs.
+    /// </summary>
+    public struct AupPrecisionScheduleLease
+    {
+        private uint _pinMask;
+
+        private AupPrecisionScheduleLease(uint pinMask)
+        {
+            _pinMask = pinMask;
+        }
+
+        public bool IsValid => _pinMask != 0u;
+
+        internal static AupPrecisionScheduleLease FromPinMask(uint pinMask)
+        {
+            return new AupPrecisionScheduleLease(pinMask);
+        }
+
+        public bool Release(IDataVault vault)
+        {
+            uint pinMask = _pinMask;
+            if (pinMask == 0u || vault == null)
+                return false;
+
+            _pinMask = 0u;
+            AupPrecisionVault.ReleaseScheduledLocalizationBuffers(vault, pinMask);
+            return true;
         }
     }
 
@@ -377,7 +636,7 @@ namespace Hecton8.Core
         /// <summary>
         /// Writes a raw binary telemetry dump for AUP precision faults.
         /// </summary>
-        public static bool TryDumpTelemetry(NativeArray<AupPrecisionTelemetryEntry> ring, int cursor)
+        public static bool TryDumpTelemetry(NativeArray<AupPrecisionTelemetryEntry>.ReadOnly ring, int cursor)
         {
             if (!ring.IsCreated || ring.Length <= 0)
                 return false;
@@ -397,11 +656,23 @@ namespace Hecton8.Core
                 writer.Write((uint)stride);
                 writer.Write((uint)math.clamp(cursor, 0, ring.Length - 1));
 
-                void* ptr = NativeArrayUnsafeUtility.GetUnsafeReadOnlyPtr(ring);
-                byte* bytes = (byte*)ptr;
-                int byteCount = ring.Length * stride;
-                for (int i = 0; i < byteCount; i++)
-                    writer.Write(bytes[i]);
+                for (int i = 0; i < ring.Length; i++)
+                {
+                    AupPrecisionTelemetryEntry entry = ring[i];
+                    writer.Write(entry.MaxLocalDistanceMeters);
+                    writer.Write(entry.MaxLocalDistanceSq);
+                    writer.Write(entry.Frame);
+                    writer.Write(entry.ActiveCount);
+                    writer.Write(entry.SkippedCount);
+                    writer.Write(entry.NonFiniteCount);
+                    writer.Write(entry.SafeNormalizeFallbackCount);
+                    writer.Write(entry.GlobalQualityWeight);
+                    writer.Write(entry.KernelMicrosecondsEstimate);
+                    writer.Write(entry.GateDistanceMeters);
+                    writer.Write(entry.Flags);
+                    writer.Write(entry.SectorHash);
+                    writer.Write(entry.PositionHash);
+                }
             }
 
             return true;

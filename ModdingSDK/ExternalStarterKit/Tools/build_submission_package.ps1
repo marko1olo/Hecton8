@@ -53,6 +53,17 @@ function Normalize-EntryName([string]$RelativePath) {
     return $normalized
 }
 
+function New-TempArtifactPath([string]$LeafName) {
+    $safeLeaf = $LeafName -replace '[^a-zA-Z0-9._-]', '_'
+    return (Join-Path ([System.IO.Path]::GetTempPath()) ('hecton8-' + $safeLeaf + '-' + [System.Guid]::NewGuid().ToString('N')))
+}
+
+function Remove-TempFile([string]$Path) {
+    if (-not [string]::IsNullOrWhiteSpace($Path) -and (Test-Path -LiteralPath $Path -PathType Leaf)) {
+        Remove-Item -LiteralPath $Path -Force -ErrorAction SilentlyContinue
+    }
+}
+
 $rootFull = (Resolve-Path -LiteralPath $Root).Path
 $prepareTool = Join-StarterPath $rootFull 'Tools/prepare_mod.ps1'
 if (-not (Test-Path -LiteralPath $prepareTool -PathType Leaf)) {
@@ -132,13 +143,9 @@ try {
     Fail ('System.IO.Compression assemblies unavailable: ' + $_.Exception.Message)
 }
 
-$tempOutputPath = $outputPath + '.tmp'
-$backupOutputPath = $outputPath + '.previous'
-foreach ($stalePath in @($tempOutputPath, $backupOutputPath)) {
-    if (Test-Path -LiteralPath $stalePath -PathType Leaf) {
-        Remove-Item -LiteralPath $stalePath -Force
-    }
-}
+$outputLeafName = [System.IO.Path]::GetFileName($outputPath)
+$tempOutputPath = (New-TempArtifactPath ($outputLeafName + '.tmp.zip'))
+$backupOutputPath = (New-TempArtifactPath ($outputLeafName + '.previous.zip'))
 
 $zip = $null
 try {
@@ -157,9 +164,7 @@ try {
         $zip.Dispose()
         $zip = $null
     }
-    if (Test-Path -LiteralPath $tempOutputPath -PathType Leaf) {
-        Remove-Item -LiteralPath $tempOutputPath -Force
-    }
+    Remove-TempFile $tempOutputPath
     Fail ('Submission package zip write failed: ' + $_.Exception.Message)
 } finally {
     if ($null -ne $zip) {
@@ -168,29 +173,24 @@ try {
 }
 
 $hadPreviousOutput = Test-Path -LiteralPath $outputPath -PathType Leaf
-$previousMovedToBackup = $false
+$previousCopiedToBackup = $false
 try {
     if ($hadPreviousOutput) {
-        Move-Item -LiteralPath $outputPath -Destination $backupOutputPath -Force
-        $previousMovedToBackup = $true
+        Copy-Item -LiteralPath $outputPath -Destination $backupOutputPath -Force
+        $previousCopiedToBackup = $true
     }
-    Move-Item -LiteralPath $tempOutputPath -Destination $outputPath -Force
-    if (Test-Path -LiteralPath $backupOutputPath -PathType Leaf) {
-        Remove-Item -LiteralPath $backupOutputPath -Force
-    }
+    Copy-Item -LiteralPath $tempOutputPath -Destination $outputPath -Force
+    Remove-TempFile $backupOutputPath
+    Remove-TempFile $tempOutputPath
 } catch {
-    if ($previousMovedToBackup -and (Test-Path -LiteralPath $outputPath -PathType Leaf)) {
-        Remove-Item -LiteralPath $outputPath -Force
-    }
-    if ($previousMovedToBackup -and (Test-Path -LiteralPath $backupOutputPath -PathType Leaf)) {
-        Move-Item -LiteralPath $backupOutputPath -Destination $outputPath -Force
+    if ($previousCopiedToBackup -and (Test-Path -LiteralPath $backupOutputPath -PathType Leaf)) {
+        Copy-Item -LiteralPath $backupOutputPath -Destination $outputPath -Force -ErrorAction SilentlyContinue
     }
     if ((-not $hadPreviousOutput) -and (Test-Path -LiteralPath $outputPath -PathType Leaf)) {
-        Remove-Item -LiteralPath $outputPath -Force
+        Remove-Item -LiteralPath $outputPath -Force -ErrorAction SilentlyContinue
     }
-    if (Test-Path -LiteralPath $tempOutputPath -PathType Leaf) {
-        Remove-Item -LiteralPath $tempOutputPath -Force
-    }
+    Remove-TempFile $backupOutputPath
+    Remove-TempFile $tempOutputPath
     Fail ('Submission package zip replace failed: ' + $_.Exception.Message)
 }
 Write-Host ('PASS HECTON-8 submission package: ' + $Output)

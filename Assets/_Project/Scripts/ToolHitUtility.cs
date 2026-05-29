@@ -1,3 +1,4 @@
+using System;
 using Hecton8.Core;
 using Hecton8.Core.Contracts;
 using Hecton8.Core.Contracts.Signals;
@@ -607,7 +608,7 @@ namespace Hecton8.Gameplay
                 HUDNotification.TryGetActive(out s_notification);
 
             if (s_notification != null)
-                s_notification.ShowInfo(message);
+                s_notification.ShowInfo(message.AsSpan());
             else
                 LogToolInfo(message);
         }
@@ -635,7 +636,7 @@ namespace Hecton8.Gameplay
                 HUDNotification.TryGetActive(out s_notification);
 
             if (s_notification != null)
-                s_notification.ShowWarning(message);
+                s_notification.ShowWarning(message.AsSpan());
             else
                 LogToolWarning(message);
         }

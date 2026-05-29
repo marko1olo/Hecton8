@@ -178,7 +178,10 @@ namespace Hecton8.Visor
             }
 
             if (serviceSlot == GlobalRegistryServiceSlot.Player)
+            {
                 _cachedPlayerContext = currentService as IPlayerRuntimeContext;
+                ApplyCachedPlayerContext();
+            }
         }
 
         /// <summary>
@@ -190,7 +193,7 @@ namespace Hecton8.Visor
             if (deltaTime <= 0f || !math.isfinite(deltaTime))
                 return;
 
-            TryResolveDependencies(deltaTime);
+            RefreshRuntimeDependencies();
 
             _traumaPulse01 = SanitizeUnit(_traumaPulse01);
             _interactionStress01 = SanitizeUnit(_interactionStress01);
@@ -349,6 +352,14 @@ namespace Hecton8.Visor
             }
         }
 
+        private void RefreshRuntimeDependencies()
+        {
+            if (_survivalSystem != null && _playerMovement != null && _playerHealth != null)
+                return;
+
+            ApplyCachedPlayerContext();
+        }
+
         private void TryRegisterTickHandler()
         {
             if (!Application.isPlaying)
@@ -389,6 +400,21 @@ namespace Hecton8.Visor
         {
             _cachedAudioService = GlobalRegistry.Audio;
             _cachedPlayerContext = GlobalRegistry.Player;
+            ApplyCachedPlayerContext();
+        }
+
+        private void ApplyCachedPlayerContext()
+        {
+            IPlayerRuntimeContext playerContext = _cachedPlayerContext;
+            if (playerContext == null || !playerContext.IsInitialized)
+                return;
+
+            if (_survivalSystem == null)
+                _survivalSystem = playerContext.SurvivalSystem;
+            if (_playerMovement == null)
+                _playerMovement = playerContext.PlayerMovement;
+            if (_playerHealth == null)
+                _playerHealth = playerContext.PlayerHealth;
         }
 
         private float ResolveStress01()

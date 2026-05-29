@@ -102,6 +102,7 @@ namespace Hecton8.Visor
         private bool _pendingMockReset;
         private bool _registeredHotSwapListener;
         private bool _nativeFaultLogged;
+        private bool _coldSupportsSetConstantBuffer;
 
         public bool TryGetPreview(out VisorStateDTO state, out DiegeticVisorLensGpuGlobalsDTO globals, out VisorLensTuningDTO tuning)
         {
@@ -188,12 +189,14 @@ namespace Hecton8.Visor
 
         private void Awake()
         {
+            CacheGraphicsCapabilitiesCold();
             CacheRegistryServicesCold();
             EnsureNativeState();
         }
 
         private void OnEnable()
         {
+            CacheGraphicsCapabilitiesCold();
             CacheRegistryServicesCold();
             EnsureNativeState();
             TryRegisterHotSwapListener();
@@ -268,97 +271,70 @@ namespace Hecton8.Visor
         private void ApplyEmergencyMockVisorData()
         {
             IDataVault vault = EnsureVault();
-            bool stateLocked = false;
-            bool tuningLocked = false;
-            bool physiologyLocked = false;
-            bool environmentLocked = false;
-            try
+            if (!TryReadVisorValue(vault, in _stateHandle, StateBufferId, out VisorStateDTO state) ||
+                !TryReadVisorValue(vault, in _tuningHandle, TuningBufferId, out VisorLensTuningDTO tuning) ||
+                !TryReadVisorValue(vault, in _physiologyHandle, PhysiologyBufferId, out MockPhysiologySignal physiology) ||
+                !TryReadVisorValue(vault, in _environmentHandle, EnvironmentBufferId, out MockVisorEnvironmentSignal environment))
             {
-                if (!TryAcquireVisorWriteBuffer(vault, in _stateHandle, StateBufferId, 1, out NativeArray<VisorStateDTO> stateBuffer))
-                    return;
-                stateLocked = true;
-
-                if (!TryAcquireVisorWriteBuffer(vault, in _tuningHandle, TuningBufferId, 1, out NativeArray<VisorLensTuningDTO> tuningBuffer))
-                    return;
-                tuningLocked = true;
-
-                if (!TryAcquireVisorWriteBuffer(vault, in _physiologyHandle, PhysiologyBufferId, 1, out NativeArray<MockPhysiologySignal> physiologyBuffer))
-                    return;
-                physiologyLocked = true;
-
-                if (!TryAcquireVisorWriteBuffer(vault, in _environmentHandle, EnvironmentBufferId, 1, out NativeArray<MockVisorEnvironmentSignal> environmentBuffer))
-                    return;
-                environmentLocked = true;
-
-                VisorStateDTO state = stateBuffer[0];
-                VisorLensTuningDTO tuning = tuningBuffer[0];
-                MockPhysiologySignal physiology = physiologyBuffer[0];
-                MockVisorEnvironmentSignal environment = environmentBuffer[0];
-
-                state.CondensationLevel = 0f;
-                state.WaterDropletIntensity = 0f;
-                state.CrackSeverity = 0f;
-                state.DirtAccumulation = 0.04f;
-
-                tuning.FogRate = 0.08f;
-                tuning.FogBreathGain = 0.045f;
-                tuning.FogColdGain = 0.035f;
-                tuning.ClearingRate = 0.22f;
-                tuning.DropletDrainSeconds = 5f;
-                tuning.DropletGravityStrength = 0.42f;
-                tuning.SurfaceWashDrainRate = 0.2f;
-                tuning.CrackPressureThreshold = 0.78f;
-                tuning.CrackGrowthRate = 0.45f;
-                tuning.MaxCrackSeverity = 1f;
-                tuning.DirtSiltGain = 0.04f;
-                tuning.WipeStrength = 2.4f;
-                tuning.ReflectionDarknessGain = 0.64f;
-                tuning.AnomalyNoiseGain = 0.32f;
-                tuning.LowRefractionQualityCutoff = 0.3f;
-                tuning.BiolumReflectionGain = 0.22f;
-                tuning.HeartCondensationGain = 0.012f;
-                tuning.CoreTempCondensationGain = 0.018f;
-                tuning.QualityStaticBlendStart = 0.18f;
-                tuning.QualityDynamicBlendEnd = 0.72f;
-                tuning.Flags = 0u;
-                tuning.Version++;
-
-                physiology.RespirationRate = 12f;
-                physiology.HeartRate = 72f;
-                physiology.CoreTemperatureC = 37f;
-                physiology.BreathSpike01 = 0f;
-                physiology.Frame = _frameCounter;
-                physiology.Flags = 0u;
-
-                environment.ExternalWaterTemperatureC = 4f;
-                environment.ExternalPressure01 = 0f;
-                environment.SiltDensity01 = 0f;
-                environment.Darkness01 = 0.48f;
-                environment.SurfaceEmergence01 = 0f;
-                environment.WipeCommand01 = 0f;
-                environment.Corruption01 = 0f;
-                environment.WaterlineBreach01 = 0f;
-                environment.Frame = _frameCounter;
-                environment.Flags = 0u;
-
-                stateBuffer[0] = state;
-                tuningBuffer[0] = tuning;
-                physiologyBuffer[0] = physiology;
-                environmentBuffer[0] = environment;
-                _mockDataActive = true;
-                ClearPendingExternalInputs();
+                return;
             }
-            finally
+
+            state.CondensationLevel = 0f;
+            state.WaterDropletIntensity = 0f;
+            state.CrackSeverity = 0f;
+            state.DirtAccumulation = 0.04f;
+
+            tuning.FogRate = 0.08f;
+            tuning.FogBreathGain = 0.045f;
+            tuning.FogColdGain = 0.035f;
+            tuning.ClearingRate = 0.22f;
+            tuning.DropletDrainSeconds = 5f;
+            tuning.DropletGravityStrength = 0.42f;
+            tuning.SurfaceWashDrainRate = 0.2f;
+            tuning.CrackPressureThreshold = 0.78f;
+            tuning.CrackGrowthRate = 0.45f;
+            tuning.MaxCrackSeverity = 1f;
+            tuning.DirtSiltGain = 0.04f;
+            tuning.WipeStrength = 2.4f;
+            tuning.ReflectionDarknessGain = 0.64f;
+            tuning.AnomalyNoiseGain = 0.32f;
+            tuning.LowRefractionQualityCutoff = 0.3f;
+            tuning.BiolumReflectionGain = 0.22f;
+            tuning.HeartCondensationGain = 0.012f;
+            tuning.CoreTempCondensationGain = 0.018f;
+            tuning.QualityStaticBlendStart = 0.18f;
+            tuning.QualityDynamicBlendEnd = 0.72f;
+            tuning.Flags = 0u;
+            tuning.Version++;
+
+            physiology.RespirationRate = 12f;
+            physiology.HeartRate = 72f;
+            physiology.CoreTemperatureC = 37f;
+            physiology.BreathSpike01 = 0f;
+            physiology.Frame = _frameCounter;
+            physiology.Flags = 0u;
+
+            environment.ExternalWaterTemperatureC = 4f;
+            environment.ExternalPressure01 = 0f;
+            environment.SiltDensity01 = 0f;
+            environment.Darkness01 = 0.48f;
+            environment.SurfaceEmergence01 = 0f;
+            environment.WipeCommand01 = 0f;
+            environment.Corruption01 = 0f;
+            environment.WaterlineBreach01 = 0f;
+            environment.Frame = _frameCounter;
+            environment.Flags = 0u;
+
+            if (!TryWriteVisorValue(vault, in _stateHandle, StateBufferId, in state) ||
+                !TryWriteVisorValue(vault, in _tuningHandle, TuningBufferId, in tuning) ||
+                !TryWriteVisorValue(vault, in _physiologyHandle, PhysiologyBufferId, in physiology) ||
+                !TryWriteVisorValue(vault, in _environmentHandle, EnvironmentBufferId, in environment))
             {
-                if (environmentLocked)
-                    vault.ReleaseWriteLock(in _environmentHandle, OwnerSystem);
-                if (physiologyLocked)
-                    vault.ReleaseWriteLock(in _physiologyHandle, OwnerSystem);
-                if (tuningLocked)
-                    vault.ReleaseWriteLock(in _tuningHandle, OwnerSystem);
-                if (stateLocked)
-                    vault.ReleaseWriteLock(in _stateHandle, OwnerSystem);
+                return;
             }
+
+            _mockDataActive = true;
+            ClearPendingExternalInputs();
         }
 
         public void InjectMockPhysiology(float respirationRate, float heartRate, float coreTemperatureC)
@@ -883,6 +859,41 @@ namespace Hecton8.Visor
             }
         }
 
+        private static bool TryReadVisorValue<T>(
+            IDataVault vault,
+            in VaultGenerationHandle<T> handle,
+            BufferID id,
+            out T value) where T : unmanaged
+        {
+            value = default;
+            if (!TryReadVaultArray(vault, in handle, id, 1, out NativeArray<T>.ReadOnly buffer))
+                return false;
+
+            value = buffer[0];
+            return true;
+        }
+
+        private static bool TryWriteVisorValue<T>(
+            IDataVault vault,
+            in VaultGenerationHandle<T> handle,
+            BufferID id,
+            in T value) where T : unmanaged
+        {
+            if (!TryAcquireVisorWriteBuffer(vault, in handle, id, 1, out NativeArray<T> buffer))
+                return false;
+
+            try
+            {
+                T copy = value;
+                buffer[0] = copy;
+                return true;
+            }
+            finally
+            {
+                vault.ReleaseWriteLock(in handle, OwnerSystem);
+            }
+        }
+
         private static bool IsVisorVaultHandle<T>(
             in VaultGenerationHandle<T> handle,
             BufferID id) where T : unmanaged
@@ -959,95 +970,56 @@ namespace Hecton8.Visor
             if (vault == null || vault.IsCompactionFenceActive)
                 return;
 
-            bool stateLocked = false;
-            bool tuningLocked = false;
-            bool physiologyLocked = false;
-            bool environmentLocked = false;
-            bool gpuGlobalsLocked = false;
-            bool nanFlagsLocked = false;
-            bool hasResult = false;
-            VisorStateDTO stateSnapshot = default;
-            int nanFlags = 0;
-            try
+            if (!TryReadVisorValue(vault, in _stateHandle, StateBufferId, out VisorStateDTO state) ||
+                !TryReadVisorValue(vault, in _tuningHandle, TuningBufferId, out VisorLensTuningDTO tuning) ||
+                !TryReadVisorValue(vault, in _physiologyHandle, PhysiologyBufferId, out MockPhysiologySignal physiology) ||
+                !TryReadVisorValue(vault, in _environmentHandle, EnvironmentBufferId, out MockVisorEnvironmentSignal environment) ||
+                !TryReadVisorValue(vault, in _nanFlagsHandle, NanFlagBufferId, out int nanFlags))
             {
-                if (!TryAcquireVisorWriteBuffer(vault, in _stateHandle, StateBufferId, 1, out NativeArray<VisorStateDTO> state))
-                    return;
-                stateLocked = true;
-
-                if (!TryAcquireVisorWriteBuffer(vault, in _tuningHandle, TuningBufferId, 1, out NativeArray<VisorLensTuningDTO> tuning))
-                    return;
-                tuningLocked = true;
-
-                if (!TryAcquireVisorWriteBuffer(vault, in _physiologyHandle, PhysiologyBufferId, 1, out NativeArray<MockPhysiologySignal> physiology))
-                    return;
-                physiologyLocked = true;
-
-                if (!TryAcquireVisorWriteBuffer(vault, in _environmentHandle, EnvironmentBufferId, 1, out NativeArray<MockVisorEnvironmentSignal> environment))
-                    return;
-                environmentLocked = true;
-
-                if (!TryAcquireVisorWriteBuffer(vault, in _gpuGlobalsHandle, GpuGlobalsBufferId, 1, out NativeArray<DiegeticVisorLensGpuGlobalsDTO> gpuGlobals))
-                    return;
-                gpuGlobalsLocked = true;
-
-                if (!TryAcquireVisorWriteBuffer(vault, in _nanFlagsHandle, NanFlagBufferId, 1, out NativeArray<int> nanFlagBuffer))
-                    return;
-                nanFlagsLocked = true;
-
-                if (!state.IsCreated || state.Length <= 0 ||
-                    !tuning.IsCreated || tuning.Length <= 0 ||
-                    !physiology.IsCreated || physiology.Length <= 0 ||
-                    !environment.IsCreated || environment.Length <= 0 ||
-                    !gpuGlobals.IsCreated || gpuGlobals.Length <= 0 ||
-                    !nanFlagBuffer.IsCreated || nanFlagBuffer.Length <= 0)
-                    return;
-
-                VisorCondensationEvaluator evaluator = default;
-                evaluator.State = state;
-                evaluator.Tuning = tuning;
-                evaluator.Physiology = physiology;
-                evaluator.Environment = environment;
-                evaluator.GpuGlobals = gpuGlobals;
-                evaluator.NanFlags = nanFlagBuffer;
-                evaluator.DeltaTime = deltaTime;
-                evaluator.GlobalQualityWeight = qualityWeight;
-                evaluator.HeadAngularVelocity = _headAngularVelocity;
-                evaluator.Frame = _frameCounter;
-                evaluator.Execute();
-
-                stateSnapshot = state[0];
-                _lastGpuGlobals = gpuGlobals[0];
-                _hasGpuGlobals = true;
-                nanFlags = nanFlagBuffer[0];
-                if (nanFlags != 0)
-                    nanFlagBuffer[0] = 0;
-
-                hasResult = true;
-            }
-            finally
-            {
-                if (nanFlagsLocked)
-                    vault.ReleaseWriteLock(in _nanFlagsHandle, OwnerSystem);
-                if (gpuGlobalsLocked)
-                    vault.ReleaseWriteLock(in _gpuGlobalsHandle, OwnerSystem);
-                if (environmentLocked)
-                    vault.ReleaseWriteLock(in _environmentHandle, OwnerSystem);
-                if (physiologyLocked)
-                    vault.ReleaseWriteLock(in _physiologyHandle, OwnerSystem);
-                if (tuningLocked)
-                    vault.ReleaseWriteLock(in _tuningHandle, OwnerSystem);
-                if (stateLocked)
-                    vault.ReleaseWriteLock(in _stateHandle, OwnerSystem);
-            }
-
-            if (!hasResult)
                 return;
+            }
 
-            WriteTelemetryFrame(in stateSnapshot, in _lastGpuGlobals, nanFlags);
+            VisorCondensationEvaluator evaluator = default;
+            evaluator.State = state;
+            evaluator.Tuning = tuning;
+            evaluator.Physiology = physiology;
+            evaluator.Environment = environment;
+            evaluator.NanFlags = nanFlags;
+            evaluator.DeltaTime = deltaTime;
+            evaluator.GlobalQualityWeight = qualityWeight;
+            evaluator.HeadAngularVelocity = _headAngularVelocity;
+            evaluator.Frame = _frameCounter;
+            evaluator.Execute();
+
+            state = evaluator.State;
+            physiology = evaluator.Physiology;
+            environment = evaluator.Environment;
+            DiegeticVisorLensGpuGlobalsDTO gpuGlobals = evaluator.GpuGlobals;
+            nanFlags = evaluator.NanFlags;
+
+            if (!TryWriteVisorValue(vault, in _stateHandle, StateBufferId, in state) ||
+                !TryWriteVisorValue(vault, in _physiologyHandle, PhysiologyBufferId, in physiology) ||
+                !TryWriteVisorValue(vault, in _environmentHandle, EnvironmentBufferId, in environment) ||
+                !TryWriteVisorValue(vault, in _gpuGlobalsHandle, GpuGlobalsBufferId, in gpuGlobals))
+            {
+                return;
+            }
+
+            if (nanFlags != 0)
+            {
+                int clearedNanFlags = 0;
+                if (!TryWriteVisorValue(vault, in _nanFlagsHandle, NanFlagBufferId, in clearedNanFlags))
+                    return;
+            }
+
+            _lastGpuGlobals = gpuGlobals;
+            _hasGpuGlobals = true;
+
+            WriteTelemetryFrame(in state, in _lastGpuGlobals, nanFlags);
             if (nanFlags != 0)
                 DumpBlackBoxOnce((uint)nanFlags);
 
-            TryPublishBreach(in stateSnapshot);
+            TryPublishBreach(in state);
         }
 
         private bool TryFinalizeScheduledWorkNoWait()
@@ -1101,7 +1073,7 @@ namespace Hecton8.Visor
 
         private bool EnsureGpuBuffer()
         {
-            if (!SystemInfo.supportsSetConstantBuffer)
+            if (!_coldSupportsSetConstantBuffer)
             {
                 ReleaseGpuBuffer();
                 return false;
@@ -1149,6 +1121,11 @@ namespace Hecton8.Visor
                 ReportNativeFaultClosed();
                 return false;
             }
+        }
+
+        private void CacheGraphicsCapabilitiesCold()
+        {
+            _coldSupportsSetConstantBuffer = SystemInfo.supportsSetConstantBuffer;
         }
 
         private void ReleaseGpuBuffer()
@@ -1252,72 +1229,58 @@ namespace Hecton8.Visor
         private void IngestCoreSignals(float deltaTime)
         {
             IDataVault vault = EnsureVault();
-            bool physiologyLocked = false;
-            bool environmentLocked = false;
-            try
+            if (!TryReadVisorValue(vault, in _physiologyHandle, PhysiologyBufferId, out MockPhysiologySignal physiology) ||
+                !TryReadVisorValue(vault, in _environmentHandle, EnvironmentBufferId, out MockVisorEnvironmentSignal environment))
             {
-                if (!TryAcquireVisorWriteBuffer(vault, in _physiologyHandle, PhysiologyBufferId, 1, out NativeArray<MockPhysiologySignal> physiologyBuffer))
-                    return;
-                physiologyLocked = true;
-
-                if (!TryAcquireVisorWriteBuffer(vault, in _environmentHandle, EnvironmentBufferId, 1, out NativeArray<MockVisorEnvironmentSignal> environmentBuffer))
-                    return;
-                environmentLocked = true;
-
-                MockPhysiologySignal physiology = physiologyBuffer[0];
-                MockVisorEnvironmentSignal environment = environmentBuffer[0];
-
-                physiology.Frame = _frameCounter;
-                environment.Frame = _frameCounter;
-                physiology.BreathSpike01 = math.max(0f, physiology.BreathSpike01 - deltaTime * 0.8f);
-                environment.Corruption01 = math.max(0f, environment.Corruption01 - deltaTime * 0.12f);
-                environment.SiltDensity01 = math.max(0f, environment.SiltDensity01 - deltaTime * 0.08f);
-                ApplyPendingExternalInputs(ref physiology, ref environment);
-
-                ReadOnlySpan<PlayerExhaleSignal> exhales = SignalBus<PlayerExhaleSignal>.GetFrameSnapshot();
-                if (exhales.Length > 0)
-                {
-                    physiology.BreathSpike01 = 1f;
-                    physiology.RespirationRate = math.max(SanitizeRange(physiology.RespirationRate, 4f, 44f, 12f), math.min(44f, 16f + exhales.Length * 2f));
-                    _forceImmediateSimulation = true;
-                }
-
-                ReadOnlySpan<PlayerWaterSplashSignal> splashes = SignalBus<PlayerWaterSplashSignal>.GetFrameSnapshot();
-                for (int i = 0; i < splashes.Length; i++)
-                {
-                    ref readonly PlayerWaterSplashSignal signal = ref splashes[i];
-                    float intensity = Sanitize01(signal.Intensity01);
-                    environment.SurfaceEmergence01 = math.max(environment.SurfaceEmergence01, intensity);
-                    if (signal.IsSubmerged != 0 || signal.VerticalSpeed < -0.35f)
-                    {
-                        environment.WaterlineBreach01 = math.max(environment.WaterlineBreach01, intensity);
-                        _forceImmediateSimulation = true;
-                    }
-                }
-
-                ReadOnlySpan<PlayerFatalPressureSignal> pressureSignals = SignalBus<PlayerFatalPressureSignal>.GetFrameSnapshot();
-                for (int i = 0; i < pressureSignals.Length; i++)
-                {
-                    environment.ExternalPressure01 = math.max(environment.ExternalPressure01, Sanitize01(pressureSignals[i].Intensity01));
-                    _forceImmediateSimulation = true;
-                }
-
-                ReadOnlySpan<SystemGlitchSignal> glitches = SignalBus<SystemGlitchSignal>.GetFrameSnapshot();
-                for (int i = 0; i < glitches.Length; i++)
-                {
-                    environment.Corruption01 = math.max(environment.Corruption01, Sanitize01(glitches[i].Intensity01));
-                    _forceImmediateSimulation = true;
-                }
-
-                physiologyBuffer[0] = physiology;
-                environmentBuffer[0] = environment;
+                return;
             }
-            finally
+
+            physiology.Frame = _frameCounter;
+            environment.Frame = _frameCounter;
+            physiology.BreathSpike01 = math.max(0f, physiology.BreathSpike01 - deltaTime * 0.8f);
+            environment.Corruption01 = math.max(0f, environment.Corruption01 - deltaTime * 0.12f);
+            environment.SiltDensity01 = math.max(0f, environment.SiltDensity01 - deltaTime * 0.08f);
+            ApplyPendingExternalInputs(ref physiology, ref environment);
+
+            ReadOnlySpan<PlayerExhaleSignal> exhales = SignalBus<PlayerExhaleSignal>.GetFrameSnapshot();
+            if (exhales.Length > 0)
             {
-                if (environmentLocked)
-                    vault.ReleaseWriteLock(in _environmentHandle, OwnerSystem);
-                if (physiologyLocked)
-                    vault.ReleaseWriteLock(in _physiologyHandle, OwnerSystem);
+                physiology.BreathSpike01 = 1f;
+                physiology.RespirationRate = math.max(SanitizeRange(physiology.RespirationRate, 4f, 44f, 12f), math.min(44f, 16f + exhales.Length * 2f));
+                _forceImmediateSimulation = true;
+            }
+
+            ReadOnlySpan<PlayerWaterSplashSignal> splashes = SignalBus<PlayerWaterSplashSignal>.GetFrameSnapshot();
+            for (int i = 0; i < splashes.Length; i++)
+            {
+                ref readonly PlayerWaterSplashSignal signal = ref splashes[i];
+                float intensity = Sanitize01(signal.Intensity01);
+                environment.SurfaceEmergence01 = math.max(environment.SurfaceEmergence01, intensity);
+                if (signal.IsSubmerged != 0 || signal.VerticalSpeed < -0.35f)
+                {
+                    environment.WaterlineBreach01 = math.max(environment.WaterlineBreach01, intensity);
+                    _forceImmediateSimulation = true;
+                }
+            }
+
+            ReadOnlySpan<PlayerFatalPressureSignal> pressureSignals = SignalBus<PlayerFatalPressureSignal>.GetFrameSnapshot();
+            for (int i = 0; i < pressureSignals.Length; i++)
+            {
+                environment.ExternalPressure01 = math.max(environment.ExternalPressure01, Sanitize01(pressureSignals[i].Intensity01));
+                _forceImmediateSimulation = true;
+            }
+
+            ReadOnlySpan<SystemGlitchSignal> glitches = SignalBus<SystemGlitchSignal>.GetFrameSnapshot();
+            for (int i = 0; i < glitches.Length; i++)
+            {
+                environment.Corruption01 = math.max(environment.Corruption01, Sanitize01(glitches[i].Intensity01));
+                _forceImmediateSimulation = true;
+            }
+
+            if (!TryWriteVisorValue(vault, in _physiologyHandle, PhysiologyBufferId, in physiology) ||
+                !TryWriteVisorValue(vault, in _environmentHandle, EnvironmentBufferId, in environment))
+            {
+                return;
             }
         }
 
@@ -1486,32 +1449,43 @@ namespace Hecton8.Visor
             entry.ShaderUpdateComputeTimeNs = _lastShaderUpdateComputeTimeNs;
             entry.Anomaly01 = Sanitize01(environment.Corruption01);
 
-            bool ringLocked = false;
+            int cursor = 0;
             bool cursorLocked = false;
             try
             {
-                if (!TryAcquireVisorWriteBuffer(vault, in _telemetryHandle, TelemetryRingBufferId, TelemetryCapacity, out NativeArray<VisorLensTelemetryEntry> ring))
-                    return;
-                ringLocked = true;
-
                 if (!TryAcquireVisorWriteBuffer(vault, in _telemetryCursorHandle, TelemetryCursorBufferId, 1, out NativeArray<int> cursorBuffer))
                     return;
                 cursorLocked = true;
 
-                if (!ring.IsCreated || ring.Length < TelemetryCapacity || !cursorBuffer.IsCreated || cursorBuffer.Length <= 0)
+                if (!cursorBuffer.IsCreated || cursorBuffer.Length <= 0)
                     return;
 
-                int cursor = cursorBuffer[0];
+                cursor = cursorBuffer[0];
                 if (cursor < 0 || cursor >= TelemetryCapacity)
                     cursor = 0;
 
-                ring[cursor] = entry;
                 cursorBuffer[0] = cursor + 1 >= TelemetryCapacity ? 0 : cursor + 1;
             }
             finally
             {
                 if (cursorLocked)
                     vault.ReleaseWriteLock(in _telemetryCursorHandle, OwnerSystem);
+            }
+
+            bool ringLocked = false;
+            try
+            {
+                if (!TryAcquireVisorWriteBuffer(vault, in _telemetryHandle, TelemetryRingBufferId, TelemetryCapacity, out NativeArray<VisorLensTelemetryEntry> ring))
+                    return;
+
+                ringLocked = true;
+                if (!ring.IsCreated || ring.Length < TelemetryCapacity)
+                    return;
+
+                ring[cursor] = entry;
+            }
+            finally
+            {
                 if (ringLocked)
                     vault.ReleaseWriteLock(in _telemetryHandle, OwnerSystem);
             }
@@ -1523,24 +1497,22 @@ namespace Hecton8.Visor
             if (vault == null || vault.IsCompactionFenceActive)
                 return;
 
+            if (!TryReadVisorValue(vault, in _telemetryCursorHandle, TelemetryCursorBufferId, out int cursor))
+                return;
+
+            cursor--;
+            if (cursor < 0)
+                cursor = TelemetryCapacity - 1;
+
             bool ringLocked = false;
-            bool cursorLocked = false;
             try
             {
                 if (!TryAcquireVisorWriteBuffer(vault, in _telemetryHandle, TelemetryRingBufferId, TelemetryCapacity, out NativeArray<VisorLensTelemetryEntry> ring))
                     return;
                 ringLocked = true;
 
-                if (!TryAcquireVisorWriteBuffer(vault, in _telemetryCursorHandle, TelemetryCursorBufferId, 1, out NativeArray<int> cursorBuffer))
+                if (!ring.IsCreated || ring.Length < TelemetryCapacity)
                     return;
-                cursorLocked = true;
-
-                if (!ring.IsCreated || ring.Length < TelemetryCapacity || !cursorBuffer.IsCreated || cursorBuffer.Length <= 0)
-                    return;
-
-                int cursor = cursorBuffer[0] - 1;
-                if (cursor < 0)
-                    cursor = TelemetryCapacity - 1;
 
                 VisorLensTelemetryEntry entry = ring[cursor];
                 entry.ShaderUpdateComputeTimeNs = shaderUpdateComputeTimeNs;
@@ -1548,8 +1520,6 @@ namespace Hecton8.Visor
             }
             finally
             {
-                if (cursorLocked)
-                    vault.ReleaseWriteLock(in _telemetryCursorHandle, OwnerSystem);
                 if (ringLocked)
                     vault.ReleaseWriteLock(in _telemetryHandle, OwnerSystem);
             }
@@ -1625,27 +1595,13 @@ namespace Hecton8.Visor
             if (vault == null || vault.IsCompactionFenceActive)
                 return false;
 
-            bool cursorLocked = false;
-            try
-            {
-                if (!TryAcquireVisorWriteBuffer(vault, in _telemetryCursorHandle, TelemetryCursorBufferId, 1, out NativeArray<int> cursorBuffer))
-                    return false;
+            if (!TryReadVisorValue(vault, in _telemetryCursorHandle, TelemetryCursorBufferId, out cursor))
+                return false;
 
-                cursorLocked = true;
-                if (!cursorBuffer.IsCreated || cursorBuffer.Length <= 0)
-                    return false;
+            if (cursor < 0 || cursor >= TelemetryCapacity)
+                cursor = 0;
 
-                cursor = cursorBuffer[0];
-                if (cursor < 0 || cursor >= TelemetryCapacity)
-                    cursor = 0;
-
-                return true;
-            }
-            finally
-            {
-                if (cursorLocked)
-                    vault.ReleaseWriteLock(in _telemetryCursorHandle, OwnerSystem);
-            }
+            return true;
         }
 
         private bool TryReadTelemetryDumpEntry(int index, out VisorLensTelemetryEntry entry)
@@ -1658,24 +1614,11 @@ namespace Hecton8.Visor
             if (vault == null || vault.IsCompactionFenceActive)
                 return false;
 
-            bool ringLocked = false;
-            try
-            {
-                if (!TryAcquireVisorWriteBuffer(vault, in _telemetryHandle, TelemetryRingBufferId, TelemetryCapacity, out NativeArray<VisorLensTelemetryEntry> ring))
-                    return false;
+            if (!TryReadVaultArray(vault, in _telemetryHandle, TelemetryRingBufferId, TelemetryCapacity, out NativeArray<VisorLensTelemetryEntry>.ReadOnly ring))
+                return false;
 
-                ringLocked = true;
-                if (!ring.IsCreated || ring.Length < TelemetryCapacity)
-                    return false;
-
-                entry = ring[index];
-                return true;
-            }
-            finally
-            {
-                if (ringLocked)
-                    vault.ReleaseWriteLock(in _telemetryHandle, OwnerSystem);
-            }
+            entry = ring[index];
+            return true;
         }
 
         private void ProbeColdBinaryPayloads()
@@ -2077,12 +2020,12 @@ namespace Hecton8.Visor
 
         private ref struct VisorCondensationEvaluator
         {
-            public NativeArray<VisorStateDTO> State;
-            public NativeArray<VisorLensTuningDTO> Tuning;
-            public NativeArray<MockPhysiologySignal> Physiology;
-            public NativeArray<MockVisorEnvironmentSignal> Environment;
-            public NativeArray<DiegeticVisorLensGpuGlobalsDTO> GpuGlobals;
-            public NativeArray<int> NanFlags;
+            public VisorStateDTO State;
+            public VisorLensTuningDTO Tuning;
+            public MockPhysiologySignal Physiology;
+            public MockVisorEnvironmentSignal Environment;
+            public DiegeticVisorLensGpuGlobalsDTO GpuGlobals;
+            public int NanFlags;
             public float DeltaTime;
             public float GlobalQualityWeight;
             public float3 HeadAngularVelocity;
@@ -2092,10 +2035,10 @@ namespace Hecton8.Visor
             {
                 float dt = math.max(0f, math.isfinite(DeltaTime) ? DeltaTime : 0f);
                 float quality = Sanitize01Job(GlobalQualityWeight);
-                VisorStateDTO state = SanitizeState(State[0]);
-                VisorLensTuningDTO tuning = SanitizeTuning(Tuning[0]);
-                MockPhysiologySignal physiology = SanitizePhysiology(Physiology[0]);
-                MockVisorEnvironmentSignal environment = SanitizeEnvironment(Environment[0]);
+                VisorStateDTO state = SanitizeState(State);
+                VisorLensTuningDTO tuning = SanitizeTuning(Tuning);
+                MockPhysiologySignal physiology = SanitizePhysiology(Physiology);
+                MockVisorEnvironmentSignal environment = SanitizeEnvironment(Environment);
 
                 uint anomalyHash = math.hash(math.uint3(Frame + 17u, math.asuint(environment.Corruption01), math.asuint(state.CrackSeverity)));
                 float anomalyNoise = ((anomalyHash & 1023u) * (1f / 1023f) - 0.5f) * environment.Corruption01;
@@ -2142,7 +2085,7 @@ namespace Hecton8.Visor
                 flags |= refractionScale <= 0.05f ? 2u : 0u;
                 flags |= environment.Corruption01 > 0.01f ? 4u : 0u;
 
-                State[0] = state;
+                State = state;
                 MockPhysiologySignal physiologySignal = default;
                 physiologySignal.RespirationRate = physiology.RespirationRate;
                 physiologySignal.HeartRate = physiology.HeartRate;
@@ -2150,7 +2093,7 @@ namespace Hecton8.Visor
                 physiologySignal.BreathSpike01 = physiology.BreathSpike01 * MathLodApproximation.ApproxExpNegPade33Wide40(3.2f * dt);
                 physiologySignal.Frame = Frame;
                 physiologySignal.Flags = physiology.Flags;
-                Physiology[0] = physiologySignal;
+                Physiology = physiologySignal;
 
                 MockVisorEnvironmentSignal environmentSignal = default;
                 environmentSignal.ExternalWaterTemperatureC = environment.ExternalWaterTemperatureC;
@@ -2163,19 +2106,19 @@ namespace Hecton8.Visor
                 environmentSignal.WaterlineBreach01 = math.max(0f, environment.WaterlineBreach01 - dt * 0.2f);
                 environmentSignal.Frame = Frame;
                 environmentSignal.Flags = environment.Flags;
-                Environment[0] = environmentSignal;
+                Environment = environmentSignal;
 
                 DiegeticVisorLensGpuGlobalsDTO gpu = default;
                 gpu.State = math.float4(state.CondensationLevel, state.WaterDropletIntensity, state.CrackSeverity, state.DirtAccumulation);
                 gpu.Params0 = math.float4(gravity.x, gravity.y, reflection, refractionScale);
                 gpu.Params1 = math.float4(quality, environment.Corruption01, math.max(environment.SurfaceEmergence01, environment.WaterlineBreach01), environment.Darkness01);
                 gpu.Params2 = math.float4(environment.ExternalPressure01, environment.SiltDensity01, headSpeed, math.asfloat(flags));
-                GpuGlobals[0] = gpu;
+                GpuGlobals = gpu;
 
                 if (!FiniteState(state) || !math.all(math.isfinite(gpu.State)) || !math.all(math.isfinite(gpu.Params0)) ||
                     !math.all(math.isfinite(gpu.Params1)) || !math.all(math.isfinite(gpu.Params2)))
                 {
-                    NanFlags[0] = 1;
+                    NanFlags = 1;
                 }
             }
 

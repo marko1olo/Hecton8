@@ -12,9 +12,15 @@ namespace Hecton8.World.SeedShipAnomaly
         private const int RequiredShaderSlots = 512;
         private static readonly int _SeedShipAnomalyParamsId = Shader.PropertyToID("_SeedShipAnomalyParams");
         private static readonly int _SeedShipUniverseOffsetNoiseId = Shader.PropertyToID("_SeedShipUniverseOffsetNoise");
+        private static readonly ulong ShaderGlobalStateMutationGuardMask = MutationGuardBit(BufferID.ShaderGlobalState);
 
         private static VaultGenerationHandle<float4> _shaderSlotsHandle;
         private static IDataVault _cachedVault;
+
+        private static ulong MutationGuardBit(BufferID bufferId)
+        {
+            return 1UL << (unchecked((int)(uint)(int)bufferId) & 31);
+        }
 
         public static void Publish(IDataVault vault, in AnomalyFieldDTO field, in AnomalyGlobalScalarsDTO globals)
         {
@@ -25,17 +31,20 @@ namespace Hecton8.World.SeedShipAnomaly
                 math.saturate(globals.RadarJam01));
 
             if (vault != null &&
-                TryResolveShaderSlots(vault, out NativeArray<float4> slots) &&
-                vault.TryLockBuffer(BufferID.ShaderGlobalState, SystemID.EndgameAnomaly))
+                vault.TryAcquireMutationGuard(ShaderGlobalStateMutationGuardMask))
             {
                 try
                 {
-                    if (slots.IsCreated && slots.Length > SeedShipAnomalySlot)
+                    if (TryResolveShaderSlots(vault, out NativeArray<float4> slots) &&
+                        slots.IsCreated &&
+                        slots.Length > SeedShipAnomalySlot)
+                    {
                         slots[SeedShipAnomalySlot] = payload;
+                    }
                 }
                 finally
                 {
-                    vault.TryUnlockBuffer(BufferID.ShaderGlobalState, SystemID.EndgameAnomaly);
+                    vault.ReleaseMutationGuard(ShaderGlobalStateMutationGuardMask);
                 }
             }
 

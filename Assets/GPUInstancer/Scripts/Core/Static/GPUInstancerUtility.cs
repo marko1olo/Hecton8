@@ -21,6 +21,19 @@ namespace GPUInstancer
         private static readonly int s_billboardWidthPropertyId = Shader.PropertyToID("billboardWidth");
         private static readonly int s_billboardHeightPropertyId = Shader.PropertyToID("billboardHeight");
 
+        public static int GetUnityObjectId(UnityEngine.Object unityObject)
+        {
+            if (unityObject == null)
+                return 0;
+
+            return unchecked((int)UnityEngine.EntityId.ToULong(unityObject.GetEntityId()));
+        }
+
+        public static float GetUnityObjectIdAsFloat(UnityEngine.Object unityObject)
+        {
+            return GetUnityObjectId(unityObject);
+        }
+
         /// <summary>
         /// Initializes GPU buffer related data for the instance prototypes. Instance transformation matrices must be generated before this.
         /// </summary>
@@ -1114,7 +1127,7 @@ namespace GPUInstancer
             detailPrototype.noiseSpread = terrainDetailPrototype.noiseSpread;
             detailPrototype.detailScale = new Vector4(terrainDetailPrototype.minWidth, terrainDetailPrototype.maxWidth, terrainDetailPrototype.minHeight, terrainDetailPrototype.maxHeight);
             detailPrototype.windWaveTintColor = Color.Lerp(detailPrototype.detailHealthyColor, detailPrototype.detailDryColor, 0.5f);
-            detailPrototype.name = "Detail_" + detailIndex + "_" + (terrainDetailPrototype.prototype != null ? terrainDetailPrototype.prototype.name + "_" + terrainDetailPrototype.prototype.GetInstanceID() : terrainDetailPrototype.prototypeTexture.name + "_" + terrainDetailPrototype.prototypeTexture.GetInstanceID());
+            detailPrototype.name = "Detail_" + detailIndex + "_" + (terrainDetailPrototype.prototype != null ? terrainDetailPrototype.prototype.name + "_" + GetUnityObjectId(terrainDetailPrototype.prototype) : terrainDetailPrototype.prototypeTexture.name + "_" + GetUnityObjectId(terrainDetailPrototype.prototypeTexture));
             detailPrototype.maxDistance = terrainSettings.maxDetailDistance;
             detailPrototype.detailDensity = terrainSettings.detailDensity;
             detailPrototype.isShadowCasting = terrainDetailPrototype.usePrototypeMesh;
@@ -1580,7 +1593,7 @@ namespace GPUInstancer
                 if (prefabScript != null)
                     prefabScript.prefabPrototype = prototype;
                 prototype.prefabObject = go;
-                prototype.name = go.name + "_" + go.GetInstanceID();
+                prototype.name = go.name + "_" + GetUnityObjectId(go);
                 DetermineTreePrototypeType(prototype);
                 if (prototype.treeType != GPUInstancerTreeType.None || !GPUInstancerConstants.gpuiSettings.IsStandardRenderPipeline())
                     prototype.useOriginalShaderForShadow = true;
@@ -2039,6 +2052,8 @@ namespace GPUInstancer
 
         public static void GeneratePrototypeBillboard(GPUInstancerPrototype prototype, bool forceRegenerate = false)
         {
+            if (prototype == null || prototype.prefabObject == null)
+                return;
 
             if (prototype.billboard == null)
                 prototype.billboard = new GPUInstancerBillboard();
@@ -2048,6 +2063,11 @@ namespace GPUInstancer
 
             if (!GPUInstancerConstants.gpuiSettings.IsBillboardsSupported())
                 return; // SRP version is not supported for generated billboards.
+            if (prototype.billboard.atlasResolution <= 0 || prototype.billboard.frameCount <= 0 || prototype.billboard.atlasResolution < prototype.billboard.frameCount)
+            {
+                prototype.useGeneratedBillboard = false;
+                return;
+            }
             DetermineTreePrototypeType(prototype);
 
             prototype.billboard.billboardFaceCamPos = GPUInstancerConstants.gpuiSettings.isVREnabled;
@@ -2076,6 +2096,11 @@ namespace GPUInstancer
 
             GameObject sample = null;
             GameObject billboardCameraPivot = null;
+            RenderTexture currentRt = RenderTexture.active;
+            RenderTexture frameTarget = null;
+            RenderPipelineAsset renderPipelineAsset = null;
+            RenderPipelineAsset qualityPipelineAsset = null;
+            bool renderPipelineOverridden = false;
 #if UNITY_EDITOR
             string albedoAtlasPath = null;
             string normalAtlasPath = null;
@@ -2091,9 +2116,6 @@ namespace GPUInstancer
             try
             {
                 //Debug.Log("Generating Billboard for " + prototype.name);
-
-                // cache the current render texture
-                RenderTexture currentRt = RenderTexture.active;
 
                 // calculate frame resolution
                 int frameResolution = prototype.billboard.atlasResolution / prototype.billboard.frameCount;
@@ -2111,7 +2133,7 @@ namespace GPUInstancer
                 prototype.billboard.normalAtlasTexture = new Texture2D(prototype.billboard.atlasResolution, frameResolution);
 
                 // create render target for atlas frames (both albedo and normal will share the same target)
-                RenderTexture frameTarget = RenderTexture.GetTemporary(frameResolution, frameResolution, 32, RenderTextureFormat.ARGB32, RenderTextureReadWrite.Linear);
+                frameTarget = RenderTexture.GetTemporary(frameResolution, frameResolution, 32, RenderTextureFormat.ARGB32, RenderTextureReadWrite.Linear);
                 frameTarget.enableRandomWrite = true;
                 frameTarget.Create();
 
@@ -2193,10 +2215,11 @@ namespace GPUInstancer
 
                 float rotateAngle = 360f / prototype.billboard.frameCount;
 
-                RenderPipelineAsset renderPipelineAsset = GraphicsSettings.defaultRenderPipeline;
-                RenderPipelineAsset qualityPipelineAsset = QualitySettings.renderPipeline;
+                renderPipelineAsset = GraphicsSettings.defaultRenderPipeline;
+                qualityPipelineAsset = QualitySettings.renderPipeline;
                 if (!GPUInstancerConstants.gpuiSettings.IsStandardRenderPipeline())
                 {
+                    renderPipelineOverridden = true;
                     GraphicsSettings.defaultRenderPipeline = null;
                     QualitySettings.renderPipeline = null;
                 }
@@ -2217,6 +2240,7 @@ namespace GPUInstancer
                 {
                     GraphicsSettings.defaultRenderPipeline = renderPipelineAsset;
                     QualitySettings.renderPipeline = qualityPipelineAsset;
+                    renderPipelineOverridden = false;
                 }
 
                 // set the result billboard to the prototype
@@ -2277,61 +2301,83 @@ namespace GPUInstancer
                 // Debug quad:
                 // ShowBillboardQuad(prototype, Vector3.zero);
             }
-            catch (Exception e)
+            catch (Exception)
             {
                 Debug.LogError("Error on billboard generation for: " + prototype);
+                throw;
+            }
+            finally
+            {
+#if UNITY_2022_2_OR_NEWER
+                QualitySettings.globalTextureMipmapLimit = cachedMasterTextureLimit;
+#else
+                QualitySettings.masterTextureLimit = cachedMasterTextureLimit;
+#endif
+                RenderTexture.active = currentRt;
+                if (frameTarget != null)
+                    RenderTexture.ReleaseTemporary(frameTarget);
+                if (renderPipelineOverridden)
+                {
+                    GraphicsSettings.defaultRenderPipeline = renderPipelineAsset;
+                    QualitySettings.renderPipeline = qualityPipelineAsset;
+                }
                 if (sample)
                     GameObject.DestroyImmediate(sample);
                 if (billboardCameraPivot)
                     GameObject.DestroyImmediate(billboardCameraPivot);
-                throw e;
             }
-
-            // clean up
-#if UNITY_2022_2_OR_NEWER
-            QualitySettings.globalTextureMipmapLimit = cachedMasterTextureLimit;
-#else
-            QualitySettings.masterTextureLimit = cachedMasterTextureLimit;
-#endif
-            GameObject.DestroyImmediate(sample);
-            GameObject.DestroyImmediate(billboardCameraPivot); // this will also release the frameTarget RT
         }
 
         public static Texture2D DilateBillboardTexture(Texture2D billboardTexture, int frameCount, bool isNormal)
         {
+            if (billboardTexture == null || billboardTexture.width <= 0 || billboardTexture.height <= 0)
+                return billboardTexture;
+
             int safeFrameCount = frameCount < 1 ? 1 : frameCount;
             int maxFrameCount = billboardTexture.width < 1 ? 1 : billboardTexture.width;
             if (safeFrameCount > maxFrameCount)
                 safeFrameCount = maxFrameCount;
 
             ComputeShader dilationCompute = (ComputeShader)Resources.Load(GPUInstancerConstants.COMPUTE_BILLBOARD_RESOURCE_PATH);
+            if (dilationCompute == null || !dilationCompute.HasKernel(GPUInstancerConstants.COMPUTE_BILLBOARD_DILATION_KERNEL))
+                return billboardTexture;
+
             int dilationKernel = dilationCompute.FindKernel(GPUInstancerConstants.COMPUTE_BILLBOARD_DILATION_KERNEL);
 
-            RenderTexture resultTexture = RenderTexture.GetTemporary(billboardTexture.width, billboardTexture.height, 32, RenderTextureFormat.ARGB32);
+            RenderTexture previousActive = RenderTexture.active;
+            RenderTexture resultTexture = null;
+            try
+            {
+                resultTexture = RenderTexture.GetTemporary(billboardTexture.width, billboardTexture.height, 32, RenderTextureFormat.ARGB32);
 
-            resultTexture.enableRandomWrite = true;
-            resultTexture.Create();
+                resultTexture.enableRandomWrite = true;
+                resultTexture.Create();
 
-            dilationCompute.SetTexture(dilationKernel, "result", resultTexture);
-            dilationCompute.SetTexture(dilationKernel, "billboardSource", billboardTexture);
-            dilationCompute.SetInt(s_billboardWidthPropertyId, billboardTexture.width);
-            dilationCompute.SetInt(s_billboardHeightPropertyId, billboardTexture.height);
-            dilationCompute.SetInt("frameCount", safeFrameCount);
+                dilationCompute.SetTexture(dilationKernel, "result", resultTexture);
+                dilationCompute.SetTexture(dilationKernel, "billboardSource", billboardTexture);
+                dilationCompute.SetInt(s_billboardWidthPropertyId, billboardTexture.width);
+                dilationCompute.SetInt(s_billboardHeightPropertyId, billboardTexture.height);
+                dilationCompute.SetInt("frameCount", safeFrameCount);
 #if UNITY_EDITOR
-            dilationCompute.SetBool("isLinearSpace", PlayerSettings.colorSpace == ColorSpace.Linear);
+                dilationCompute.SetBool("isLinearSpace", PlayerSettings.colorSpace == ColorSpace.Linear);
 #endif
-            dilationCompute.SetBool("isNormal", isNormal);
-            dilationCompute.Dispatch(dilationKernel, GPUInstancerConstants.GetComputeThreadGroupCount2D(billboardTexture.width, safeFrameCount),
-                GPUInstancerConstants.GetComputeThreadGroupCount2D(billboardTexture.height), safeFrameCount);
-            RenderTexture.active = resultTexture;
+                dilationCompute.SetBool("isNormal", isNormal);
+                dilationCompute.Dispatch(dilationKernel, GPUInstancerConstants.GetComputeThreadGroupCount2D(billboardTexture.width, safeFrameCount),
+                    GPUInstancerConstants.GetComputeThreadGroupCount2D(billboardTexture.height), safeFrameCount);
+                RenderTexture.active = resultTexture;
 
-            Texture2D result = new Texture2D(billboardTexture.width, billboardTexture.height);
-            result.ReadPixels(new Rect(0, 0, billboardTexture.width, billboardTexture.height), 0, 0);
-            result.Apply();
+                Texture2D result = new Texture2D(billboardTexture.width, billboardTexture.height);
+                result.ReadPixels(new Rect(0, 0, billboardTexture.width, billboardTexture.height), 0, 0);
+                result.Apply();
 
-            RenderTexture.active = null;
-            resultTexture.Release();
-            return result;
+                return result;
+            }
+            finally
+            {
+                RenderTexture.active = previousActive;
+                if (resultTexture != null)
+                    RenderTexture.ReleaseTemporary(resultTexture);
+            }
         }
 
         public static void AddBillboardToRuntimeData(GPUInstancerRuntimeData runtimeData)
@@ -3534,7 +3580,7 @@ namespace GPUInstancer
 #if UNITY_2017_1_OR_NEWER && !UNITY_ANDROID
             computeBuffer.SetData(data, managedBufferStartIndex, computeBufferStartIndex, 1);
 #else
-            if (GPUInstancerConstants.computeBufferSetDataPartial != null)
+            if (GPUInstancerConstants.computeBufferSetDataPartial != null && GPUInstancerConstants.computeBufferSetDataSingleKernelId >= 0)
             {
                 GPUInstancerConstants.computeBufferSetDataPartial.SetBuffer(GPUInstancerConstants.computeBufferSetDataSingleKernelId, 
                     GPUInstancerConstants.VisibilityKernelPoperties.INSTANCE_DATA_BUFFER, computeBuffer);
@@ -3593,7 +3639,7 @@ namespace GPUInstancer
             }
             else
             {
-                if (GPUInstancerConstants.computeBufferSetDataPartial != null && managedBuffer != null && managedData != null && managedBuffer.count >= safeCount && managedData.Length >= safeCount)
+                if (GPUInstancerConstants.computeBufferSetDataPartial != null && GPUInstancerConstants.computeBufferSetDataPartialKernelId >= 0 && managedBuffer != null && managedData != null && managedBuffer.count >= safeCount && managedData.Length >= safeCount)
                 {
                     Array.Copy(data, managedBufferStartIndex, managedData, 0, safeCount);
                     managedBuffer.SetData(managedData, 0, 0, safeCount);
@@ -3612,7 +3658,7 @@ namespace GPUInstancer
 
         public static void CopyComputeBuffer(this ComputeBuffer computeBuffer, int computeBufferStartIndex, int count, ComputeBuffer managedBuffer)
         {
-            if (computeBuffer == null || managedBuffer == null || GPUInstancerConstants.computeBufferSetDataPartial == null || count <= 0 || computeBufferStartIndex < 0 || computeBufferStartIndex >= computeBuffer.count)
+            if (computeBuffer == null || managedBuffer == null || GPUInstancerConstants.computeBufferSetDataPartial == null || GPUInstancerConstants.computeBufferSetDataPartialKernelId < 0 || count <= 0 || computeBufferStartIndex < 0 || computeBufferStartIndex >= computeBuffer.count)
                 return;
 
             int safeCount = count;
@@ -3639,7 +3685,7 @@ namespace GPUInstancer
                 return bufferToMerge;
             if (bufferToMerge == null)
                 return computeBuffer;
-            if (GPUInstancerConstants.computeBufferSetDataPartial == null)
+            if (GPUInstancerConstants.computeBufferSetDataPartial == null || GPUInstancerConstants.computeBufferSetDataPartialKernelId < 0)
                 return computeBuffer;
             if (computeBuffer.count <= 0)
                 return bufferToMerge;
@@ -3997,7 +4043,7 @@ namespace GPUInstancer
 
         public static void CopyTextureWithComputeShader(Texture source, Texture destination, int offsetX, int sourceMip = 0, int destinationMip = 0, bool reverseZ = true)
         {
-            if (source == null || destination == null || GPUInstancerConstants.computeTextureUtils == null)
+            if (source == null || destination == null || GPUInstancerConstants.computeTextureUtils == null || GPUInstancerConstants.computeTextureUtilsCopyTextureId < 0)
                 return;
 
             if (sourceMip < 0)
@@ -4036,7 +4082,7 @@ namespace GPUInstancer
 
         public static void CopyTextureArrayWithComputeShader(Texture source, Texture destination, int offsetX, int textureArrayIndex, int sourceMip = 0, int destinationMip = 0, bool reverseZ = true)
         {
-            if (source == null || destination == null || GPUInstancerConstants.computeTextureUtils == null || textureArrayIndex < 0)
+            if (source == null || destination == null || GPUInstancerConstants.computeTextureUtils == null || GPUInstancerConstants.computeTextureUtilsCopyTextureArrayId < 0 || textureArrayIndex < 0)
                 return;
 
             if (sourceMip < 0)
@@ -4049,8 +4095,8 @@ namespace GPUInstancer
             int destinationW = GetTextureMipDimension(destination.width, destinationMip);
             int destinationH = GetTextureMipDimension(destination.height, destinationMip);
 
-            GPUInstancerConstants.computeTextureUtils.SetTexture(2, GPUInstancerConstants.CopyTextureKernelProperties.SOURCE_TEXTURE_ARRAY, source, sourceMip);
-            GPUInstancerConstants.computeTextureUtils.SetTexture(2, GPUInstancerConstants.CopyTextureKernelProperties.DESTINATION_TEXTURE, destination, destinationMip);
+            GPUInstancerConstants.computeTextureUtils.SetTexture(GPUInstancerConstants.computeTextureUtilsCopyTextureArrayId, GPUInstancerConstants.CopyTextureKernelProperties.SOURCE_TEXTURE_ARRAY, source, sourceMip);
+            GPUInstancerConstants.computeTextureUtils.SetTexture(GPUInstancerConstants.computeTextureUtilsCopyTextureArrayId, GPUInstancerConstants.CopyTextureKernelProperties.DESTINATION_TEXTURE, destination, destinationMip);
 
             GPUInstancerConstants.computeTextureUtils.SetInt(GPUInstancerConstants.CopyTextureKernelProperties.OFFSET_X, offsetX);
             GPUInstancerConstants.computeTextureUtils.SetInt(GPUInstancerConstants.CopyTextureKernelProperties.TEXTURE_ARRAY_INDEX, textureArrayIndex);
@@ -4060,14 +4106,14 @@ namespace GPUInstancer
             GPUInstancerConstants.computeTextureUtils.SetInt(GPUInstancerConstants.CopyTextureKernelProperties.DESTINATION_SIZE_Y, destinationH);
             GPUInstancerConstants.computeTextureUtils.SetBool(GPUInstancerConstants.CopyTextureKernelProperties.REVERSE_Z, reverseZ);
 
-            GPUInstancerConstants.computeTextureUtils.Dispatch(2,
+            GPUInstancerConstants.computeTextureUtils.Dispatch(GPUInstancerConstants.computeTextureUtilsCopyTextureArrayId,
                 GPUInstancerConstants.GetComputeThreadGroupCount2D(sourceW),
                 GPUInstancerConstants.GetComputeThreadGroupCount2D(sourceH), 1);
         }
 
         public static void ReduceTextureWithComputeShader(Texture source, Texture destination, int offsetX, int sourceMip = 0, int destinationMip = 0)
         {
-            if (source == null || destination == null || GPUInstancerConstants.computeTextureUtils == null)
+            if (source == null || destination == null || GPUInstancerConstants.computeTextureUtils == null || GPUInstancerConstants.computeTextureUtilsReduceTextureId < 0)
                 return;
 
             if (sourceMip < 0)
@@ -4080,8 +4126,8 @@ namespace GPUInstancer
             int destinationW = GetTextureMipDimension(destination.width, destinationMip);
             int destinationH = GetTextureMipDimension(destination.height, destinationMip);
 
-            GPUInstancerConstants.computeTextureUtils.SetTexture(1, GPUInstancerConstants.CopyTextureKernelProperties.SOURCE_TEXTURE, source, sourceMip);
-            GPUInstancerConstants.computeTextureUtils.SetTexture(1, GPUInstancerConstants.CopyTextureKernelProperties.DESTINATION_TEXTURE, destination, destinationMip);
+            GPUInstancerConstants.computeTextureUtils.SetTexture(GPUInstancerConstants.computeTextureUtilsReduceTextureId, GPUInstancerConstants.CopyTextureKernelProperties.SOURCE_TEXTURE, source, sourceMip);
+            GPUInstancerConstants.computeTextureUtils.SetTexture(GPUInstancerConstants.computeTextureUtilsReduceTextureId, GPUInstancerConstants.CopyTextureKernelProperties.DESTINATION_TEXTURE, destination, destinationMip);
 
             GPUInstancerConstants.computeTextureUtils.SetInt(GPUInstancerConstants.CopyTextureKernelProperties.OFFSET_X, offsetX);
             GPUInstancerConstants.computeTextureUtils.SetInt(GPUInstancerConstants.CopyTextureKernelProperties.SOURCE_SIZE_X, sourceW);
@@ -4089,7 +4135,7 @@ namespace GPUInstancer
             GPUInstancerConstants.computeTextureUtils.SetInt(GPUInstancerConstants.CopyTextureKernelProperties.DESTINATION_SIZE_X, destinationW);
             GPUInstancerConstants.computeTextureUtils.SetInt(GPUInstancerConstants.CopyTextureKernelProperties.DESTINATION_SIZE_Y, destinationH);
 
-            GPUInstancerConstants.computeTextureUtils.Dispatch(1, GPUInstancerConstants.GetComputeThreadGroupCount2D(destinationW),
+            GPUInstancerConstants.computeTextureUtils.Dispatch(GPUInstancerConstants.computeTextureUtilsReduceTextureId, GPUInstancerConstants.GetComputeThreadGroupCount2D(destinationW),
                 GPUInstancerConstants.GetComputeThreadGroupCount2D(destinationH), 1);
         }
 

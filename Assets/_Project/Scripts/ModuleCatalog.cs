@@ -21,7 +21,7 @@ namespace Hecton8.Construction
         fileName = "ModuleCatalog",
         menuName = "Hecton/Module Catalog",
         order    = 101)]
-    public sealed class ModuleCatalog : ScriptableObject
+    public sealed class ModuleCatalog : ScriptableObject, IGlobalRegistryHotSwapListener
     {
         // ══════════════════════════════════════════════════════════
         //  INSPECTOR
@@ -46,6 +46,8 @@ namespace Hecton8.Construction
         private Dictionary<string, string> _runtimeCategoryByPersistentId;
         private List<BuildableData> _combinedModulesView;
         private bool _combinedModulesDirty = true;
+        private bool _registeredHotSwap;
+        private IQuestSystem _cachedQuestSystem;
 
         // ══════════════════════════════════════════════════════════
         //  LIFECYCLE
@@ -54,6 +56,15 @@ namespace Hecton8.Construction
         private void OnEnable()
         {
             RebuildLookup();
+            CacheQuestSystemCold();
+            TryRegisterHotSwapListener();
+        }
+
+        private void OnDisable()
+        {
+            TryUnregisterHotSwapListener();
+            _cachedQuestSystem = null;
+            BuildableData.ConfigureBlueprintQuestSystem(null);
         }
 
 #if UNITY_EDITOR
@@ -148,7 +159,7 @@ namespace Hecton8.Construction
         {
             get
             {
-                return GetViewableCount(GlobalRegistry.QuestSystem);
+                return GetViewableCount(_cachedQuestSystem);
             }
         }
 
@@ -284,7 +295,7 @@ namespace Hecton8.Construction
         /// </summary>
         public BuildableData GetViewableAt(int index)
         {
-            return GetViewableAt(index, GlobalRegistry.QuestSystem);
+            return GetViewableAt(index, _cachedQuestSystem);
         }
 
         /// <summary>
@@ -344,7 +355,7 @@ namespace Hecton8.Construction
         /// </summary>
         public int IndexOfViewable(BuildableData data)
         {
-            return IndexOfViewable(data, GlobalRegistry.QuestSystem);
+            return IndexOfViewable(data, _cachedQuestSystem);
         }
 
         /// <summary>
@@ -415,6 +426,47 @@ namespace Hecton8.Construction
         private static bool IsModuleBlueprintViewable(BuildableData data, IQuestSystem questSystem)
         {
             return data != null && data.IsBlueprintViewable(questSystem);
+        }
+
+        public void OnGlobalRegistryServiceReplaced(
+            GlobalRegistryServiceSlot serviceSlot,
+            object previousService,
+            object currentService)
+        {
+            if (serviceSlot != GlobalRegistryServiceSlot.QuestSystem &&
+                serviceSlot != GlobalRegistryServiceSlot.QuestRuntime)
+            {
+                return;
+            }
+
+            _cachedQuestSystem = currentService as IQuestSystem;
+            BuildableData.ConfigureBlueprintQuestSystem(_cachedQuestSystem);
+        }
+
+        private void CacheQuestSystemCold()
+        {
+            if (!Application.isPlaying)
+                return;
+
+            _cachedQuestSystem = GlobalRegistry.QuestSystem;
+            BuildableData.ConfigureBlueprintQuestSystem(_cachedQuestSystem);
+        }
+
+        private void TryRegisterHotSwapListener()
+        {
+            if (_registeredHotSwap || !Application.isPlaying)
+                return;
+
+            _registeredHotSwap = GlobalRegistry.TryRegisterHotSwapListener(this);
+        }
+
+        private void TryUnregisterHotSwapListener()
+        {
+            if (!_registeredHotSwap)
+                return;
+
+            GlobalRegistry.TryUnregisterHotSwapListener(this);
+            _registeredHotSwap = false;
         }
 
         private void AddLookupAlias(string id, BuildableData data)

@@ -73,20 +73,28 @@ namespace Hecton8.Core.Bridge
             if (vault == null ||
                 !vault.TryGetGenerationHandle<byte>(BufferID.BridgeDesignFacadeValues, out VaultGenerationHandle<byte> bytes) ||
                 bytes.BufferID == 0u ||
-                !vault.TryResolveHandle(in bytes, out NativeArray<byte> buffer) ||
-                !buffer.IsCreated ||
-                buffer.Length <= 0)
+                !vault.TryAcquireWriteLock(in bytes, SystemID.CoreBridge, out NativeArray<byte> buffer))
             {
                 return;
             }
 
-            byte* ptr = (byte*)buffer.GetUnsafePtr();
-            if (ptr == null)
-                return;
+            try
+            {
+                if (!buffer.IsCreated || buffer.Length <= 0)
+                    return;
 
-            Thread.MemoryBarrier();
-            UnsafeUtility.MemClear(ptr, buffer.Length);
-            Thread.MemoryBarrier();
+                byte* ptr = (byte*)buffer.GetUnsafePtr();
+                if (ptr == null)
+                    return;
+
+                Thread.MemoryBarrier();
+                UnsafeUtility.MemClear(ptr, buffer.Length);
+                Thread.MemoryBarrier();
+            }
+            finally
+            {
+                vault.ReleaseWriteLock(in bytes, SystemID.CoreBridge);
+            }
         }
 
         private static void PublishDesignClearSignal(uint facadeHash, ushort extraFlags)
@@ -138,31 +146,40 @@ namespace Hecton8.Core.Bridge
                 NativeArrayOptions.ClearMemory);
 
             if (bytes.BufferID == 0u ||
-                !vault.TryResolveHandle(in bytes, out NativeArray<byte> buffer) ||
-                !buffer.IsCreated ||
-                buffer.Length < requiredLength)
+                !vault.TryAcquireWriteLock(in bytes, SystemID.CoreBridge, out NativeArray<byte> buffer))
             {
                 GlobalTelemetryBus.PublishPerformanceWarning(PointerFenceFaultHash, entry.FieldHash, requiredLength);
                 return false;
             }
 
+            bool valueWriteSucceeded = false;
             try
             {
-                Thread.MemoryBarrier();
-                byte* basePtr = (byte*)buffer.GetUnsafePtr();
-                if (basePtr == null)
+                if (buffer.IsCreated && buffer.Length >= requiredLength)
                 {
-                    GlobalTelemetryBus.PublishPerformanceWarning(PointerFenceFaultHash, entry.FieldHash, requiredLength);
-                    return false;
+                    Thread.MemoryBarrier();
+                    byte* basePtr = (byte*)buffer.GetUnsafePtr();
+                    if (basePtr != null)
+                    {
+                        float* valuePtr = (float*)(basePtr + entry.OffsetBytes);
+                        oldValue = *valuePtr;
+                        Thread.MemoryBarrier();
+                        *valuePtr = value;
+                        Thread.MemoryBarrier();
+                        valueWriteSucceeded = true;
+                    }
                 }
-
-                float* valuePtr = (float*)(basePtr + entry.OffsetBytes);
-                oldValue = *valuePtr;
-                Thread.MemoryBarrier();
-                *valuePtr = value;
-                Thread.MemoryBarrier();
             }
             catch (Exception)
+            {
+                valueWriteSucceeded = false;
+            }
+            finally
+            {
+                vault.ReleaseWriteLock(in bytes, SystemID.CoreBridge);
+            }
+
+            if (!valueWriteSucceeded)
             {
                 GlobalTelemetryBus.PublishPerformanceWarning(PointerFenceFaultHash, entry.FieldHash, requiredLength);
                 return false;
@@ -305,13 +322,21 @@ namespace Hecton8.Core.Bridge
                 SystemID.CoreBridge,
                 NativeArrayOptions.ClearMemory);
             if (headerBuffer.BufferID != 0u &&
-                vault.TryResolveHandle(in headerBuffer, out NativeArray<H8FacadeMacroHeader> headerBufferView) &&
-                headerBufferView.IsCreated &&
-                headerBufferView.Length > 0)
+                vault.TryAcquireWriteLock(in headerBuffer, SystemID.CoreBridge, out NativeArray<H8FacadeMacroHeader> headerBufferView))
             {
-                Thread.MemoryBarrier();
-                headerBufferView[0] = header;
-                Thread.MemoryBarrier();
+                try
+                {
+                    if (headerBufferView.IsCreated && headerBufferView.Length > 0)
+                    {
+                        Thread.MemoryBarrier();
+                        headerBufferView[0] = header;
+                        Thread.MemoryBarrier();
+                    }
+                }
+                finally
+                {
+                    vault.ReleaseWriteLock(in headerBuffer, SystemID.CoreBridge);
+                }
             }
 
             IMacroDatabaseService macroDatabase = GlobalRegistry.MacroDatabase;
@@ -366,32 +391,38 @@ namespace Hecton8.Core.Bridge
                 NativeArrayOptions.ClearMemory);
 
             if (ring.BufferID == 0u ||
-                !vault.TryResolveHandle(in ring, out NativeArray<H8FacadeTelemetryEntry> ringBuffer) ||
-                !ringBuffer.IsCreated ||
-                ringBuffer.Length < BlackBoxFrameCount)
+                !vault.TryAcquireWriteLock(in ring, SystemID.CoreBridge, out NativeArray<H8FacadeTelemetryEntry> ringBuffer))
             {
                 return;
             }
 
-            int index = Interlocked.Increment(ref _blackBoxCursor) - 1;
-            if (index < 0)
-                index = 0;
-
-            H8FacadeTelemetryEntry telemetry = new H8FacadeTelemetryEntry
+            try
             {
-                Frame = Hecton8.Core.SystemDispatcher.CurrentFrameId,
-                FacadeHash = facadeHash,
-                FieldHash = entry.FieldHash,
-                OffsetBytes = entry.OffsetBytes,
-                OldValue = oldValue,
-                NewValue = entry.Value,
-                SafeDefault = entry.SafeDefault,
-                LutSwapHash = entry.LutSwapHash,
-                Flags = (ushort)(entry.Flags | extraFlags)
-            };
-            Thread.MemoryBarrier();
-            ringBuffer[index % BlackBoxFrameCount] = telemetry;
-            Thread.MemoryBarrier();
+                if (!ringBuffer.IsCreated || ringBuffer.Length < BlackBoxFrameCount)
+                    return;
+
+                int index = Interlocked.Increment(ref _blackBoxCursor) - 1;
+                if (index < 0)
+                    index = 0;
+
+                H8FacadeTelemetryEntry telemetry = default;
+                telemetry.Frame = Hecton8.Core.SystemDispatcher.CurrentFrameId;
+                telemetry.FacadeHash = facadeHash;
+                telemetry.FieldHash = entry.FieldHash;
+                telemetry.OffsetBytes = entry.OffsetBytes;
+                telemetry.OldValue = oldValue;
+                telemetry.NewValue = entry.Value;
+                telemetry.SafeDefault = entry.SafeDefault;
+                telemetry.LutSwapHash = entry.LutSwapHash;
+                telemetry.Flags = (ushort)(entry.Flags | extraFlags);
+                Thread.MemoryBarrier();
+                ringBuffer[index % BlackBoxFrameCount] = telemetry;
+                Thread.MemoryBarrier();
+            }
+            finally
+            {
+                vault.ReleaseWriteLock(in ring, SystemID.CoreBridge);
+            }
         }
 
         public static void RequestBlackBoxDump()

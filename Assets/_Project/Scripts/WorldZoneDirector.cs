@@ -146,6 +146,7 @@ namespace Hecton8.World
         private WorldZoneAnchor _secondaryZone;
         private float _currentBlendFactor;
         private float _nextAutoResolveAttemptTime = float.NegativeInfinity;
+        private IPlayerRuntimeContext _cachedPlayerContext;
 
         public WorldZoneAnchor CurrentZone => _currentZone;
         public WorldZoneAnchor SecondaryZone => _secondaryZone;
@@ -154,6 +155,7 @@ namespace Hecton8.World
         private void Awake()
         {
             ActiveRuntimeInstance = this;
+            CachePlayerContextCold();
             ResolvePlayer(force: true);
             RefreshAnchors();
             UpdateDiagnostics();
@@ -161,6 +163,7 @@ namespace Hecton8.World
 
         private void OnEnable()
         {
+            CachePlayerContextCold();
             if (Application.isPlaying)
                 GlobalRegistry.TryRegisterHotSwapListener(this);
 
@@ -194,19 +197,24 @@ namespace Hecton8.World
             object previousService,
             object currentService)
         {
-            if (serviceSlot != GlobalRegistryServiceSlot.Dispatcher)
-                return;
-
-            if (currentService == null)
+            switch (serviceSlot)
             {
-                _registeredToTickManager = false;
-                return;
-            }
+                case GlobalRegistryServiceSlot.Player:
+                    RebindPlayerContext(previousService, currentService);
+                    break;
+                case GlobalRegistryServiceSlot.Dispatcher:
+                    if (currentService == null)
+                    {
+                        _registeredToTickManager = false;
+                        return;
+                    }
 
-            if (isActiveAndEnabled)
-            {
-                TryUnregister();
-                TryRegister();
+                    if (isActiveAndEnabled)
+                    {
+                        TryUnregister();
+                        TryRegister();
+                    }
+                    break;
             }
         }
 
@@ -370,9 +378,40 @@ namespace Hecton8.World
 
             _nextAutoResolveAttemptTime = now + Mathf.Max(0f, autoResolveRetryInterval);
 
-            WorldRuntimeReferenceUtility.TryResolvePlayerTransform(ref playerTransform);
+            if (playerTransform == null)
+            {
+                IPlayerRuntimeContext playerContext = _cachedPlayerContext;
+                if (playerContext != null)
+                    playerTransform = playerContext.PlayerTransform;
+            }
+
             WorldRuntimeReferenceUtility.TryResolveScatterBudgetController(ref scatterBudgetController);
             WorldRuntimeReferenceUtility.TryResolveWorldSliceDirector(ref worldSliceDirector);
+        }
+
+        private void CachePlayerContextCold()
+        {
+            if (!Application.isPlaying)
+                return;
+
+            _cachedPlayerContext = GlobalRegistry.Player;
+            if (playerTransform == null && _cachedPlayerContext != null)
+                playerTransform = _cachedPlayerContext.PlayerTransform;
+        }
+
+        private void RebindPlayerContext(object previousService, object currentService)
+        {
+            IPlayerRuntimeContext previousContext = previousService as IPlayerRuntimeContext;
+            if (previousContext != null &&
+                previousContext.PlayerTransform != null &&
+                ReferenceEquals(playerTransform, previousContext.PlayerTransform))
+            {
+                playerTransform = null;
+            }
+
+            _cachedPlayerContext = currentService as IPlayerRuntimeContext;
+            if (_cachedPlayerContext != null && _cachedPlayerContext.PlayerTransform != null)
+                playerTransform = _cachedPlayerContext.PlayerTransform;
         }
 
         private void ApplyZoneProfile(WorldZoneAnchor primaryZone, WorldZoneAnchor secondaryZone, float blendFactor)
@@ -412,7 +451,7 @@ namespace Hecton8.World
         {
             WorldZoneProfile profile = zone != null ? zone.Profile : null;
             HectonBiomeMatrixProfile biome = zone != null ? zone.DominantMatrixBiome : null;
-            float scale = profile != null ? profile.scavengeRadiusScale : 1f;
+            float scale = profile != null ? profile.ScavengeRadiusScale : 1f;
             return scale * EvaluateBiomeScavengeScale(zone, biome);
         }
 
@@ -420,7 +459,7 @@ namespace Hecton8.World
         {
             WorldZoneProfile profile = zone != null ? zone.Profile : null;
             HectonBiomeMatrixProfile biome = zone != null ? zone.DominantMatrixBiome : null;
-            float scale = profile != null ? profile.spawnScale : 1f;
+            float scale = profile != null ? profile.SpawnScale : 1f;
             return scale * EvaluateBiomeSpawnScale(zone, biome);
         }
 
@@ -428,7 +467,7 @@ namespace Hecton8.World
         {
             WorldZoneProfile profile = zone != null ? zone.Profile : null;
             HectonBiomeMatrixProfile biome = zone != null ? zone.DominantMatrixBiome : null;
-            float scale = profile != null ? profile.colliderRadiusScale : 1f;
+            float scale = profile != null ? profile.ColliderRadiusScale : 1f;
             return scale * EvaluateBiomeColliderRadiusScale(zone, biome);
         }
 
@@ -436,7 +475,7 @@ namespace Hecton8.World
         {
             WorldZoneProfile profile = zone != null ? zone.Profile : null;
             HectonBiomeMatrixProfile biome = zone != null ? zone.DominantMatrixBiome : null;
-            float scale = profile != null ? profile.colliderOpsScale : 1f;
+            float scale = profile != null ? profile.ColliderOpsScale : 1f;
             return scale * EvaluateBiomeColliderOpsScale(zone, biome);
         }
 
@@ -444,7 +483,7 @@ namespace Hecton8.World
         {
             WorldZoneProfile profile = zone != null ? zone.Profile : null;
             HectonBiomeMatrixProfile biome = zone != null ? zone.DominantMatrixBiome : null;
-            float scale = profile != null ? profile.sliceNearScale : 1f;
+            float scale = profile != null ? profile.SliceNearScale : 1f;
             return scale * EvaluateBiomeNearSliceScale(zone, biome);
         }
 
@@ -452,7 +491,7 @@ namespace Hecton8.World
         {
             WorldZoneProfile profile = zone != null ? zone.Profile : null;
             HectonBiomeMatrixProfile biome = zone != null ? zone.DominantMatrixBiome : null;
-            float scale = profile != null ? profile.sliceMidScale : 1f;
+            float scale = profile != null ? profile.SliceMidScale : 1f;
             return scale * EvaluateBiomeMidSliceScale(zone, biome);
         }
 
@@ -698,11 +737,11 @@ namespace Hecton8.World
             _debugDominantRisk = biome != null && !string.IsNullOrWhiteSpace(biome.riskSummary)
                 ? biome.riskSummary
                 : "None";
-            _debugDominantEarlyFarm = biomeFamily != null && biomeFamily.resourcePlanProfile != null && !string.IsNullOrWhiteSpace(biomeFamily.resourcePlanProfile.earlyReasonToFarm)
-                ? biomeFamily.resourcePlanProfile.earlyReasonToFarm
+            _debugDominantEarlyFarm = biomeFamily != null && biomeFamily.resourcePlanProfile != null
+                ? biomeFamily.resourcePlanProfile.RuntimeEarlyReasonToFarm
                 : "None";
-            _debugDominantLateReturn = biomeFamily != null && biomeFamily.resourcePlanProfile != null && !string.IsNullOrWhiteSpace(biomeFamily.resourcePlanProfile.lateReasonToReturn)
-                ? biomeFamily.resourcePlanProfile.lateReasonToReturn
+            _debugDominantLateReturn = biomeFamily != null && biomeFamily.resourcePlanProfile != null
+                ? biomeFamily.resourcePlanProfile.RuntimeLateReasonToReturn
                 : "None";
             _debugPocketResource = GetItemLabel(biomeFamily != null && biomeFamily.resourceChannelProfile != null ? biomeFamily.resourceChannelProfile.resourcePocketItem : null);
             _debugNodeResource = GetItemLabel(biomeFamily != null && biomeFamily.resourceChannelProfile != null ? biomeFamily.resourceChannelProfile.nodeClusterItem : null);
@@ -890,7 +929,7 @@ namespace Hecton8.World
                 return biomeFamily.spatialPatternProfile.rareObjectivePattern;
 
             string familyLogic = biomeFamily != null && biomeFamily.resourcePlanProfile != null
-                ? biomeFamily.resourcePlanProfile.routeRewardLogic
+                ? biomeFamily.resourcePlanProfile.RuntimeRouteRewardLogic
                 : string.Empty;
 
             if (!string.IsNullOrWhiteSpace(familyLogic))

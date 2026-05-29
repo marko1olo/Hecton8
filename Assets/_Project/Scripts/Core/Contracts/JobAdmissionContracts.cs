@@ -68,7 +68,7 @@ namespace Hecton8.Core.Contracts
         void ReportCostState(int slotIndex, uint jobHash, float ewmaCostMs, int costSlotCount, float overflowEwmaCostMs);
 
         /// <summary>Reports a non-finite admission state that requires a crash telemetry dump.</summary>
-        void ReportNonFiniteAdmissionState(JobAdmissionLane lane, uint jobHash, float value);
+        void ReportNonFiniteAdmissionState(JobAdmissionLane lane, uint jobHash, float value, int criticalDebtFrames);
     }
 
     /// <summary>

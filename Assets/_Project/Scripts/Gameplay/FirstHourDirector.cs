@@ -873,6 +873,7 @@ namespace Hecton8.Gameplay
                 return;
 
             TryRegister();
+            TryRegisterLateFrameTick();
             CacheRuntimeServices();
             TryRegisterHotSwapListener();
             TryRegisterSaveParticipant();
@@ -959,8 +960,6 @@ namespace Hecton8.Gameplay
         public void LateFrameTick()
         {
             FlushQueuedNotifications();
-            if (_pendingNotificationCount == 0)
-                TryUnregisterLateFrameTick();
         }
 
         private void TryRegisterLateFrameTick()
@@ -1000,7 +999,6 @@ namespace Hecton8.Gameplay
             request.Severity = (byte)severity;
             request.IsDirty = 1;
             _pendingNotificationCount++;
-            TryRegisterLateFrameTick();
             return true;
         }
 
@@ -1112,8 +1110,7 @@ namespace Hecton8.Gameplay
                     if (currentService != null && isActiveAndEnabled)
                     {
                         TryRegister();
-                        if (_pendingNotificationCount > 0)
-                            TryRegisterLateFrameTick();
+                        TryRegisterLateFrameTick();
                     }
                     break;
                 case GlobalRegistryServiceSlot.QuestRuntime:
@@ -1129,7 +1126,7 @@ namespace Hecton8.Gameplay
                     _cachedAudioLogSystem = currentService as IAudioLogRuntime;
                     break;
                 case GlobalRegistryServiceSlot.Player:
-                    _cachedPlayerContext = currentService as IPlayerRuntimeContext;
+                    CachePlayerContext(currentService as IPlayerRuntimeContext);
                     break;
                 case GlobalRegistryServiceSlot.LocalizationRuntime:
                     _cachedLocalization = currentService as ILocalizationTextReadModel;
@@ -1148,7 +1145,7 @@ namespace Hecton8.Gameplay
             _cachedAtlasSignalSystem = Hecton8.Core.GlobalRegistry.AtlasSignalReadModel;
             _cachedEmergencyRelayDirector = Hecton8.Core.GlobalRegistry.EmergencyRelayReadModel;
             _cachedAudioLogSystem = Hecton8.Core.GlobalRegistry.AudioLogRuntime;
-            _cachedPlayerContext = Hecton8.Core.GlobalRegistry.Player;
+            CachePlayerContext(Hecton8.Core.GlobalRegistry.Player);
             _cachedLocalization = Hecton8.Core.GlobalRegistry.LocalizationText;
             _saveService = Hecton8.Core.GlobalRegistry.Save;
         }
@@ -1160,8 +1157,15 @@ namespace Hecton8.Gameplay
             _cachedEmergencyRelayDirector = null;
             _cachedAudioLogSystem = null;
             _cachedPlayerContext = null;
+            _survivalSystem = null;
             _cachedLocalization = null;
             _saveService = null;
+        }
+
+        private void CachePlayerContext(IPlayerRuntimeContext playerContext)
+        {
+            _cachedPlayerContext = playerContext;
+            _survivalSystem = playerContext != null ? playerContext.SurvivalSystem : null;
         }
 
         private void TryRegisterHotSwapListener()
@@ -1410,13 +1414,9 @@ namespace Hecton8.Gameplay
             if (_survivalSystem != null)
                 return true;
 
-            if (!GameBootstrapper.TryGetCurrentPlayerTransform(out Transform playerTransform) ||
-                playerTransform == null)
-            {
-                return false;
-            }
-
-            return playerTransform.TryGetComponent(out _survivalSystem);
+            IPlayerRuntimeContext playerContext = _cachedPlayerContext;
+            _survivalSystem = playerContext != null ? playerContext.SurvivalSystem : null;
+            return _survivalSystem != null;
         }
 
         private void ResolveWorldContext(bool force = false)
@@ -2102,18 +2102,6 @@ namespace Hecton8.Gameplay
 
         private bool TryGetRuntimeInventory(out PlayerInventory inventory)
         {
-            inventory = null;
-
-            if (!GameBootstrapper.TryGetCurrentPlayerTransform(out Transform playerTransform) ||
-                playerTransform == null)
-            {
-                return false;
-            }
-
-            playerTransform.TryGetComponent(out inventory);
-            if (inventory != null)
-                return true;
-
             IPlayerRuntimeContext playerContext = _cachedPlayerContext;
             inventory = playerContext != null ? playerContext.Inventory : null;
             return inventory != null;

@@ -47,6 +47,7 @@ namespace Hecton8.Quest
         private bool _hasLookupAmbiguity;
         private bool _serviceRegistered;
         private ISaveService _registeredSaveService;
+        private ILocalizationTextReadModel _localizationManager;
         private bool _hotSwapRegistered;
         private uint[] _questCompletedNotificationHashes = Array.Empty<uint>();
         private uint[] _questRestoredNotificationHashes = Array.Empty<uint>();
@@ -71,8 +72,7 @@ namespace Hecton8.Quest
         /// <summary>
         /// True once the quest runtime owner is registered in the global registry.
         /// </summary>
-        public bool IsInitialized => ReferenceEquals(GlobalRegistry.QuestSystem, this) &&
-                                     ReferenceEquals(GlobalRegistry.Quest, this);
+        public bool IsInitialized => _serviceRegistered && ReferenceEquals(ActiveRuntimeInstance, this);
 
         private void Awake()
         {
@@ -95,6 +95,7 @@ namespace Hecton8.Quest
 
             TryRegisterHotSwapListener();
             BindSaveService(GlobalRegistry.Save);
+            BindLocalization(GlobalRegistry.LocalizationText);
             _graphEvaluator?.Bind();
         }
 
@@ -107,6 +108,7 @@ namespace Hecton8.Quest
 
             TryUnregisterHotSwapListener();
             BindSaveService(null);
+            _localizationManager = null;
 
             if (_serviceRegistered)
             {
@@ -122,6 +124,7 @@ namespace Hecton8.Quest
 
             TryUnregisterHotSwapListener();
             BindSaveService(null);
+            _localizationManager = null;
 
             _graphEvaluator?.Dispose();
             _graphEvaluator = null;
@@ -153,8 +156,15 @@ namespace Hecton8.Quest
             object previousService,
             object currentService)
         {
-            if (serviceSlot == GlobalRegistryServiceSlot.Save)
-                BindSaveService(currentService as ISaveService);
+            switch (serviceSlot)
+            {
+                case GlobalRegistryServiceSlot.Save:
+                    BindSaveService(currentService as ISaveService);
+                    break;
+                case GlobalRegistryServiceSlot.LocalizationRuntime:
+                    BindLocalization(currentService as ILocalizationTextReadModel);
+                    break;
+            }
         }
 
         private void BindSaveService(ISaveService saveService)
@@ -165,6 +175,27 @@ namespace Hecton8.Quest
             _registeredSaveService?.Unregister(this);
             _registeredSaveService = saveService;
             _registeredSaveService?.Register(this);
+        }
+
+        private void BindLocalization(ILocalizationTextReadModel localizationManager)
+        {
+            if (ReferenceEquals(_localizationManager, localizationManager))
+                return;
+
+            _localizationManager = localizationManager;
+            RefreshQuestPresentationCaches();
+        }
+
+        private void RefreshQuestPresentationCaches()
+        {
+            _stateManager?.RebindLocalization(_localizationManager, allQuests);
+
+            if (allQuests == null)
+                return;
+
+            EnsureQuestNotificationCacheCapacity(allQuests.Length);
+            for (int i = 0; i < allQuests.Length; i++)
+                CacheQuestNotificationHashes(i, allQuests[i]);
         }
 
         private void TryRegisterHotSwapListener()
@@ -339,22 +370,21 @@ namespace Hecton8.Quest
             if (!TryGetQuestDataByHash(questHash, out QuestData questData) || questData == null)
                 return false;
 
-            ILocalizationTextReadModel manager = GlobalRegistry.LocalizationText;
             if (titleDestination != null &&
-                questData.TryWriteDisplayTitleOrFallback(manager, titleDestination, out int fallbackTitleLength))
+                questData.TryWriteDisplayTitleOrFallback(_localizationManager, titleDestination, out int fallbackTitleLength))
             {
                 titleLength = math.min(fallbackTitleLength, titleDestination.Length);
             }
 
             if (descriptionDestination != null &&
-                questData.TryWriteDescriptionOrFallback(manager, descriptionDestination, out int fallbackDescriptionLength))
+                questData.TryWriteDescriptionOrFallback(_localizationManager, descriptionDestination, out int fallbackDescriptionLength))
             {
                 descriptionLength = math.min(fallbackDescriptionLength, descriptionDestination.Length);
             }
 
             markerTargetHash = 0u;
-            markerWorldPosition = questData.markerWorldPosition;
-            markerHeightOffset = math.max(0f, questData.markerHeightOffset);
+            markerWorldPosition = questData.RuntimeMarkerWorldPosition;
+            markerHeightOffset = questData.RuntimeMarkerHeightOffset;
             return titleLength > 0 || markerWorldPosition.sqrMagnitude > 0.0001f;
         }
 
@@ -488,7 +518,7 @@ namespace Hecton8.Quest
             if (_stateManager == null)
                 _stateManager = new QuestStateManager();
 
-            bool initialized = _stateManager.Initialize(allQuests);
+            bool initialized = _stateManager.Initialize(allQuests, _localizationManager);
             if (_hasLookupAmbiguity)
             {
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
@@ -643,9 +673,8 @@ namespace Hecton8.Quest
             if (!TryAppendSpan(prefix, _questNotificationMessageBuffer, ref messageLength))
                 return 0u;
 
-            ILocalizationTextReadModel manager = GlobalRegistry.LocalizationText;
             if (questData == null ||
-                !questData.TryWriteDisplayTitleOrFallback(manager, _questNotificationTitleBuffer, out int titleLength) ||
+                !questData.TryWriteDisplayTitleOrFallback(_localizationManager, _questNotificationTitleBuffer, out int titleLength) ||
                 titleLength <= 0)
             {
                 UnknownObjectiveLabel.AsSpan().CopyTo(_questNotificationTitleBuffer);

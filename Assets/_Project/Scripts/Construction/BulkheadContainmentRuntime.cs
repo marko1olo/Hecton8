@@ -32,6 +32,24 @@ namespace Hecton8.Construction
         private const ulong BulkheadProfileImportMutationGuardMask = 1UL << 58;
         private const ulong BulkheadTelemetryMutationGuardMask = 1UL << 59;
         private const ulong BulkheadRefreshMutationGuardMask = 1UL << 60;
+        private const ulong BulkheadJobMutationGuardMask =
+            (1UL << ((int)BufferID.Shinobu220BulkheadStates & 31)) |
+            (1UL << ((int)BufferID.Shinobu220BulkheadAups & 31)) |
+            (1UL << ((int)BufferID.Shinobu220BulkheadPlanes & 31)) |
+            (1UL << ((int)BufferID.Shinobu220BulkheadCsrEdges & 31)) |
+            (1UL << ((int)BufferID.Shinobu220BulkheadEdgeConductivity & 31)) |
+            (1UL << ((int)BufferID.Shinobu220BulkheadFluidFlow & 31)) |
+            (1UL << ((int)BufferID.Shinobu220BulkheadModuleIntegrity & 31)) |
+            (1UL << ((int)BufferID.Shinobu220BulkheadCollisionResults & 31)) |
+            (1UL << ((int)BufferID.Shinobu220BulkheadTelemetryRing & 31)) |
+            (1UL << ((int)BufferID.Shinobu220BulkheadTelemetryCursor & 31)) |
+            (1UL << ((int)BufferID.Shinobu343HatchStates & 31)) |
+            (1UL << ((int)BufferID.Shinobu343HatchTelemetryRing & 31)) |
+            (1UL << ((int)BufferID.Shinobu343HatchTelemetryCursor & 31)) |
+            (1UL << ((int)BufferID.Shinobu343HatchTuning & 31)) |
+            (1UL << ((int)BufferID.Shinobu343HatchMockFluidCompartments & 31)) |
+            (1UL << ((int)BufferID.ShinobuFluidCompartmentFront & 31)) |
+            (1UL << ((int)BufferID.StructuralIntegrityStates & 31));
         private const uint BulkheadJobPinStates = 1u << 0;
         private const uint BulkheadJobPinAups = 1u << 1;
         private const uint BulkheadJobPinPlanes = 1u << 2;
@@ -49,6 +67,22 @@ namespace Hecton8.Construction
         private const uint BulkheadJobPinHatchMockFluid = 1u << 14;
         private const uint BulkheadJobPinHatchFluidFront = 1u << 15;
         private const uint BulkheadJobPinHatchStructural = 1u << 16;
+        private const uint BulkheadRequiredJobPinMask =
+            BulkheadJobPinStates |
+            BulkheadJobPinAups |
+            BulkheadJobPinPlanes |
+            BulkheadJobPinCsrEdges |
+            BulkheadJobPinEdgeConductivity |
+            BulkheadJobPinFluidFlow |
+            BulkheadJobPinModuleIntegrity |
+            BulkheadJobPinCollisionResults |
+            BulkheadJobPinTelemetry |
+            BulkheadJobPinTelemetryCursor |
+            BulkheadJobPinHatchStates |
+            BulkheadJobPinHatchTelemetry |
+            BulkheadJobPinHatchTelemetryCursor |
+            BulkheadJobPinHatchTuning |
+            BulkheadJobPinHatchMockFluid;
 
         private static readonly int GlobalBulkheadStatesId = Shader.PropertyToID("_GlobalBulkheadStates");
         private static readonly int GlobalBulkheadParamsId = Shader.PropertyToID("_GlobalBulkheadParams");
@@ -624,44 +658,11 @@ namespace Hecton8.Construction
             if (_bulkheadJobPinVault != null)
                 return ReferenceEquals(_bulkheadJobPinVault, vault);
 
-            uint mask = 0u;
-            if (!TryLockBulkheadJobPin(vault, BufferID.Shinobu220BulkheadStates, BulkheadJobPinStates, ref mask) ||
-                !TryLockBulkheadJobPin(vault, BufferID.Shinobu220BulkheadAups, BulkheadJobPinAups, ref mask) ||
-                !TryLockBulkheadJobPin(vault, BufferID.Shinobu220BulkheadPlanes, BulkheadJobPinPlanes, ref mask) ||
-                !TryLockBulkheadJobPin(vault, BufferID.Shinobu220BulkheadCsrEdges, BulkheadJobPinCsrEdges, ref mask) ||
-                !TryLockBulkheadJobPin(vault, BufferID.Shinobu220BulkheadEdgeConductivity, BulkheadJobPinEdgeConductivity, ref mask) ||
-                !TryLockBulkheadJobPin(vault, BufferID.Shinobu220BulkheadFluidFlow, BulkheadJobPinFluidFlow, ref mask) ||
-                !TryLockBulkheadJobPin(vault, BufferID.Shinobu220BulkheadModuleIntegrity, BulkheadJobPinModuleIntegrity, ref mask) ||
-                !TryLockBulkheadJobPin(vault, BufferID.Shinobu220BulkheadCollisionResults, BulkheadJobPinCollisionResults, ref mask) ||
-                !TryLockBulkheadJobPin(vault, BufferID.Shinobu220BulkheadTelemetryRing, BulkheadJobPinTelemetry, ref mask) ||
-                !TryLockBulkheadJobPin(vault, BufferID.Shinobu220BulkheadTelemetryCursor, BulkheadJobPinTelemetryCursor, ref mask) ||
-                !TryLockBulkheadJobPin(vault, BufferID.Shinobu343HatchStates, BulkheadJobPinHatchStates, ref mask) ||
-                !TryLockBulkheadJobPin(vault, BufferID.Shinobu343HatchTelemetryRing, BulkheadJobPinHatchTelemetry, ref mask) ||
-                !TryLockBulkheadJobPin(vault, BufferID.Shinobu343HatchTelemetryCursor, BulkheadJobPinHatchTelemetryCursor, ref mask) ||
-                !TryLockBulkheadJobPin(vault, BufferID.Shinobu343HatchTuning, BulkheadJobPinHatchTuning, ref mask) ||
-                !TryLockBulkheadJobPin(vault, BufferID.Shinobu343HatchMockFluidCompartments, BulkheadJobPinHatchMockFluid, ref mask))
-            {
-                ReleaseBulkheadJobPins(vault, mask);
+            if (!vault.TryAcquireMutationGuard(BulkheadJobMutationGuardMask))
                 return false;
-            }
 
             _bulkheadJobPinVault = vault;
-            _bulkheadJobPinMask = mask;
-            return true;
-        }
-
-        private static bool TryLockBulkheadJobPin(IDataVault vault, BufferID bufferId, uint bit, ref uint mask)
-        {
-            if (vault == null || bufferId == BufferID.Unknown)
-                return false;
-
-            if ((mask & bit) != 0u)
-                return true;
-
-            if (!vault.TryLockBuffer(bufferId, OwnerSystemId))
-                return false;
-
-            mask |= bit;
+            _bulkheadJobPinMask = BulkheadRequiredJobPinMask;
             return true;
         }
 
@@ -674,9 +675,6 @@ namespace Hecton8.Construction
             if ((_bulkheadJobPinMask & bit) != 0u)
                 return true;
 
-            if (!vault.TryLockBuffer(bufferId, OwnerSystemId))
-                return false;
-
             _bulkheadJobPinMask |= bit;
             return true;
         }
@@ -687,7 +685,6 @@ namespace Hecton8.Construction
             if (vault == null || (_bulkheadJobPinMask & bit) == 0u)
                 return;
 
-            vault.TryUnlockBuffer(bufferId, OwnerSystemId);
             _bulkheadJobPinMask &= ~bit;
         }
 
@@ -705,23 +702,7 @@ namespace Hecton8.Construction
             if (vault == null || mask == 0u)
                 return;
 
-            if ((mask & BulkheadJobPinHatchStructural) != 0u) vault.TryUnlockBuffer(BufferID.StructuralIntegrityStates, OwnerSystemId);
-            if ((mask & BulkheadJobPinHatchFluidFront) != 0u) vault.TryUnlockBuffer(BufferID.ShinobuFluidCompartmentFront, OwnerSystemId);
-            if ((mask & BulkheadJobPinHatchMockFluid) != 0u) vault.TryUnlockBuffer(BufferID.Shinobu343HatchMockFluidCompartments, OwnerSystemId);
-            if ((mask & BulkheadJobPinHatchTuning) != 0u) vault.TryUnlockBuffer(BufferID.Shinobu343HatchTuning, OwnerSystemId);
-            if ((mask & BulkheadJobPinHatchTelemetryCursor) != 0u) vault.TryUnlockBuffer(BufferID.Shinobu343HatchTelemetryCursor, OwnerSystemId);
-            if ((mask & BulkheadJobPinHatchTelemetry) != 0u) vault.TryUnlockBuffer(BufferID.Shinobu343HatchTelemetryRing, OwnerSystemId);
-            if ((mask & BulkheadJobPinHatchStates) != 0u) vault.TryUnlockBuffer(BufferID.Shinobu343HatchStates, OwnerSystemId);
-            if ((mask & BulkheadJobPinTelemetryCursor) != 0u) vault.TryUnlockBuffer(BufferID.Shinobu220BulkheadTelemetryCursor, OwnerSystemId);
-            if ((mask & BulkheadJobPinTelemetry) != 0u) vault.TryUnlockBuffer(BufferID.Shinobu220BulkheadTelemetryRing, OwnerSystemId);
-            if ((mask & BulkheadJobPinCollisionResults) != 0u) vault.TryUnlockBuffer(BufferID.Shinobu220BulkheadCollisionResults, OwnerSystemId);
-            if ((mask & BulkheadJobPinModuleIntegrity) != 0u) vault.TryUnlockBuffer(BufferID.Shinobu220BulkheadModuleIntegrity, OwnerSystemId);
-            if ((mask & BulkheadJobPinFluidFlow) != 0u) vault.TryUnlockBuffer(BufferID.Shinobu220BulkheadFluidFlow, OwnerSystemId);
-            if ((mask & BulkheadJobPinEdgeConductivity) != 0u) vault.TryUnlockBuffer(BufferID.Shinobu220BulkheadEdgeConductivity, OwnerSystemId);
-            if ((mask & BulkheadJobPinCsrEdges) != 0u) vault.TryUnlockBuffer(BufferID.Shinobu220BulkheadCsrEdges, OwnerSystemId);
-            if ((mask & BulkheadJobPinPlanes) != 0u) vault.TryUnlockBuffer(BufferID.Shinobu220BulkheadPlanes, OwnerSystemId);
-            if ((mask & BulkheadJobPinAups) != 0u) vault.TryUnlockBuffer(BufferID.Shinobu220BulkheadAups, OwnerSystemId);
-            if ((mask & BulkheadJobPinStates) != 0u) vault.TryUnlockBuffer(BufferID.Shinobu220BulkheadStates, OwnerSystemId);
+            vault.ReleaseMutationGuard(BulkheadJobMutationGuardMask);
         }
 
         private void ReleaseVaultHandles()

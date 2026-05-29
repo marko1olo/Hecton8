@@ -15,7 +15,6 @@ namespace Hecton8.UI
     public sealed class DiegeticPDAController : MonoBehaviour, ILateFrameTickable, IPanelInteractable, IGlobalRegistryHotSwapListener
     {
         private const string TabletScreenShaderPath = "Assets/_Project/Art/Shaders/Hecton_DiegeticPanelUnlit.shader";
-        private const float ReferenceResolveRetryIntervalSeconds = 0.5f;
         private const float HoverRaycastPixelThresholdSq = 16f;
         private const int PointerTargetCapacity = 256;
         private const int PointerDiscoveryCapacity = 512;
@@ -81,6 +80,9 @@ namespace Hecton8.UI
         private readonly Selectable[] _pointerTargetSelectables = new Selectable[PointerTargetCapacity];
         // COLD ALLOC: Graphic[256] — cached PDA pointer draw-depth hints — owner: DiegeticPDAController
         private readonly Graphic[] _pointerTargetGraphics = new Graphic[PointerTargetCapacity];
+        private Renderer[] _tabletVisibilityRenderers;
+        private Collider[] _tabletVisibilityColliders;
+        private CanvasGroup[] _tabletVisibilityCanvasGroups;
 
         private bool _registeredToTickManager;
         private bool _uiConfigured;
@@ -107,7 +109,6 @@ namespace Hecton8.UI
         private int _pointerTargetCount;
         private IPlayerRuntimeContext _cachedPlayerContext;
         private Material _runtimeTabletScreenMaterial;
-        private float _referenceResolveRetryTimer;
 
         private void Awake()
         {
@@ -122,7 +123,6 @@ namespace Hecton8.UI
         {
             CacheRegistryServicesCold();
             ResolveReferences();
-            _referenceResolveRetryTimer = 0f;
             ConfigureDiegeticPdaShell();
             TryRegisterHotSwapListener();
             RegisterToTickManager();
@@ -157,7 +157,6 @@ namespace Hecton8.UI
 
         public void LateFrameTick()
         {
-            float safeDeltaTime = math.max(0f, SystemDispatcher.CurrentFrameUnscaledDeltaTime);
             bool openState = PlayerPDA.IsOpen;
             if (!openState)
             {
@@ -168,11 +167,11 @@ namespace Hecton8.UI
                 return;
             }
 
-            if (openState != _lastOpenState)
-                _referenceResolveRetryTimer = 0f;
-
-            ResolveReferencesThrottled(safeDeltaTime);
-            ConfigureDiegeticPdaShell();
+            if (!_uiConfigured || NeedsReferenceResolve())
+            {
+                ApplyPresentationCullState(openState, false, force: false);
+                return;
+            }
 
             if (openState != _lastOpenState)
                 ApplyPresentationState(openState, force: true);
@@ -263,7 +262,8 @@ namespace Hecton8.UI
             if (_visibilityCamera == null || ReferenceEquals(_visibilityCamera, previousCamera))
                 _visibilityCamera = _cachedPlayerContext != null ? _cachedPlayerContext.PlayerCamera : null;
 
-            _referenceResolveRetryTimer = 0f;
+            ResolveReferences();
+            ConfigureDiegeticPdaShell();
         }
 
         private void CacheRegistryServicesCold()
@@ -286,22 +286,6 @@ namespace Hecton8.UI
 
             GlobalRegistry.TryUnregisterHotSwapListener(this);
             _hotSwapListenerRegistered = false;
-        }
-
-        private void ResolveReferencesThrottled(float deltaTime)
-        {
-            if (!NeedsReferenceResolve())
-            {
-                _referenceResolveRetryTimer = 0f;
-                return;
-            }
-
-            _referenceResolveRetryTimer = math.max(0f, _referenceResolveRetryTimer - deltaTime);
-            if (_referenceResolveRetryTimer > 0f)
-                return;
-
-            _referenceResolveRetryTimer = ReferenceResolveRetryIntervalSeconds;
-            ResolveReferences();
         }
 
         private bool NeedsReferenceResolve()
@@ -607,6 +591,17 @@ namespace Hecton8.UI
         {
             _cachedTabletRoot = tabletRoot;
             _tabletVisibilityInitialized = false;
+            if (tabletRoot == null)
+            {
+                _tabletVisibilityRenderers = null;
+                _tabletVisibilityColliders = null;
+                _tabletVisibilityCanvasGroups = null;
+                return;
+            }
+
+            _tabletVisibilityRenderers = tabletRoot.GetComponentsInChildren<Renderer>(true);
+            _tabletVisibilityColliders = tabletRoot.GetComponentsInChildren<Collider>(true);
+            _tabletVisibilityCanvasGroups = tabletRoot.GetComponentsInChildren<CanvasGroup>(true);
         }
 
         private void SetTabletVisible(bool visible)
@@ -614,37 +609,50 @@ namespace Hecton8.UI
             if (tabletRoot == null || (_tabletVisibilityInitialized && _tabletVisible == visible))
                 return;
 
-            SetTabletVisibleInHierarchy(tabletRoot.transform, visible);
+            Renderer[] renderers = _tabletVisibilityRenderers;
+            if (renderers != null)
+            {
+                for (int i = 0; i < renderers.Length; i++)
+                {
+                    Renderer renderer = renderers[i];
+                    if (renderer != null)
+                        renderer.enabled = visible;
+                }
+            }
+
+            Collider[] colliders = _tabletVisibilityColliders;
+            if (colliders != null)
+            {
+                for (int i = 0; i < colliders.Length; i++)
+                {
+                    Collider collider = colliders[i];
+                    if (collider != null)
+                        collider.enabled = visible;
+                }
+            }
+
+            CanvasGroup[] canvasGroups = _tabletVisibilityCanvasGroups;
+            if (canvasGroups != null)
+            {
+                for (int i = 0; i < canvasGroups.Length; i++)
+                {
+                    CanvasGroup canvasGroup = canvasGroups[i];
+                    if (canvasGroup == null)
+                        continue;
+
+                    canvasGroup.alpha = visible ? 1f : 0f;
+                    canvasGroup.interactable = visible;
+                    canvasGroup.blocksRaycasts = visible;
+                }
+            }
 
             _tabletVisible = visible;
             _tabletVisibilityInitialized = true;
         }
 
-        private static void SetTabletVisibleInHierarchy(Transform root, bool visible)
-        {
-            if (root == null)
-                return;
-
-            if (root.TryGetComponent(out Renderer renderer))
-                renderer.enabled = visible;
-
-            if (root.TryGetComponent(out Collider collider))
-                collider.enabled = visible;
-
-            if (root.TryGetComponent(out CanvasGroup canvasGroup))
-            {
-                canvasGroup.alpha = visible ? 1f : 0f;
-                canvasGroup.interactable = visible;
-                canvasGroup.blocksRaycasts = visible;
-            }
-
-            for (int i = 0; i < root.childCount; i++)
-                SetTabletVisibleInHierarchy(root.GetChild(i), visible);
-        }
-
         private bool EnsureUiInteractionState(bool allowColdCreateFallback)
         {
-            if (allowColdCreateFallback || _panelCanvas == null)
+            if (allowColdCreateFallback)
                 ResolveReferences();
 
             if (_panelCanvas == null)
@@ -739,7 +747,7 @@ namespace Hecton8.UI
             hitTarget = null;
 
             if (_pointerTargetCacheDirty)
-                RebuildPointerTargetCache();
+                return false;
 
             if (_pointerTargetCount <= 0 || _pointerTargetCacheOverflow)
                 return false;

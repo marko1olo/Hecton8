@@ -1,4 +1,3 @@
-using System.Collections.Generic;
 using Hecton8.Core;
 using Hecton8.Core.Memory;
 using Hecton8.Gameplay;
@@ -27,11 +26,13 @@ namespace Hecton8.Construction
         private const BufferID QueueBufferId = (BufferID)72058;
         private const BufferID SortedOrderBufferId = (BufferID)72059;
         private const BufferID SortedCountBufferId = (BufferID)72060;
+        private const ulong SortBuffersMutationGuardMask = 0x000000001FC00000UL;
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
         private const string CycleRepairWarningMessage = "LogisticsPipeTransportScheduler dropped cyclic edge to keep pipe DAG valid.";
 #endif
-        // COLD ALLOC: List<LogisticsPipeNode>[32] - managed pipe-node registry for shared DAG transport scheduling.
-        private static readonly List<LogisticsPipeNode> _activeNodes = new List<LogisticsPipeNode>(MaxNodeCapacity);
+        // COLD ALLOC: fixed pipe-node registry; hot scheduler never grows or shifts a managed collection.
+        private static readonly LogisticsPipeNode[] _activeNodes = new LogisticsPipeNode[MaxNodeCapacity];
+        private static int _activeNodeCount;
         private static IDataVault _dataVault;
         private static VaultGenerationHandle<int> _edgeOffsetsHandle;
         private static VaultGenerationHandle<int> _edgeDestinationsHandle;
@@ -41,12 +42,17 @@ namespace Hecton8.Construction
         private static VaultGenerationHandle<int> _queueHandle;
         private static VaultGenerationHandle<int> _sortedOrderHandle;
         private static VaultGenerationHandle<int> _sortedCountHandle;
-        private static bool _sortLocksHeld;
+        private static bool _sortGuardHeld;
 
         private static JobHandle _pendingSortHandle;
         private static bool _pendingSort;
         private static int _scheduledSortedCount;
         private static int _scheduledNodeCount;
+        private static int _activeTopologyVersion;
+        private static int _sortTopologyVersion = -1;
+        private static int _scheduledTopologyVersion = -1;
+        private static int _sortTopologySignature = -1;
+        private static int _scheduledTopologySignature = -1;
         private static int _lastProcessedFrame = -1;
         private static int _nextCycleWarningFrame;
 
@@ -114,9 +120,15 @@ namespace Hecton8.Construction
             IDataVault vault = _dataVault;
             ReleaseSortWriteLocks(vault);
             ReleaseVaultHandles(vault);
-            _activeNodes.Clear();
+            System.Array.Clear(_activeNodes, 0, _activeNodeCount);
+            _activeNodeCount = 0;
             _scheduledSortedCount = 0;
             _scheduledNodeCount = 0;
+            _activeTopologyVersion = 0;
+            _sortTopologyVersion = -1;
+            _scheduledTopologyVersion = -1;
+            _sortTopologySignature = -1;
+            _scheduledTopologySignature = -1;
             _lastProcessedFrame = -1;
             _nextCycleWarningFrame = 0;
         }
@@ -139,17 +151,18 @@ namespace Hecton8.Construction
             if (node == null)
                 return;
 
-            int activeCount = _activeNodes.Count;
+            int activeCount = _activeNodeCount;
             for (int i = 0; i < activeCount; i++)
             {
                 if (ReferenceEquals(_activeNodes[i], node))
                     return;
             }
 
-            if (_activeNodes.Count >= MaxNodeCapacity)
+            if (_activeNodeCount >= MaxNodeCapacity)
                 return;
 
-            _activeNodes.Add(node);
+            _activeNodes[_activeNodeCount++] = node;
+            _activeTopologyVersion++;
         }
 
         internal static void Unregister(LogisticsPipeNode node)
@@ -157,13 +170,13 @@ namespace Hecton8.Construction
             if (node == null)
                 return;
 
-            int activeCount = _activeNodes.Count;
+            int activeCount = _activeNodeCount;
             for (int i = 0; i < activeCount; i++)
             {
                 if (!ReferenceEquals(_activeNodes[i], node))
                     continue;
 
-                _activeNodes.RemoveAt(i);
+                RemoveActiveNodeAt(i);
                 break;
             }
         }
@@ -173,7 +186,7 @@ namespace Hecton8.Construction
             if (requester == null)
                 return false;
 
-            if (_activeNodes.Count <= 0)
+            if (_activeNodeCount <= 0)
                 return false;
 
             int currentFrame = Hecton8.Core.SystemDispatcher.CurrentFrameIndex;
@@ -186,32 +199,61 @@ namespace Hecton8.Construction
             if (activeCount <= 0)
                 return true;
 
+            int topologySignature = RefreshActiveNodesForScheduler(activeCount);
             CompletePendingSort(forceComplete: false);
-            ReplayCurrentOrder(activeCount);
+            ReplayCurrentOrder(activeCount, topologySignature);
             if (!_pendingSort)
-                ScheduleNextOrder(activeCount);
+                ScheduleNextOrder(activeCount, topologySignature);
             return true;
         }
 
         private static int CompactActiveNodes()
         {
-            for (int i = _activeNodes.Count - 1; i >= 0; i--)
+            for (int i = _activeNodeCount - 1; i >= 0; i--)
             {
                 if (_activeNodes[i] != null)
                     continue;
 
-                _activeNodes.RemoveAt(i);
+                RemoveActiveNodeAt(i);
             }
 
-            return _activeNodes.Count;
+            return _activeNodeCount;
         }
 
-        private static void ReplayCurrentOrder(int activeCount)
+        private static void RemoveActiveNodeAt(int index)
         {
-            for (int nodeIndex = 0; nodeIndex < activeCount; nodeIndex++)
-                _activeNodes[nodeIndex].SchedulerRefresh();
+            int lastIndex = _activeNodeCount - 1;
+            if ((uint)index > (uint)lastIndex)
+                return;
 
+            _activeNodes[index] = _activeNodes[lastIndex];
+            _activeNodes[lastIndex] = null;
+            _activeNodeCount = lastIndex;
+            _activeTopologyVersion++;
+        }
+
+        private static int RefreshActiveNodesForScheduler(int activeCount)
+        {
+            unchecked
+            {
+                int signature = 17;
+                for (int nodeIndex = 0; nodeIndex < activeCount; nodeIndex++)
+                {
+                    LogisticsPipeNode node = _activeNodes[nodeIndex];
+                    node.SchedulerRefresh();
+                    signature = (signature * 397) ^ node.SchedulerTopologyKey;
+                }
+
+                return signature;
+            }
+        }
+
+        private static void ReplayCurrentOrder(int activeCount, int topologySignature)
+        {
             if (_scheduledSortedCount == activeCount &&
+                _scheduledNodeCount == activeCount &&
+                _scheduledTopologyVersion == _activeTopologyVersion &&
+                _scheduledTopologySignature == topologySignature &&
                 TryReadBuffer(CacheDataVault(), in _sortedOrderHandle, SortedOrderBufferId, activeCount, out NativeArray<int>.ReadOnly sortedOrder))
             {
                 for (int sortedIndex = 0; sortedIndex < _scheduledSortedCount; sortedIndex++)
@@ -230,7 +272,7 @@ namespace Hecton8.Construction
                 _activeNodes[nodeIndex].ExecuteCoordinatedSlowTick();
         }
 
-        private static void ScheduleNextOrder(int activeCount)
+        private static void ScheduleNextOrder(int activeCount, int topologySignature)
         {
             int edgeCount = CountEdges(activeCount);
             IDataVault vault = CacheDataVault();
@@ -248,6 +290,8 @@ namespace Hecton8.Construction
             {
                 _scheduledSortedCount = 0;
                 _scheduledNodeCount = 0;
+                _scheduledTopologyVersion = -1;
+                _scheduledTopologySignature = -1;
                 return;
             }
 
@@ -322,29 +366,28 @@ namespace Hecton8.Construction
                     }
                 }
 
-                BuildPipeTopologicalOrderJob job = new BuildPipeTopologicalOrderJob
-                {
-                    NodeCount = activeCount,
-                    EdgeOffsets = edgeOffsets,
-                    EdgeDestinations = edgeDestinations,
-                    InputIndegrees = inputIndegrees,
-                    WorkIndegrees = workIndegrees,
-                    Queue = queue,
-                    SortedOrder = sortedOrder,
-                    SortedCount = sortedCount
-                };
+                BuildPipeTopologicalOrderJob job;
+                job.NodeCount = activeCount;
+                job.EdgeOffsets = edgeOffsets;
+                job.EdgeDestinations = edgeDestinations;
+                job.InputIndegrees = inputIndegrees;
+                job.WorkIndegrees = workIndegrees;
+                job.Queue = queue;
+                job.SortedOrder = sortedOrder;
+                job.SortedCount = sortedCount;
 
                 _pendingSortHandle = job.Schedule();
                 _pendingSort = true;
-                _sortLocksHeld = true;
                 _scheduledSortedCount = 0;
                 _scheduledNodeCount = activeCount;
+                _sortTopologyVersion = _activeTopologyVersion;
+                _sortTopologySignature = topologySignature;
                 scheduled = true;
             }
             finally
             {
                 if (!scheduled)
-                    ReleaseSortWriteLocks(vault, true, true, true, true, true, true, true);
+                    ReleaseSortWriteLocks(vault);
             }
         }
 
@@ -399,16 +442,26 @@ namespace Hecton8.Construction
             {
                 _scheduledSortedCount = 0;
                 _scheduledNodeCount = 0;
+                _scheduledTopologyVersion = -1;
+                _sortTopologyVersion = -1;
+                _scheduledTopologySignature = -1;
+                _sortTopologySignature = -1;
                 ReleaseSortWriteLocks(vault);
                 return;
             }
 
             _scheduledSortedCount = sortedCount[0];
+            _scheduledTopologyVersion = _sortTopologyVersion;
+            _scheduledTopologySignature = _sortTopologySignature;
+            _sortTopologyVersion = -1;
+            _sortTopologySignature = -1;
             if (_scheduledSortedCount < _scheduledNodeCount)
             {
                 LogCycleRepairWarning(-1, -1);
                 sortedCount[0] = 0;
                 _scheduledSortedCount = 0;
+                _scheduledTopologyVersion = -1;
+                _scheduledTopologySignature = -1;
             }
 
             ReleaseSortWriteLocks(vault);
@@ -424,6 +477,10 @@ namespace Hecton8.Construction
             _pendingSort = false;
             _scheduledSortedCount = 0;
             _scheduledNodeCount = 0;
+            _sortTopologyVersion = -1;
+            _scheduledTopologyVersion = -1;
+            _sortTopologySignature = -1;
+            _scheduledTopologySignature = -1;
             return dependency;
         }
 
@@ -466,60 +523,32 @@ namespace Hecton8.Construction
             sortedOrder = default;
             sortedCount = default;
 
-            bool edgeOffsetsLocked = false;
-            bool edgeDestinationsLocked = false;
-            bool inputIndegreesLocked = false;
-            bool workIndegreesLocked = false;
-            bool queueLocked = false;
-            bool sortedOrderLocked = false;
-            bool sortedCountLocked = false;
-
-            if (!TryAcquireWriteBuffer(vault, EdgeOffsetsBufferId, nodeCount + 1, ref _edgeOffsetsHandle, out edgeOffsets))
+            if (vault == null || !vault.TryAcquireMutationGuard(SortBuffersMutationGuardMask))
                 return false;
-            edgeOffsetsLocked = true;
 
-            if (!TryAcquireWriteBuffer(vault, EdgeDestinationsBufferId, edgeCount, ref _edgeDestinationsHandle, out edgeDestinations))
+            bool guardHeld = true;
+            try
             {
-                ReleaseSortWriteLocks(vault, edgeOffsetsLocked, edgeDestinationsLocked, inputIndegreesLocked, workIndegreesLocked, queueLocked, sortedOrderLocked, sortedCountLocked);
-                return false;
-            }
-            edgeDestinationsLocked = true;
+                if (!TryBorrowSortBuffer(vault, EdgeOffsetsBufferId, nodeCount + 1, ref _edgeOffsetsHandle, out edgeOffsets) ||
+                    !TryBorrowSortBuffer(vault, EdgeDestinationsBufferId, edgeCount, ref _edgeDestinationsHandle, out edgeDestinations) ||
+                    !TryBorrowSortBuffer(vault, InputIndegreesBufferId, nodeCount, ref _inputIndegreesHandle, out inputIndegrees) ||
+                    !TryBorrowSortBuffer(vault, WorkIndegreesBufferId, nodeCount, ref _workIndegreesHandle, out workIndegrees) ||
+                    !TryBorrowSortBuffer(vault, QueueBufferId, nodeCount, ref _queueHandle, out queue) ||
+                    !TryBorrowSortBuffer(vault, SortedOrderBufferId, nodeCount, ref _sortedOrderHandle, out sortedOrder) ||
+                    !TryBorrowSortBuffer(vault, SortedCountBufferId, 1, ref _sortedCountHandle, out sortedCount))
+                {
+                    return false;
+                }
 
-            if (!TryAcquireWriteBuffer(vault, InputIndegreesBufferId, nodeCount, ref _inputIndegreesHandle, out inputIndegrees))
+                _sortGuardHeld = true;
+                guardHeld = false;
+                return true;
+            }
+            finally
             {
-                ReleaseSortWriteLocks(vault, edgeOffsetsLocked, edgeDestinationsLocked, inputIndegreesLocked, workIndegreesLocked, queueLocked, sortedOrderLocked, sortedCountLocked);
-                return false;
+                if (guardHeld)
+                    vault.ReleaseMutationGuard(SortBuffersMutationGuardMask);
             }
-            inputIndegreesLocked = true;
-
-            if (!TryAcquireWriteBuffer(vault, WorkIndegreesBufferId, nodeCount, ref _workIndegreesHandle, out workIndegrees))
-            {
-                ReleaseSortWriteLocks(vault, edgeOffsetsLocked, edgeDestinationsLocked, inputIndegreesLocked, workIndegreesLocked, queueLocked, sortedOrderLocked, sortedCountLocked);
-                return false;
-            }
-            workIndegreesLocked = true;
-
-            if (!TryAcquireWriteBuffer(vault, QueueBufferId, nodeCount, ref _queueHandle, out queue))
-            {
-                ReleaseSortWriteLocks(vault, edgeOffsetsLocked, edgeDestinationsLocked, inputIndegreesLocked, workIndegreesLocked, queueLocked, sortedOrderLocked, sortedCountLocked);
-                return false;
-            }
-            queueLocked = true;
-
-            if (!TryAcquireWriteBuffer(vault, SortedOrderBufferId, nodeCount, ref _sortedOrderHandle, out sortedOrder))
-            {
-                ReleaseSortWriteLocks(vault, edgeOffsetsLocked, edgeDestinationsLocked, inputIndegreesLocked, workIndegreesLocked, queueLocked, sortedOrderLocked, sortedCountLocked);
-                return false;
-            }
-            sortedOrderLocked = true;
-
-            if (!TryAcquireWriteBuffer(vault, SortedCountBufferId, 1, ref _sortedCountHandle, out sortedCount))
-            {
-                ReleaseSortWriteLocks(vault, edgeOffsetsLocked, edgeDestinationsLocked, inputIndegreesLocked, workIndegreesLocked, queueLocked, sortedOrderLocked, sortedCountLocked);
-                return false;
-            }
-
-            return true;
         }
 
         private static bool TryReadLockedSortBuffers(
@@ -551,7 +580,7 @@ namespace Hecton8.Construction
                    TryReadLockedBuffer(vault, in _sortedCountHandle, SortedCountBufferId, 1, out sortedCount);
         }
 
-        private static bool TryAcquireWriteBuffer(
+        private static bool TryBorrowSortBuffer(
             IDataVault vault,
             BufferID bufferId,
             int requiredLength,
@@ -572,7 +601,7 @@ namespace Hecton8.Construction
             }
 
             if (!IsLogisticsVaultHandle(in handle, bufferId) ||
-                !vault.TryAcquireWriteLock(in handle, OwnerSystemId, out buffer))
+                !vault.TryResolveHandle(in handle, out buffer))
             {
                 return false;
             }
@@ -580,7 +609,6 @@ namespace Hecton8.Construction
             if (buffer.IsCreated && buffer.Length >= safeLength)
                 return true;
 
-            vault.ReleaseWriteLock(in handle, OwnerSystemId);
             buffer = default;
             return false;
         }
@@ -601,40 +629,12 @@ namespace Hecton8.Construction
 
         private static void ReleaseSortWriteLocks(IDataVault vault)
         {
-            if (!_sortLocksHeld)
+            if (!_sortGuardHeld)
                 return;
 
-            ReleaseSortWriteLocks(vault, true, true, true, true, true, true, true);
-            _sortLocksHeld = false;
-        }
-
-        private static void ReleaseSortWriteLocks(
-            IDataVault vault,
-            bool edgeOffsetsLocked,
-            bool edgeDestinationsLocked,
-            bool inputIndegreesLocked,
-            bool workIndegreesLocked,
-            bool queueLocked,
-            bool sortedOrderLocked,
-            bool sortedCountLocked)
-        {
-            if (vault == null)
-                return;
-
-            if (sortedCountLocked)
-                ReleaseSortWriteLock(vault, in _sortedCountHandle, SortedCountBufferId);
-            if (sortedOrderLocked)
-                ReleaseSortWriteLock(vault, in _sortedOrderHandle, SortedOrderBufferId);
-            if (queueLocked)
-                ReleaseSortWriteLock(vault, in _queueHandle, QueueBufferId);
-            if (workIndegreesLocked)
-                ReleaseSortWriteLock(vault, in _workIndegreesHandle, WorkIndegreesBufferId);
-            if (inputIndegreesLocked)
-                ReleaseSortWriteLock(vault, in _inputIndegreesHandle, InputIndegreesBufferId);
-            if (edgeDestinationsLocked)
-                ReleaseSortWriteLock(vault, in _edgeDestinationsHandle, EdgeDestinationsBufferId);
-            if (edgeOffsetsLocked)
-                ReleaseSortWriteLock(vault, in _edgeOffsetsHandle, EdgeOffsetsBufferId);
+            if (vault != null)
+                vault.ReleaseMutationGuard(SortBuffersMutationGuardMask);
+            _sortGuardHeld = false;
         }
 
         private static void ReleaseVaultHandles(IDataVault vault)
@@ -655,12 +655,6 @@ namespace Hecton8.Construction
             }
 
             _dataVault = null;
-        }
-
-        private static void ReleaseSortWriteLock(IDataVault vault, in VaultGenerationHandle<int> handle, BufferID expectedBufferId)
-        {
-            if (IsLogisticsVaultHandle(in handle, expectedBufferId))
-                vault.ReleaseWriteLock(in handle, OwnerSystemId);
         }
 
         private static void ReleaseVaultHandle(IDataVault vault, ref VaultGenerationHandle<int> handle, BufferID expectedBufferId)

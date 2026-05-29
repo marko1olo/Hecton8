@@ -236,6 +236,31 @@ namespace Hecton8.Gameplay
         private const byte ArmorImpactSignalFlagDirectionalDeflect = 1 << 1;
 
         private const SystemID ArmorMemoryOwner = SystemID.GameplayCombat;
+        private static readonly ulong ArmorPenetrationJobMutationGuardMask =
+            CombatVaultMutationGuardBit(ArmorPenetrationVaultBufferIds.SignalImpactAups) |
+            CombatVaultMutationGuardBit(ArmorPenetrationVaultBufferIds.TargetRootAups) |
+            CombatVaultMutationGuardBit(ArmorPenetrationVaultBufferIds.TargetRotations) |
+            CombatVaultMutationGuardBit(ArmorPenetrationVaultBufferIds.TargetHalfExtents) |
+            CombatVaultMutationGuardBit(ArmorPenetrationVaultBufferIds.TargetArmorProfiles) |
+            CombatVaultMutationGuardBit(ArmorPenetrationVaultBufferIds.TelemetryRing) |
+            CombatVaultMutationGuardBit(ArmorPenetrationVaultBufferIds.DebugHits) |
+            CombatVaultMutationGuardBit(ArmorPenetrationVaultBufferIds.Tuning);
+        private static readonly ulong ArmorMockMutationGuardMask =
+            ArmorPenetrationJobMutationGuardMask |
+            CombatVaultMutationGuardBit(ArmorPenetrationVaultBufferIds.MockRequests) |
+            CombatVaultMutationGuardBit(ArmorPenetrationVaultBufferIds.MockDetails) |
+            CombatVaultMutationGuardBit(ArmorPenetrationVaultBufferIds.MockAups) |
+            CombatVaultMutationGuardBit(ArmorPenetrationVaultBufferIds.MockTargetSlots);
+        private static readonly ulong ArmorEvaluatorTortureMutationGuardMask =
+            ArmorPenetrationJobMutationGuardMask |
+            CombatVaultMutationGuardBit(ArmorPenetrationVaultBufferIds.TortureRequests) |
+            CombatVaultMutationGuardBit(ArmorPenetrationVaultBufferIds.TortureDetails) |
+            CombatVaultMutationGuardBit(ArmorPenetrationVaultBufferIds.TortureAups) |
+            CombatVaultMutationGuardBit(ArmorPenetrationVaultBufferIds.TortureTargetSlots) |
+            CombatVaultMutationGuardBit(ArmorPenetrationVaultBufferIds.TortureResolvedHits);
+        private static readonly ulong ArmorCasTortureMutationGuardMask =
+            CombatVaultMutationGuardBit(ArmorPenetrationVaultBufferIds.CasTortureHealth) |
+            CombatVaultMutationGuardBit(ArmorPenetrationVaultBufferIds.CasTortureSuccesses);
 
         private static IDataVault _armorDataVault;
         private static VaultGenerationHandle<double3> _signalImpactAupsHandle;
@@ -262,7 +287,6 @@ namespace Hecton8.Gameplay
         private static long _armorScheduleTicks;
         private static bool _armorTelemetryDumped;
         private static bool _armorTelemetryDumpRequested;
-        private static bool _armorVaultBuffersLocked;
         private static bool _armorVaultRebindPending;
         private static bool _armorHotSwapRegistered;
         private static IDataVault _armorPendingDataVault;
@@ -661,27 +685,20 @@ namespace Hecton8.Gameplay
         {
             if (vault == null ||
                 vault.IsAllocationLocked ||
+                vault.IsCompactionFenceActive ||
                 !IsArmorVaultHandleCreated(in _armorTuningHandle, ArmorPenetrationVaultBufferIds.Tuning) ||
-                !vault.TryAcquireWriteLock(in _armorTuningHandle, ArmorMemoryOwner, out NativeArray<ArmorPenetrationTuningDTO> tuningBuffer))
+                !vault.TryResolveHandle(in _armorTuningHandle, out NativeArray<ArmorPenetrationTuningDTO> tuningBuffer) ||
+                !tuningBuffer.IsCreated ||
+                tuningBuffer.Length == 0)
             {
                 return false;
             }
 
-            bool valid = false;
-            try
-            {
-                if (tuningBuffer.IsCreated && tuningBuffer.Length > 0 && tuningBuffer[0].Revision == 0u)
-                    tuningBuffer[0] = ResolveDefaultArmorTuning();
+            if (tuningBuffer[0].Revision == 0u)
+                tuningBuffer[0] = ResolveDefaultArmorTuning();
 
-                views.Tuning = tuningBuffer;
-                valid = tuningBuffer.IsCreated && tuningBuffer.Length > 0 && tuningBuffer[0].Revision != 0u;
-            }
-            finally
-            {
-                valid &= vault.ReleaseWriteLock(in _armorTuningHandle, ArmorMemoryOwner);
-            }
-
-            return valid;
+            views.Tuning = tuningBuffer;
+            return tuningBuffer[0].Revision != 0u;
         }
 
         private static bool TryOpenOrEnsureArmorVaultBuffer<T>(
@@ -797,225 +814,58 @@ namespace Hecton8.Gameplay
             handle = default;
         }
 
-        private static bool TryLockArmorVaultBuffersForJobs()
+        private static bool TryAcquireArmorOnlyMutationGuardLease(
+            ulong armorMask,
+            out CombatVaultMutationGuardLease lease)
         {
-            if (_armorVaultBuffersLocked)
-                return false;
-
-            IDataVault vault = _armorDataVault;
-            if (vault == null)
-                return false;
-
-            int locked = 0;
-            bool success = false;
-            try
+            lease = default;
+            if (!lease.Add(_armorDataVault, armorMask))
             {
-                if (!vault.TryLockBuffer(ArmorPenetrationVaultBufferIds.SignalImpactAups, ArmorMemoryOwner)) return false;
-                locked++;
-                if (!vault.TryLockBuffer(ArmorPenetrationVaultBufferIds.TargetRootAups, ArmorMemoryOwner)) return false;
-                locked++;
-                if (!vault.TryLockBuffer(ArmorPenetrationVaultBufferIds.TargetRotations, ArmorMemoryOwner)) return false;
-                locked++;
-                if (!vault.TryLockBuffer(ArmorPenetrationVaultBufferIds.TargetHalfExtents, ArmorMemoryOwner)) return false;
-                locked++;
-                if (!vault.TryLockBuffer(ArmorPenetrationVaultBufferIds.TargetArmorProfiles, ArmorMemoryOwner)) return false;
-                locked++;
-                if (!vault.TryLockBuffer(ArmorPenetrationVaultBufferIds.TelemetryRing, ArmorMemoryOwner)) return false;
-                locked++;
-                if (!vault.TryLockBuffer(ArmorPenetrationVaultBufferIds.DebugHits, ArmorMemoryOwner)) return false;
-                locked++;
-                if (!vault.TryLockBuffer(ArmorPenetrationVaultBufferIds.Tuning, ArmorMemoryOwner)) return false;
-                locked++;
+                lease.Release();
+                return false;
+            }
 
-                _armorVaultBuffersLocked = true;
-                success = true;
+            if (lease.TryAcquire())
                 return true;
-            }
-            finally
+
+            lease.Release();
+            return false;
+        }
+
+        private static bool TryAcquireArmorCombatMutationGuardLease(
+            ulong armorMask,
+            out CombatVaultMutationGuardLease lease)
+        {
+            lease = default;
+            if (!lease.Add(OpenCombatDataVault(allowColdBootstrap: false), CombatDamageJobMutationGuardMask) ||
+                !lease.Add(_armorDataVault, armorMask))
             {
-                if (!success)
-                    UnlockArmorVaultBuffersForJobs(locked);
+                lease.Release();
+                return false;
             }
+
+            if (lease.TryAcquire())
+                return true;
+
+            lease.Release();
+            return false;
         }
 
-        private static void UnlockArmorVaultBuffersForJobs()
-        {
-            UnlockArmorVaultBuffersForJobs(8);
-        }
-
-        private static void UnlockArmorVaultBuffersForJobs(int lockedCount)
-        {
-            IDataVault vault = _armorDataVault;
-            if (vault == null)
-                return;
-
-            if (lockedCount >= 8) vault.TryUnlockBuffer(ArmorPenetrationVaultBufferIds.Tuning, ArmorMemoryOwner);
-            if (lockedCount >= 7) vault.TryUnlockBuffer(ArmorPenetrationVaultBufferIds.DebugHits, ArmorMemoryOwner);
-            if (lockedCount >= 6) vault.TryUnlockBuffer(ArmorPenetrationVaultBufferIds.TelemetryRing, ArmorMemoryOwner);
-            if (lockedCount >= 5) vault.TryUnlockBuffer(ArmorPenetrationVaultBufferIds.TargetArmorProfiles, ArmorMemoryOwner);
-            if (lockedCount >= 4) vault.TryUnlockBuffer(ArmorPenetrationVaultBufferIds.TargetHalfExtents, ArmorMemoryOwner);
-            if (lockedCount >= 3) vault.TryUnlockBuffer(ArmorPenetrationVaultBufferIds.TargetRotations, ArmorMemoryOwner);
-            if (lockedCount >= 2) vault.TryUnlockBuffer(ArmorPenetrationVaultBufferIds.TargetRootAups, ArmorMemoryOwner);
-            if (lockedCount >= 1) vault.TryUnlockBuffer(ArmorPenetrationVaultBufferIds.SignalImpactAups, ArmorMemoryOwner);
-            _armorVaultBuffersLocked = false;
-        }
-
-        private static bool TryAcquireArmorTargetWriteLocks(out ArmorPenetrationVaultViews views, out int lockedCount)
+        private static bool TryResolveArmorTargetOwnerViews(out ArmorPenetrationVaultViews views)
         {
             views = default;
-            lockedCount = 0;
             IDataVault vault = _armorDataVault;
             if (vault == null || vault.IsCompactionFenceActive)
                 return false;
 
-            bool success = false;
-            try
-            {
-                if (!vault.TryAcquireWriteLock(in _targetRootAupsHandle, ArmorMemoryOwner, out views.TargetRootAups)) return false;
-                lockedCount++;
-                if (!vault.TryAcquireWriteLock(in _targetRotationsHandle, ArmorMemoryOwner, out views.TargetRotations)) return false;
-                lockedCount++;
-                if (!vault.TryAcquireWriteLock(in _targetHalfExtentsHandle, ArmorMemoryOwner, out views.TargetHalfExtents)) return false;
-                lockedCount++;
-                if (!vault.TryAcquireWriteLock(in _targetArmorProfilesHandle, ArmorMemoryOwner, out views.TargetArmorProfiles)) return false;
-                lockedCount++;
-                success = true;
-                return true;
-            }
-            finally
-            {
-                if (!success)
-                    ReleaseArmorTargetWriteLocks(lockedCount);
-            }
-        }
-
-        private static void ReleaseArmorTargetWriteLocks(int lockedCount)
-        {
-            IDataVault vault = _armorDataVault;
-            if (vault == null)
-                return;
-
-            if (lockedCount >= 4) vault.ReleaseWriteLock(in _targetArmorProfilesHandle, ArmorMemoryOwner);
-            if (lockedCount >= 3) vault.ReleaseWriteLock(in _targetHalfExtentsHandle, ArmorMemoryOwner);
-            if (lockedCount >= 2) vault.ReleaseWriteLock(in _targetRotationsHandle, ArmorMemoryOwner);
-            if (lockedCount >= 1) vault.ReleaseWriteLock(in _targetRootAupsHandle, ArmorMemoryOwner);
-        }
-
-        private static bool TryLockArmorMockBuffersForJobs(out int lockedCount)
-        {
-            lockedCount = 0;
-            IDataVault vault = _armorDataVault;
-            if (vault == null)
-                return false;
-
-            bool success = false;
-            try
-            {
-                if (!vault.TryLockBuffer(ArmorPenetrationVaultBufferIds.MockRequests, ArmorMemoryOwner)) return false;
-                lockedCount++;
-                if (!vault.TryLockBuffer(ArmorPenetrationVaultBufferIds.MockDetails, ArmorMemoryOwner)) return false;
-                lockedCount++;
-                if (!vault.TryLockBuffer(ArmorPenetrationVaultBufferIds.MockAups, ArmorMemoryOwner)) return false;
-                lockedCount++;
-                if (!vault.TryLockBuffer(ArmorPenetrationVaultBufferIds.MockTargetSlots, ArmorMemoryOwner)) return false;
-                lockedCount++;
-                success = true;
-                return true;
-            }
-            finally
-            {
-                if (!success)
-                    UnlockArmorMockBuffersForJobs(lockedCount);
-            }
-        }
-
-        private static void UnlockArmorMockBuffersForJobs(int lockedCount)
-        {
-            IDataVault vault = _armorDataVault;
-            if (vault == null)
-                return;
-
-            if (lockedCount >= 4) vault.TryUnlockBuffer(ArmorPenetrationVaultBufferIds.MockTargetSlots, ArmorMemoryOwner);
-            if (lockedCount >= 3) vault.TryUnlockBuffer(ArmorPenetrationVaultBufferIds.MockAups, ArmorMemoryOwner);
-            if (lockedCount >= 2) vault.TryUnlockBuffer(ArmorPenetrationVaultBufferIds.MockDetails, ArmorMemoryOwner);
-            if (lockedCount >= 1) vault.TryUnlockBuffer(ArmorPenetrationVaultBufferIds.MockRequests, ArmorMemoryOwner);
-        }
-
-        private static bool TryLockArmorEvaluatorTortureBuffersForJobs(out int lockedCount)
-        {
-            lockedCount = 0;
-            IDataVault vault = _armorDataVault;
-            if (vault == null)
-                return false;
-
-            bool success = false;
-            try
-            {
-                if (!vault.TryLockBuffer(ArmorPenetrationVaultBufferIds.TortureRequests, ArmorMemoryOwner)) return false;
-                lockedCount++;
-                if (!vault.TryLockBuffer(ArmorPenetrationVaultBufferIds.TortureDetails, ArmorMemoryOwner)) return false;
-                lockedCount++;
-                if (!vault.TryLockBuffer(ArmorPenetrationVaultBufferIds.TortureAups, ArmorMemoryOwner)) return false;
-                lockedCount++;
-                if (!vault.TryLockBuffer(ArmorPenetrationVaultBufferIds.TortureTargetSlots, ArmorMemoryOwner)) return false;
-                lockedCount++;
-                if (!vault.TryLockBuffer(ArmorPenetrationVaultBufferIds.TortureResolvedHits, ArmorMemoryOwner)) return false;
-                lockedCount++;
-                success = true;
-                return true;
-            }
-            finally
-            {
-                if (!success)
-                    UnlockArmorEvaluatorTortureBuffersForJobs(lockedCount);
-            }
-        }
-
-        private static void UnlockArmorEvaluatorTortureBuffersForJobs(int lockedCount)
-        {
-            IDataVault vault = _armorDataVault;
-            if (vault == null)
-                return;
-
-            if (lockedCount >= 5) vault.TryUnlockBuffer(ArmorPenetrationVaultBufferIds.TortureResolvedHits, ArmorMemoryOwner);
-            if (lockedCount >= 4) vault.TryUnlockBuffer(ArmorPenetrationVaultBufferIds.TortureTargetSlots, ArmorMemoryOwner);
-            if (lockedCount >= 3) vault.TryUnlockBuffer(ArmorPenetrationVaultBufferIds.TortureAups, ArmorMemoryOwner);
-            if (lockedCount >= 2) vault.TryUnlockBuffer(ArmorPenetrationVaultBufferIds.TortureDetails, ArmorMemoryOwner);
-            if (lockedCount >= 1) vault.TryUnlockBuffer(ArmorPenetrationVaultBufferIds.TortureRequests, ArmorMemoryOwner);
-        }
-
-        private static bool TryLockArmorCasTortureBuffersForJobs(out int lockedCount)
-        {
-            lockedCount = 0;
-            IDataVault vault = _armorDataVault;
-            if (vault == null)
-                return false;
-
-            bool success = false;
-            try
-            {
-                if (!vault.TryLockBuffer(ArmorPenetrationVaultBufferIds.CasTortureHealth, ArmorMemoryOwner)) return false;
-                lockedCount++;
-                if (!vault.TryLockBuffer(ArmorPenetrationVaultBufferIds.CasTortureSuccesses, ArmorMemoryOwner)) return false;
-                lockedCount++;
-                success = true;
-                return true;
-            }
-            finally
-            {
-                if (!success)
-                    UnlockArmorCasTortureBuffersForJobs(lockedCount);
-            }
-        }
-
-        private static void UnlockArmorCasTortureBuffersForJobs(int lockedCount)
-        {
-            IDataVault vault = _armorDataVault;
-            if (vault == null)
-                return;
-
-            if (lockedCount >= 2) vault.TryUnlockBuffer(ArmorPenetrationVaultBufferIds.CasTortureSuccesses, ArmorMemoryOwner);
-            if (lockedCount >= 1) vault.TryUnlockBuffer(ArmorPenetrationVaultBufferIds.CasTortureHealth, ArmorMemoryOwner);
+            return vault.TryResolveHandle(in _targetRootAupsHandle, out views.TargetRootAups) &&
+                   vault.TryResolveHandle(in _targetRotationsHandle, out views.TargetRotations) &&
+                   vault.TryResolveHandle(in _targetHalfExtentsHandle, out views.TargetHalfExtents) &&
+                   vault.TryResolveHandle(in _targetArmorProfilesHandle, out views.TargetArmorProfiles) &&
+                   views.TargetRootAups.IsCreated &&
+                   views.TargetRotations.IsCreated &&
+                   views.TargetHalfExtents.IsCreated &&
+                   views.TargetArmorProfiles.IsCreated;
         }
 
         private static void ResetArmorPenetrationTransientState()
@@ -1079,35 +929,37 @@ namespace Hecton8.Gameplay
 
         private static void FinishArmorPenetrationScheduledCompletion()
         {
-            if (!TryOpenOrEnsureArmorPenetrationVaultViews(out ArmorPenetrationVaultViews views, ensure: false) ||
-                !views.TelemetryRing.IsCreated ||
-                views.TelemetryRing.Length == 0)
+            try
             {
-                UnlockCombatDamageVaultBuffersForJobs(CombatDamageVaultJobLockCount);
-                UnlockArmorVaultBuffersForJobs();
-                return;
+                if (!TryOpenOrEnsureArmorPenetrationVaultViews(out ArmorPenetrationVaultViews views, ensure: false) ||
+                    !views.TelemetryRing.IsCreated ||
+                    views.TelemetryRing.Length == 0)
+                {
+                    return;
+                }
+
+                long ticks = System.Diagnostics.Stopwatch.GetTimestamp() - _armorScheduleTicks;
+                double microseconds = ticks > 0L
+                    ? ticks * 1000000.0d / System.Diagnostics.Stopwatch.Frequency
+                    : 0.0d;
+                int index = math.clamp(_armorActiveTelemetryIndex, 0, views.TelemetryRing.Length - 1);
+                ArmorPenetrationTelemetryEntry entry = views.TelemetryRing[index];
+                entry.SolveMicroseconds = (float)math.min(microseconds, float.MaxValue);
+                if (microseconds > ArmorTelemetryDumpThresholdMicroseconds)
+                    entry.Flags |= ArmorTelemetryFlagsOverBudget;
+                if (!math.isfinite(entry.AvgMitigatedDamage) || !math.isfinite(entry.GlobalQualityWeight))
+                    entry.Flags |= ArmorTelemetryFlagsNanGuard;
+
+                views.TelemetryRing[index] = entry;
+                _lastArmorTelemetry = entry;
+                if ((entry.Flags & (ArmorTelemetryFlagsNanGuard | ArmorTelemetryFlagsOverBudget)) != 0)
+                    DumpArmorTelemetryIfNeeded(views.TelemetryRing, entry);
             }
-
-            long ticks = System.Diagnostics.Stopwatch.GetTimestamp() - _armorScheduleTicks;
-            double microseconds = ticks > 0L
-                ? ticks * 1000000.0d / System.Diagnostics.Stopwatch.Frequency
-                : 0.0d;
-            int index = math.clamp(_armorActiveTelemetryIndex, 0, views.TelemetryRing.Length - 1);
-            ArmorPenetrationTelemetryEntry entry = views.TelemetryRing[index];
-            entry.SolveMicroseconds = (float)math.min(microseconds, float.MaxValue);
-            if (microseconds > ArmorTelemetryDumpThresholdMicroseconds)
-                entry.Flags |= ArmorTelemetryFlagsOverBudget;
-            if (!math.isfinite(entry.AvgMitigatedDamage) || !math.isfinite(entry.GlobalQualityWeight))
-                entry.Flags |= ArmorTelemetryFlagsNanGuard;
-
-            views.TelemetryRing[index] = entry;
-            _lastArmorTelemetry = entry;
-            if ((entry.Flags & (ArmorTelemetryFlagsNanGuard | ArmorTelemetryFlagsOverBudget)) != 0)
-                DumpArmorTelemetryIfNeeded(views.TelemetryRing, entry);
-
-            UnlockCombatDamageVaultBuffersForJobs(CombatDamageVaultJobLockCount);
-            UnlockArmorVaultBuffersForJobs();
-            TryApplyPendingArmorVaultRebind();
+            finally
+            {
+                _damageJobMutationGuardLease.Release();
+                TryApplyPendingArmorVaultRebind();
+            }
         }
 
         private static void DumpArmorTelemetryIfNeeded(NativeArray<ArmorPenetrationTelemetryEntry> telemetryRing, in ArmorPenetrationTelemetryEntry cause)
@@ -1192,28 +1044,21 @@ namespace Hecton8.Gameplay
             float targetHeight)
         {
             if (!TryOpenOrEnsureArmorPenetrationVaultViews(out _, ensure: true) ||
-                !TryAcquireArmorTargetWriteLocks(out ArmorPenetrationVaultViews views, out int targetLockCount))
+                !TryResolveArmorTargetOwnerViews(out ArmorPenetrationVaultViews views))
                 return false;
 
-            try
-            {
-                return SeedTargetArmorProfileLocked(
-                    ref views,
-                    slot,
-                    targetId,
-                    kind,
-                    armorClass,
-                    safeMaxHealth,
-                    armorValue,
-                    targetHeight);
-            }
-            finally
-            {
-                ReleaseArmorTargetWriteLocks(targetLockCount);
-            }
+            return SeedTargetArmorProfileOwnerView(
+                ref views,
+                slot,
+                targetId,
+                kind,
+                armorClass,
+                safeMaxHealth,
+                armorValue,
+                targetHeight);
         }
 
-        private static bool SeedTargetArmorProfileLocked(
+        private static bool SeedTargetArmorProfileOwnerView(
             ref ArmorPenetrationVaultViews views,
             int slot,
             int targetId,
@@ -1251,20 +1096,13 @@ namespace Hecton8.Gameplay
 
         private static bool RefreshTargetArmorBase(int slot, float armorValue)
         {
-            if (!TryAcquireArmorTargetWriteLocks(out ArmorPenetrationVaultViews views, out int targetLockCount))
+            if (!TryResolveArmorTargetOwnerViews(out ArmorPenetrationVaultViews views))
                 return false;
 
-            try
-            {
-                return RefreshTargetArmorBaseLocked(ref views, slot, armorValue);
-            }
-            finally
-            {
-                ReleaseArmorTargetWriteLocks(targetLockCount);
-            }
+            return RefreshTargetArmorBaseOwnerView(ref views, slot, armorValue);
         }
 
-        private static bool RefreshTargetArmorBaseLocked(ref ArmorPenetrationVaultViews views, int slot, float armorValue)
+        private static bool RefreshTargetArmorBaseOwnerView(ref ArmorPenetrationVaultViews views, int slot, float armorValue)
         {
             if (!views.TargetArmorProfiles.IsCreated ||
                 (uint)slot >= (uint)views.TargetArmorProfiles.Length)
@@ -1328,20 +1166,13 @@ namespace Hecton8.Gameplay
         private static void RefreshArmorTargetSnapshots()
         {
             if (!TryOpenOrEnsureArmorPenetrationVaultViews(out _, ensure: true) ||
-                !TryAcquireArmorTargetWriteLocks(out ArmorPenetrationVaultViews views, out int targetLockCount))
+                !TryResolveArmorTargetOwnerViews(out ArmorPenetrationVaultViews views))
                 return;
 
-            try
-            {
-                RefreshArmorTargetSnapshotsLocked(ref views);
-            }
-            finally
-            {
-                ReleaseArmorTargetWriteLocks(targetLockCount);
-            }
+            RefreshArmorTargetSnapshotsOwnerView(ref views);
         }
 
-        private static void RefreshArmorTargetSnapshotsLocked(ref ArmorPenetrationVaultViews views)
+        private static void RefreshArmorTargetSnapshotsOwnerView(ref ArmorPenetrationVaultViews views)
         {
             if (!views.TargetRootAups.IsCreated ||
                 !views.TargetRotations.IsCreated ||
@@ -1843,15 +1674,15 @@ namespace Hecton8.Gameplay
             if (views.CasTortureHealth.Length < 1 || views.CasTortureSuccesses.Length < count)
                 return false;
 
-            int lockedCasBuffers = 0;
+            if (!TryAcquireArmorOnlyMutationGuardLease(
+                    ArmorCasTortureMutationGuardMask,
+                    out CombatVaultMutationGuardLease casTortureLease))
+            {
+                return false;
+            }
+
             try
             {
-                if (!TryLockArmorCasTortureBuffersForJobs(out lockedCasBuffers))
-                {
-                    lockedCasBuffers = 0;
-                    return false;
-                }
-
                 views.CasTortureHealth[0] = count;
                 for (int i = 0; i < count; i++)
                     views.CasTortureSuccesses[i] = 0;
@@ -1871,8 +1702,7 @@ namespace Hecton8.Gameplay
             }
             finally
             {
-                if (lockedCasBuffers > 0)
-                    UnlockArmorCasTortureBuffersForJobs(lockedCasBuffers);
+                casTortureLease.Release();
             }
 #else
             return false;
@@ -1980,25 +1810,17 @@ namespace Hecton8.Gameplay
 
             IDataVault vault = _armorDataVault;
             if (vault == null ||
+                vault.IsCompactionFenceActive ||
                 !IsArmorVaultHandleCreated(in _armorTuningHandle, ArmorPenetrationVaultBufferIds.Tuning) ||
-                !vault.TryAcquireWriteLock(in _armorTuningHandle, ArmorMemoryOwner, out NativeArray<ArmorPenetrationTuningDTO> tuningBuffer))
+                !vault.TryResolveHandle(in _armorTuningHandle, out NativeArray<ArmorPenetrationTuningDTO> tuningBuffer) ||
+                !tuningBuffer.IsCreated ||
+                tuningBuffer.Length == 0)
             {
                 return false;
             }
 
-            bool written = false;
-            try
-            {
-                written = tuningBuffer.IsCreated && tuningBuffer.Length > 0;
-                if (written)
-                    tuningBuffer[0] = tuning;
-            }
-            finally
-            {
-                vault.ReleaseWriteLock(in _armorTuningHandle, ArmorMemoryOwner);
-            }
-
-            return written;
+            tuningBuffer[0] = tuning;
+            return true;
         }
 
         public static bool TryGetArmorDebugBuffers(
@@ -2059,64 +1881,59 @@ namespace Hecton8.Gameplay
 
             IDataVault vault = _armorDataVault;
             if (vault == null ||
+                vault.IsCompactionFenceActive ||
                 !IsArmorVaultHandleCreated(in _targetArmorProfilesHandle, ArmorPenetrationVaultBufferIds.TargetArmorProfiles) ||
-                !vault.TryAcquireWriteLock(in _targetArmorProfilesHandle, ArmorMemoryOwner, out NativeArray<ArmorProfileDTO> profileBuffer))
+                !vault.TryResolveHandle(in _targetArmorProfilesHandle, out NativeArray<ArmorProfileDTO> profileBuffer) ||
+                !profileBuffer.IsCreated)
             {
                 return false;
             }
 
             bool parsedAny = false;
-            try
+            views.TargetArmorProfiles = profileBuffer;
+
+            int cursor = 0;
+            while (TryReadLine(bytes, ref cursor, out ReadOnlySpan<byte> line))
             {
-                views.TargetArmorProfiles = profileBuffer;
+                line = Trim(line);
+                if (line.Length == 0 || IsCsvHeader(line))
+                    continue;
 
-                int cursor = 0;
-                while (TryReadLine(bytes, ref cursor, out ReadOnlySpan<byte> line))
+                ArmorProfileDTO profile = default;
+                int lineCursor = 0;
+                int column = 0;
+                int lutIndex = 0;
+                while (TryReadToken(line, ref lineCursor, out ReadOnlySpan<byte> token))
                 {
-                    line = Trim(line);
-                    if (line.Length == 0 || IsCsvHeader(line))
-                        continue;
-
-                    ArmorProfileDTO profile = default;
-                    int lineCursor = 0;
-                    int column = 0;
-                    int lutIndex = 0;
-                    while (TryReadToken(line, ref lineCursor, out ReadOnlySpan<byte> token))
+                    token = Trim(token);
+                    if (token.Length == 0)
                     {
-                        token = Trim(token);
-                        if (token.Length == 0)
-                        {
-                            column++;
-                            continue;
-                        }
-
-                        if (column == 0)
-                            profile.SpeciesHashID = ParseUIntOrHash(token);
-                        else if (column == 1)
-                            profile.BaseHealth = ParseFloat(token, 1f);
-                        else if (column == 2)
-                            profile.BaseArmor = ParseFloat(token, 0f);
-                        else if (lutIndex < ArmorGridLutLength)
-                        {
-                            profile.ArmorGridLUT[lutIndex] = (byte)math.clamp((int)ParseUIntOrHash(token), 0, byte.MaxValue);
-                            lutIndex++;
-                        }
-
                         column++;
+                        continue;
                     }
 
-                    if (profile.SpeciesHashID == 0u || lutIndex != ArmorGridLutLength)
-                        continue;
+                    if (column == 0)
+                        profile.SpeciesHashID = ParseUIntOrHash(token);
+                    else if (column == 1)
+                        profile.BaseHealth = ParseFloat(token, 1f);
+                    else if (column == 2)
+                        profile.BaseArmor = ParseFloat(token, 0f);
+                    else if (lutIndex < ArmorGridLutLength)
+                    {
+                        profile.ArmorGridLUT[lutIndex] = (byte)math.clamp((int)ParseUIntOrHash(token), 0, byte.MaxValue);
+                        lutIndex++;
+                    }
 
-                    parsedAny |= ApplyCsvProfileToTargets(ref views, in profile);
+                    column++;
                 }
 
-                return parsedAny;
+                if (profile.SpeciesHashID == 0u || lutIndex != ArmorGridLutLength)
+                    continue;
+
+                parsedAny |= ApplyCsvProfileToTargets(ref views, in profile);
             }
-            finally
-            {
-                vault.ReleaseWriteLock(in _targetArmorProfilesHandle, ArmorMemoryOwner);
-            }
+
+            return parsedAny;
         }
 
         private static unsafe bool ApplyCsvProfileToTargets(ref ArmorPenetrationVaultViews views, in ArmorProfileDTO profile)
@@ -2159,23 +1976,19 @@ namespace Hecton8.Gameplay
                 return false;
             }
 
-            bool coreLocked = false;
-            int lockedMockBuffers = 0;
+            if (!TryAcquireArmorCombatMutationGuardLease(
+                    ArmorMockMutationGuardMask,
+                    out CombatVaultMutationGuardLease mockLease))
+            {
+                return false;
+            }
+
             try
             {
                 int targetCount = math.max(0, _targetCount);
-                if (!TryLockArmorVaultBuffersForJobs())
-                    return false;
-                coreLocked = true;
-                RefreshArmorTargetSnapshotsLocked(ref views);
+                RefreshArmorTargetSnapshotsOwnerView(ref views);
                 if (!CanUseArmorEvaluatorTargetBuffers(ref damageViews, in views, targetCount))
                     return false;
-
-                if (!TryLockArmorMockBuffersForJobs(out lockedMockBuffers))
-                {
-                    lockedMockBuffers = 0;
-                    return false;
-                }
 
                 int count = math.min(math.max(1, maxSignals), math.min(targetCount, MaxQueuedSignals));
                 if (!CanUseArmorMockSignalBuffers(in views, count))
@@ -2210,10 +2023,7 @@ namespace Hecton8.Gameplay
             }
             finally
             {
-                if (lockedMockBuffers > 0)
-                    UnlockArmorMockBuffersForJobs(lockedMockBuffers);
-                if (coreLocked)
-                    UnlockArmorVaultBuffersForJobs();
+                mockLease.Release();
             }
 #else
             return false;
@@ -2241,15 +2051,17 @@ namespace Hecton8.Gameplay
                 return false;
             }
 
-            bool coreLocked = false;
-            int lockedTortureBuffers = 0;
+            if (!TryAcquireArmorCombatMutationGuardLease(
+                    ArmorEvaluatorTortureMutationGuardMask,
+                    out CombatVaultMutationGuardLease tortureLease))
+            {
+                return false;
+            }
+
             try
             {
                 int targetCount = math.max(0, _targetCount);
-                if (!TryLockArmorVaultBuffersForJobs())
-                    return false;
-                coreLocked = true;
-                RefreshArmorTargetSnapshotsLocked(ref views);
+                RefreshArmorTargetSnapshotsOwnerView(ref views);
                 if (!CanUseArmorEvaluatorTargetBuffers(ref damageViews, in views, targetCount))
                     return false;
 
@@ -2260,12 +2072,6 @@ namespace Hecton8.Gameplay
                     views.TortureTargetSlots.Length < count ||
                     views.TortureResolvedHits.Length < count)
                 {
-                    return false;
-                }
-
-                if (!TryLockArmorEvaluatorTortureBuffersForJobs(out lockedTortureBuffers))
-                {
-                    lockedTortureBuffers = 0;
                     return false;
                 }
 
@@ -2364,10 +2170,7 @@ namespace Hecton8.Gameplay
             }
             finally
             {
-                if (lockedTortureBuffers > 0)
-                    UnlockArmorEvaluatorTortureBuffersForJobs(lockedTortureBuffers);
-                if (coreLocked)
-                    UnlockArmorVaultBuffersForJobs();
+                tortureLease.Release();
             }
 #else
             return false;

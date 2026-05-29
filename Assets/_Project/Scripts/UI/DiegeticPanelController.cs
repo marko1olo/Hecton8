@@ -563,9 +563,9 @@ namespace Hecton8.UI
 
             if (_presentationPausedByOwner)
             {
-                SetCursorVisible(false);
+                ApplyCursorVisible(false);
                 ClearHoverState();
-                SetPanelViewEnabled(false);
+                ApplyPanelViewEnabled(false);
                 QueueProxyLightDisable();
                 return;
             }
@@ -592,7 +592,7 @@ namespace Hecton8.UI
                 if (showFingerCursor)
                     UpdateCursor(fingerLocalHit, frameDeltaTime);
                 else
-                    SetCursorVisible(false);
+                    ApplyCursorVisible(false);
 
                 QueueInputEvent(fingerCanvasPos, fingerEventType);
                 DispatchInputEvents();
@@ -669,7 +669,6 @@ namespace Hecton8.UI
             if (_presentationPausedByOwner)
             {
                 _applyingLateFramePresentation = false;
-                RefreshLateFrameRegistration();
                 return;
             }
 
@@ -681,10 +680,8 @@ namespace Hecton8.UI
 
             if (_pendingDistanceRenderTextureRefresh)
             {
-                float pendingDeltaTime = _pendingDistanceRefreshDeltaTime;
                 _pendingDistanceRenderTextureRefresh = false;
                 _pendingDistanceRefreshDeltaTime = 0f;
-                RefreshDistanceAndRenderTexture(pendingDeltaTime);
             }
 
             FlushQueuedMaterialState();
@@ -693,7 +690,6 @@ namespace Hecton8.UI
                 ApplyMaterialState(forceTextureRefresh: true, forceDepthRefresh: false);
 
             _applyingLateFramePresentation = false;
-            RefreshLateFrameRegistration();
         }
 
         /// <inheritdoc />
@@ -1101,16 +1097,6 @@ namespace Hecton8.UI
             if (!qualityChanged && !phosphorChanged && !formatChanged)
                 return;
 
-            if (ShouldUsePhosphorDecay())
-                EnsurePhosphorResources();
-            else
-                ReleasePhosphorTextures();
-
-            if (formatChanged && _panelRenderTexture != null)
-                EnsureRenderTexture(forceRefresh: true);
-            else
-                RefreshLateFrameRegistration();
-
             ApplyMaterialState(forceTextureRefresh: true, forceDepthRefresh: false);
         }
 
@@ -1170,15 +1156,10 @@ namespace Hecton8.UI
 
         private bool EnsureRuntimeState()
         {
-            if (!isActiveAndEnabled)
-                return false;
-
-            ResolveSerializedReferences();
-            ResolveInterfaces();
-            if (_input == null || _inputAwaitingRegistration)
-                RefreshInputService();
-            ApplyCanvasWorldSpaceSettings();
-            return targetCanvas != null && _resolvedPanelRect != null && panelCollider != null;
+            return isActiveAndEnabled &&
+                   targetCanvas != null &&
+                   _resolvedPanelRect != null &&
+                   panelCollider != null;
         }
 
         private void ApplyCanvasWorldSpaceSettings()
@@ -1519,9 +1500,14 @@ namespace Hecton8.UI
                 return;
             }
 
-            EnsurePhosphorResources();
             if (_phosphorFrontTexture == null || _phosphorBackTexture == null)
                 return;
+
+            if (_phosphorFrontTexture.width != _panelRenderTexture.width ||
+                _phosphorFrontTexture.height != _panelRenderTexture.height)
+            {
+                return;
+            }
 
             if (!ReferenceEquals(_appliedPhosphorPreviousTexture, _phosphorFrontTexture))
             {
@@ -1709,14 +1695,12 @@ namespace Hecton8.UI
         private void QueueQualityPresentationRefresh()
         {
             _pendingQualityPresentationRefresh = true;
-            RefreshLateFrameRegistration();
         }
 
         private void QueueDistanceSurfaceRefresh(float deltaTime)
         {
             _pendingDistanceRenderTextureRefresh = true;
             _pendingDistanceRefreshDeltaTime = math.max(_pendingDistanceRefreshDeltaTime, math.max(0f, deltaTime));
-            RefreshLateFrameRegistration();
         }
 
         private void QueueMaterialState(bool forceTextureRefresh, bool forceDepthRefresh)
@@ -1724,7 +1708,6 @@ namespace Hecton8.UI
             _pendingMaterialRefresh = true;
             _pendingMaterialTextureRefresh |= forceTextureRefresh;
             _pendingMaterialDepthRefresh |= forceDepthRefresh;
-            RefreshLateFrameRegistration();
         }
 
         private void FlushQueuedMaterialState()
@@ -1798,14 +1781,12 @@ namespace Hecton8.UI
             _pendingProxyLightData = lightData;
             _pendingProxyLightActive = true;
             _pendingProxyLightFlush = true;
-            RefreshLateFrameRegistration();
         }
 
         private void QueueProxyLightDisable()
         {
             _pendingProxyLightActive = false;
             _pendingProxyLightFlush = true;
-            RefreshLateFrameRegistration();
         }
 
         private void FlushQueuedProxyLightRegistration()
@@ -2214,10 +2195,14 @@ namespace Hecton8.UI
             float3 panelUp = _panelData.PanelUp;
             quaternion rotation = quaternion.LookRotationSafe(-panelNormal, panelUp);
 
-            QueueCursorPose(
-                _smoothedCursorWorld,
-                new Quaternion(rotation.value.x, rotation.value.y, rotation.value.z, rotation.value.w));
-            SetCursorVisible(true);
+            if (cursorTransform != null)
+            {
+                cursorTransform.SetPositionAndRotation(
+                    _smoothedCursorWorld,
+                    new Quaternion(rotation.value.x, rotation.value.y, rotation.value.z, rotation.value.w));
+            }
+
+            ApplyCursorVisible(true);
         }
 
         private static float FastDecayBlend(float sharpness, float deltaTime)
@@ -2332,7 +2317,7 @@ namespace Hecton8.UI
             _inputEventTail = 0;
             _inputEventCount = 0;
             _cursorStateInitialized = false;
-            SetCursorVisible(false);
+            ApplyCursorVisible(false);
         }
 
         private void DispatchReleaseBeforeClear()

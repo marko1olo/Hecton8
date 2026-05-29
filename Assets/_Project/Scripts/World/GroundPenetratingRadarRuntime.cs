@@ -32,6 +32,16 @@ namespace Hecton8.World
         private static readonly int GroundRadarPingsId = Shader.PropertyToID("_GroundRadarPings");
         private static readonly int GroundRadarPulseId = Shader.PropertyToID("_GroundRadarPulse");
         private static readonly int GroundRadarScaleId = Shader.PropertyToID("_GroundRadarScale");
+        private static readonly ulong ScanJobMutationGuardMask =
+            GroundRadarMutationGuardBit(BufferID.GroundRadarHits) |
+            GroundRadarMutationGuardBit(BufferID.GroundRadarSignalStrength) |
+            GroundRadarMutationGuardBit(BufferID.GroundRadarAgeSeconds) |
+            GroundRadarMutationGuardBit(BufferID.GroundRadarOreTypes) |
+            GroundRadarMutationGuardBit(BufferID.GroundRadarPingGpu) |
+            GroundRadarMutationGuardBit(BufferID.GroundRadarCounters) |
+            GroundRadarMutationGuardBit(BufferID.GroundRadarMaxSignalStrength);
+        private static readonly ulong PingGpuReadGuardMask =
+            GroundRadarMutationGuardBit(BufferID.GroundRadarPingGpu);
 
         private struct RadarPendingJob
         {
@@ -97,7 +107,7 @@ namespace Hecton8.World
         private int _registeredLateFrame;
         private int _registeredRenderable;
         private int _hotSwapRegistered;
-        private int _scanJobBufferLockCount;
+        private int _scanJobBufferPinCount;
         private int _radarJobScheduled;
         private bool _gprReadSnapshotsValid;
         private bool _pendingDataVaultRebind;
@@ -105,6 +115,7 @@ namespace Hecton8.World
         private float _pulsePhaseSeconds;
         private float _highestSignalStrength;
         private float3 _lastProbeOrigin;
+        private IDataVault _scanJobGuardVault;
         private IDataVault _pendingDataVault;
 
         public int ActiveGprPings => _activeGprPings;
@@ -186,7 +197,7 @@ namespace Hecton8.World
             _submarineState = null;
             CompleteRadarJob(forceComplete: true);
             ReleaseRadarPendingJob(ref _radarJob);
-            ReleaseScanJobBufferLocks();
+            ReleaseScanJobBufferPins();
             _voxelSdfReadModel = null;
             _voxelSdfReadLeaseModel = null;
 
@@ -313,12 +324,12 @@ namespace Hecton8.World
             }
 
             IDataVault vault = _dataVault;
-            if (!TryLockWorldBuffer(vault, BufferID.GroundRadarPingGpu))
+            if (!TryPinPingGpuReadBuffer(vault))
                 return false;
 
             try
             {
-                if (!TryReadGprPingGpu(out NativeArray<float4>.ReadOnly pingGpu))
+                if (!TryReadVaultBuffer(vault, BufferID.GroundRadarPingGpu, in _gprPingGpuHandle, GroundRadarConstants.MaxPings, out NativeArray<float4>.ReadOnly pingGpu))
                     return false;
 
                 copiedCount = math.min(destination.Length, _activeGprPings);
@@ -328,7 +339,7 @@ namespace Hecton8.World
             }
             finally
             {
-                vault?.TryUnlockBuffer(BufferID.GroundRadarPingGpu, SystemID.WorldStreaming);
+                vault?.ReleaseMutationGuard(PingGpuReadGuardMask);
             }
         }
 
@@ -500,14 +511,14 @@ namespace Hecton8.World
             out NativeArray<float> maxSignalStrength,
             out NativeArray<GroundRadarTelemetryEntry> telemetryRing)
         {
-            bool resolvedHits = TryOpenVaultBufferForOwnerWrite(vault, in _gprHitsHandle, GroundRadarConstants.MaxPings, out hits);
-            bool resolvedSignal = TryOpenVaultBufferForOwnerWrite(vault, in _gprSignalStrengthHandle, GroundRadarConstants.MaxPings, out signalStrength);
-            bool resolvedAge = TryOpenVaultBufferForOwnerWrite(vault, in _gprAgeSecondsHandle, GroundRadarConstants.MaxPings, out ageSeconds);
-            bool resolvedOreTypes = TryOpenVaultBufferForOwnerWrite(vault, in _gprOreTypesHandle, GroundRadarConstants.MaxPings, out oreTypes);
-            bool resolvedPingGpu = TryOpenVaultBufferForOwnerWrite(vault, in _gprPingGpuHandle, GroundRadarConstants.MaxPings, out pingGpu);
-            bool resolvedCounters = TryOpenVaultBufferForOwnerWrite(vault, in _gprCountersHandle, 4, out counters);
-            bool resolvedMaxSignal = TryOpenVaultBufferForOwnerWrite(vault, in _maxSignalStrengthHandle, 1, out maxSignalStrength);
-            bool resolvedTelemetry = TryOpenVaultBufferForOwnerWrite(vault, in _telemetryRingHandle, GroundRadarConstants.TelemetryFrames, out telemetryRing);
+            bool resolvedHits = TryOpenVaultBufferForOwnerWrite(vault, BufferID.GroundRadarHits, in _gprHitsHandle, GroundRadarConstants.MaxPings, out hits);
+            bool resolvedSignal = TryOpenVaultBufferForOwnerWrite(vault, BufferID.GroundRadarSignalStrength, in _gprSignalStrengthHandle, GroundRadarConstants.MaxPings, out signalStrength);
+            bool resolvedAge = TryOpenVaultBufferForOwnerWrite(vault, BufferID.GroundRadarAgeSeconds, in _gprAgeSecondsHandle, GroundRadarConstants.MaxPings, out ageSeconds);
+            bool resolvedOreTypes = TryOpenVaultBufferForOwnerWrite(vault, BufferID.GroundRadarOreTypes, in _gprOreTypesHandle, GroundRadarConstants.MaxPings, out oreTypes);
+            bool resolvedPingGpu = TryOpenVaultBufferForOwnerWrite(vault, BufferID.GroundRadarPingGpu, in _gprPingGpuHandle, GroundRadarConstants.MaxPings, out pingGpu);
+            bool resolvedCounters = TryOpenVaultBufferForOwnerWrite(vault, BufferID.GroundRadarCounters, in _gprCountersHandle, 4, out counters);
+            bool resolvedMaxSignal = TryOpenVaultBufferForOwnerWrite(vault, BufferID.GroundRadarMaxSignalStrength, in _maxSignalStrengthHandle, 1, out maxSignalStrength);
+            bool resolvedTelemetry = TryOpenVaultBufferForOwnerWrite(vault, BufferID.GroundRadarTelemetryRing, in _telemetryRingHandle, GroundRadarConstants.TelemetryFrames, out telemetryRing);
 
             return resolvedHits &&
                 resolvedSignal &&
@@ -521,32 +532,33 @@ namespace Hecton8.World
 
         private bool TryReadGprHits(out NativeArray<float3>.ReadOnly hits)
         {
-            return TryReadVaultBuffer(_dataVault, in _gprHitsHandle, GroundRadarConstants.MaxPings, out hits);
+            return TryReadVaultBuffer(_dataVault, BufferID.GroundRadarHits, in _gprHitsHandle, GroundRadarConstants.MaxPings, out hits);
         }
 
         private bool TryReadGprSignalStrength(out NativeArray<float>.ReadOnly signalStrength)
         {
-            return TryReadVaultBuffer(_dataVault, in _gprSignalStrengthHandle, GroundRadarConstants.MaxPings, out signalStrength);
+            return TryReadVaultBuffer(_dataVault, BufferID.GroundRadarSignalStrength, in _gprSignalStrengthHandle, GroundRadarConstants.MaxPings, out signalStrength);
         }
 
         private bool TryReadGprPingGpu(out NativeArray<float4>.ReadOnly pingGpu)
         {
-            return TryReadVaultBuffer(_dataVault, in _gprPingGpuHandle, GroundRadarConstants.MaxPings, out pingGpu);
+            return TryReadVaultBuffer(_dataVault, BufferID.GroundRadarPingGpu, in _gprPingGpuHandle, GroundRadarConstants.MaxPings, out pingGpu);
         }
 
         private bool TryOpenGprTelemetryForOwnerWrite(out NativeArray<GroundRadarTelemetryEntry> telemetryRing)
         {
-            return TryOpenVaultBufferForOwnerWrite(_dataVault, in _telemetryRingHandle, GroundRadarConstants.TelemetryFrames, out telemetryRing);
+            return TryOpenVaultBufferForOwnerWrite(_dataVault, BufferID.GroundRadarTelemetryRing, in _telemetryRingHandle, GroundRadarConstants.TelemetryFrames, out telemetryRing);
         }
 
         private static bool TryOpenVaultBufferForOwnerWrite<T>(
             IDataVault vault,
+            BufferID expectedBufferId,
             in VaultGenerationHandle<T> handle,
             int requiredLength,
             out NativeArray<T> buffer) where T : struct
         {
             buffer = default;
-            if (vault == null || requiredLength <= 0 || !IsVaultHandleCreated(in handle))
+            if (vault == null || requiredLength <= 0 || !IsGroundRadarVaultHandle(in handle, expectedBufferId))
                 return false;
 
             if (!vault.TryResolveHandle(in handle, out buffer))
@@ -556,12 +568,13 @@ namespace Hecton8.World
 
         private static bool TryReadVaultBuffer<T>(
             IDataVault vault,
+            BufferID expectedBufferId,
             in VaultGenerationHandle<T> handle,
             int requiredLength,
             out NativeArray<T>.ReadOnly buffer) where T : struct
         {
             buffer = default;
-            if (vault == null || requiredLength <= 0 || !IsVaultHandleCreated(in handle))
+            if (vault == null || requiredLength <= 0 || !IsGroundRadarVaultHandle(in handle, expectedBufferId))
                 return false;
 
             if (!vault.TryReadOnlyHandle(in handle, out buffer))
@@ -569,21 +582,25 @@ namespace Hecton8.World
             return buffer.IsCreated && buffer.Length >= requiredLength;
         }
 
-        private static bool IsVaultHandleCreated<T>(in VaultGenerationHandle<T> handle) where T : struct
+        private static bool IsGroundRadarVaultHandle<T>(
+            in VaultGenerationHandle<T> handle,
+            BufferID expectedBufferId) where T : struct
         {
-            return handle.BufferID != 0u && handle.Generation != 0u;
+            return handle.BufferID == (uint)expectedBufferId &&
+                   handle.SystemID == (uint)SystemID.WorldStreaming &&
+                   handle.Generation != 0u;
         }
 
         private bool AreGprHandlesCreated()
         {
-            return IsVaultHandleCreated(in _gprHitsHandle) &&
-                   IsVaultHandleCreated(in _gprSignalStrengthHandle) &&
-                   IsVaultHandleCreated(in _gprAgeSecondsHandle) &&
-                   IsVaultHandleCreated(in _gprOreTypesHandle) &&
-                   IsVaultHandleCreated(in _gprPingGpuHandle) &&
-                   IsVaultHandleCreated(in _gprCountersHandle) &&
-                   IsVaultHandleCreated(in _maxSignalStrengthHandle) &&
-                   IsVaultHandleCreated(in _telemetryRingHandle);
+            return IsGroundRadarVaultHandle(in _gprHitsHandle, BufferID.GroundRadarHits) &&
+                   IsGroundRadarVaultHandle(in _gprSignalStrengthHandle, BufferID.GroundRadarSignalStrength) &&
+                   IsGroundRadarVaultHandle(in _gprAgeSecondsHandle, BufferID.GroundRadarAgeSeconds) &&
+                   IsGroundRadarVaultHandle(in _gprOreTypesHandle, BufferID.GroundRadarOreTypes) &&
+                   IsGroundRadarVaultHandle(in _gprPingGpuHandle, BufferID.GroundRadarPingGpu) &&
+                   IsGroundRadarVaultHandle(in _gprCountersHandle, BufferID.GroundRadarCounters) &&
+                   IsGroundRadarVaultHandle(in _maxSignalStrengthHandle, BufferID.GroundRadarMaxSignalStrength) &&
+                   IsGroundRadarVaultHandle(in _telemetryRingHandle, BufferID.GroundRadarTelemetryRing);
         }
 
         private static void ClearNativeArray<T>(NativeArray<T> buffer) where T : struct
@@ -674,12 +691,14 @@ namespace Hecton8.World
 
         private bool TryCopyCurrentGprStateToPending(ref RadarPendingJob pending)
         {
-            if (!IsRadarPendingJobValid(in pending) || !TryLockScanJobBuffers())
+            IDataVault vault = _dataVault;
+            if (!IsRadarPendingJobValid(in pending) || vault == null || !TryPinScanJobBuffers(vault))
                 return false;
 
             try
             {
                 if (!TryOpenGprStateForOwnerWrite(
+                    vault,
                     out NativeArray<float3> hits,
                     out NativeArray<float> signalStrength,
                     out NativeArray<float> ageSeconds,
@@ -703,73 +722,57 @@ namespace Hecton8.World
             }
             finally
             {
-                ReleaseScanJobBufferLocks();
+                ReleaseScanJobBufferPins();
             }
         }
 
         private bool TryPublishRadarPendingJob(ref RadarPendingJob pending)
         {
             IDataVault vault = _dataVault;
-            if (vault == null || vault.IsCompactionFenceActive || !IsRadarPendingJobValid(in pending))
+            if (vault == null ||
+                vault.IsCompactionFenceActive ||
+                !IsRadarPendingJobValid(in pending) ||
+                !TryValidateScanJobBuffers(vault))
+            {
                 return false;
+            }
 
-            bool hitsLocked = false;
-            bool signalLocked = false;
-            bool ageLocked = false;
-            bool oreTypesLocked = false;
-            bool pingGpuLocked = false;
-            bool countersLocked = false;
-            bool maxSignalLocked = false;
-
+            bool acquired = false;
             try
             {
-                if (!vault.TryAcquireWriteLock(in _gprHitsHandle, SystemID.WorldStreaming, out NativeArray<float3> hits))
+                if (!vault.TryAcquireMutationGuard(ScanJobMutationGuardMask))
                     return false;
-                hitsLocked = true;
-                if (!vault.TryAcquireWriteLock(in _gprSignalStrengthHandle, SystemID.WorldStreaming, out NativeArray<float> signalStrength))
+
+                acquired = true;
+                if (vault.IsCompactionFenceActive ||
+                    !TryOpenGprStateForOwnerWrite(
+                        vault,
+                        out NativeArray<float3> hits,
+                        out NativeArray<float> signalStrength,
+                        out NativeArray<float> ageSeconds,
+                        out NativeArray<int> gprOreTypes,
+                        out NativeArray<float4> pingGpu,
+                        out NativeArray<int> counters,
+                        out NativeArray<float> maxSignalStrength,
+                        out _))
+                {
                     return false;
-                signalLocked = true;
-                if (!vault.TryAcquireWriteLock(in _gprAgeSecondsHandle, SystemID.WorldStreaming, out NativeArray<float> ageSeconds))
-                    return false;
-                ageLocked = true;
-                if (!vault.TryAcquireWriteLock(in _gprOreTypesHandle, SystemID.WorldStreaming, out NativeArray<int> gprOreTypes))
-                    return false;
-                oreTypesLocked = true;
-                if (!vault.TryAcquireWriteLock(in _gprPingGpuHandle, SystemID.WorldStreaming, out NativeArray<float4> pingGpu))
-                    return false;
-                pingGpuLocked = true;
-                if (!vault.TryAcquireWriteLock(in _gprCountersHandle, SystemID.WorldStreaming, out NativeArray<int> counters))
-                    return false;
-                countersLocked = true;
-                if (!vault.TryAcquireWriteLock(in _maxSignalStrengthHandle, SystemID.WorldStreaming, out NativeArray<float> maxSignalStrength))
-                    return false;
-                maxSignalLocked = true;
+                }
 
                 NativeArray<float3>.Copy(pending.Hits, hits, GroundRadarConstants.MaxPings);
                 NativeArray<float>.Copy(pending.SignalStrength, signalStrength, GroundRadarConstants.MaxPings);
                 NativeArray<float>.Copy(pending.AgeSeconds, ageSeconds, GroundRadarConstants.MaxPings);
                 NativeArray<int>.Copy(pending.OreTypes, gprOreTypes, GroundRadarConstants.MaxPings);
                 NativeArray<float4>.Copy(pending.PingGpu, pingGpu, GroundRadarConstants.MaxPings);
+                NativeArray<float>.Copy(pending.MaxSignalStrength, maxSignalStrength, 1);
+                // Counters publish last; readers treat counter[0] as the visible ping count.
                 NativeArray<int>.Copy(pending.Counters, counters, 4);
-                maxSignalStrength[0] = pending.MaxSignalStrength[0];
                 return true;
             }
             finally
             {
-                if (maxSignalLocked)
-                    vault.ReleaseWriteLock(in _maxSignalStrengthHandle, SystemID.WorldStreaming);
-                if (countersLocked)
-                    vault.ReleaseWriteLock(in _gprCountersHandle, SystemID.WorldStreaming);
-                if (pingGpuLocked)
-                    vault.ReleaseWriteLock(in _gprPingGpuHandle, SystemID.WorldStreaming);
-                if (oreTypesLocked)
-                    vault.ReleaseWriteLock(in _gprOreTypesHandle, SystemID.WorldStreaming);
-                if (ageLocked)
-                    vault.ReleaseWriteLock(in _gprAgeSecondsHandle, SystemID.WorldStreaming);
-                if (signalLocked)
-                    vault.ReleaseWriteLock(in _gprSignalStrengthHandle, SystemID.WorldStreaming);
-                if (hitsLocked)
-                    vault.ReleaseWriteLock(in _gprHitsHandle, SystemID.WorldStreaming);
+                if (acquired)
+                    vault.ReleaseMutationGuard(ScanJobMutationGuardMask);
             }
         }
 
@@ -1132,68 +1135,93 @@ namespace Hecton8.World
             return true;
         }
 
-        private bool TryLockScanJobBuffers()
+        private bool TryPinScanJobBuffers(IDataVault vault)
         {
-            if (_scanJobBufferLockCount != 0)
+            if (_scanJobBufferPinCount != 0)
                 return false;
 
-            IDataVault vault = _dataVault;
-            if (vault == null || vault.IsCompactionFenceActive)
+            if (vault == null || vault.IsCompactionFenceActive || !TryValidateScanJobBuffers(vault))
                 return false;
 
-            int locked = 0;
-            if (!TryLockWorldBuffer(vault, BufferID.GroundRadarHits)) { UnlockScanJobBuffers(vault, locked); return false; }
-            locked++;
-            if (!TryLockWorldBuffer(vault, BufferID.GroundRadarSignalStrength)) { UnlockScanJobBuffers(vault, locked); return false; }
-            locked++;
-            if (!TryLockWorldBuffer(vault, BufferID.GroundRadarAgeSeconds)) { UnlockScanJobBuffers(vault, locked); return false; }
-            locked++;
-            if (!TryLockWorldBuffer(vault, BufferID.GroundRadarOreTypes)) { UnlockScanJobBuffers(vault, locked); return false; }
-            locked++;
-            if (!TryLockWorldBuffer(vault, BufferID.GroundRadarPingGpu)) { UnlockScanJobBuffers(vault, locked); return false; }
-            locked++;
-            if (!TryLockWorldBuffer(vault, BufferID.GroundRadarCounters)) { UnlockScanJobBuffers(vault, locked); return false; }
-            locked++;
-            if (!TryLockWorldBuffer(vault, BufferID.GroundRadarMaxSignalStrength)) { UnlockScanJobBuffers(vault, locked); return false; }
-            locked++;
+            bool acquired = false;
+            try
+            {
+                if (!vault.TryAcquireMutationGuard(ScanJobMutationGuardMask))
+                    return false;
 
-            _scanJobBufferLockCount = locked;
-            return true;
-        }
+                acquired = true;
+                if (vault.IsCompactionFenceActive || !TryValidateScanJobBuffers(vault))
+                    return false;
 
-        private static bool TryLockWorldBuffer(IDataVault vault, BufferID bufferId)
-        {
-            if (vault == null || vault.IsCompactionFenceActive)
-                return false;
-
-            if (!vault.TryLockBuffer(bufferId, SystemID.WorldStreaming))
-                return false;
-
-            if (!vault.IsCompactionFenceActive)
+                _scanJobGuardVault = vault;
+                _scanJobBufferPinCount = 1;
+                acquired = false;
                 return true;
-
-            vault.TryUnlockBuffer(bufferId, SystemID.WorldStreaming);
-            return false;
+            }
+            finally
+            {
+                if (acquired)
+                    vault.ReleaseMutationGuard(ScanJobMutationGuardMask);
+            }
         }
 
-        private void ReleaseScanJobBufferLocks()
+        private void ReleaseScanJobBufferPins()
         {
-            UnlockScanJobBuffers(_dataVault, _scanJobBufferLockCount);
-            _scanJobBufferLockCount = 0;
-        }
-
-        private static void UnlockScanJobBuffers(IDataVault vault, int locked)
-        {
-            if (vault == null)
+            if (_scanJobBufferPinCount == 0)
                 return;
 
-            if (locked >= 7) vault.TryUnlockBuffer(BufferID.GroundRadarMaxSignalStrength, SystemID.WorldStreaming);
-            if (locked >= 6) vault.TryUnlockBuffer(BufferID.GroundRadarCounters, SystemID.WorldStreaming);
-            if (locked >= 5) vault.TryUnlockBuffer(BufferID.GroundRadarPingGpu, SystemID.WorldStreaming);
-            if (locked >= 4) vault.TryUnlockBuffer(BufferID.GroundRadarOreTypes, SystemID.WorldStreaming);
-            if (locked >= 3) vault.TryUnlockBuffer(BufferID.GroundRadarAgeSeconds, SystemID.WorldStreaming);
-            if (locked >= 2) vault.TryUnlockBuffer(BufferID.GroundRadarSignalStrength, SystemID.WorldStreaming);
-            if (locked >= 1) vault.TryUnlockBuffer(BufferID.GroundRadarHits, SystemID.WorldStreaming);
+            IDataVault vault = _scanJobGuardVault ?? _dataVault;
+            if (vault != null)
+                vault.ReleaseMutationGuard(ScanJobMutationGuardMask);
+
+            _scanJobGuardVault = null;
+            _scanJobBufferPinCount = 0;
+        }
+
+        private bool TryPinPingGpuReadBuffer(IDataVault vault)
+        {
+            if (vault == null || vault.IsCompactionFenceActive || !TryValidatePingGpuBuffer(vault))
+                return false;
+
+            bool acquired = false;
+            try
+            {
+                if (!vault.TryAcquireMutationGuard(PingGpuReadGuardMask))
+                    return false;
+
+                acquired = true;
+                if (vault.IsCompactionFenceActive || !TryValidatePingGpuBuffer(vault))
+                    return false;
+
+                acquired = false;
+                return true;
+            }
+            finally
+            {
+                if (acquired)
+                    vault.ReleaseMutationGuard(PingGpuReadGuardMask);
+            }
+        }
+
+        private bool TryValidateScanJobBuffers(IDataVault vault)
+        {
+            return TryOpenVaultBufferForOwnerWrite(vault, BufferID.GroundRadarHits, in _gprHitsHandle, GroundRadarConstants.MaxPings, out _) &&
+                   TryOpenVaultBufferForOwnerWrite(vault, BufferID.GroundRadarSignalStrength, in _gprSignalStrengthHandle, GroundRadarConstants.MaxPings, out _) &&
+                   TryOpenVaultBufferForOwnerWrite(vault, BufferID.GroundRadarAgeSeconds, in _gprAgeSecondsHandle, GroundRadarConstants.MaxPings, out _) &&
+                   TryOpenVaultBufferForOwnerWrite(vault, BufferID.GroundRadarOreTypes, in _gprOreTypesHandle, GroundRadarConstants.MaxPings, out _) &&
+                   TryOpenVaultBufferForOwnerWrite(vault, BufferID.GroundRadarPingGpu, in _gprPingGpuHandle, GroundRadarConstants.MaxPings, out _) &&
+                   TryOpenVaultBufferForOwnerWrite(vault, BufferID.GroundRadarCounters, in _gprCountersHandle, 4, out _) &&
+                   TryOpenVaultBufferForOwnerWrite(vault, BufferID.GroundRadarMaxSignalStrength, in _maxSignalStrengthHandle, 1, out _);
+        }
+
+        private bool TryValidatePingGpuBuffer(IDataVault vault)
+        {
+            return TryReadVaultBuffer(vault, BufferID.GroundRadarPingGpu, in _gprPingGpuHandle, GroundRadarConstants.MaxPings, out _);
+        }
+
+        private static ulong GroundRadarMutationGuardBit(BufferID bufferId)
+        {
+            return 1UL << (unchecked((int)(uint)(int)bufferId) & 31);
         }
 
         private static float ReadGlobalQualityWeight01()
@@ -1441,12 +1469,22 @@ namespace Hecton8.World
         private void WriteTelemetry(uint frameId, int addedCount, int rayCount, float highestStrength, uint flags)
         {
             IDataVault vault = _dataVault;
-            if (!TryLockWorldBuffer(vault, BufferID.GroundRadarTelemetryRing))
+            if (vault == null ||
+                vault.IsCompactionFenceActive ||
+                !IsGroundRadarVaultHandle(in _telemetryRingHandle, BufferID.GroundRadarTelemetryRing))
+            {
                 return;
+            }
 
+            bool locked = false;
             try
             {
-                if (!TryOpenVaultBufferForOwnerWrite(vault, in _telemetryRingHandle, GroundRadarConstants.TelemetryFrames, out NativeArray<GroundRadarTelemetryEntry> telemetryRing) ||
+                if (!vault.TryAcquireWriteLock(in _telemetryRingHandle, SystemID.WorldStreaming, out NativeArray<GroundRadarTelemetryEntry> telemetryRing))
+                    return;
+                locked = true;
+
+                if (!telemetryRing.IsCreated ||
+                    telemetryRing.Length < GroundRadarConstants.TelemetryFrames ||
                     telemetryRing.Length == 0)
                 {
                     return;
@@ -1467,7 +1505,8 @@ namespace Hecton8.World
             }
             finally
             {
-                vault?.TryUnlockBuffer(BufferID.GroundRadarTelemetryRing, SystemID.WorldStreaming);
+                if (locked)
+                    vault.ReleaseWriteLock(in _telemetryRingHandle, SystemID.WorldStreaming);
             }
         }
 

@@ -206,7 +206,6 @@ namespace Hecton8.Audio.Synthesis
         private const float DefaultStereoWidth = 0.82f;
         private const float DefaultDetuneCentsMax = 31f;
         private const float DefaultStingerDecaySeconds = 0.7f;
-        private const float DspDumpThresholdMicroseconds = 1500f;
         private const float MinimumDeltaSeconds = 0.0001f;
         private const float MaximumDeltaSeconds = 0.25f;
         private const uint DefaultSynthSeed = 0x51350B75u;
@@ -216,7 +215,6 @@ namespace Hecton8.Audio.Synthesis
         private const uint FlagAudioUnderrun = 1u << 2;
         private const uint FlagCsvApplied = 1u << 3;
         private const uint FlagProceduralOnly = 1u << 4;
-        private const string DumpRelativePath = "Docs/AgentLogs/Dump_1308_Synthesis.bin";
         private const SystemID VaultOwner = SystemID.AudioDynamicSynth;
         private const int LockVoices = 1 << 0;
         private const int LockScalar = 1 << 1;
@@ -229,6 +227,16 @@ namespace Hecton8.Audio.Synthesis
         private const int LockPresetRules = 1 << 8;
         private const int LockGrainBank = 1 << 9;
         private const int LockSharedState = 1 << 10;
+        private const ulong GuardVoices = 1UL << ((int)BufferID.AudioDynamicSynthVoices & 31);
+        private const ulong GuardScalar = 1UL << ((int)BufferID.AudioDynamicSynthScalar & 31);
+        private const ulong GuardTuning = 1UL << ((int)BufferID.AudioDynamicSynthTuning & 31);
+        private const ulong GuardOutputA = 1UL << ((int)BufferID.AudioDynamicSynthOutputA & 31);
+        private const ulong GuardOutputB = 1UL << ((int)BufferID.AudioDynamicSynthOutputB & 31);
+        private const ulong GuardBiquad = 1UL << ((int)BufferID.AudioDynamicSynthBiquad & 31);
+        private const ulong GuardTelemetryRing = 1UL << ((int)BufferID.AudioDynamicSynthTelemetry & 31);
+        private const ulong GuardTelemetryCursor = 1UL << ((int)BufferID.AudioDynamicSynthTelemetryCursor & 31);
+        private const ulong GuardGrainBank = 1UL << ((int)BufferID.AudioDynamicSynthGrainBank & 31);
+        private const ulong GuardSharedState = 1UL << ((int)BufferID.AudioDynamicSynthSharedState & 31);
 #if UNITY_EDITOR
         private const int LockCsvScratch = 1 << 11;
         private const int CsvScratchBytes = 8192;
@@ -334,12 +342,11 @@ namespace Hecton8.Audio.Synthesis
 #if UNITY_EDITOR
         private int _csvPollCountdown;
 #endif
-        private int _telemetryDumped;
         private uint _simulationFrameCounter;
         private long _synthJobStartTicks;
         private JobHandle _synthJobHandle;
-        private int _synthJobLockMask;
-        private IDataVault _synthJobLockedVault;
+        private long _synthJobMutationMask;
+        private IDataVault _synthJobGuardedVault;
 
         public static bool TryGetActive(out DynamicMusicGranularSynthesizer synth)
         {
@@ -415,11 +422,25 @@ namespace Hecton8.Audio.Synthesis
 
         public bool TryWriteEditorTuning(in DynamicMusicSynthTuningDTO tuning)
         {
-            IDataVault lockedVault = _dataVault;
             if (Volatile.Read(ref _nativeAllocated) == 0 ||
-                lockedVault == null ||
-                !AreDynamicMusicVaultHandlesExact() ||
                 Volatile.Read(ref _synthJobPending) != 0)
+                return false;
+
+            return TryWriteTuningSnapshot(in tuning);
+        }
+
+        private DynamicMusicSynthTuningDTO ReadTuningSnapshotOrDefault()
+        {
+            if (TryGetEditorTuning(out DynamicMusicSynthTuningDTO tuning))
+                return tuning;
+
+            return CreateDefaultSynthTuning();
+        }
+
+        private bool TryWriteTuningSnapshot(in DynamicMusicSynthTuningDTO tuning)
+        {
+            IDataVault lockedVault = _dataVault;
+            if (lockedVault == null || !AreDynamicMusicVaultHandlesExact())
                 return false;
 
             int lockMask = 0;
@@ -430,6 +451,29 @@ namespace Hecton8.Audio.Synthesis
                     return false;
 
                 tuningView[0] = SanitizeTuning(tuning);
+                return true;
+            }
+            finally
+            {
+                ReleaseDynamicMusicWriteLocks(lockedVault, lockMask);
+            }
+        }
+
+        private bool TryWritePresetRuleSnapshot(in DynamicMusicPresetRuleDTO rule, int ruleIndex)
+        {
+            IDataVault lockedVault = _dataVault;
+            if (lockedVault == null || !AreDynamicMusicVaultHandlesExact())
+                return false;
+
+            int lockMask = 0;
+            try
+            {
+                if (!TryAcquireLockedView(lockedVault, in _presetRulesHandle, LockPresetRules, ref lockMask, out NativeArray<DynamicMusicPresetRuleDTO> presetRules) ||
+                    ruleIndex < 0 ||
+                    ruleIndex >= presetRules.Length)
+                    return false;
+
+                presetRules[ruleIndex] = SanitizePresetRule(rule);
                 return true;
             }
             finally
@@ -507,6 +551,28 @@ namespace Hecton8.Audio.Synthesis
             if (string.IsNullOrEmpty(path) || !File.Exists(path))
                 return false;
 
+            DynamicMusicSynthTuningDTO tuning = ReadTuningSnapshotOrDefault();
+            DynamicMusicPresetRuleDTO rule = default;
+            if (!TryReadCsvIntoScratchAndParse(path, ref tuning, ref rule, out int ruleCount))
+                return false;
+
+            if (!TryWriteTuningSnapshot(in tuning))
+                return false;
+
+            if (ruleCount > 0 && !TryWritePresetRuleSnapshot(in rule, 0))
+                return false;
+
+            _lastCsvWriteUtc = File.GetLastWriteTimeUtc(path);
+            return true;
+        }
+
+        private bool TryReadCsvIntoScratchAndParse(
+            string path,
+            ref DynamicMusicSynthTuningDTO tuning,
+            ref DynamicMusicPresetRuleDTO rule,
+            out int ruleCount)
+        {
+            ruleCount = 0;
             DynamicMusicVaultViews views = default;
             int lockMask = 0;
             IDataVault lockedVault = _dataVault;
@@ -516,10 +582,7 @@ namespace Hecton8.Audio.Synthesis
             try
             {
                 if (!TryAcquireLockedView(lockedVault, in _csvScratchHandle, LockCsvScratch, ref lockMask, out views.CsvScratch) ||
-                    !TryAcquireLockedView(lockedVault, in _tuningHandle, LockTuning, ref lockMask, out views.Tuning) ||
-                    !TryAcquireLockedView(lockedVault, in _presetRulesHandle, LockPresetRules, ref lockMask, out views.PresetRules) ||
-                    views.CsvScratch.Length <= 0 ||
-                    views.Tuning.Length <= 0)
+                    views.CsvScratch.Length <= 0)
                     return false;
 
                 int bytesRead;
@@ -541,8 +604,7 @@ namespace Hecton8.Audio.Synthesis
                     }
                 }
 
-                ParseSynthPresetCsv(bytesRead, ref views);
-                _lastCsvWriteUtc = File.GetLastWriteTimeUtc(path);
+                ParseSynthPresetCsv(bytesRead, csvScratch, ref tuning, ref rule, out ruleCount);
                 return true;
             }
             catch (Exception)
@@ -632,7 +694,6 @@ namespace Hecton8.Audio.Synthesis
                     return;
             }
 
-            TryFlushCompletedSynthJob();
             if (Volatile.Read(ref _synthJobPending) != 0)
                 return;
 
@@ -654,7 +715,7 @@ namespace Hecton8.Audio.Synthesis
 
             TryFlushCompletedSynthJob();
             if (Interlocked.Exchange(ref _audioHostConfigDirty, 0) != 0)
-                ConfigureAudioHostCold();
+                ConfigureAudioHostCached();
         }
 
         public void SlowTick()
@@ -702,11 +763,11 @@ namespace Hecton8.Audio.Synthesis
                 return;
             }
 
-            int lockMask = 0;
-            IDataVault lockedVault = null;
+            ulong mutationMask = 0UL;
+            IDataVault guardedVault = null;
             try
             {
-                if (!TryAcquireAudioCopyBuffer(readyIndex, out NativeArray<float> sourceBuffer, out lockMask, out lockedVault) ||
+                if (!TryAcquireAudioCopyBuffer(readyIndex, out NativeArray<float> sourceBuffer, out mutationMask, out guardedVault) ||
                     !sourceBuffer.IsCreated)
                 {
                     Interlocked.Increment(ref _audioUnderrunCount);
@@ -732,7 +793,7 @@ namespace Hecton8.Audio.Synthesis
             finally
             {
                 Volatile.Write(ref _audioCopyBufferIndex, -1);
-                ReleaseDynamicMusicWriteLocks(lockedVault, lockMask);
+                ReleaseDynamicMusicMutationGuard(guardedVault, mutationMask);
             }
         }
 
@@ -800,31 +861,10 @@ namespace Hecton8.Audio.Synthesis
             _grainBankHandle = vault.EnsureGenerationHandle<float>(BufferID.AudioDynamicSynthGrainBank, GrainBankSampleCapacity, VaultOwner, NativeArrayOptions.UninitializedMemory);
             _sharedStateHandle = vault.EnsureGenerationHandle<DynamicMusicSharedStateDTO>(BufferID.AudioDynamicSynthSharedState, 1, VaultOwner, NativeArrayOptions.UninitializedMemory);
 
-            if (!TryAcquireColdInitViews(out DynamicMusicVaultViews views, out int lockMask, out IDataVault lockedVault))
+            if (!ClearDynamicMusicVaultStorage())
             {
                 DisposeVaultStorage();
                 return;
-            }
-
-            try
-            {
-                MemClearArray(views.Voices);
-                MemClearArray(views.Scalar);
-                MemClearArray(views.Tuning);
-                MemClearArray(views.OutputA);
-                MemClearArray(views.OutputB);
-                MemClearArray(views.Biquad);
-                MemClearArray(views.TelemetryRing);
-                MemClearArray(views.TelemetryCursor);
-#if UNITY_EDITOR
-                MemClearArray(views.CsvScratch);
-#endif
-                MemClearArray(views.PresetRules);
-                MemClearArray(views.SharedState);
-            }
-            finally
-            {
-                ReleaseDynamicMusicWriteLocks(lockedVault, lockMask);
             }
 
             Volatile.Write(ref _readyBufferIndex, -1);
@@ -931,84 +971,146 @@ namespace Hecton8.Audio.Synthesis
                    view.Length >= minimumLength;
         }
 
-        private bool TryAcquireSynthJobViews(int targetBuffer, out DynamicMusicVaultViews views, out int lockMask, out IDataVault lockedVault)
+        private bool ClearDynamicMusicVaultStorage()
         {
-            views = default;
-            lockMask = 0;
-            lockedVault = _dataVault;
-            if (lockedVault == null || !AreDynamicMusicVaultHandlesExact())
-                return false;
-
-            if (!TryAcquireLockedView(lockedVault, in _voicesHandle, LockVoices, ref lockMask, out views.Voices) ||
-                !TryAcquireLockedView(lockedVault, in _scalarHandle, LockScalar, ref lockMask, out views.Scalar) ||
-                !TryAcquireLockedView(lockedVault, in _tuningHandle, LockTuning, ref lockMask, out views.Tuning) ||
-                !TryAcquireLockedView(lockedVault, in _biquadHandle, LockBiquad, ref lockMask, out views.Biquad) ||
-                !TryAcquireLockedView(lockedVault, in _grainBankHandle, LockGrainBank, ref lockMask, out views.GrainBank) ||
-                !TryAcquireLockedView(lockedVault, in _telemetryRingHandle, LockTelemetryRing, ref lockMask, out views.TelemetryRing) ||
-                !TryAcquireLockedView(lockedVault, in _telemetryCursorHandle, LockTelemetryCursor, ref lockMask, out views.TelemetryCursor) ||
-                !TryAcquireLockedView(lockedVault, in _sharedStateHandle, LockSharedState, ref lockMask, out views.SharedState) ||
-                (targetBuffer == 0 && !TryAcquireLockedView(lockedVault, in _outputAHandle, LockOutputA, ref lockMask, out views.OutputA)) ||
-                (targetBuffer != 0 && !TryAcquireLockedView(lockedVault, in _outputBHandle, LockOutputB, ref lockMask, out views.OutputB)))
-            {
-                ReleaseDynamicMusicWriteLocks(lockedVault, lockMask);
-                views = default;
-                lockMask = 0;
-                lockedVault = null;
-                return false;
-            }
-
-            return true;
-        }
-
-        private bool TryAcquireColdInitViews(out DynamicMusicVaultViews views, out int lockMask, out IDataVault lockedVault)
-        {
-            views = default;
-            lockMask = 0;
-            lockedVault = _dataVault;
-            if (lockedVault == null || !AreDynamicMusicVaultHandlesExact())
-                return false;
-
-            if (!TryAcquireLockedView(lockedVault, in _voicesHandle, LockVoices, ref lockMask, out views.Voices) ||
-                !TryAcquireLockedView(lockedVault, in _scalarHandle, LockScalar, ref lockMask, out views.Scalar) ||
-                !TryAcquireLockedView(lockedVault, in _tuningHandle, LockTuning, ref lockMask, out views.Tuning) ||
-                !TryAcquireLockedView(lockedVault, in _outputAHandle, LockOutputA, ref lockMask, out views.OutputA) ||
-                !TryAcquireLockedView(lockedVault, in _outputBHandle, LockOutputB, ref lockMask, out views.OutputB) ||
-                !TryAcquireLockedView(lockedVault, in _biquadHandle, LockBiquad, ref lockMask, out views.Biquad) ||
-                !TryAcquireLockedView(lockedVault, in _telemetryRingHandle, LockTelemetryRing, ref lockMask, out views.TelemetryRing) ||
-                !TryAcquireLockedView(lockedVault, in _telemetryCursorHandle, LockTelemetryCursor, ref lockMask, out views.TelemetryCursor) ||
+            return TryClearLockedBuffer(in _voicesHandle, LockVoices) &&
+                   TryClearLockedBuffer(in _scalarHandle, LockScalar) &&
+                   TryClearLockedBuffer(in _tuningHandle, LockTuning) &&
+                   TryClearLockedBuffer(in _outputAHandle, LockOutputA) &&
+                   TryClearLockedBuffer(in _outputBHandle, LockOutputB) &&
+                   TryClearLockedBuffer(in _biquadHandle, LockBiquad) &&
+                   TryClearLockedBuffer(in _telemetryRingHandle, LockTelemetryRing) &&
+                   TryClearLockedBuffer(in _telemetryCursorHandle, LockTelemetryCursor) &&
 #if UNITY_EDITOR
-                !TryAcquireLockedView(lockedVault, in _csvScratchHandle, LockCsvScratch, ref lockMask, out views.CsvScratch) ||
+                   TryClearLockedBuffer(in _csvScratchHandle, LockCsvScratch) &&
 #endif
-                !TryAcquireLockedView(lockedVault, in _presetRulesHandle, LockPresetRules, ref lockMask, out views.PresetRules) ||
-                !TryAcquireLockedView(lockedVault, in _grainBankHandle, LockGrainBank, ref lockMask, out views.GrainBank) ||
-                !TryAcquireLockedView(lockedVault, in _sharedStateHandle, LockSharedState, ref lockMask, out views.SharedState))
-            {
-                ReleaseDynamicMusicWriteLocks(lockedVault, lockMask);
-                views = default;
-                lockMask = 0;
-                lockedVault = null;
-                return false;
-            }
-
-            return true;
+                   TryClearLockedBuffer(in _presetRulesHandle, LockPresetRules) &&
+                   TryClearLockedBuffer(in _grainBankHandle, LockGrainBank) &&
+                   TryClearLockedBuffer(in _sharedStateHandle, LockSharedState);
         }
 
-        private bool TryResolveSynthPublishViews(IDataVault lockedVault, int publishedBuffer, out DynamicMusicVaultViews views)
+        private bool TryClearLockedBuffer<T>(in VaultGenerationHandle<T> handle, int lockBit)
+            where T : unmanaged
+        {
+            int lockMask = 0;
+            IDataVault lockedVault = _dataVault;
+            if (lockedVault == null)
+                return false;
+
+            try
+            {
+                if (!TryAcquireLockedView(lockedVault, in handle, lockBit, ref lockMask, out NativeArray<T> buffer))
+                    return false;
+
+                MemClearArray(buffer);
+                return true;
+            }
+            finally
+            {
+                ReleaseDynamicMusicWriteLocks(lockedVault, lockMask);
+            }
+        }
+
+        private bool TryAcquireSynthJobViews(int targetBuffer, out DynamicMusicVaultViews views, out ulong mutationMask, out IDataVault guardedVault)
         {
             views = default;
-            if (lockedVault == null || !AreDynamicMusicVaultHandlesExact())
+            mutationMask = ResolveSynthJobMutationMask(targetBuffer);
+            guardedVault = _dataVault;
+            if (guardedVault == null || mutationMask == 0UL || !AreDynamicMusicVaultHandlesExact())
+                return false;
+
+            if (!guardedVault.TryAcquireMutationGuard(mutationMask))
+                return false;
+
+            bool resolved = false;
+            try
+            {
+                if (!guardedVault.TryResolveHandle(in _voicesHandle, out views.Voices) ||
+                    !guardedVault.TryResolveHandle(in _scalarHandle, out views.Scalar) ||
+                    !guardedVault.TryResolveHandle(in _tuningHandle, out views.Tuning) ||
+                    !guardedVault.TryResolveHandle(in _biquadHandle, out views.Biquad) ||
+                    !guardedVault.TryResolveHandle(in _grainBankHandle, out views.GrainBank) ||
+                    !guardedVault.TryResolveHandle(in _telemetryRingHandle, out views.TelemetryRing) ||
+                    !guardedVault.TryResolveHandle(in _telemetryCursorHandle, out views.TelemetryCursor) ||
+                    !guardedVault.TryResolveHandle(in _sharedStateHandle, out views.SharedState) ||
+                    (targetBuffer == 0 && !guardedVault.TryResolveHandle(in _outputAHandle, out views.OutputA)) ||
+                    (targetBuffer != 0 && !guardedVault.TryResolveHandle(in _outputBHandle, out views.OutputB)))
+                {
+                    return false;
+                }
+
+                resolved = true;
+                return true;
+            }
+            finally
+            {
+                if (!resolved)
+                {
+                    ReleaseDynamicMusicMutationGuard(guardedVault, mutationMask);
+                    views = default;
+                    mutationMask = 0UL;
+                    guardedVault = null;
+                }
+            }
+        }
+
+        private static ulong ResolveSynthJobMutationMask(int targetBuffer)
+        {
+            return GuardVoices |
+                   GuardScalar |
+                   GuardTuning |
+                   GuardBiquad |
+                   GuardGrainBank |
+                   GuardTelemetryRing |
+                   GuardTelemetryCursor |
+                   GuardSharedState |
+                   (targetBuffer == 0 ? GuardOutputA : GuardOutputB);
+        }
+
+        private static ulong ResolvePublishMutationMask(int publishedBuffer)
+        {
+            return GuardScalar |
+                   GuardTuning |
+                   GuardTelemetryRing |
+                   GuardTelemetryCursor |
+                   GuardSharedState |
+                   (publishedBuffer == 0 ? GuardOutputA : GuardOutputB);
+        }
+
+        private static ulong ResolveOutputMutationMask(int bufferIndex)
+        {
+            if (bufferIndex == 0)
+                return GuardOutputA;
+            if (bufferIndex == 1)
+                return GuardOutputB;
+
+            return 0UL;
+        }
+
+        private static void ReleaseDynamicMusicMutationGuard(IDataVault vault, ulong mutationMask)
+        {
+            if (vault == null || mutationMask == 0UL)
+                return;
+
+            vault.ReleaseMutationGuard(mutationMask);
+        }
+
+        private bool TryResolveSynthPublishViews(IDataVault guardedVault, int publishedBuffer, out DynamicMusicVaultViews views)
+        {
+            views = default;
+            if (guardedVault == null || !AreDynamicMusicVaultHandlesExact())
                 return false;
 
             bool outputResolved = publishedBuffer == 0
-                ? lockedVault.TryResolveHandle(in _outputAHandle, out views.OutputA)
-                : lockedVault.TryResolveHandle(in _outputBHandle, out views.OutputB);
+                ? guardedVault.TryResolveHandle(in _outputAHandle, out views.OutputA)
+                : guardedVault.TryResolveHandle(in _outputBHandle, out views.OutputB);
 
             if (!outputResolved ||
-                !lockedVault.TryResolveHandle(in _scalarHandle, out views.Scalar) ||
-                !lockedVault.TryResolveHandle(in _tuningHandle, out views.Tuning) ||
-                !lockedVault.TryResolveHandle(in _telemetryRingHandle, out views.TelemetryRing) ||
-                !lockedVault.TryResolveHandle(in _telemetryCursorHandle, out views.TelemetryCursor) ||
-                !lockedVault.TryResolveHandle(in _sharedStateHandle, out views.SharedState) ||
+                !guardedVault.TryResolveHandle(in _scalarHandle, out views.Scalar) ||
+                !guardedVault.TryResolveHandle(in _tuningHandle, out views.Tuning) ||
+                !guardedVault.TryResolveHandle(in _telemetryRingHandle, out views.TelemetryRing) ||
+                !guardedVault.TryResolveHandle(in _telemetryCursorHandle, out views.TelemetryCursor) ||
+                !guardedVault.TryResolveHandle(in _sharedStateHandle, out views.SharedState) ||
                 !views.Scalar.IsCreated ||
                 !views.Tuning.IsCreated ||
                 !views.TelemetryRing.IsCreated ||
@@ -1024,33 +1126,44 @@ namespace Hecton8.Audio.Synthesis
             return true;
         }
 
-        private static bool HasRequiredPublishLocks(int lockMask, int publishedBuffer)
+        private static bool HasRequiredPublishGuard(ulong mutationMask, int publishedBuffer)
         {
-            int required = LockScalar |
-                LockTuning |
-                LockTelemetryRing |
-                LockTelemetryCursor |
-                LockSharedState |
-                (publishedBuffer == 0 ? LockOutputA : LockOutputB);
-            return (lockMask & required) == required;
+            ulong required = ResolvePublishMutationMask(publishedBuffer);
+            return required != 0UL && (mutationMask & required) == required;
         }
 
-        private bool TryAcquireAudioCopyBuffer(int readyIndex, out NativeArray<float> buffer, out int lockMask, out IDataVault lockedVault)
+        private bool TryAcquireAudioCopyBuffer(int readyIndex, out NativeArray<float> buffer, out ulong mutationMask, out IDataVault guardedVault)
         {
             buffer = default;
-            lockMask = 0;
-            lockedVault = _dataVault;
-            if (lockedVault == null || !AreDynamicMusicVaultHandlesExact())
+            mutationMask = ResolveOutputMutationMask(readyIndex);
+            guardedVault = _dataVault;
+            if (guardedVault == null || mutationMask == 0UL || !AreDynamicMusicVaultHandlesExact())
                 return false;
 
-            if (readyIndex == 0)
-                return TryAcquireLockedView(lockedVault, in _outputAHandle, LockOutputA, ref lockMask, out buffer);
+            if (!guardedVault.TryAcquireMutationGuard(mutationMask))
+                return false;
 
-            if (readyIndex == 1)
-                return TryAcquireLockedView(lockedVault, in _outputBHandle, LockOutputB, ref lockMask, out buffer);
+            bool resolved = false;
+            try
+            {
+                resolved = readyIndex == 0
+                    ? guardedVault.TryResolveHandle(in _outputAHandle, out buffer)
+                    : guardedVault.TryResolveHandle(in _outputBHandle, out buffer);
+                if (resolved && buffer.IsCreated)
+                    return true;
 
-            lockedVault = null;
-            return false;
+                return false;
+            }
+            finally
+            {
+                if (!resolved || !buffer.IsCreated)
+                {
+                    ReleaseDynamicMusicMutationGuard(guardedVault, mutationMask);
+                    buffer = default;
+                    mutationMask = 0UL;
+                    guardedVault = null;
+                }
+            }
         }
 
         private bool TryAcquireLockedView<T>(
@@ -1078,12 +1191,12 @@ namespace Hecton8.Audio.Synthesis
             return true;
         }
 
-        private void ReleaseOutstandingSynthJobLocks()
+        private void ReleaseOutstandingSynthJobMutationGuard()
         {
-            int lockMask = Interlocked.Exchange(ref _synthJobLockMask, 0);
-            IDataVault lockedVault = _synthJobLockedVault;
-            _synthJobLockedVault = null;
-            ReleaseDynamicMusicWriteLocks(lockedVault, lockMask);
+            long rawMask = Interlocked.Exchange(ref _synthJobMutationMask, 0L);
+            IDataVault guardedVault = _synthJobGuardedVault;
+            _synthJobGuardedVault = null;
+            ReleaseDynamicMusicMutationGuard(guardedVault, unchecked((ulong)rawMask));
         }
 
         private void ReleaseDynamicMusicWriteLocks(IDataVault vault, int lockMask)
@@ -1122,6 +1235,14 @@ namespace Hecton8.Audio.Synthesis
         private void ConfigureAudioHostCold()
         {
             if (_hostSource == null && !TryGetComponent(out _hostSource))
+                return;
+
+            ConfigureAudioHostCached();
+        }
+
+        private void ConfigureAudioHostCached()
+        {
+            if (_hostSource == null)
                 return;
 
             int sampleRate = math.max(8000, AudioSettings.outputSampleRate);
@@ -1176,66 +1297,101 @@ namespace Hecton8.Audio.Synthesis
 
         private void GenerateEmergencyMockAudioProfiles()
         {
-            DynamicMusicVaultViews views = default;
+            if (_dataVault == null || !AreDynamicMusicVaultHandlesExact())
+                return;
+
+            DynamicMusicSynthTuningDTO tuning = CreateDefaultSynthTuning();
+            if (!TryWriteTuningSnapshot(in tuning))
+                return;
+
+            DynamicMusicSynthScalarDTO scalar = default;
+            scalar.GlobalQualityWeight = ResolveGlobalQualityWeightFromSnapshot();
+            scalar.DepthMeters = math.max(0f, _mockDepthMeters);
+            scalar.Depth01 = math.saturate(scalar.DepthMeters / math.max(0.0001f, tuning.DepthMaxMeters));
+            scalar.TensionIndex = math.saturate(_mockTensionBias01);
+            scalar.LpfCutoffHz = math.max(tuning.LpfMinHz, 22000f - scalar.DepthMeters * tuning.LpfDepthHzPerMeter);
+            scalar.ActiveVoices = 16;
+            if (!TryWriteScalarSnapshot(in scalar))
+                return;
+
+            TryWriteDefaultVoiceBank(in tuning);
+        }
+
+        private static DynamicMusicSynthTuningDTO CreateDefaultSynthTuning()
+        {
+            DynamicMusicSynthTuningDTO tuning = default;
+            tuning.BasePitchHz = DefaultBasePitchHz;
+            tuning.BaseGrainDensity = DefaultBaseGrainDensity;
+            tuning.TensionMultiplier = DefaultTensionMultiplier;
+            tuning.LfoFrequency = DefaultLfoFrequency;
+            tuning.BaseVolume = DefaultBaseVolume;
+            tuning.GrainSizeSeconds = DefaultGrainSizeSeconds;
+            tuning.QualityMin = 0f;
+            tuning.QualityMax = 1f;
+            tuning.DepthMaxMeters = DefaultDepthMaxMeters;
+            tuning.LpfMinHz = DefaultLpfMinHz;
+            tuning.LpfDepthHzPerMeter = DefaultLpfDepthHzPerMeter;
+            tuning.StereoWidth = DefaultStereoWidth;
+            tuning.DensityTensionScale = 0.85f;
+            tuning.DetuneCentsMax = DefaultDetuneCentsMax;
+            tuning.StingerDecaySeconds = DefaultStingerDecaySeconds;
+            tuning.NoiseFoldback = 0.23f;
+            tuning.SeedBase = DefaultSynthSeed;
+            tuning.WaveformHash = DefaultWaveformHash;
+            tuning.PresetHash = 0xA8A55335u;
+            tuning.Flags = FlagProceduralOnly;
+            return SanitizeTuning(tuning);
+        }
+
+        private bool TryWriteScalarSnapshot(in DynamicMusicSynthScalarDTO scalar)
+        {
             int lockMask = 0;
             IDataVault lockedVault = _dataVault;
             if (lockedVault == null || !AreDynamicMusicVaultHandlesExact())
-                return;
+                return false;
 
             try
             {
-                if (!TryAcquireLockedView(lockedVault, in _tuningHandle, LockTuning, ref lockMask, out views.Tuning) ||
-                    !TryAcquireLockedView(lockedVault, in _scalarHandle, LockScalar, ref lockMask, out views.Scalar) ||
-                    !TryAcquireLockedView(lockedVault, in _voicesHandle, LockVoices, ref lockMask, out views.Voices) ||
-                    views.Tuning.Length <= 0 ||
-                    views.Scalar.Length <= 0)
-                    return;
+                if (!TryAcquireLockedView(lockedVault, in _scalarHandle, LockScalar, ref lockMask, out NativeArray<DynamicMusicSynthScalarDTO> scalarView) ||
+                    scalarView.Length <= 0)
+                    return false;
 
-                DynamicMusicSynthTuningDTO tuning = default;
-                tuning.BasePitchHz = DefaultBasePitchHz;
-                tuning.BaseGrainDensity = DefaultBaseGrainDensity;
-                tuning.TensionMultiplier = DefaultTensionMultiplier;
-                tuning.LfoFrequency = DefaultLfoFrequency;
-                tuning.BaseVolume = DefaultBaseVolume;
-                tuning.GrainSizeSeconds = DefaultGrainSizeSeconds;
-                tuning.QualityMin = 0f;
-                tuning.QualityMax = 1f;
-                tuning.DepthMaxMeters = DefaultDepthMaxMeters;
-                tuning.LpfMinHz = DefaultLpfMinHz;
-                tuning.LpfDepthHzPerMeter = DefaultLpfDepthHzPerMeter;
-                tuning.StereoWidth = DefaultStereoWidth;
-                tuning.DensityTensionScale = 0.85f;
-                tuning.DetuneCentsMax = DefaultDetuneCentsMax;
-                tuning.StingerDecaySeconds = DefaultStingerDecaySeconds;
-                tuning.NoiseFoldback = 0.23f;
-                tuning.SeedBase = DefaultSynthSeed;
-                tuning.WaveformHash = DefaultWaveformHash;
-                tuning.PresetHash = 0xA8A55335u;
-                tuning.Flags = FlagProceduralOnly;
-                views.Tuning[0] = SanitizeTuning(tuning);
+                scalarView[0] = scalar;
+                return true;
+            }
+            finally
+            {
+                ReleaseDynamicMusicWriteLocks(lockedVault, lockMask);
+            }
+        }
 
-                DynamicMusicSynthScalarDTO scalar = default;
-                scalar.GlobalQualityWeight = ResolveGlobalQualityWeightFromSnapshot();
-                scalar.DepthMeters = math.max(0f, _mockDepthMeters);
-                scalar.Depth01 = math.saturate(scalar.DepthMeters / math.max(0.0001f, tuning.DepthMaxMeters));
-                scalar.TensionIndex = math.saturate(_mockTensionBias01);
-                scalar.LpfCutoffHz = math.max(tuning.LpfMinHz, 22000f - scalar.DepthMeters * tuning.LpfDepthHzPerMeter);
-                scalar.ActiveVoices = 16;
-                views.Scalar[0] = scalar;
+        private bool TryWriteDefaultVoiceBank(in DynamicMusicSynthTuningDTO tuning)
+        {
+            int lockMask = 0;
+            IDataVault lockedVault = _dataVault;
+            if (lockedVault == null || !AreDynamicMusicVaultHandlesExact())
+                return false;
 
-                NativeArray<SynthVoiceDTO> voices = views.Voices;
+            try
+            {
+                if (!TryAcquireLockedView(lockedVault, in _voicesHandle, LockVoices, ref lockMask, out NativeArray<SynthVoiceDTO> voices))
+                    return false;
+
+                float sampleRate = math.max(8000f, AudioSettings.outputSampleRate);
                 for (int i = 0; i < voices.Length; i++)
                 {
                     uint hash = Hash32((uint)i ^ tuning.SeedBase);
                     SynthVoiceDTO voice = default;
                     voice.CurrentPhase = HashToUnit(hash);
-                    voice.PhaseIncrement = tuning.BasePitchHz / math.max(8000f, AudioSettings.outputSampleRate);
+                    voice.PhaseIncrement = tuning.BasePitchHz / sampleRate;
                     voice.EnvelopeState = 1f;
                     voice.SoundHash = hash == 0u ? 1u : hash;
                     voice.TargetPitch = tuning.BasePitchHz;
                     voice.TargetVolume = 0f;
                     voices[i] = voice;
                 }
+
+                return true;
             }
             finally
             {
@@ -1350,10 +1506,10 @@ namespace Hecton8.Audio.Synthesis
             if (targetBuffer == copyIndex)
                 return;
 
-            if (Volatile.Read(ref _synthJobLockMask) != 0)
-                ReleaseOutstandingSynthJobLocks();
+            if (Interlocked.Read(ref _synthJobMutationMask) != 0L)
+                ReleaseOutstandingSynthJobMutationGuard();
 
-            if (!TryAcquireSynthJobViews(targetBuffer, out DynamicMusicVaultViews views, out int lockMask, out IDataVault lockedVault))
+            if (!TryAcquireSynthJobViews(targetBuffer, out DynamicMusicVaultViews views, out ulong mutationMask, out IDataVault guardedVault))
             {
                 Interlocked.Increment(ref _audioOverflowCount);
                 return;
@@ -1434,18 +1590,18 @@ namespace Hecton8.Audio.Synthesis
                 _jobChannels = requestedChannels;
                 _synthJobStartTicks = Stopwatch.GetTimestamp();
                 _synthJobHandle = synthJob.Schedule(modulateHandle);
-                _synthJobLockedVault = lockedVault;
-                Volatile.Write(ref _synthJobLockMask, lockMask);
+                _synthJobGuardedVault = guardedVault;
+                Interlocked.Exchange(ref _synthJobMutationMask, unchecked((long)mutationMask));
                 Volatile.Write(ref _synthJobPending, 1);
                 scheduled = true;
-                lockedVault = null;
-                lockMask = 0;
+                guardedVault = null;
+                mutationMask = 0UL;
                 _ = tuning;
             }
             finally
             {
                 if (!scheduled)
-                    ReleaseDynamicMusicWriteLocks(lockedVault, lockMask);
+                    ReleaseDynamicMusicMutationGuard(guardedVault, mutationMask);
             }
         }
 
@@ -1453,8 +1609,8 @@ namespace Hecton8.Audio.Synthesis
         {
             if (Volatile.Read(ref _synthJobPending) == 0)
             {
-                if (Volatile.Read(ref _synthJobLockMask) != 0)
-                    ReleaseOutstandingSynthJobLocks();
+                if (Interlocked.Read(ref _synthJobMutationMask) != 0L)
+                    ReleaseOutstandingSynthJobMutationGuard();
                 return true;
             }
 
@@ -1472,7 +1628,7 @@ namespace Hecton8.Audio.Synthesis
             }
             finally
             {
-                ReleaseOutstandingSynthJobLocks();
+                ReleaseOutstandingSynthJobMutationGuard();
             }
 
             return true;
@@ -1482,8 +1638,8 @@ namespace Hecton8.Audio.Synthesis
         {
             if (Volatile.Read(ref _synthJobPending) == 0)
             {
-                if (Volatile.Read(ref _synthJobLockMask) != 0)
-                    ReleaseOutstandingSynthJobLocks();
+                if (Interlocked.Read(ref _synthJobMutationMask) != 0L)
+                    ReleaseOutstandingSynthJobMutationGuard();
                 return;
             }
 
@@ -1495,7 +1651,7 @@ namespace Hecton8.Audio.Synthesis
             }
             finally
             {
-                ReleaseOutstandingSynthJobLocks();
+                ReleaseOutstandingSynthJobMutationGuard();
             }
         }
 
@@ -1505,10 +1661,10 @@ namespace Hecton8.Audio.Synthesis
             if (publishedBuffer < 0)
                 return;
 
-            IDataVault lockedVault = _synthJobLockedVault;
-            int lockMask = Volatile.Read(ref _synthJobLockMask);
-            if (!HasRequiredPublishLocks(lockMask, publishedBuffer) ||
-                !TryResolveSynthPublishViews(lockedVault, publishedBuffer, out DynamicMusicVaultViews views))
+            IDataVault guardedVault = _synthJobGuardedVault;
+            ulong mutationMask = unchecked((ulong)Interlocked.Read(ref _synthJobMutationMask));
+            if (!HasRequiredPublishGuard(mutationMask, publishedBuffer) ||
+                !TryResolveSynthPublishViews(guardedVault, publishedBuffer, out DynamicMusicVaultViews views))
                 return;
 
             int sampleCount = math.clamp(_jobSampleCount, 0, OutputSampleCapacity);
@@ -1519,12 +1675,11 @@ namespace Hecton8.Audio.Synthesis
             if (HasNonFiniteScalar(in scalar))
                 flags |= FlagNonFinite;
 
-            Volatile.Write(ref _readySampleCount, sampleCount);
-            Volatile.Write(ref _readyBufferIndex, publishedBuffer);
             WriteSharedState(ref views, publishedBuffer, sampleCount, channels, elapsedMicroseconds, flags);
             WriteTelemetry(ref views, elapsedMicroseconds, publishedBuffer, sampleCount, flags);
-            if (elapsedMicroseconds > DspDumpThresholdMicroseconds || (flags & FlagNonFinite) != 0u)
-                DumpTelemetryOnce(ref views);
+
+            Volatile.Write(ref _readySampleCount, sampleCount);
+            Volatile.Write(ref _readyBufferIndex, publishedBuffer);
 
             float decaySeconds = views.Tuning.IsCreated && views.Tuning.Length > 0
                 ? math.max(0.0001f, views.Tuning[0].StingerDecaySeconds)
@@ -1601,36 +1756,6 @@ namespace Hecton8.Audio.Synthesis
                    !math.isfinite(scalar.OutputRms);
         }
 
-        private void DumpTelemetryOnce(ref DynamicMusicVaultViews views)
-        {
-            if (Interlocked.Exchange(ref _telemetryDumped, 1) != 0)
-                return;
-
-            try
-            {
-                if (!views.TelemetryRing.IsCreated || views.TelemetryRing.Length <= 0)
-                    return;
-
-                string repoRoot = ResolveRepoRootPath();
-                string dumpPath = Path.Combine(repoRoot, DumpRelativePath);
-                string directory = Path.GetDirectoryName(dumpPath);
-                if (!string.IsNullOrEmpty(directory))
-                    Directory.CreateDirectory(directory);
-
-                void* source = NativeArrayUnsafeUtility.GetUnsafeBufferPointerWithoutChecks(views.TelemetryRing);
-                int byteCount = math.min(TelemetryCapacity, views.TelemetryRing.Length) * UnsafeUtility.SizeOf<AudioDSPTelemetryEntry>();
-                using (FileStream stream = File.Open(dumpPath, FileMode.Create, FileAccess.Write, FileShare.Read))
-                {
-                    ref byte payloadStart = ref UnsafeUtility.AsRef<byte>(source);
-                    ReadOnlySpan<byte> payload = MemoryMarshal.CreateReadOnlySpan(ref payloadStart, byteCount);
-                    stream.Write(payload);
-                }
-            }
-            catch (Exception)
-            {
-            }
-        }
-
         private void PollCsvRulesCold()
         {
 #if UNITY_EDITOR
@@ -1657,16 +1782,18 @@ namespace Hecton8.Audio.Synthesis
         }
 
 #if UNITY_EDITOR
-        private void ParseSynthPresetCsv(int byteCount, ref DynamicMusicVaultViews views)
+        private void ParseSynthPresetCsv(
+            int byteCount,
+            NativeArray<byte> csvScratch,
+            ref DynamicMusicSynthTuningDTO tuning,
+            ref DynamicMusicPresetRuleDTO rule,
+            out int ruleCount)
         {
-            if (byteCount <= 0 || !views.Tuning.IsCreated || views.Tuning.Length <= 0 || !views.CsvScratch.IsCreated)
+            ruleCount = 0;
+            if (byteCount <= 0 || !csvScratch.IsCreated)
                 return;
 
-            NativeArray<byte> csvScratch = views.CsvScratch;
             int safeByteCount = math.min(byteCount, csvScratch.Length);
-            DynamicMusicSynthTuningDTO tuning = views.Tuning[0];
-            DynamicMusicPresetRuleDTO rule = default;
-            int ruleIndex = 0;
             int index = 0;
             while (index < safeByteCount)
             {
@@ -1714,14 +1841,14 @@ namespace Hecton8.Audio.Synthesis
                     index++;
             }
 
-            if (views.PresetRules.IsCreated && ruleIndex < views.PresetRules.Length && rule.PresetHash != 0u)
+            if (rule.PresetHash != 0u)
             {
-                views.PresetRules[ruleIndex] = SanitizePresetRule(rule);
-                ruleIndex++;
+                rule = SanitizePresetRule(rule);
+                ruleCount = 1;
             }
 
             tuning.Flags |= FlagCsvApplied | FlagProceduralOnly;
-            views.Tuning[0] = SanitizeTuning(tuning);
+            tuning = SanitizeTuning(tuning);
         }
 
         private static void ApplyCsvTuning(ref DynamicMusicSynthTuningDTO tuning, ref DynamicMusicPresetRuleDTO rule, uint hash, float value)

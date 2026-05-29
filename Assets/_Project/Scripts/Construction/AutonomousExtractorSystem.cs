@@ -133,9 +133,6 @@ namespace Hecton8.Construction
         private int _moduleCount;
         private static AutonomousExtractorSystem s_activeRuntime;
 
-        /// <summary>Returns the current runtime owner when one exists.</summary>
-        public static AutonomousExtractorSystem Instance => s_activeRuntime;
-
         internal IPersistentDroppedItemRegistry PersistentDroppedItems => _persistentDroppedItems;
 
         internal static bool TryGetActiveRuntime(out AutonomousExtractorSystem runtime)

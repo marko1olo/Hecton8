@@ -37,7 +37,7 @@ namespace Hecton8.UI
         private void OnEnable()
         {
             EnsureUiBuilt(allowCreate: true);
-            ResolveNavigationService();
+            CacheNavigationServiceCold();
             TryRegisterHotSwapListener();
             TryRegister();
         }
@@ -45,7 +45,7 @@ namespace Hecton8.UI
         private void Start()
         {
             EnsureUiBuilt(allowCreate: true);
-            ResolveNavigationService();
+            CacheNavigationServiceCold();
             TryRegisterHotSwapListener();
             TryRegister();
         }
@@ -97,7 +97,7 @@ namespace Hecton8.UI
 
         public void LateFrameTick()
         {
-            if (!EnsureUiBuilt(allowCreate: false))
+            if (!_uiBuilt || _root == null)
             {
                 ApplyRootAlpha(0f);
                 return;
@@ -177,12 +177,12 @@ namespace Hecton8.UI
             if (_runtimeMaterial != null)
                 _ribbonImage.material = _runtimeMaterial;
 
-            ResolveNavigationService();
+            CacheNavigationServiceCold();
             _uiBuilt = true;
             return true;
         }
 
-        private void ResolveNavigationService()
+        private void CacheNavigationServiceCold()
         {
             if (_navigation != null)
                 return;

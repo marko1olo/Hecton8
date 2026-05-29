@@ -53,6 +53,11 @@ namespace Hecton8.Physics
                 out handle);
         }
 
+        public void ReleaseMockScheduleBufferPins(IDataVault vault)
+        {
+            CablePhysicsSolver132.ReleaseMockScheduleBufferPins(vault);
+        }
+
         public bool TryDumpLatestFault(IDataVault vault)
         {
             if (!CablePhysicsSolver132.TrySampleLatestTelemetry(vault, out TetherTelemetryEntry telemetry))

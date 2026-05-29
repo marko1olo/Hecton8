@@ -33,12 +33,14 @@ namespace Hecton8.Gameplay
         public const BufferID HandIkTelemetryCursorBuffer = BufferID.PlayerHandIkTelemetryCursor;
         public const BufferID HandIkConfigBuffer = BufferID.PlayerHandIkConfig;
         public const BufferID HandIkPublishedStatesBuffer = BufferID.PlayerHandIkPublishedStates;
-        private const int HandIkLockStates = 1 << 0;
-        private const int HandIkLockTargets = 1 << 1;
-        private const int HandIkLockBoneMatrices = 1 << 2;
-        private const int HandIkLockTelemetry = 1 << 3;
-        private const int HandIkLockTelemetryCursor = 1 << 4;
-        private const int HandIkLockConfig = 1 << 5;
+        private static readonly ulong HandIkJobMutationGuardMask =
+            MutationGuardBit(HandIkStatesBuffer) |
+            MutationGuardBit(HandIkPublishedStatesBuffer) |
+            MutationGuardBit(HandIkTargetsBuffer) |
+            MutationGuardBit(HandIkBoneMatricesBuffer) |
+            MutationGuardBit(HandIkTelemetryRingBuffer) |
+            MutationGuardBit(HandIkTelemetryCursorBuffer) |
+            MutationGuardBit(HandIkConfigBuffer);
 
         private VaultBufferBinding<IkHandStateDTO> _handIkStates = new VaultBufferBinding<IkHandStateDTO>(HandIkStatesBuffer, HandIkHandCount, OwnerSystemId);
         private VaultBufferBinding<IkHandStateDTO> _handIkPublishedStates = new VaultBufferBinding<IkHandStateDTO>(HandIkPublishedStatesBuffer, HandIkHandCount, OwnerSystemId);
@@ -62,8 +64,9 @@ namespace Hecton8.Gameplay
         private long _handIkScheduleTimestamp;
         private uint _handIkFrameIndex;
         private int _handIkGpuBufferIndex;
-        private int _handIkLockedBuffers;
+        private IDataVault _handIkJobGuardVault;
         private bool _handIkJobPending;
+        private bool _handIkJobGuardHeld;
         private bool _handIkGpuDataValid;
         private bool _handIkGpuDirty;
         private double3 _handIkCachedFloatingOriginAup;
@@ -232,81 +235,91 @@ namespace Hecton8.Gameplay
 
         private void ScheduleHandFabrikIk(float deltaTime)
         {
-            if (_handIkJobPending || !TryResolveHandIkViews(out HandIkVaultViews views))
+            if (_handIkJobPending || !TryAcquireHandIkJobGuard())
                 return;
 
-            IkHandConfigDTO config = views.Config[0];
-            float safeDelta = math.max(0.0001f, SanitizeNonNegative(deltaTime));
-            float qualityWeight = ResolveHandIkQuality(config);
-            bool mockTargets = (config.Flags & IkHandFlags.ConfigMockTargets) != 0u;
-            bool bridgeInputEnabled = (config.Flags & IkHandFlags.ConfigDisableBridgeInput) == 0u;
-            NativeArray<VRHandStateDTO> bridgeStates = default;
-            NativeArray<VRInteractionTuningDTO> bridgeTuning = default;
-            bool bridgeAvailable = bridgeInputEnabled && TryResolveHandIkBridgeViews(out bridgeStates, out bridgeTuning);
-            if (!mockTargets && !bridgeAvailable)
-                return;
-
-            double3 fallbackRootAup = ResolveHandIkFallbackRootAup();
-            if (!math.all(math.isfinite(fallbackRootAup)))
-                return;
-
-            if (!TryLockHandIkJobBuffers())
-                return;
-
-            uint frame = ++_handIkFrameIndex;
-            double3 rootAup = bridgeAvailable
-                ? ResolveHandIkRootAup(bridgeTuning, fallbackRootAup)
-                : fallbackRootAup;
-            JobHandle targetHandle;
-            if (mockTargets)
+            bool keepJobGuard = false;
+            try
             {
-                targetHandle = new GenerateMockIkTargetsJob
+                if (!TryResolveHandIkViews(out HandIkVaultViews views))
+                    return;
+
+                IkHandConfigDTO config = views.Config[0];
+                float safeDelta = math.max(0.0001f, SanitizeNonNegative(deltaTime));
+                float qualityWeight = ResolveHandIkQuality(config);
+                bool mockTargets = (config.Flags & IkHandFlags.ConfigMockTargets) != 0u;
+                bool bridgeInputEnabled = (config.Flags & IkHandFlags.ConfigDisableBridgeInput) == 0u;
+                NativeArray<VRHandStateDTO> bridgeStates = default;
+                NativeArray<VRInteractionTuningDTO> bridgeTuning = default;
+                bool bridgeAvailable = bridgeInputEnabled && TryResolveHandIkBridgeViews(out bridgeStates, out bridgeTuning);
+                if (!mockTargets && !bridgeAvailable)
+                    return;
+
+                double3 fallbackRootAup = ResolveHandIkFallbackRootAup();
+                if (!math.all(math.isfinite(fallbackRootAup)))
+                    return;
+
+                uint frame = ++_handIkFrameIndex;
+                double3 rootAup = bridgeAvailable
+                    ? ResolveHandIkRootAup(bridgeTuning, fallbackRootAup)
+                    : fallbackRootAup;
+                JobHandle targetHandle;
+                if (mockTargets)
+                {
+                    targetHandle = new GenerateMockIkTargetsJob
+                    {
+                        States = views.States,
+                        Targets = views.Targets,
+                        Config = views.Config,
+                        RootAUP = rootAup,
+                        DeltaTime = safeDelta,
+                        GlobalQualityWeight = qualityWeight,
+                        FrameIndex = frame
+                    }.Schedule(HandIkHandCount, 1);
+                }
+                else
+                {
+                    targetHandle = new BuildHandIkTargetsFromBridgeJob
+                    {
+                        BridgeStates = bridgeStates,
+                        BridgeTuning = bridgeTuning,
+                        States = views.States,
+                        Targets = views.Targets,
+                        Config = views.Config,
+                        DeltaTime = safeDelta,
+                        GlobalQualityWeight = qualityWeight,
+                        FrameIndex = frame,
+                        FallbackRootAUP = rootAup
+                    }.Schedule(HandIkHandCount, 1);
+                }
+
+                JobHandle solveHandle = new EvaluateHandIkJob
                 {
                     States = views.States,
                     Targets = views.Targets,
-                    Config = views.Config,
-                    RootAUP = rootAup,
-                    DeltaTime = safeDelta,
-                    GlobalQualityWeight = qualityWeight,
+                    Telemetry = views.Telemetry,
+                    TelemetryCursor = views.TelemetryCursor,
+                    ActiveHandCount = HandIkHandCount,
                     FrameIndex = frame
-                }.Schedule(HandIkHandCount, 1);
-            }
-            else
-            {
-                targetHandle = new BuildHandIkTargetsFromBridgeJob
+                }.Schedule(HandIkHandCount, 1, targetHandle);
+
+                _handIkJobHandle = new BuildHandBoneMatricesJob
                 {
-                    BridgeStates = bridgeStates,
-                    BridgeTuning = bridgeTuning,
                     States = views.States,
-                    Targets = views.Targets,
-                    Config = views.Config,
-                    DeltaTime = safeDelta,
-                    GlobalQualityWeight = qualityWeight,
-                    FrameIndex = frame,
-                    FallbackRootAUP = rootAup
-                }.Schedule(HandIkHandCount, 1);
+                    BoneMatrices = views.BoneMatrices,
+                    ActiveHandCount = HandIkHandCount
+                }.Schedule(HandIkHandCount, 1, solveHandle);
+                _handIkJobPending = true;
+                _handIkScheduleTimestamp = System.Diagnostics.Stopwatch.GetTimestamp();
+                H8Memory.RegisterActiveJob(OwnerSystemId, _handIkJobHandle);
+                keepJobGuard = true;
+                JobHandle.ScheduleBatchedJobs();
             }
-
-            JobHandle solveHandle = new EvaluateHandIkJob
+            finally
             {
-                States = views.States,
-                Targets = views.Targets,
-                Telemetry = views.Telemetry,
-                TelemetryCursor = views.TelemetryCursor,
-                ActiveHandCount = HandIkHandCount,
-                FrameIndex = frame
-            }.Schedule(HandIkHandCount, 1, targetHandle);
-
-            _handIkJobHandle = new BuildHandBoneMatricesJob
-            {
-                States = views.States,
-                BoneMatrices = views.BoneMatrices,
-                ActiveHandCount = HandIkHandCount
-            }.Schedule(HandIkHandCount, 1, solveHandle);
-            _handIkJobPending = true;
-            _handIkScheduleTimestamp = System.Diagnostics.Stopwatch.GetTimestamp();
-            H8Memory.RegisterActiveJob(OwnerSystemId, _handIkJobHandle);
-            JobHandle.ScheduleBatchedJobs();
+                if (!keepJobGuard)
+                    ReleaseHandIkJobGuard();
+            }
         }
 
         private bool TryFinalizeHandFabrikIkJob()
@@ -330,7 +343,7 @@ namespace Hecton8.Gameplay
             }
             finally
             {
-                UnlockHandIkJobBuffers();
+                ReleaseHandIkJobGuard();
             }
 
             return true;
@@ -340,11 +353,11 @@ namespace Hecton8.Gameplay
         {
             if (!_handIkJobPending)
             {
-                UnlockHandIkJobBuffers();
+                ReleaseHandIkJobGuard();
                 return;
             }
 
-            DispatcherJobFence.TryComplete(ref _handIkJobHandle, forceComplete: true);
+            ForceCompleteHandFabrikIkInPostSimulationWindow();
             _handIkJobPending = false;
             _handIkGpuDataValid = true;
             _handIkGpuDirty = true;
@@ -355,7 +368,20 @@ namespace Hecton8.Gameplay
             }
             finally
             {
-                UnlockHandIkJobBuffers();
+                ReleaseHandIkJobGuard();
+            }
+        }
+
+        private void ForceCompleteHandFabrikIkInPostSimulationWindow()
+        {
+            DispatcherJobFence.BeginPostSimulationSwapWindow();
+            try
+            {
+                DispatcherJobFence.TryComplete(ref _handIkJobHandle, forceComplete: true);
+            }
+            finally
+            {
+                DispatcherJobFence.EndPostSimulationSwapWindow();
             }
         }
 
@@ -414,60 +440,35 @@ namespace Hecton8.Gameplay
             return false;
         }
 
-        private bool TryLockHandIkJobBuffers()
+        private bool TryAcquireHandIkJobGuard()
         {
             IDataVault vault = _dataVault;
-            _handIkLockedBuffers = 0;
-            if (vault == null)
+            if (_handIkJobGuardHeld)
+                return true;
+
+            if (vault == null || !vault.TryAcquireMutationGuard(HandIkJobMutationGuardMask))
                 return false;
 
-            if (!TryLockHandIkRequired(vault, HandIkStatesBuffer, HandIkLockStates) ||
-                !TryLockHandIkRequired(vault, HandIkTargetsBuffer, HandIkLockTargets) ||
-                !TryLockHandIkRequired(vault, HandIkBoneMatricesBuffer, HandIkLockBoneMatrices) ||
-                !TryLockHandIkRequired(vault, HandIkTelemetryRingBuffer, HandIkLockTelemetry) ||
-                !TryLockHandIkRequired(vault, HandIkTelemetryCursorBuffer, HandIkLockTelemetryCursor) ||
-                !TryLockHandIkRequired(vault, HandIkConfigBuffer, HandIkLockConfig))
-            {
-                UnlockHandIkJobBuffers();
-                return false;
-            }
-
+            _handIkJobGuardVault = vault;
+            _handIkJobGuardHeld = true;
             return true;
         }
 
-        private bool TryLockHandIkRequired(IDataVault vault, BufferID bufferId, int bit)
+        private void ReleaseHandIkJobGuard()
         {
-            if (vault.TryLockBuffer(bufferId, OwnerSystemId))
-            {
-                _handIkLockedBuffers |= bit;
-                return true;
-            }
-
-            return false;
-        }
-
-        private void UnlockHandIkJobBuffers()
-        {
-            IDataVault vault = _dataVault;
-            if (vault == null || _handIkLockedBuffers == 0)
-            {
-                _handIkLockedBuffers = 0;
+            if (!_handIkJobGuardHeld)
                 return;
-            }
 
-            UnlockHandIkBuffer(vault, HandIkStatesBuffer, HandIkLockStates);
-            UnlockHandIkBuffer(vault, HandIkTargetsBuffer, HandIkLockTargets);
-            UnlockHandIkBuffer(vault, HandIkBoneMatricesBuffer, HandIkLockBoneMatrices);
-            UnlockHandIkBuffer(vault, HandIkTelemetryRingBuffer, HandIkLockTelemetry);
-            UnlockHandIkBuffer(vault, HandIkTelemetryCursorBuffer, HandIkLockTelemetryCursor);
-            UnlockHandIkBuffer(vault, HandIkConfigBuffer, HandIkLockConfig);
-            _handIkLockedBuffers = 0;
+            IDataVault vault = _handIkJobGuardVault ?? _dataVault;
+            _handIkJobGuardVault = null;
+            _handIkJobGuardHeld = false;
+            if (vault != null)
+                vault.ReleaseMutationGuard(HandIkJobMutationGuardMask);
         }
 
-        private void UnlockHandIkBuffer(IDataVault vault, BufferID bufferId, int bit)
+        private static ulong MutationGuardBit(BufferID bufferId)
         {
-            if ((_handIkLockedBuffers & bit) != 0)
-                vault.TryUnlockBuffer(bufferId, OwnerSystemId);
+            return 1UL << (unchecked((int)(uint)(int)bufferId) & 31);
         }
 
         private void EnsureDefaultHandIkConfig()
@@ -575,25 +576,14 @@ namespace Hecton8.Gameplay
 
         private void PublishHandIkStatesForAnimation()
         {
-            IDataVault vault = _dataVault;
-            if (vault == null || !_handIkStates.IsCreated || !_handIkPublishedStates.IsCreated)
+            if (!_handIkJobGuardHeld || !_handIkStates.IsCreated || !_handIkPublishedStates.IsCreated)
                 return;
 
-            if (!vault.TryLockBuffer(HandIkPublishedStatesBuffer, OwnerSystemId))
-                return;
-
-            try
-            {
-                NativeArray<IkHandStateDTO> source = _handIkStates;
-                NativeArray<IkHandStateDTO> destination = _handIkPublishedStates;
-                int count = math.min(math.min(source.Length, destination.Length), HandIkHandCount);
-                for (int i = 0; i < count; i++)
-                    destination[i] = source[i];
-            }
-            finally
-            {
-                vault.TryUnlockBuffer(HandIkPublishedStatesBuffer, OwnerSystemId);
-            }
+            NativeArray<IkHandStateDTO> source = _handIkStates;
+            NativeArray<IkHandStateDTO> destination = _handIkPublishedStates;
+            int count = math.min(math.min(source.Length, destination.Length), HandIkHandCount);
+            for (int i = 0; i < count; i++)
+                destination[i] = source[i];
         }
 
         private void RefreshHandIkFloatingOriginSnapshotCold(double3 origin)

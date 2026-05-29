@@ -145,14 +145,10 @@ namespace Hecton8.Optimization
         private IPlayerRuntimeContext _cachedPlayer;
         private IPlayerInventoryService _cachedPlayerInventory;
         private IScannerInterferenceUiSink _cachedScannerInterferenceUi;
-        private JobHandle _ttlEvaluationHandle;
-        private bool _ttlEvaluationScheduled;
         private bool _ttlEvaluationResultsPending;
-        private bool _ttlEvaluationVaultLocksHeld;
         private bool _ttlEvaluationVramPanic;
         private bool _ttlEvaluationFlagsMirrored;
         private bool _nativeRefSyncRequired;
-        private int _deferredTrackerMutationCount;
         private bool _nativeStorageInitialized;
         private int _resolvedHandleCapacity;
         private int _resolvedMapCapacity;
@@ -300,7 +296,6 @@ namespace Hecton8.Optimization
             _forcedVramReleaseCount = 0;
             _lastPendingTtlCount = 0;
             _lastLeakSuspectHash = 0u;
-            _deferredTrackerMutationCount = 0;
 #if UNITY_ADDRESSABLES_EXIST
             _lastAddressableDependencyGroupHash = 0u;
             _lastAddressableDependencyOrder = 0;
@@ -1429,99 +1424,21 @@ namespace Hecton8.Optimization
                 out telemetry);
         }
 
-        private bool TryLockTtlEvaluationVaultBuffers()
-        {
-            if (_dataVault == null)
-                return false;
-
-            bool lockedTrackers = _dataVault.TryLockBuffer(BufferID.AddressableHeapTrackers, VaultOwnerSystem);
-            bool lockedTtl = lockedTrackers &&
-                             _dataVault.TryLockBuffer(BufferID.AddressableHeapTimeToLive, VaultOwnerSystem);
-            bool lockedFlags = lockedTtl &&
-                               _dataVault.TryLockBuffer(BufferID.AddressableHeapTrackerFlags, VaultOwnerSystem);
-            bool lockedHandleMap = lockedFlags &&
-                                   _dataVault.TryLockBuffer(BufferID.AddressableHeapHandleMap, VaultOwnerSystem);
-            if (lockedTrackers && lockedTtl && lockedFlags && lockedHandleMap)
-            {
-                _ttlEvaluationVaultLocksHeld = true;
-                return true;
-            }
-
-            if (lockedHandleMap)
-                _dataVault.TryUnlockBuffer(BufferID.AddressableHeapHandleMap, VaultOwnerSystem);
-            if (lockedFlags)
-                _dataVault.TryUnlockBuffer(BufferID.AddressableHeapTrackerFlags, VaultOwnerSystem);
-            if (lockedTtl)
-                _dataVault.TryUnlockBuffer(BufferID.AddressableHeapTimeToLive, VaultOwnerSystem);
-            if (lockedTrackers)
-                _dataVault.TryUnlockBuffer(BufferID.AddressableHeapTrackers, VaultOwnerSystem);
-            return false;
-        }
-
-        private void ReleaseTtlEvaluationVaultLocks()
-        {
-            if (!_ttlEvaluationVaultLocksHeld || _dataVault == null)
-            {
-                _ttlEvaluationVaultLocksHeld = false;
-                return;
-            }
-
-            _dataVault.TryUnlockBuffer(BufferID.AddressableHeapHandleMap, VaultOwnerSystem);
-            _dataVault.TryUnlockBuffer(BufferID.AddressableHeapTrackerFlags, VaultOwnerSystem);
-            _dataVault.TryUnlockBuffer(BufferID.AddressableHeapTimeToLive, VaultOwnerSystem);
-            _dataVault.TryUnlockBuffer(BufferID.AddressableHeapTrackers, VaultOwnerSystem);
-            _ttlEvaluationVaultLocksHeld = false;
-        }
-
         private void CompleteTtlEvaluationForTeardown()
         {
-            if (!_ttlEvaluationScheduled)
-                return;
-
-            DispatcherJobFence.TryComplete(ref _ttlEvaluationHandle, forceComplete: true);
-            _ttlEvaluationScheduled = false;
             _ttlEvaluationResultsPending = false;
             _ttlEvaluationVramPanic = false;
             _ttlEvaluationFlagsMirrored = false;
-            ReleaseTtlEvaluationVaultLocks();
         }
 
         private bool TryPrepareTrackerMutation()
         {
-            if (!_ttlEvaluationScheduled)
-                return true;
-
-            if (!_ttlEvaluationHandle.IsCompleted)
-            {
-                _nativeRefSyncRequired = true;
-                _deferredTrackerMutationCount++;
-                return false;
-            }
-
-            if (!DispatcherJobFence.TryFinalizeCompleted(ref _ttlEvaluationHandle))
-                return false;
-
-            _ttlEvaluationScheduled = false;
-            _ttlEvaluationResultsPending = true;
-            _ttlEvaluationFlagsMirrored = false;
-            if (TryResolveTrackerViews(
-                    out NativeArray<AssetTrackerDTO> trackers,
-                    out NativeArray<float> ttl,
-                    out NativeArray<byte> trackerFlags,
-                    out NativeArray<AssetHandleMapEntryDTO> handleMap))
-            {
-                MirrorTrackerDtoFlagsIntoBytes(trackers, trackerFlags);
-                MirrorHandleMapTtlIntoSlots(ttl, handleMap);
-                _ttlEvaluationFlagsMirrored = true;
-            }
-
-            ReleaseTtlEvaluationVaultLocks();
             return true;
         }
 
         private bool IsTrackerMutationBlockedByScheduledJob()
         {
-            return _ttlEvaluationScheduled && !_ttlEvaluationHandle.IsCompleted;
+            return false;
         }
 
 #if UNITY_ADDRESSABLES_EXIST
@@ -2409,29 +2326,6 @@ namespace Hecton8.Optimization
                 SyncNativeRefCountsFromRegistry(trackers, ttl, trackerFlags, handleMap);
             }
 
-            if (_ttlEvaluationScheduled)
-            {
-                if (!_ttlEvaluationHandle.IsCompleted)
-                {
-                    _lastPendingTtlCount = CountPendingTtlReleases(trackerFlags);
-                    return;
-                }
-
-                if (!DispatcherJobFence.TryFinalizeCompleted(ref _ttlEvaluationHandle))
-                    return;
-
-                _ttlEvaluationScheduled = false;
-                _ttlEvaluationResultsPending = false;
-                bool scheduledUnderVramPanic = _ttlEvaluationVramPanic;
-                _ttlEvaluationVramPanic = false;
-                MirrorTrackerDtoFlagsIntoBytes(trackers, trackerFlags);
-                MirrorHandleMapTtlIntoSlots(ttl, handleMap);
-                _ttlEvaluationFlagsMirrored = false;
-                ReleaseTtlEvaluationVaultLocks();
-                SyncNativeRefCountsFromRegistry(trackers, ttl, trackerFlags, handleMap);
-                DrainTtlEvaluationResults(trackers, ttl, trackerFlags, handleMap, vramPanic || scheduledUnderVramPanic);
-            }
-
             if (vramPanic)
             {
                 ForceFurthestUnusedAddressableTtlsToZero(
@@ -2522,19 +2416,12 @@ namespace Hecton8.Optimization
 
         private void ScheduleAddressableTtlEvaluation()
         {
-            if (_ttlEvaluationScheduled)
-                return;
-
-            if (!TryLockTtlEvaluationVaultBuffers())
-                return;
-
             if (!TryResolveTrackerViews(
                     out NativeArray<AssetTrackerDTO> trackers,
                     out NativeArray<float> ttl,
                     out NativeArray<byte> trackerFlags,
                     out NativeArray<AssetHandleMapEntryDTO> handleMap))
             {
-                ReleaseTtlEvaluationVaultLocks();
                 return;
             }
 
@@ -2550,11 +2437,14 @@ namespace Hecton8.Optimization
                 QualityTtlDecayMultiplier = ResolveQualityTtlDecayMultiplier(ResolveGlobalQualityWeight()),
                 ForceVramPanic = vramPanic ? (byte)1 : (byte)0
             };
-            _ttlEvaluationHandle = job.Schedule(handleMap.Length, 16);
-            H8Memory.RegisterActiveJob(VaultOwnerSystem, _ttlEvaluationHandle);
-            _ttlEvaluationScheduled = true;
+            for (int i = 0; i < handleMap.Length; i++)
+                job.Execute(i);
+
+            MirrorTrackerDtoFlagsIntoBytes(trackers, trackerFlags);
+            MirrorHandleMapTtlIntoSlots(ttl, handleMap);
+            _ttlEvaluationResultsPending = true;
             _ttlEvaluationVramPanic = vramPanic;
-            _ttlEvaluationFlagsMirrored = false;
+            _ttlEvaluationFlagsMirrored = true;
         }
 
         private void DrainTtlEvaluationResults(
@@ -2594,25 +2484,6 @@ namespace Hecton8.Optimization
             _lastPendingTtlCount = pending;
             if (forced > 0)
                 _forcedVramReleaseCount += forced;
-        }
-
-        private static int CountPendingTtlReleases(NativeArray<byte> trackerFlags)
-        {
-            if (!trackerFlags.IsCreated)
-                return 0;
-
-            int pending = 0;
-            for (int i = 0; i < trackerFlags.Length; i++)
-            {
-                byte flags = trackerFlags[i];
-                if ((flags & AssetHandleFlags.Active) != 0 &&
-                    (flags & AssetHandleFlags.PendingTtl) != 0)
-                {
-                    pending++;
-                }
-            }
-
-            return pending;
         }
 
         private static int ForceFurthestUnusedAddressableTtlsToZero(
@@ -4734,36 +4605,51 @@ namespace Hecton8.Optimization
                 maxReleaseCount);
         }
 
-        private static void DisableOwnerPresentation(Component owner)
+        private static Component ResolvePresentationDisableTargetCold(Component owner)
         {
             if (owner == null)
-                return;
+                return null;
 
             if (owner is Renderer renderer)
+                return renderer;
+
+            if (owner is AudioSource audioSource)
+                return audioSource;
+
+            if (owner.TryGetComponent(out Renderer ownerRenderer))
+                return ownerRenderer;
+
+            if (owner.TryGetComponent(out AudioSource ownerAudioSource))
+                return ownerAudioSource;
+
+            return null;
+        }
+
+        private static void DisableOwnerPresentation(Component presentationTarget)
+        {
+            if (presentationTarget == null)
+                return;
+
+            if (presentationTarget is Renderer renderer)
             {
                 renderer.enabled = false;
                 return;
             }
 
-            if (owner is AudioSource audioSource)
-            {
+            if (presentationTarget is AudioSource audioSource)
                 audioSource.enabled = false;
-                return;
-            }
-
-            if (owner.TryGetComponent(out Renderer ownerRenderer))
-                ownerRenderer.enabled = false;
         }
 
         private void QueueOwnerPresentationDisable(Component owner)
         {
-            if (owner == null)
+            Component presentationTarget = ResolvePresentationDisableTargetCold(owner);
+            if (presentationTarget == null)
                 return;
 
             if (_pendingPresentationDisableCount >= _pendingPresentationDisableOwners.Length)
                 return;
 
-            _pendingPresentationDisableOwners[_pendingPresentationDisableCount++] = owner;
+            _pendingPresentationDisableOwners[_pendingPresentationDisableCount++] = presentationTarget;
         }
 
         private void FlushPendingPresentationDisables()
@@ -4783,11 +4669,22 @@ namespace Hecton8.Optimization
             if (owner == null || _checkerboardMaterial == null)
                 return;
 
-            Renderer targetRenderer = owner as Renderer;
-            if (targetRenderer == null && !owner.TryGetComponent(out targetRenderer))
+            Renderer targetRenderer = ResolveOwnerRendererCold(owner);
+            if (targetRenderer == null)
                 return;
 
             targetRenderer.sharedMaterial = _checkerboardMaterial;
+        }
+
+        private static Renderer ResolveOwnerRendererCold(Component owner)
+        {
+            if (owner == null)
+                return null;
+
+            if (owner is Renderer renderer)
+                return renderer;
+
+            return owner.TryGetComponent(out Renderer ownerRenderer) ? ownerRenderer : null;
         }
 
         private bool TryApplyShaderFallback(ref AssetRecord record, Object asset)

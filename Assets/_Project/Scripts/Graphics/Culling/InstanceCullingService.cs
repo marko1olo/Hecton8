@@ -30,7 +30,7 @@ namespace Hecton8.Graphics.Culling
         private const uint PortableMaxComputeThreadsPerGroup = 256u;
         private const int MaxDispatchGroupsPerDimension = 65535;
         private const float DefaultCullDistanceMeters = 200f;
-        private const float LowTierCullDistanceMeters = 100f;
+        private const float SurvivalCullDistanceMeters = 100f;
         private const float VramDownsampleThresholdMb = 1600f;
         private const uint TelemetryInvalidStateFlag = 1u << 0;
         private const uint TelemetryOverloadFlag = 1u << 1;
@@ -54,7 +54,6 @@ namespace Hecton8.Graphics.Culling
         private static readonly int _Plane5Id = Shader.PropertyToID("_HectonFrustumPlane5");
         private static readonly int _BoundsRadiusId = Shader.PropertyToID("_HectonBoundsRadius");
         private static readonly int _CullDistanceId = Shader.PropertyToID("_HectonCullDistanceMeters");
-        private static readonly int _QualityTierId = Shader.PropertyToID("_HectonQualityTier");
         private static readonly int _VramUsedMbId = Shader.PropertyToID("_HectonVramUsedMb");
         private static readonly int _FlagsId = Shader.PropertyToID("_HectonCullingFlags");
         private static readonly int _VoxelSdfTextureId = Shader.PropertyToID("_HectonVoxelSdfTexture3D");
@@ -237,7 +236,7 @@ namespace Hecton8.Graphics.Culling
             float cullDistance = ResolveCullDistance(in descriptor);
             float qualityWeight = ResolveDispatchQualityWeight(in descriptor);
             uint flags = (uint)descriptor.Flags;
-            if (ResolveLowTierDistanceWeight01(qualityWeight) > 0.0001f)
+            if (ResolveSurvivalDistanceWeight01(qualityWeight) > 0.0001f)
                 flags |= (uint)InstanceCullingDispatchFlags.LowTierDistance;
             if (descriptor.VramUsedMb > VramDownsampleThresholdMb)
                 flags |= (uint)InstanceCullingDispatchFlags.VramDownsample;
@@ -272,7 +271,6 @@ namespace Hecton8.Graphics.Culling
             _activeComputeShader.SetVector(_Plane5Id, _cameraFrustum.Plane5);
             _activeComputeShader.SetFloat(_BoundsRadiusId, math.max(0.001f, descriptor.BoundsRadius > 0f ? descriptor.BoundsRadius : _defaultBoundsRadius));
             _activeComputeShader.SetFloat(_CullDistanceId, cullDistance);
-            _activeComputeShader.SetInt(_QualityTierId, (int)descriptor.QualityTier);
             _activeComputeShader.SetFloat(_VramUsedMbId, descriptor.VramUsedMb);
             _activeComputeShader.SetInt(_FlagsId, unchecked((int)flags));
             _activeComputeShader.SetVector(_VoxelSdfOriginId, _voxelSdfOrigin);
@@ -429,7 +427,7 @@ namespace Hecton8.Graphics.Culling
         {
             float qualityWeight = ResolveDispatchQualityWeight(in descriptor);
             float qualityCurve = math.smoothstep(0.18f, 0.72f, qualityWeight);
-            float defaultDistance = math.lerp(LowTierCullDistanceMeters, DefaultCullDistanceMeters, qualityCurve);
+            float defaultDistance = math.lerp(SurvivalCullDistanceMeters, DefaultCullDistanceMeters, qualityCurve);
             float requested = descriptor.MaxCullDistanceMeters > 0f
                 ? descriptor.MaxCullDistanceMeters
                 : defaultDistance;
@@ -442,11 +440,10 @@ namespace Hecton8.Graphics.Culling
             if (math.isfinite(weight))
                 return math.saturate(weight);
 
-            int tierIndex = (int)descriptor.QualityTier;
-            return math.saturate(tierIndex * (1f / 3f));
+            return 1f;
         }
 
-        private static float ResolveLowTierDistanceWeight01(float qualityWeight)
+        private static float ResolveSurvivalDistanceWeight01(float qualityWeight)
         {
             return 1f - math.smoothstep(0.18f, 0.42f, math.saturate(qualityWeight));
         }
@@ -590,14 +587,11 @@ namespace Hecton8.Graphics.Culling
                 !vault.TryAcquireWriteLock(in _telemetryRingHandle, VaultOwnerSystemId, out NativeArray<InstanceCullingTelemetryEntry> telemetryRing))
                 return;
 
-            if (!telemetryRing.IsCreated || telemetryRing.Length < TelemetryCapacity)
-            {
-                vault.ReleaseWriteLock(in _telemetryRingHandle, VaultOwnerSystemId);
-                return;
-            }
-
             try
             {
+                if (!telemetryRing.IsCreated || telemetryRing.Length < TelemetryCapacity)
+                    return;
+
                 uint stateHash = 2166136261u;
                 stateHash = MixHash(stateHash, (uint)math.max(0, sourceInstances));
                 stateHash = MixHash(stateHash, (uint)math.max(0, visibleInstances));

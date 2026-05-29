@@ -30,6 +30,26 @@ namespace Hecton8.Atmosphere
         private const int MinQualityDiffusionIterations = 2;
         private const int AuthoritativeDiffusionIterations = 8;
         private const int MaxQualityDiffusionIterations = AuthoritativeDiffusionIterations;
+        private static readonly ulong AtmosphereJobMutationGuardMask =
+            AtmosphereLogisticsMutationGuardBit(AtmosphereLogisticsBufferIds.CellsFront) |
+            AtmosphereLogisticsMutationGuardBit(AtmosphereLogisticsBufferIds.CellsBack) |
+            AtmosphereLogisticsMutationGuardBit(AtmosphereLogisticsBufferIds.EdgeOffsets) |
+            AtmosphereLogisticsMutationGuardBit(AtmosphereLogisticsBufferIds.EdgeDestinations) |
+            AtmosphereLogisticsMutationGuardBit(AtmosphereLogisticsBufferIds.EdgeConductance) |
+            AtmosphereLogisticsMutationGuardBit(AtmosphereLogisticsBufferIds.Counters) |
+            AtmosphereLogisticsMutationGuardBit(AtmosphereLogisticsBufferIds.TelemetryRing) |
+            AtmosphereLogisticsMutationGuardBit(AtmosphereLogisticsBufferIds.OxygenDeltaUnits) |
+            AtmosphereLogisticsMutationGuardBit(AtmosphereLogisticsBufferIds.CarbonDioxideDeltaUnits) |
+            AtmosphereLogisticsMutationGuardBit(AtmosphereLogisticsBufferIds.NitrogenDeltaUnits) |
+            AtmosphereLogisticsMutationGuardBit(AtmosphereLogisticsBufferIds.ToxinDeltaUnits) |
+            AtmosphereLogisticsMutationGuardBit(AtmosphereLogisticsBufferIds.TemperatureDeltaMilli) |
+            AtmosphereLogisticsMutationGuardBit(AtmosphereLogisticsBufferIds.GasRemainders) |
+            AtmosphereLogisticsMutationGuardBit(AtmosphereLogisticsBufferIds.ShaderPayload) |
+            AtmosphereLogisticsMutationGuardBit(AtmosphereLogisticsBufferIds.Nodes) |
+            AtmosphereLogisticsMutationGuardBit(AtmosphereLogisticsBufferIds.Consumers) |
+            AtmosphereLogisticsMutationGuardBit(AtmosphereLogisticsBufferIds.ToxicSources) |
+            AtmosphereLogisticsMutationGuardBit(AtmosphereLogisticsBufferIds.Vents) |
+            AtmosphereLogisticsMutationGuardBit(AtmosphereLogisticsBufferIds.Tuning);
 
         private static readonly int _GasScalarsShaderId = Shader.PropertyToID("_H8BaseAtmosphereGasScalars");
         private static readonly int _GasQualityShaderId = Shader.PropertyToID("_H8BaseAtmosphereQualityWeight");
@@ -50,7 +70,7 @@ namespace Hecton8.Atmosphere
 
         private IDataVault _vault;
         private IDataVault _pendingVault;
-        private IDataVault _lockedVault;
+        private IDataVault _jobGuardVault;
         private bool _shutdown;
         private bool _registeredHotSwap;
         private bool _hasPendingVaultRebind;
@@ -63,10 +83,8 @@ namespace Hecton8.Atmosphere
         private bool _layoutValid;
         private bool _defaultsInitialized;
         private bool _simulationScheduled;
+        private bool _jobBuffersPinned;
         private bool _dumpWrittenThisFault;
-        private int _lockedBufferMask;
-        private BufferID _lockedFrontBufferId;
-        private BufferID _lockedBackBufferId;
         private uint _lastDispatcherFrame;
         private long _jobScheduleTimestamp;
         private JobHandle _simulationHandle;
@@ -183,7 +201,7 @@ namespace Hecton8.Atmosphere
 
             try
             {
-                if (!active.Resolve(in active._tuning, out NativeArray<AtmosphereTuningDTO> tuningBuffer) ||
+                if (!active.Resolve(in active._tuning, AtmosphereLogisticsBufferIds.Tuning, out NativeArray<AtmosphereTuningDTO> tuningBuffer) ||
                     tuningBuffer.Length == 0)
                 {
                     return;
@@ -204,7 +222,7 @@ namespace Hecton8.Atmosphere
         {
             BaseAtmosphereLogisticsRuntime active = s_active;
             if (active == null || active._vault == null || active._simulationScheduled ||
-                !active.ResolveReadOnly(in active._tuning, out NativeArray<AtmosphereTuningDTO>.ReadOnly tuningBuffer) ||
+                !active.ResolveReadOnly(in active._tuning, AtmosphereLogisticsBufferIds.Tuning, out NativeArray<AtmosphereTuningDTO>.ReadOnly tuningBuffer) ||
                 tuningBuffer.Length == 0)
             {
                 tuning = default;
@@ -219,8 +237,8 @@ namespace Hecton8.Atmosphere
         {
             BaseAtmosphereLogisticsRuntime active = s_active;
             if (active == null || active._vault == null || active._simulationScheduled ||
-                !active.ResolveReadOnly(in active._telemetry, out NativeArray<AtmosphereTelemetryEntry>.ReadOnly telemetry) ||
-                !active.ResolveReadOnly(in active._counters, out NativeArray<AtmosphereGraphCountersDTO>.ReadOnly counters) ||
+                !active.ResolveReadOnly(in active._telemetry, AtmosphereLogisticsBufferIds.TelemetryRing, out NativeArray<AtmosphereTelemetryEntry>.ReadOnly telemetry) ||
+                !active.ResolveReadOnly(in active._counters, AtmosphereLogisticsBufferIds.Counters, out NativeArray<AtmosphereGraphCountersDTO>.ReadOnly counters) ||
                 telemetry.Length == 0 || counters.Length == 0)
             {
                 entry = default;
@@ -243,8 +261,8 @@ namespace Hecton8.Atmosphere
             BaseAtmosphereLogisticsRuntime active = s_active;
             NativeArray<AtmosphereTelemetryEntry>.ReadOnly telemetryBuffer;
             if (active == null || active._vault == null || active._simulationScheduled ||
-                !active.ResolveReadOnly(in active._telemetry, out telemetryBuffer) ||
-                !active.ResolveReadOnly(in active._counters, out NativeArray<AtmosphereGraphCountersDTO>.ReadOnly counters) ||
+                !active.ResolveReadOnly(in active._telemetry, AtmosphereLogisticsBufferIds.TelemetryRing, out telemetryBuffer) ||
+                !active.ResolveReadOnly(in active._counters, AtmosphereLogisticsBufferIds.Counters, out NativeArray<AtmosphereGraphCountersDTO>.ReadOnly counters) ||
                 telemetryBuffer.Length == 0 || counters.Length == 0)
             {
                 return false;
@@ -260,9 +278,9 @@ namespace Hecton8.Atmosphere
         {
             BaseAtmosphereLogisticsRuntime active = s_active;
             if (active == null || active._vault == null || active._simulationScheduled ||
-                !active.ResolveReadOnly(in active._nodes, out NativeArray<AtmosphereNodeDTO>.ReadOnly nodes) ||
-                !active.ResolveReadOnly(in active._frontCells, out NativeArray<AtmosphereCellDTO>.ReadOnly cells) ||
-                !active.ResolveReadOnly(in active._counters, out NativeArray<AtmosphereGraphCountersDTO>.ReadOnly counters) ||
+                !active.ResolveReadOnly(in active._nodes, AtmosphereLogisticsBufferIds.Nodes, out NativeArray<AtmosphereNodeDTO>.ReadOnly nodes) ||
+                !active.ResolveReadOnly(in active._frontCells, AtmosphereLogisticsBufferIds.CellsFront, out NativeArray<AtmosphereCellDTO>.ReadOnly cells) ||
+                !active.ResolveReadOnly(in active._counters, AtmosphereLogisticsBufferIds.Counters, out NativeArray<AtmosphereGraphCountersDTO>.ReadOnly counters) ||
                 counters.Length == 0)
             {
                 node = default;
@@ -311,14 +329,14 @@ namespace Hecton8.Atmosphere
             _shutdown = true;
             Application.quitting -= ShutdownActive;
             CompleteSimulationForLifecycle();
-            UnlockJobBuffers();
+            ReleaseJobBufferPins();
             TryUnregisterHotSwapListener();
             UnregisterDispatcherPhases();
             ReleaseVaultHandles(_vault);
             ClearVaultHandles();
             _vault = null;
             _pendingVault = null;
-            _lockedVault = null;
+            _jobGuardVault = null;
             _hasPendingVaultRebind = false;
             _vaultInitialized = false;
             _defaultsInitialized = false;
@@ -377,7 +395,8 @@ namespace Hecton8.Atmosphere
             if (serviceSlot != GlobalRegistryServiceSlot.DataVault)
                 return;
 
-            QueueOrApplyVaultRebind(currentService as IDataVault);
+            IDataVault nextVault = currentService is IDataVault dataVault ? dataVault : null;
+            QueueOrApplyVaultRebind(nextVault);
         }
 
         private IDataVault ResolveVault()
@@ -405,7 +424,7 @@ namespace Hecton8.Atmosphere
 
         private void QueueOrApplyVaultRebind(IDataVault vault)
         {
-            if (_simulationScheduled || _lockedBufferMask != 0)
+            if (_simulationScheduled || _jobBuffersPinned)
             {
                 _pendingVault = vault;
                 _hasPendingVaultRebind = true;
@@ -417,7 +436,7 @@ namespace Hecton8.Atmosphere
 
         private void ApplyPendingVaultRebindIfSafe()
         {
-            if (!_hasPendingVaultRebind || _simulationScheduled || _lockedBufferMask != 0)
+            if (!_hasPendingVaultRebind || _simulationScheduled || _jobBuffersPinned)
                 return;
 
             ApplyVaultRebind(_pendingVault);
@@ -481,9 +500,55 @@ namespace Hecton8.Atmosphere
 
         private static bool IsOwnedVaultHandle<T>(in VaultGenerationHandle<T> handle) where T : struct
         {
-            return handle.BufferID != 0u &&
+            return IsAtmosphereLogisticsBufferId(handle.BufferID) &&
                    handle.Generation != 0u &&
                    handle.SystemID == (uint)OwnerSystemId;
+        }
+
+        private static bool IsOwnedVaultHandle<T>(
+            in VaultGenerationHandle<T> handle,
+            BufferID expectedBufferId) where T : struct
+        {
+            return handle.BufferID == ToHandleBufferId(expectedBufferId) &&
+                   handle.Generation != 0u &&
+                   handle.SystemID == (uint)OwnerSystemId;
+        }
+
+        private static bool IsAtmosphereLogisticsBufferId(uint bufferId)
+        {
+            return bufferId == ToHandleBufferId(AtmosphereLogisticsBufferIds.CellsFront) ||
+                   bufferId == ToHandleBufferId(AtmosphereLogisticsBufferIds.CellsBack) ||
+                   bufferId == ToHandleBufferId(AtmosphereLogisticsBufferIds.Nodes) ||
+                   bufferId == ToHandleBufferId(AtmosphereLogisticsBufferIds.Connections) ||
+                   bufferId == ToHandleBufferId(AtmosphereLogisticsBufferIds.EdgeOffsets) ||
+                   bufferId == ToHandleBufferId(AtmosphereLogisticsBufferIds.EdgeDestinations) ||
+                   bufferId == ToHandleBufferId(AtmosphereLogisticsBufferIds.EdgeConductance) ||
+                   bufferId == ToHandleBufferId(AtmosphereLogisticsBufferIds.EdgeWriteCursor) ||
+                   bufferId == ToHandleBufferId(AtmosphereLogisticsBufferIds.Consumers) ||
+                   bufferId == ToHandleBufferId(AtmosphereLogisticsBufferIds.ToxicSources) ||
+                   bufferId == ToHandleBufferId(AtmosphereLogisticsBufferIds.Vents) ||
+                   bufferId == ToHandleBufferId(AtmosphereLogisticsBufferIds.Counters) ||
+                   bufferId == ToHandleBufferId(AtmosphereLogisticsBufferIds.Tuning) ||
+                   bufferId == ToHandleBufferId(AtmosphereLogisticsBufferIds.TelemetryRing) ||
+                   bufferId == ToHandleBufferId(AtmosphereLogisticsBufferIds.OxygenDeltaUnits) ||
+                   bufferId == ToHandleBufferId(AtmosphereLogisticsBufferIds.CarbonDioxideDeltaUnits) ||
+                   bufferId == ToHandleBufferId(AtmosphereLogisticsBufferIds.NitrogenDeltaUnits) ||
+                   bufferId == ToHandleBufferId(AtmosphereLogisticsBufferIds.ToxinDeltaUnits) ||
+                   bufferId == ToHandleBufferId(AtmosphereLogisticsBufferIds.TemperatureDeltaMilli) ||
+                   bufferId == ToHandleBufferId(AtmosphereLogisticsBufferIds.GasRemainders) ||
+                   bufferId == ToHandleBufferId(AtmosphereLogisticsBufferIds.ShaderPayload) ||
+                   bufferId == ToHandleBufferId(AtmosphereLogisticsBufferIds.CsvScratch) ||
+                   bufferId == ToHandleBufferId(AtmosphereLogisticsBufferIds.Profiles);
+        }
+
+        private static uint ToHandleBufferId(BufferID bufferId)
+        {
+            return unchecked((uint)(int)bufferId);
+        }
+
+        private static ulong AtmosphereLogisticsMutationGuardBit(BufferID bufferId)
+        {
+            return 1UL << (unchecked((int)(uint)(int)bufferId) & 31);
         }
 
         private void ClearVaultHandles()
@@ -538,7 +603,7 @@ namespace Hecton8.Atmosphere
                     return JobHandle.CombineDependencies(dependsOn, _simulationHandle);
 
                 _simulationScheduled = false;
-                UnlockJobBuffers();
+                ReleaseJobBufferPins();
                 ApplyPendingVaultRebindIfSafe();
             }
 
@@ -547,7 +612,11 @@ namespace Hecton8.Atmosphere
                 return dependsOn;
 
             _lastDispatcherFrame = context.Frame;
+            if (!TryPinJobBuffers(vault))
+                return dependsOn;
+
             if (!TryResolveSimulationBuffers(
+                    vault,
                     out NativeArray<AtmosphereCellDTO> front,
                     out NativeArray<AtmosphereCellDTO> back,
                     out NativeArray<AtmosphereNodeDTO> nodes,
@@ -568,11 +637,9 @@ namespace Hecton8.Atmosphere
                     out NativeArray<AtmosphereGasRemainderDTO> remainders,
                     out NativeArray<AtmosphereShaderPayloadDTO> shaderPayload))
             {
+                ReleaseJobBufferPins();
                 return dependsOn;
             }
-
-            if (!TryLockJobBuffers(vault))
-                return dependsOn;
 
             bool keepLocksForScheduledJob = false;
             try
@@ -721,7 +788,7 @@ namespace Hecton8.Atmosphere
             finally
             {
                 if (!keepLocksForScheduledJob)
-                    UnlockJobBuffers();
+                    ReleaseJobBufferPins();
             }
         }
 
@@ -730,7 +797,7 @@ namespace Hecton8.Atmosphere
             IDataVault vault = ResolveVault();
             if (vault == null || !_simulationScheduled)
             {
-                UnlockJobBuffers();
+                ReleaseJobBufferPins();
                 return;
             }
 
@@ -739,8 +806,8 @@ namespace Hecton8.Atmosphere
 
             _simulationScheduled = false;
             _lastMicros = ElapsedMicroseconds(_jobScheduleTimestamp);
-            if (Resolve(in _telemetry, out NativeArray<AtmosphereTelemetryEntry> telemetry) &&
-                Resolve(in _counters, out NativeArray<AtmosphereGraphCountersDTO> counters) &&
+            if (Resolve(in _telemetry, AtmosphereLogisticsBufferIds.TelemetryRing, out NativeArray<AtmosphereTelemetryEntry> telemetry) &&
+                Resolve(in _counters, AtmosphereLogisticsBufferIds.Counters, out NativeArray<AtmosphereGraphCountersDTO> counters) &&
                 telemetry.Length > 0 && counters.Length > 0)
             {
                 int cursor = counters[0].TelemetryCursor - 1;
@@ -760,7 +827,7 @@ namespace Hecton8.Atmosphere
                     _dumpWrittenThisFault = false;
             }
 
-            UnlockJobBuffers();
+            ReleaseJobBufferPins();
         }
 
         private void CompleteSimulationForLifecycle()
@@ -770,12 +837,12 @@ namespace Hecton8.Atmosphere
 
             DispatcherJobFence.TryComplete(ref _simulationHandle, forceComplete: true);
             _simulationScheduled = false;
-            UnlockJobBuffers();
+            ReleaseJobBufferPins();
         }
 
         private void VisualSyncTick(in DispatcherTimingDTO timing)
         {
-            if (Resolve(in _shaderPayload, out NativeArray<AtmosphereShaderPayloadDTO> payload) && payload.Length > 0)
+            if (Resolve(in _shaderPayload, AtmosphereLogisticsBufferIds.ShaderPayload, out NativeArray<AtmosphereShaderPayloadDTO> payload) && payload.Length > 0)
             {
                 AtmosphereShaderPayloadDTO scalar = payload[0];
                 Shader.SetGlobalVector(_GasScalarsShaderId, new Vector4(scalar.Oxygen01, scalar.CarbonDioxide01, scalar.Toxin01, scalar.Flow01));
@@ -881,7 +948,7 @@ namespace Hecton8.Atmosphere
 
         private void ApplyQualityAndEditorTuning(IDataVault vault, in DispatcherTimingDTO timing)
         {
-            if (!Resolve(in _tuning, out NativeArray<AtmosphereTuningDTO> tuning) || tuning.Length == 0)
+            if (!Resolve(in _tuning, AtmosphereLogisticsBufferIds.Tuning, out NativeArray<AtmosphereTuningDTO> tuning) || tuning.Length == 0)
                 return;
 
             AtmosphereTuningDTO tune = tuning[0];
@@ -899,8 +966,8 @@ namespace Hecton8.Atmosphere
 
         private void IngestExternalGasSignals(IDataVault vault)
         {
-            if (!Resolve(in _sources, out NativeArray<AtmosphereToxicSourceDTO> sources) ||
-                !Resolve(in _counters, out NativeArray<AtmosphereGraphCountersDTO> counters) ||
+            if (!Resolve(in _sources, AtmosphereLogisticsBufferIds.ToxicSources, out NativeArray<AtmosphereToxicSourceDTO> sources) ||
+                !Resolve(in _counters, AtmosphereLogisticsBufferIds.Counters, out NativeArray<AtmosphereGraphCountersDTO> counters) ||
                 sources.Length == 0 || counters.Length == 0)
             {
                 return;
@@ -960,8 +1027,8 @@ namespace Hecton8.Atmosphere
 
         private void IngestPlayerBreathingSignals(IDataVault vault)
         {
-            if (!Resolve(in _consumers, out NativeArray<AtmosphereConsumerDTO> consumers) ||
-                !Resolve(in _counters, out NativeArray<AtmosphereGraphCountersDTO> counters) ||
+            if (!Resolve(in _consumers, AtmosphereLogisticsBufferIds.Consumers, out NativeArray<AtmosphereConsumerDTO> consumers) ||
+                !Resolve(in _counters, AtmosphereLogisticsBufferIds.Counters, out NativeArray<AtmosphereGraphCountersDTO> counters) ||
                 consumers.Length == 0 || counters.Length == 0)
             {
                 return;
@@ -1003,8 +1070,8 @@ namespace Hecton8.Atmosphere
         private void MonitorGasProfileCsv(IDataVault vault)
         {
             if (!File.Exists(_csvPath) ||
-                !Resolve(in _csvScratch, out NativeArray<byte> scratch) ||
-                !Resolve(in _profiles, out NativeArray<AtmosphereGasProfileDTO> profiles))
+                !Resolve(in _csvScratch, AtmosphereLogisticsBufferIds.CsvScratch, out NativeArray<byte> scratch) ||
+                !Resolve(in _profiles, AtmosphereLogisticsBufferIds.Profiles, out NativeArray<AtmosphereGasProfileDTO> profiles))
             {
                 return;
             }
@@ -1020,7 +1087,7 @@ namespace Hecton8.Atmosphere
 
             ReadOnlySpan<byte> span = new ReadOnlySpan<byte>((byte*)NativeArrayUnsafeUtility.GetUnsafeReadOnlyPtr(scratch), math.min(bytesRead, scratch.Length));
             if (TryParseGasProfilesCsv(span, profiles, out int parsed) &&
-                Resolve(in _tuning, out NativeArray<AtmosphereTuningDTO> tuning) &&
+                Resolve(in _tuning, AtmosphereLogisticsBufferIds.Tuning, out NativeArray<AtmosphereTuningDTO> tuning) &&
                 tuning.Length > 0 && parsed > 0)
             {
                 AtmosphereGasProfileDTO profile = profiles[0];
@@ -1119,22 +1186,23 @@ namespace Hecton8.Atmosphere
             edgeConductance = default;
             edgeWriteCursor = default;
 
-            return Resolve(in _nodes, out nodes) &&
-                   Resolve(in _connections, out connections) &&
-                   Resolve(in _frontCells, out front) &&
-                   Resolve(in _backCells, out back) &&
-                   Resolve(in _consumers, out consumers) &&
-                   Resolve(in _sources, out sources) &&
-                   Resolve(in _vents, out vents) &&
-                   Resolve(in _counters, out counters) &&
-                   Resolve(in _tuning, out tuning) &&
-                   Resolve(in _edgeOffsets, out edgeOffsets) &&
-                   Resolve(in _edgeDestinations, out edgeDestinations) &&
-                   Resolve(in _edgeConductance, out edgeConductance) &&
-                   Resolve(in _edgeWriteCursor, out edgeWriteCursor);
+            return Resolve(in _nodes, AtmosphereLogisticsBufferIds.Nodes, out nodes) &&
+                   Resolve(in _connections, AtmosphereLogisticsBufferIds.Connections, out connections) &&
+                   Resolve(in _frontCells, AtmosphereLogisticsBufferIds.CellsFront, out front) &&
+                   Resolve(in _backCells, AtmosphereLogisticsBufferIds.CellsBack, out back) &&
+                   Resolve(in _consumers, AtmosphereLogisticsBufferIds.Consumers, out consumers) &&
+                   Resolve(in _sources, AtmosphereLogisticsBufferIds.ToxicSources, out sources) &&
+                   Resolve(in _vents, AtmosphereLogisticsBufferIds.Vents, out vents) &&
+                   Resolve(in _counters, AtmosphereLogisticsBufferIds.Counters, out counters) &&
+                   Resolve(in _tuning, AtmosphereLogisticsBufferIds.Tuning, out tuning) &&
+                   Resolve(in _edgeOffsets, AtmosphereLogisticsBufferIds.EdgeOffsets, out edgeOffsets) &&
+                   Resolve(in _edgeDestinations, AtmosphereLogisticsBufferIds.EdgeDestinations, out edgeDestinations) &&
+                   Resolve(in _edgeConductance, AtmosphereLogisticsBufferIds.EdgeConductance, out edgeConductance) &&
+                   Resolve(in _edgeWriteCursor, AtmosphereLogisticsBufferIds.EdgeWriteCursor, out edgeWriteCursor);
         }
 
         private bool TryResolveSimulationBuffers(
+            IDataVault vault,
             out NativeArray<AtmosphereCellDTO> front,
             out NativeArray<AtmosphereCellDTO> back,
             out NativeArray<AtmosphereNodeDTO> nodes,
@@ -1175,31 +1243,42 @@ namespace Hecton8.Atmosphere
             remainders = default;
             shaderPayload = default;
 
-            return Resolve(in _frontCells, out front) &&
-                   Resolve(in _backCells, out back) &&
-                   Resolve(in _nodes, out nodes) &&
-                   Resolve(in _edgeOffsets, out edgeOffsets) &&
-                   Resolve(in _edgeDestinations, out edgeDestinations) &&
-                   Resolve(in _edgeConductance, out edgeConductance) &&
-                   Resolve(in _consumers, out consumers) &&
-                   Resolve(in _sources, out sources) &&
-                   Resolve(in _vents, out vents) &&
-                   Resolve(in _counters, out counters) &&
-                   Resolve(in _tuning, out tuning) &&
-                   Resolve(in _telemetry, out telemetry) &&
-                   Resolve(in _oxygenDeltaUnits, out oxygenDelta) &&
-                   Resolve(in _carbonDioxideDeltaUnits, out carbonDioxideDelta) &&
-                   Resolve(in _nitrogenDeltaUnits, out nitrogenDelta) &&
-                   Resolve(in _toxinDeltaUnits, out toxinDelta) &&
-                   Resolve(in _temperatureDeltaMilli, out temperatureDelta) &&
-                   Resolve(in _remainders, out remainders) &&
-                   Resolve(in _shaderPayload, out shaderPayload);
+            return Resolve(vault, in _frontCells, AtmosphereLogisticsBufferIds.CellsFront, out front) &&
+                   Resolve(vault, in _backCells, AtmosphereLogisticsBufferIds.CellsBack, out back) &&
+                   Resolve(vault, in _nodes, AtmosphereLogisticsBufferIds.Nodes, out nodes) &&
+                   Resolve(vault, in _edgeOffsets, AtmosphereLogisticsBufferIds.EdgeOffsets, out edgeOffsets) &&
+                   Resolve(vault, in _edgeDestinations, AtmosphereLogisticsBufferIds.EdgeDestinations, out edgeDestinations) &&
+                   Resolve(vault, in _edgeConductance, AtmosphereLogisticsBufferIds.EdgeConductance, out edgeConductance) &&
+                   Resolve(vault, in _consumers, AtmosphereLogisticsBufferIds.Consumers, out consumers) &&
+                   Resolve(vault, in _sources, AtmosphereLogisticsBufferIds.ToxicSources, out sources) &&
+                   Resolve(vault, in _vents, AtmosphereLogisticsBufferIds.Vents, out vents) &&
+                   Resolve(vault, in _counters, AtmosphereLogisticsBufferIds.Counters, out counters) &&
+                   Resolve(vault, in _tuning, AtmosphereLogisticsBufferIds.Tuning, out tuning) &&
+                   Resolve(vault, in _telemetry, AtmosphereLogisticsBufferIds.TelemetryRing, out telemetry) &&
+                   Resolve(vault, in _oxygenDeltaUnits, AtmosphereLogisticsBufferIds.OxygenDeltaUnits, out oxygenDelta) &&
+                   Resolve(vault, in _carbonDioxideDeltaUnits, AtmosphereLogisticsBufferIds.CarbonDioxideDeltaUnits, out carbonDioxideDelta) &&
+                   Resolve(vault, in _nitrogenDeltaUnits, AtmosphereLogisticsBufferIds.NitrogenDeltaUnits, out nitrogenDelta) &&
+                   Resolve(vault, in _toxinDeltaUnits, AtmosphereLogisticsBufferIds.ToxinDeltaUnits, out toxinDelta) &&
+                   Resolve(vault, in _temperatureDeltaMilli, AtmosphereLogisticsBufferIds.TemperatureDeltaMilli, out temperatureDelta) &&
+                   Resolve(vault, in _remainders, AtmosphereLogisticsBufferIds.GasRemainders, out remainders) &&
+                   Resolve(vault, in _shaderPayload, AtmosphereLogisticsBufferIds.ShaderPayload, out shaderPayload);
         }
 
-        private bool Resolve<T>(in VaultGenerationHandle<T> handle, out NativeArray<T> buffer) where T : struct
+        private bool Resolve<T>(
+            in VaultGenerationHandle<T> handle,
+            BufferID expectedBufferId,
+            out NativeArray<T> buffer) where T : struct
         {
-            IDataVault vault = ResolveVault();
-            if (vault == null || vault.IsCompactionFenceActive || handle.Generation == 0u)
+            return Resolve(ResolveVault(), in handle, expectedBufferId, out buffer);
+        }
+
+        private bool Resolve<T>(
+            IDataVault vault,
+            in VaultGenerationHandle<T> handle,
+            BufferID expectedBufferId,
+            out NativeArray<T> buffer) where T : struct
+        {
+            if (vault == null || vault.IsCompactionFenceActive || !IsOwnedVaultHandle(in handle, expectedBufferId))
             {
                 buffer = default;
                 return false;
@@ -1208,11 +1287,14 @@ namespace Hecton8.Atmosphere
             return vault.TryResolveHandle(in handle, out buffer);
         }
 
-        private bool ResolveReadOnly<T>(in VaultGenerationHandle<T> handle, out NativeArray<T>.ReadOnly buffer) where T : struct
+        private bool ResolveReadOnly<T>(
+            in VaultGenerationHandle<T> handle,
+            BufferID expectedBufferId,
+            out NativeArray<T>.ReadOnly buffer) where T : struct
         {
             buffer = default;
             IDataVault vault = _vault;
-            if (vault == null || vault.IsCompactionFenceActive || handle.Generation == 0u)
+            if (vault == null || vault.IsCompactionFenceActive || !IsOwnedVaultHandle(in handle, expectedBufferId))
             {
                 return false;
             }
@@ -1221,110 +1303,80 @@ namespace Hecton8.Atmosphere
                    buffer.IsCreated;
         }
 
-        private bool TryLockJobBuffers(IDataVault vault)
+        private bool TryPinJobBuffers(IDataVault vault)
         {
-            UnlockJobBuffers();
-            if (vault == null || vault.IsCompactionFenceActive)
+            ReleaseJobBufferPins();
+            if (vault == null || vault.IsCompactionFenceActive || !TryValidateSimulationBuffers(vault))
                 return false;
 
-            _lockedVault = vault;
-            _lockedFrontBufferId = ActiveFrontBufferId();
-            _lockedBackBufferId = ActiveBackBufferId();
-            if (!TryLock(vault, _lockedFrontBufferId, 1 << 0)) return false;
-            if (!TryLock(vault, _lockedBackBufferId, 1 << 1)) return false;
-            if (!TryLock(vault, AtmosphereLogisticsBufferIds.EdgeOffsets, 1 << 2)) return false;
-            if (!TryLock(vault, AtmosphereLogisticsBufferIds.EdgeDestinations, 1 << 3)) return false;
-            if (!TryLock(vault, AtmosphereLogisticsBufferIds.EdgeConductance, 1 << 4)) return false;
-            if (!TryLock(vault, AtmosphereLogisticsBufferIds.Counters, 1 << 5)) return false;
-            if (!TryLock(vault, AtmosphereLogisticsBufferIds.TelemetryRing, 1 << 6)) return false;
-            if (!TryLock(vault, AtmosphereLogisticsBufferIds.OxygenDeltaUnits, 1 << 7)) return false;
-            if (!TryLock(vault, AtmosphereLogisticsBufferIds.CarbonDioxideDeltaUnits, 1 << 8)) return false;
-            if (!TryLock(vault, AtmosphereLogisticsBufferIds.NitrogenDeltaUnits, 1 << 9)) return false;
-            if (!TryLock(vault, AtmosphereLogisticsBufferIds.ToxinDeltaUnits, 1 << 10)) return false;
-            if (!TryLock(vault, AtmosphereLogisticsBufferIds.TemperatureDeltaMilli, 1 << 11)) return false;
-            if (!TryLock(vault, AtmosphereLogisticsBufferIds.GasRemainders, 1 << 12)) return false;
-            if (!TryLock(vault, AtmosphereLogisticsBufferIds.ShaderPayload, 1 << 13)) return false;
-            if (!TryLock(vault, AtmosphereLogisticsBufferIds.Nodes, 1 << 14)) return false;
-            if (!TryLock(vault, AtmosphereLogisticsBufferIds.Consumers, 1 << 15)) return false;
-            if (!TryLock(vault, AtmosphereLogisticsBufferIds.ToxicSources, 1 << 16)) return false;
-            if (!TryLock(vault, AtmosphereLogisticsBufferIds.Vents, 1 << 17)) return false;
-            if (!TryLock(vault, AtmosphereLogisticsBufferIds.Tuning, 1 << 18)) return false;
-            return true;
-        }
-
-        private bool TryLock(IDataVault vault, BufferID bufferId, int bit)
-        {
-            if (vault.IsCompactionFenceActive || !vault.TryLockBuffer(bufferId, OwnerSystemId))
+            bool acquired = false;
+            try
             {
-                UnlockJobBuffers();
-                return false;
+                if (!vault.TryAcquireMutationGuard(AtmosphereJobMutationGuardMask))
+                    return false;
+
+                acquired = true;
+                if (!TryValidateSimulationBuffers(vault))
+                    return false;
+
+                _jobGuardVault = vault;
+                _jobBuffersPinned = true;
+                acquired = false;
+                return true;
             }
-
-            _lockedBufferMask |= bit;
-            return true;
+            finally
+            {
+                if (acquired)
+                    vault.ReleaseMutationGuard(AtmosphereJobMutationGuardMask);
+            }
         }
 
-        private void UnlockJobBuffers()
+        private bool TryValidateSimulationBuffers(IDataVault vault)
         {
-            IDataVault vault = _lockedVault != null ? _lockedVault : _vault;
-            if (vault == null || _lockedBufferMask == 0)
+            return TryResolveSimulationBuffers(
+                vault,
+                out _,
+                out _,
+                out _,
+                out _,
+                out _,
+                out _,
+                out _,
+                out _,
+                out _,
+                out _,
+                out _,
+                out _,
+                out _,
+                out _,
+                out _,
+                out _,
+                out _,
+                out _,
+                out _);
+        }
+
+        private void ReleaseJobBufferPins()
+        {
+            if (!_jobBuffersPinned)
             {
-                _lockedBufferMask = 0;
-                _lockedVault = null;
+                _jobGuardVault = null;
                 ApplyPendingVaultRebindIfSafe();
                 return;
             }
 
-            if ((_lockedBufferMask & (1 << 18)) != 0) vault.TryUnlockBuffer(AtmosphereLogisticsBufferIds.Tuning, OwnerSystemId);
-            if ((_lockedBufferMask & (1 << 17)) != 0) vault.TryUnlockBuffer(AtmosphereLogisticsBufferIds.Vents, OwnerSystemId);
-            if ((_lockedBufferMask & (1 << 16)) != 0) vault.TryUnlockBuffer(AtmosphereLogisticsBufferIds.ToxicSources, OwnerSystemId);
-            if ((_lockedBufferMask & (1 << 15)) != 0) vault.TryUnlockBuffer(AtmosphereLogisticsBufferIds.Consumers, OwnerSystemId);
-            if ((_lockedBufferMask & (1 << 14)) != 0) vault.TryUnlockBuffer(AtmosphereLogisticsBufferIds.Nodes, OwnerSystemId);
-            if ((_lockedBufferMask & (1 << 13)) != 0) vault.TryUnlockBuffer(AtmosphereLogisticsBufferIds.ShaderPayload, OwnerSystemId);
-            if ((_lockedBufferMask & (1 << 12)) != 0) vault.TryUnlockBuffer(AtmosphereLogisticsBufferIds.GasRemainders, OwnerSystemId);
-            if ((_lockedBufferMask & (1 << 11)) != 0) vault.TryUnlockBuffer(AtmosphereLogisticsBufferIds.TemperatureDeltaMilli, OwnerSystemId);
-            if ((_lockedBufferMask & (1 << 10)) != 0) vault.TryUnlockBuffer(AtmosphereLogisticsBufferIds.ToxinDeltaUnits, OwnerSystemId);
-            if ((_lockedBufferMask & (1 << 9)) != 0) vault.TryUnlockBuffer(AtmosphereLogisticsBufferIds.NitrogenDeltaUnits, OwnerSystemId);
-            if ((_lockedBufferMask & (1 << 8)) != 0) vault.TryUnlockBuffer(AtmosphereLogisticsBufferIds.CarbonDioxideDeltaUnits, OwnerSystemId);
-            if ((_lockedBufferMask & (1 << 7)) != 0) vault.TryUnlockBuffer(AtmosphereLogisticsBufferIds.OxygenDeltaUnits, OwnerSystemId);
-            if ((_lockedBufferMask & (1 << 6)) != 0) vault.TryUnlockBuffer(AtmosphereLogisticsBufferIds.TelemetryRing, OwnerSystemId);
-            if ((_lockedBufferMask & (1 << 5)) != 0) vault.TryUnlockBuffer(AtmosphereLogisticsBufferIds.Counters, OwnerSystemId);
-            if ((_lockedBufferMask & (1 << 4)) != 0) vault.TryUnlockBuffer(AtmosphereLogisticsBufferIds.EdgeConductance, OwnerSystemId);
-            if ((_lockedBufferMask & (1 << 3)) != 0) vault.TryUnlockBuffer(AtmosphereLogisticsBufferIds.EdgeDestinations, OwnerSystemId);
-            if ((_lockedBufferMask & (1 << 2)) != 0) vault.TryUnlockBuffer(AtmosphereLogisticsBufferIds.EdgeOffsets, OwnerSystemId);
-            if ((_lockedBufferMask & (1 << 1)) != 0) vault.TryUnlockBuffer(_lockedBackBufferId, OwnerSystemId);
-            if ((_lockedBufferMask & 1) != 0) vault.TryUnlockBuffer(_lockedFrontBufferId, OwnerSystemId);
-            _lockedBufferMask = 0;
-            _lockedVault = null;
-            _lockedFrontBufferId = default;
-            _lockedBackBufferId = default;
+            IDataVault vault = _jobGuardVault ?? _vault;
+            if (vault != null)
+                vault.ReleaseMutationGuard(AtmosphereJobMutationGuardMask);
+
+            _jobGuardVault = null;
+            _jobBuffersPinned = false;
             ApplyPendingVaultRebindIfSafe();
-        }
-
-        private BufferID ActiveFrontBufferId()
-        {
-            return ResolveActiveCellBufferId(_frontCells.BufferID, AtmosphereLogisticsBufferIds.CellsFront);
-        }
-
-        private BufferID ActiveBackBufferId()
-        {
-            return ResolveActiveCellBufferId(_backCells.BufferID, AtmosphereLogisticsBufferIds.CellsBack);
-        }
-
-        private static BufferID ResolveActiveCellBufferId(uint bufferId, BufferID fallback)
-        {
-            if (bufferId == AtmosphereLogisticsBufferIds.CellsFrontValue)
-                return AtmosphereLogisticsBufferIds.CellsFront;
-
-            if (bufferId == AtmosphereLogisticsBufferIds.CellsBackValue)
-                return AtmosphereLogisticsBufferIds.CellsBack;
-
-            return fallback;
         }
 
         private void WriteDump(IDataVault vault)
         {
-            if (!Resolve(in _telemetry, out NativeArray<AtmosphereTelemetryEntry> telemetry) || telemetry.Length == 0)
+            if (!Resolve(in _telemetry, AtmosphereLogisticsBufferIds.TelemetryRing, out NativeArray<AtmosphereTelemetryEntry> telemetry) || telemetry.Length == 0)
                 return;
 
             _dumpWrittenThisFault = true;

@@ -83,6 +83,7 @@ namespace Hecton8.Crafting
 
         private string _cachedCraftText;
         private string _cachedCostSummary;
+        private string _requiredScanEntryIdNormalized = string.Empty;
         private uint _requiredScanEntryHash;
         private int _requiredAnchoredBiomeFamilyHashId;
         private ulong _recipeMask;
@@ -117,16 +118,28 @@ namespace Hecton8.Crafting
         /// <summary>
         /// Localized display name used by Fabricator and PDA recipe surfaces.
         /// </summary>
-        public string DisplayNameOrFallback => resultItem != null && !string.IsNullOrWhiteSpace(resultItem.itemName)
-            ? ResolveLocalizedRecipeName(resultItem.itemName)
-            : ResolveLocalizedRecipeName(recipeName);
+        public string DisplayNameOrFallback => ResolveDisplayNameOrFallback(null);
 
         /// <summary>
         /// Localized description used by Fabricator detail surfaces.
         /// </summary>
-        public string DescriptionOrFallback => resultItem != null && !string.IsNullOrWhiteSpace(resultItem.description)
-            ? ResolveLocalizedRecipeDescription(resultItem.description)
-            : ResolveLocalizedRecipeDescription(description);
+        public string DescriptionOrFallback => ResolveDescriptionOrFallback(null);
+
+        public string ResolveDisplayNameOrFallback(ILocalizationTextReadModel manager)
+        {
+            string fallback = resultItem != null && !string.IsNullOrWhiteSpace(resultItem.itemName)
+                ? resultItem.itemName
+                : recipeName;
+            return ResolveLocalizedRecipeName(manager, fallback);
+        }
+
+        public string ResolveDescriptionOrFallback(ILocalizationTextReadModel manager)
+        {
+            string fallback = resultItem != null && !string.IsNullOrWhiteSpace(resultItem.description)
+                ? resultItem.description
+                : description;
+            return ResolveLocalizedRecipeDescription(manager, fallback);
+        }
 
         /// <summary>
         /// Localized craft CTA used by prompt-style UI.
@@ -138,11 +151,16 @@ namespace Hecton8.Crafting
 
         public bool TryWriteDisplayNameOrFallback(char[] destination, out int length)
         {
+            return TryWriteDisplayNameOrFallback(null, destination, out length);
+        }
+
+        public bool TryWriteDisplayNameOrFallback(ILocalizationTextReadModel manager, char[] destination, out int length)
+        {
             string fallback = resultItem != null && !string.IsNullOrWhiteSpace(resultItem.itemName)
                 ? resultItem.itemName
                 : recipeName;
             return localizedRecipeName.TryCopyResolvedOrFallback(
-                Hecton8.Core.GlobalRegistry.LocalizationText,
+                manager,
                 destination,
                 out length,
                 fallback);
@@ -168,9 +186,7 @@ namespace Hecton8.Crafting
                                                  (requiredAnchoredBiomeMatrixId > 0 ||
                                                   !string.IsNullOrWhiteSpace(requiredAnchoredBiomeFamilyId));
 
-        public string RequiredScanEntryId => string.IsNullOrWhiteSpace(requiredScanEntryId)
-            ? string.Empty
-            : requiredScanEntryId.Trim();
+        public string RequiredScanEntryId => _requiredScanEntryIdNormalized ?? string.Empty;
         public uint RequiredScanEntryHash => _requiredScanEntryHash;
         public int RequiredAnchoredBiomeFamilyHashId => _requiredAnchoredBiomeFamilyHashId;
         public ulong RecipeMask => _recipeMask;
@@ -237,9 +253,15 @@ namespace Hecton8.Crafting
 
         private void RefreshRuntimeHashes()
         {
-            _requiredScanEntryHash = ScanEvents.ComputeEntryHash(requiredScanEntryId);
+            _requiredScanEntryIdNormalized = NormalizeIdentifierCold(requiredScanEntryId);
+            _requiredScanEntryHash = ScanEvents.ComputeEntryHash(_requiredScanEntryIdNormalized);
             _requiredAnchoredBiomeFamilyHashId = LocHash.ComputeAsciiLowerInvariant(requiredAnchoredBiomeFamilyId);
             _recipeMask = BuildRecipeMask();
+        }
+
+        private static string NormalizeIdentifierCold(string value)
+        {
+            return string.IsNullOrWhiteSpace(value) ? string.Empty : value.Trim();
         }
 
         private ulong BuildRecipeMask()
@@ -258,15 +280,15 @@ namespace Hecton8.Crafting
             return mask;
         }
 
-        private string ResolveLocalizedRecipeName(string fallback)
+        private string ResolveLocalizedRecipeName(ILocalizationTextReadModel manager, string fallback)
         {
-            string resolved = localizedRecipeName.ResolveOrFallback(string.Empty);
+            string resolved = localizedRecipeName.ResolveOrFallback(manager, string.Empty);
             return !string.IsNullOrWhiteSpace(resolved) ? resolved : (fallback ?? string.Empty);
         }
 
-        private string ResolveLocalizedRecipeDescription(string fallback)
+        private string ResolveLocalizedRecipeDescription(ILocalizationTextReadModel manager, string fallback)
         {
-            string resolved = localizedRecipeDescription.ResolveOrFallback(string.Empty);
+            string resolved = localizedRecipeDescription.ResolveOrFallback(manager, string.Empty);
             return !string.IsNullOrWhiteSpace(resolved) ? resolved : (fallback ?? string.Empty);
         }
     }

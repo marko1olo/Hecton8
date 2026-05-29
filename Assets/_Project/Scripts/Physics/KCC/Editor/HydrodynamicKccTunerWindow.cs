@@ -143,13 +143,6 @@ namespace Hecton8.Physics.KCC.Editor
                 return;
             }
 
-            bool environmentAcquired = TryAcquireEditorWriteView(
-                vault,
-                BufferID.ShinobuKccEnvironmentProfile,
-                1,
-                out VaultGenerationHandle<KccEnvironmentProfileDTO> environmentHandle,
-                out NativeArray<KccEnvironmentProfileDTO> environmentBuffer);
-
             try
             {
                 HydrodynamicKccTuningDTO tuning = tuningBuffer[0];
@@ -162,23 +155,34 @@ namespace Hecton8.Physics.KCC.Editor
                 tuning.ProfileHash = HydrodynamicKccMath.SourceHash;
                 tuning.Flags = 1u;
                 tuningBuffer[0] = tuning;
-
-                if (environmentAcquired)
-                {
-                    environmentBuffer[0] = new KccEnvironmentProfileDTO
-                    {
-                        MaxSlopeAngle = math.clamp(_maxSlopeAngle.value, 1f, 89f),
-                        CurrentAdvectionScalar = math.clamp(_currentAdvection.value, 0f, 8f),
-                        FrictionCoefficient = math.clamp(_environmentFriction.value, 0f, 8f),
-                        ExhaustionPenaltyMax = math.saturate(_exhaustionPenalty.value)
-                    };
-                }
             }
             finally
             {
-                if (environmentAcquired)
-                    vault.ReleaseWriteLock(in environmentHandle, SystemID.CoreDiagnostics);
                 vault.ReleaseWriteLock(in tuningHandle, SystemID.CoreDiagnostics);
+            }
+
+            if (!TryAcquireEditorWriteView(
+                    vault,
+                    BufferID.ShinobuKccEnvironmentProfile,
+                    1,
+                    out VaultGenerationHandle<KccEnvironmentProfileDTO> environmentHandle,
+                    out NativeArray<KccEnvironmentProfileDTO> environmentBuffer))
+            {
+                return;
+            }
+
+            try
+            {
+                KccEnvironmentProfileDTO environment = default;
+                environment.MaxSlopeAngle = math.clamp(_maxSlopeAngle.value, 1f, 89f);
+                environment.CurrentAdvectionScalar = math.clamp(_currentAdvection.value, 0f, 8f);
+                environment.FrictionCoefficient = math.clamp(_environmentFriction.value, 0f, 8f);
+                environment.ExhaustionPenaltyMax = math.saturate(_exhaustionPenalty.value);
+                environmentBuffer[0] = environment;
+            }
+            finally
+            {
+                vault.ReleaseWriteLock(in environmentHandle, SystemID.CoreDiagnostics);
             }
         }
 

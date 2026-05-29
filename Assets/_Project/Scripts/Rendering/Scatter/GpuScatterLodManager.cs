@@ -125,6 +125,7 @@ namespace Hecton8.Rendering.Scatter
     [AddComponentMenu("Hecton8/Rendering/GPU Scatter LOD Manager")]
     public sealed unsafe class GpuScatterLodManager : MonoBehaviour,
         ILateFrameTickable,
+        ISlowTickable,
         IOriginShiftListener,
         IGlobalRegistryHotSwapListener,
         IGlobalRegistryHotSwapRefListener
@@ -355,10 +356,14 @@ namespace Hecton8.Rendering.Scatter
         private int _lastVisibleFloraCount;
         private int _nextMissingRegistryRefreshFrame;
         private bool _registeredLateFrame;
+        private bool _registeredSlowTick;
         private bool _hotSwapRegistered;
         private bool _originShiftListenerRegistered;
+        private bool _registryRefreshRequested;
         private bool _gpuReady;
         private bool _forceUpload;
+        private bool _coldSupportsComputeShaders;
+        private bool _coldSupportsSetConstantBuffer;
         private bool _metadataDefaultsInitialized;
         private bool _hasMatrixGeneration;
         private bool _hasMetadataGeneration;
@@ -473,6 +478,7 @@ namespace Hecton8.Rendering.Scatter
             _cameraPlanes = new Plane[FrustumPlaneCount]; // COLD ALLOC: Plane[6] - camera frustum cache - owner: GpuScatterLodManager
             _frustumPlaneUpload = new Vector4[FrustumPlaneCount]; // COLD ALLOC: Vector4[6] - compute frustum upload cache - owner: GpuScatterLodManager
             _materialProperties = new MaterialPropertyBlock(); // COLD ALLOC: MaterialPropertyBlock[1] - per-draw indirect flora shader state - owner: GpuScatterLodManager
+            CacheGraphicsCapabilitiesCold();
             instanceCapacity = math.max(1, instanceCapacity);
             _abiLayoutValid = ValidateAbiLayoutCold();
             if (!_abiLayoutValid)
@@ -488,6 +494,12 @@ namespace Hecton8.Rendering.Scatter
             RefreshAupOffsetCold();
         }
 
+        private void CacheGraphicsCapabilitiesCold()
+        {
+            _coldSupportsComputeShaders = SystemInfo.supportsComputeShaders;
+            _coldSupportsSetConstantBuffer = SystemInfo.supportsSetConstantBuffer;
+        }
+
         private void OnEnable()
         {
             if (!_abiLayoutValid)
@@ -498,12 +510,14 @@ namespace Hecton8.Rendering.Scatter
             RefreshContinuousQualityPolicy(forceCommit: true);
             TryRegisterOriginShiftListener();
             TryRegisterLateFrame();
+            TryRegisterSlowTick();
             _forceUpload = true;
         }
 
         private void OnDisable()
         {
             TryUnregisterLateFrame();
+            TryUnregisterSlowTick();
             TryUnregisterOriginShiftListener();
             TryUnregisterHotSwapListener();
             ReleaseOwnedVaultHandles(_dataVault);
@@ -526,6 +540,15 @@ namespace Hecton8.Rendering.Scatter
         public void LateFrameTick()
         {
             RunScatterVisualTick(math.max(0f, SystemDispatcher.CurrentFrameDeltaTime));
+        }
+
+        public void SlowTick()
+        {
+            if (!_registryRefreshRequested && _registryDataVault != null)
+                return;
+
+            RefreshCachedRegistryServices();
+            _registryRefreshRequested = _registryDataVault == null;
         }
 
         private void RunScatterVisualTick(float deltaTime)
@@ -638,6 +661,23 @@ namespace Hecton8.Rendering.Scatter
             _registeredLateFrame = false;
         }
 
+        private void TryRegisterSlowTick()
+        {
+            if (_registeredSlowTick || !Application.isPlaying)
+                return;
+
+            _registeredSlowTick = GlobalRegistry.TryRegisterSlowTickable(this, PriorityLayer.Environment);
+        }
+
+        private void TryUnregisterSlowTick()
+        {
+            if (!_registeredSlowTick)
+                return;
+
+            GlobalRegistry.UnregisterSlowTickable(this, PriorityLayer.Environment);
+            _registeredSlowTick = false;
+        }
+
         private void TryRegisterHotSwapListener()
         {
             if (!_hotSwapRegistered)
@@ -688,7 +728,8 @@ namespace Hecton8.Rendering.Scatter
             if (frame < _nextMissingRegistryRefreshFrame)
                 return;
 
-            RefreshCachedRegistryServices();
+            _registryRefreshRequested = true;
+            _nextMissingRegistryRefreshFrame = frame + MissingRegistryRefreshStrideFrames;
         }
 
         private void ApplyRegistryServiceRebind(GlobalRegistryServiceSlot serviceSlot, object currentService)
@@ -716,7 +757,7 @@ namespace Hecton8.Rendering.Scatter
 
             _gpuReady = false;
             if (scatterCullCompute == null ||
-                !SystemInfo.supportsComputeShaders ||
+                !_coldSupportsComputeShaders ||
                 floraMesh == null ||
                 !HasAnyConfiguredMaterial())
                 return false;
@@ -986,7 +1027,7 @@ namespace Hecton8.Rendering.Scatter
                     GraphicsBuffer.IndirectDrawIndexedArgs.size);
             }
 
-            if (SystemInfo.supportsSetConstantBuffer &&
+            if (_coldSupportsSetConstantBuffer &&
                 (_frameConstantsBufferA == null || !_frameConstantsBufferA.IsValid() ||
                  _frameConstantsBufferB == null || !_frameConstantsBufferB.IsValid()))
             {
@@ -1369,7 +1410,7 @@ namespace Hecton8.Rendering.Scatter
                 FrustumPlane5 = _frustumPlaneUpload[5]
             };
 
-            if (SystemInfo.supportsSetConstantBuffer &&
+            if (_coldSupportsSetConstantBuffer &&
                 TryResolveFrameConstantsWriteBuffer(out GraphicsBuffer constantsWriteBuffer))
             {
                 _frameConstantsUpload[0] = constants;
@@ -2063,9 +2104,9 @@ namespace Hecton8.Rendering.Scatter
             _cpuVisibilityMaskHandle = default;
         }
 
-        private static int ResolveKernel(ComputeShader compute, string kernelName)
+        private int ResolveKernel(ComputeShader compute, string kernelName)
         {
-            if (compute == null || !SystemInfo.supportsComputeShaders || !compute.HasKernel(kernelName))
+            if (compute == null || !_coldSupportsComputeShaders || !compute.HasKernel(kernelName))
                 return -1;
 
             int kernel = compute.FindKernel(kernelName);
@@ -2076,7 +2117,7 @@ namespace Hecton8.Rendering.Scatter
         {
             if (scatterCullCompute == null ||
                 _scatterCullKernel < 0 ||
-                !SystemInfo.supportsComputeShaders ||
+                !_coldSupportsComputeShaders ||
                 !scatterCullCompute.IsSupported(_scatterCullKernel))
                 return false;
 

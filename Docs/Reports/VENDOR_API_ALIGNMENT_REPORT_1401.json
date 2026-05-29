@@ -3,20 +3,19 @@
     "role":  "THIRD_PARTY_API_ALIGNMENT_AND_SQLITE_BRIDGE_REPAIRER",
     "domain":  "Echelon 9 Meta / Polish / Integration - vendor dependency quarantine",
     "taskCount":  20,
-    "generatedAt":  "2026-05-28T21:47:18.5218981+04:00",
+    "generatedAt":  "2026-05-28T23:29:54.4801490+04:00",
     "status":  "PENDING_VERIFICATION",
     "evidenceClass":  "STATIC_SOURCE_PLUS_GUARDED_COMPILE_GATE_NO_BUILD",
     "directDotnetBuildUsed":  false,
     "directMSBuildUsed":  false,
     "guardedWrapperUsed":  true,
     "latestCompileGate":  {
-                              "artifact":  "Docs/AgentLogs/Build_1401_Attempt_20260528_214633_BLOCKED_BY_CONTENTION.json",
-                              "cpuLoadPercent":  54,
-                              "compilerProcessCount":  1,
+                              "artifact":  "Docs/AgentLogs/Build_1401_Attempt_20260528_232505_BLOCKED_BY_CONTENTION.json",
+                              "cpuLoadPercent":  93,
+                              "compilerProcessCount":  0,
                               "blockedByContention":  true,
                               "blockReasons":  [
-                                                   "CPU_LOAD_ABOVE_THRESHOLD",
-                                                   "ACTIVE_COMPILER_PROCESS"
+                                                   "CPU_LOAD_ABOVE_THRESHOLD"
                                                ],
                               "attempts":  [
 
@@ -24,11 +23,11 @@
                           },
     "zeroGcStaticEvidence":  {
                                  "artifact":  "Docs/AgentLogs/CandiceRuntimeHotPathAudit_1401.json",
-                                 "methodCount":  61,
+                                 "methodCount":  31,
                                  "pass":  true,
                                  "totals":  {
                                                 "hotNewReferenceTypeCount":  0,
-                                                "valueTypeNewCount":  14,
+                                                "valueTypeNewCount":  4,
                                                 "stringFormatCount":  0,
                                                 "toStringCount":  0,
                                                 "linqQueryTokenCount":  0,
@@ -39,182 +38,158 @@
                                                 "sendMessageCount":  0,
                                                 "arrayResizeCount":  0,
                                                 "findWithTagCount":  0,
-                                                "throwNewExceptionCount":  0
+                                                "gameObjectFindCount":  0,
+                                                "findGameObjectsWithTagCount":  0,
+                                                "cameraMainCount":  0,
+                                                "checkSphereCount":  0,
+                                                "syncAllocPhysicsTokenCount":  0
                                             },
                                  "valueTypeNewCountIsNotManagedAllocation":  true,
-                                 "scannedMethods":  "61 modified production hot/event method ranges; comments stripped; cold allocations isolated in audit coldAllocationExceptions."
+                                 "scannedMethods":  "31 modified Candice production hot/event ranges; cold startup/planning/editor ranges listed separately and excluded from hot totals."
                              },
     "thisPassFixes":  [
                           {
-                              "file":  "Assets/Candice AI for Games/Scripts/Modules/CandiceModuleDetection.cs",
+                              "file":  "Assets/Candice AI for Games/Scripts/Libs/Candice Pathfinding/CandicePathFinding.cs",
                               "lines":  [
-                                            12,
-                                            16,
-                                            18,
-                                            26,
-                                            28,
-                                            44,
+                                            15,
+                                            55,
                                             59,
-                                            100,
-                                            179,
-                                            331,
-                                            368,
-                                            411
+                                            64
                                         ],
-                              "change":  "Replaced OverlapSphere/OverlapCircleAll/List/Dictionary hot allocations with bounded reusable buffers and non-alloc physics query overloads.",
-                              "microsecondsSavedEstimate":  "unmeasured; removes managed array/list/dictionary allocation from each detection/obstacle scan."
+                              "change":  "Removed automatic constructor-triggered CandiceTile scene scan, reused static empty fallback, switched legacy tile loop to indexed for, and null-guarded missing tile components.",
+                              "microsecondsSavedEstimate":  "unmeasured; removes startup scene-wide tag search from default A* route."
                           },
                           {
-                              "file":  "Assets/Candice AI for Games/Scripts/Modules/CandiceModuleCombat.cs",
+                              "file":  "Assets/Candice AI for Games/Scripts/Editor/CandiceAutorun.cs",
                               "lines":  [
-                                            9,
-                                            11,
-                                            13,
-                                            37,
-                                            69,
-                                            107,
-                                            117,
-                                            123,
-                                            144,
-                                            182,
-                                            201,
-                                            215
+                                            42,
+                                            74,
+                                            92
                                         ],
-                              "change":  "Replaced SphereCastAll/CircleCastAll/foreach/SendMessage controller attack damage with fixed query buffers, indexed loops, direct TryGetComponent dispatch, and cold projectile prewarm pool.",
-                              "microsecondsSavedEstimate":  "unmeasured; removes per-attack cast arrays, coroutine path from controller, and hot projectile instantiate."
+                              "change":  "Removed editor BinaryFormatter persistence and replaced it with plain text read/write for the startup flag.",
+                              "microsecondsSavedEstimate":  "editor-only security/compatibility fix; no runtime frame claim."
                           },
                           {
-                              "file":  "Assets/Candice AI for Games/Scripts/CandiceAIController.cs",
+                              "file":  "Assets/Candice AI for Games/Scripts/Player/FollowPlayer.cs",
                               "lines":  [
-                                            92,
-                                            239,
-                                            311,
-                                            341,
-                                            372,
-                                            373,
-                                            394,
-                                            577,
-                                            592,
-                                            596,
-                                            603,
-                                            720,
-                                            745,
-                                            751,
-                                            796,
-                                            830,
-                                            852,
-                                            885,
-                                            900
+                                            16,
+                                            17
                                         ],
-                              "change":  "Fixed GameResources owner bug, converted non-animation attack timing to Update-owned scalar timer, converted death Destroy/coroutine to delayed SetActive(false), removed detection callback foreach/AddRange growth path.",
-                              "microsecondsSavedEstimate":  "unmeasured; removes attack coroutine allocations and keeps spawner pools reusable after death."
-                          },
-                          {
-                              "file":  "Assets/Candice AI for Games/Scripts/CandiceProjectile.cs",
-                              "lines":  [
-                                            8,
-                                            10,
-                                            61,
-                                            76,
-                                            149,
-                                            155,
-                                            161,
-                                            167,
-                                            176
-                                        ],
-                              "change":  "Converted projectile Destroy/coroutine path to active registry, scheduled deactivation, direct damage dispatch, and physics state reset before reuse.",
-                              "microsecondsSavedEstimate":  "unmeasured; removes projectile destroy/recreate churn and SendMessage reflection dispatch."
-                          },
-                          {
-                              "file":  "Assets/Candice AI for Games/Scripts/EnemySpawners.cs",
-                              "lines":  [
-                                            17,
-                                            19,
-                                            32,
-                                            39,
-                                            51,
-                                            61,
-                                            76,
-                                            103,
-                                            117
-                                        ],
-                              "change":  "Converted Update-time enemy/spawn effect Instantiate/Destroy to bounded prewarm pools and timed effect deactivation.",
-                              "microsecondsSavedEstimate":  "unmeasured; removes spawn interval managed/engine object churn after Start prewarm."
-                          },
-                          {
-                              "file":  "Assets/Candice AI for Games/Scripts/Libs/Candice Animations Management/Possessor/Possessor.cs",
-                              "lines":  [
-                                            41,
-                                            97,
-                                            137
-                                        ],
-                              "change":  "Removed FindWithTag/Array.Resize/Instantiate/Destroy possession path and switched to projectile registry plus fixed slots.",
-                              "microsecondsSavedEstimate":  "unmeasured; removes event-gated scene search and array resize."
-                          },
-                          {
-                              "file":  "Assets/MapMagic/Tools/ThreadManager/CoroutineManager.cs",
-                              "lines":  [
-                                            140,
-                                            142,
-                                            143
-                                        ],
-                              "change":  "Removed throw-new-exception allocation from CoroutineManager.Update; dev builds log and stop active routine instead.",
-                              "microsecondsSavedEstimate":  "unmeasured; removes exception allocation from frame Update error path."
+                              "change":  "Removed Start-time FindWithTag player fallback; optional follow target must be wired or assigned by killcam route.",
+                              "microsecondsSavedEstimate":  "unmeasured; removes one scene tag search on startup."
                           },
                           {
                               "file":  "Assets/Candice AI for Games/Scripts/CandiceAnimationManager.cs",
                               "lines":  [
-                                            46,
-                                            79,
-                                            112,
-                                            130,
-                                            151,
-                                            196,
-                                            254,
-                                            276,
-                                            400,
-                                            536,
-                                            554,
-                                            594,
-                                            656,
-                                            694,
-                                            727,
-                                            754,
-                                            768,
-                                            784,
-                                            807,
-                                            814
+                                            171,
+                                            195,
+                                            197
                                         ],
-                              "change":  "Removed Candice animation runtime coroutine combo dispatch, VFX Instantiate/Destroy loops, FindWithTag healthbar resolution, and repeated hot GetComponent calls; replaced with cold VFX slot table, scalar combo timer, CompareTag, cached controller references, and scheduled SetActive VFX lifetime.",
-                              "microsecondsSavedEstimate":  "unmeasured; removes hot animation/event object clone/destroy churn and coroutine allocation route."
+                              "change":  "Removed Camera.main and GameObject.Find killcam fallbacks; cached optional FollowPlayer reference during cold killcam setup.",
+                              "microsecondsSavedEstimate":  "unmeasured; removes optional runtime camera scene search."
+                          },
+                          {
+                              "file":  "Assets/Candice AI for Games/Scripts/Libs/Candice Animations Management/Camera/CandiceCamera.cs",
+                              "lines":  [
+                                            22,
+                                            29,
+                                            54,
+                                            56
+                                        ],
+                              "change":  "Added cached FollowPlayer route and replaced enum ToString/concat dependency lookup with fixed dependency literal.",
+                              "microsecondsSavedEstimate":  "unmeasured; removes event-time GetComponent and string construction."
                           },
                           {
                               "file":  "Assets/Candice AI for Games/Scripts/Libs/Candice Animations Management/Actions/CandicePlayerOverrides.cs",
                               "lines":  [
-                                            15,
-                                            27,
-                                            32,
-                                            49,
-                                            60,
-                                            77,
-                                            95,
-                                            106,
-                                            123,
-                                            149
+                                            43,
+                                            66,
+                                            112
                                         ],
-                              "change":  "Removed per-ranged-attack new GameObject target creation; player override now reuses a cold persistent attack target prepared during animation startup and fails closed if not prepared.",
-                              "microsecondsSavedEstimate":  "unmeasured; removes one scene GameObject allocation per player ranged override call."
+                              "change":  "Moved camera discovery to cold owner-child lookup and removed Camera.main fallback from ranged attack event methods.",
+                              "microsecondsSavedEstimate":  "unmeasured; removes attack-event scene camera search."
                           },
                           {
-                              "file":  "Assets/Candice AI for Games/Scripts/Libs/Candice Animations Management/UI/CandiceUI.cs",
+                              "file":  "Assets/Candice AI for Games/Scripts/Player/CandiceAIPlayerController.cs",
                               "lines":  [
-                                            23,
-                                            28,
-                                            31,
-                                            38
+                                            65,
+                                            67,
+                                            89,
+                                            118
                                         ],
-                              "change":  "Made health UI fail closed when HealthBar/agent is missing, replaced repeated GetComponent with TryGetComponent, and removed dynamic string-concat log from runtime path.",
-                              "microsecondsSavedEstimate":  "unmeasured; removes null-crash risk after eliminating FindWithTag healthbar fallback."
+                              "change":  "Removed Camera.main fallback, null-guarded camera rotation, and fail-closed mecha camera path without a wired camera.",
+                              "microsecondsSavedEstimate":  "unmeasured; removes player startup/mecha camera scene search."
+                          },
+                          {
+                              "file":  "Assets/Candice AI for Games/Scripts/EnemySpawners.cs",
+                              "lines":  [
+                                            14,
+                                            29
+                                        ],
+                              "change":  "Removed demo spawner GameObject.Find parent lookup; parent layer is serialized and null parent is allowed.",
+                              "microsecondsSavedEstimate":  "unmeasured; removes one startup scene name search."
+                          },
+                          {
+                              "file":  "Assets/Candice AI for Games/Scripts/Libs/Candice GOAP/CandiceGOAPAgent.cs",
+                              "lines":  [
+                                            32,
+                                            39,
+                                            47,
+                                            117,
+                                            142,
+                                            156,
+                                            157,
+                                            158
+                                        ],
+                              "change":  "Converted static shared GOAP queue/action state to per-agent queue, removed LINQ frontier sort, cached current state conversion, and fixed simulated child-state effects being applied to a discarded dictionary.",
+                              "microsecondsSavedEstimate":  "unmeasured; correctness fix plus removal of planning LINQ allocations."
+                          },
+                          {
+                              "file":  "Assets/Candice AI for Games/Scripts/Libs/Candice GOAP/CandiceGOAPAction.cs",
+                              "lines":  [
+                                            111,
+                                            125,
+                                            133,
+                                            166,
+                                            183
+                                        ],
+                              "change":  "Removed GOAP action LINQ import/debug logs and replaced foreach effect application with explicit dictionary enumerators.",
+                              "microsecondsSavedEstimate":  "unmeasured; removes iterator/token debt from action apply paths."
+                          },
+                          {
+                              "file":  "Assets/Candice AI for Games/Scripts/Libs/Candice GOAP/CandiceGOAPActionS.cs",
+                              "lines":  [
+                                            29,
+                                            34
+                                        ],
+                              "change":  "Pre-sized conversion dictionaries, replaced foreach with indexed loops, and removed behavior-tree debug string logging.",
+                              "microsecondsSavedEstimate":  "unmeasured; cold conversion allocation reduced to required dictionaries only."
+                          },
+                          {
+                              "file":  "Assets/Candice AI for Games/Scripts/Libs/Candice GOAP/CandiceGOAPState.cs",
+                              "lines":  [
+                                            33,
+                                            57,
+                                            74,
+                                            138,
+                                            223,
+                                            253,
+                                            285,
+                                            290
+                                        ],
+                              "change":  "Added indexed CandiceDictionary access and removed LINQ/foreach from GOAP state checks/conversions; ToString remains explicitly diagnostic and excluded from hot range totals.",
+                              "microsecondsSavedEstimate":  "unmeasured; removes iterator-backed CandiceDictionary traversal from GOAP checks."
+                          },
+                          {
+                              "file":  "Assets/Candice AI for Games/Scripts/Libs/Candice GOAP/CandiceGOAPNode.cs",
+                              "lines":  [
+                                            39,
+                                            40,
+                                            62,
+                                            63
+                                        ],
+                              "change":  "Replaced GOAP node goal traversal with indexed CandiceDictionary access.",
+                              "microsecondsSavedEstimate":  "unmeasured; removes iterator-backed traversal from planner checks."
                           }
                       ],
     "dataSovereignty":  {
@@ -228,59 +203,66 @@
                             "finallyReleaseSites":  [
 
                                                     ],
-                            "reason":  "No GlobalDataVault, BufferID, native DTO, SignalBus payload, or lock ownership route was introduced or modified in this pass."
+                            "reason":  "No GlobalDataVault, BufferID, native DTO, SignalBus payload, or lock ownership route was introduced or modified."
                         },
     "structLayoutAudit":  {
                               "unmanagedStructOffsetsRequired":  false,
-                              "modifiedUnmanagedStructs":  [
+                              "modifiedRuntimeDtos":  [
 
-                                                           ],
-                              "reason":  "Only managed vendor MonoBehaviour/module code and JSON proof artifacts changed. No unmanaged struct layout or NativeArray element type changed."
+                                                      ],
+                              "reason":  "No unmanaged runtime DTO, NativeArray element, SignalBus payload, save wire struct, telemetry entry, or GPU upload struct changed."
                           },
     "cinematicCheatAndScalability":  {
                                          "physicalSimulationAdded":  false,
                                          "binaryIsLowEndSwitchAdded":  false,
                                          "globalQualityWeightConsumerAdded":  false,
-                                         "globalQualityWeightJustification":  "No new fidelity route was added; this pass removes vendor runtime churn and keeps existing visuals. GlobalQualityWeight is not consumed because behavior/fidelity ownership was not changed.",
-                                         "low":  "bounded pools and non-alloc scans cap work and fail closed when buffers saturate.",
-                                         "middle":  "same behavior with fewer managed/engine churn spikes.",
-                                         "high":  "saved CPU/GC budget can be spent by existing first-party visual systems; no fake physical simulation added.",
-                                         "ultra":  "existing GPUI/visual routes remain free to increase density; this pass does not alter gameplay truth."
+                                         "globalQualityWeightJustification":  "No new fidelity/processing route was added. This pass removes vendor scene-search/allocation/correctness debt; consuming HomeostasisBrain.GlobalQualityWeight here would create a false owner route in quarantined vendor code.",
+                                         "low":  "fail-closed optional camera and bounded queues avoid search/allocation spikes on weak devices.",
+                                         "middle":  "same vendor behavior where references are wired, fewer hitches.",
+                                         "high":  "saved CPU/GC budget remains available to existing first-party visual systems.",
+                                         "ultra":  "no new simulation; existing presentation routes can spend budget on detail/density."
                                      },
     "proofArtifacts":  {
                            "candiceRuntimeHotPathAudit":  "Docs/AgentLogs/CandiceRuntimeHotPathAudit_1401.json",
-                           "latestCompileGate":  "Docs/AgentLogs/Build_1401_Attempt_20260528_214633_BLOCKED_BY_CONTENTION.json",
-                           "legacyVendorHotPathAudit":  "Docs/AgentLogs/VendorHotPathDeltaScan_1401.json",
                            "staticAudit":  "Docs/AgentLogs/VendorStaticAudit_1401.json",
+                           "latestCompileGate":  "Docs/AgentLogs/Build_1401_Attempt_20260528_232505_BLOCKED_BY_CONTENTION.json",
                            "candicePluginImporterAudit":  "Docs/AgentLogs/CandicePluginImporterAudit_1401.json",
-                           "runtimeEditorLeakageAudit":  "Docs/AgentLogs/VendorRuntimeEditorLeakage_1401.json"
+                           "vendorHotPathDeltaScan":  "Docs/AgentLogs/VendorHotPathDeltaScan_1401.json"
                        },
+    "tokenCounts":  {
+                        "activeDefaultCandiceSqliteCompileRefs":  0,
+                        "candiceBinaryFormatterTokens":  0,
+                        "candiceCameraMainTokens":  0,
+                        "candiceFindWithTagTokens":  0,
+                        "candiceGameObjectFindTokens":  0,
+                        "candiceFindGameObjectsWithTagTokens":  1,
+                        "candiceGoapLinqTokens":  0,
+                        "candiceRuntimeAuditMapMagicContaminationTokens":  0
+                    },
     "residualFaults":  [
-                           "Post-patch compile proof absent: latest guarded wrapper blocked at CPU 54 percent with active dotnet PID 43164 before launching builds.",
+                           "Post-patch compile proof absent because guarded wrapper blocked at CPU 93 before any build attempts.",
                            "Unity import, Console, PlayMode, ProfilerRecorder, GCMonitor, player build, and device proof are absent.",
-                           "CandiceAIforGames.Runtime/Editor csproj files are still missing until Unity regenerates project files from asmdefs.",
-                           "No Docs/AgentLogs/Dump_1401* exists from this pass; no runtime crash/NaN execution occurred.",
-                           "Candice detection result dictionary uses reusable lists; current internal callback consumes synchronously, but external callbacks retaining results would observe mutation on next scan.",
-                           "Candice cold prewarm creates bounded scene objects in Start/registration. This is deliberate cold object-pool setup, not hot-path zero-allocation proof."
+                           "CandicePathFinding.ComputeAdjacencyList still contains explicit legacy GameObject.FindGameObjectsWithTag for BFS tile setup; constructor no longer invokes it.",
+                           "CandiceGOAPState.ToString still materializes a diagnostic string; not part of scanned hot/event ranges.",
+                           "Broad Candice package still contains cold/demo/editor/save utility Instantiate/Destroy/StartCoroutine/.ToString residuals outside the scanned modified hot/event method set.",
+                           "No Docs/AgentLogs/Dump_1401* runtime dump exists because no crash/NaN run was executed."
                        ],
     "modifiedFileHashes":  {
-                               "Assets/Candice AI for Games/Scripts/CandiceAIController.cs":  "deda738d8a1576ae1c7c2d18b39aaa02233982b246356f9b6819135fbcf32869",
-                               "Assets/Candice AI for Games/Scripts/Modules/CandiceModuleCombat.cs":  "5f5d19fd0d79e64a9ce0482871e9a83d970bc10c901d39009447387b93f418e9",
-                               "Assets/Candice AI for Games/Scripts/CandiceProjectile.cs":  "583694f9d2c4701a3e7f5cafc8a727092a23c48dfd24ee92569bb9284029af60",
-                               "Assets/Candice AI for Games/Scripts/Player/BasicPlayerController.cs":  "b542dc7e238021ceca4a7e10f24737781cf703dd4817406a3cdbf59047d404a5",
-                               "Assets/Candice AI for Games/Scripts/EnemySpawners.cs":  "e021b4aa4ea1bcc1bd824ffc3e3b1ddf929f2922293a10dd6b8c3a2668a00dc7",
-                               "Assets/Candice AI for Games/Scripts/Libs/Candice Animations Management/Possessor/Possessor.cs":  "12a0bc48e1f4b397efea4b847360ae52d8a343ec8519c83ba1e5345f9ddc292e",
-                               "Assets/Candice AI for Games/Scripts/Modules/CandiceModuleDetection.cs":  "708e34a9a56d47183be0ab6493b5ff785a551ed7c9064d7a289ba8510c16ba76",
-                               "Assets/Candice AI for Games/Scripts/Modules/CandiceModuleMovement.cs":  "ac83959f09ea84839d19e1bc446f64ac543ba6f75c73b5df7ab7a294bdd7b6e3",
-                               "Assets/Candice AI for Games/Scripts/Libs/Candice Pathfinding/CandiceTile.cs":  "584b7d7ba4bd25222bb23b9d8c51f0279f7bbfda389e8a7d19805a21394e002a",
-                               "Assets/Candice AI for Games/Scripts/Libs/Candice Pathfinding/CandiceGrid.cs":  "5a992b74d5d3e50b5f4701302e8d7ede577ebd7c348c4e7dfd8b2e118b27e262",
-                               "Assets/MapMagic/Tools/ThreadManager/CoroutineManager.cs":  "b69686166af8b9f4f3e0e88bd271a21804acf29eddcdd140e1557acfc0429ec6",
-                               "Docs/AgentLogs/Build_1401_Attempt_20260528_212933_BLOCKED_BY_CONTENTION.json":  "6035bbd486cd3ffeec9a7656945b586dfbe7750809277090562dd732960ce0e2",
-                               "Assets/Candice AI for Games/Scripts/CandiceAnimationManager.cs":  "a94fd86b237f6f7db517e19d6003807ed288673cb31418a51a8afa0ba7dd9d0c",
-                               "Assets/Candice AI for Games/Scripts/Libs/Candice Animations Management/Actions/CandicePlayerOverrides.cs":  "0e31901d59aae5b5646fcf6be701071f726c03f9f6eda30b1abeafeb470292c0",
-                               "Assets/Candice AI for Games/Scripts/Libs/Candice Animations Management/Actions/CandiceHumanoidMelee.cs":  "1a9b7689e591b3b70c9ef7f2399691ca7af93fd63326cf90cae1d8d3214c95c1",
-                               "Assets/Candice AI for Games/Scripts/Libs/Candice Animations Management/UI/CandiceUI.cs":  "3788f4b81f91b07482a6dfffaea5eaa7d07b8e7ece037e209089009d52734ba0",
-                               "Docs/AgentLogs/CandiceRuntimeHotPathAudit_1401.json":  "22bed8ccb57c24a3036b9e9acc5af37b25faddf2d1057271eea2691c3fc67e61",
-                               "Docs/AgentLogs/Build_1401_Attempt_20260528_214633_BLOCKED_BY_CONTENTION.json":  "5f229a8444a256f1230ddcfbaceb7e34780e408bba2b51cc1d096d83e6284e47"
+                               "Assets/Candice AI for Games/Scripts/Libs/Candice Pathfinding/CandicePathFinding.cs":  "461437f640a36a241772353e94452696b2fbeeb31b214449d51c069708fe3fbd",
+                               "Assets/Candice AI for Games/Scripts/Editor/CandiceAutorun.cs":  "4ea3650220e66ba39a2d9b7205c0618712c74c7ad697afb73360e524f421a57f",
+                               "Assets/Candice AI for Games/Scripts/Player/FollowPlayer.cs":  "c4cdd781d51d908da0dc3863246fd017528fc76553461b12c2e6b3b996166132",
+                               "Assets/Candice AI for Games/Scripts/CandiceAnimationManager.cs":  "821c5373a35c6501650f8edd70c1e2486042199bd2aa1536194c4a4d90c7f577",
+                               "Assets/Candice AI for Games/Scripts/Libs/Candice Animations Management/Camera/CandiceCamera.cs":  "54969d474fbe38595159f6ed3b929e5be73826a5e21c21e8b8cd309cf8d0ee3c",
+                               "Assets/Candice AI for Games/Scripts/Libs/Candice Animations Management/Actions/CandicePlayerOverrides.cs":  "681177f3a6670ae8c9b3e403e51e77374264c3a3adfbdb88247d136d4b41a05c",
+                               "Assets/Candice AI for Games/Scripts/Player/CandiceAIPlayerController.cs":  "bb06cf905d3109a7aa26c2143f2d188927f89804b7d7dd11dc8f668f9dadb485",
+                               "Assets/Candice AI for Games/Scripts/EnemySpawners.cs":  "91bd3f739abaaed1a1ad3f7f31f03cda61a67f6633658bee0249bcde506fef9e",
+                               "Assets/Candice AI for Games/Scripts/Libs/Candice GOAP/CandiceGOAPAgent.cs":  "d22356cd25a99ca4b258ad4e798db12b38d260887b16eb27556faf2c4e918f4c",
+                               "Assets/Candice AI for Games/Scripts/Libs/Candice GOAP/CandiceGOAPAction.cs":  "adc74a1867b0f389a55e8de5fb5478698eb7549411f094aa13c7be3279544f02",
+                               "Assets/Candice AI for Games/Scripts/Libs/Candice GOAP/CandiceGOAPActionS.cs":  "8ba3cec35978bc1d8fe899ef099c0bfa052ab99f914b7558da60fd5fad67b46b",
+                               "Assets/Candice AI for Games/Scripts/Libs/Candice GOAP/CandiceGOAPNode.cs":  "fbfd06a46be6ac9c8fa805c7c16beb0b78fa370e95deceadfd92a4e4cb19476b",
+                               "Assets/Candice AI for Games/Scripts/Libs/Candice GOAP/CandiceGOAPState.cs":  "dd9be8273a0fa642195c70d66716f1ade502c2f25ce23e69017865ba137136e9",
+                               "Docs/AgentLogs/CandiceRuntimeHotPathAudit_1401.json":  "50ae5a959fd871e52338578fdc41a989e80cbbde5aad78543da235b645f38de4",
+                               "Docs/AgentLogs/VendorStaticAudit_1401.json":  "f77c72076401174391634ea70523a00c42a6aaa04cd68d07c66bf7bb690c2a35",
+                               "Docs/AgentLogs/Build_1401_Attempt_20260528_232505_BLOCKED_BY_CONTENTION.json":  "3481a91cae750b689a3be97ec92983d1e88dee2c152943cf151688dc3bf96572"
                            }
 }

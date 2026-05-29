@@ -61,14 +61,14 @@ namespace Hecton8.Thermodynamics
         private const float UpdraftThresholdCelsius = 120f;
         private const float DefaultRadiationDecayCoefficient = 0.9975f;
         private const int ConfigFileStreamBufferBytes = 4096;
-        private const int LowTierVisualUploadStride = 4;
-        private const int HealthPressureLowTierFrames = 120;
+        private const int MaxVisualUploadStride = 4;
+        private const int HealthPressureSurvivalFrames = 120;
         private const int CsvBufferBytes = 4096;
         private const int BinaryConstantsBytes = 16;
         private const uint TelemetryFlagNaN = 1u << 0;
-        private const uint TelemetryFlagLowTier = 1u << 1;
+        private const uint TelemetryFlagQualityPressure = 1u << 1;
         private const uint TelemetryFlagRebase = 1u << 2;
-        private const uint TelemetryFlagHealthPressureLowTier = 1u << 3;
+        private const uint TelemetryFlagHealthPressureSurvival = 1u << 3;
         private const uint TelemetryFlagSignalDrop = 1u << 4;
         private static readonly int HeatTexturePropertyId = Shader.PropertyToID("_HectonThermoHazardHeatTex3D");
         private static readonly int GridMetaPropertyId = Shader.PropertyToID("_HectonThermoHazardGridMeta");
@@ -128,7 +128,7 @@ namespace Hecton8.Thermodynamics
         private int _gridVersion;
         private int _lastTextureVersion = -1;
         private int _vaultMirrorVersion = -1;
-        private int _healthPressureLowTierFrames;
+        private int _healthPressureSurvivalFrames;
         private int _droppedSignalCount;
         private uint _simulationFrame;
         private float _tierSwitchTimer;
@@ -905,15 +905,15 @@ namespace Hecton8.Thermodynamics
             float quality = math.isfinite(weight) ? math.saturate(weight) : 1f;
             quality = math.min(quality, math.saturate(qualityCeiling));
 
-            float pressure01 = math.saturate(_healthPressureLowTierFrames * math.rcp(math.max(1f, HealthPressureLowTierFrames)));
+            float pressure01 = math.saturate(_healthPressureSurvivalFrames * math.rcp(math.max(1f, HealthPressureSurvivalFrames)));
             float pressureCurve = pressure01 * pressure01 * (3f - (2f * pressure01));
             return math.saturate(quality * math.lerp(1f, 0.1f, pressureCurve));
         }
 
         private void ConsumeSystemHealthSignals()
         {
-            if (_healthPressureLowTierFrames > 0)
-                _healthPressureLowTierFrames--;
+            if (_healthPressureSurvivalFrames > 0)
+                _healthPressureSurvivalFrames--;
 
             ReadOnlySpan<SystemHealthIndexSignal> signals = SignalBus<SystemHealthIndexSignal>.GetFrameSnapshot();
             for (int i = 0; i < signals.Length; i++)
@@ -922,9 +922,16 @@ namespace Hecton8.Thermodynamics
                 if (signal.State >= SystemHealthIndexSignal.StateCritical ||
                     (signal.Flags & SystemHealthIndexSignal.FlagAdrenaline) != 0)
                 {
-                    _healthPressureLowTierFrames = HealthPressureLowTierFrames;
+                    _healthPressureSurvivalFrames = HealthPressureSurvivalFrames;
                 }
             }
+        }
+
+        private static int ResolveVisualUploadStride(float qualityWeight01)
+        {
+            float quality = math.isfinite(qualityWeight01) ? math.saturate(qualityWeight01) : 1f;
+            float curvedQuality = quality * quality * (3f - (2f * quality));
+            return math.clamp((int)math.ceil(math.lerp(MaxVisualUploadStride, 1f, curvedQuality)), 1, MaxVisualUploadStride);
         }
 
         private void ApplyStableResolutionIfNeeded()
@@ -1086,7 +1093,7 @@ namespace Hecton8.Thermodynamics
 
             float effectiveQuality01 = ResolveContinuousQualityWeight();
             uint qualityPressureQ8 = EncodeUnitQ8(1f - effectiveQuality01);
-            uint healthPressureQ8 = EncodeUnitQ8(_healthPressureLowTierFrames * math.rcp(math.max(1f, HealthPressureLowTierFrames)));
+            uint healthPressureQ8 = EncodeUnitQ8(_healthPressureSurvivalFrames * math.rcp(math.max(1f, HealthPressureSurvivalFrames)));
             ScanTelemetryJob scanJob = new ScanTelemetryJob
             {
                 TemperatureBack = (float*)NativeArrayUnsafeUtility.GetUnsafeReadOnlyPtr(temperatureBack),
@@ -1177,7 +1184,8 @@ namespace Hecton8.Thermodynamics
                 return;
 
             bool textureRequiresRebuild = _temperatureTexture == null || _temperatureTexture.width != _activeResolution;
-            if (!textureRequiresRebuild && _activeResolution == LowResolution && (_gridVersion & (LowTierVisualUploadStride - 1)) != 0)
+            int uploadStride = ResolveVisualUploadStride(ResolveContinuousQualityWeight());
+            if (!textureRequiresRebuild && uploadStride > 1 && (_gridVersion % uploadStride) != 0)
                 return;
 
             if (textureRequiresRebuild)
@@ -1779,9 +1787,9 @@ namespace Hecton8.Thermodynamics
             {
                 float maxTemp = -1000f;
                 float maxRad = 0f;
-                uint flags = QualityPressureQ8 >= 128u ? TelemetryFlagLowTier : 0u;
+                uint flags = QualityPressureQ8 >= 128u ? TelemetryFlagQualityPressure : 0u;
                 if (HealthPressureQ8 > 0u)
-                    flags |= TelemetryFlagHealthPressureLowTier;
+                    flags |= TelemetryFlagHealthPressureSurvival;
 
                 uint nanIndex = 0u;
                 int updraftCount = 0;

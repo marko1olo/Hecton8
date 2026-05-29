@@ -187,7 +187,7 @@ namespace Hecton8.Editor
                     PlantHash = 0xED1708u,
                     SpeciesHash = genome.SpeciesHash,
                     WorldSeed = 0xB07A4E08u,
-                    HardwareTier = (byte)FloraGenomeHardwareTier.High,
+                    QualityWeightQ8 = 255,
                     RequestedIterations = genome.MaxIterations,
                     ChunkSlot = 0,
                     Reserved0 = 0u
@@ -197,7 +197,7 @@ namespace Hecton8.Editor
                 {
                     Genomes = genomes,
                     GenomeIndex = genomeIndex,
-                    HardwareTier = (byte)FloraGenomeHardwareTier.High,
+                    QualityWeight01 = 1f,
                     ExpandedSymbols = previewWorkspace.ExpandedSymbols,
                     ScratchSymbols = previewWorkspace.ScratchSymbols,
                     Stats = stats
@@ -211,7 +211,7 @@ namespace Hecton8.Editor
                     GenomeIndex = genomeIndex,
                     PlantIndex = 0,
                     FrameIndex = (uint)Time.frameCount,
-                    HardwareTier = (byte)FloraGenomeHardwareTier.High,
+                    QualityWeight01 = 1f,
                     TurtleStack = previewWorkspace.TurtleStack,
                     BranchMatrices = previewWorkspace.BranchMatrices,
                     MatrixWriteOffset = 0,

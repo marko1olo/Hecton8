@@ -1,39 +1,74 @@
-//System
-using System;
-using System.Collections;
-using System.Collections.Generic;
 //Unity
 using UnityEngine;
-using UnityEngine.UI;
-//Candice AI
-using CandiceAIforGames.AI;
 
 namespace CandiceAIforGames.AI
 {
     public class CandiceInventoryManager : DeriveMono
     {
+        private const int MaxDropPool = 8;
 
         [HideInInspector]
-        public GameObject drop;        
+        public GameObject drop;
+        private GameObject dropPrefab;
+        // COLD ALLOC: GameObject[8] - bounded Candice death drop pool - owner: CandiceInventoryManager
+        private readonly GameObject[] dropPool = new GameObject[MaxDropPool];
 
-        // Update is called once per frame
-        void Update()
+        public void PrepareDropPool(GameObject prefab)
         {
+            if (prefab == null || ReferenceEquals(dropPrefab, prefab))
+            {
+                return;
+            }
 
+            drop = prefab;
+            dropPrefab = prefab;
+            for (int i = 0; i < dropPool.Length; i++)
+            {
+                if (dropPool[i] != null)
+                {
+                    dropPool[i].SetActive(false);
+                    continue;
+                }
+
+                GameObject pooledDrop = Instantiate(prefab, prefab.transform.position, prefab.transform.rotation);
+                pooledDrop.SetActive(false);
+                dropPool[i] = pooledDrop;
+            }
         }
 
-        public void Drop(Transform t) {
-            if (drop != null) {
-                Transform indicator = drop.transform.Find("Indicator P2");
-                if (indicator != null) {
-                    GameObject screenRenderer = GameObject.Find("Renderer P2");
-                    if (screenRenderer != null) {
-                        /*indicator.gameObject.GetComponent<LincolnCpp.HUDIndicator.IndicatorOnScreen>().renderers[0] = screenRenderer.GetComponent<LincolnCpp.HUDIndicator.IndicatorRenderer>();
-                        indicator.gameObject.GetComponent<LincolnCpp.HUDIndicator.IndicatorOffScreen>().renderers[0] = screenRenderer.GetComponent<LincolnCpp.HUDIndicator.IndicatorRenderer>();*/
-                    }
-                }                
-                Instantiate(drop, new Vector3(t.position.x, t.position.y+1f, t.position.z+2f), Quaternion.identity);
-            }            
+        public void Drop(Transform t)
+        {
+            if (t == null || dropPrefab == null || !ReferenceEquals(dropPrefab, drop))
+            {
+                return;
+            }
+
+            GameObject pooledDrop = GetInactiveDrop();
+            if (pooledDrop == null)
+            {
+                return;
+            }
+
+            Vector3 dropPosition = t.position;
+            dropPosition.y += 1f;
+            dropPosition.z += 2f;
+            pooledDrop.transform.position = dropPosition;
+            pooledDrop.transform.rotation = Quaternion.identity;
+            pooledDrop.SetActive(true);
+        }
+
+        private GameObject GetInactiveDrop()
+        {
+            for (int i = 0; i < dropPool.Length; i++)
+            {
+                GameObject candidate = dropPool[i];
+                if (candidate != null && !candidate.activeSelf)
+                {
+                    return candidate;
+                }
+            }
+
+            return null;
         }
     }
 }

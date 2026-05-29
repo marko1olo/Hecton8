@@ -76,6 +76,8 @@ namespace Hecton8.Ecosystem
         private HectonMapMagicVegetationBridge _mapMagicVegetationBridge;
         private BufferID _migrationFieldWriteBufferId;
         private BufferID _migrationFieldPoiBufferId;
+        private ulong _migrationFieldGuardMask;
+        private IDataVault _migrationFieldGuardVault;
         private VaultGenerationHandle<MigrationGridCell> _migrationGridFrontHandle;
         private VaultGenerationHandle<MigrationGridCell> _migrationGridBackHandle;
         private VaultGenerationHandle<MigrationBloodCloudPoi> _bloodCloudPoisHandle;
@@ -872,7 +874,7 @@ namespace Hecton8.Ecosystem
             if (!_migrationFieldScheduled)
                 return;
 
-            if (!DispatcherJobFence.TryComplete(ref _migrationFieldHandle, forceComplete))
+            if (!TryCompleteMigrationFieldHandle(forceComplete))
                 return;
 
             VaultGenerationHandle<MigrationGridCell> handleSwap = _migrationGridFrontHandle;
@@ -894,6 +896,22 @@ namespace Hecton8.Ecosystem
             ApplyMigrationSwarmPopulationCountsToFrontGrid();
             if (FlushPendingBloodCloudPoiWrites(gameTimeSeconds))
                 RequestMigrationFieldRebuildSoon();
+        }
+
+        private bool TryCompleteMigrationFieldHandle(bool forceComplete)
+        {
+            if (!forceComplete)
+                return DispatcherJobFence.TryComplete(ref _migrationFieldHandle, forceComplete: false);
+
+            DispatcherJobFence.BeginPostSimulationSwapWindow();
+            try
+            {
+                return DispatcherJobFence.TryComplete(ref _migrationFieldHandle, forceComplete: true);
+            }
+            finally
+            {
+                DispatcherJobFence.EndPostSimulationSwapWindow();
+            }
         }
 
         private bool TrySampleMigrationFieldDirection(Vector3 origin, out Vector3 direction)
@@ -1836,6 +1854,8 @@ namespace Hecton8.Ecosystem
             _lastColdTickRuntimeSeconds = -1f;
             _migrationFieldHandle = default;
             _migrationFieldScheduled = false;
+            _migrationFieldGuardMask = 0UL;
+            _migrationFieldGuardVault = null;
         }
 
         private void ClearMigrationNativeStateRows(
@@ -1866,17 +1886,14 @@ namespace Hecton8.Ecosystem
 
             BufferID writeBufferId = ToBufferId(in _migrationGridBackHandle);
             BufferID poiBufferId = BufferID.ShinobuMigrationBloodCloudPois;
-            if (!vault.TryLockBuffer(writeBufferId, NativeMemorySystemId))
+            ulong guardMask = MigrationFieldGuardBit(writeBufferId) | MigrationFieldGuardBit(poiBufferId);
+            if (!vault.TryAcquireMutationGuard(guardMask))
                 return false;
-
-            if (!vault.TryLockBuffer(poiBufferId, NativeMemorySystemId))
-            {
-                vault.TryUnlockBuffer(writeBufferId, NativeMemorySystemId);
-                return false;
-            }
 
             _migrationFieldWriteBufferId = writeBufferId;
             _migrationFieldPoiBufferId = poiBufferId;
+            _migrationFieldGuardMask = guardMask;
+            _migrationFieldGuardVault = vault;
             _migrationFieldBuffersLocked = true;
             return true;
         }
@@ -1886,19 +1903,20 @@ namespace Hecton8.Ecosystem
             if (!_migrationFieldBuffersLocked)
                 return;
 
-            IDataVault vault = CacheMigrationDataVault();
-            if (vault != null)
-            {
-                if (_migrationFieldWriteBufferId != BufferID.Unknown)
-                    vault.TryUnlockBuffer(_migrationFieldWriteBufferId, NativeMemorySystemId);
-
-                if (_migrationFieldPoiBufferId != BufferID.Unknown)
-                    vault.TryUnlockBuffer(_migrationFieldPoiBufferId, NativeMemorySystemId);
-            }
-
+            IDataVault vault = _migrationFieldGuardVault ?? CacheMigrationDataVault();
+            ulong guardMask = _migrationFieldGuardMask;
             _migrationFieldWriteBufferId = BufferID.Unknown;
             _migrationFieldPoiBufferId = BufferID.Unknown;
+            _migrationFieldGuardMask = 0UL;
+            _migrationFieldGuardVault = null;
             _migrationFieldBuffersLocked = false;
+            if (vault != null && guardMask != 0UL)
+                vault.ReleaseMutationGuard(guardMask);
+        }
+
+        private static ulong MigrationFieldGuardBit(BufferID bufferId)
+        {
+            return 1UL << ((int)bufferId & 31);
         }
 
         private void TryRegisterService()

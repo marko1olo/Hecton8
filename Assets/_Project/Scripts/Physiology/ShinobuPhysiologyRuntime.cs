@@ -28,7 +28,6 @@ namespace Hecton8.Physiology
         private const int CsvMaxBytes = 8192;
         private const int CsvOverrideCapacity = 32;
 #endif
-        private const int LockBufferCount = 20;
         private const float KilopascalsPerAtmosphere = 101.325f;
         private const float AuthoritativeQualityWeight = 1f;
         private const uint ToxicityExposureLaneHash = 0x54584F58u; // TOX
@@ -66,6 +65,27 @@ namespace Hecton8.Physiology
         private static readonly uint _AnoxiaPpo2Hash = HashLowerAsciiString("anoxia_ppo2");
         private static readonly uint _Co2ToxicityStartHash = HashLowerAsciiString("co2_toxicity_start");
         private static readonly uint _Co2ToxicityFullHash = HashLowerAsciiString("co2_toxicity_full");
+        private static readonly ulong JobMutationGuardMask =
+            MutationGuardBit(BufferID.ShinobuPhysiologyVitals) |
+            MutationGuardBit(BufferID.ShinobuDecompressionStates) |
+            MutationGuardBit(BufferID.ShinobuTissueCompartments) |
+            MutationGuardBit(BufferID.ShinobuHaldaneCoefficients) |
+            MutationGuardBit(BufferID.ShinobuEnvironmentVitals) |
+            MutationGuardBit(BufferID.ShinobuPhysiologyScalars) |
+            MutationGuardBit(ShinobuPhysiologyConstants.StatusEffectStatesBuffer) |
+            MutationGuardBit(ShinobuPhysiologyConstants.GasPhysiologyStatesBuffer) |
+            MutationGuardBit(ShinobuPhysiologyConstants.BreathingGasFractionsBuffer) |
+            MutationGuardBit(ShinobuPhysiologyConstants.GasPhysiologyTuningBuffer) |
+            MutationGuardBit(BufferID.ShinobuVitalsExport) |
+            MutationGuardBit(BufferID.ShinobuPhysiologyTelemetryRing) |
+            MutationGuardBit(ShinobuPhysiologyConstants.DecompressionTelemetryRingBuffer) |
+            MutationGuardBit(BufferID.ShinobuCardiacPulseStates) |
+            MutationGuardBit(BufferID.ShinobuMockToxemiaSignals) |
+            MutationGuardBit(BufferID.ShinobuMockPressureSignals) |
+            MutationGuardBit(BufferID.ShinobuMockCombatDamageSignals) |
+            MutationGuardBit(BufferID.ShinobuMockPredatorAggroSignals) |
+            MutationGuardBit(BufferID.ShinobuMockMedicalItemSignals) |
+            MutationGuardBit(BufferID.ShinobuPhysiologyTuning);
 
         [Header("Runtime Capacity")]
         [Tooltip("Maximum player or humanoid rows simulated by the physiology jobs.")]
@@ -264,6 +284,9 @@ namespace Hecton8.Physiology
             if (!TryLockJobBuffers(vault))
                 return;
 
+            bool keepJobGuard = false;
+            try
+            {
             WriteEnvironmentSeed(vault, dt, frame);
 
             if (!TryResolveBuffers(
@@ -290,7 +313,6 @@ namespace Hecton8.Physiology
                     out NativeArray<PhysiologyTuningDTO> tuningArray,
                     out NativeArray<DiveProfileSampleDTO> mockDiveProfile))
             {
-                UnlockJobBuffers();
                 return;
             }
 
@@ -311,7 +333,6 @@ namespace Hecton8.Physiology
             count = math.min(count, pulses.Length);
             if (count <= 0)
             {
-                UnlockJobBuffers();
                 return;
             }
 
@@ -431,6 +452,13 @@ namespace Hecton8.Physiology
             _simulationAccumulator = 0f;
             _jobScheduled = true;
             H8Memory.RegisterActiveJob(OwnerSystem, _activeJobHandle);
+            keepJobGuard = true;
+            }
+            finally
+            {
+                if (!keepJobGuard)
+                    UnlockJobBuffers();
+            }
         }
 
         public void LateFrameTick()
@@ -1492,8 +1520,16 @@ namespace Hecton8.Physiology
             if (!_jobScheduled)
                 return;
 
-            if (!DispatcherJobFence.TryComplete(ref _activeJobHandle, forceComplete: true))
-                return;
+            DispatcherJobFence.BeginPostSimulationSwapWindow();
+            try
+            {
+                if (!DispatcherJobFence.TryComplete(ref _activeJobHandle, forceComplete: true))
+                    return;
+            }
+            finally
+            {
+                DispatcherJobFence.EndPostSimulationSwapWindow();
+            }
 
             FinishFrameJobCompletion();
         }
@@ -1502,25 +1538,29 @@ namespace Hecton8.Physiology
         {
             float elapsedMicroseconds = ResolveElapsedMicroseconds(_jobScheduleTimestamp, Stopwatch.GetTimestamp());
 
-            IDataVault vault = _dataVault;
-            if (vault != null)
+            try
             {
-                PatchLatestTelemetryExecutionTime(vault, elapsedMicroseconds);
-                PublishSurvivalVitals(vault);
-                PublishVisualSyncScalars(vault);
-                TryDumpAutopsyIfFatal(vault);
+                IDataVault vault = _dataVault;
+                if (vault != null)
+                {
+                    PatchLatestTelemetryExecutionTime(vault, elapsedMicroseconds);
+                    PublishSurvivalVitals(vault);
+                    PublishVisualSyncScalars(vault);
+                    TryDumpAutopsyIfFatal(vault);
+                }
             }
-
-            UnlockJobBuffers();
-
-            _telemetryCursor++;
-            if (_telemetryCursor >= ShinobuPhysiologyConstants.TelemetryFrameCount)
-                _telemetryCursor %= ShinobuPhysiologyConstants.TelemetryFrameCount;
-            _decompressionTelemetryCursor++;
-            if (_decompressionTelemetryCursor >= ShinobuPhysiologyConstants.TelemetryFrameCount)
-                _decompressionTelemetryCursor %= ShinobuPhysiologyConstants.TelemetryFrameCount;
-            _scheduledCount = 0;
-            _jobScheduled = false;
+            finally
+            {
+                UnlockJobBuffers();
+                _telemetryCursor++;
+                if (_telemetryCursor >= ShinobuPhysiologyConstants.TelemetryFrameCount)
+                    _telemetryCursor %= ShinobuPhysiologyConstants.TelemetryFrameCount;
+                _decompressionTelemetryCursor++;
+                if (_decompressionTelemetryCursor >= ShinobuPhysiologyConstants.TelemetryFrameCount)
+                    _decompressionTelemetryCursor %= ShinobuPhysiologyConstants.TelemetryFrameCount;
+                _scheduledCount = 0;
+                _jobScheduled = false;
+            }
         }
 
         private static float ResolveElapsedMicroseconds(long startTimestamp, long endTimestamp)
@@ -2232,47 +2272,8 @@ namespace Hecton8.Physiology
             if (vault == null || _jobLocksHeld)
                 return false;
 
-            int locked = 0;
-            if (!vault.TryLockBuffer(BufferID.ShinobuPhysiologyVitals, OwnerSystem)) return false;
-            locked++;
-            if (!vault.TryLockBuffer(BufferID.ShinobuDecompressionStates, OwnerSystem)) { UnlockLockedJobBuffers(vault, locked); return false; }
-            locked++;
-            if (!vault.TryLockBuffer(BufferID.ShinobuTissueCompartments, OwnerSystem)) { UnlockLockedJobBuffers(vault, locked); return false; }
-            locked++;
-            if (!vault.TryLockBuffer(BufferID.ShinobuHaldaneCoefficients, OwnerSystem)) { UnlockLockedJobBuffers(vault, locked); return false; }
-            locked++;
-            if (!vault.TryLockBuffer(BufferID.ShinobuEnvironmentVitals, OwnerSystem)) { UnlockLockedJobBuffers(vault, locked); return false; }
-            locked++;
-            if (!vault.TryLockBuffer(BufferID.ShinobuPhysiologyScalars, OwnerSystem)) { UnlockLockedJobBuffers(vault, locked); return false; }
-            locked++;
-            if (!vault.TryLockBuffer(ShinobuPhysiologyConstants.StatusEffectStatesBuffer, OwnerSystem)) { UnlockLockedJobBuffers(vault, locked); return false; }
-            locked++;
-            if (!vault.TryLockBuffer(ShinobuPhysiologyConstants.GasPhysiologyStatesBuffer, OwnerSystem)) { UnlockLockedJobBuffers(vault, locked); return false; }
-            locked++;
-            if (!vault.TryLockBuffer(ShinobuPhysiologyConstants.BreathingGasFractionsBuffer, OwnerSystem)) { UnlockLockedJobBuffers(vault, locked); return false; }
-            locked++;
-            if (!vault.TryLockBuffer(ShinobuPhysiologyConstants.GasPhysiologyTuningBuffer, OwnerSystem)) { UnlockLockedJobBuffers(vault, locked); return false; }
-            locked++;
-            if (!vault.TryLockBuffer(BufferID.ShinobuVitalsExport, OwnerSystem)) { UnlockLockedJobBuffers(vault, locked); return false; }
-            locked++;
-            if (!vault.TryLockBuffer(BufferID.ShinobuPhysiologyTelemetryRing, OwnerSystem)) { UnlockLockedJobBuffers(vault, locked); return false; }
-            locked++;
-            if (!vault.TryLockBuffer(ShinobuPhysiologyConstants.DecompressionTelemetryRingBuffer, OwnerSystem)) { UnlockLockedJobBuffers(vault, locked); return false; }
-            locked++;
-            if (!vault.TryLockBuffer(BufferID.ShinobuCardiacPulseStates, OwnerSystem)) { UnlockLockedJobBuffers(vault, locked); return false; }
-            locked++;
-            if (!vault.TryLockBuffer(BufferID.ShinobuMockToxemiaSignals, OwnerSystem)) { UnlockLockedJobBuffers(vault, locked); return false; }
-            locked++;
-            if (!vault.TryLockBuffer(BufferID.ShinobuMockPressureSignals, OwnerSystem)) { UnlockLockedJobBuffers(vault, locked); return false; }
-            locked++;
-            if (!vault.TryLockBuffer(BufferID.ShinobuMockCombatDamageSignals, OwnerSystem)) { UnlockLockedJobBuffers(vault, locked); return false; }
-            locked++;
-            if (!vault.TryLockBuffer(BufferID.ShinobuMockPredatorAggroSignals, OwnerSystem)) { UnlockLockedJobBuffers(vault, locked); return false; }
-            locked++;
-            if (!vault.TryLockBuffer(BufferID.ShinobuMockMedicalItemSignals, OwnerSystem)) { UnlockLockedJobBuffers(vault, locked); return false; }
-            locked++;
-            if (!vault.TryLockBuffer(BufferID.ShinobuPhysiologyTuning, OwnerSystem)) { UnlockLockedJobBuffers(vault, locked); return false; }
-            locked++;
+            if (!vault.TryAcquireMutationGuard(JobMutationGuardMask))
+                return false;
 
             _jobLocksHeld = true;
             return true;
@@ -2283,34 +2284,15 @@ namespace Hecton8.Physiology
             if (!_jobLocksHeld)
                 return;
 
+            _jobLocksHeld = false;
             IDataVault vault = _dataVault;
             if (vault != null)
-                UnlockLockedJobBuffers(vault, LockBufferCount);
-            _jobLocksHeld = false;
+                vault.ReleaseMutationGuard(JobMutationGuardMask);
         }
 
-        private static void UnlockLockedJobBuffers(IDataVault vault, int lockedCount)
+        private static ulong MutationGuardBit(BufferID bufferId)
         {
-            if (lockedCount >= 20) vault.TryUnlockBuffer(BufferID.ShinobuPhysiologyTuning, OwnerSystem);
-            if (lockedCount >= 19) vault.TryUnlockBuffer(BufferID.ShinobuMockMedicalItemSignals, OwnerSystem);
-            if (lockedCount >= 18) vault.TryUnlockBuffer(BufferID.ShinobuMockPredatorAggroSignals, OwnerSystem);
-            if (lockedCount >= 17) vault.TryUnlockBuffer(BufferID.ShinobuMockCombatDamageSignals, OwnerSystem);
-            if (lockedCount >= 16) vault.TryUnlockBuffer(BufferID.ShinobuMockPressureSignals, OwnerSystem);
-            if (lockedCount >= 15) vault.TryUnlockBuffer(BufferID.ShinobuMockToxemiaSignals, OwnerSystem);
-            if (lockedCount >= 14) vault.TryUnlockBuffer(BufferID.ShinobuCardiacPulseStates, OwnerSystem);
-            if (lockedCount >= 13) vault.TryUnlockBuffer(ShinobuPhysiologyConstants.DecompressionTelemetryRingBuffer, OwnerSystem);
-            if (lockedCount >= 12) vault.TryUnlockBuffer(BufferID.ShinobuPhysiologyTelemetryRing, OwnerSystem);
-            if (lockedCount >= 11) vault.TryUnlockBuffer(BufferID.ShinobuVitalsExport, OwnerSystem);
-            if (lockedCount >= 10) vault.TryUnlockBuffer(ShinobuPhysiologyConstants.GasPhysiologyTuningBuffer, OwnerSystem);
-            if (lockedCount >= 9) vault.TryUnlockBuffer(ShinobuPhysiologyConstants.BreathingGasFractionsBuffer, OwnerSystem);
-            if (lockedCount >= 8) vault.TryUnlockBuffer(ShinobuPhysiologyConstants.GasPhysiologyStatesBuffer, OwnerSystem);
-            if (lockedCount >= 7) vault.TryUnlockBuffer(ShinobuPhysiologyConstants.StatusEffectStatesBuffer, OwnerSystem);
-            if (lockedCount >= 6) vault.TryUnlockBuffer(BufferID.ShinobuPhysiologyScalars, OwnerSystem);
-            if (lockedCount >= 5) vault.TryUnlockBuffer(BufferID.ShinobuEnvironmentVitals, OwnerSystem);
-            if (lockedCount >= 4) vault.TryUnlockBuffer(BufferID.ShinobuHaldaneCoefficients, OwnerSystem);
-            if (lockedCount >= 3) vault.TryUnlockBuffer(BufferID.ShinobuTissueCompartments, OwnerSystem);
-            if (lockedCount >= 2) vault.TryUnlockBuffer(BufferID.ShinobuDecompressionStates, OwnerSystem);
-            if (lockedCount >= 1) vault.TryUnlockBuffer(BufferID.ShinobuPhysiologyVitals, OwnerSystem);
+            return 1UL << (unchecked((int)(uint)(int)bufferId) & 31);
         }
 
         private void TryRegisterTicks()

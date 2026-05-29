@@ -170,6 +170,12 @@ namespace Hecton8.UI
             RegisterToTickManager();
         }
 
+        private void Start()
+        {
+            EnsureLineLibrary();
+            EnsureUiBuilt();
+        }
+
         private void OnDisable()
         {
             TryUnregisterHotSwapListener();
@@ -290,9 +296,10 @@ namespace Hecton8.UI
 
         private void StartDump(SurvivalDeathRecord record)
         {
-            EnsureLineLibrary();
-            EnsureUiBuilt();
             if (_dumpLabel == null || _overlayGroup == null)
+                return;
+
+            if (!_libraryBuilt || !_uiBuilt)
                 return;
 
             int seed = ComputeDumpSeed(record);

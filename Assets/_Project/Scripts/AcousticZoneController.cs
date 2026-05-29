@@ -384,6 +384,7 @@ namespace Hecton8.Audio
 
         [SerializeField] private BuoyancyObject playerBuoyancy; // player acoustic owner ref
         private IBuoyancyAirStateReadModel _playerBuoyancyState;
+        private IPlayerRuntimeContext _playerRuntimeContext;
 
         [Header("Underwater Vegetation Overlay")]
         [Tooltip("Optional 2D ambient pulse used when underwater audio moves through dense sargassum fields.")]
@@ -854,11 +855,12 @@ namespace Hecton8.Audio
         private void Start()
         {
             CachePlayerBuoyancyState();
+            TryBindPlayerBuoyancyFromCachedContext();
 
             // Lazy player lookup.
-            if (playerBuoyancy == null)
+            if (_playerBuoyancyState == null)
             {
-                FindPlayerBuoyancy(true);
+                FindPlayerBuoyancyCold(true);
             }
 
             // Deferred registration.
@@ -877,7 +879,7 @@ namespace Hecton8.Audio
             }
 
             ResolvePlayerAmbientSource();
-            ResolvePlayerListenerFilters();
+            ResolvePlayerListenerFiltersCold();
             ResolveBiomeMatrixDirector(true);
             RefreshBiomeAmbientContext();
             RefreshSoundscapeTierContext(true);
@@ -945,6 +947,11 @@ namespace Hecton8.Audio
                 case GlobalRegistryServiceSlot.AtmosphereRuntime:
                     _atmosphereReadModel = currentService as IAtmosphereReadModel;
                     RefreshAtmosphereZoneCache();
+                    break;
+                case GlobalRegistryServiceSlot.Player:
+                    _playerRuntimeContext = currentService as IPlayerRuntimeContext;
+                    TryBindPlayerBuoyancyFromCachedContext();
+                    ResolvePlayerListenerFiltersCold();
                     break;
                 case GlobalRegistryServiceSlot.PhysicsStateManager:
                     RebindPhysicsStateEventService(currentService as IPhysicsStateEventService);
@@ -1057,6 +1064,7 @@ namespace Hecton8.Audio
             _physicsStateEvents = null;
             _cachedSoundscapeReadModel = null;
             _atmosphereReadModel = null;
+            _playerRuntimeContext = null;
             _nextAudioServiceResolveFrame = 0;
         }
 
@@ -1066,6 +1074,8 @@ namespace Hecton8.Audio
             CacheSoundscapeReadModel(GlobalRegistry.SoundscapeTierReadModel);
             _atmosphereReadModel = GlobalRegistry.AtmosphereReadModel;
             _physicsStateEvents = GlobalRegistry.PhysicsStateEvents;
+            _playerRuntimeContext = GlobalRegistry.Player;
+            TryBindPlayerBuoyancyFromCachedContext();
         }
 
         private void CacheAudioService(IAudioService audioService)
@@ -1165,23 +1175,11 @@ namespace Hecton8.Audio
 
         public void Tick(float deltaTime)
         {
-            // Lazy player lookup if the runtime owner is not ready yet.
-            if (playerBuoyancy == null)
+            if (!HasValidPlayerBuoyancyState())
             {
-                FindPlayerBuoyancy(false);
-                if (playerBuoyancy == null)
-                {
-                    _playerBuoyancyState = null;
-                    return; // Player not found yet.
-                }
-            }
-
-            // Unity destroyed-object check.
-            if ((object)playerBuoyancy == null || playerBuoyancy == null)
-            {
-                playerBuoyancy = null;
-                _playerBuoyancyState = null;
-                return;
+                TryBindPlayerBuoyancyFromCachedContext();
+                if (!HasValidPlayerBuoyancyState())
+                    return;
             }
 
             // Current acoustic zone.
@@ -1298,7 +1296,7 @@ namespace Hecton8.Audio
         /// </summary>
         private void ApplyInitialSnapshot()
         {
-            if (playerBuoyancy == null) return;
+            if (!HasValidPlayerBuoyancyState()) return;
 
             ApplyInitialSnapshot(ResolveCurrentZone());
         }
@@ -1396,13 +1394,12 @@ namespace Hecton8.Audio
         // ══════════════════════════════════════════════════════════
 
         /// <summary>
-        /// Lazily resolves the current player BuoyancyObject through GameBootstrapper.
-        /// Called once. If the player is not ready yet, retries later from Tick.
+        /// Cold-resolves the current player BuoyancyObject through GameBootstrapper.
+        /// Called from startup or explicit player rebinding, never from Tick.
         ///
-        /// TryGetComponent is zero GC.
-        /// TryGetComponent is zero GC.
+        /// TryGetComponent is zero GC and restricted to this cold path.
         /// </summary>
-        private void FindPlayerBuoyancy(bool force)
+        private void FindPlayerBuoyancyCold(bool force)
         {
             if (!force && ResolvePresentationClockSeconds() < _nextPlayerResolveTime)
                 return;
@@ -1422,6 +1419,42 @@ namespace Hecton8.Audio
         private void CachePlayerBuoyancyState()
         {
             _playerBuoyancyState = playerBuoyancy as IBuoyancyAirStateReadModel;
+        }
+
+        private bool TryBindPlayerBuoyancyFromCachedContext()
+        {
+            IPlayerRuntimeContext playerContext = _playerRuntimeContext;
+            if (playerContext == null)
+                return false;
+
+            IBuoyancyAirStateReadModel airState = playerContext.PlayerBuoyancyAirState;
+            if (!IsValidUnityBackedReadModel(airState))
+                return false;
+
+            _playerBuoyancyState = airState;
+            playerBuoyancy = airState as BuoyancyObject;
+            _playerMovement = playerContext.PlayerMovement;
+            UpdatePlayerFoundDiagnostic();
+            return true;
+        }
+
+        private bool HasValidPlayerBuoyancyState()
+        {
+            if (IsValidUnityBackedReadModel(_playerBuoyancyState))
+                return true;
+
+            _playerBuoyancyState = null;
+            playerBuoyancy = null;
+            return false;
+        }
+
+        private static bool IsValidUnityBackedReadModel(IBuoyancyAirStateReadModel readModel)
+        {
+            if (readModel == null)
+                return false;
+
+            UnityEngine.Object unityObject = readModel as UnityEngine.Object;
+            return unityObject == null ? !(readModel is UnityEngine.Object) : true;
         }
 
         // ══════════════════════════════════════════════════════════
@@ -1680,10 +1713,10 @@ namespace Hecton8.Audio
             if (_cachedSoundscapeReadModel != null)
                 return _cachedSoundscapeReadModel;
 
-            float currentTime = ResolvePresentationClockSeconds();
-            if (!force && currentTime < _nextSoundscapeResolveTime)
+            if (!force)
                 return null;
 
+            float currentTime = ResolvePresentationClockSeconds();
             _nextSoundscapeResolveTime = currentTime + soundscapeResolveRetryInterval;
             CacheSoundscapeReadModel(GlobalRegistry.SoundscapeTierReadModel);
             return _cachedSoundscapeReadModel;
@@ -1867,8 +1900,8 @@ namespace Hecton8.Audio
 
         private HectonPlayerMovement ResolvePlayerMovement()
         {
-            if (_playerMovement == null && playerBuoyancy != null)
-                playerBuoyancy.TryGetComponent(out _playerMovement);
+            if (_playerMovement == null && _playerRuntimeContext != null)
+                _playerMovement = _playerRuntimeContext.PlayerMovement;
 
             return _playerMovement;
         }
@@ -2063,13 +2096,26 @@ namespace Hecton8.Audio
 
         private AudioListener ResolvePlayerListenerFilters()
         {
+            AudioListener listener = _cachedPlayerAudioListener;
+            if ((object)listener != null && listener != null)
+            {
+                EnsureAcousticMixerParameterBindings();
+                return listener;
+            }
+
+            _cachedPlayerAudioListener = null;
+            return null;
+        }
+
+        private AudioListener ResolvePlayerListenerFiltersCold()
+        {
             if (GameBootstrapper.TryGetCurrentPlayerTransform(out Transform playerTransform))
-                ResolvePlayerListenerFilters(playerTransform);
+                ResolvePlayerListenerFiltersCold(playerTransform);
 
             return _cachedPlayerAudioListener;
         }
 
-        private void ResolvePlayerListenerFilters(Transform playerTransform)
+        private void ResolvePlayerListenerFiltersCold(Transform playerTransform)
         {
             if (playerTransform == null)
                 return;

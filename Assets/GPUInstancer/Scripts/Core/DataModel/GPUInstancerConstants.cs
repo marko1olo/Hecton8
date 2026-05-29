@@ -184,18 +184,26 @@ namespace GPUInstancer
         }
 
         public static ComputeShader computeBufferSetDataPartial;
-        public static int computeBufferSetDataPartialKernelId;
-        public static int computeBufferSetDataSingleKernelId;
+        public static int computeBufferSetDataPartialKernelId = -1;
+        public static int computeBufferSetDataSingleKernelId = -1;
 
         public static void SetupComputeSetDataPartial()
         {
             if (computeBufferSetDataPartial == null)
             {
                 computeBufferSetDataPartial = Resources.Load<ComputeShader>(COMPUTE_SET_DATA_PARTIAL_RESOURCE_PATH);
-                if (computeBufferSetDataPartial != null)
+                if (computeBufferSetDataPartial != null &&
+                    computeBufferSetDataPartial.HasKernel(COMPUTE_SET_DATA_PARTIAL_KERNEL) &&
+                    computeBufferSetDataPartial.HasKernel(COMPUTE_SET_DATA_SINGLE_KERNEL))
                 {
                     computeBufferSetDataPartialKernelId = computeBufferSetDataPartial.FindKernel(COMPUTE_SET_DATA_PARTIAL_KERNEL);
                     computeBufferSetDataSingleKernelId = computeBufferSetDataPartial.FindKernel(COMPUTE_SET_DATA_SINGLE_KERNEL);
+                }
+                else
+                {
+                    computeBufferSetDataPartial = null;
+                    computeBufferSetDataPartialKernelId = -1;
+                    computeBufferSetDataSingleKernelId = -1;
                 }
             }
         }
@@ -210,6 +218,8 @@ namespace GPUInstancer
 
         public static readonly string COMPUTE_TEXTURE_UTILS_PATH = "Compute/CSTextureUtils";
         public static readonly string COMPUTE_COPY_TEXTURE_KERNEL = "CSCopyTexture";
+        public static readonly string COMPUTE_REDUCE_TEXTURE_KERNEL = "CSReduceTexture";
+        public static readonly string COMPUTE_COPY_TEXTURE_ARRAY_KERNEL = "CSCopyTextureArray";
 
         public static class CopyTextureKernelProperties
         {
@@ -226,7 +236,9 @@ namespace GPUInstancer
         }
 
         public static ComputeShader computeTextureUtils;
-        public static int computeTextureUtilsCopyTextureId;
+        public static int computeTextureUtilsCopyTextureId = -1;
+        public static int computeTextureUtilsReduceTextureId = -1;
+        public static int computeTextureUtilsCopyTextureArrayId = -1;
 
         public static void SetupComputeTextureUtils()
         {
@@ -234,9 +246,21 @@ namespace GPUInstancer
             {
                 computeTextureUtils = Resources.Load<ComputeShader>(COMPUTE_TEXTURE_UTILS_PATH);
 
-                if (computeTextureUtils != null)
+                if (computeTextureUtils != null &&
+                    computeTextureUtils.HasKernel(COMPUTE_COPY_TEXTURE_KERNEL) &&
+                    computeTextureUtils.HasKernel(COMPUTE_REDUCE_TEXTURE_KERNEL) &&
+                    computeTextureUtils.HasKernel(COMPUTE_COPY_TEXTURE_ARRAY_KERNEL))
                 {
                     computeTextureUtilsCopyTextureId = computeTextureUtils.FindKernel(COMPUTE_COPY_TEXTURE_KERNEL);
+                    computeTextureUtilsReduceTextureId = computeTextureUtils.FindKernel(COMPUTE_REDUCE_TEXTURE_KERNEL);
+                    computeTextureUtilsCopyTextureArrayId = computeTextureUtils.FindKernel(COMPUTE_COPY_TEXTURE_ARRAY_KERNEL);
+                }
+                else
+                {
+                    computeTextureUtils = null;
+                    computeTextureUtilsCopyTextureId = -1;
+                    computeTextureUtilsReduceTextureId = -1;
+                    computeTextureUtilsCopyTextureArrayId = -1;
                 }
             }
         }
@@ -311,12 +335,12 @@ namespace GPUInstancer
         }
 
         public static ComputeShader computeRuntimeModification;
-        public static int computeBufferTransformOffsetId;
-        public static int computeRemoveInsideBoundsId;
-        public static int computeRemoveInsideBoxId;
-        public static int computeRemoveInsideSphereId;
-        public static int computeRemoveInsideCapsuleId;
-        public static int computeBufferMatrixOffsetId;
+        public static int computeBufferTransformOffsetId = -1;
+        public static int computeRemoveInsideBoundsId = -1;
+        public static int computeRemoveInsideBoxId = -1;
+        public static int computeRemoveInsideSphereId = -1;
+        public static int computeRemoveInsideCapsuleId = -1;
+        public static int computeBufferMatrixOffsetId = -1;
 
         public static void SetupComputeRuntimeModification()
         {
@@ -324,7 +348,13 @@ namespace GPUInstancer
             {
                 computeRuntimeModification = Resources.Load<ComputeShader>(COMPUTE_RUNTIME_MODIFICATION_RESOURCE_PATH);
 
-                if (computeRuntimeModification != null)
+                if (computeRuntimeModification != null &&
+                    computeRuntimeModification.HasKernel(COMPUTE_TRANSFORM_OFFSET_KERNEL) &&
+                    computeRuntimeModification.HasKernel(COMPUTE_REMOVE_INSIDE_BOUNDS_KERNEL) &&
+                    computeRuntimeModification.HasKernel(COMPUTE_REMOVE_INSIDE_BOX_KERNEL) &&
+                    computeRuntimeModification.HasKernel(COMPUTE_REMOVE_INSIDE_SPHERE_KERNEL) &&
+                    computeRuntimeModification.HasKernel(COMPUTE_REMOVE_INSIDE_CAPSULE_KERNEL) &&
+                    computeRuntimeModification.HasKernel(COMPUTE_MATRIX_OFFSET_KERNEL))
                 {
                     computeBufferTransformOffsetId = computeRuntimeModification.FindKernel(COMPUTE_TRANSFORM_OFFSET_KERNEL);
                     computeRemoveInsideBoundsId = computeRuntimeModification.FindKernel(COMPUTE_REMOVE_INSIDE_BOUNDS_KERNEL);
@@ -332,6 +362,16 @@ namespace GPUInstancer
                     computeRemoveInsideSphereId = computeRuntimeModification.FindKernel(COMPUTE_REMOVE_INSIDE_SPHERE_KERNEL);
                     computeRemoveInsideCapsuleId = computeRuntimeModification.FindKernel(COMPUTE_REMOVE_INSIDE_CAPSULE_KERNEL);
                     computeBufferMatrixOffsetId = computeRuntimeModification.FindKernel(COMPUTE_MATRIX_OFFSET_KERNEL);
+                }
+                else
+                {
+                    computeRuntimeModification = null;
+                    computeBufferTransformOffsetId = -1;
+                    computeRemoveInsideBoundsId = -1;
+                    computeRemoveInsideBoxId = -1;
+                    computeRemoveInsideSphereId = -1;
+                    computeRemoveInsideCapsuleId = -1;
+                    computeBufferMatrixOffsetId = -1;
                 }
             }
         }

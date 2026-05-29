@@ -132,6 +132,9 @@ namespace Hecton8.UI
         private const BufferID UIOptimizationTelemetryBufferId = (BufferID)15070552;
         private const string DumpRelativePath = "Docs/AgentLogs/Dump_1335_BabelSubtitleSync.bin";
         private const string UIOptimizationDumpRelativePath = "Docs/AgentLogs/Dump_1423.bin";
+        private static readonly ulong CueStateMutationGuardMask = SubtitleMutationGuardBit(SubtitleCueStateBufferId);
+        private static readonly ulong TelemetryMutationGuardMask = SubtitleMutationGuardBit(SubtitleCueTelemetryBufferId);
+        private static readonly ulong UIOptimizationTelemetryMutationGuardMask = SubtitleMutationGuardBit(UIOptimizationTelemetryBufferId);
 
         private static readonly DispatcherBridge s_dispatcherBridge = new DispatcherBridge();
         private static IDataVault s_vault;
@@ -251,7 +254,7 @@ namespace Hecton8.UI
                 return false;
             }
 
-            if (!TryAcquireCueWriteBuffer(out NativeArray<SubtitleCueDTO> cues))
+            if (!TryAcquireCueMutationBuffer(out NativeArray<SubtitleCueDTO> cues))
             {
                 s_initialized = false;
                 return false;
@@ -268,7 +271,7 @@ namespace Hecton8.UI
             }
             finally
             {
-                s_vault.ReleaseWriteLock(in s_cueHandle, SystemID.UI);
+                ReleaseCueMutationBuffer();
             }
 
             s_nextCueSlot = 0;
@@ -306,7 +309,7 @@ namespace Hecton8.UI
                 return false;
 
             PreparePresentationFrame();
-            if (!TryCompletePendingCueEvaluation() || !TryAcquireCueWriteBuffer(out NativeArray<SubtitleCueDTO> cues))
+            if (!TryCompletePendingCueEvaluation() || !TryAcquireCueMutationBuffer(out NativeArray<SubtitleCueDTO> cues))
                 return false;
 
             try
@@ -332,7 +335,7 @@ namespace Hecton8.UI
             }
             finally
             {
-                s_vault.ReleaseWriteLock(in s_cueHandle, SystemID.UI);
+                ReleaseCueMutationBuffer();
             }
         }
 
@@ -428,7 +431,7 @@ namespace Hecton8.UI
             if (failureCode == UIOptimizationFailureCode.None || !s_initialized || s_vault == null)
                 return;
 
-            if (!TryAcquireUIOptimizationTelemetryWriteBuffer(out NativeArray<UIOptimizationTelemetryEntry> telemetry))
+            if (!TryAcquireUIOptimizationTelemetryMutationBuffer(out NativeArray<UIOptimizationTelemetryEntry> telemetry))
                 return;
 
             try
@@ -458,7 +461,7 @@ namespace Hecton8.UI
             }
             finally
             {
-                s_vault.ReleaseWriteLock(in s_uiOptimizationTelemetryHandle, SystemID.UI);
+                ReleaseUIOptimizationTelemetryMutationBuffer();
             }
 
             if (failureCode == UIOptimizationFailureCode.InvalidTextState)
@@ -577,37 +580,41 @@ namespace Hecton8.UI
             return true;
         }
 
-        private static bool TryAcquireCueWriteBuffer(out NativeArray<SubtitleCueDTO> cues)
+        private static bool TryAcquireCueMutationBuffer(out NativeArray<SubtitleCueDTO> cues)
         {
-            return TryAcquireSubtitleWriteBuffer(
+            return TryAcquireSubtitleMutationBuffer(
                 in s_cueHandle,
                 SubtitleCueStateBufferId,
                 MaxSubtitleCueCount,
+                CueStateMutationGuardMask,
                 out cues);
         }
 
-        private static bool TryAcquireTelemetryWriteBuffer(out NativeArray<LocalizationTelemetryEntry> telemetry)
+        private static bool TryAcquireTelemetryMutationBuffer(out NativeArray<LocalizationTelemetryEntry> telemetry)
         {
-            return TryAcquireSubtitleWriteBuffer(
+            return TryAcquireSubtitleMutationBuffer(
                 in s_telemetryHandle,
                 SubtitleCueTelemetryBufferId,
                 TelemetryFrameCapacity,
+                TelemetryMutationGuardMask,
                 out telemetry);
         }
 
-        private static bool TryAcquireUIOptimizationTelemetryWriteBuffer(out NativeArray<UIOptimizationTelemetryEntry> telemetry)
+        private static bool TryAcquireUIOptimizationTelemetryMutationBuffer(out NativeArray<UIOptimizationTelemetryEntry> telemetry)
         {
-            return TryAcquireSubtitleWriteBuffer(
+            return TryAcquireSubtitleMutationBuffer(
                 in s_uiOptimizationTelemetryHandle,
                 UIOptimizationTelemetryBufferId,
                 TelemetryFrameCapacity,
+                UIOptimizationTelemetryMutationGuardMask,
                 out telemetry);
         }
 
-        private static bool TryAcquireSubtitleWriteBuffer<T>(
+        private static bool TryAcquireSubtitleMutationBuffer<T>(
             in VaultGenerationHandle<T> handle,
             BufferID bufferId,
             int requiredLength,
+            ulong mutationGuardMask,
             out NativeArray<T> buffer) where T : unmanaged
         {
             buffer = default;
@@ -615,7 +622,8 @@ namespace Hecton8.UI
                 s_vault.IsCompactionFenceActive ||
                 requiredLength <= 0 ||
                 !IsSubtitleVaultHandle(in handle, bufferId) ||
-                !s_vault.TryAcquireWriteLock(in handle, SystemID.UI, out buffer))
+                mutationGuardMask == 0ul ||
+                !s_vault.TryAcquireMutationGuard(mutationGuardMask))
             {
                 return false;
             }
@@ -624,6 +632,8 @@ namespace Hecton8.UI
             try
             {
                 if (s_vault.IsCompactionFenceActive ||
+                    !s_vault.TryResolveHandle(in handle, out buffer) ||
+                    s_vault.IsCompactionFenceActive ||
                     !buffer.IsCreated ||
                     buffer.Length < requiredLength)
                 {
@@ -637,8 +647,30 @@ namespace Hecton8.UI
             finally
             {
                 if (releaseOnExit)
-                    s_vault.ReleaseWriteLock(in handle, SystemID.UI);
+                    s_vault.ReleaseMutationGuard(mutationGuardMask);
             }
+        }
+
+        private static void ReleaseCueMutationBuffer()
+        {
+            ReleaseSubtitleMutationBuffer(CueStateMutationGuardMask);
+        }
+
+        private static void ReleaseTelemetryMutationBuffer()
+        {
+            ReleaseSubtitleMutationBuffer(TelemetryMutationGuardMask);
+        }
+
+        private static void ReleaseUIOptimizationTelemetryMutationBuffer()
+        {
+            ReleaseSubtitleMutationBuffer(UIOptimizationTelemetryMutationGuardMask);
+        }
+
+        private static void ReleaseSubtitleMutationBuffer(ulong mutationGuardMask)
+        {
+            IDataVault vault = s_vault;
+            if (vault != null && mutationGuardMask != 0ul)
+                vault.ReleaseMutationGuard(mutationGuardMask);
         }
 
         private static bool IsSubtitleVaultHandle<T>(
@@ -648,6 +680,11 @@ namespace Hecton8.UI
             return handle.BufferID == unchecked((uint)(int)bufferId) &&
                    handle.SystemID == (uint)SystemID.UI &&
                    handle.Generation != 0u;
+        }
+
+        private static ulong SubtitleMutationGuardBit(BufferID bufferId)
+        {
+            return 1UL << (unchecked((int)(uint)(int)bufferId) & 31);
         }
 
         private static void ReleaseSubtitleBuffers(IDataVault vault)
@@ -822,7 +859,7 @@ namespace Hecton8.UI
 
         private static bool RegisterCue(uint tokenHash, uint startAudioFrame, float durationSeconds, uint flags)
         {
-            if (!TryCompletePendingCueEvaluation() || !TryAcquireCueWriteBuffer(out NativeArray<SubtitleCueDTO> cues))
+            if (!TryCompletePendingCueEvaluation() || !TryAcquireCueMutationBuffer(out NativeArray<SubtitleCueDTO> cues))
                 return false;
 
             try
@@ -845,7 +882,7 @@ namespace Hecton8.UI
             }
             finally
             {
-                s_vault.ReleaseWriteLock(in s_cueHandle, SystemID.UI);
+                ReleaseCueMutationBuffer();
             }
         }
 
@@ -929,7 +966,7 @@ namespace Hecton8.UI
 
         private static JobHandle ScheduleCueEvaluation(JobHandle dependsOn)
         {
-            if (!TryAcquireCueWriteBuffer(out NativeArray<SubtitleCueDTO> cues))
+            if (!TryAcquireCueMutationBuffer(out NativeArray<SubtitleCueDTO> cues))
             {
                 s_activeCueCount = 0;
                 return dependsOn;
@@ -959,7 +996,7 @@ namespace Hecton8.UI
             }
             finally
             {
-                s_vault.ReleaseWriteLock(in s_cueHandle, SystemID.UI);
+                ReleaseCueMutationBuffer();
             }
         }
 
@@ -1034,7 +1071,7 @@ namespace Hecton8.UI
 
         private static void WriteFrameTelemetry(float decodeMilliseconds)
         {
-            if (!TryAcquireTelemetryWriteBuffer(out NativeArray<LocalizationTelemetryEntry> telemetry))
+            if (!TryAcquireTelemetryMutationBuffer(out NativeArray<LocalizationTelemetryEntry> telemetry))
                 return;
 
             try
@@ -1063,7 +1100,7 @@ namespace Hecton8.UI
             }
             finally
             {
-                s_vault.ReleaseWriteLock(in s_telemetryHandle, SystemID.UI);
+                ReleaseTelemetryMutationBuffer();
             }
         }
 

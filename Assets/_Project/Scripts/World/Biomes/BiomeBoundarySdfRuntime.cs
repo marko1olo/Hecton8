@@ -34,6 +34,12 @@ namespace Hecton8.World.Biomes
         private const BufferID GlobalBiomeHashMapBufferId = BufferID.BiomeBoundaryGlobalBiomeHashMap;
         private const BufferID SampleResultBufferId = BufferID.BiomeBoundarySampleResult;
         private const BufferID TelemetryRingBufferId = BufferID.BiomeBoundaryTelemetryRing;
+        private static readonly ulong BiomeMapMutationGuardMask =
+            MutationGuardBit(GlobalBiomeMapBufferId) |
+            MutationGuardBit(GlobalBiomeHashMapBufferId);
+        private static readonly ulong SampleMutationGuardMask =
+            BiomeMapMutationGuardMask |
+            MutationGuardBit(SampleResultBufferId);
 
         [Header("Heatmap")]
         [SerializeField] private Transform playerTransform;
@@ -428,36 +434,34 @@ namespace Hecton8.World.Biomes
             globalBiomeMap = default;
             globalBiomeHashMap = default;
             EnsureNativeStorage();
-            if (!_nativeStorageReady || _dataVault == null)
+            IDataVault vault = _dataVault;
+            if (!_nativeStorageReady || vault == null)
                 return false;
 
-            bool mapLocked = false;
-            bool hashLocked = false;
+            bool guardHeld = false;
             try
             {
-                if (!_dataVault.TryAcquireWriteLock(in _globalBiomeMapHandle, VaultOwnerSystemId, out globalBiomeMap))
+                if (!vault.TryAcquireMutationGuard(BiomeMapMutationGuardMask))
                     return false;
 
-                mapLocked = true;
-                if (!_dataVault.TryAcquireWriteLock(in _globalBiomeHashMapHandle, VaultOwnerSystemId, out globalBiomeHashMap))
+                guardHeld = true;
+                if (_globalBiomeMapHandle.BufferID != (uint)GlobalBiomeMapBufferId ||
+                    _globalBiomeHashMapHandle.BufferID != (uint)GlobalBiomeHashMapBufferId ||
+                    !vault.TryResolveHandle(in _globalBiomeMapHandle, out globalBiomeMap) ||
+                    !vault.TryResolveHandle(in _globalBiomeHashMapHandle, out globalBiomeHashMap) ||
+                    globalBiomeMap.Length < BiomeHeatmapPixelCount ||
+                    globalBiomeHashMap.Length < BiomeHeatmapPixelCount)
+                {
                     return false;
+                }
 
-                hashLocked = true;
-                if (globalBiomeMap.Length < BiomeHeatmapPixelCount || globalBiomeHashMap.Length < BiomeHeatmapPixelCount)
-                    return false;
-
+                guardHeld = false;
                 return true;
             }
             finally
             {
-                if (!hashLocked || globalBiomeMap.Length < BiomeHeatmapPixelCount || globalBiomeHashMap.Length < BiomeHeatmapPixelCount)
-                {
-                    if (hashLocked)
-                        _dataVault.ReleaseWriteLock(in _globalBiomeHashMapHandle, VaultOwnerSystemId);
-
-                    if (mapLocked)
-                        _dataVault.ReleaseWriteLock(in _globalBiomeMapHandle, VaultOwnerSystemId);
-                }
+                if (guardHeld)
+                    vault.ReleaseMutationGuard(BiomeMapMutationGuardMask);
             }
         }
 
@@ -467,8 +471,7 @@ namespace Hecton8.World.Biomes
             if (vault == null)
                 return;
 
-            vault.ReleaseWriteLock(in _globalBiomeHashMapHandle, VaultOwnerSystemId);
-            vault.ReleaseWriteLock(in _globalBiomeMapHandle, VaultOwnerSystemId);
+            vault.ReleaseMutationGuard(BiomeMapMutationGuardMask);
         }
 
         private bool TryAcquireSampleBuffers(
@@ -480,53 +483,37 @@ namespace Hecton8.World.Biomes
             globalBiomeHashMap = default;
             sampleResult = default;
             EnsureNativeStorage();
-            if (!_nativeStorageReady || _dataVault == null)
+            IDataVault vault = _dataVault;
+            if (!_nativeStorageReady || vault == null)
                 return false;
 
-            bool mapLocked = false;
-            bool hashLocked = false;
-            bool resultLocked = false;
+            bool guardHeld = false;
             try
             {
-                if (!_dataVault.TryAcquireWriteLock(in _globalBiomeMapHandle, VaultOwnerSystemId, out globalBiomeMap))
+                if (!vault.TryAcquireMutationGuard(SampleMutationGuardMask))
                     return false;
 
-                mapLocked = true;
-                if (!_dataVault.TryAcquireWriteLock(in _globalBiomeHashMapHandle, VaultOwnerSystemId, out globalBiomeHashMap))
-                    return false;
-
-                hashLocked = true;
-                if (!_dataVault.TryAcquireWriteLock(in _sampleResultHandle, VaultOwnerSystemId, out sampleResult))
-                    return false;
-
-                resultLocked = true;
-                if (globalBiomeMap.Length < BiomeHeatmapPixelCount ||
+                guardHeld = true;
+                if (_globalBiomeMapHandle.BufferID != (uint)GlobalBiomeMapBufferId ||
+                    _globalBiomeHashMapHandle.BufferID != (uint)GlobalBiomeHashMapBufferId ||
+                    _sampleResultHandle.BufferID != (uint)SampleResultBufferId ||
+                    !vault.TryResolveHandle(in _globalBiomeMapHandle, out globalBiomeMap) ||
+                    !vault.TryResolveHandle(in _globalBiomeHashMapHandle, out globalBiomeHashMap) ||
+                    !vault.TryResolveHandle(in _sampleResultHandle, out sampleResult) ||
+                    globalBiomeMap.Length < BiomeHeatmapPixelCount ||
                     globalBiomeHashMap.Length < BiomeHeatmapPixelCount ||
                     sampleResult.Length < 1)
                 {
                     return false;
                 }
 
+                guardHeld = false;
                 return true;
             }
             finally
             {
-                bool invalid =
-                    !resultLocked ||
-                    globalBiomeMap.Length < BiomeHeatmapPixelCount ||
-                    globalBiomeHashMap.Length < BiomeHeatmapPixelCount ||
-                    sampleResult.Length < 1;
-                if (invalid)
-                {
-                    if (resultLocked)
-                        _dataVault.ReleaseWriteLock(in _sampleResultHandle, VaultOwnerSystemId);
-
-                    if (hashLocked)
-                        _dataVault.ReleaseWriteLock(in _globalBiomeHashMapHandle, VaultOwnerSystemId);
-
-                    if (mapLocked)
-                        _dataVault.ReleaseWriteLock(in _globalBiomeMapHandle, VaultOwnerSystemId);
-                }
+                if (guardHeld)
+                    vault.ReleaseMutationGuard(SampleMutationGuardMask);
             }
         }
 
@@ -536,9 +523,7 @@ namespace Hecton8.World.Biomes
             if (vault == null)
                 return;
 
-            vault.ReleaseWriteLock(in _sampleResultHandle, VaultOwnerSystemId);
-            vault.ReleaseWriteLock(in _globalBiomeHashMapHandle, VaultOwnerSystemId);
-            vault.ReleaseWriteLock(in _globalBiomeMapHandle, VaultOwnerSystemId);
+            vault.ReleaseMutationGuard(SampleMutationGuardMask);
         }
 
         private bool TryAcquireTelemetryWriteBuffer(out NativeArray<BiomeBoundaryTelemetryEntry> telemetryRing)
@@ -605,6 +590,11 @@ namespace Hecton8.World.Biomes
                    handle.BufferID == (uint)bufferId &&
                    vault.TryReadOnlyHandle(in handle, out NativeArray<T>.ReadOnly existing) &&
                    existing.Length >= requiredLength;
+        }
+
+        private static ulong MutationGuardBit(BufferID bufferId)
+        {
+            return 1UL << (unchecked((int)(uint)(int)bufferId) & 31);
         }
 
         private void RebindDataVault(IDataVault currentVault)

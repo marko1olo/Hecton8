@@ -25,7 +25,6 @@ namespace Hecton8.Physiology
         private static int s_x001ShinobuRespawnReconciliationRuntimeSignalPushDropCount;
         private const SystemID OwnerSystem = SystemID.GameplayPlayer;
         private const uint SystemHash = ShinobuRespawnConstants.SourceHash;
-        private const int JobBufferLockCount = 16;
         private const uint DefaultPlayerHash = 0x504C5952u; // PLYR
         private const ulong DumpMagic = 0x5253504E53524745ul; // RSPNSRGE
         private const uint DumpVersion = 1u;
@@ -36,6 +35,26 @@ namespace Hecton8.Physiology
         private const string LegacyDumpRelativePath = "Docs/AgentLogs/Dump_RECONCILIATION_SURGEON.bin";
 
         private static readonly double s_ticksToMicroseconds = 1000000.0 / Stopwatch.Frequency;
+        private static readonly ulong JobMutationGuardMask =
+            MutationGuardBit(ShinobuRespawnConstants.RespawnStateBuffer) |
+            MutationGuardBit(ShinobuRespawnConstants.RespawnRequestBuffer) |
+            MutationGuardBit(ShinobuRespawnConstants.MedicalBayRespawnPointsBuffer) |
+            MutationGuardBit(ShinobuRespawnConstants.RespawnFadeBuffer) |
+            MutationGuardBit(ShinobuRespawnConstants.RespawnTelemetryRingBuffer) |
+            MutationGuardBit(ShinobuRespawnConstants.RespawnTelemetryCursorBuffer) |
+            MutationGuardBit(ShinobuRespawnConstants.RespawnTuningBuffer) |
+            MutationGuardBit(ShinobuRespawnConstants.RespawnPenaltyRulesBuffer) |
+            MutationGuardBit(ShinobuRespawnConstants.RespawnPenaltyRuleCountBuffer) |
+            MutationGuardBit(BufferID.ShinobuPhysiologyVitals) |
+            MutationGuardBit(BufferID.ShinobuDecompressionStates) |
+            MutationGuardBit(BufferID.ShinobuTissueCompartments) |
+            MutationGuardBit(BufferID.ShinobuPhysiologyScalars) |
+            MutationGuardBit(ShinobuMetabolismConstants.MetabolismStatesBuffer) |
+            MutationGuardBit(ShinobuPhysiologyConstants.GasPhysiologyStatesBuffer) |
+            MutationGuardBit(BufferID.PlayerKinematicState);
+        private static readonly ulong TelemetryMutationGuardMask =
+            MutationGuardBit(ShinobuRespawnConstants.RespawnTelemetryRingBuffer) |
+            MutationGuardBit(ShinobuRespawnConstants.RespawnTelemetryCursorBuffer);
         private static ShinobuRespawnReconciliationRuntime s_active;
 
         private VaultGenerationHandle<RespawnStateDTO> _stateHandle;
@@ -258,26 +277,23 @@ namespace Hecton8.Physiology
             if (!TryLockJobBuffers(vault))
                 return dependsOn;
 
-            if (!TryResolveJobPointers(vault, out JobPointers pointers))
-            {
-                UnlockJobBuffers();
-                return dependsOn;
-            }
-
-            if ((pointers.Request->Flags & ShinobuRespawnFlags.PendingRequest) == 0u &&
-                (pointers.State->Flags & ShinobuRespawnFlags.RespawnActive) == 0u &&
-                pointers.Fade->DeathFadeIntensity <= 0.0001f)
-            {
-                UnlockJobBuffers();
-                return dependsOn;
-            }
-
-            _lastFrame = context.Frame;
-            _lastQualityWeight = ResolveQualityWeight();
-            long start = Stopwatch.GetTimestamp();
-
+            bool keepJobGuard = false;
             try
             {
+                if (!TryResolveJobPointers(vault, out JobPointers pointers))
+                    return dependsOn;
+
+                if ((pointers.Request->Flags & ShinobuRespawnFlags.PendingRequest) == 0u &&
+                    (pointers.State->Flags & ShinobuRespawnFlags.RespawnActive) == 0u &&
+                    pointers.Fade->DeathFadeIntensity <= 0.0001f)
+                {
+                    return dependsOn;
+                }
+
+                _lastFrame = context.Frame;
+                _lastQualityWeight = ResolveQualityWeight();
+                long start = Stopwatch.GetTimestamp();
+
                 FindNearestMedicalBayJob nearestJob = default;
                 nearestJob.RespawnState = pointers.State;
                 nearestJob.RespawnRequest = pointers.Request;
@@ -314,9 +330,6 @@ namespace Hecton8.Physiology
                 resetJob.GlobalQualityWeight = _lastQualityWeight;
                 resetJob.ScheduleMicroseconds = _lastScheduleMicroseconds;
                 JobHandle resetHandle = resetJob.Schedule(nearestHandle);
-                _activeHandle = resetHandle;
-                _jobScheduled = true;
-                H8Memory.RegisterActiveJob(OwnerSystem, _activeHandle);
 
                 float dt = ResolveSimulationDelta(in timing);
                 UpdateRespawnFadeJob fadeJob = default;
@@ -329,13 +342,15 @@ namespace Hecton8.Physiology
                 JobHandle fadeHandle = fadeJob.Schedule(resetHandle);
 
                 _activeHandle = fadeHandle;
+                _jobScheduled = true;
                 _lastScheduleMicroseconds = (float)((Stopwatch.GetTimestamp() - start) * s_ticksToMicroseconds);
                 H8Memory.RegisterActiveJob(OwnerSystem, _activeHandle);
+                keepJobGuard = true;
                 return _activeHandle;
             }
             finally
             {
-                if (!_jobScheduled)
+                if (!keepJobGuard)
                     UnlockJobBuffers();
             }
         }
@@ -472,18 +487,9 @@ namespace Hecton8.Physiology
                 return false;
             }
 
-            int locked = 0;
-            if (!vault.TryLockBuffer(ShinobuRespawnConstants.RespawnTelemetryRingBuffer, OwnerSystem))
+            if (!vault.TryAcquireMutationGuard(TelemetryMutationGuardMask))
                 return false;
 
-            locked++;
-            if (!vault.TryLockBuffer(ShinobuRespawnConstants.RespawnTelemetryCursorBuffer, OwnerSystem))
-            {
-                vault.TryUnlockBuffer(ShinobuRespawnConstants.RespawnTelemetryRingBuffer, OwnerSystem);
-                return false;
-            }
-
-            locked++;
             try
             {
                 NativeArray<RespawnTelemetryEntry> telemetry = ResolveVaultBuffer(vault, in _telemetryHandle);
@@ -515,8 +521,7 @@ namespace Hecton8.Physiology
             }
             finally
             {
-                if (locked >= 2) vault.TryUnlockBuffer(ShinobuRespawnConstants.RespawnTelemetryCursorBuffer, OwnerSystem);
-                if (locked >= 1) vault.TryUnlockBuffer(ShinobuRespawnConstants.RespawnTelemetryRingBuffer, OwnerSystem);
+                vault.ReleaseMutationGuard(TelemetryMutationGuardMask);
             }
         }
 
@@ -969,34 +974,10 @@ namespace Hecton8.Physiology
             if (vault == null || _jobBuffersLocked)
                 return false;
 
-            int locked = 0;
-            if (!TryLockJobBuffer(vault, ShinobuRespawnConstants.RespawnStateBuffer, ref locked)) { UnlockLockedJobBuffers(vault, locked); return false; }
-            if (!TryLockJobBuffer(vault, ShinobuRespawnConstants.RespawnRequestBuffer, ref locked)) { UnlockLockedJobBuffers(vault, locked); return false; }
-            if (!TryLockJobBuffer(vault, ShinobuRespawnConstants.MedicalBayRespawnPointsBuffer, ref locked)) { UnlockLockedJobBuffers(vault, locked); return false; }
-            if (!TryLockJobBuffer(vault, ShinobuRespawnConstants.RespawnFadeBuffer, ref locked)) { UnlockLockedJobBuffers(vault, locked); return false; }
-            if (!TryLockJobBuffer(vault, ShinobuRespawnConstants.RespawnTelemetryRingBuffer, ref locked)) { UnlockLockedJobBuffers(vault, locked); return false; }
-            if (!TryLockJobBuffer(vault, ShinobuRespawnConstants.RespawnTelemetryCursorBuffer, ref locked)) { UnlockLockedJobBuffers(vault, locked); return false; }
-            if (!TryLockJobBuffer(vault, ShinobuRespawnConstants.RespawnTuningBuffer, ref locked)) { UnlockLockedJobBuffers(vault, locked); return false; }
-            if (!TryLockJobBuffer(vault, ShinobuRespawnConstants.RespawnPenaltyRulesBuffer, ref locked)) { UnlockLockedJobBuffers(vault, locked); return false; }
-            if (!TryLockJobBuffer(vault, ShinobuRespawnConstants.RespawnPenaltyRuleCountBuffer, ref locked)) { UnlockLockedJobBuffers(vault, locked); return false; }
-            if (!TryLockJobBuffer(vault, BufferID.ShinobuPhysiologyVitals, ref locked)) { UnlockLockedJobBuffers(vault, locked); return false; }
-            if (!TryLockJobBuffer(vault, BufferID.ShinobuDecompressionStates, ref locked)) { UnlockLockedJobBuffers(vault, locked); return false; }
-            if (!TryLockJobBuffer(vault, BufferID.ShinobuTissueCompartments, ref locked)) { UnlockLockedJobBuffers(vault, locked); return false; }
-            if (!TryLockJobBuffer(vault, BufferID.ShinobuPhysiologyScalars, ref locked)) { UnlockLockedJobBuffers(vault, locked); return false; }
-            if (!TryLockJobBuffer(vault, ShinobuMetabolismConstants.MetabolismStatesBuffer, ref locked)) { UnlockLockedJobBuffers(vault, locked); return false; }
-            if (!TryLockJobBuffer(vault, ShinobuPhysiologyConstants.GasPhysiologyStatesBuffer, ref locked)) { UnlockLockedJobBuffers(vault, locked); return false; }
-            if (!TryLockJobBuffer(vault, BufferID.PlayerKinematicState, ref locked)) { UnlockLockedJobBuffers(vault, locked); return false; }
-
-            _jobBuffersLocked = true;
-            return true;
-        }
-
-        private static bool TryLockJobBuffer(IDataVault vault, BufferID bufferId, ref int locked)
-        {
-            if (!vault.TryLockBuffer(bufferId, OwnerSystem))
+            if (!vault.TryAcquireMutationGuard(JobMutationGuardMask))
                 return false;
 
-            locked++;
+            _jobBuffersLocked = true;
             return true;
         }
 
@@ -1007,31 +988,8 @@ namespace Hecton8.Physiology
 
             IDataVault vault = _dataVault;
             if (vault != null)
-                UnlockLockedJobBuffers(vault, JobBufferLockCount);
+                vault.ReleaseMutationGuard(JobMutationGuardMask);
             _jobBuffersLocked = false;
-        }
-
-        private static void UnlockLockedJobBuffers(IDataVault vault, int lockedCount)
-        {
-            if (vault == null)
-                return;
-
-            if (lockedCount >= 16) vault.TryUnlockBuffer(BufferID.PlayerKinematicState, OwnerSystem);
-            if (lockedCount >= 15) vault.TryUnlockBuffer(ShinobuPhysiologyConstants.GasPhysiologyStatesBuffer, OwnerSystem);
-            if (lockedCount >= 14) vault.TryUnlockBuffer(ShinobuMetabolismConstants.MetabolismStatesBuffer, OwnerSystem);
-            if (lockedCount >= 13) vault.TryUnlockBuffer(BufferID.ShinobuPhysiologyScalars, OwnerSystem);
-            if (lockedCount >= 12) vault.TryUnlockBuffer(BufferID.ShinobuTissueCompartments, OwnerSystem);
-            if (lockedCount >= 11) vault.TryUnlockBuffer(BufferID.ShinobuDecompressionStates, OwnerSystem);
-            if (lockedCount >= 10) vault.TryUnlockBuffer(BufferID.ShinobuPhysiologyVitals, OwnerSystem);
-            if (lockedCount >= 9) vault.TryUnlockBuffer(ShinobuRespawnConstants.RespawnPenaltyRuleCountBuffer, OwnerSystem);
-            if (lockedCount >= 8) vault.TryUnlockBuffer(ShinobuRespawnConstants.RespawnPenaltyRulesBuffer, OwnerSystem);
-            if (lockedCount >= 7) vault.TryUnlockBuffer(ShinobuRespawnConstants.RespawnTuningBuffer, OwnerSystem);
-            if (lockedCount >= 6) vault.TryUnlockBuffer(ShinobuRespawnConstants.RespawnTelemetryCursorBuffer, OwnerSystem);
-            if (lockedCount >= 5) vault.TryUnlockBuffer(ShinobuRespawnConstants.RespawnTelemetryRingBuffer, OwnerSystem);
-            if (lockedCount >= 4) vault.TryUnlockBuffer(ShinobuRespawnConstants.RespawnFadeBuffer, OwnerSystem);
-            if (lockedCount >= 3) vault.TryUnlockBuffer(ShinobuRespawnConstants.MedicalBayRespawnPointsBuffer, OwnerSystem);
-            if (lockedCount >= 2) vault.TryUnlockBuffer(ShinobuRespawnConstants.RespawnRequestBuffer, OwnerSystem);
-            if (lockedCount >= 1) vault.TryUnlockBuffer(ShinobuRespawnConstants.RespawnStateBuffer, OwnerSystem);
         }
 
 #if UNITY_EDITOR
@@ -1167,18 +1125,9 @@ namespace Hecton8.Physiology
             if (!HasHotVaultState(vault) || _jobScheduled)
                 return false;
 
-            int locked = 0;
-            if (!vault.TryLockBuffer(ShinobuRespawnConstants.RespawnTelemetryRingBuffer, OwnerSystem))
+            if (!vault.TryAcquireMutationGuard(TelemetryMutationGuardMask))
                 return false;
 
-            locked++;
-            if (!vault.TryLockBuffer(ShinobuRespawnConstants.RespawnTelemetryCursorBuffer, OwnerSystem))
-            {
-                vault.TryUnlockBuffer(ShinobuRespawnConstants.RespawnTelemetryRingBuffer, OwnerSystem);
-                return false;
-            }
-
-            locked++;
             try
             {
                 NativeArray<RespawnTelemetryEntry> telemetry = ResolveVaultBuffer(vault, in _telemetryHandle);
@@ -1206,8 +1155,7 @@ namespace Hecton8.Physiology
             }
             finally
             {
-                if (locked >= 2) vault.TryUnlockBuffer(ShinobuRespawnConstants.RespawnTelemetryCursorBuffer, OwnerSystem);
-                if (locked >= 1) vault.TryUnlockBuffer(ShinobuRespawnConstants.RespawnTelemetryRingBuffer, OwnerSystem);
+                vault.ReleaseMutationGuard(TelemetryMutationGuardMask);
             }
         }
 
@@ -1587,10 +1535,16 @@ namespace Hecton8.Physiology
             if (!DispatcherJobFence.TryFinalizeCompleted(ref _activeHandle))
                 return false;
 
-            _jobScheduled = false;
-            UnlockJobBuffers();
-            TryTransformCommittedRespawnSignal();
-            return true;
+            try
+            {
+                TryTransformCommittedRespawnSignal();
+                return true;
+            }
+            finally
+            {
+                _jobScheduled = false;
+                UnlockJobBuffers();
+            }
         }
 
         private void CompleteActiveJobForTeardown()
@@ -1598,12 +1552,36 @@ namespace Hecton8.Physiology
             if (!_jobScheduled)
                 return;
 
-            if (!DispatcherJobFence.TryComplete(ref _activeHandle, forceComplete: true))
+            bool completed = false;
+            DispatcherJobFence.BeginPostSimulationSwapWindow();
+            try
+            {
+                if (!DispatcherJobFence.TryComplete(ref _activeHandle, forceComplete: true))
+                    return;
+                completed = true;
+            }
+            finally
+            {
+                DispatcherJobFence.EndPostSimulationSwapWindow();
+            }
+
+            if (!completed)
                 return;
 
-            _jobScheduled = false;
-            UnlockJobBuffers();
-            TryTransformCommittedRespawnSignal();
+            try
+            {
+                TryTransformCommittedRespawnSignal();
+            }
+            finally
+            {
+                _jobScheduled = false;
+                UnlockJobBuffers();
+            }
+        }
+
+        private static ulong MutationGuardBit(BufferID bufferId)
+        {
+            return 1UL << (unchecked((int)(uint)(int)bufferId) & 31);
         }
 
         private bool TryTransformCommittedRespawnSignal()

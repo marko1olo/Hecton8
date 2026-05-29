@@ -44,6 +44,9 @@ namespace Hecton8.Gameplay
         private const Hecton8.Core.Memory.SystemID VaultOwnerSystemId = Hecton8.Core.Memory.SystemID.GameplayDebris;
         private const Hecton8.Core.Memory.BufferID FrontStatesBufferId = Hecton8.Core.Memory.BufferID.GameplayDebrisFrontStates;
         private const Hecton8.Core.Memory.BufferID BackStatesBufferId = Hecton8.Core.Memory.BufferID.GameplayDebrisBackStates;
+        private static readonly ulong StateMutationGuardMask =
+            MutationGuardBit(FrontStatesBufferId) |
+            MutationGuardBit(BackStatesBufferId);
         private static readonly uint _DebrisSolveWarningHash = unchecked((uint)Hecton.Localization.LocHash.Compute("DebrisManager.SolveBudgetExceeded"));
         private static readonly uint _DebrisTelemetryContextHash = unchecked((uint)Hecton.Localization.LocHash.Compute("DebrisManager"));
 
@@ -87,11 +90,10 @@ namespace Hecton8.Gameplay
         private JobHandle _simulationHandle;
         private IDataVault _dataVault;
         private Vector3 _pendingShiftOffset;
-        private BufferID _simulationReadBufferId;
-        private BufferID _simulationWriteBufferId;
+        private IDataVault _simulationJobGuardVault;
         private int _pendingBurstCount;
         private bool _simulationScheduled;
-        private bool _simulationJobBuffersLocked;
+        private bool _simulationJobGuardHeld;
         private bool _dispatcherRegistered;
         private bool _lateFrameRegistered;
         private bool _originShiftRegistered;
@@ -380,9 +382,9 @@ namespace Hecton8.Gameplay
             if (!_simulationScheduled &&
                 TryReadVaultBuffer(in _frontStatesHandle, MaxActiveChunks, out NativeArray<DebrisChunkState> frontStatesForScan) &&
                 HasSimulatedChunks(frontStatesForScan) &&
-                TryLockSimulationJobBuffers() &&
-                TryOpenVaultBuffer(in _frontStatesHandle, MaxActiveChunks, out NativeArray<DebrisChunkState> frontStates) &&
-                TryOpenVaultBuffer(in _backStatesHandle, MaxActiveChunks, out NativeArray<DebrisChunkState> backStates))
+                TryAcquireSimulationJobGuard() &&
+                TryOpenVaultBuffer(_simulationJobGuardVault, in _frontStatesHandle, MaxActiveChunks, out NativeArray<DebrisChunkState> frontStates) &&
+                TryOpenVaultBuffer(_simulationJobGuardVault, in _backStatesHandle, MaxActiveChunks, out NativeArray<DebrisChunkState> backStates))
             {
                 DebrisSimulationJob job = new DebrisSimulationJob
                 {
@@ -403,7 +405,7 @@ namespace Hecton8.Gameplay
             }
             else if (!_simulationScheduled)
             {
-                UnlockSimulationJobBuffers();
+                ReleaseSimulationJobGuard();
             }
 
             PublishDebrisSolveWarningIfNeeded(solveStartTimestamp);
@@ -417,7 +419,7 @@ namespace Hecton8.Gameplay
             if (_simulationScheduled && DispatcherJobSwap.TryComplete(ref _simulationHandle, forceComplete: false))
             {
                 _simulationScheduled = false;
-                UnlockSimulationJobBuffers();
+                ReleaseSimulationJobGuard();
                 SwapStateBuffers();
                 completedSimulation = true;
             }
@@ -475,134 +477,135 @@ namespace Hecton8.Gameplay
             if (_pendingBurstCount <= 0)
                 return;
 
-            if (!TryAcquireVaultBuffer(in _frontStatesHandle, MaxActiveChunks, out NativeArray<DebrisChunkState> frontStates))
+            if (!TryAcquireStateMutationGuard(out IDataVault guardVault))
                 return;
 
-            if (!TryAcquireVaultBuffer(in _backStatesHandle, MaxActiveChunks, out NativeArray<DebrisChunkState> backStates))
-            {
-                ReleaseVaultWrite(in _frontStatesHandle);
-                return;
-            }
-
+            bool flushed = false;
             try
             {
-            for (int requestIndex = 0; requestIndex < _pendingBurstCount; requestIndex++)
-            {
-                PendingBurstRequest request = _pendingBursts[requestIndex];
-                if (request.Definition == null || !request.Definition.IsValid)
-                    continue;
-
-                int validChunkCount = CountValidChunks(request.Definition);
-                if (validChunkCount <= 0)
-                    continue;
-
-                int requestedSlots = request.MaxChunkCount > 0
-                    ? math.min(validChunkCount, request.MaxChunkCount)
-                    : validChunkCount;
-                if (requestedSlots <= 0)
-                    continue;
-
-                if (CountFreeSlots(frontStates) < requestedSlots)
+                if (TryOpenVaultBuffer(guardVault, in _frontStatesHandle, MaxActiveChunks, out NativeArray<DebrisChunkState> frontStates) &&
+                    TryOpenVaultBuffer(guardVault, in _backStatesHandle, MaxActiveChunks, out NativeArray<DebrisChunkState> backStates))
                 {
-                    PublishDebrisPoolExhausted(ActiveSlotPoolExhaustedReason);
-                    continue;
-                }
-
-                BurstRandom rng = new BurstRandom(request.Seed != 0u ? request.Seed : 1u);
-                float power = math.max(MinimumPower, request.Power01);
-                float3 hitNormal = NormalizeFastOrDefault(
-                    new float3(request.RuntimeHitNormal.x, request.RuntimeHitNormal.y, request.RuntimeHitNormal.z),
-                    new float3(0f, 1f, 0f));
-
-                int spawnedChunks = 0;
-                int authoredChunkCount = request.Definition.ChunkCount;
-                int startChunkIndex = authoredChunkCount > 0 ? rng.NextInt(0, authoredChunkCount) : 0;
-                float authoredSinkDuration = math.max(0.1f, request.Definition.SinkDuration);
-                float authoredSinkDistance = math.max(0.05f, request.Definition.SinkDistance);
-                float poolReturnDelay = request.LifetimeSeconds > 0f
-                    ? math.max(0.5f, request.LifetimeSeconds)
-                    : PhysicsPhaseDuration + authoredSinkDuration;
-                float sinkDuration = math.min(authoredSinkDuration, math.max(0.1f, poolReturnDelay - 0.1f));
-                float physicsPhaseDuration = math.min(PhysicsPhaseDuration, math.max(0.1f, poolReturnDelay - sinkDuration));
-                for (int chunkOffset = 0; chunkOffset < authoredChunkCount && spawnedChunks < requestedSlots; chunkOffset++)
-                {
-                    int chunkIndex = (startChunkIndex + chunkOffset) % authoredChunkCount;
-                    Mesh mesh = request.Definition.GetChunkMesh(chunkIndex);
-                    if (mesh == null)
-                        continue;
-
-                    int slotIndex = FindFreeSlot(frontStates);
-                    if (slotIndex < 0)
+                    for (int requestIndex = 0; requestIndex < _pendingBurstCount; requestIndex++)
                     {
-                        PublishDebrisPoolExhausted(ActiveSlotPoolExhaustedReason);
-                        break;
+                        PendingBurstRequest request = _pendingBursts[requestIndex];
+                        if (request.Definition == null || !request.Definition.IsValid)
+                            continue;
+
+                        int validChunkCount = CountValidChunks(request.Definition);
+                        if (validChunkCount <= 0)
+                            continue;
+
+                        int requestedSlots = request.MaxChunkCount > 0
+                            ? math.min(validChunkCount, request.MaxChunkCount)
+                            : validChunkCount;
+                        if (requestedSlots <= 0)
+                            continue;
+
+                        if (CountFreeSlots(frontStates) < requestedSlots)
+                        {
+                            PublishDebrisPoolExhausted(ActiveSlotPoolExhaustedReason);
+                            continue;
+                        }
+
+                        BurstRandom rng = new BurstRandom(request.Seed != 0u ? request.Seed : 1u);
+                        float power = math.max(MinimumPower, request.Power01);
+                        float3 hitNormal = NormalizeFastOrDefault(
+                            new float3(request.RuntimeHitNormal.x, request.RuntimeHitNormal.y, request.RuntimeHitNormal.z),
+                            new float3(0f, 1f, 0f));
+
+                        int spawnedChunks = 0;
+                        int authoredChunkCount = request.Definition.ChunkCount;
+                        int startChunkIndex = authoredChunkCount > 0 ? rng.NextInt(0, authoredChunkCount) : 0;
+                        float authoredSinkDuration = math.max(0.1f, request.Definition.SinkDuration);
+                        float authoredSinkDistance = math.max(0.05f, request.Definition.SinkDistance);
+                        float poolReturnDelay = request.LifetimeSeconds > 0f
+                            ? math.max(0.5f, request.LifetimeSeconds)
+                            : PhysicsPhaseDuration + authoredSinkDuration;
+                        float sinkDuration = math.min(authoredSinkDuration, math.max(0.1f, poolReturnDelay - 0.1f));
+                        float physicsPhaseDuration = math.min(PhysicsPhaseDuration, math.max(0.1f, poolReturnDelay - sinkDuration));
+                        for (int chunkOffset = 0; chunkOffset < authoredChunkCount && spawnedChunks < requestedSlots; chunkOffset++)
+                        {
+                            int chunkIndex = (startChunkIndex + chunkOffset) % authoredChunkCount;
+                            Mesh mesh = request.Definition.GetChunkMesh(chunkIndex);
+                            if (mesh == null)
+                                continue;
+
+                            int slotIndex = FindFreeSlot(frontStates);
+                            if (slotIndex < 0)
+                            {
+                                PublishDebrisPoolExhausted(ActiveSlotPoolExhaustedReason);
+                                break;
+                            }
+
+                            Matrix4x4 worldMatrix = Matrix4x4.TRS(request.RuntimeOrigin, request.RuntimeRotation, Vector3.one) *
+                                                    request.Definition.GetLocalMatrix(chunkIndex);
+                            Vector3 runtimePosition = worldMatrix.GetColumn(3);
+                            float3 direction = NormalizeFastOrDefault(
+                                new float3(
+                                    runtimePosition.x - request.RuntimeHitPoint.x,
+                                    runtimePosition.y - request.RuntimeHitPoint.y,
+                                    runtimePosition.z - request.RuntimeHitPoint.z) +
+                                hitNormal * 0.45f +
+                                NextCheapSignedVector(ref rng) * 0.22f,
+                                hitNormal);
+                            float massScale = math.max(0.2f, request.Definition.GetMassScale(chunkIndex));
+                            float impulse = request.Definition.BaseImpulse *
+                                            (0.45f + power) *
+                                            math.lerp(0.85f, 1.25f, rng.NextFloat()) /
+                                            massScale;
+                            float3 velocity = direction * impulse;
+                            velocity.y += 0.35f + power * 0.8f;
+                            float3 angularVelocity = NextCheapSignedVector(ref rng) * (0.95f + power * 4.5f) / massScale;
+
+                            DebrisChunkState state = new DebrisChunkState
+                            {
+                                Position = new float3(runtimePosition.x, runtimePosition.y, runtimePosition.z),
+                                Rotation = ToQuaternion(worldMatrix.rotation),
+                                Scale = ToFloat3(ExtractScale(worldMatrix)),
+                                Velocity = velocity,
+                                AngularVelocity = angularVelocity,
+                                Age = 0f,
+                                GroundY = request.RuntimeOrigin.y - request.Definition.GroundPlaneOffset,
+                                SinkStartY = runtimePosition.y,
+                                SinkTargetY = runtimePosition.y - authoredSinkDistance,
+                                SinkDuration = sinkDuration,
+                                SinkDistance = authoredSinkDistance,
+                                LinearDamping = math.max(0.05f, request.Definition.LinearDamping),
+                                AngularDamping = math.max(0.05f, request.Definition.AngularDamping),
+                                BounceDamping = math.clamp(request.Definition.BounceDamping, 0f, 1f),
+                                MassScale = massScale,
+                                PhysicsPhaseDuration = physicsPhaseDuration,
+                                PoolReturnDelay = poolReturnDelay,
+                                Active = 1,
+                                CollisionEnabled = 1,
+                                Kinematic = 0,
+                                SettledStatic = 0
+                            };
+
+                            frontStates[slotIndex] = state;
+                            if (!_simulationScheduled)
+                                backStates[slotIndex] = state;
+
+                            _slotMeshes[slotIndex] = mesh;
+                            _slotMaterials[slotIndex] = request.Definition.SharedMaterial;
+                            _slotShadowModes[slotIndex] = request.Definition.ShadowCastingMode;
+                            _slotReceiveShadows[slotIndex] = request.Definition.ReceiveShadows;
+                            _slotLayerMasks[slotIndex] = request.Definition.RenderingLayerMask;
+                            spawnedChunks++;
+                        }
                     }
 
-                    Matrix4x4 worldMatrix = Matrix4x4.TRS(request.RuntimeOrigin, request.RuntimeRotation, Vector3.one) *
-                                            request.Definition.GetLocalMatrix(chunkIndex);
-                    Vector3 runtimePosition = worldMatrix.GetColumn(3);
-                    float3 direction = NormalizeFastOrDefault(
-                        new float3(
-                            runtimePosition.x - request.RuntimeHitPoint.x,
-                            runtimePosition.y - request.RuntimeHitPoint.y,
-                            runtimePosition.z - request.RuntimeHitPoint.z) +
-                        hitNormal * 0.45f +
-                        NextCheapSignedVector(ref rng) * 0.22f,
-                        hitNormal);
-                    float massScale = math.max(0.2f, request.Definition.GetMassScale(chunkIndex));
-                    float impulse = request.Definition.BaseImpulse *
-                                    (0.45f + power) *
-                                    math.lerp(0.85f, 1.25f, rng.NextFloat()) /
-                                    massScale;
-                    float3 velocity = direction * impulse;
-                    velocity.y += 0.35f + power * 0.8f;
-                    float3 angularVelocity = NextCheapSignedVector(ref rng) * (0.95f + power * 4.5f) / massScale;
-
-                    DebrisChunkState state = new DebrisChunkState
-                    {
-                        Position = new float3(runtimePosition.x, runtimePosition.y, runtimePosition.z),
-                        Rotation = ToQuaternion(worldMatrix.rotation),
-                        Scale = ToFloat3(ExtractScale(worldMatrix)),
-                        Velocity = velocity,
-                        AngularVelocity = angularVelocity,
-                        Age = 0f,
-                        GroundY = request.RuntimeOrigin.y - request.Definition.GroundPlaneOffset,
-                        SinkStartY = runtimePosition.y,
-                        SinkTargetY = runtimePosition.y - authoredSinkDistance,
-                        SinkDuration = sinkDuration,
-                        SinkDistance = authoredSinkDistance,
-                        LinearDamping = math.max(0.05f, request.Definition.LinearDamping),
-                        AngularDamping = math.max(0.05f, request.Definition.AngularDamping),
-                        BounceDamping = math.clamp(request.Definition.BounceDamping, 0f, 1f),
-                        MassScale = massScale,
-                        PhysicsPhaseDuration = physicsPhaseDuration,
-                        PoolReturnDelay = poolReturnDelay,
-                        Active = 1,
-                        CollisionEnabled = 1,
-                        Kinematic = 0,
-                        SettledStatic = 0
-                    };
-
-                    frontStates[slotIndex] = state;
-                    if (!_simulationScheduled)
-                        backStates[slotIndex] = state;
-
-                    _slotMeshes[slotIndex] = mesh;
-                    _slotMaterials[slotIndex] = request.Definition.SharedMaterial;
-                    _slotShadowModes[slotIndex] = request.Definition.ShadowCastingMode;
-                    _slotReceiveShadows[slotIndex] = request.Definition.ReceiveShadows;
-                    _slotLayerMasks[slotIndex] = request.Definition.RenderingLayerMask;
-                    spawnedChunks++;
+                    flushed = true;
                 }
-            }
             }
             finally
             {
-                ReleaseVaultWrite(in _backStatesHandle);
-                ReleaseVaultWrite(in _frontStatesHandle);
+                guardVault.ReleaseMutationGuard(StateMutationGuardMask);
             }
 
-            _pendingBurstCount = 0;
+            if (flushed)
+                _pendingBurstCount = 0;
         }
 
         private void RenderActiveChunks()
@@ -1029,8 +1032,17 @@ namespace Hecton8.Gameplay
             int requiredLength,
             out NativeArray<DebrisChunkState> buffer)
         {
-            buffer = default;
             IDataVault vault = _dataVault;
+            return TryOpenVaultBuffer(vault, in handle, requiredLength, out buffer);
+        }
+
+        private static bool TryOpenVaultBuffer(
+            IDataVault vault,
+            in VaultGenerationHandle<DebrisChunkState> handle,
+            int requiredLength,
+            out NativeArray<DebrisChunkState> buffer)
+        {
+            buffer = default;
             if (vault == null || !IsVaultHandleCreated(in handle))
                 return false;
 
@@ -1075,9 +1087,9 @@ namespace Hecton8.Gameplay
             handle = default;
         }
 
-        private bool TryLockSimulationJobBuffers()
+        private bool TryAcquireSimulationJobGuard()
         {
-            if (_simulationJobBuffersLocked)
+            if (_simulationJobGuardHeld)
                 return true;
 
             IDataVault vault = _dataVault;
@@ -1088,41 +1100,38 @@ namespace Hecton8.Gameplay
                 return false;
             }
 
-            BufferID readBufferId = ToBufferID(in _frontStatesHandle);
-            BufferID writeBufferId = ToBufferID(in _backStatesHandle);
-            if (!vault.TryLockBuffer(readBufferId, VaultOwnerSystemId))
+            if (!vault.TryAcquireMutationGuard(StateMutationGuardMask))
                 return false;
 
-            if (!vault.TryLockBuffer(writeBufferId, VaultOwnerSystemId))
-            {
-                vault.TryUnlockBuffer(readBufferId, VaultOwnerSystemId);
-                return false;
-            }
-
-            _simulationReadBufferId = readBufferId;
-            _simulationWriteBufferId = writeBufferId;
-            _simulationJobBuffersLocked = true;
+            _simulationJobGuardVault = vault;
+            _simulationJobGuardHeld = true;
             return true;
         }
 
-        private void UnlockSimulationJobBuffers()
+        private void ReleaseSimulationJobGuard()
         {
-            if (!_simulationJobBuffersLocked)
+            if (!_simulationJobGuardHeld)
                 return;
 
-            IDataVault vault = _dataVault;
+            IDataVault vault = _simulationJobGuardVault ?? _dataVault;
+            _simulationJobGuardVault = null;
+            _simulationJobGuardHeld = false;
             if (vault != null)
-            {
-                if (_simulationReadBufferId != BufferID.Unknown)
-                    vault.TryUnlockBuffer(_simulationReadBufferId, VaultOwnerSystemId);
+                vault.ReleaseMutationGuard(StateMutationGuardMask);
+        }
 
-                if (_simulationWriteBufferId != BufferID.Unknown)
-                    vault.TryUnlockBuffer(_simulationWriteBufferId, VaultOwnerSystemId);
-            }
+        private bool TryAcquireStateMutationGuard(out IDataVault vault)
+        {
+            vault = _dataVault;
+            return vault != null &&
+                   IsVaultHandleCreated(in _frontStatesHandle) &&
+                   IsVaultHandleCreated(in _backStatesHandle) &&
+                   vault.TryAcquireMutationGuard(StateMutationGuardMask);
+        }
 
-            _simulationReadBufferId = BufferID.Unknown;
-            _simulationWriteBufferId = BufferID.Unknown;
-            _simulationJobBuffersLocked = false;
+        private static ulong MutationGuardBit(BufferID bufferId)
+        {
+            return 1UL << (unchecked((int)(uint)(int)bufferId) & 31);
         }
 
         private static BufferID ToBufferID(in VaultGenerationHandle<DebrisChunkState> handle)
@@ -1208,14 +1217,27 @@ namespace Hecton8.Gameplay
         private void ReleaseNativeState()
         {
             if (_simulationScheduled)
-                DispatcherJobSwap.TryComplete(ref _simulationHandle, forceComplete: true);
+                ForceCompleteSimulationInPostSimulationWindow();
 
             _simulationScheduled = false;
-            UnlockSimulationJobBuffers();
+            ReleaseSimulationJobGuard();
             ReleaseVaultBuffer(ref _frontStatesHandle);
             ReleaseVaultBuffer(ref _backStatesHandle);
 
             _simulationHandle = default;
+        }
+
+        private void ForceCompleteSimulationInPostSimulationWindow()
+        {
+            DispatcherJobFence.BeginPostSimulationSwapWindow();
+            try
+            {
+                DispatcherJobSwap.TryComplete(ref _simulationHandle, forceComplete: true);
+            }
+            finally
+            {
+                DispatcherJobFence.EndPostSimulationSwapWindow();
+            }
         }
 
         private static void ReleaseBuffer(ref GraphicsBuffer buffer)

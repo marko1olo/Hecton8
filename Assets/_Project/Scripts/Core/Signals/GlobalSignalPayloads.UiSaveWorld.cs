@@ -261,12 +261,12 @@ namespace Hecton8.Core.Contracts.Signals
     public struct SaveMetadataReadySignal : ISignal
     {
         public const byte Completed = 1;
-        public const byte SkippedLowTier = 2;
+        public const byte DeferredByQuality = 2;
         public const byte Failed = 3;
         public const byte TimedOut = 4;
         public const byte ReusedExisting = 5;
 
-        public const byte LowTierFlag = 1 << 0;
+        public const byte QualityDeferredFlag = 1 << 0;
         public const byte FailureFlag = 1 << 1;
         public const byte ReusedExistingFlag = 1 << 2;
 

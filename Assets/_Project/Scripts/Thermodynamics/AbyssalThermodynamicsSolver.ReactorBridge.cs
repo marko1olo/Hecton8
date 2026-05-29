@@ -47,10 +47,8 @@ namespace Hecton8.Thermodynamics
         private float _reactorCadenceAccumulator;
         private string _reactorDumpPath;
         private string _baseReactorDumpPath;
-        private const int ReactorSharedLockPowerNodes = 1 << 0;
-        private const int ReactorSharedLockFluidBack = 1 << 1;
-        private const int ReactorSharedLockAirlockStates = 1 << 2;
-        private int _reactorSharedBufferLockMask;
+        private IDataVault _reactorSharedGuardVault;
+        private ulong _reactorSharedGuardMask;
         private int _reactorThermalVisualWriteIndex;
         private GraphicsBuffer _reactorThermalVisualBufferA;
         private GraphicsBuffer _reactorThermalVisualBufferB;
@@ -384,7 +382,18 @@ namespace Hecton8.Thermodynamics
                 thermoJob.DeltaTime = nuclearDeltaTime;
                 thermoJob.Frame = gridTuning.Frame;
                 long nuclearScheduleStart = System.Diagnostics.Stopwatch.GetTimestamp();
-                dependency = thermoJob.Schedule(ReactorThermalMath.MaxReactors, 4, dependency);
+                bool thermoJobScheduled = false;
+                try
+                {
+                    dependency = thermoJob.Schedule(ReactorThermalMath.MaxReactors, 4, dependency);
+                    thermoJobScheduled = true;
+                }
+                finally
+                {
+                    if (!thermoJobScheduled)
+                        ReleaseReactorSharedLocks();
+                }
+
                 long nuclearScheduleEnd = System.Diagnostics.Stopwatch.GetTimestamp();
                 _lastNuclearThermoMicroseconds = (float)((nuclearScheduleEnd - nuclearScheduleStart) * 1000000.0 / System.Diagnostics.Stopwatch.Frequency);
 
@@ -532,66 +541,110 @@ namespace Hecton8.Thermodynamics
             airlocks = null;
             airlockCount = 0;
 
-            if (TryLockAndResolveOptionalBuffer(PowerGridBufferIds.Nodes, ReactorSharedLockPowerNodes, out NativeArray<PowerNodeDTO> powerArray))
+            IDataVault vault = _vault;
+            if (vault == null)
+                return;
+
+            bool hasPower = TryGetOptionalSharedHandle(
+                vault,
+                PowerGridBufferIds.Nodes,
+                SystemID.Power,
+                out VaultGenerationHandle<PowerNodeDTO> powerHandle);
+            bool hasFluid = TryGetOptionalSharedHandle(
+                vault,
+                BufferID.ShinobuFluidCompartmentBack,
+                SystemID.Fluid,
+                out VaultGenerationHandle<FluidCompartmentDTO> fluidHandle);
+            bool hasAirlock = TryGetOptionalSharedHandle(
+                vault,
+                AirlockPressurizationBufferIds.AirlockStates,
+                SystemID.HabitatAtmosphere,
+                out VaultGenerationHandle<AirlockStateDTO> airlockHandle);
+
+            ulong guardMask = 0UL;
+            if (hasPower)
+                guardMask |= ReactorSharedMutationGuardBit(PowerGridBufferIds.Nodes);
+            if (hasFluid)
+                guardMask |= ReactorSharedMutationGuardBit(BufferID.ShinobuFluidCompartmentBack);
+            if (hasAirlock)
+                guardMask |= ReactorSharedMutationGuardBit(AirlockPressurizationBufferIds.AirlockStates);
+
+            if (guardMask == 0UL ||
+                !vault.TryAcquireMutationGuard(guardMask))
+            {
+                return;
+            }
+
+            _reactorSharedGuardVault = vault;
+            _reactorSharedGuardMask = guardMask;
+            if (hasPower &&
+                TryResolveOptionalSharedBuffer(vault, in powerHandle, out NativeArray<PowerNodeDTO> powerArray))
             {
                 powerNodes = (PowerNodeDTO*)NativeArrayUnsafeUtility.GetUnsafePtr(powerArray);
                 powerNodeCount = powerArray.Length;
             }
 
-            if (TryLockAndResolveOptionalBuffer(BufferID.ShinobuFluidCompartmentBack, ReactorSharedLockFluidBack, out NativeArray<FluidCompartmentDTO> fluidArray))
+            if (hasFluid &&
+                TryResolveOptionalSharedBuffer(vault, in fluidHandle, out NativeArray<FluidCompartmentDTO> fluidArray))
             {
                 fluidCompartments = (FluidCompartmentDTO*)NativeArrayUnsafeUtility.GetUnsafePtr(fluidArray);
                 fluidCompartmentCount = fluidArray.Length;
             }
 
-            if (TryLockAndResolveOptionalBuffer(AirlockPressurizationBufferIds.AirlockStates, ReactorSharedLockAirlockStates, out NativeArray<AirlockStateDTO> airlockArray))
+            if (hasAirlock &&
+                TryResolveOptionalSharedBuffer(vault, in airlockHandle, out NativeArray<AirlockStateDTO> airlockArray))
             {
                 airlocks = (AirlockStateDTO*)NativeArrayUnsafeUtility.GetUnsafePtr(airlockArray);
                 airlockCount = airlockArray.Length;
             }
+
+            if (powerNodes == null && fluidCompartments == null && airlocks == null)
+                ReleaseReactorSharedLocks();
         }
 
-        private bool TryLockAndResolveOptionalBuffer<T>(BufferID bufferId, int lockBit, out NativeArray<T> buffer)
+        private static bool TryGetOptionalSharedHandle<T>(
+            IDataVault vault,
+            BufferID bufferId,
+            SystemID ownerSystem,
+            out VaultGenerationHandle<T> handle)
+            where T : struct
+        {
+            handle = default;
+            return vault != null &&
+                   vault.TryGetGenerationHandle<T>(bufferId, out handle) &&
+                   handle.BufferID == unchecked((uint)(int)bufferId) &&
+                   handle.SystemID == (uint)ownerSystem &&
+                   handle.Generation != 0u;
+        }
+
+        private static bool TryResolveOptionalSharedBuffer<T>(
+            IDataVault vault,
+            in VaultGenerationHandle<T> handle,
+            out NativeArray<T> buffer)
             where T : struct
         {
             buffer = default;
-            IDataVault vault = _vault;
-            if (vault == null || (_reactorSharedBufferLockMask & lockBit) != 0)
-                return false;
-
-            if (!vault.TryGetGenerationHandle<T>(bufferId, out VaultGenerationHandle<T> handle))
-                return false;
-
-            if (!vault.TryLockBuffer(bufferId, SystemID.Thermodynamics))
-                return false;
-
-            _reactorSharedBufferLockMask |= lockBit;
-            if (vault.TryResolveHandle(in handle, out buffer) && buffer.IsCreated)
-                return true;
-
-            UnlockReactorSharedLock(bufferId, lockBit);
-            return false;
+            return vault != null &&
+                   vault.TryResolveHandle(in handle, out buffer) &&
+                   buffer.IsCreated &&
+                   buffer.Length > 0;
         }
 
         private void ReleaseReactorSharedLocks()
         {
-            UnlockReactorSharedLock(AirlockPressurizationBufferIds.AirlockStates, ReactorSharedLockAirlockStates);
-            UnlockReactorSharedLock(BufferID.ShinobuFluidCompartmentBack, ReactorSharedLockFluidBack);
-            UnlockReactorSharedLock(PowerGridBufferIds.Nodes, ReactorSharedLockPowerNodes);
-            if (_vault == null)
-                _reactorSharedBufferLockMask = 0;
-        }
-
-        private void UnlockReactorSharedLock(BufferID bufferId, int lockBit)
-        {
-            if ((_reactorSharedBufferLockMask & lockBit) == 0)
+            ulong guardMask = _reactorSharedGuardMask;
+            if (guardMask == 0UL)
                 return;
 
-            IDataVault vault = _vault;
-            if (vault != null)
-                vault.TryUnlockBuffer(bufferId, SystemID.Thermodynamics);
+            IDataVault vault = _reactorSharedGuardVault ?? _vault;
+            _reactorSharedGuardVault = null;
+            _reactorSharedGuardMask = 0UL;
+            vault?.ReleaseMutationGuard(guardMask);
+        }
 
-            _reactorSharedBufferLockMask &= ~lockBit;
+        private static ulong ReactorSharedMutationGuardBit(BufferID bufferId)
+        {
+            return 1UL << ((int)bufferId & 31);
         }
 
         public bool TryReadReactorTuning(out ReactorThermalTuningDTO tuning)
@@ -1066,7 +1119,8 @@ namespace Hecton8.Thermodynamics
             _baseReactorProfiles = default;
             _baseReactorProfileCount = default;
             _reactorBridgeInitialized = false;
-            _reactorSharedBufferLockMask = 0;
+            _reactorSharedGuardVault = null;
+            _reactorSharedGuardMask = 0UL;
         }
 
         private void TryLoadReactorProfilesCold()

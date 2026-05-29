@@ -1,6 +1,6 @@
 using System;
 using System.Collections.Generic;
-using System.Linq;
+using System.Text;
 using UnityEngine;
 
 namespace CandiceAIforGames.AI
@@ -30,13 +30,19 @@ namespace CandiceAIforGames.AI
 
         public override string ToString()
         {
-            string str = String.Format("------------\n{0}\n------------\n", stateName);
-            foreach (KeyValuePair<string, int> condition in state)
+            StringBuilder builder = new StringBuilder(64 + (state.Count * 24));
+            builder.Append("------------\n");
+            builder.Append(stateName);
+            builder.Append("\n------------\n");
+            for (int i = 0; i < state.Count; i++)
             {
-                str += String.Format("{0}: {1}\n", condition.Key, condition.Value);
+                builder.Append(state.KeyAt(i));
+                builder.Append(": ");
+                builder.Append(state.ValueAt(i));
+                builder.Append('\n');
             }
-            str += String.Format("------------", stateName);
-            return str;
+            builder.Append("------------");
+            return builder.ToString();
         }
         /// <summary>
         /// Determines whether this state satisfies the given goal.
@@ -46,9 +52,11 @@ namespace CandiceAIforGames.AI
         public bool SatisfiesGoal(CandiceGOAPState goal)
         {
             // Check each resource in the goal state and ensure it is present in this state with the required quantity
-            foreach (KeyValuePair<string, int> resource in goal.state)
+            for (int i = 0; i < goal.state.Count; i++)
             {
-                if (!state.ContainsKey(resource.Key) || state[resource.Key] < resource.Value)
+                string key = goal.state.KeyAt(i);
+                int value = goal.state.ValueAt(i);
+                if (!state.ContainsKey(key) || state[key] < value)
                 {
                     return false;
                 }
@@ -61,17 +69,19 @@ namespace CandiceAIforGames.AI
             int heuristicValue = 0;
 
             // Iterate through each condition in the goal state
-            foreach (KeyValuePair<string, int> condition in goal.state)
+            for (int i = 0; i < goal.state.Count; i++)
             {
+                string key = goal.state.KeyAt(i);
+                int value = goal.state.ValueAt(i);
                 // If the current node's state does not contain the condition, add it to the heuristic value
-                if (!state.ContainsKey(condition.Key))
+                if (!state.ContainsKey(key))
                 {
-                    heuristicValue += condition.Value;
+                    heuristicValue += value;
                 }
                 // If the current node's state does contain the condition, but not enough to satisfy the goal state, add the difference to the heuristic value
-                else if (state[condition.Key] < condition.Value)
+                else if (state[key] < value)
                 {
-                    heuristicValue += condition.Value - state[condition.Key];
+                    heuristicValue += value - state[key];
                 }
             }
             return heuristicValue;
@@ -84,8 +94,10 @@ namespace CandiceAIforGames.AI
         public void ApplyActionEffects(CandiceGOAPAction action)
         {
             // Apply each effect of the action to this state
-            foreach (KeyValuePair<string, int> effect in action.effects)
+            Dictionary<string, int>.Enumerator enumerator = action.effects.GetEnumerator();
+            while (enumerator.MoveNext())
             {
+                KeyValuePair<string, int> effect = enumerator.Current;
                 if (state.ContainsKey(effect.Key))
                 {
                     state[effect.Key] += effect.Value;
@@ -121,9 +133,11 @@ namespace CandiceAIforGames.AI
         public bool IsAchievable(CandiceGOAPState otherState)
         {
             // Check each resource in this state and ensure it is present in the other state with the required quantity
-            foreach (KeyValuePair<string, int> resource in state)
+            for (int i = 0; i < state.Count; i++)
             {
-                if (!otherState.state.ContainsKey(resource.Key) || otherState.state[resource.Key] < resource.Value)
+                string key = state.KeyAt(i);
+                int value = state.ValueAt(i);
+                if (!otherState.state.ContainsKey(key) || otherState.state[key] < value)
                 {
                     return false;
                 }
@@ -175,8 +189,10 @@ namespace CandiceAIforGames.AI
 
         public bool HasStates(Dictionary<string, int> conditions)
         {
-            foreach (KeyValuePair<string, int> condition in conditions)
+            Dictionary<string, int>.Enumerator enumerator = conditions.GetEnumerator();
+            while (enumerator.MoveNext())
             {
+                KeyValuePair<string, int> condition = enumerator.Current;
                 if (!state.ContainsKey(condition.Key) || state[condition.Key] != condition.Value)
                 {
                     return false;
@@ -187,8 +203,10 @@ namespace CandiceAIforGames.AI
 
         public bool HasAnyState(Dictionary<string, int> conditions)
         {
-            foreach (KeyValuePair<string, int> condition in conditions)
+            Dictionary<string, int>.Enumerator enumerator = conditions.GetEnumerator();
+            while (enumerator.MoveNext())
             {
+                KeyValuePair<string, int> condition = enumerator.Current;
                 if (state.ContainsKey(condition.Key) && state[condition.Key] == condition.Value)
                 {
                     return true;
@@ -200,17 +218,23 @@ namespace CandiceAIforGames.AI
         public void CopyFrom(CandiceGOAPState other)
         {
             state.Clear();
-            foreach (KeyValuePair<string, int> entry in other.state)
+            for (int i = 0; i < other.state.Count; i++)
             {
-                state[entry.Key] = entry.Value;
+                state[other.state.KeyAt(i)] = other.state.ValueAt(i);
             }
         }
         public static CandiceDictionary<string, int> ConvertToCandiceDictionary(Dictionary<string, int> dictionary)
         {
-            CandiceDictionary<string, int> serializableDictionary = new CandiceDictionary<string, int>();
-
-            foreach (var kvp in dictionary)
+            CandiceDictionary<string, int> serializableDictionary = new CandiceDictionary<string, int>(dictionary != null ? dictionary.Count : 0);
+            if (dictionary == null)
             {
+                return serializableDictionary;
+            }
+
+            Dictionary<string, int>.Enumerator enumerator = dictionary.GetEnumerator();
+            while (enumerator.MoveNext())
+            {
+                KeyValuePair<string, int> kvp = enumerator.Current;
                 serializableDictionary.Add(kvp.Key, kvp.Value);
             }
 
@@ -218,11 +242,15 @@ namespace CandiceAIforGames.AI
         }
         public static Dictionary<string, int> ConvertToNormalDictionary(CandiceDictionary<string, int> serializableDictionary)
         {
-            Dictionary<string, int> normalDictionary = new Dictionary<string, int>();
-
-            foreach (KeyValuePair <string, int> kvp in serializableDictionary)
+            Dictionary<string, int> normalDictionary = new Dictionary<string, int>(serializableDictionary != null ? serializableDictionary.Count : 0);
+            if (serializableDictionary == null)
             {
-                normalDictionary[kvp.Key] = kvp.Value;
+                return normalDictionary;
+            }
+
+            for (int i = 0; i < serializableDictionary.Count; i++)
+            {
+                normalDictionary[serializableDictionary.KeyAt(i)] = serializableDictionary.ValueAt(i);
             }
 
             return normalDictionary;
@@ -232,13 +260,37 @@ namespace CandiceAIforGames.AI
     [System.Serializable]
     public class CandiceDictionary<TKey, TValue>
     {
+        // COLD ALLOC: List<TKey>[0] - serialized GOAP key storage, explicit empty capacity for deserialization - owner: CandiceDictionary
         [SerializeField]
-        private List<TKey> keys = new List<TKey>();
+        private List<TKey> keys = new List<TKey>(0);
 
+        // COLD ALLOC: List<TValue>[0] - serialized GOAP value storage, explicit empty capacity for deserialization - owner: CandiceDictionary
         [SerializeField]
-        private List<TValue> values = new List<TValue>();
+        private List<TValue> values = new List<TValue>(0);
 
         public int Count => keys.Count;
+
+        public CandiceDictionary()
+        {
+        }
+
+        public CandiceDictionary(int capacity)
+        {
+            // COLD ALLOC: List<TKey>[capacity] - serialized GOAP key storage - owner: CandiceDictionary
+            keys = new List<TKey>(capacity);
+            // COLD ALLOC: List<TValue>[capacity] - serialized GOAP value storage - owner: CandiceDictionary
+            values = new List<TValue>(capacity);
+        }
+
+        public TKey KeyAt(int index)
+        {
+            return keys[index];
+        }
+
+        public TValue ValueAt(int index)
+        {
+            return values[index];
+        }
 
         public TValue this[TKey key]
         {
@@ -251,7 +303,7 @@ namespace CandiceAIforGames.AI
                 }
                 else
                 {
-                    throw new KeyNotFoundException($"Key not found: {key}");
+                    throw new KeyNotFoundException("Key not found");
                 }
             }
             set
@@ -298,7 +350,7 @@ namespace CandiceAIforGames.AI
             }
             else
             {
-                Debug.LogWarning($"Key '{key}' already exists in the dictionary.");
+                return;
             }
         }
 

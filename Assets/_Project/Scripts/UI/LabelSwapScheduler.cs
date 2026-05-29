@@ -48,14 +48,25 @@ namespace Hecton8.UI
         /// </summary>
         public bool Enqueue(TMP_TextEntry entry)
         {
+            return Enqueue(entry, new int2(-1, 0), false);
+        }
+
+        /// <summary>
+        /// Queue one TMP entry with an optional already-resolved UTF-8 slice.
+        /// </summary>
+        public bool Enqueue(TMP_TextEntry entry, int2 utf8Slice, bool hasPrefetchedSlice)
+        {
             if (_count >= _pending.Length || entry.Text == null)
                 return false;
+
+            if (!hasPrefetchedSlice)
+                utf8Slice = new int2(-1, 0);
 
             _pending[_tail] = new PendingSwap
             {
                 Entry = entry,
-                Utf8Slice = new int2(-1, 0),
-                HasPrefetchedSlice = 0
+                Utf8Slice = utf8Slice,
+                HasPrefetchedSlice = hasPrefetchedSlice ? (byte)1 : (byte)0
             };
             _tail++;
             if (_tail >= _pending.Length)

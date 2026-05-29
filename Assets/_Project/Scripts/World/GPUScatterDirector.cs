@@ -20,7 +20,7 @@ namespace Hecton8.World
     /// Generates and renders seabed scatter entirely on the GPU from the active MapMagic height payload.
     /// </summary>
     [DisallowMultipleComponent]
-    public sealed class GPUScatterDirector : MonoBehaviour, ILateFrameTickable, IOriginShiftListener, IGlobalRegistryHotSwapListener
+    public sealed class GPUScatterDirector : MonoBehaviour, ILateFrameTickable, ISlowTickable, IOriginShiftListener, IGlobalRegistryHotSwapListener
     {
         private const int ThreadGroupSize = 64;
         private const uint PortableMaxComputeThreadsPerGroup = 256u;
@@ -284,7 +284,10 @@ namespace Hecton8.World
         [SerializeField] private Bounds _debugDrawBounds;
 
         private bool _registered;
+        private bool _registeredSlowTick;
         private bool _registeredHotSwapListener;
+        private bool _coldSupportsComputeShaders;
+        private bool _runtimeDependencyResolveRequested;
         private int _clearDensityKernel = -1;
         private int _generateKernel = -1;
         private int _compactKernel = -1;
@@ -384,6 +387,7 @@ namespace Hecton8.World
         private void Awake()
         {
             _activeInstance = this;
+            CacheGraphicsCapabilitiesCold();
 #if UNITY_EDITOR
             TryAutoAssignAssets();
 #endif
@@ -401,6 +405,7 @@ namespace Hecton8.World
         private void OnEnable()
         {
             _activeInstance = this;
+            CacheGraphicsCapabilitiesCold();
 #if UNITY_EDITOR
             TryAutoAssignAssets();
 #endif
@@ -450,10 +455,12 @@ namespace Hecton8.World
             {
                 case GlobalRegistryServiceSlot.Player:
                     _playerRuntimeContext = currentService as IPlayerRuntimeContext;
+                    ResolveDependencies();
                     break;
                 case GlobalRegistryServiceSlot.Dispatcher:
                     _dispatcher = currentService as ITickDispatcher;
                     _registered = false;
+                    _registeredSlowTick = false;
                     if (currentService != null && isActiveAndEnabled)
                         TryRegister();
                     break;
@@ -475,7 +482,7 @@ namespace Hecton8.World
                 return;
 
             if (HasMissingRuntimeDependencies())
-                ResolveDependencies();
+                _runtimeDependencyResolveRequested = true;
 
             EnsureResources();
             if (_modInstanceMatrices == null || _modInstanceMatrixBufferA == null || _modInstanceMatrixBufferB == null)
@@ -659,6 +666,18 @@ namespace Hecton8.World
             RecordScatterTelemetry(center, activeScatterRadius, activeCellSizeMeters, _gridResolution, candidateCount, _lastCurrentBiomeHash, (uint)math.max(0, _debugVisibleCount), 0u);
         }
 
+        public void SlowTick()
+        {
+            if (_runtimeDependencyResolveRequested || HasMissingRuntimeDependencies())
+            {
+                _runtimeDependencyResolveRequested = false;
+                ResolveDependencies();
+            }
+
+            if (!IsExactVaultHandle(in _scatterTelemetryRingHandle, ScatterTelemetryRingBufferId))
+                EnsureScatterTelemetryResources();
+        }
+
         /// <summary>
         /// Adds one mod-authored matrix to the reserved GPU instancing layer.
         /// </summary>
@@ -693,7 +712,7 @@ namespace Hecton8.World
         private void EnsureResources()
         {
             if (scatterCompute == null ||
-                !HardwareTierDetector.AllowHighResourceComputeShaders ||
+                !_coldSupportsComputeShaders ||
                 scatterMesh == null ||
                 scatterMaterial == null)
                 return;
@@ -1340,7 +1359,7 @@ namespace Hecton8.World
 
         private void EnsureScatterTelemetryResources()
         {
-            IDataVault vault = CacheDataVaultCold();
+            IDataVault vault = _dataVault;
             if (vault == null)
                 return;
 
@@ -1367,7 +1386,6 @@ namespace Hecton8.World
             uint visibleCount,
             uint flags)
         {
-            EnsureScatterTelemetryResources();
             if (!TryAcquireScatterTelemetryRingWrite(out NativeArray<ScatterTelemetryEntry> telemetryRing))
                 return;
 
@@ -1608,20 +1626,20 @@ namespace Hecton8.World
             return count;
         }
 
-        private static int ResolveKernel(ComputeShader computeShader, string kernelName)
+        private int ResolveKernel(ComputeShader computeShader, string kernelName)
         {
-            if (computeShader == null || !HardwareTierDetector.AllowHighResourceComputeShaders || !computeShader.HasKernel(kernelName))
+            if (computeShader == null || !_coldSupportsComputeShaders || !computeShader.HasKernel(kernelName))
                 return -1;
 
             int kernel = computeShader.FindKernel(kernelName);
             return kernel >= 0 && computeShader.IsSupported(kernel) ? kernel : -1;
         }
 
-        private static int ResolveKernelThreadGroupSizeX(ComputeShader computeShader, int kernel)
+        private int ResolveKernelThreadGroupSizeX(ComputeShader computeShader, int kernel)
         {
             if (computeShader == null ||
                 kernel < 0 ||
-                !HardwareTierDetector.AllowHighResourceComputeShaders ||
+                !_coldSupportsComputeShaders ||
                 !computeShader.IsSupported(kernel))
                 return 0;
 
@@ -1633,7 +1651,7 @@ namespace Hecton8.World
             return totalThreads <= PortableMaxComputeThreadsPerGroup ? (int)queryX : 0;
         }
 
-        private static void ResolveKernelThreadGroupSizes(
+        private void ResolveKernelThreadGroupSizes(
             ComputeShader computeShader,
             int kernel,
             out int threadGroupSizeX,
@@ -1643,7 +1661,7 @@ namespace Hecton8.World
             threadGroupSizeY = 0;
             if (computeShader == null ||
                 kernel < 0 ||
-                !HardwareTierDetector.AllowHighResourceComputeShaders ||
+                !_coldSupportsComputeShaders ||
                 !computeShader.IsSupported(kernel))
                 return;
 
@@ -1659,6 +1677,11 @@ namespace Hecton8.World
             threadGroupSizeY = (int)queryY;
         }
 
+        private void CacheGraphicsCapabilitiesCold()
+        {
+            _coldSupportsComputeShaders = SystemInfo.supportsComputeShaders;
+        }
+
         private static int CeilDividePositive(int value, int divisor)
         {
             const int MaxDispatchGroupsPerDimension = 65535;
@@ -1671,10 +1694,14 @@ namespace Hecton8.World
 
         private void TryRegister()
         {
-            if (_registered || !Application.isPlaying || _dispatcher == null)
+            if (!Application.isPlaying || _dispatcher == null)
                 return;
 
-            _registered = GlobalRegistry.TryRegisterLateFrameTickable(this, PriorityLayer.Environment);
+            if (!_registered)
+                _registered = GlobalRegistry.TryRegisterLateFrameTickable(this, PriorityLayer.Environment);
+
+            if (!_registeredSlowTick)
+                _registeredSlowTick = GlobalRegistry.TryRegisterSlowTickable(this, PriorityLayer.Environment);
         }
 
         private void CacheRegistryServicesCold()
@@ -1689,13 +1716,6 @@ namespace Hecton8.World
                 _dataVault = GlobalRegistry.DataVault;
 
             _cachedGlobalQualityWeight01 = ResolveGlobalQualityWeight01();
-        }
-
-        private IDataVault CacheDataVaultCold()
-        {
-            if (_dataVault == null)
-                _dataVault = GlobalRegistry.DataVault;
-            return _dataVault;
         }
 
         private bool TryAcquireScatterTelemetryRingWrite(out NativeArray<ScatterTelemetryEntry> telemetryRing)
@@ -1774,11 +1794,17 @@ namespace Hecton8.World
 
         private void TryUnregister()
         {
-            if (!_registered)
-                return;
+            if (_registeredSlowTick)
+            {
+                GlobalRegistry.UnregisterSlowTickable(this, PriorityLayer.Environment);
+                _registeredSlowTick = false;
+            }
 
-            GlobalRegistry.UnregisterLateFrameTickable(this, PriorityLayer.Environment);
-            _registered = false;
+            if (_registered)
+            {
+                GlobalRegistry.UnregisterLateFrameTickable(this, PriorityLayer.Environment);
+                _registered = false;
+            }
         }
 
         private void TryUnregisterOriginShiftListener()

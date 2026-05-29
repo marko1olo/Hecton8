@@ -1051,9 +1051,6 @@ namespace Hecton8.Environment
 
         private void EvaluateMatrix(bool forcePublish)
         {
-            if (!Application.isPlaying)
-                ResolveReferences();
-
             Transform evaluationTransform = ResolveEvaluationTransform();
 
             if (evaluationTransform == null || !HasCatalog)
@@ -1406,29 +1403,29 @@ namespace Hecton8.Environment
             _debugMatrixIndex = profile != null ? profile.matrixIndex : -1;
             _debugPlaceholder = profile != null && profile.isPlaceholder;
             _debugFamilyId = profile != null ? profile.familyId : "None";
-            _debugFamilyLabel = profile != null && profile.familyProfile != null ? profile.familyProfile.familyLabel : "None";
-            _debugAtmosphereMood = profile != null && profile.familyProfile != null ? profile.familyProfile.atmosphereMood : "None";
-            _debugPrimaryResourceTheme = profile != null && profile.familyProfile != null ? profile.familyProfile.primaryResourceTheme : "None";
-            _debugNavigationStyle = profile != null && profile.familyProfile != null ? profile.familyProfile.navigationStyle : "None";
+            _debugFamilyLabel = profile != null && profile.familyProfile != null ? profile.familyProfile.RuntimeFamilyLabel : "None";
+            _debugAtmosphereMood = profile != null && profile.familyProfile != null ? profile.familyProfile.RuntimeAtmosphereMood : "None";
+            _debugPrimaryResourceTheme = profile != null && profile.familyProfile != null ? profile.familyProfile.RuntimePrimaryResourceTheme : "None";
+            _debugNavigationStyle = profile != null && profile.familyProfile != null ? profile.familyProfile.RuntimeNavigationStyle : "None";
             _debugAtmosphereProfile = profile != null && profile.familyProfile != null && profile.familyProfile.atmosphereProfile != null ? profile.familyProfile.atmosphereProfile.name : "None";
             _debugFaunaFamily = profile != null && profile.familyProfile != null && profile.familyProfile.faunaFamilyProfile != null ? profile.familyProfile.faunaFamilyProfile.familyLabel : "None";
             _debugThreatStyle = profile != null && profile.familyProfile != null && profile.familyProfile.faunaFamilyProfile != null ? profile.familyProfile.faunaFamilyProfile.threatStyle : "None";
             _debugRecommendedLoadout = profile != null && profile.familyProfile != null && profile.familyProfile.recommendedLoadoutPreset != null ? profile.familyProfile.recommendedLoadoutPreset.presetName : "None";
-            _debugResourcePlan = profile != null && profile.familyProfile != null && profile.familyProfile.resourcePlanProfile != null ? profile.familyProfile.resourcePlanProfile.profileLabel : "None";
+            _debugResourcePlan = profile != null && profile.familyProfile != null && profile.familyProfile.resourcePlanProfile != null ? profile.familyProfile.resourcePlanProfile.RuntimeProfileLabel : "None";
             _debugResourceChannels = profile != null && profile.familyProfile != null && profile.familyProfile.resourceChannelProfile != null ? profile.familyProfile.resourceChannelProfile.profileLabel : "None";
-            _debugEarlyFarmReason = profile != null && profile.familyProfile != null && profile.familyProfile.resourcePlanProfile != null ? profile.familyProfile.resourcePlanProfile.earlyReasonToFarm : "None";
-            _debugLateReturnReason = profile != null && profile.familyProfile != null && profile.familyProfile.resourcePlanProfile != null ? profile.familyProfile.resourcePlanProfile.lateReasonToReturn : "None";
-            _debugExtractionStyle = profile != null && profile.familyProfile != null && profile.familyProfile.resourcePlanProfile != null ? profile.familyProfile.resourcePlanProfile.extractionStyle : "None";
+            _debugEarlyFarmReason = profile != null && profile.familyProfile != null && profile.familyProfile.resourcePlanProfile != null ? profile.familyProfile.resourcePlanProfile.RuntimeEarlyReasonToFarm : "None";
+            _debugLateReturnReason = profile != null && profile.familyProfile != null && profile.familyProfile.resourcePlanProfile != null ? profile.familyProfile.resourcePlanProfile.RuntimeLateReasonToReturn : "None";
+            _debugExtractionStyle = profile != null && profile.familyProfile != null && profile.familyProfile.resourcePlanProfile != null ? profile.familyProfile.resourcePlanProfile.RuntimeExtractionStyle : "None";
             _debugPocketResource = GetItemLabel(profile != null && profile.familyProfile != null && profile.familyProfile.resourceChannelProfile != null ? profile.familyProfile.resourceChannelProfile.resourcePocketItem : null);
             _debugNodeResource = GetItemLabel(profile != null && profile.familyProfile != null && profile.familyProfile.resourceChannelProfile != null ? profile.familyProfile.resourceChannelProfile.nodeClusterItem : null);
             _debugSafePocketResource = GetItemLabel(profile != null && profile.familyProfile != null && profile.familyProfile.resourceChannelProfile != null ? profile.familyProfile.resourceChannelProfile.safePocketItem : null);
             _debugRareObjectiveResource = GetItemLabel(profile != null && profile.familyProfile != null && profile.familyProfile.resourceChannelProfile != null ? profile.familyProfile.resourceChannelProfile.rareObjectiveRewardItem : null);
-            _debugLoosePickupWeight = profile != null && profile.familyProfile != null && profile.familyProfile.resourcePlanProfile != null ? profile.familyProfile.resourcePlanProfile.loosePickupWeight : 0;
-            _debugNodeExtractionWeight = profile != null && profile.familyProfile != null && profile.familyProfile.resourcePlanProfile != null ? profile.familyProfile.resourcePlanProfile.nodeExtractionWeight : 0;
-            _debugSalvageRecoveryWeight = profile != null && profile.familyProfile != null && profile.familyProfile.resourcePlanProfile != null ? profile.familyProfile.resourcePlanProfile.salvageRecoveryWeight : 0;
-            _debugCommonResourcePull = profile != null && profile.familyProfile != null && profile.familyProfile.resourcePlanProfile != null ? profile.familyProfile.resourcePlanProfile.commonResourcePull : 0;
-            _debugUncommonResourcePull = profile != null && profile.familyProfile != null && profile.familyProfile.resourcePlanProfile != null ? profile.familyProfile.resourcePlanProfile.uncommonResourcePull : 0;
-            _debugRareResourcePull = profile != null && profile.familyProfile != null && profile.familyProfile.resourcePlanProfile != null ? profile.familyProfile.resourcePlanProfile.rareResourcePull : 0;
+            _debugLoosePickupWeight = profile != null && profile.familyProfile != null && profile.familyProfile.resourcePlanProfile != null ? profile.familyProfile.resourcePlanProfile.RuntimeLoosePickupWeight : 0;
+            _debugNodeExtractionWeight = profile != null && profile.familyProfile != null && profile.familyProfile.resourcePlanProfile != null ? profile.familyProfile.resourcePlanProfile.RuntimeNodeExtractionWeight : 0;
+            _debugSalvageRecoveryWeight = profile != null && profile.familyProfile != null && profile.familyProfile.resourcePlanProfile != null ? profile.familyProfile.resourcePlanProfile.RuntimeSalvageRecoveryWeight : 0;
+            _debugCommonResourcePull = profile != null && profile.familyProfile != null && profile.familyProfile.resourcePlanProfile != null ? profile.familyProfile.resourcePlanProfile.RuntimeCommonResourcePull : 0;
+            _debugUncommonResourcePull = profile != null && profile.familyProfile != null && profile.familyProfile.resourcePlanProfile != null ? profile.familyProfile.resourcePlanProfile.RuntimeUncommonResourcePull : 0;
+            _debugRareResourcePull = profile != null && profile.familyProfile != null && profile.familyProfile.resourcePlanProfile != null ? profile.familyProfile.resourcePlanProfile.RuntimeRareResourcePull : 0;
             _debugLandmarkPlan = profile != null && profile.familyProfile != null && profile.familyProfile.landmarkPlanProfile != null ? profile.familyProfile.landmarkPlanProfile.profileLabel : "None";
             _debugDominantLandmarkRole = profile != null && profile.familyProfile != null && profile.familyProfile.landmarkPlanProfile != null ? profile.familyProfile.landmarkPlanProfile.dominantLandmarkRole : "None";
             _debugRouteUse = profile != null && profile.familyProfile != null && profile.familyProfile.landmarkPlanProfile != null ? profile.familyProfile.landmarkPlanProfile.routeUse : "None";
@@ -1440,12 +1437,12 @@ namespace Hecton8.Environment
             _debugRouteAnchorPattern = profile != null && profile.familyProfile != null && profile.familyProfile.spatialPatternProfile != null ? profile.familyProfile.spatialPatternProfile.routeAnchorPattern : "None";
             _debugRareObjectivePattern = profile != null && profile.familyProfile != null && profile.familyProfile.spatialPatternProfile != null ? profile.familyProfile.spatialPatternProfile.rareObjectivePattern : "None";
             _debugExplorationLoop = profile != null && profile.familyProfile != null && profile.familyProfile.spatialPatternProfile != null ? profile.familyProfile.spatialPatternProfile.explorationLoop : "None";
-            _debugWhyPlayerComesHere = profile != null && profile.familyProfile != null && profile.familyProfile.playProfile != null ? profile.familyProfile.playProfile.whyPlayerComesHere : "None";
-            _debugRouteClarity = profile != null && profile.familyProfile != null && profile.familyProfile.playProfile != null ? profile.familyProfile.playProfile.routeClarity : 0;
-            _debugSafePocketFrequency = profile != null && profile.familyProfile != null && profile.familyProfile.playProfile != null ? profile.familyProfile.playProfile.safePocketFrequency : 0;
-            _debugRareRewardPull = profile != null && profile.familyProfile != null && profile.familyProfile.playProfile != null ? profile.familyProfile.playProfile.rareRewardPull : 0;
-            _debugEncounterPressure = profile != null && profile.familyProfile != null && profile.familyProfile.playProfile != null ? profile.familyProfile.playProfile.encounterPressure : 0;
-            _debugHazardPressure = profile != null && profile.familyProfile != null && profile.familyProfile.playProfile != null ? profile.familyProfile.playProfile.hazardPressure : 0;
+            _debugWhyPlayerComesHere = profile != null && profile.familyProfile != null && profile.familyProfile.playProfile != null ? profile.familyProfile.playProfile.RuntimeWhyPlayerComesHere : "None";
+            _debugRouteClarity = profile != null && profile.familyProfile != null && profile.familyProfile.playProfile != null ? profile.familyProfile.playProfile.RuntimeRouteClarity : 0;
+            _debugSafePocketFrequency = profile != null && profile.familyProfile != null && profile.familyProfile.playProfile != null ? profile.familyProfile.playProfile.RuntimeSafePocketFrequency : 0;
+            _debugRareRewardPull = profile != null && profile.familyProfile != null && profile.familyProfile.playProfile != null ? profile.familyProfile.playProfile.RuntimeRareRewardPull : 0;
+            _debugEncounterPressure = profile != null && profile.familyProfile != null && profile.familyProfile.playProfile != null ? profile.familyProfile.playProfile.RuntimeEncounterPressure : 0;
+            _debugHazardPressure = profile != null && profile.familyProfile != null && profile.familyProfile.playProfile != null ? profile.familyProfile.playProfile.RuntimeHazardPressure : 0;
             _debugVisitPurpose = profile != null ? profile.visitPurpose : "None";
             _debugCommonRewardHook = profile != null ? profile.commonRewardHook : "None";
             _debugRareRewardHook = profile != null ? profile.rareRewardHook : "None";

@@ -175,6 +175,7 @@ namespace Hecton8.UI
         private IAtmosphereReadModel _cachedAtmosphere;
         private bool _headerDirty = true;
         private bool _plainClassificationDirty = true;
+        private bool _localizedPresentationDirty;
         private bool _storageCapacityBarkActive;
         private bool _hotSwapListenerRegistered;
         private ContactClassification _lastRenderedClassification = ContactClassification.None;
@@ -228,6 +229,7 @@ namespace Hecton8.UI
         /// <inheritdoc />
         public void LateFrameTick()
         {
+            ApplyPendingLocalizationRefresh();
             DrainPhysicsEventPayloads();
             DrainStorageCapacityExceededBarks();
 
@@ -288,8 +290,6 @@ namespace Hecton8.UI
                 return;
 
             _pendingSnapshotPulseCount--;
-            ResolveAcousticOwners();
-            EnsureUiBuilt();
             if (_classificationLabel == null || _headerLabel == null)
                 return;
 
@@ -337,7 +337,7 @@ namespace Hecton8.UI
             if (serviceSlot == GlobalRegistryServiceSlot.LocalizationRuntime)
             {
                 _cachedLocalization = currentService as ILocalizationStressPresentationReadModel;
-                RefreshLocalizedCache();
+                QueueLocalizationPresentationRefresh();
                 return;
             }
 
@@ -366,11 +366,27 @@ namespace Hecton8.UI
 
         private void HandleLanguageChanged(GameLanguage _)
         {
-            RefreshLocalizedCache();
+            QueueLocalizationPresentationRefresh();
+        }
+
+        private void QueueLocalizationPresentationRefresh()
+        {
+            _localizedPresentationDirty = true;
             _headerDirty = true;
             _plainClassificationDirty = true;
             _lastRenderedClassification = ContactClassification.None;
             _lastRenderedDistanceMeters = int.MinValue;
+            if (isActiveAndEnabled)
+                RegisterToTickManager();
+        }
+
+        private void ApplyPendingLocalizationRefresh()
+        {
+            if (!_localizedPresentationDirty)
+                return;
+
+            _localizedPresentationDirty = false;
+            RefreshLocalizedCache();
         }
 
         private void DrainStorageCapacityExceededBarks()
@@ -387,8 +403,6 @@ namespace Hecton8.UI
 
         private void ShowStorageCapacityExceededBark()
         {
-            ResolveAcousticOwners();
-            EnsureUiBuilt();
             if (_classificationLabel == null || _headerLabel == null)
                 return;
 
@@ -421,7 +435,6 @@ namespace Hecton8.UI
             _lastRenderedClassification = ContactClassification.None;
             _lastRenderedDistanceMeters = int.MinValue;
             ApplyVisualState(1f);
-            RegisterToTickManager();
         }
 
         private void DrainPhysicsEventPayloads()
@@ -451,8 +464,6 @@ namespace Hecton8.UI
                 return;
             }
 
-            ResolveAcousticOwners();
-            EnsureUiBuilt();
             if (_classificationLabel == null || _headerLabel == null)
                 return;
 
@@ -471,7 +482,6 @@ namespace Hecton8.UI
             _lastRenderedClassification = ContactClassification.None;
             _lastRenderedDistanceMeters = int.MinValue;
             ApplyVisualState(1f);
-            RegisterToTickManager();
         }
 
         private bool TryResolveContact(SpatialSonarSnapshot snapshot, out ContactClassification classification, out int distanceMeters)
@@ -678,7 +688,6 @@ namespace Hecton8.UI
             _fadeTimer = FadeDuration;
             _pulse01 = math.max(_pulse01, 1f);
             ApplyVisualState(1f);
-            RegisterToTickManager();
         }
 
         private void ApplyPlainClassification(ContactClassification classification, ReadOnlySpan<char> classText, int distanceMeters)
@@ -1606,13 +1615,7 @@ namespace Hecton8.UI
         {
             float dt = SystemDispatcher.CurrentFrameUnscaledDeltaTime;
             if (!_uiBuilt)
-            {
-                EnsureUiBuilt(allowComponentFallback: true);
-                if (!_uiBuilt)
-                    return;
-
-                TryRegisterCaptionConsumer();
-            }
+                return;
 
             if (_viewTransform == null)
                 ResolveViewCamera();
@@ -1660,7 +1663,6 @@ namespace Hecton8.UI
 
         private void HandleCaptionRequested(AudioCaptionRequest request)
         {
-            EnsureUiBuilt(allowComponentFallback: true);
             if (!_uiBuilt)
                 return;
 
@@ -1713,7 +1715,6 @@ namespace Hecton8.UI
             }
             CaptionViewFrame viewFrame = ResolveCaptionViewFrame();
             UpdateSlotPose(ref slot, in viewFrame);
-            RegisterToTickManager();
         }
 
         private void EnsureUiBuilt(bool allowComponentFallback)

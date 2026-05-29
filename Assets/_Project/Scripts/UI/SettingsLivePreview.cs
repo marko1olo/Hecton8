@@ -51,8 +51,14 @@ namespace Hecton8.UI
         private void OnEnable()
         {
             CacheRegistryServicesCold();
+            TryResolveMainCameraCold();
             TryRegisterHotSwapListener();
             RefreshTickRegistration();
+        }
+
+        private void Start()
+        {
+            TryResolveMainCameraCold();
         }
 
         private void OnDisable()
@@ -138,7 +144,6 @@ namespace Hecton8.UI
 
             if (!_isDirty)
             {
-                RefreshTickRegistration();
                 return;
             }
 
@@ -155,7 +160,6 @@ namespace Hecton8.UI
 
             _isDirty = false;
             _dirtyTimer = 0f;
-            RefreshTickRegistration();
         }
 
         // ══════════════════════════════════════════════════════════
@@ -164,7 +168,7 @@ namespace Hecton8.UI
 
         private void ApplyFOV()
         {
-            if (!TryResolveMainCamera())
+            if (mainCamera == null)
             {
                 _pendingFOV = -1f;
                 return;
@@ -174,7 +178,7 @@ namespace Hecton8.UI
             _pendingFOV = -1f;
         }
 
-        private bool TryResolveMainCamera()
+        private bool TryResolveMainCameraCold()
         {
             if (mainCamera != null)
                 return true;
@@ -246,6 +250,7 @@ namespace Hecton8.UI
             {
                 _playerRuntimeContext = currentService as IPlayerRuntimeContext;
                 _mainCameraResolveRetryTimer = 0f;
+                TryResolveMainCameraCold();
             }
         }
 

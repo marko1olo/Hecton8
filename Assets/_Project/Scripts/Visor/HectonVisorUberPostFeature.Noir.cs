@@ -45,6 +45,7 @@ namespace Hecton8.Visor
         private const BufferID NoirColorProfilesVaultId = BufferID.Shinobu235NoirColorProfiles;
         private const BufferID NoirCsvScratchVaultId = BufferID.Shinobu235NoirCsvScratch;
         private static readonly bool s_noirLayoutValid = ComputeNoirLayoutValid();
+        private static readonly bool s_noirSupportsSetConstantBufferCold = SystemInfo.supportsSetConstantBuffer;
 
         private sealed partial class FeatureSettings
         {
@@ -569,7 +570,7 @@ namespace Hecton8.Visor
 
         private bool EnsureNoirConstantsBuffersCold()
         {
-            if (!SystemInfo.supportsSetConstantBuffer || !ValidateNoirLayout())
+            if (!s_noirSupportsSetConstantBufferCold || !ValidateNoirLayout())
             {
                 _noirConstantsBufferA?.Release();
                 _noirConstantsBufferA = null;
@@ -604,7 +605,7 @@ namespace Hecton8.Visor
 
         private bool NoirConstantsBuffersReady()
         {
-            return SystemInfo.supportsSetConstantBuffer &&
+            return s_noirSupportsSetConstantBufferCold &&
                    _noirConstantsBufferA != null &&
                    _noirConstantsBufferB != null &&
                    _noirConstantsBufferA.IsValid() &&
@@ -733,7 +734,7 @@ namespace Hecton8.Visor
                    handle.Generation != 0u;
         }
 
-        private unsafe bool TryUpdateNoirConstants()
+        private bool TryUpdateNoirConstants()
         {
             IDataVault vault = _dataVault;
             if (!NoirVaultHandlesReady() || vault == null || vault.IsCompactionFenceActive)
@@ -760,52 +761,11 @@ namespace Hecton8.Visor
                 input.Flags |= NoirFlagInvalidMath;
             }
 
-            NativeArray<NoirPostProcessInputDTO> inputArray = default;
-            NativeArray<NoirPostProcessTuningDTO> tuningArray = default;
-            NativeArray<NoirPostProcessDTO> constantsArray = default;
-            bool inputLocked = false;
-            bool tuningLocked = false;
-            bool constantsLocked = false;
-            try
+            if (!TryWriteNoirDto(in _noirInputHandle, in input) ||
+                !TryWriteNoirDto(in _noirTuningHandle, in tuning) ||
+                !TryWriteNoirDto(in _noirConstantsHandle, in constants))
             {
-                if (vault.IsCompactionFenceActive ||
-                    !vault.TryAcquireWriteLock(in _noirInputHandle, SystemID.GraphicsScalability, out inputArray))
-                    return false;
-                inputLocked = true;
-
-                if (vault.IsCompactionFenceActive ||
-                    !vault.TryAcquireWriteLock(in _noirTuningHandle, SystemID.GraphicsScalability, out tuningArray))
-                    return false;
-                tuningLocked = true;
-
-                if (vault.IsCompactionFenceActive ||
-                    !vault.TryAcquireWriteLock(in _noirConstantsHandle, SystemID.GraphicsScalability, out constantsArray))
-                    return false;
-                constantsLocked = true;
-
-                if (vault.IsCompactionFenceActive ||
-                    !inputArray.IsCreated || inputArray.Length <= 0 ||
-                    !tuningArray.IsCreated || tuningArray.Length <= 0 ||
-                    !constantsArray.IsCreated || constantsArray.Length <= 0)
-                {
-                    return false;
-                }
-
-                void* inputPtr = inputArray.GetUnsafePtr();
-                void* tuningPtr = tuningArray.GetUnsafePtr();
-                void* constantsPtr = constantsArray.GetUnsafePtr();
-                UnsafeUtility.AsRef<NoirPostProcessInputDTO>(inputPtr) = input;
-                UnsafeUtility.AsRef<NoirPostProcessTuningDTO>(tuningPtr) = tuning;
-                UnsafeUtility.AsRef<NoirPostProcessDTO>(constantsPtr) = constants;
-            }
-            finally
-            {
-                if (constantsLocked)
-                    vault.ReleaseWriteLock(in _noirConstantsHandle, SystemID.GraphicsScalability);
-                if (tuningLocked)
-                    vault.ReleaseWriteLock(in _noirTuningHandle, SystemID.GraphicsScalability);
-                if (inputLocked)
-                    vault.ReleaseWriteLock(in _noirInputHandle, SystemID.GraphicsScalability);
+                return false;
             }
 
             bool uploaded = UpdateNoirConstantsBuffer(in constants);
@@ -813,6 +773,32 @@ namespace Hecton8.Visor
             if (!validConstants && !_noirDumpWritten)
                 _noirDumpWritten = TryDumpNoirTelemetry();
             return uploaded;
+        }
+
+        private bool TryWriteNoirDto<T>(
+            in VaultGenerationHandle<T> handle,
+            in T value) where T : struct
+        {
+            IDataVault vault = _dataVault;
+            if (vault == null || vault.IsCompactionFenceActive)
+                return false;
+
+            if (!vault.TryAcquireWriteLock(in handle, SystemID.GraphicsScalability, out NativeArray<T> buffer))
+                return false;
+
+            try
+            {
+                if (!buffer.IsCreated || buffer.Length <= 0)
+                    return false;
+
+                T copy = value;
+                buffer[0] = copy;
+                return true;
+            }
+            finally
+            {
+                vault.ReleaseWriteLock(in handle, SystemID.GraphicsScalability);
+            }
         }
 
         private bool TryBuildNoirInputSnapshot(

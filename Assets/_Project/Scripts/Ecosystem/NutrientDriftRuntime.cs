@@ -58,6 +58,33 @@ namespace Hecton8.Ecosystem
         private static readonly int DensityTextureShaderId = Shader.PropertyToID("_H8NutrientDriftDensityTex");
         private static readonly int DensityParamsShaderId = Shader.PropertyToID("_H8NutrientDriftParams");
         private static readonly int DensityOriginShaderId = Shader.PropertyToID("_H8NutrientDriftOriginAup");
+        private static readonly ulong NutrientJobMutationGuardMask =
+            MutationGuardBit(BufferID.ShinobuNutrientDriftCellFront) |
+            MutationGuardBit(BufferID.ShinobuNutrientDriftCellBack) |
+            MutationGuardBit(BufferID.ShinobuNutrientDriftFlowField) |
+            MutationGuardBit(BufferID.ShinobuNutrientDriftInjection) |
+            MutationGuardBit(BufferID.ShinobuNutrientDriftSources) |
+            MutationGuardBit(BufferID.ShinobuNutrientDriftSourceCount) |
+            MutationGuardBit(BufferID.ShinobuNutrientDriftTuning) |
+            MutationGuardBit(BufferID.ShinobuNutrientDriftTelemetryRing) |
+            MutationGuardBit(BufferID.ShinobuNutrientDriftTelemetryCursor) |
+            MutationGuardBit(BufferID.ShinobuNutrientDriftDensityUpload) |
+            MutationGuardBit(BufferID.ShinobuNutrientDriftGridHeader) |
+            MutationGuardBit(BufferID.ShinobuNutrientDriftFaultFlags);
+        private static readonly ulong CarrionJobMutationGuardMask =
+            MutationGuardBit(BufferID.ShinobuCarrionStates) |
+            MutationGuardBit(BufferID.ShinobuCarrionDeathIngress) |
+            MutationGuardBit(BufferID.ShinobuCarrionRuntimeCounters) |
+            MutationGuardBit(BufferID.ShinobuCarrionTuning) |
+            MutationGuardBit(BufferID.ShinobuCarrionTelemetryRing) |
+            MutationGuardBit(BufferID.ShinobuCarrionAttractionRecords) |
+            MutationGuardBit(BufferID.ShinobuCarrionProfiles) |
+            MutationGuardBit(BufferID.ShinobuCarrionFaunaStates) |
+            MutationGuardBit(BufferID.ShinobuCarrionFaultFlags);
+        private static readonly ulong CombinedJobMutationGuardMask = NutrientJobMutationGuardMask | CarrionJobMutationGuardMask;
+        private static readonly ulong InitializationMutationGuardMask =
+            NutrientJobMutationGuardMask |
+            MutationGuardBit(BufferID.ShinobuNutrientDriftProfiles);
         private static NutrientDriftRuntime s_runtime;
 
         private VaultGenerationHandle<NutrientCellDTO> _frontHandle;
@@ -283,12 +310,9 @@ namespace Hecton8.Ecosystem
             if (vault == null || !TryLockJobBuffers(vault))
                 return;
 
-            if (!TryLockCarrionJobBuffers(vault))
+            bool keepJobGuard = false;
+            try
             {
-                UnlockJobBuffers();
-                return;
-            }
-
             if (!TryOpenVaultBuffer(vault, ref _frontHandle, BufferID.ShinobuNutrientDriftCellFront, GridCellCapacity, out NativeArray<NutrientCellDTO> front) ||
                 !TryOpenVaultBuffer(vault, ref _backHandle, BufferID.ShinobuNutrientDriftCellBack, GridCellCapacity, out NativeArray<NutrientCellDTO> back) ||
                 !TryOpenVaultBuffer(vault, ref _flowHandle, BufferID.ShinobuNutrientDriftFlowField, GridCellCapacity, out NativeArray<float3> flow) ||
@@ -304,8 +328,6 @@ namespace Hecton8.Ecosystem
             {
                 _initialized = false;
                 _profilesLoadedCold = false;
-                UnlockCarrionJobBuffers();
-                UnlockJobBuffers();
                 return;
             }
 
@@ -435,6 +457,13 @@ namespace Hecton8.Ecosystem
             _telemetryCursor = nextTelemetryCursor;
             _jobScheduled = true;
             _simulationTick++;
+            keepJobGuard = true;
+            }
+            finally
+            {
+                if (!keepJobGuard)
+                    UnlockJobBuffers();
+            }
         }
 
         public void LateFrameTick()
@@ -556,18 +585,16 @@ namespace Hecton8.Ecosystem
 
             bool nutrientReady = false;
             bool profileLoadRequired = false;
-            bool jobLocked = false;
-            bool profileLocked = false;
+            bool initializationGuardHeld = false;
             try
             {
-                if (!TryLockJobBuffers(vault))
+                if (!vault.TryAcquireMutationGuard(InitializationMutationGuardMask))
                     return false;
 
-                jobLocked = true;
-                if (!vault.TryAcquireWriteLock(in _profileHandle, SystemID.AIEcology, out NativeArray<NutrientProfileDTO> profiles))
+                initializationGuardHeld = true;
+                if (!TryOpenVaultBuffer(vault, ref _profileHandle, BufferID.ShinobuNutrientDriftProfiles, ProfileCapacity, out NativeArray<NutrientProfileDTO> profiles))
                     return false;
 
-                profileLocked = true;
                 if (!profiles.IsCreated ||
                     profiles.Length < ProfileCapacity ||
                     !TryOpenVaultBuffer(vault, ref _frontHandle, BufferID.ShinobuNutrientDriftCellFront, GridCellCapacity, out NativeArray<NutrientCellDTO> front) ||
@@ -619,7 +646,15 @@ namespace Hecton8.Ecosystem
                         TelemetryRing = (FluidGridTelemetryEntry*)NativeArrayUnsafeUtility.GetUnsafePtr(telemetry)
                     };
                     initHandle = telemetryInitJob.Schedule(TelemetryCapacity, JobBatchSize, initHandle);
-                    DispatcherJobFence.TryComplete(ref initHandle, forceComplete: true); // COLD_BOOTSTRAP_SYNC: uninitialized Vault memory must be deterministically populated before first public read.
+                    DispatcherJobFence.BeginPostSimulationSwapWindow();
+                    try
+                    {
+                        DispatcherJobFence.TryComplete(ref initHandle, forceComplete: true); // COLD_BOOTSTRAP_SYNC: uninitialized Vault memory must be deterministically populated before first public read.
+                    }
+                    finally
+                    {
+                        DispatcherJobFence.EndPostSimulationSwapWindow();
+                    }
 
                     _initialized = true;
                     nutrientReady = true;
@@ -628,10 +663,8 @@ namespace Hecton8.Ecosystem
             }
             finally
             {
-                if (profileLocked)
-                    vault.ReleaseWriteLock(in _profileHandle, SystemID.AIEcology);
-                if (jobLocked)
-                    UnlockJobBuffers();
+                if (initializationGuardHeld)
+                    vault.ReleaseMutationGuard(InitializationMutationGuardMask);
             }
 
             if (!nutrientReady)
@@ -842,31 +875,11 @@ namespace Hecton8.Ecosystem
 
         private bool TryLockJobBuffers(IDataVault vault)
         {
-            int locked = 0;
-            if (!vault.TryLockBuffer(BufferID.ShinobuNutrientDriftCellFront, SystemID.AIEcology)) return false;
-            locked++;
-            if (!vault.TryLockBuffer(BufferID.ShinobuNutrientDriftCellBack, SystemID.AIEcology)) { UnlockLockedJobBuffers(vault, locked); return false; }
-            locked++;
-            if (!vault.TryLockBuffer(BufferID.ShinobuNutrientDriftFlowField, SystemID.AIEcology)) { UnlockLockedJobBuffers(vault, locked); return false; }
-            locked++;
-            if (!vault.TryLockBuffer(BufferID.ShinobuNutrientDriftInjection, SystemID.AIEcology)) { UnlockLockedJobBuffers(vault, locked); return false; }
-            locked++;
-            if (!vault.TryLockBuffer(BufferID.ShinobuNutrientDriftSources, SystemID.AIEcology)) { UnlockLockedJobBuffers(vault, locked); return false; }
-            locked++;
-            if (!vault.TryLockBuffer(BufferID.ShinobuNutrientDriftSourceCount, SystemID.AIEcology)) { UnlockLockedJobBuffers(vault, locked); return false; }
-            locked++;
-            if (!vault.TryLockBuffer(BufferID.ShinobuNutrientDriftTuning, SystemID.AIEcology)) { UnlockLockedJobBuffers(vault, locked); return false; }
-            locked++;
-            if (!vault.TryLockBuffer(BufferID.ShinobuNutrientDriftTelemetryRing, SystemID.AIEcology)) { UnlockLockedJobBuffers(vault, locked); return false; }
-            locked++;
-            if (!vault.TryLockBuffer(BufferID.ShinobuNutrientDriftTelemetryCursor, SystemID.AIEcology)) { UnlockLockedJobBuffers(vault, locked); return false; }
-            locked++;
-            if (!vault.TryLockBuffer(BufferID.ShinobuNutrientDriftDensityUpload, SystemID.AIEcology)) { UnlockLockedJobBuffers(vault, locked); return false; }
-            locked++;
-            if (!vault.TryLockBuffer(BufferID.ShinobuNutrientDriftGridHeader, SystemID.AIEcology)) { UnlockLockedJobBuffers(vault, locked); return false; }
-            locked++;
-            if (!vault.TryLockBuffer(BufferID.ShinobuNutrientDriftFaultFlags, SystemID.AIEcology)) { UnlockLockedJobBuffers(vault, locked); return false; }
-            locked++;
+            if (vault == null || _jobLocksHeld)
+                return false;
+            if (!vault.TryAcquireMutationGuard(CombinedJobMutationGuardMask))
+                return false;
+
             _jobLocksHeld = true;
             return true;
         }
@@ -878,26 +891,15 @@ namespace Hecton8.Ecosystem
             if (!_jobLocksHeld)
                 return;
 
+            _jobLocksHeld = false;
             IDataVault vault = _vault;
             if (vault != null)
-                UnlockLockedJobBuffers(vault, 12);
-            _jobLocksHeld = false;
+                vault.ReleaseMutationGuard(CombinedJobMutationGuardMask);
         }
 
-        private static void UnlockLockedJobBuffers(IDataVault vault, int locked)
+        private static ulong MutationGuardBit(BufferID bufferId)
         {
-            if (locked >= 12) vault.TryUnlockBuffer(BufferID.ShinobuNutrientDriftFaultFlags, SystemID.AIEcology);
-            if (locked >= 11) vault.TryUnlockBuffer(BufferID.ShinobuNutrientDriftGridHeader, SystemID.AIEcology);
-            if (locked >= 10) vault.TryUnlockBuffer(BufferID.ShinobuNutrientDriftDensityUpload, SystemID.AIEcology);
-            if (locked >= 9) vault.TryUnlockBuffer(BufferID.ShinobuNutrientDriftTelemetryCursor, SystemID.AIEcology);
-            if (locked >= 8) vault.TryUnlockBuffer(BufferID.ShinobuNutrientDriftTelemetryRing, SystemID.AIEcology);
-            if (locked >= 7) vault.TryUnlockBuffer(BufferID.ShinobuNutrientDriftTuning, SystemID.AIEcology);
-            if (locked >= 6) vault.TryUnlockBuffer(BufferID.ShinobuNutrientDriftSourceCount, SystemID.AIEcology);
-            if (locked >= 5) vault.TryUnlockBuffer(BufferID.ShinobuNutrientDriftSources, SystemID.AIEcology);
-            if (locked >= 4) vault.TryUnlockBuffer(BufferID.ShinobuNutrientDriftInjection, SystemID.AIEcology);
-            if (locked >= 3) vault.TryUnlockBuffer(BufferID.ShinobuNutrientDriftFlowField, SystemID.AIEcology);
-            if (locked >= 2) vault.TryUnlockBuffer(BufferID.ShinobuNutrientDriftCellBack, SystemID.AIEcology);
-            if (locked >= 1) vault.TryUnlockBuffer(BufferID.ShinobuNutrientDriftCellFront, SystemID.AIEcology);
+            return 1UL << (unchecked((int)(uint)(int)bufferId) & 31);
         }
 
         private void TryFinalizeScheduledJobNoWait()
@@ -919,8 +921,16 @@ namespace Hecton8.Ecosystem
             if (!_jobScheduled)
                 return;
 
-            if (DispatcherJobFence.TryComplete(ref _activeJobHandle, forceComplete: true))
-                FinishCompletedScheduledJob();
+            DispatcherJobFence.BeginPostSimulationSwapWindow();
+            try
+            {
+                if (DispatcherJobFence.TryComplete(ref _activeJobHandle, forceComplete: true))
+                    FinishCompletedScheduledJob();
+            }
+            finally
+            {
+                DispatcherJobFence.EndPostSimulationSwapWindow();
+            }
         }
 
         private void CompleteScheduledJobForVaultSwapBarrier()
@@ -928,8 +938,16 @@ namespace Hecton8.Ecosystem
             if (!_jobScheduled)
                 return;
 
-            if (DispatcherJobFence.TryComplete(ref _activeJobHandle, forceComplete: true))
-                FinishCompletedScheduledJob();
+            DispatcherJobFence.BeginPostSimulationSwapWindow();
+            try
+            {
+                if (DispatcherJobFence.TryComplete(ref _activeJobHandle, forceComplete: true))
+                    FinishCompletedScheduledJob();
+            }
+            finally
+            {
+                DispatcherJobFence.EndPostSimulationSwapWindow();
+            }
         }
 
         private void FinishCompletedScheduledJob()
@@ -939,19 +957,24 @@ namespace Hecton8.Ecosystem
                 ? (float)((now - _scheduleTicks) * 1000000.0 / Stopwatch.Frequency)
                 : 0f;
 
-            IDataVault vault = _vault;
-            if (vault != null)
+            try
             {
-                SwapFrontBackHandles();
-                ClearSnapshotWriteInFlight(vault);
-                PatchCompletedCarrionTelemetry(vault, ResolveCarrionSolverMicros(now, micros));
-                PublishCarrionAttractions(vault);
-                PatchCompletedTelemetry(vault, micros);
-                UpdateGridHeaderAndTexture(vault, micros);
+                IDataVault vault = _vault;
+                if (vault != null)
+                {
+                    SwapFrontBackHandles();
+                    ClearSnapshotWriteInFlight(vault);
+                    PatchCompletedCarrionTelemetry(vault, ResolveCarrionSolverMicros(now, micros));
+                    PublishCarrionAttractions(vault);
+                    PatchCompletedTelemetry(vault, micros);
+                    UpdateGridHeaderAndTexture(vault, micros);
+                }
             }
-
-            _jobScheduled = false;
-            UnlockJobBuffers();
+            finally
+            {
+                _jobScheduled = false;
+                UnlockJobBuffers();
+            }
         }
 
         private void SwapFrontBackHandles()

@@ -176,6 +176,39 @@ namespace Hecton8.VFX
             };
         }
 
+        public static FoamTuningDTO ResolveMockStormTuning(in FoamTuningDTO source, float qualityWeight)
+        {
+            float quality = math.saturate(qualityWeight);
+            FoamTuningDTO tuning = source.Version != 0u ? source : CreateDefaultTuning();
+            tuning.WindX = 0.92f;
+            tuning.WindZ = 0.38f;
+            tuning.AdvectionSpeed = math.lerp(7.5f, 18.5f, quality);
+            tuning.Intensity = math.lerp(0.85f, 2.45f, quality);
+            tuning.PinchThreshold = math.lerp(0.90f, 0.68f, quality);
+            tuning.Version = tuning.Version == uint.MaxValue ? 1u : tuning.Version + 1u;
+            return tuning;
+        }
+
+        public static FoamWakeImpactDTO BuildMockWakeImpact(
+            int index,
+            int count,
+            float timeSeconds,
+            float qualityWeight,
+            in FoamTuningDTO tuning)
+        {
+            float safeCount = math.max(1f, count);
+            float lane = (index + 1f) * math.rcp(safeCount);
+            float phase = timeSeconds * (0.17f + lane * 0.31f) + lane * 17f;
+            float radius = math.lerp(2.5f, 24f, lane) * math.lerp(0.65f, 1.4f, math.saturate(qualityWeight));
+            float2 pos = new float2(TriangleSigned(phase) * 210f, TriangleSigned(phase * 0.73f + 0.25f) * 210f);
+            float intensity = math.saturate(1f - lane * 0.55f) * tuning.WakeGain;
+            return new FoamWakeImpactDTO
+            {
+                LocalPositionRadius = new float4(pos.x, 0f, pos.y, radius),
+                IntensityAgeFlags = new float4(intensity, timeSeconds, 1f, 0f)
+            };
+        }
+
         public static int ResolveFoamResolution(float globalQualityWeight, int minResolution, int maxResolution)
         {
             int minSafe = math.max(256, Align64(minResolution));
@@ -258,6 +291,12 @@ namespace Hecton8.VFX
             int safe = math.max(1, value);
             return ((safe + 63) / 64) * 64;
         }
+
+        private static float TriangleSigned(float phase)
+        {
+            float t = math.frac(phase);
+            return (math.abs(t * 2f - 1f) * 2f) - 1f;
+        }
     }
 
     [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
@@ -316,16 +355,10 @@ namespace Hecton8.VFX
             if (!Params.IsCreated || Params.Length <= 0)
                 return;
 
-            FoamTuningDTO tuning = Tuning.IsCreated && Tuning.Length > 0 && Tuning[0].Version != 0u
+            FoamTuningDTO source = Tuning.IsCreated && Tuning.Length > 0 && Tuning[0].Version != 0u
                 ? Tuning[0]
                 : JacobianFoamContracts.CreateDefaultTuning();
-
-            tuning.WindX = 0.92f;
-            tuning.WindZ = 0.38f;
-            tuning.AdvectionSpeed = math.lerp(7.5f, 18.5f, math.saturate(GlobalQualityWeight));
-            tuning.Intensity = math.lerp(0.85f, 2.45f, math.saturate(GlobalQualityWeight));
-            tuning.PinchThreshold = math.lerp(0.90f, 0.68f, math.saturate(GlobalQualityWeight));
-            tuning.Version = tuning.Version == uint.MaxValue ? 1u : tuning.Version + 1u;
+            FoamTuningDTO tuning = JacobianFoamContracts.ResolveMockStormTuning(in source, GlobalQualityWeight);
 
             ref FoamComputeParamsDTO paramRef = ref JacobianFoamContracts.MutableParamsRef(Params);
             paramRef = JacobianFoamContracts.BuildParams(in tuning, GlobalQualityWeight, DeltaTime, ScrollOffset);
@@ -338,24 +371,7 @@ namespace Hecton8.VFX
 
             int count = math.min(WakeImpacts.Length, JacobianFoamContracts.WakeImpactCapacity);
             for (int i = 0; i < count; i++)
-            {
-                float lane = (i + 1f) * math.rcp(math.max(1f, count));
-                float phase = TimeSeconds * (0.17f + lane * 0.31f) + lane * 17f;
-                float radius = math.lerp(2.5f, 24f, lane) * math.lerp(0.65f, 1.4f, math.saturate(GlobalQualityWeight));
-                float2 pos = new float2(TriangleSigned(phase) * 210f, TriangleSigned(phase * 0.73f + 0.25f) * 210f);
-                float intensity = math.saturate(1f - lane * 0.55f) * tuning.WakeGain;
-                WakeImpacts[i] = new FoamWakeImpactDTO
-                {
-                    LocalPositionRadius = new float4(pos.x, 0f, pos.y, radius),
-                    IntensityAgeFlags = new float4(intensity, TimeSeconds, 1f, 0f)
-                };
-            }
-        }
-
-        private static float TriangleSigned(float phase)
-        {
-            float t = math.frac(phase);
-            return (math.abs(t * 2f - 1f) * 2f) - 1f;
+                WakeImpacts[i] = JacobianFoamContracts.BuildMockWakeImpact(i, count, TimeSeconds, GlobalQualityWeight, in tuning);
         }
     }
 

@@ -65,8 +65,6 @@ namespace Hecton8.Gameplay
         private readonly char[] _labelPrefixBuffer = new char[32];
         private static BeaconNetworkSystem s_activeRuntime;
 
-        public static BeaconNetworkSystem Instance => s_activeRuntime;
-
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
         private static void ResetStaticState()
         {

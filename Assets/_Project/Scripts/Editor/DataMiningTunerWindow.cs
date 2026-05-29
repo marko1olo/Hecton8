@@ -32,7 +32,7 @@ namespace Hecton8.Editor
 
         private void OnGUI()
         {
-            ScannerSettingsDTO settings = ScannerDataMiningRouter.TryReadVaultSettings(out ScannerSettingsDTO vaultSettings)
+            ScannerSettingsDTO settings = ScannerDataMiningRouter.TryReadVaultSettings(Hecton8.Core.GlobalRegistry.DataVault, out ScannerSettingsDTO vaultSettings)
                 ? vaultSettings
                 : ScannerDataMiningTuning.Settings;
             EditorGUI.BeginChangeCheck();
@@ -52,7 +52,7 @@ namespace Hecton8.Editor
             if (EditorGUI.EndChangeCheck())
             {
                 ScannerDataMiningTuning.Settings = settings;
-                ScannerDataMiningRouter.TryWriteVaultSettings(in settings);
+                ScannerDataMiningRouter.TryWriteVaultSettings(Hecton8.Core.GlobalRegistry.DataVault, in settings);
                 SceneView.RepaintAll();
             }
         }
@@ -63,7 +63,7 @@ namespace Hecton8.Editor
             if (router == null)
                 return;
 
-            ScannerSettingsDTO settings = ScannerDataMiningRouter.TryReadVaultSettings(out ScannerSettingsDTO vaultSettings)
+            ScannerSettingsDTO settings = ScannerDataMiningRouter.TryReadVaultSettings(Hecton8.Core.GlobalRegistry.DataVault, out ScannerSettingsDTO vaultSettings)
                 ? vaultSettings
                 : ScannerDataMiningTuning.Settings;
             Transform routerTransform = router.transform;

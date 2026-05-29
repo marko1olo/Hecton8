@@ -50,6 +50,13 @@ namespace Hecton8.World
         private const SystemID OwnerSystemId = SystemID.WorldProceduralFieldSampler;
         private const int EmptyNativeArrayCapacity = 1;
         private const float NoiseLookupValueScale = 1f / ushort.MaxValue;
+        private static readonly ulong SamplingJobMutationGuardMask =
+            WorldProceduralFieldMutationGuardBit(BufferID.WorldProceduralFieldZones) |
+            WorldProceduralFieldMutationGuardBit(BufferID.WorldProceduralFieldBiomeMatrices) |
+            WorldProceduralFieldMutationGuardBit(BufferID.WorldProceduralFieldBiomeMatrixIndex) |
+            WorldProceduralFieldMutationGuardBit(BufferID.WorldProceduralFieldBiomeFamilies) |
+            WorldProceduralFieldMutationGuardBit(BufferID.WorldProceduralFieldCaveEntranceHints) |
+            WorldProceduralFieldMutationGuardBit(BufferID.WorldProceduralFieldNoiseLookup);
         private static readonly uint _biomeInfluenceGridCapacityWarningHash =
             unchecked((uint)LocHash.Compute("WorldProceduralFieldSampler.BiomeInfluenceGridCapacity"));
         private static readonly uint _fieldSamplerTelemetryContextHash =
@@ -634,6 +641,7 @@ namespace Hecton8.World
         private readonly byte[] _seafloorHeightCacheOccupied = new byte[MaxSeafloorHeightCacheEntries];
         private int _seafloorHeightCacheCount;
         private IDataVault _dataVault;
+        private IDataVault _samplingJobGuardVault;
         private VaultGenerationHandle<ZoneData> _burstZoneDataHandle;
         private VaultGenerationHandle<BiomeMatrixData> _burstBiomeMatrixDataHandle;
         private VaultGenerationHandle<int> _burstBiomeMatrixIdToDataIndexHandle;
@@ -653,7 +661,7 @@ namespace Hecton8.World
         private WorldCaveDirector _worldCaveDirector;
         private JobHandle _lastSamplingJobHandle;
         private bool _hasPendingSamplingJob;
-        private bool _samplingJobBuffersLocked;
+        private bool _samplingJobBuffersPinned;
 
         private static WorldProceduralFieldSampler s_activeRuntimeInstance;
 
@@ -2286,7 +2294,7 @@ namespace Hecton8.World
         {
             _lastSamplingJobHandle = default;
             _hasPendingSamplingJob = false;
-            ReleaseSamplingJobBufferLocks();
+            ReleaseSamplingJobBufferPins();
         }
 
         public void MarkBurstDataDirty()
@@ -2384,7 +2392,7 @@ namespace Hecton8.World
             }
 
             if (cellCount <= 0 ||
-                !TryAcquireSamplingJobBuffers(
+                !TryPinSamplingJobBuffers(
                     out zoneData,
                     out biomeMatrixData,
                     out biomeMatrixIdToDataIndex,
@@ -2438,7 +2446,7 @@ namespace Hecton8.World
                 CrystalGrowthFamilyIndex = ResolveBiomeFamilyDataIndex(crystalGrowthFamily)
             };
 
-            _samplingJobBuffersLocked = true;
+            _samplingJobBuffersPinned = true;
 
             try
             {
@@ -2451,7 +2459,7 @@ namespace Hecton8.World
             {
                 _lastSamplingJobHandle = default;
                 _hasPendingSamplingJob = false;
-                ReleaseSamplingJobBufferLocks();
+                ReleaseSamplingJobBufferPins();
                 throw;
             }
         }
@@ -2710,7 +2718,7 @@ namespace Hecton8.World
 
             int secondaryIndex = ResolveSecondaryBiomeMatrixDataIndex(in output);
             if (secondaryIndex < 0 ||
-                !TryReadVaultBuffer(in _burstBiomeMatrixDataHandle, out NativeArray<BiomeMatrixData>.ReadOnly biomeMatrixData) ||
+                !TryReadVaultBuffer(BufferID.WorldProceduralFieldBiomeMatrices, in _burstBiomeMatrixDataHandle, out NativeArray<BiomeMatrixData>.ReadOnly biomeMatrixData) ||
                 secondaryIndex >= _burstBiomeMatrixDataCount)
             {
                 return null;
@@ -2812,7 +2820,7 @@ namespace Hecton8.World
         private void EnsureNoiseLookupTable()
         {
             int requiredLength = NoiseLookupResolution * NoiseLookupResolution;
-            if (TryResolveVaultBuffer(in _noiseLookupTableHandle, out NativeArray<ushort> existing) &&
+            if (TryResolveVaultBuffer(BufferID.WorldProceduralFieldNoiseLookup, in _noiseLookupTableHandle, out NativeArray<ushort> existing) &&
                 existing.Length == requiredLength)
             {
                 return;
@@ -4196,7 +4204,7 @@ namespace Hecton8.World
         private float EvaluateNoise01(float x, float z, float scale)
         {
             EnsureNoiseLookupTable();
-            return TryResolveVaultBuffer(in _noiseLookupTableHandle, out NativeArray<ushort> noiseLookupTable)
+            return TryResolveVaultBuffer(BufferID.WorldProceduralFieldNoiseLookup, in _noiseLookupTableHandle, out NativeArray<ushort> noiseLookupTable)
                 ? SampleNoiseLookup01(noiseLookupTable, x, z, scale)
                 : 0f;
         }
@@ -5111,6 +5119,7 @@ namespace Hecton8.World
                 return false;
 
             if (handle.BufferID == unchecked((uint)(int)bufferId) &&
+                handle.SystemID == unchecked((uint)OwnerSystemId) &&
                 handle.Generation != 0u &&
                 _dataVault.TryResolveHandle(in handle, out buffer) &&
                 buffer.IsCreated &&
@@ -5126,6 +5135,7 @@ namespace Hecton8.World
                 options);
 
             return handle.BufferID == unchecked((uint)(int)bufferId) &&
+                   handle.SystemID == unchecked((uint)OwnerSystemId) &&
                    handle.Generation != 0u &&
                    _dataVault.TryResolveHandle(in handle, out buffer) &&
                    buffer.IsCreated &&
@@ -5141,24 +5151,39 @@ namespace Hecton8.World
             return _dataVault != null;
         }
 
-        private bool TryResolveVaultBuffer<T>(in VaultGenerationHandle<T> handle, out NativeArray<T> buffer) where T : struct
+        private bool TryResolveVaultBuffer<T>(BufferID bufferId, in VaultGenerationHandle<T> handle, out NativeArray<T> buffer) where T : struct
+        {
+            return TryResolveVaultBuffer(_dataVault, bufferId, in handle, out buffer);
+        }
+
+        private static bool TryResolveVaultBuffer<T>(IDataVault vault, BufferID bufferId, in VaultGenerationHandle<T> handle, out NativeArray<T> buffer) where T : struct
         {
             buffer = default;
-            return _dataVault != null &&
-                   handle.BufferID != 0u &&
-                   handle.Generation != 0u &&
-                   _dataVault.TryResolveHandle(in handle, out buffer) &&
+            return vault != null &&
+                   IsWorldProceduralFieldHandle(in handle, bufferId) &&
+                   vault.TryResolveHandle(in handle, out buffer) &&
                    buffer.IsCreated;
         }
 
-        private bool TryReadVaultBuffer<T>(in VaultGenerationHandle<T> handle, out NativeArray<T>.ReadOnly buffer) where T : struct
+        private bool TryReadVaultBuffer<T>(BufferID bufferId, in VaultGenerationHandle<T> handle, out NativeArray<T>.ReadOnly buffer) where T : struct
         {
             buffer = default;
             return _dataVault != null &&
-                   handle.BufferID != 0u &&
-                   handle.Generation != 0u &&
+                   IsWorldProceduralFieldHandle(in handle, bufferId) &&
                    _dataVault.TryReadOnlyHandle(in handle, out buffer) &&
                    buffer.IsCreated;
+        }
+
+        private static bool IsWorldProceduralFieldHandle<T>(in VaultGenerationHandle<T> handle, BufferID bufferId) where T : struct
+        {
+            return handle.BufferID == unchecked((uint)(int)bufferId) &&
+                   handle.SystemID == unchecked((uint)OwnerSystemId) &&
+                   handle.Generation != 0u;
+        }
+
+        private static ulong WorldProceduralFieldMutationGuardBit(BufferID bufferId)
+        {
+            return 1UL << (unchecked((int)(uint)(int)bufferId) & 31);
         }
 
         private bool TryResolveSamplingData(
@@ -5176,15 +5201,11 @@ namespace Hecton8.World
             caveEntranceHints = default;
             noiseLookupTable = default;
 
-            return TryResolveVaultBuffer(in _burstZoneDataHandle, out zones) &&
-                   TryResolveVaultBuffer(in _burstBiomeMatrixDataHandle, out biomeMatrices) &&
-                   TryResolveVaultBuffer(in _burstBiomeMatrixIdToDataIndexHandle, out biomeMatrixIdToDataIndex) &&
-                   TryResolveVaultBuffer(in _burstBiomeFamilyDataHandle, out biomeFamilies) &&
-                   TryResolveVaultBuffer(in _burstCaveEntranceHintsHandle, out caveEntranceHints) &&
-                   TryResolveVaultBuffer(in _noiseLookupTableHandle, out noiseLookupTable);
+            return TryResolveSamplingData(_dataVault, out zones, out biomeMatrices, out biomeMatrixIdToDataIndex, out biomeFamilies, out caveEntranceHints, out noiseLookupTable);
         }
 
-        private bool TryAcquireSamplingJobBuffers(
+        private bool TryResolveSamplingData(
+            IDataVault vault,
             out NativeArray<ZoneData> zones,
             out NativeArray<BiomeMatrixData> biomeMatrices,
             out NativeArray<int> biomeMatrixIdToDataIndex,
@@ -5199,70 +5220,120 @@ namespace Hecton8.World
             caveEntranceHints = default;
             noiseLookupTable = default;
 
-            if (_dataVault == null)
-                return false;
-
-            if (!_dataVault.TryAcquireWriteLock(in _burstZoneDataHandle, OwnerSystemId, out zones))
-                return false;
-
-            if (!_dataVault.TryAcquireWriteLock(in _burstBiomeMatrixDataHandle, OwnerSystemId, out biomeMatrices))
-            {
-                _dataVault.ReleaseWriteLock(in _burstZoneDataHandle, OwnerSystemId);
-                return false;
-            }
-
-            if (!_dataVault.TryAcquireWriteLock(in _burstBiomeMatrixIdToDataIndexHandle, OwnerSystemId, out biomeMatrixIdToDataIndex))
-            {
-                _dataVault.ReleaseWriteLock(in _burstBiomeMatrixDataHandle, OwnerSystemId);
-                _dataVault.ReleaseWriteLock(in _burstZoneDataHandle, OwnerSystemId);
-                return false;
-            }
-
-            if (!_dataVault.TryAcquireWriteLock(in _burstBiomeFamilyDataHandle, OwnerSystemId, out biomeFamilies))
-            {
-                _dataVault.ReleaseWriteLock(in _burstBiomeMatrixIdToDataIndexHandle, OwnerSystemId);
-                _dataVault.ReleaseWriteLock(in _burstBiomeMatrixDataHandle, OwnerSystemId);
-                _dataVault.ReleaseWriteLock(in _burstZoneDataHandle, OwnerSystemId);
-                return false;
-            }
-
-            if (!_dataVault.TryAcquireWriteLock(in _burstCaveEntranceHintsHandle, OwnerSystemId, out caveEntranceHints))
-            {
-                _dataVault.ReleaseWriteLock(in _burstBiomeFamilyDataHandle, OwnerSystemId);
-                _dataVault.ReleaseWriteLock(in _burstBiomeMatrixIdToDataIndexHandle, OwnerSystemId);
-                _dataVault.ReleaseWriteLock(in _burstBiomeMatrixDataHandle, OwnerSystemId);
-                _dataVault.ReleaseWriteLock(in _burstZoneDataHandle, OwnerSystemId);
-                return false;
-            }
-
-            if (!_dataVault.TryAcquireWriteLock(in _noiseLookupTableHandle, OwnerSystemId, out noiseLookupTable))
-            {
-                _dataVault.ReleaseWriteLock(in _burstCaveEntranceHintsHandle, OwnerSystemId);
-                _dataVault.ReleaseWriteLock(in _burstBiomeFamilyDataHandle, OwnerSystemId);
-                _dataVault.ReleaseWriteLock(in _burstBiomeMatrixIdToDataIndexHandle, OwnerSystemId);
-                _dataVault.ReleaseWriteLock(in _burstBiomeMatrixDataHandle, OwnerSystemId);
-                _dataVault.ReleaseWriteLock(in _burstZoneDataHandle, OwnerSystemId);
-                return false;
-            }
-
-            return true;
+            return TryResolveVaultBuffer(vault, BufferID.WorldProceduralFieldZones, in _burstZoneDataHandle, out zones) &&
+                   TryResolveVaultBuffer(vault, BufferID.WorldProceduralFieldBiomeMatrices, in _burstBiomeMatrixDataHandle, out biomeMatrices) &&
+                   TryResolveVaultBuffer(vault, BufferID.WorldProceduralFieldBiomeMatrixIndex, in _burstBiomeMatrixIdToDataIndexHandle, out biomeMatrixIdToDataIndex) &&
+                   TryResolveVaultBuffer(vault, BufferID.WorldProceduralFieldBiomeFamilies, in _burstBiomeFamilyDataHandle, out biomeFamilies) &&
+                   TryResolveVaultBuffer(vault, BufferID.WorldProceduralFieldCaveEntranceHints, in _burstCaveEntranceHintsHandle, out caveEntranceHints) &&
+                   TryResolveVaultBuffer(vault, BufferID.WorldProceduralFieldNoiseLookup, in _noiseLookupTableHandle, out noiseLookupTable);
         }
 
-        private void ReleaseSamplingJobBufferLocks()
+        private bool TryPinSamplingJobBuffers(
+            out NativeArray<ZoneData> zones,
+            out NativeArray<BiomeMatrixData> biomeMatrices,
+            out NativeArray<int> biomeMatrixIdToDataIndex,
+            out NativeArray<BiomeFamilyData> biomeFamilies,
+            out NativeArray<CaveEntranceHintData> caveEntranceHints,
+            out NativeArray<ushort> noiseLookupTable)
         {
-            if (!_samplingJobBuffersLocked || _dataVault == null)
+            zones = default;
+            biomeMatrices = default;
+            biomeMatrixIdToDataIndex = default;
+            biomeFamilies = default;
+            caveEntranceHints = default;
+            noiseLookupTable = default;
+
+            IDataVault vault = _samplingJobGuardVault ?? _dataVault;
+            if (_samplingJobBuffersPinned)
             {
-                _samplingJobBuffersLocked = false;
-                return;
+                if (vault != null &&
+                    TryResolveSamplingData(vault, out zones, out biomeMatrices, out biomeMatrixIdToDataIndex, out biomeFamilies, out caveEntranceHints, out noiseLookupTable))
+                {
+                    return true;
+                }
+
+                if (!_hasPendingSamplingJob)
+                    ReleaseSamplingJobBufferPins();
+                zones = default;
+                biomeMatrices = default;
+                biomeMatrixIdToDataIndex = default;
+                biomeFamilies = default;
+                caveEntranceHints = default;
+                noiseLookupTable = default;
+                return false;
             }
 
-            _dataVault.ReleaseWriteLock(in _noiseLookupTableHandle, OwnerSystemId);
-            _dataVault.ReleaseWriteLock(in _burstCaveEntranceHintsHandle, OwnerSystemId);
-            _dataVault.ReleaseWriteLock(in _burstBiomeFamilyDataHandle, OwnerSystemId);
-            _dataVault.ReleaseWriteLock(in _burstBiomeMatrixIdToDataIndexHandle, OwnerSystemId);
-            _dataVault.ReleaseWriteLock(in _burstBiomeMatrixDataHandle, OwnerSystemId);
-            _dataVault.ReleaseWriteLock(in _burstZoneDataHandle, OwnerSystemId);
-            _samplingJobBuffersLocked = false;
+            vault = _dataVault;
+            if (vault == null ||
+                !TryResolveSamplingData(vault, out zones, out biomeMatrices, out biomeMatrixIdToDataIndex, out biomeFamilies, out caveEntranceHints, out noiseLookupTable))
+            {
+                zones = default;
+                biomeMatrices = default;
+                biomeMatrixIdToDataIndex = default;
+                biomeFamilies = default;
+                caveEntranceHints = default;
+                noiseLookupTable = default;
+                return false;
+            }
+
+            bool acquired = false;
+            try
+            {
+                if (!vault.TryAcquireMutationGuard(SamplingJobMutationGuardMask))
+                {
+                    zones = default;
+                    biomeMatrices = default;
+                    biomeMatrixIdToDataIndex = default;
+                    biomeFamilies = default;
+                    caveEntranceHints = default;
+                    noiseLookupTable = default;
+                    return false;
+                }
+
+                acquired = true;
+                if (!TryResolveSamplingData(
+                        vault,
+                        out zones,
+                        out biomeMatrices,
+                        out biomeMatrixIdToDataIndex,
+                        out biomeFamilies,
+                        out caveEntranceHints,
+                        out noiseLookupTable))
+                {
+                    return false;
+                }
+
+                _samplingJobGuardVault = vault;
+                _samplingJobBuffersPinned = true;
+                acquired = false;
+                return true;
+            }
+            finally
+            {
+                if (acquired)
+                {
+                    vault.ReleaseMutationGuard(SamplingJobMutationGuardMask);
+                    zones = default;
+                    biomeMatrices = default;
+                    biomeMatrixIdToDataIndex = default;
+                    biomeFamilies = default;
+                    caveEntranceHints = default;
+                    noiseLookupTable = default;
+                }
+            }
+        }
+
+        private void ReleaseSamplingJobBufferPins()
+        {
+            if (!_samplingJobBuffersPinned)
+                return;
+
+            IDataVault vault = _samplingJobGuardVault ?? _dataVault;
+            if (vault != null)
+                vault.ReleaseMutationGuard(SamplingJobMutationGuardMask);
+
+            _samplingJobGuardVault = null;
+            _samplingJobBuffersPinned = false;
         }
 
         private static int ResolvePowerOfTwoCapacity(int requiredCapacity)
@@ -5323,8 +5394,12 @@ namespace Hecton8.World
 
         private void ReleaseVaultHandle<T>(ref VaultGenerationHandle<T> handle) where T : struct
         {
-            if (handle.BufferID != 0u && _dataVault != null)
+            if (handle.BufferID != 0u &&
+                handle.SystemID == unchecked((uint)OwnerSystemId) &&
+                _dataVault != null)
+            {
                 _dataVault.ReleaseBuffer(in handle);
+            }
 
             handle = default;
         }
@@ -5333,18 +5408,18 @@ namespace Hecton8.World
         {
             if (!_hasPendingSamplingJob)
             {
-                ReleaseSamplingJobBufferLocks();
+                ReleaseSamplingJobBufferPins();
                 return;
             }
 
             DispatcherJobSwap.TryComplete(ref _lastSamplingJobHandle, true);
             _hasPendingSamplingJob = false;
-            ReleaseSamplingJobBufferLocks();
+            ReleaseSamplingJobBufferPins();
         }
 
         private bool TryGetZoneData(int zoneDataIndex, out ZoneData zoneData)
         {
-            if (TryReadVaultBuffer(in _burstZoneDataHandle, out NativeArray<ZoneData>.ReadOnly zoneDataBuffer) &&
+            if (TryReadVaultBuffer(BufferID.WorldProceduralFieldZones, in _burstZoneDataHandle, out NativeArray<ZoneData>.ReadOnly zoneDataBuffer) &&
                 zoneDataIndex >= 0 &&
                 zoneDataIndex < _burstZoneDataCount)
             {
@@ -5358,7 +5433,7 @@ namespace Hecton8.World
 
         private bool TryGetBiomeMatrixData(int biomeMatrixDataIndex, out BiomeMatrixData biomeData)
         {
-            if (TryReadVaultBuffer(in _burstBiomeMatrixDataHandle, out NativeArray<BiomeMatrixData>.ReadOnly biomeMatrixData) &&
+            if (TryReadVaultBuffer(BufferID.WorldProceduralFieldBiomeMatrices, in _burstBiomeMatrixDataHandle, out NativeArray<BiomeMatrixData>.ReadOnly biomeMatrixData) &&
                 biomeMatrixDataIndex >= 0 &&
                 biomeMatrixDataIndex < _burstBiomeMatrixDataCount)
             {
@@ -5372,7 +5447,7 @@ namespace Hecton8.World
 
         private bool TryGetBiomeFamilyData(int biomeFamilyDataIndex, out BiomeFamilyData familyData)
         {
-            if (TryReadVaultBuffer(in _burstBiomeFamilyDataHandle, out NativeArray<BiomeFamilyData>.ReadOnly biomeFamilyData) &&
+            if (TryReadVaultBuffer(BufferID.WorldProceduralFieldBiomeFamilies, in _burstBiomeFamilyDataHandle, out NativeArray<BiomeFamilyData>.ReadOnly biomeFamilyData) &&
                 biomeFamilyDataIndex >= 0 &&
                 biomeFamilyDataIndex < _burstBiomeFamilyDataCount)
             {

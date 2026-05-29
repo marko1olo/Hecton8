@@ -39,8 +39,7 @@ namespace Hecton8.UI
         /// </summary>
         public static TMP_FontAsset ResolveReadableFont(TMP_FontAsset preferred)
         {
-            ILocalizationTextReadModel manager = GlobalRegistry.LocalizationText;
-            return ResolveReadableFont(preferred, manager);
+            return ResolveReadableFontForLanguage(preferred, GameLanguage.English);
         }
 
         /// <summary>

@@ -23,7 +23,26 @@ namespace Hecton8.Construction
         private static int s_x001FoundationPylonGpuBatchSignalPushDropCount;
         private const string PylonShaderPath = "Assets/_Project/Shaders/Hecton_FoundationPylon.shader";
         private const uint WarningMask = FoundationPylonFlags.ExtensionCulled | FoundationPylonFlags.OutOfSdfBounds | FoundationPylonFlags.NonFinite;
-        private const int MaxVaultJobLocks = 18;
+        private const ulong FoundationPylonJobCoreMutationGuardMask =
+            (1UL << ((int)FoundationSnappingCalculatorRuntime.ModuleBufferId & 31)) |
+            (1UL << ((int)FoundationSnappingCalculatorRuntime.PylonMatrixBufferId & 31)) |
+            (1UL << ((int)FoundationSnappingCalculatorRuntime.PylonSurfaceBufferId & 31)) |
+            (1UL << ((int)FoundationSnappingCalculatorRuntime.PerModuleCounterBufferId & 31)) |
+            (1UL << ((int)FoundationSnappingCalculatorRuntime.FrameCounterBufferId & 31)) |
+            (1UL << ((int)FoundationSnappingCalculatorRuntime.TelemetryBufferId & 31)) |
+            (1UL << ((int)FoundationSnappingCalculatorRuntime.TelemetryCursorBufferId & 31)) |
+            (1UL << ((int)FoundationSnappingCalculatorRuntime.TuningBufferId & 31)) |
+            (1UL << ((int)FoundationSnappingCalculatorRuntime.MockSdfDistanceBufferId & 31)) |
+            (1UL << ((int)FoundationSnappingCalculatorRuntime.SdfConfigBufferId & 31)) |
+            (1UL << ((int)FoundationSnappingCalculatorRuntime.RayOriginBufferId & 31)) |
+            (1UL << ((int)FoundationSnappingCalculatorRuntime.ProfileRangeBufferId & 31)) |
+            (1UL << ((int)FoundationSnappingCalculatorRuntime.DebugRayBufferId & 31)) |
+            (1UL << ((int)FoundationSnappingCalculatorRuntime.IndirectArgsBufferId & 31));
+        private const ulong FoundationPylonSocketInputMutationGuardMask =
+            (1UL << ((int)BufferID.ConstructionSocketModules & 31)) |
+            (1UL << ((int)BufferID.ConstructionSocketCounters & 31));
+        private const ulong FoundationPylonEncodedSdfMutationGuardMask =
+            1UL << ((int)BufferID.VoxelSdfTexture3D & 31);
 
         [SerializeField] private Material pylonMaterial;
         [SerializeField] private Shader pylonShader;
@@ -44,7 +63,7 @@ namespace Hecton8.Construction
         private IPlayerRuntimeContext _cachedPlayerContext;
         private VaultGenerationHandle<byte> _encodedSdfHandle;
         private JobHandle _pendingHandle;
-        private readonly BufferID[] _pendingVaultLocks = new BufferID[MaxVaultJobLocks]; // COLD ALLOC: BufferID[18] - fixed DataVault job lock list - owner: FoundationPylonGpuBatch
+        private IDataVault _pendingVaultGuardVault;
         private Bounds _drawBounds = new Bounds(Vector3.zero, new Vector3(1f, 1f, 1f));
         private Vector3 _pendingCameraWorldOffset;
         private Vector3 _uploadedCameraWorldOffset;
@@ -63,8 +82,8 @@ namespace Hecton8.Construction
         private bool _encodedSdfHandleValid;
         private bool _mockSdfGenerated;
         private bool _originSnapshotValid;
+        private ulong _pendingVaultGuardMask;
         private int _pendingSlotCount;
-        private int _pendingVaultLockCount;
         private int _uploadedSlotCount;
         private int _capacityResolved;
         private int _writeBufferIndex;
@@ -246,7 +265,7 @@ namespace Hecton8.Construction
             if (!TryBeginSocketModuleReadFenceForSchedule(out useSocketInputs))
                 return false;
 
-            if (!TryBeginVaultJobLocks(useSocketInputs, usingRealSdf))
+            if (!TryBeginVaultJobGuard(useSocketInputs, usingRealSdf))
             {
                 ReleasePendingSocketModuleReadFence();
                 return false;
@@ -255,7 +274,7 @@ namespace Hecton8.Construction
             if (!FoundationSnappingCalculatorRuntime.TryBeginProfileReadFence())
             {
                 ReleasePendingSocketModuleReadFence();
-                ReleasePendingVaultJobLocks();
+                ReleasePendingVaultJobGuard();
                 return false;
             }
 
@@ -275,7 +294,7 @@ namespace Hecton8.Construction
                     out ConstructionSocketVaultViews socketViews))
             {
                 ReleasePendingProfileReadFence();
-                ReleasePendingVaultJobLocks();
+                ReleasePendingVaultJobGuard();
                 return false;
             }
 
@@ -283,7 +302,7 @@ namespace Hecton8.Construction
             {
                 ClearUploadedBatch();
                 ReleasePendingProfileReadFence();
-                ReleasePendingVaultJobLocks();
+                ReleasePendingVaultJobGuard();
                 return false;
             }
 
@@ -408,7 +427,7 @@ namespace Hecton8.Construction
                     _pendingCameraWorldOffset = Vector3.zero;
                     ReleasePendingProfileReadFence();
                     ReleasePendingSocketModuleReadFence();
-                    ReleasePendingVaultJobLocks();
+                    ReleasePendingVaultJobGuard();
                 }
             }
         }
@@ -432,7 +451,7 @@ namespace Hecton8.Construction
             if (uploadSlots <= 0)
             {
                 ClearUploadedBatch();
-                ReleasePendingVaultJobLocks();
+                ReleasePendingVaultJobGuard();
                 return true;
             }
 
@@ -441,7 +460,7 @@ namespace Hecton8.Construction
                 !HasGraphicsBuffers())
             {
                 ClearUploadedBatch();
-                ReleasePendingVaultJobLocks();
+                ReleasePendingVaultJobGuard();
                 return false;
             }
 
@@ -455,7 +474,7 @@ namespace Hecton8.Construction
             if (!_drawBoundsValid)
             {
                 _uploadedSlotCount = 0;
-                ReleasePendingVaultJobLocks();
+                ReleasePendingVaultJobGuard();
                 return true;
             }
 
@@ -482,7 +501,7 @@ namespace Hecton8.Construction
             if ((counters.Flags & WarningMask) != 0u)
                 PublishStructuralWarning(firstAup, in counters, views.Tuning.IsCreated && views.Tuning.Length > 0 ? views.Tuning[0] : FoundationSnappingCalculatorRuntime.CreateDefaultTuning(1f));
 
-            ReleasePendingVaultJobLocks();
+            ReleasePendingVaultJobGuard();
             return true;
         }
 
@@ -964,63 +983,37 @@ namespace Hecton8.Construction
             return _writeBufferIndex == 0 ? _argsBufferA : _argsBufferB;
         }
 
-        private bool TryBeginVaultJobLocks(bool includeSocketInputs, bool includeEncodedSdf)
+        private bool TryBeginVaultJobGuard(bool includeSocketInputs, bool includeEncodedSdf)
         {
-            ReleasePendingVaultJobLocks();
-            if (_vault == null)
+            ReleasePendingVaultJobGuard();
+            IDataVault vault = _vault;
+            if (vault == null)
                 return false;
 
-            return TryAddVaultJobLock(FoundationSnappingCalculatorRuntime.ModuleBufferId) &&
-                   TryAddVaultJobLock(FoundationSnappingCalculatorRuntime.PylonMatrixBufferId) &&
-                   TryAddVaultJobLock(FoundationSnappingCalculatorRuntime.PylonSurfaceBufferId) &&
-                   TryAddVaultJobLock(FoundationSnappingCalculatorRuntime.PerModuleCounterBufferId) &&
-                   TryAddVaultJobLock(FoundationSnappingCalculatorRuntime.FrameCounterBufferId) &&
-                   TryAddVaultJobLock(FoundationSnappingCalculatorRuntime.TelemetryBufferId) &&
-                   TryAddVaultJobLock(FoundationSnappingCalculatorRuntime.TelemetryCursorBufferId) &&
-                   TryAddVaultJobLock(FoundationSnappingCalculatorRuntime.TuningBufferId) &&
-                   TryAddVaultJobLock(FoundationSnappingCalculatorRuntime.MockSdfDistanceBufferId) &&
-                   TryAddVaultJobLock(FoundationSnappingCalculatorRuntime.SdfConfigBufferId) &&
-                   TryAddVaultJobLock(FoundationSnappingCalculatorRuntime.RayOriginBufferId) &&
-                   TryAddVaultJobLock(FoundationSnappingCalculatorRuntime.ProfileRangeBufferId) &&
-                   TryAddVaultJobLock(FoundationSnappingCalculatorRuntime.DebugRayBufferId) &&
-                   TryAddVaultJobLock(FoundationSnappingCalculatorRuntime.IndirectArgsBufferId) &&
-                   (!includeSocketInputs ||
-                    (TryAddVaultJobLock(BufferID.ConstructionSocketModules) &&
-                     TryAddVaultJobLock(BufferID.ConstructionSocketCounters))) &&
-                   (!includeEncodedSdf || TryAddVaultJobLock(BufferID.VoxelSdfTexture3D));
-        }
+            ulong guardMask = FoundationPylonJobCoreMutationGuardMask;
+            if (includeSocketInputs)
+                guardMask |= FoundationPylonSocketInputMutationGuardMask;
+            if (includeEncodedSdf)
+                guardMask |= FoundationPylonEncodedSdfMutationGuardMask;
 
-        private bool TryAddVaultJobLock(BufferID bufferId)
-        {
-            if (_pendingVaultLockCount >= _pendingVaultLocks.Length ||
-                _vault == null ||
-                !_vault.TryLockBuffer(bufferId, SystemID.Construction))
-            {
-                ReleasePendingVaultJobLocks();
+            if (!vault.TryAcquireMutationGuard(guardMask))
                 return false;
-            }
 
-            _pendingVaultLocks[_pendingVaultLockCount++] = bufferId;
+            _pendingVaultGuardVault = vault;
+            _pendingVaultGuardMask = guardMask;
             return true;
         }
 
-        private void ReleasePendingVaultJobLocks()
+        private void ReleasePendingVaultJobGuard()
         {
-            if (_vault == null || _pendingVaultLockCount <= 0)
-            {
-                _pendingVaultLockCount = 0;
+            ulong guardMask = _pendingVaultGuardMask;
+            if (guardMask == 0UL)
                 return;
-            }
 
-            for (int i = _pendingVaultLockCount - 1; i >= 0; i--)
-            {
-                BufferID bufferId = _pendingVaultLocks[i];
-                if (bufferId != BufferID.Unknown)
-                    _vault.TryUnlockBuffer(bufferId, SystemID.Construction);
-                _pendingVaultLocks[i] = BufferID.Unknown;
-            }
-
-            _pendingVaultLockCount = 0;
+            IDataVault vault = _pendingVaultGuardVault ?? _vault;
+            _pendingVaultGuardVault = null;
+            _pendingVaultGuardMask = 0UL;
+            vault?.ReleaseMutationGuard(guardMask);
         }
 
         private void ReleasePendingProfileReadFence()
@@ -1063,7 +1056,7 @@ namespace Hecton8.Construction
             {
                 ReleasePendingProfileReadFence();
                 ReleasePendingSocketModuleReadFence();
-                ReleasePendingVaultJobLocks();
+                ReleasePendingVaultJobGuard();
                 return;
             }
 
@@ -1074,7 +1067,7 @@ namespace Hecton8.Construction
             _pendingDiscard = false;
             _pendingSlotCount = 0;
             _pendingCameraWorldOffset = Vector3.zero;
-            ReleasePendingVaultJobLocks();
+            ReleasePendingVaultJobGuard();
         }
 
         private static void ReleaseGraphicsBuffer(ref GraphicsBuffer buffer)

@@ -711,7 +711,7 @@ namespace Hecton8.Editor
             if (itemRegistry.Length > 0)
             {
                 AssertContains(itemRegistry, "public uint BlueprintQuestFlagId => blueprintQuestFlagId", "Item templates expose blueprint quest flag ID", report, ref failureCount);
-                AssertContains(itemRegistry, "GlobalRegistry.QuestSystem", "Blueprint visibility resolves quest system through GlobalRegistry", report, ref failureCount);
+                AssertContains(itemRegistry, "ConfigureQuestSystem(IQuestSystem questSystem)", "Blueprint visibility receives quest system through cold cache", report, ref failureCount);
                 AssertContains(itemRegistry, "questSystem.GetFlag(requiredFlag)", "Blueprint visibility gates on quest flag state", report, ref failureCount);
             }
 
@@ -735,7 +735,7 @@ namespace Hecton8.Editor
                 AssertContains(moduleCatalog, "public int ViewableCount", "ModuleCatalog exposes viewable-only blueprint count", report, ref failureCount);
                 AssertContains(moduleCatalog, "public BuildableData GetViewableAt(int index)", "ModuleCatalog exposes viewable-only indexer", report, ref failureCount);
                 AssertContains(moduleCatalog, "public int IndexOfViewable(BuildableData data)", "ModuleCatalog resolves viewable-only index", report, ref failureCount);
-                AssertContains(moduleCatalog, "data.IsBlueprintViewable()", "ModuleCatalog filters locked construction blueprints", report, ref failureCount);
+                AssertContains(moduleCatalog, "data.IsBlueprintViewable(questSystem)", "ModuleCatalog filters locked construction blueprints through cached quest owner", report, ref failureCount);
             }
 
             if (playerBuilder.Length > 0)

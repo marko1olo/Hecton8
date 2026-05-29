@@ -1276,30 +1276,35 @@ namespace DarkTonic.MasterAudio {
         }
 
         private static void RecalcClosestColliderPositions() {
-            if (!AmbientUtil.HasListenerFollower) { 
-                AmbientUtil.InitListenerFollower();
+            var instance = _instance;
+            if (instance == null) {
+                return;
             }
 
-            Instance.ProcessedColliderPositionRecalcs.Clear();
+            if (!AmbientUtil.HasListenerFollower) { 
+                return;
+            }
 
-            var itemsToCalc = Instance.TransFollowerColliderPositionRecalcs.Count;
-            if (itemsToCalc > Instance.ambientMaxRecalcsPerFrame)
+            instance.ProcessedColliderPositionRecalcs.Clear();
+
+            var itemsToCalc = instance.TransFollowerColliderPositionRecalcs.Count;
+            if (itemsToCalc > instance.ambientMaxRecalcsPerFrame)
             {
-                itemsToCalc = Instance.ambientMaxRecalcsPerFrame;
+                itemsToCalc = instance.ambientMaxRecalcsPerFrame;
             }
 
             for (var i = 0; i < itemsToCalc;) {
-                if (Instance.TransFollowerColliderPositionRecalcs.Count == 0) {
+                if (instance.TransFollowerColliderPositionRecalcs.Count == 0) {
                     break; // no more waiting there. Abort
                 }
 
-                var follower = Instance.TransFollowerColliderPositionRecalcs.Dequeue();
+                var follower = instance.TransFollowerColliderPositionRecalcs.Dequeue();
                 if (follower == null || !follower.enabled) { // Updater was destroyed while waiting, or sound is done playing and Updater disabled.
                     continue;
                 }
 
                 var wasCalculated = follower.RecalcClosestColliderPosition();
-                Instance.ProcessedColliderPositionRecalcs.Add(follower);
+                instance.ProcessedColliderPositionRecalcs.Add(follower);
 
                 if (wasCalculated) {
                     i++;
@@ -1307,17 +1312,22 @@ namespace DarkTonic.MasterAudio {
             }
 
             // put the processed ones back in the rear of the queue so they will continue to update position.
-            for (var i = 0; i < Instance.ProcessedColliderPositionRecalcs.Count; i++) {
-                Instance.TransFollowerColliderPositionRecalcs.Enqueue(Instance.ProcessedColliderPositionRecalcs[i]);
+            for (var i = 0; i < instance.ProcessedColliderPositionRecalcs.Count; i++) {
+                instance.TransFollowerColliderPositionRecalcs.Enqueue(instance.ProcessedColliderPositionRecalcs[i]);
             }
         }
 
 #if UNITY_2019_3_OR_NEWER && VIDEO_ENABLED
         private static void TrackVideoPlayers()
         {
-            for (var i = 0; i < Instance.VideoPlayerTrackers.Count; i++)
+            var instance = _instance;
+            if (instance == null) {
+                return;
+            }
+
+            for (var i = 0; i < instance.VideoPlayerTrackers.Count; i++)
             {
-                var aPlayer = Instance.VideoPlayerTrackers[i];
+                var aPlayer = instance.VideoPlayerTrackers[i];
 
                 if (!aPlayer.IsPlaying)
                 {
@@ -1344,44 +1354,62 @@ namespace DarkTonic.MasterAudio {
 #endif
 
         private static void FireCustomEventsWaiting() {
-            while (Instance.CustomEventsToFire.Count > 0) {
-                var custEvent = Instance.CustomEventsToFire.Dequeue();
+            var instance = _instance;
+            if (instance == null) {
+                return;
+            }
+
+            while (instance.CustomEventsToFire.Count > 0) {
+                var custEvent = instance.CustomEventsToFire.Dequeue();
                 FireCustomEvent(custEvent.eventName, custEvent.eventOrigin);
             }
         }
 
 #if ADDRESSABLES_ENABLED
         private static void CheckAddressablesForDelayedRelease() {
-            if (Instance.AddressablesToReleaseLater.Count == 0) {
+            var instance = _instance;
+            if (instance == null) {
+                return;
+            }
+
+            if (instance.AddressablesToReleaseLater.Count == 0) {
                 return;
             }
 
             AddressableDeadIds.Clear();
 
-            for (var i = 0; i < Instance.AddressablesToReleaseLater.Count; i++) {
-                var addToRelease = Instance.AddressablesToReleaseLater[i];
+            for (var i = 0; i < instance.AddressablesToReleaseLater.Count; i++) {
+                var addToRelease = instance.AddressablesToReleaseLater[i];
                 if (Time.realtimeSinceStartup >= addToRelease.RealtimeToRelease) {
                     AddressableDeadIds.Add(addToRelease.AddressableId);
                 }
             }
 
-            foreach (var deadId in AddressableDeadIds) {
-                AudioAddressableOptimizer.MaybeReleaseAddressable(deadId, true);
+            for (var i = 0; i < AddressableDeadIds.Count; i++) {
+                AudioAddressableOptimizer.MaybeReleaseAddressable(AddressableDeadIds[i], true);
             }
 
-            Instance.AddressablesToReleaseLater.RemoveAll(delegate (AddressableDelayedRelease adr) {
-                return AddressableDeadIds.Contains(adr.AddressableId);
-            });
+            for (var i = instance.AddressablesToReleaseLater.Count - 1; i >= 0; i--) {
+                if (AddressableDeadIds.Contains(instance.AddressablesToReleaseLater[i].AddressableId)) {
+                    instance.AddressablesToReleaseLater.RemoveAt(i);
+                }
+            }
         }
 #endif
 
         private static void RefillInactiveGroupPools() {
-            var groups = Instance.LastTimeSoundGroupPlayed.GetEnumerator();
-
-            if (Instance._groupsToRemove == null) { // re-init for compile-time changes.
-                Instance._groupsToRemove = new List<string>();
+            var instance = _instance;
+            if (instance == null) {
+                return;
             }
-            Instance._groupsToRemove.Clear();
+
+            var groups = instance.LastTimeSoundGroupPlayed.GetEnumerator();
+
+            if (instance._groupsToRemove == null) {
+                return;
+            }
+
+            instance._groupsToRemove.Clear();
 
             while (groups.MoveNext()) {
                 var grp = groups.Current;
@@ -1390,18 +1418,23 @@ namespace DarkTonic.MasterAudio {
                 }
 
                 RefillSoundGroupPool(grp.Key);
-                Instance._groupsToRemove.Add(grp.Key);
+                instance._groupsToRemove.Add(grp.Key);
             }
 
             // ReSharper disable once ForCanBeConvertedToForeach
-            for (var i = 0; i < Instance._groupsToRemove.Count; i++) {
-                Instance.LastTimeSoundGroupPlayed.Remove(Instance._groupsToRemove[i]);
+            for (var i = 0; i < instance._groupsToRemove.Count; i++) {
+                instance.LastTimeSoundGroupPlayed.Remove(instance._groupsToRemove[i]);
             }
         }
 
         private static void PerformOcclusionFrequencyChanges() {
-            if (!AmbientUtil.HasListenerFollower) { // this will make occlusion work when you don't have an Audio Listener in the Scene initially.
-                AmbientUtil.InitListenerFollower();
+            var instance = _instance;
+            if (instance == null) {
+                return;
+            }
+
+            if (!AmbientUtil.HasListenerFollower) {
+                return;
             }
 
             // ReSharper disable TooWideLocalVariableScope
@@ -1409,8 +1442,8 @@ namespace DarkTonic.MasterAudio {
             // ReSharper restore TooWideLocalVariableScope
 
             // ReSharper disable once ForCanBeConvertedToForeach
-            for (var i = 0; i < Instance.VariationOcclusionFreqChanges.Count; i++) {
-                aFader = Instance.VariationOcclusionFreqChanges[i];
+            for (var i = 0; i < instance.VariationOcclusionFreqChanges.Count; i++) {
+                aFader = instance.VariationOcclusionFreqChanges[i];
                 if (!aFader.IsActive) {
                     continue;
                 }
@@ -1438,9 +1471,11 @@ namespace DarkTonic.MasterAudio {
                 aFader.IsActive = false;
             }
 
-            Instance.VariationOcclusionFreqChanges.RemoveAll(delegate (OcclusionFreqChangeInfo obj) {
-                return obj.IsActive == false;
-            });
+            for (var i = instance.VariationOcclusionFreqChanges.Count - 1; i >= 0; i--) {
+                if (!instance.VariationOcclusionFreqChanges[i].IsActive) {
+                    instance.VariationOcclusionFreqChanges.RemoveAt(i);
+                }
+            }
         }
 
         private void PerformBusFades() {
@@ -1500,9 +1535,11 @@ namespace DarkTonic.MasterAudio {
                 }
             }
 
-            BusFades.RemoveAll(delegate (BusFadeInfo obj) {
-                return obj.IsActive == false;
-            });
+            for (var i = BusFades.Count - 1; i >= 0; i--) {
+                if (!BusFades[i].IsActive) {
+                    BusFades.RemoveAt(i);
+                }
+            }
         }
 
         private void PerformGroupFades() {
@@ -1561,9 +1598,11 @@ namespace DarkTonic.MasterAudio {
                 }
             }
 
-            GroupFades.RemoveAll(delegate (GroupFadeInfo obj) {
-                return obj.IsActive == false;
-            });
+            for (var i = GroupFades.Count - 1; i >= 0; i--) {
+                if (!GroupFades[i].IsActive) {
+                    GroupFades.RemoveAt(i);
+                }
+            }
         }
 
         /// <summary>
@@ -1574,24 +1613,27 @@ namespace DarkTonic.MasterAudio {
                 return;
             }
 
-            if (Instance.AmbientsToDelayedTrigger.Count == 0) {
+            var instance = _instance;
+            if (instance == null) {
                 return;
             }
 
-			var ambientsToTrigger = Instance.AmbientsToDelayedTrigger.FindAll(delegate (AmbientSoundToTriggerInfo obj) {
-				return Time.frameCount >= obj.frameToTrigger;
-			});
+            if (instance.AmbientsToDelayedTrigger.Count == 0) {
+                return;
+            }
 
-			if (ambientsToTrigger.Count == 0) {
-				return;
-			}
+            for (var i = instance.AmbientsToDelayedTrigger.Count - 1; i >= 0; i--) {
+                var ambient = instance.AmbientsToDelayedTrigger[i];
+                if (Time.frameCount < ambient.frameToTrigger) {
+                    continue;
+                }
 
-			foreach (var ambient in ambientsToTrigger) {
-				if (ambient.ambient != null) {
-					ambient.ambient.StartTrackers();
-				}
-				Instance.AmbientsToDelayedTrigger.Remove(ambient);
-			}
+                if (ambient.ambient != null) {
+                    ambient.ambient.StartTrackers();
+                }
+
+                instance.AmbientsToDelayedTrigger.RemoveAt(i);
+            }
         }
 
 
@@ -1626,9 +1668,11 @@ namespace DarkTonic.MasterAudio {
                 }
             }
 
-            GroupPitchGlides.RemoveAll(delegate (GroupPitchGlideInfo obj) {
-                return obj.IsActive == false;
-            });
+            for (var i = GroupPitchGlides.Count - 1; i >= 0; i--) {
+                if (!GroupPitchGlides[i].IsActive) {
+                    GroupPitchGlides.RemoveAt(i);
+                }
+            }
         }
 
         private void PerformBusPitchGlides() {
@@ -1661,9 +1705,11 @@ namespace DarkTonic.MasterAudio {
                 }
             }
 
-            BusPitchGlides.RemoveAll(delegate (BusPitchGlideInfo obj) {
-                return obj.IsActive == false;
-            });
+            for (var i = BusPitchGlides.Count - 1; i >= 0; i--) {
+                if (!BusPitchGlides[i].IsActive) {
+                    BusPitchGlides.RemoveAt(i);
+                }
+            }
         }
 
         // ReSharper disable once UnusedMember.Local
@@ -8281,15 +8327,18 @@ namespace DarkTonic.MasterAudio {
 				return;
 			}
 
-			var match = Instance.AmbientsToDelayedTrigger.Find(delegate (AmbientSoundToTriggerInfo obj) {
-				return obj.ambient == ambient;
-			});
-			if (match != null) {
-				// already in the list, abort
-				return;
-			}
+            var instance = _instance;
+            if (instance == null) {
+                return;
+            }
 
-			Instance.AmbientsToDelayedTrigger.Add(new AmbientSoundToTriggerInfo {
+            for (var i = 0; i < instance.AmbientsToDelayedTrigger.Count; i++) {
+                if (instance.AmbientsToDelayedTrigger[i].ambient == ambient) {
+                    return; // already in the list, abort
+                }
+            }
+
+			instance.AmbientsToDelayedTrigger.Add(new AmbientSoundToTriggerInfo {
 				frameToTrigger = Time.frameCount + 1,
 				ambient = ambient
 			});
@@ -8304,26 +8353,32 @@ namespace DarkTonic.MasterAudio {
                 return;
             }
 
-			Instance.AmbientsToDelayedTrigger.RemoveAll(delegate (AmbientSoundToTriggerInfo obj) {
-				return obj.ambient == ambient;
-			});
+            var instance = _instance;
+            if (instance == null) {
+                return;
+            }
+
+			for (var i = instance.AmbientsToDelayedTrigger.Count - 1; i >= 0; i--) {
+                if (instance.AmbientsToDelayedTrigger[i].ambient == ambient) {
+                    instance.AmbientsToDelayedTrigger.RemoveAt(i);
+                }
+            }
         }
 			
         /// <summary>
         /// Do not call this method ever. Used internally by Ambient Sounds script.
         /// </summary>
         public static void QueueTransformFollowerForColliderPositionRecalc(TransformFollower follower) {
-            if (SafeInstance == null) {
+            var instance = _instance;
+            if (instance == null) {
                 return;
             }
 
-            foreach (var transFollower in Instance.TransFollowerColliderPositionRecalcs) {
-                if (transFollower == follower) {
-                    return; // already in there. Should almost never happen except under weird circumstances.
-                }
+            if (instance.TransFollowerColliderPositionRecalcs.Contains(follower)) {
+                return; // already in there. Should almost never happen except under weird circumstances.
             }
 
-            Instance.TransFollowerColliderPositionRecalcs.Enqueue(follower);
+            instance.TransFollowerColliderPositionRecalcs.Enqueue(follower);
         }
         /*! \endcond */
 
@@ -8333,45 +8388,45 @@ namespace DarkTonic.MasterAudio {
         /*! \cond PRIVATE */
 
         public static void AddToQueuedOcclusionRays(SoundGroupVariationUpdater updater) {
-            if (SafeInstance == null) {
+            var instance = _instance;
+            if (instance == null) {
                 return;
             }
 
-
-            foreach (var occlusionRay in Instance.QueuedOcclusionRays) {
-                if (occlusionRay == updater) {
-                    return; // already in there. Should almost never happen except under weird circumstances.
-                }
+            if (instance.QueuedOcclusionRays.Contains(updater)) {
+                return; // already in there. Should almost never happen except under weird circumstances.
             }
 
-            Instance.QueuedOcclusionRays.Enqueue(updater);
+            instance.QueuedOcclusionRays.Enqueue(updater);
         }
 
         public static void AddToOcclusionInRangeSources(GameObject src) {
-            if (!Application.isEditor || SafeInstance == null || !Instance.occlusionShowCategories) {
+            var instance = _instance;
+            if (!Application.isEditor || instance == null || !instance.occlusionShowCategories) {
                 return;
             }
 
-            if (!Instance.OcclusionSourcesInRange.Contains(src)) {
-                Instance.OcclusionSourcesInRange.Add(src);
+            if (!instance.OcclusionSourcesInRange.Contains(src)) {
+                instance.OcclusionSourcesInRange.Add(src);
             }
 
-            if (Instance.OcclusionSourcesOutOfRange.Contains(src)) {
-                Instance.OcclusionSourcesOutOfRange.Remove(src);
+            if (instance.OcclusionSourcesOutOfRange.Contains(src)) {
+                instance.OcclusionSourcesOutOfRange.Remove(src);
             }
         }
 
         public static void AddToOcclusionOutOfRangeSources(GameObject src) {
-            if (!Application.isEditor || SafeInstance == null || !Instance.occlusionShowCategories) {
+            var instance = _instance;
+            if (!Application.isEditor || instance == null || !instance.occlusionShowCategories) {
                 return;
             }
 
-            if (!Instance.OcclusionSourcesOutOfRange.Contains(src)) {
-                Instance.OcclusionSourcesOutOfRange.Add(src);
+            if (!instance.OcclusionSourcesOutOfRange.Contains(src)) {
+                instance.OcclusionSourcesOutOfRange.Add(src);
             }
 
-            if (Instance.OcclusionSourcesInRange.Contains(src)) {
-                Instance.OcclusionSourcesInRange.Remove(src);
+            if (instance.OcclusionSourcesInRange.Contains(src)) {
+                instance.OcclusionSourcesInRange.Remove(src);
             }
 
             // out of range means no longer blocked
@@ -8379,30 +8434,38 @@ namespace DarkTonic.MasterAudio {
         }
 
         public static void AddToBlockedOcclusionSources(GameObject src) {
-            if (!Application.isEditor || SafeInstance == null || !Instance.occlusionShowCategories) {
+            var instance = _instance;
+            if (!Application.isEditor || instance == null || !instance.occlusionShowCategories) {
                 return;
             }
 
-            if (!Instance.OcclusionSourcesBlocked.Contains(src)) {
-                Instance.OcclusionSourcesBlocked.Add(src);
+            if (!instance.OcclusionSourcesBlocked.Contains(src)) {
+                instance.OcclusionSourcesBlocked.Add(src);
             }
         }
 
         public static bool HasQueuedOcclusionRays() {
-            return Instance.QueuedOcclusionRays.Count > 0;
+            var instance = _instance;
+            return instance != null && instance.QueuedOcclusionRays.Count > 0;
         }
 
         public static SoundGroupVariationUpdater OldestQueuedOcclusionRay() {
-            if (SafeInstance == null) {
+            var instance = _instance;
+            if (instance == null) {
                 return null;
             }
 
-            return Instance.QueuedOcclusionRays.Dequeue();
+            return instance.QueuedOcclusionRays.Dequeue();
         }
 
         public static bool IsOcclusionFreqencyTransitioning(SoundGroupVariation variation) {
-            for (var i = 0; i < Instance.VariationOcclusionFreqChanges.Count; i++) {
-                if (Instance.VariationOcclusionFreqChanges[i].ActingVariation == variation) {
+            var instance = _instance;
+            if (instance == null) {
+                return false;
+            }
+
+            for (var i = 0; i < instance.VariationOcclusionFreqChanges.Count; i++) {
+                if (instance.VariationOcclusionFreqChanges[i].ActingVariation == variation) {
                     return true;
                 }
             }
@@ -8411,41 +8474,48 @@ namespace DarkTonic.MasterAudio {
         }
 
         public static void RemoveFromOcclusionFrequencyTransitioning(SoundGroupVariation variation) {
-            for (var i = 0; i < Instance.VariationOcclusionFreqChanges.Count; i++) {
-                if (Instance.VariationOcclusionFreqChanges[i].ActingVariation != variation) {
+            var instance = _instance;
+            if (instance == null) {
+                return;
+            }
+
+            for (var i = 0; i < instance.VariationOcclusionFreqChanges.Count; i++) {
+                if (instance.VariationOcclusionFreqChanges[i].ActingVariation != variation) {
                     continue;
                 }
 
-                Instance.VariationOcclusionFreqChanges.RemoveAt(i);
+                instance.VariationOcclusionFreqChanges.RemoveAt(i);
                 break;
             }
         }
 
         public static void RemoveFromBlockedOcclusionSources(GameObject src) {
-            if (!Application.isEditor || SafeInstance == null || !Instance.occlusionShowCategories) {
+            var instance = _instance;
+            if (!Application.isEditor || instance == null || !instance.occlusionShowCategories) {
                 return;
             }
 
-            if (Instance.OcclusionSourcesBlocked.Contains(src)) {
-                Instance.OcclusionSourcesBlocked.Remove(src);
+            if (instance.OcclusionSourcesBlocked.Contains(src)) {
+                instance.OcclusionSourcesBlocked.Remove(src);
             }
         }
 
         public static void StopTrackingOcclusionForSource(GameObject src) {
-            if (!Application.isEditor || SafeInstance == null || !Instance.occlusionShowCategories) {
+            var instance = _instance;
+            if (!Application.isEditor || instance == null || !instance.occlusionShowCategories) {
                 return;
             }
 
-            if (Instance.OcclusionSourcesOutOfRange.Contains(src)) {
-                Instance.OcclusionSourcesOutOfRange.Remove(src);
+            if (instance.OcclusionSourcesOutOfRange.Contains(src)) {
+                instance.OcclusionSourcesOutOfRange.Remove(src);
             }
 
-            if (Instance.OcclusionSourcesInRange.Contains(src)) {
-                Instance.OcclusionSourcesInRange.Remove(src);
+            if (instance.OcclusionSourcesInRange.Contains(src)) {
+                instance.OcclusionSourcesInRange.Remove(src);
             }
 
-            if (Instance.OcclusionSourcesBlocked.Contains(src)) {
-                Instance.OcclusionSourcesBlocked.Remove(src);
+            if (instance.OcclusionSourcesBlocked.Contains(src)) {
+                instance.OcclusionSourcesBlocked.Remove(src);
             }
         }
 
@@ -8540,6 +8610,20 @@ namespace DarkTonic.MasterAudio {
 
                         _listenerTrans = listener.transform;
                     }
+                }
+
+                return _listenerTrans;
+            }
+        }
+
+        public static Transform CachedListenerTrans {
+            get {
+                if (_listenerTrans == null) {
+                    return null;
+                }
+
+                if (!DTMonoHelper.IsActive(_listenerTrans.gameObject)) {
+                    return null;
                 }
 
                 return _listenerTrans;
@@ -8707,6 +8791,10 @@ namespace DarkTonic.MasterAudio {
                 _instance = GameObject.FindAnyObjectByType<MasterAudio>();
                 return _instance;
             }
+        }
+
+        public static MasterAudio CachedInstance {
+            get { return _instance; }
         }
 
         /// <summary>

@@ -244,8 +244,8 @@ namespace Hecton8.Physics
         //
         // SAFETY_JUSTIFICATION_PARAGRAPH_3:
         // Authoritative topology/CSV/mock writes call CompleteScheduledSimulationForAuthoritativeWrite
-        // before mutating Vault lanes. TryLockJobBuffers keeps front/back buffers locked until the
-        // chained handle is fenced, so no second writer mutates the SignalBus lane or backing buffers.
+        // before mutating Vault lanes. The fluid mutation guard keeps front/back buffers stable until
+        // the chained handle is fenced, so no second writer mutates the SignalBus lane or backing buffers.
         [NoAlias, NativeDisableContainerSafetyRestriction]
         public global::Hecton8.Core.MpscSignalRingBuffer<FluidIncursionSignal>.ParallelWriter IncursionWriter;
         [NativeDisableParallelForRestriction] public NativeArray<int> IncursionWriterBudget;

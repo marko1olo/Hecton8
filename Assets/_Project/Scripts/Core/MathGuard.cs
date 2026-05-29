@@ -1,3 +1,4 @@
+using System;
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 using System.Threading;
@@ -37,16 +38,21 @@ namespace Hecton8.Core
         /// <summary>Resolves the vault-owned invalid-number ring before Burst jobs can request a writer.</summary>
         public static void Initialize()
         {
-            if (!TryResolveInvalidNumberBuffers(
-                    allowAllocate: true,
-                    out _,
-                    out NativeArray<InvalidNumberCounter64> invalidNumberCounters))
+            if (!OpenOrAcquireInvalidNumberBuffersForOwnerRoute() ||
+                !TryAcquireInvalidNumberCounterWriteBuffer(out NativeArray<InvalidNumberCounter64> invalidNumberCounters))
             {
                 return;
             }
 
-            ref InvalidNumberCounter64 counter = ref ResolveCounterRef(invalidNumberCounters);
-            ResetInvalidNumberCounters(ref counter);
+            try
+            {
+                ref InvalidNumberCounter64 counter = ref ResolveCounterRef(invalidNumberCounters);
+                ResetInvalidNumberCounters(ref counter);
+            }
+            finally
+            {
+                ReleaseInvalidNumberCounterWriteLock();
+            }
         }
 
         /// <summary>Binds the bootstrap-owned DataVault used for invalid-number telemetry.</summary>
@@ -89,8 +95,7 @@ namespace Hecton8.Core
         /// <summary>Returns a Burst-safe writer for invalid-number error codes.</summary>
         public static InvalidNumberWriter AsParallelWriter()
         {
-            return TryResolveInvalidNumberBuffers(
-                    allowAllocate: false,
+            return TryResolveExistingInvalidNumberBuffers(
                     out NativeArray<int> invalidNumberCodes,
                     out NativeArray<InvalidNumberCounter64> invalidNumberCounters)
                 ? new InvalidNumberWriter(invalidNumberCodes, invalidNumberCounters)
@@ -143,31 +148,50 @@ namespace Hecton8.Core
         /// <param name="maxDrainCount">Maximum codes to consume this frame.</param>
         public static int DrainInvalidNumberErrors(int maxDrainCount = MaxMainThreadDrainPerLateFrame)
         {
-            if (!TryResolveInvalidNumberBuffers(
-                    allowAllocate: false,
-                    out NativeArray<int> invalidNumberCodes,
-                    out NativeArray<InvalidNumberCounter64> invalidNumberCounters) ||
-                maxDrainCount <= 0)
+            int maxCodesToDrain = math.clamp(maxDrainCount, 0, MaxMainThreadDrainPerLateFrame);
+            if (maxCodesToDrain <= 0 ||
+                !TryReadInvalidNumberCodes(out NativeArray<int>.ReadOnly invalidNumberCodes) ||
+                !TryAcquireInvalidNumberCounterWriteBuffer(out NativeArray<InvalidNumberCounter64> invalidNumberCounters))
             {
                 return 0;
             }
 
-            ref InvalidNumberCounter64 counter = ref ResolveCounterRef(invalidNumberCounters);
-            int writeCursor = Volatile.Read(ref counter.WriteCursor);
-            int readCursor = counter.ReadCursor;
-            int readable = math.min(writeCursor, InvalidNumberQueuePrewarmCapacity) - readCursor;
-            if (readable <= 0)
-            {
-                if (readCursor >= InvalidNumberQueuePrewarmCapacity || writeCursor <= 0)
-                    ResetInvalidNumberCounters(ref counter);
-                return 0;
-            }
-
+            Span<int> drainedCodes = stackalloc int[MaxMainThreadDrainPerLateFrame];
             int drainedCount = 0;
-            int drainTarget = math.min(maxDrainCount, readable);
-            while (drainedCount < drainTarget)
+
+            try
             {
-                int errorCode = invalidNumberCodes[readCursor];
+                ref InvalidNumberCounter64 counter = ref ResolveCounterRef(invalidNumberCounters);
+                int writeCursor = Volatile.Read(ref counter.WriteCursor);
+                int readCursor = counter.ReadCursor;
+                int readable = math.min(writeCursor, InvalidNumberQueuePrewarmCapacity) - readCursor;
+                if (readable <= 0)
+                {
+                    if (readCursor >= InvalidNumberQueuePrewarmCapacity || writeCursor <= 0)
+                        ResetInvalidNumberCounters(ref counter);
+                    return 0;
+                }
+
+                int drainTarget = math.min(maxCodesToDrain, readable);
+                while (drainedCount < drainTarget)
+                {
+                    drainedCodes[drainedCount] = invalidNumberCodes[readCursor];
+                    readCursor++;
+                    drainedCount++;
+                }
+
+                counter.ReadCursor = readCursor;
+                if (readCursor >= writeCursor || readCursor >= InvalidNumberQueuePrewarmCapacity)
+                    ResetInvalidNumberCounters(ref counter);
+            }
+            finally
+            {
+                ReleaseInvalidNumberCounterWriteLock();
+            }
+
+            for (int i = 0; i < drainedCount; i++)
+            {
+                int errorCode = drainedCodes[i];
                 GlobalTelemetryBus.PublishMathGuardInvalidNumber(errorCode);
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
                 DodReplayRecorder.RequestFullStateDump(
@@ -175,13 +199,7 @@ namespace Hecton8.Core
                     unchecked((uint)errorCode));
 #endif
                 CrashTelemetryBuffer.ReportNanPhysicsRecovery();
-                readCursor++;
-                drainedCount++;
             }
-
-            counter.ReadCursor = readCursor;
-            if (readCursor >= writeCursor || readCursor >= InvalidNumberQueuePrewarmCapacity)
-                ResetInvalidNumberCounters(ref counter);
 
             return drainedCount;
         }
@@ -342,8 +360,58 @@ namespace Hecton8.Core
             return new float3(0f, 0f, value.z < 0f ? -1f : 1f);
         }
 
-        private static bool TryResolveInvalidNumberBuffers(
-            bool allowAllocate,
+        private static bool OpenOrAcquireInvalidNumberBuffersForOwnerRoute()
+        {
+            IDataVault vault = _dataVault;
+            if (vault == null)
+                return false;
+
+            if (!IsVaultHandleCreated(in _invalidNumberCodesHandle) &&
+                !OpenOrAcquireInvalidNumberHandleForOwnerRoute(
+                    vault,
+                    InvalidNumberCodesBufferId,
+                    InvalidNumberQueuePrewarmCapacity,
+                    out _invalidNumberCodesHandle))
+            {
+                return false;
+            }
+
+            if (!IsVaultHandleCreated(in _invalidNumberCounterHandle) &&
+                !OpenOrAcquireInvalidNumberHandleForOwnerRoute(
+                    vault,
+                    InvalidNumberCounterBufferId,
+                    1,
+                    out _invalidNumberCounterHandle))
+            {
+                return false;
+            }
+
+            return TryResolveExistingInvalidNumberBuffers(out _, out _);
+        }
+
+        private static bool OpenOrAcquireInvalidNumberHandleForOwnerRoute<T>(
+            IDataVault vault,
+            BufferID bufferId,
+            int capacity,
+            out VaultGenerationHandle<T> handle)
+            where T : struct
+        {
+            handle = default;
+            if (vault == null || capacity <= 0)
+                return false;
+
+            if (vault.IsAllocationLocked)
+                return vault.TryGetGenerationHandle<T>(bufferId, out handle);
+
+            handle = vault.EnsureGenerationHandle<T>(
+                bufferId,
+                capacity,
+                VaultOwner,
+                NativeArrayOptions.ClearMemory);
+            return IsVaultHandleCreated(in handle);
+        }
+
+        private static bool TryResolveExistingInvalidNumberBuffers(
             out NativeArray<int> invalidNumberCodes,
             out NativeArray<InvalidNumberCounter64> invalidNumberCounters)
         {
@@ -354,55 +422,63 @@ namespace Hecton8.Core
             if (vault == null)
                 return false;
 
-            if (!IsVaultHandleCreated(in _invalidNumberCodesHandle))
-            {
-                if (!allowAllocate || vault.IsAllocationLocked)
-                {
-                    if (!vault.TryGetGenerationHandle<int>(
-                            InvalidNumberCodesBufferId,
-                            out _invalidNumberCodesHandle))
-                    {
-                        return false;
-                    }
-                }
-                else
-                {
-                    _invalidNumberCodesHandle = vault.EnsureGenerationHandle<int>(
-                        InvalidNumberCodesBufferId,
-                        InvalidNumberQueuePrewarmCapacity,
-                        VaultOwner,
-                        NativeArrayOptions.ClearMemory);
-                }
-            }
-
-            if (!IsVaultHandleCreated(in _invalidNumberCounterHandle))
-            {
-                if (!allowAllocate || vault.IsAllocationLocked)
-                {
-                    if (!vault.TryGetGenerationHandle<InvalidNumberCounter64>(
-                            InvalidNumberCounterBufferId,
-                            out _invalidNumberCounterHandle))
-                    {
-                        return false;
-                    }
-                }
-                else
-                {
-                    _invalidNumberCounterHandle = vault.EnsureGenerationHandle<InvalidNumberCounter64>(
-                        InvalidNumberCounterBufferId,
-                        1,
-                        VaultOwner,
-                        NativeArrayOptions.ClearMemory);
-                }
-            }
-
             return
+                IsVaultHandleCreated(in _invalidNumberCodesHandle) &&
+                IsVaultHandleCreated(in _invalidNumberCounterHandle) &&
                 vault.TryResolveHandle(in _invalidNumberCodesHandle, out invalidNumberCodes) &&
                 vault.TryResolveHandle(in _invalidNumberCounterHandle, out invalidNumberCounters) &&
                 invalidNumberCodes.IsCreated &&
                 invalidNumberCounters.IsCreated &&
                 invalidNumberCodes.Length >= InvalidNumberQueuePrewarmCapacity &&
                 invalidNumberCounters.Length > 0;
+        }
+
+        private static bool TryReadInvalidNumberCodes(out NativeArray<int>.ReadOnly invalidNumberCodes)
+        {
+            invalidNumberCodes = default;
+            IDataVault vault = _dataVault;
+            return vault != null &&
+                IsVaultHandleCreated(in _invalidNumberCodesHandle) &&
+                vault.TryReadOnlyHandle(in _invalidNumberCodesHandle, out invalidNumberCodes) &&
+                invalidNumberCodes.Length >= InvalidNumberQueuePrewarmCapacity;
+        }
+
+        private static bool TryAcquireInvalidNumberCounterWriteBuffer(
+            out NativeArray<InvalidNumberCounter64> invalidNumberCounters)
+        {
+            invalidNumberCounters = default;
+            IDataVault vault = _dataVault;
+            if (vault == null ||
+                !IsVaultHandleCreated(in _invalidNumberCounterHandle) ||
+                !vault.TryAcquireWriteLock(in _invalidNumberCounterHandle, VaultOwner, out invalidNumberCounters))
+            {
+                return false;
+            }
+
+            bool handedOff = false;
+            try
+            {
+                if (invalidNumberCounters.IsCreated && invalidNumberCounters.Length > 0)
+                {
+                    handedOff = true;
+                    return true;
+                }
+
+                invalidNumberCounters = default;
+                return false;
+            }
+            finally
+            {
+                if (!handedOff)
+                    vault.ReleaseWriteLock(in _invalidNumberCounterHandle, VaultOwner);
+            }
+        }
+
+        private static void ReleaseInvalidNumberCounterWriteLock()
+        {
+            IDataVault vault = _dataVault;
+            if (vault != null && IsVaultHandleCreated(in _invalidNumberCounterHandle))
+                vault.ReleaseWriteLock(in _invalidNumberCounterHandle, VaultOwner);
         }
 
         private static bool IsVaultHandleCreated<T>(in VaultGenerationHandle<T> handle)

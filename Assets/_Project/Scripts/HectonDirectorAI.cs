@@ -591,6 +591,9 @@ namespace Hecton8.Systems.AI
         private const int PredatorSpatialHashContactCapacity = 64;
         private const BufferID PredatorSpatialAbsolutePositionsBufferId = (BufferID)73238;
         private const BufferID PredatorSpatialCellCoordsBufferId = (BufferID)73239;
+        private static readonly ulong _predatorSpatialHashMutationGuardMask =
+            PredatorSpatialHashMutationGuardBit(PredatorSpatialAbsolutePositionsBufferId) |
+            PredatorSpatialHashMutationGuardBit(PredatorSpatialCellCoordsBufferId);
         private const float PredatorSpatialHashCellSizeMeters = 50f;
         private const float PredatorSpatialHashActiveChunkRadiusMeters = 500f;
         private const float PredatorDeadZoneCullDistanceMeters = 250f;
@@ -634,12 +637,13 @@ namespace Hecton8.Systems.AI
         private SargassumMicroFaunaBoids _sargassumMicroFauna;
         private ITerrainProvider _terrainProvider;
         private HectonMapMagicVegetationBridge _vegetationBridge;
+        private IDataVault _predatorSpatialHashGuardVault;
         private bool _encounterDirectorServiceRegistered;
         private bool _dispatcherRegistered;
         private bool _lateFrameRegistered;
         private bool _hotSwapRegistered;
         private bool _physicsEventPayloadReaderActive;
-        private bool _predatorSpatialHashVaultLocked;
+        private bool _predatorSpatialHashBuffersPinned;
         private bool _predatorSpatialHashJobScheduled;
         private bool _predatorSpatialHashReady;
         private float _resolveRetryTimer;
@@ -1164,7 +1168,7 @@ namespace Hecton8.Systems.AI
             _predatorSightCooldown = PredatorSightIntervalSeconds;
             if (!_predatorSpatialHashReady)
             {
-                SchedulePredatorSpatialHashRefresh(in playerAup, spatialAbsolutePositions, spatialCellCoords);
+                SchedulePredatorSpatialHashRefresh(in playerAup);
                 return;
             }
 
@@ -1190,7 +1194,7 @@ namespace Hecton8.Systems.AI
                     ref processedCount);
             }
 
-            SchedulePredatorSpatialHashRefresh(in playerAup, spatialAbsolutePositions, spatialCellCoords);
+            SchedulePredatorSpatialHashRefresh(in playerAup);
         }
 
         private void ProcessPredatorSightContact(
@@ -1304,19 +1308,19 @@ namespace Hecton8.Systems.AI
         }
 
         private void SchedulePredatorSpatialHashRefresh(
-            in AbsoluteUniversePosition playerAup,
-            NativeArray<double3> spatialAbsolutePositions,
-            NativeArray<int3> spatialCellCoords)
+            in AbsoluteUniversePosition playerAup)
         {
-            if (_predatorSpatialHashJobScheduled ||
-                !spatialAbsolutePositions.IsCreated ||
-                !spatialCellCoords.IsCreated)
+            if (_predatorSpatialHashJobScheduled)
             {
                 return;
             }
 
-            if (!TryLockPredatorSpatialHashVaultBuffers())
+            if (!TryPinPredatorSpatialHashVaultBuffers(
+                    out NativeArray<double3> spatialAbsolutePositions,
+                    out NativeArray<int3> spatialCellCoords))
+            {
                 return;
+            }
 
             try
             {
@@ -1347,7 +1351,7 @@ namespace Hecton8.Systems.AI
             }
             finally
             {
-                UnlockPredatorSpatialHashVaultBuffers();
+                ReleasePredatorSpatialHashVaultPins();
             }
         }
 
@@ -1361,7 +1365,7 @@ namespace Hecton8.Systems.AI
 
             _predatorSpatialHashJobScheduled = false;
             _predatorSpatialHashReady = _predatorSpatialContactCount > 0;
-            UnlockPredatorSpatialHashVaultBuffers();
+            ReleasePredatorSpatialHashVaultPins();
             return true;
         }
 
@@ -1446,10 +1450,12 @@ namespace Hecton8.Systems.AI
             spatialCellCoords = default;
             return TryOpenDirectorVaultView(
                        in _predatorSpatialAbsolutePositionsHandle,
+                       PredatorSpatialAbsolutePositionsBufferId,
                        PredatorSpatialHashContactCapacity,
                        out spatialAbsolutePositions) &&
                    TryOpenDirectorVaultView(
                        in _predatorSpatialCellCoordsHandle,
+                       PredatorSpatialCellCoordsBufferId,
                        PredatorSpatialHashContactCapacity,
                        out spatialCellCoords);
         }
@@ -1463,7 +1469,7 @@ namespace Hecton8.Systems.AI
         {
             CompletePredatorSpatialHashBuild(forceComplete: true);
 
-            UnlockPredatorSpatialHashVaultBuffers();
+            ReleasePredatorSpatialHashVaultPins();
             ReleaseDirectorVaultHandle(vault, ref _predatorSpatialAbsolutePositionsHandle);
             ReleaseDirectorVaultHandle(vault, ref _predatorSpatialCellCoordsHandle);
             _predatorSpatialHashReady = false;
@@ -1483,11 +1489,11 @@ namespace Hecton8.Systems.AI
             if (vault == null || requiredLength <= 0)
                 return false;
 
-            if (TryOpenDirectorVaultView(in handle, requiredLength, out buffer))
+            if (TryOpenDirectorVaultView(in handle, bufferId, requiredLength, out buffer))
                 return true;
 
             if (vault.TryGetGenerationHandle(bufferId, out handle) &&
-                TryOpenDirectorVaultView(in handle, requiredLength, out buffer))
+                TryOpenDirectorVaultView(in handle, bufferId, requiredLength, out buffer))
             {
                 return true;
             }
@@ -1504,19 +1510,30 @@ namespace Hecton8.Systems.AI
                 requiredLength,
                 SystemID.AICognition,
                 options);
-            return TryOpenDirectorVaultView(in handle, requiredLength, out buffer);
+            return TryOpenDirectorVaultView(in handle, bufferId, requiredLength, out buffer);
         }
 
         private bool TryOpenDirectorVaultView<T>(
             in VaultGenerationHandle<T> handle,
+            BufferID bufferId,
+            int requiredLength,
+            out NativeArray<T> buffer)
+            where T : struct
+        {
+            return TryOpenDirectorVaultView(_dataVault, in handle, bufferId, requiredLength, out buffer);
+        }
+
+        private static bool TryOpenDirectorVaultView<T>(
+            IDataVault vault,
+            in VaultGenerationHandle<T> handle,
+            BufferID bufferId,
             int requiredLength,
             out NativeArray<T> buffer)
             where T : struct
         {
             buffer = default;
-            IDataVault vault = _dataVault;
             return vault != null &&
-                   handle.BufferID != 0u &&
+                   IsDirectorVaultHandle(in handle, bufferId) &&
                    vault.TryResolveHandle(in handle, out buffer) &&
                    buffer.IsCreated &&
                    buffer.Length >= requiredLength;
@@ -1533,41 +1550,74 @@ namespace Hecton8.Systems.AI
             handle = default;
         }
 
-        private bool TryLockPredatorSpatialHashVaultBuffers()
+        private bool TryPinPredatorSpatialHashVaultBuffers(
+            out NativeArray<double3> spatialAbsolutePositions,
+            out NativeArray<int3> spatialCellCoords)
         {
-            if (_predatorSpatialHashVaultLocked)
-                return true;
+            spatialAbsolutePositions = default;
+            spatialCellCoords = default;
+            if (_predatorSpatialHashBuffersPinned)
+                return false;
 
             IDataVault vault = _dataVault;
             if (vault == null ||
-                !vault.TryLockBuffer(PredatorSpatialAbsolutePositionsBufferId, SystemID.AICognition))
+                !IsDirectorVaultHandle(in _predatorSpatialAbsolutePositionsHandle, PredatorSpatialAbsolutePositionsBufferId) ||
+                !IsDirectorVaultHandle(in _predatorSpatialCellCoordsHandle, PredatorSpatialCellCoordsBufferId))
             {
                 return false;
             }
 
-            if (!vault.TryLockBuffer(PredatorSpatialCellCoordsBufferId, SystemID.AICognition))
+            if (!vault.TryAcquireMutationGuard(_predatorSpatialHashMutationGuardMask))
+                return false;
+
+            if (!TryOpenDirectorVaultView(
+                    vault,
+                    in _predatorSpatialAbsolutePositionsHandle,
+                    PredatorSpatialAbsolutePositionsBufferId,
+                    PredatorSpatialHashContactCapacity,
+                    out spatialAbsolutePositions) ||
+                !TryOpenDirectorVaultView(
+                    vault,
+                    in _predatorSpatialCellCoordsHandle,
+                    PredatorSpatialCellCoordsBufferId,
+                    PredatorSpatialHashContactCapacity,
+                    out spatialCellCoords))
             {
-                vault.TryUnlockBuffer(PredatorSpatialAbsolutePositionsBufferId, SystemID.AICognition);
+                vault.ReleaseMutationGuard(_predatorSpatialHashMutationGuardMask);
+                spatialAbsolutePositions = default;
+                spatialCellCoords = default;
                 return false;
             }
 
-            _predatorSpatialHashVaultLocked = true;
+            _predatorSpatialHashGuardVault = vault;
+            _predatorSpatialHashBuffersPinned = true;
             return true;
         }
 
-        private void UnlockPredatorSpatialHashVaultBuffers()
+        private void ReleasePredatorSpatialHashVaultPins()
         {
-            if (!_predatorSpatialHashVaultLocked)
+            if (!_predatorSpatialHashBuffersPinned)
                 return;
 
-            IDataVault vault = _dataVault;
-            if (vault != null)
-            {
-                vault.TryUnlockBuffer(PredatorSpatialCellCoordsBufferId, SystemID.AICognition);
-                vault.TryUnlockBuffer(PredatorSpatialAbsolutePositionsBufferId, SystemID.AICognition);
-            }
+            IDataVault vault = _predatorSpatialHashGuardVault ?? _dataVault;
+            vault?.ReleaseMutationGuard(_predatorSpatialHashMutationGuardMask);
+            _predatorSpatialHashGuardVault = null;
+            _predatorSpatialHashBuffersPinned = false;
+        }
 
-            _predatorSpatialHashVaultLocked = false;
+        private static bool IsDirectorVaultHandle<T>(
+            in VaultGenerationHandle<T> handle,
+            BufferID bufferId)
+            where T : struct
+        {
+            return handle.BufferID == unchecked((uint)(int)bufferId) &&
+                   handle.SystemID == (uint)SystemID.AICognition &&
+                   handle.Generation != 0u;
+        }
+
+        private static ulong PredatorSpatialHashMutationGuardBit(BufferID bufferId)
+        {
+            return 1UL << (unchecked((int)(uint)(int)bufferId) & 31);
         }
 
         private void PublishDirectorSolveBudgetIfNeeded(long solveStartTicks)

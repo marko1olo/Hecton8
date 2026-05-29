@@ -77,6 +77,8 @@ namespace Hecton8.UI
         private uint _pauseSignalSequence;
         private uint _lastPlayerInputSignalSequence;
         private INativeInputManagerRuntime _inputManager;
+        private IInputService _cachedInputService;
+        private ITickDispatcher _cachedTickDispatcher;
         private bool _hotSwapListenerRegistered;
         private IPlayerRuntimeContext _cachedPlayerContext;
         private ISaveService _cachedSaveService;
@@ -103,6 +105,7 @@ namespace Hecton8.UI
         private Button _savesFirstButton;
         private Button _savesBackButton;
         private Button[] _saveSlotButtons;
+        private TextMeshProUGUI[] _saveSlotButtonLabels;
         private Button _helpBackButton;
         private Button _settingsBackButton;
         private Button _settingsLanguageButton;
@@ -142,7 +145,7 @@ namespace Hecton8.UI
             };
             SimulationSignalRoute.TryQueuePause(in signal);
 
-            ITickDispatcher dispatcher = GlobalRegistry.TickDispatcher;
+            ITickDispatcher dispatcher = _cachedTickDispatcher;
             if (dispatcher != null)
             {
                 dispatcher.RequestSimulationPause(paused, PauseMenuSignalSourceHash);
@@ -196,6 +199,8 @@ namespace Hecton8.UI
             _cachedPlayerContext = Hecton8.Core.GlobalRegistry.Player;
             _cachedSaveService = Hecton8.Core.GlobalRegistry.Save;
             _cachedLocalization = Hecton8.Core.GlobalRegistry.LocalizationLanguageControl;
+            _cachedInputService = Hecton8.Core.GlobalRegistry.Input;
+            _cachedTickDispatcher = Hecton8.Core.GlobalRegistry.TickDispatcher;
         }
 
         private void TryRegisterHotSwapListener()
@@ -224,6 +229,7 @@ namespace Hecton8.UI
             NormalizeSaveSlots();
             AutoResolve();
             EnsureBuilt();
+            EnsureEventSystem();
             ApplyClosedState(restorePlayerInput: false);
         }
 
@@ -237,6 +243,7 @@ namespace Hecton8.UI
             TryRegisterHotSwapListener();
             TryAcquireSaveStatusBuffer();
             TryRegister();
+            EnsureEventSystem();
             BindInputActions();
 
             LocalizationEvents.RegisterLanguageListener(this);
@@ -303,6 +310,15 @@ namespace Hecton8.UI
                         if (_activeSection == PauseSection.Saves)
                             RefreshSaveSectionState();
                     }
+                    break;
+                case GlobalRegistryServiceSlot.Input:
+                    _cachedInputService = currentService as IInputService;
+                    break;
+                case GlobalRegistryServiceSlot.Dispatcher:
+                    _cachedTickDispatcher = currentService as ITickDispatcher;
+                    break;
+                case GlobalRegistryServiceSlot.NativeInputManagerRuntime:
+                    BindInputActions(currentService as INativeInputManagerRuntime);
                     break;
             }
         }
@@ -426,8 +442,8 @@ namespace Hecton8.UI
                 CraftingEvents.TryRaiseFabricatorClosed();
             }
 
-            EnsureBuilt();
-            EnsureEventSystem();
+            if (!_built)
+                return;
 
             _pauseRequested = false;
             _cancelRequested = false;
@@ -437,7 +453,7 @@ namespace Hecton8.UI
 
             if (pauseTimeScale)
             {
-                ITickDispatcher dispatcher = GlobalRegistry.TickDispatcher;
+                ITickDispatcher dispatcher = _cachedTickDispatcher;
                 _cachedTimeDilationScalar = dispatcher != null
                     ? dispatcher.TimeDilationScalar
                     : 1f;
@@ -445,7 +461,7 @@ namespace Hecton8.UI
             }
 
             // TASK 33: Ensure correct input mode restoration
-            GlobalRegistry.Input.SwitchToUIInput();
+            _cachedInputService?.SwitchToUIInput();
             SystemDispatcher.RequestPauseDepthOfField(true);
 
             Cursor.lockState = CursorLockMode.None;
@@ -533,8 +549,9 @@ namespace Hecton8.UI
                 PublishPauseState(false, restoreScalar);
             }
 
-            if (restorePlayerInput && GlobalRegistry.Input.IsInitialized)
-                GlobalRegistry.Input.SwitchToPlayerInput();
+            IInputService inputService = _cachedInputService;
+            if (restorePlayerInput && inputService != null && inputService.IsInitialized)
+                inputService.SwitchToPlayerInput();
 
             ClearPauseSelection();
             ApplyCursorState(restorePlayerInput);
@@ -566,12 +583,13 @@ namespace Hecton8.UI
                 _openMenuCount--;
         }
 
-        private static bool ShouldRestorePlayerInputOnDisable()
+        private bool ShouldRestorePlayerInputOnDisable()
         {
             if (!Application.isPlaying)
                 return false;
 
-            return GlobalRegistry.Input.IsInitialized;
+            IInputService inputService = _cachedInputService;
+            return inputService != null && inputService.IsInitialized;
         }
 
         private void AutoResolve()
@@ -793,6 +811,7 @@ namespace Hecton8.UI
                 .rectTransform.anchoredPosition = new Vector2(0f, -42f);
 
             _saveSlotButtons = new Button[SaveEvents.ManualSlotCount];
+            _saveSlotButtonLabels = new TextMeshProUGUI[SaveEvents.ManualSlotCount];
             for (int i = 0; i < SaveEvents.ManualSlotCount; i++)
             {
                 string slotName = ResolveConfiguredSaveSlotName(i);
@@ -807,6 +826,7 @@ namespace Hecton8.UI
                     _savesFirstButton = slotButton;
 
                 TextMeshProUGUI label = GetText(btn, "Label");
+                _saveSlotButtonLabels[i] = label;
                 if (label != null)
                     label.alignment = TextAlignmentOptions.Center;
             }
@@ -1573,17 +1593,13 @@ namespace Hecton8.UI
 
         private void RefreshSaveSlotButtonLabels()
         {
-            if (_saveSlotButtons == null || saveSlots == null)
+            if (_saveSlotButtonLabels == null || saveSlots == null)
                 return;
 
-            int count = math.min(_saveSlotButtons.Length, SaveEvents.ManualSlotCount);
+            int count = math.min(_saveSlotButtonLabels.Length, SaveEvents.ManualSlotCount);
             for (int i = 0; i < count; i++)
             {
-                Button button = _saveSlotButtons[i];
-                if (button == null)
-                    continue;
-
-                TextMeshProUGUI label = GetText(button.transform, "Label");
+                TextMeshProUGUI label = _saveSlotButtonLabels[i];
                 if (label == null)
                     continue;
 
@@ -1932,7 +1948,11 @@ namespace Hecton8.UI
 
         private void BindInputActions()
         {
-            INativeInputManagerRuntime inputManager = GlobalRegistry.NativeInputRuntime;
+            BindInputActions(GlobalRegistry.NativeInputRuntime);
+        }
+
+        private void BindInputActions(INativeInputManagerRuntime inputManager)
+        {
             if (ReferenceEquals(_inputManager, inputManager))
                 return;
 

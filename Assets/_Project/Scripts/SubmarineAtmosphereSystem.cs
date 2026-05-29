@@ -496,16 +496,17 @@ namespace Hecton8.Atmosphere
                 return false;
 
             IDataVault vault = ResolveDataVault();
-            if (vault == null ||
-                !vault.TryAcquireWriteLock(in handle, EventOwnerSystemId, out NativeArray<HighPressureEventPayload> buffer) ||
-                !buffer.IsCreated ||
-                buffer.Length < PendingEventCapacity)
-            {
+            if (vault == null)
                 return false;
-            }
+
+            if (!vault.TryAcquireWriteLock(in handle, EventOwnerSystemId, out NativeArray<HighPressureEventPayload> buffer))
+                return false;
 
             try
             {
+                if (!buffer.IsCreated || buffer.Length < PendingEventCapacity)
+                    return false;
+
                 buffer[index] = payload;
                 return true;
             }
@@ -520,16 +521,19 @@ namespace Hecton8.Atmosphere
             payload = default;
             IDataVault vault = ResolveDataVault();
             if (vault == null ||
-                _pendingEventCount <= 0 ||
-                !vault.TryAcquireWriteLock(in _pendingEventsHandle, EventOwnerSystemId, out NativeArray<HighPressureEventPayload> buffer) ||
-                !buffer.IsCreated ||
-                buffer.Length < PendingEventCapacity)
+                _pendingEventCount <= 0)
             {
                 return false;
             }
 
+            if (!vault.TryAcquireWriteLock(in _pendingEventsHandle, EventOwnerSystemId, out NativeArray<HighPressureEventPayload> buffer))
+                return false;
+
             try
             {
+                if (!buffer.IsCreated || buffer.Length < PendingEventCapacity)
+                    return false;
+
                 payload = buffer[0];
                 int lastIndex = _pendingEventCount - 1;
                 for (int i = 0; i < lastIndex; i++)
@@ -949,16 +953,17 @@ namespace Hecton8.Atmosphere
                 return false;
 
             IDataVault vault = ResolveDataVault();
-            if (vault == null ||
-                !vault.TryAcquireWriteLock(in handle, EventOwnerSystemId, out NativeArray<FatalPressureImplosionEventPayload> buffer) ||
-                !buffer.IsCreated ||
-                buffer.Length < PendingEventCapacity)
-            {
+            if (vault == null)
                 return false;
-            }
+
+            if (!vault.TryAcquireWriteLock(in handle, EventOwnerSystemId, out NativeArray<FatalPressureImplosionEventPayload> buffer))
+                return false;
 
             try
             {
+                if (!buffer.IsCreated || buffer.Length < PendingEventCapacity)
+                    return false;
+
                 buffer[index] = payload;
                 return true;
             }
@@ -973,16 +978,19 @@ namespace Hecton8.Atmosphere
             payload = default;
             IDataVault vault = ResolveDataVault();
             if (vault == null ||
-                _pendingEventCount <= 0 ||
-                !vault.TryAcquireWriteLock(in _pendingEventsHandle, EventOwnerSystemId, out NativeArray<FatalPressureImplosionEventPayload> buffer) ||
-                !buffer.IsCreated ||
-                buffer.Length < PendingEventCapacity)
+                _pendingEventCount <= 0)
             {
                 return false;
             }
 
+            if (!vault.TryAcquireWriteLock(in _pendingEventsHandle, EventOwnerSystemId, out NativeArray<FatalPressureImplosionEventPayload> buffer))
+                return false;
+
             try
             {
+                if (!buffer.IsCreated || buffer.Length < PendingEventCapacity)
+                    return false;
+
                 payload = buffer[0];
                 int lastIndex = _pendingEventCount - 1;
                 for (int i = 0; i < lastIndex; i++)
@@ -1078,6 +1086,70 @@ namespace Hecton8.Atmosphere
         private const ushort TelemetryDumpFormatVersion = 1;
         private const ushort TelemetryFlagNaN = 1 << 0;
         private const string TelemetryDumpFileName = "Dump_1323_SubmarineAtmosphere.bin";
+        private static readonly ulong AtmospherePhaseMutationGuardMask =
+            AtmosphereBufferGuardBit(SubmarineAtmosphereVaultBufferIds.RoomVolumes) |
+            AtmosphereBufferGuardBit(SubmarineAtmosphereVaultBufferIds.FloodVolumes) |
+            AtmosphereBufferGuardBit(SubmarineAtmosphereVaultBufferIds.O2Front) |
+            AtmosphereBufferGuardBit(SubmarineAtmosphereVaultBufferIds.O2Back) |
+            AtmosphereBufferGuardBit(SubmarineAtmosphereVaultBufferIds.Co2Front) |
+            AtmosphereBufferGuardBit(SubmarineAtmosphereVaultBufferIds.Co2Back) |
+            AtmosphereBufferGuardBit(SubmarineAtmosphereVaultBufferIds.InertFront) |
+            AtmosphereBufferGuardBit(SubmarineAtmosphereVaultBufferIds.InertBack) |
+            AtmosphereBufferGuardBit(SubmarineAtmosphereVaultBufferIds.PressureFront) |
+            AtmosphereBufferGuardBit(SubmarineAtmosphereVaultBufferIds.PressureBack) |
+            AtmosphereBufferGuardBit(SubmarineAtmosphereVaultBufferIds.O2PartialPressureFront) |
+            AtmosphereBufferGuardBit(SubmarineAtmosphereVaultBufferIds.O2PartialPressureBack) |
+            AtmosphereBufferGuardBit(SubmarineAtmosphereVaultBufferIds.Co2PartialPressureFront) |
+            AtmosphereBufferGuardBit(SubmarineAtmosphereVaultBufferIds.Co2PartialPressureBack) |
+            AtmosphereBufferGuardBit(SubmarineAtmosphereVaultBufferIds.N2PartialPressureFront) |
+            AtmosphereBufferGuardBit(SubmarineAtmosphereVaultBufferIds.N2PartialPressureBack) |
+            AtmosphereBufferGuardBit(SubmarineAtmosphereVaultBufferIds.GasVolumeFront) |
+            AtmosphereBufferGuardBit(SubmarineAtmosphereVaultBufferIds.GasVolumeBack) |
+            AtmosphereBufferGuardBit(SubmarineAtmosphereVaultBufferIds.O2ConsumptionRates) |
+            AtmosphereBufferGuardBit(SubmarineAtmosphereVaultBufferIds.Co2GenerationRates) |
+            AtmosphereBufferGuardBit(SubmarineAtmosphereVaultBufferIds.RoomPlayerCounts) |
+            AtmosphereBufferGuardBit(SubmarineAtmosphereVaultBufferIds.TemperatureFront) |
+            AtmosphereBufferGuardBit(SubmarineAtmosphereVaultBufferIds.TemperatureBack) |
+            AtmosphereBufferGuardBit(SubmarineAtmosphereVaultBufferIds.SteamFront) |
+            AtmosphereBufferGuardBit(SubmarineAtmosphereVaultBufferIds.SteamBack) |
+            AtmosphereBufferGuardBit(SubmarineAtmosphereVaultBufferIds.HydrogenPocketFront) |
+            AtmosphereBufferGuardBit(SubmarineAtmosphereVaultBufferIds.OxygenPocketFront) |
+            AtmosphereBufferGuardBit(SubmarineAtmosphereVaultBufferIds.RoomHeatWatts) |
+            AtmosphereBufferGuardBit(SubmarineAtmosphereVaultBufferIds.RoomStatusMaskFront) |
+            AtmosphereBufferGuardBit(SubmarineAtmosphereVaultBufferIds.RoomStatusMaskBack) |
+            AtmosphereBufferGuardBit(SubmarineAtmosphereVaultBufferIds.DoorPairs) |
+            AtmosphereBufferGuardBit(SubmarineAtmosphereVaultBufferIds.DoorSealed) |
+            AtmosphereBufferGuardBit(SubmarineAtmosphereVaultBufferIds.DoorSealedPrevious);
+        private static readonly ulong AtmosphereJobMutationGuardMask =
+            AtmosphereBufferGuardBit(SubmarineAtmosphereVaultBufferIds.O2Front) |
+            AtmosphereBufferGuardBit(SubmarineAtmosphereVaultBufferIds.Co2Front) |
+            AtmosphereBufferGuardBit(SubmarineAtmosphereVaultBufferIds.InertFront) |
+            AtmosphereBufferGuardBit(SubmarineAtmosphereVaultBufferIds.FloodVolumes) |
+            AtmosphereBufferGuardBit(SubmarineAtmosphereVaultBufferIds.RoomVolumes) |
+            AtmosphereBufferGuardBit(SubmarineAtmosphereVaultBufferIds.PressureFront) |
+            AtmosphereBufferGuardBit(SubmarineAtmosphereVaultBufferIds.GasVolumeFront) |
+            AtmosphereBufferGuardBit(SubmarineAtmosphereVaultBufferIds.O2ConsumptionRates) |
+            AtmosphereBufferGuardBit(SubmarineAtmosphereVaultBufferIds.Co2GenerationRates) |
+            AtmosphereBufferGuardBit(SubmarineAtmosphereVaultBufferIds.RoomPlayerCounts) |
+            AtmosphereBufferGuardBit(SubmarineAtmosphereVaultBufferIds.TemperatureFront) |
+            AtmosphereBufferGuardBit(SubmarineAtmosphereVaultBufferIds.RoomHeatWatts) |
+            AtmosphereBufferGuardBit(SubmarineAtmosphereVaultBufferIds.SteamFront) |
+            AtmosphereBufferGuardBit(SubmarineAtmosphereVaultBufferIds.DoorPairs) |
+            AtmosphereBufferGuardBit(SubmarineAtmosphereVaultBufferIds.DoorSealed) |
+            AtmosphereBufferGuardBit(SubmarineAtmosphereVaultBufferIds.O2Back) |
+            AtmosphereBufferGuardBit(SubmarineAtmosphereVaultBufferIds.Co2Back) |
+            AtmosphereBufferGuardBit(SubmarineAtmosphereVaultBufferIds.InertBack) |
+            AtmosphereBufferGuardBit(SubmarineAtmosphereVaultBufferIds.PressureBack) |
+            AtmosphereBufferGuardBit(SubmarineAtmosphereVaultBufferIds.GasVolumeBack) |
+            AtmosphereBufferGuardBit(SubmarineAtmosphereVaultBufferIds.TemperatureBack) |
+            AtmosphereBufferGuardBit(SubmarineAtmosphereVaultBufferIds.SteamBack) |
+            AtmosphereBufferGuardBit(SubmarineAtmosphereVaultBufferIds.O2PartialPressureBack) |
+            AtmosphereBufferGuardBit(SubmarineAtmosphereVaultBufferIds.Co2PartialPressureBack) |
+            AtmosphereBufferGuardBit(SubmarineAtmosphereVaultBufferIds.N2PartialPressureBack) |
+            AtmosphereBufferGuardBit(SubmarineAtmosphereVaultBufferIds.RoomStatusMaskBack);
+        private static readonly ulong AtmosphereTelemetryMutationGuardMask =
+            AtmosphereBufferGuardBit(SubmarineAtmosphereVaultBufferIds.TelemetryRing) |
+            AtmosphereBufferGuardBit(SubmarineAtmosphereVaultBufferIds.TelemetryCursor);
         private const float DefaultReferenceTemperatureCelsius = 20f;
         private const float DefaultFloodWaterTemperatureCelsius = 4f;
         private const float DefaultMinimumTemperatureCelsius = -5f;
@@ -1791,7 +1863,9 @@ namespace Hecton8.Atmosphere
         private bool _atmosphereJobRunning;
         private float _scheduledAtmosphereDeltaTime;
         private ulong _atmosphereJobLockMask;
-        private ulong _atmospherePhaseWriteLockMask;
+        private IDataVault _atmosphereJobMutationGuardVault;
+        private ulong _atmospherePhaseMutationGuardMask;
+        private IDataVault _atmospherePhaseMutationGuardVault;
         private IDataVault _dataVault;
 
         private VaultGenerationHandle<float> _roomVolumesHandle;
@@ -2407,7 +2481,7 @@ namespace Hecton8.Atmosphere
 
         private bool TryPrepareAtmosphereFrontForWrite()
         {
-            if (_atmosphereJobRunning || _atmospherePhaseWriteLockMask == 0ul)
+            if (_atmosphereJobRunning || _atmospherePhaseMutationGuardMask == 0ul)
                 return false;
 
             ApplyPendingAtmosphereMutations();
@@ -4168,14 +4242,17 @@ namespace Hecton8.Atmosphere
                     if (_atmosphereJobLockMask != 0ul)
                     {
                         ulong lockMask = _atmosphereJobLockMask;
+                        IDataVault guardVault = _atmosphereJobMutationGuardVault ?? previousVault;
                         _atmosphereJobLockMask = 0ul;
-                        ReleaseAtmosphereJobBufferLocks(previousVault, lockMask);
+                        _atmosphereJobMutationGuardVault = null;
+                        ReleaseAtmosphereJobBufferLocks(guardVault, lockMask);
                     }
 
-                    if (_atmospherePhaseWriteLockMask != 0ul)
+                    if (_atmospherePhaseMutationGuardMask != 0ul)
                     {
-                        ulong phaseMask = _atmospherePhaseWriteLockMask;
-                        _atmospherePhaseWriteLockMask = 0ul;
+                        ulong phaseMask = _atmospherePhaseMutationGuardMask;
+                        _atmospherePhaseMutationGuardMask = 0ul;
+                        _atmospherePhaseMutationGuardVault = null;
                         ReleaseAtmospherePhaseWriteLocks(previousVault, phaseMask);
                     }
 
@@ -4429,8 +4506,7 @@ namespace Hecton8.Atmosphere
 
         private bool IsTelemetryRingReady()
         {
-            return HasValidVaultHandle(in _telemetryRingHandle) &&
-                HasValidVaultHandle(in _telemetryCursorHandle);
+            return ValidateAtmosphereTelemetryWriteLanes(_dataVault);
         }
 
         private void ClearAtmosphereVaultBuffersCold()
@@ -4503,33 +4579,27 @@ namespace Hecton8.Atmosphere
             _roomStatusMaskFront[0] = 0u;
             _roomStatusMaskBack[0] = 0u;
             IDataVault vault = _dataVault;
-            if (vault != null &&
-                HasValidVaultHandle(in _telemetryRingHandle) &&
-                vault.TryAcquireWriteLock(in _telemetryRingHandle, SystemID.HabitatAtmosphere, out NativeArray<SubmarineAtmosphereTelemetryEntry> telemetryRing))
+            if (TryAcquireAtmosphereTelemetryWriteGuard(vault))
             {
                 try
                 {
-                    for (int i = 0; i < telemetryRing.Length; i++)
-                        telemetryRing[i] = default;
-                }
-                finally
-                {
-                    vault.ReleaseWriteLock(in _telemetryRingHandle, SystemID.HabitatAtmosphere);
-                }
-            }
+                    if (vault.TryResolveHandle(in _telemetryRingHandle, out NativeArray<SubmarineAtmosphereTelemetryEntry> telemetryRing) &&
+                        telemetryRing.IsCreated)
+                    {
+                        for (int i = 0; i < telemetryRing.Length; i++)
+                            telemetryRing[i] = default;
+                    }
 
-            if (vault != null &&
-                HasValidVaultHandle(in _telemetryCursorHandle) &&
-                vault.TryAcquireWriteLock(in _telemetryCursorHandle, SystemID.HabitatAtmosphere, out NativeArray<int> telemetryCursor))
-            {
-                try
-                {
-                    if (telemetryCursor.Length > 0)
+                    if (vault.TryResolveHandle(in _telemetryCursorHandle, out NativeArray<int> telemetryCursor) &&
+                        telemetryCursor.IsCreated &&
+                        telemetryCursor.Length > 0)
+                    {
                         telemetryCursor[0] = 0;
+                    }
                 }
                 finally
                 {
-                    vault.ReleaseWriteLock(in _telemetryCursorHandle, SystemID.HabitatAtmosphere);
+                    vault.ReleaseMutationGuard(AtmosphereTelemetryMutationGuardMask);
                 }
             }
 
@@ -5369,7 +5439,7 @@ namespace Hecton8.Atmosphere
         private bool TryEnterAtmosphereWritePhase(out bool ownsWriteLock)
         {
             ownsWriteLock = false;
-            if (_atmospherePhaseWriteLockMask != 0ul)
+            if (_atmospherePhaseMutationGuardMask != 0ul)
                 return true;
 
             if (!TryAcquireAtmospherePhaseWriteLocks())
@@ -5390,88 +5460,108 @@ namespace Hecton8.Atmosphere
 
         private bool TryAcquireAtmospherePhaseWriteLocks()
         {
-            if (_atmospherePhaseWriteLockMask != 0ul)
+            if (_atmospherePhaseMutationGuardMask != 0ul)
                 return false;
 
             IDataVault vault = _dataVault;
-            ulong mask = 0ul;
+            ulong mutationGuardMask = AtmospherePhaseMutationGuardMask;
             bool success = false;
+            if (vault == null ||
+                vault.IsCompactionFenceActive ||
+                mutationGuardMask == 0ul ||
+                !ValidateAtmospherePhaseWriteLanes(vault) ||
+                !vault.TryAcquireMutationGuard(mutationGuardMask))
+            {
+                return false;
+            }
+
             try
             {
-                if (vault == null ||
-                    !TryAcquireAtmosphereWriteLock(vault, in _roomVolumesHandle, ref mask, 0) ||
-                    !TryAcquireAtmosphereWriteLock(vault, in _floodVolumesHandle, ref mask, 1) ||
-                    !TryAcquireAtmosphereWriteLock(vault, in _o2FrontHandle, ref mask, 2) ||
-                    !TryAcquireAtmosphereWriteLock(vault, in _o2BackHandle, ref mask, 3) ||
-                    !TryAcquireAtmosphereWriteLock(vault, in _co2FrontHandle, ref mask, 4) ||
-                    !TryAcquireAtmosphereWriteLock(vault, in _co2BackHandle, ref mask, 5) ||
-                    !TryAcquireAtmosphereWriteLock(vault, in _inertFrontHandle, ref mask, 6) ||
-                    !TryAcquireAtmosphereWriteLock(vault, in _inertBackHandle, ref mask, 7) ||
-                    !TryAcquireAtmosphereWriteLock(vault, in _pressureFrontHandle, ref mask, 8) ||
-                    !TryAcquireAtmosphereWriteLock(vault, in _pressureBackHandle, ref mask, 9) ||
-                    !TryAcquireAtmosphereWriteLock(vault, in _o2PartialPressureFrontHandle, ref mask, 10) ||
-                    !TryAcquireAtmosphereWriteLock(vault, in _o2PartialPressureBackHandle, ref mask, 11) ||
-                    !TryAcquireAtmosphereWriteLock(vault, in _co2PartialPressureFrontHandle, ref mask, 12) ||
-                    !TryAcquireAtmosphereWriteLock(vault, in _co2PartialPressureBackHandle, ref mask, 13) ||
-                    !TryAcquireAtmosphereWriteLock(vault, in _n2PartialPressureFrontHandle, ref mask, 14) ||
-                    !TryAcquireAtmosphereWriteLock(vault, in _n2PartialPressureBackHandle, ref mask, 15) ||
-                    !TryAcquireAtmosphereWriteLock(vault, in _gasVolumeFrontHandle, ref mask, 16) ||
-                    !TryAcquireAtmosphereWriteLock(vault, in _gasVolumeBackHandle, ref mask, 17) ||
-                    !TryAcquireAtmosphereWriteLock(vault, in _o2ConsumptionRatesHandle, ref mask, 18) ||
-                    !TryAcquireAtmosphereWriteLock(vault, in _co2GenerationRatesHandle, ref mask, 19) ||
-                    !TryAcquireAtmosphereWriteLock(vault, in _roomPlayerCountsHandle, ref mask, 20) ||
-                    !TryAcquireAtmosphereWriteLock(vault, in _temperatureFrontHandle, ref mask, 21) ||
-                    !TryAcquireAtmosphereWriteLock(vault, in _temperatureBackHandle, ref mask, 22) ||
-                    !TryAcquireAtmosphereWriteLock(vault, in _steamFrontHandle, ref mask, 23) ||
-                    !TryAcquireAtmosphereWriteLock(vault, in _steamBackHandle, ref mask, 24) ||
-                    !TryAcquireAtmosphereWriteLock(vault, in _hydrogenPocketFrontHandle, ref mask, 25) ||
-                    !TryAcquireAtmosphereWriteLock(vault, in _oxygenPocketFrontHandle, ref mask, 26) ||
-                    !TryAcquireAtmosphereWriteLock(vault, in _roomHeatWattsHandle, ref mask, 27) ||
-                    !TryAcquireAtmosphereWriteLock(vault, in _roomStatusMaskFrontHandle, ref mask, 28) ||
-                    !TryAcquireAtmosphereWriteLock(vault, in _roomStatusMaskBackHandle, ref mask, 29) ||
-                    !TryAcquireAtmosphereWriteLock(vault, in _doorPairsHandle, ref mask, 30) ||
-                    !TryAcquireAtmosphereWriteLock(vault, in _doorSealedHandle, ref mask, 31) ||
-                    !TryAcquireAtmosphereWriteLock(vault, in _doorSealedPreviousHandle, ref mask, 32))
-                {
+                if (vault.IsCompactionFenceActive || !ValidateAtmospherePhaseWriteLanes(vault))
                     return false;
-                }
 
-                _atmospherePhaseWriteLockMask = mask;
+                _atmospherePhaseMutationGuardMask = mutationGuardMask;
+                _atmospherePhaseMutationGuardVault = vault;
                 success = true;
                 return true;
             }
             finally
             {
                 if (!success)
-                    ReleaseAtmospherePhaseWriteLocks(vault, mask);
+                    vault.ReleaseMutationGuard(mutationGuardMask);
             }
         }
 
-        private static bool TryAcquireAtmosphereWriteLock<T>(
+        private bool ValidateAtmospherePhaseWriteLanes(IDataVault vault)
+        {
+            return ValidateAtmospherePhaseWriteLane(vault, in _roomVolumesHandle, SubmarineAtmosphereVaultBufferIds.RoomVolumes, RoomCapacity) &&
+                ValidateAtmospherePhaseWriteLane(vault, in _floodVolumesHandle, SubmarineAtmosphereVaultBufferIds.FloodVolumes, RoomCapacity) &&
+                ValidateAtmospherePhaseWriteLane(vault, in _o2FrontHandle, SubmarineAtmosphereVaultBufferIds.O2Front, RoomCapacity) &&
+                ValidateAtmospherePhaseWriteLane(vault, in _o2BackHandle, SubmarineAtmosphereVaultBufferIds.O2Back, RoomCapacity) &&
+                ValidateAtmospherePhaseWriteLane(vault, in _co2FrontHandle, SubmarineAtmosphereVaultBufferIds.Co2Front, RoomCapacity) &&
+                ValidateAtmospherePhaseWriteLane(vault, in _co2BackHandle, SubmarineAtmosphereVaultBufferIds.Co2Back, RoomCapacity) &&
+                ValidateAtmospherePhaseWriteLane(vault, in _inertFrontHandle, SubmarineAtmosphereVaultBufferIds.InertFront, RoomCapacity) &&
+                ValidateAtmospherePhaseWriteLane(vault, in _inertBackHandle, SubmarineAtmosphereVaultBufferIds.InertBack, RoomCapacity) &&
+                ValidateAtmospherePhaseWriteLane(vault, in _pressureFrontHandle, SubmarineAtmosphereVaultBufferIds.PressureFront, RoomCapacity) &&
+                ValidateAtmospherePhaseWriteLane(vault, in _pressureBackHandle, SubmarineAtmosphereVaultBufferIds.PressureBack, RoomCapacity) &&
+                ValidateAtmospherePhaseWriteLane(vault, in _o2PartialPressureFrontHandle, SubmarineAtmosphereVaultBufferIds.O2PartialPressureFront, RoomCapacity) &&
+                ValidateAtmospherePhaseWriteLane(vault, in _o2PartialPressureBackHandle, SubmarineAtmosphereVaultBufferIds.O2PartialPressureBack, RoomCapacity) &&
+                ValidateAtmospherePhaseWriteLane(vault, in _co2PartialPressureFrontHandle, SubmarineAtmosphereVaultBufferIds.Co2PartialPressureFront, RoomCapacity) &&
+                ValidateAtmospherePhaseWriteLane(vault, in _co2PartialPressureBackHandle, SubmarineAtmosphereVaultBufferIds.Co2PartialPressureBack, RoomCapacity) &&
+                ValidateAtmospherePhaseWriteLane(vault, in _n2PartialPressureFrontHandle, SubmarineAtmosphereVaultBufferIds.N2PartialPressureFront, RoomCapacity) &&
+                ValidateAtmospherePhaseWriteLane(vault, in _n2PartialPressureBackHandle, SubmarineAtmosphereVaultBufferIds.N2PartialPressureBack, RoomCapacity) &&
+                ValidateAtmospherePhaseWriteLane(vault, in _gasVolumeFrontHandle, SubmarineAtmosphereVaultBufferIds.GasVolumeFront, RoomCapacity) &&
+                ValidateAtmospherePhaseWriteLane(vault, in _gasVolumeBackHandle, SubmarineAtmosphereVaultBufferIds.GasVolumeBack, RoomCapacity) &&
+                ValidateAtmospherePhaseWriteLane(vault, in _o2ConsumptionRatesHandle, SubmarineAtmosphereVaultBufferIds.O2ConsumptionRates, RoomCapacity) &&
+                ValidateAtmospherePhaseWriteLane(vault, in _co2GenerationRatesHandle, SubmarineAtmosphereVaultBufferIds.Co2GenerationRates, RoomCapacity) &&
+                ValidateAtmospherePhaseWriteLane(vault, in _roomPlayerCountsHandle, SubmarineAtmosphereVaultBufferIds.RoomPlayerCounts, RoomCapacity) &&
+                ValidateAtmospherePhaseWriteLane(vault, in _temperatureFrontHandle, SubmarineAtmosphereVaultBufferIds.TemperatureFront, RoomCapacity) &&
+                ValidateAtmospherePhaseWriteLane(vault, in _temperatureBackHandle, SubmarineAtmosphereVaultBufferIds.TemperatureBack, RoomCapacity) &&
+                ValidateAtmospherePhaseWriteLane(vault, in _steamFrontHandle, SubmarineAtmosphereVaultBufferIds.SteamFront, RoomCapacity) &&
+                ValidateAtmospherePhaseWriteLane(vault, in _steamBackHandle, SubmarineAtmosphereVaultBufferIds.SteamBack, RoomCapacity) &&
+                ValidateAtmospherePhaseWriteLane(vault, in _hydrogenPocketFrontHandle, SubmarineAtmosphereVaultBufferIds.HydrogenPocketFront, RoomCapacity) &&
+                ValidateAtmospherePhaseWriteLane(vault, in _oxygenPocketFrontHandle, SubmarineAtmosphereVaultBufferIds.OxygenPocketFront, RoomCapacity) &&
+                ValidateAtmospherePhaseWriteLane(vault, in _roomHeatWattsHandle, SubmarineAtmosphereVaultBufferIds.RoomHeatWatts, RoomCapacity) &&
+                ValidateAtmospherePhaseWriteLane(vault, in _roomStatusMaskFrontHandle, SubmarineAtmosphereVaultBufferIds.RoomStatusMaskFront, 1) &&
+                ValidateAtmospherePhaseWriteLane(vault, in _roomStatusMaskBackHandle, SubmarineAtmosphereVaultBufferIds.RoomStatusMaskBack, 1) &&
+                ValidateAtmospherePhaseWriteLane(vault, in _doorPairsHandle, SubmarineAtmosphereVaultBufferIds.DoorPairs, DoorCapacity) &&
+                ValidateAtmospherePhaseWriteLane(vault, in _doorSealedHandle, SubmarineAtmosphereVaultBufferIds.DoorSealed, DoorCapacity) &&
+                ValidateAtmospherePhaseWriteLane(vault, in _doorSealedPreviousHandle, SubmarineAtmosphereVaultBufferIds.DoorSealedPrevious, DoorCapacity);
+        }
+
+        private static bool ValidateAtmospherePhaseWriteLane<T>(
             IDataVault vault,
             in VaultGenerationHandle<T> handle,
-            ref ulong mask,
-            int bitIndex) where T : struct
+            BufferID bufferId,
+            int requiredLength) where T : struct
         {
-            if (!HasValidVaultHandle(in handle) ||
-                !vault.TryAcquireWriteLock(in handle, SystemID.HabitatAtmosphere, out NativeArray<T> buffer) ||
-                !buffer.IsCreated)
-            {
-                return false;
-            }
+            return vault != null &&
+                !vault.IsCompactionFenceActive &&
+                HasValidVaultHandle(in handle) &&
+                handle.BufferID == (uint)bufferId &&
+                handle.SystemID == (uint)SystemID.HabitatAtmosphere &&
+                vault.TryReadOnlyHandle(in handle, out NativeArray<T>.ReadOnly buffer) &&
+                !vault.IsCompactionFenceActive &&
+                buffer.IsCreated &&
+                buffer.Length >= requiredLength;
+        }
 
-            mask |= 1ul << bitIndex;
-            return true;
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private static ulong AtmosphereBufferGuardBit(BufferID bufferId)
+        {
+            return 1UL << (unchecked((int)(uint)(int)bufferId) & 31);
         }
 
         private void ReleaseAtmospherePhaseWriteLocks()
         {
-            ulong mask = _atmospherePhaseWriteLockMask;
+            ulong mask = _atmospherePhaseMutationGuardMask;
             if (mask == 0ul)
                 return;
 
-            _atmospherePhaseWriteLockMask = 0ul;
-            ReleaseAtmospherePhaseWriteLocks(_dataVault, mask);
+            IDataVault vault = _atmospherePhaseMutationGuardVault;
+            _atmospherePhaseMutationGuardMask = 0ul;
+            _atmospherePhaseMutationGuardVault = null;
+            ReleaseAtmospherePhaseWriteLocks(vault, mask);
         }
 
         private void ReleaseAtmospherePhaseWriteLocks(IDataVault vault, ulong mask)
@@ -5479,51 +5569,7 @@ namespace Hecton8.Atmosphere
             if (vault == null || mask == 0ul)
                 return;
 
-            ReleaseAtmosphereWriteLock(vault, in _roomVolumesHandle, mask, 0);
-            ReleaseAtmosphereWriteLock(vault, in _floodVolumesHandle, mask, 1);
-            ReleaseAtmosphereWriteLock(vault, in _o2FrontHandle, mask, 2);
-            ReleaseAtmosphereWriteLock(vault, in _o2BackHandle, mask, 3);
-            ReleaseAtmosphereWriteLock(vault, in _co2FrontHandle, mask, 4);
-            ReleaseAtmosphereWriteLock(vault, in _co2BackHandle, mask, 5);
-            ReleaseAtmosphereWriteLock(vault, in _inertFrontHandle, mask, 6);
-            ReleaseAtmosphereWriteLock(vault, in _inertBackHandle, mask, 7);
-            ReleaseAtmosphereWriteLock(vault, in _pressureFrontHandle, mask, 8);
-            ReleaseAtmosphereWriteLock(vault, in _pressureBackHandle, mask, 9);
-            ReleaseAtmosphereWriteLock(vault, in _o2PartialPressureFrontHandle, mask, 10);
-            ReleaseAtmosphereWriteLock(vault, in _o2PartialPressureBackHandle, mask, 11);
-            ReleaseAtmosphereWriteLock(vault, in _co2PartialPressureFrontHandle, mask, 12);
-            ReleaseAtmosphereWriteLock(vault, in _co2PartialPressureBackHandle, mask, 13);
-            ReleaseAtmosphereWriteLock(vault, in _n2PartialPressureFrontHandle, mask, 14);
-            ReleaseAtmosphereWriteLock(vault, in _n2PartialPressureBackHandle, mask, 15);
-            ReleaseAtmosphereWriteLock(vault, in _gasVolumeFrontHandle, mask, 16);
-            ReleaseAtmosphereWriteLock(vault, in _gasVolumeBackHandle, mask, 17);
-            ReleaseAtmosphereWriteLock(vault, in _o2ConsumptionRatesHandle, mask, 18);
-            ReleaseAtmosphereWriteLock(vault, in _co2GenerationRatesHandle, mask, 19);
-            ReleaseAtmosphereWriteLock(vault, in _roomPlayerCountsHandle, mask, 20);
-            ReleaseAtmosphereWriteLock(vault, in _temperatureFrontHandle, mask, 21);
-            ReleaseAtmosphereWriteLock(vault, in _temperatureBackHandle, mask, 22);
-            ReleaseAtmosphereWriteLock(vault, in _steamFrontHandle, mask, 23);
-            ReleaseAtmosphereWriteLock(vault, in _steamBackHandle, mask, 24);
-            ReleaseAtmosphereWriteLock(vault, in _hydrogenPocketFrontHandle, mask, 25);
-            ReleaseAtmosphereWriteLock(vault, in _oxygenPocketFrontHandle, mask, 26);
-            ReleaseAtmosphereWriteLock(vault, in _roomHeatWattsHandle, mask, 27);
-            ReleaseAtmosphereWriteLock(vault, in _roomStatusMaskFrontHandle, mask, 28);
-            ReleaseAtmosphereWriteLock(vault, in _roomStatusMaskBackHandle, mask, 29);
-            ReleaseAtmosphereWriteLock(vault, in _doorPairsHandle, mask, 30);
-            ReleaseAtmosphereWriteLock(vault, in _doorSealedHandle, mask, 31);
-            ReleaseAtmosphereWriteLock(vault, in _doorSealedPreviousHandle, mask, 32);
-        }
-
-        private static void ReleaseAtmosphereWriteLock<T>(
-            IDataVault vault,
-            in VaultGenerationHandle<T> handle,
-            ulong mask,
-            int bitIndex) where T : struct
-        {
-            if ((mask & (1ul << bitIndex)) == 0ul || !HasValidVaultHandle(in handle))
-                return;
-
-            vault.ReleaseWriteLock(in handle, SystemID.HabitatAtmosphere);
+            vault.ReleaseMutationGuard(mask);
         }
 
         private bool TryLockAtmosphereJobBuffers()
@@ -5532,67 +5578,105 @@ namespace Hecton8.Atmosphere
                 return false;
 
             IDataVault vault = _dataVault;
-            ulong mask = 0ul;
+            ulong mask = AtmosphereJobMutationGuardMask;
             bool success = false;
+            bool recordPostGuardFailure = false;
+            if (vault == null ||
+                vault.IsCompactionFenceActive ||
+                mask == 0ul ||
+                !ValidateAtmosphereJobWriteLanes(vault) ||
+                !vault.TryAcquireMutationGuard(mask))
+            {
+                RecordAtmosphereFailure(3);
+                return false;
+            }
+
             try
             {
-                if (vault == null ||
-                    !TryLockAtmosphereJobBuffer(vault, in _o2FrontHandle, ref mask, 0) ||
-                    !TryLockAtmosphereJobBuffer(vault, in _co2FrontHandle, ref mask, 1) ||
-                    !TryLockAtmosphereJobBuffer(vault, in _inertFrontHandle, ref mask, 2) ||
-                    !TryLockAtmosphereJobBuffer(vault, in _floodVolumesHandle, ref mask, 3) ||
-                    !TryLockAtmosphereJobBuffer(vault, in _roomVolumesHandle, ref mask, 4) ||
-                    !TryLockAtmosphereJobBuffer(vault, in _pressureFrontHandle, ref mask, 5) ||
-                    !TryLockAtmosphereJobBuffer(vault, in _gasVolumeFrontHandle, ref mask, 6) ||
-                    !TryLockAtmosphereJobBuffer(vault, in _o2ConsumptionRatesHandle, ref mask, 7) ||
-                    !TryLockAtmosphereJobBuffer(vault, in _co2GenerationRatesHandle, ref mask, 8) ||
-                    !TryLockAtmosphereJobBuffer(vault, in _roomPlayerCountsHandle, ref mask, 9) ||
-                    !TryLockAtmosphereJobBuffer(vault, in _temperatureFrontHandle, ref mask, 10) ||
-                    !TryLockAtmosphereJobBuffer(vault, in _roomHeatWattsHandle, ref mask, 11) ||
-                    !TryLockAtmosphereJobBuffer(vault, in _steamFrontHandle, ref mask, 12) ||
-                    !TryLockAtmosphereJobBuffer(vault, in _doorPairsHandle, ref mask, 13) ||
-                    !TryLockAtmosphereJobBuffer(vault, in _doorSealedHandle, ref mask, 14) ||
-                    !TryLockAtmosphereJobBuffer(vault, in _o2BackHandle, ref mask, 15) ||
-                    !TryLockAtmosphereJobBuffer(vault, in _co2BackHandle, ref mask, 16) ||
-                    !TryLockAtmosphereJobBuffer(vault, in _inertBackHandle, ref mask, 17) ||
-                    !TryLockAtmosphereJobBuffer(vault, in _pressureBackHandle, ref mask, 18) ||
-                    !TryLockAtmosphereJobBuffer(vault, in _gasVolumeBackHandle, ref mask, 19) ||
-                    !TryLockAtmosphereJobBuffer(vault, in _temperatureBackHandle, ref mask, 20) ||
-                    !TryLockAtmosphereJobBuffer(vault, in _steamBackHandle, ref mask, 21) ||
-                    !TryLockAtmosphereJobBuffer(vault, in _o2PartialPressureBackHandle, ref mask, 22) ||
-                    !TryLockAtmosphereJobBuffer(vault, in _co2PartialPressureBackHandle, ref mask, 23) ||
-                    !TryLockAtmosphereJobBuffer(vault, in _n2PartialPressureBackHandle, ref mask, 24) ||
-                    !TryLockAtmosphereJobBuffer(vault, in _roomStatusMaskBackHandle, ref mask, 25))
+                if (vault.IsCompactionFenceActive || !ValidateAtmosphereJobWriteLanes(vault))
                 {
-                    RecordAtmosphereFailure(3);
+                    recordPostGuardFailure = true;
                     return false;
                 }
 
                 _atmosphereJobLockMask = mask;
+                _atmosphereJobMutationGuardVault = vault;
                 success = true;
                 return true;
             }
             finally
             {
                 if (!success)
-                    ReleaseAtmosphereJobBufferLocks(vault, mask);
+                {
+                    vault.ReleaseMutationGuard(mask);
+                    if (recordPostGuardFailure)
+                        RecordAtmosphereFailure(3);
+                }
             }
         }
 
-        private static bool TryLockAtmosphereJobBuffer<T>(
-            IDataVault vault,
-            in VaultGenerationHandle<T> handle,
-            ref ulong mask,
-            int bitIndex) where T : struct
+        private bool TryAcquireAtmosphereTelemetryWriteGuard(IDataVault vault)
         {
-            if (!HasValidVaultHandle(in handle) ||
-                !vault.TryLockBuffer((BufferID)unchecked((int)handle.BufferID), SystemID.HabitatAtmosphere))
+            ulong mask = AtmosphereTelemetryMutationGuardMask;
+            bool success = false;
+            if (vault == null ||
+                vault.IsCompactionFenceActive ||
+                mask == 0ul ||
+                !ValidateAtmosphereTelemetryWriteLanes(vault) ||
+                !vault.TryAcquireMutationGuard(mask))
             {
                 return false;
             }
 
-            mask |= 1ul << bitIndex;
-            return true;
+            try
+            {
+                if (vault.IsCompactionFenceActive || !ValidateAtmosphereTelemetryWriteLanes(vault))
+                    return false;
+
+                success = true;
+                return true;
+            }
+            finally
+            {
+                if (!success)
+                    vault.ReleaseMutationGuard(mask);
+            }
+        }
+
+        private bool ValidateAtmosphereTelemetryWriteLanes(IDataVault vault)
+        {
+            return ValidateAtmospherePhaseWriteLane(vault, in _telemetryRingHandle, SubmarineAtmosphereVaultBufferIds.TelemetryRing, TelemetryCapacity) &&
+                ValidateAtmospherePhaseWriteLane(vault, in _telemetryCursorHandle, SubmarineAtmosphereVaultBufferIds.TelemetryCursor, 1);
+        }
+
+        private bool ValidateAtmosphereJobWriteLanes(IDataVault vault)
+        {
+            return ValidateAtmospherePhaseWriteLane(vault, in _o2FrontHandle, SubmarineAtmosphereVaultBufferIds.O2Front, RoomCapacity) &&
+                ValidateAtmospherePhaseWriteLane(vault, in _co2FrontHandle, SubmarineAtmosphereVaultBufferIds.Co2Front, RoomCapacity) &&
+                ValidateAtmospherePhaseWriteLane(vault, in _inertFrontHandle, SubmarineAtmosphereVaultBufferIds.InertFront, RoomCapacity) &&
+                ValidateAtmospherePhaseWriteLane(vault, in _floodVolumesHandle, SubmarineAtmosphereVaultBufferIds.FloodVolumes, RoomCapacity) &&
+                ValidateAtmospherePhaseWriteLane(vault, in _roomVolumesHandle, SubmarineAtmosphereVaultBufferIds.RoomVolumes, RoomCapacity) &&
+                ValidateAtmospherePhaseWriteLane(vault, in _pressureFrontHandle, SubmarineAtmosphereVaultBufferIds.PressureFront, RoomCapacity) &&
+                ValidateAtmospherePhaseWriteLane(vault, in _gasVolumeFrontHandle, SubmarineAtmosphereVaultBufferIds.GasVolumeFront, RoomCapacity) &&
+                ValidateAtmospherePhaseWriteLane(vault, in _o2ConsumptionRatesHandle, SubmarineAtmosphereVaultBufferIds.O2ConsumptionRates, RoomCapacity) &&
+                ValidateAtmospherePhaseWriteLane(vault, in _co2GenerationRatesHandle, SubmarineAtmosphereVaultBufferIds.Co2GenerationRates, RoomCapacity) &&
+                ValidateAtmospherePhaseWriteLane(vault, in _roomPlayerCountsHandle, SubmarineAtmosphereVaultBufferIds.RoomPlayerCounts, RoomCapacity) &&
+                ValidateAtmospherePhaseWriteLane(vault, in _temperatureFrontHandle, SubmarineAtmosphereVaultBufferIds.TemperatureFront, RoomCapacity) &&
+                ValidateAtmospherePhaseWriteLane(vault, in _roomHeatWattsHandle, SubmarineAtmosphereVaultBufferIds.RoomHeatWatts, RoomCapacity) &&
+                ValidateAtmospherePhaseWriteLane(vault, in _steamFrontHandle, SubmarineAtmosphereVaultBufferIds.SteamFront, RoomCapacity) &&
+                ValidateAtmospherePhaseWriteLane(vault, in _doorPairsHandle, SubmarineAtmosphereVaultBufferIds.DoorPairs, DoorCapacity) &&
+                ValidateAtmospherePhaseWriteLane(vault, in _doorSealedHandle, SubmarineAtmosphereVaultBufferIds.DoorSealed, DoorCapacity) &&
+                ValidateAtmospherePhaseWriteLane(vault, in _o2BackHandle, SubmarineAtmosphereVaultBufferIds.O2Back, RoomCapacity) &&
+                ValidateAtmospherePhaseWriteLane(vault, in _co2BackHandle, SubmarineAtmosphereVaultBufferIds.Co2Back, RoomCapacity) &&
+                ValidateAtmospherePhaseWriteLane(vault, in _inertBackHandle, SubmarineAtmosphereVaultBufferIds.InertBack, RoomCapacity) &&
+                ValidateAtmospherePhaseWriteLane(vault, in _pressureBackHandle, SubmarineAtmosphereVaultBufferIds.PressureBack, RoomCapacity) &&
+                ValidateAtmospherePhaseWriteLane(vault, in _gasVolumeBackHandle, SubmarineAtmosphereVaultBufferIds.GasVolumeBack, RoomCapacity) &&
+                ValidateAtmospherePhaseWriteLane(vault, in _temperatureBackHandle, SubmarineAtmosphereVaultBufferIds.TemperatureBack, RoomCapacity) &&
+                ValidateAtmospherePhaseWriteLane(vault, in _steamBackHandle, SubmarineAtmosphereVaultBufferIds.SteamBack, RoomCapacity) &&
+                ValidateAtmospherePhaseWriteLane(vault, in _o2PartialPressureBackHandle, SubmarineAtmosphereVaultBufferIds.O2PartialPressureBack, RoomCapacity) &&
+                ValidateAtmospherePhaseWriteLane(vault, in _co2PartialPressureBackHandle, SubmarineAtmosphereVaultBufferIds.Co2PartialPressureBack, RoomCapacity) &&
+                ValidateAtmospherePhaseWriteLane(vault, in _n2PartialPressureBackHandle, SubmarineAtmosphereVaultBufferIds.N2PartialPressureBack, RoomCapacity) &&
+                ValidateAtmospherePhaseWriteLane(vault, in _roomStatusMaskBackHandle, SubmarineAtmosphereVaultBufferIds.RoomStatusMaskBack, 1);
         }
 
         private void ReleaseAtmosphereJobBufferLocks()
@@ -5601,8 +5685,10 @@ namespace Hecton8.Atmosphere
             if (mask == 0ul)
                 return;
 
+            IDataVault vault = _atmosphereJobMutationGuardVault ?? _dataVault;
             _atmosphereJobLockMask = 0ul;
-            ReleaseAtmosphereJobBufferLocks(_dataVault, mask);
+            _atmosphereJobMutationGuardVault = null;
+            ReleaseAtmosphereJobBufferLocks(vault, mask);
         }
 
         private void ReleaseAtmosphereJobBufferLocks(IDataVault vault, ulong mask)
@@ -5610,44 +5696,7 @@ namespace Hecton8.Atmosphere
             if (vault == null || mask == 0ul)
                 return;
 
-            ReleaseAtmosphereJobBuffer(vault, in _o2FrontHandle, mask, 0);
-            ReleaseAtmosphereJobBuffer(vault, in _co2FrontHandle, mask, 1);
-            ReleaseAtmosphereJobBuffer(vault, in _inertFrontHandle, mask, 2);
-            ReleaseAtmosphereJobBuffer(vault, in _floodVolumesHandle, mask, 3);
-            ReleaseAtmosphereJobBuffer(vault, in _roomVolumesHandle, mask, 4);
-            ReleaseAtmosphereJobBuffer(vault, in _pressureFrontHandle, mask, 5);
-            ReleaseAtmosphereJobBuffer(vault, in _gasVolumeFrontHandle, mask, 6);
-            ReleaseAtmosphereJobBuffer(vault, in _o2ConsumptionRatesHandle, mask, 7);
-            ReleaseAtmosphereJobBuffer(vault, in _co2GenerationRatesHandle, mask, 8);
-            ReleaseAtmosphereJobBuffer(vault, in _roomPlayerCountsHandle, mask, 9);
-            ReleaseAtmosphereJobBuffer(vault, in _temperatureFrontHandle, mask, 10);
-            ReleaseAtmosphereJobBuffer(vault, in _roomHeatWattsHandle, mask, 11);
-            ReleaseAtmosphereJobBuffer(vault, in _steamFrontHandle, mask, 12);
-            ReleaseAtmosphereJobBuffer(vault, in _doorPairsHandle, mask, 13);
-            ReleaseAtmosphereJobBuffer(vault, in _doorSealedHandle, mask, 14);
-            ReleaseAtmosphereJobBuffer(vault, in _o2BackHandle, mask, 15);
-            ReleaseAtmosphereJobBuffer(vault, in _co2BackHandle, mask, 16);
-            ReleaseAtmosphereJobBuffer(vault, in _inertBackHandle, mask, 17);
-            ReleaseAtmosphereJobBuffer(vault, in _pressureBackHandle, mask, 18);
-            ReleaseAtmosphereJobBuffer(vault, in _gasVolumeBackHandle, mask, 19);
-            ReleaseAtmosphereJobBuffer(vault, in _temperatureBackHandle, mask, 20);
-            ReleaseAtmosphereJobBuffer(vault, in _steamBackHandle, mask, 21);
-            ReleaseAtmosphereJobBuffer(vault, in _o2PartialPressureBackHandle, mask, 22);
-            ReleaseAtmosphereJobBuffer(vault, in _co2PartialPressureBackHandle, mask, 23);
-            ReleaseAtmosphereJobBuffer(vault, in _n2PartialPressureBackHandle, mask, 24);
-            ReleaseAtmosphereJobBuffer(vault, in _roomStatusMaskBackHandle, mask, 25);
-        }
-
-        private static void ReleaseAtmosphereJobBuffer<T>(
-            IDataVault vault,
-            in VaultGenerationHandle<T> handle,
-            ulong mask,
-            int bitIndex) where T : struct
-        {
-            if ((mask & (1ul << bitIndex)) == 0ul || !HasValidVaultHandle(in handle))
-                return;
-
-            vault.TryUnlockBuffer((BufferID)unchecked((int)handle.BufferID), SystemID.HabitatAtmosphere);
+            vault.ReleaseMutationGuard(mask);
         }
 
         private void ScheduleAtmosphereJob(float fixedDeltaTime)
@@ -5779,50 +5828,52 @@ namespace Hecton8.Atmosphere
         private void RecordAtmosphereBlackBox(float atmosphereDeltaTime)
         {
             IDataVault vault = _dataVault;
-            if (vault == null ||
-                !HasValidVaultHandle(in _telemetryRingHandle) ||
-                !HasValidVaultHandle(in _telemetryCursorHandle) ||
-                !vault.TryAcquireWriteLock(in _telemetryRingHandle, SystemID.HabitatAtmosphere, out NativeArray<SubmarineAtmosphereTelemetryEntry> telemetryRing) ||
-                !telemetryRing.IsCreated ||
-                telemetryRing.Length < TelemetryCapacity)
-            {
+            if (!TryAcquireAtmosphereTelemetryWriteGuard(vault))
                 return;
-            }
 
+            int writeIndex = 0;
+            int nextIndex = 0;
             bool dumpRequired = false;
             try
             {
-                if (!vault.TryAcquireWriteLock(in _telemetryCursorHandle, SystemID.HabitatAtmosphere, out NativeArray<int> telemetryCursor) ||
+                if (!vault.TryResolveHandle(in _telemetryCursorHandle, out NativeArray<int> telemetryCursor) ||
                     !telemetryCursor.IsCreated ||
                     telemetryCursor.Length <= 0)
                 {
                     return;
                 }
 
-                try
-                {
-                    int writeIndex = telemetryCursor[0];
-                    if ((uint)writeIndex >= (uint)telemetryRing.Length)
-                        writeIndex = 0;
+                writeIndex = telemetryCursor[0];
+                if ((uint)writeIndex >= (uint)TelemetryCapacity)
+                    writeIndex = 0;
 
-                    SubmarineAtmosphereTelemetryEntry entry = BuildAtmosphereTelemetryEntry(atmosphereDeltaTime);
-                    telemetryRing[writeIndex] = entry;
-                    writeIndex = (writeIndex + 1) % telemetryRing.Length;
-                    telemetryCursor[0] = writeIndex;
-                    _telemetryWriteIndex = writeIndex;
-                    _atmosphereTickCount++;
+                nextIndex = writeIndex + 1;
+                if (nextIndex >= TelemetryCapacity)
+                    nextIndex = 0;
 
-                    if ((entry.Flags & TelemetryFlagNaN) != 0)
-                        dumpRequired = true;
-                }
-                finally
+                telemetryCursor[0] = nextIndex;
+                _telemetryWriteIndex = nextIndex;
+
+                if (!vault.TryResolveHandle(in _telemetryRingHandle, out NativeArray<SubmarineAtmosphereTelemetryEntry> telemetryRing) ||
+                    !telemetryRing.IsCreated ||
+                    telemetryRing.Length < TelemetryCapacity)
                 {
-                    vault.ReleaseWriteLock(in _telemetryCursorHandle, SystemID.HabitatAtmosphere);
+                    return;
                 }
+
+                if ((uint)writeIndex >= (uint)telemetryRing.Length)
+                    writeIndex = 0;
+
+                SubmarineAtmosphereTelemetryEntry entry = BuildAtmosphereTelemetryEntry(atmosphereDeltaTime);
+                telemetryRing[writeIndex] = entry;
+                _atmosphereTickCount++;
+
+                if ((entry.Flags & TelemetryFlagNaN) != 0)
+                    dumpRequired = true;
             }
             finally
             {
-                vault.ReleaseWriteLock(in _telemetryRingHandle, SystemID.HabitatAtmosphere);
+                vault.ReleaseMutationGuard(AtmosphereTelemetryMutationGuardMask);
             }
 
             if (dumpRequired)
@@ -5832,46 +5883,48 @@ namespace Hecton8.Atmosphere
         private void RecordAtmosphereFailure(ushort failureCode)
         {
             IDataVault vault = _dataVault;
-            if (vault == null ||
-                !HasValidVaultHandle(in _telemetryRingHandle) ||
-                !HasValidVaultHandle(in _telemetryCursorHandle) ||
-                !vault.TryAcquireWriteLock(in _telemetryRingHandle, SystemID.HabitatAtmosphere, out NativeArray<SubmarineAtmosphereTelemetryEntry> telemetryRing) ||
-                !telemetryRing.IsCreated ||
-                telemetryRing.Length < TelemetryCapacity)
-            {
+            if (!TryAcquireAtmosphereTelemetryWriteGuard(vault))
                 return;
-            }
 
+            int writeIndex = 0;
+            int nextIndex = 0;
             try
             {
-                if (!vault.TryAcquireWriteLock(in _telemetryCursorHandle, SystemID.HabitatAtmosphere, out NativeArray<int> telemetryCursor) ||
+                if (!vault.TryResolveHandle(in _telemetryCursorHandle, out NativeArray<int> telemetryCursor) ||
                     !telemetryCursor.IsCreated ||
                     telemetryCursor.Length <= 0)
                 {
                     return;
                 }
 
-                try
-                {
-                    int writeIndex = telemetryCursor[0];
-                    if ((uint)writeIndex >= (uint)telemetryRing.Length)
-                        writeIndex = 0;
+                writeIndex = telemetryCursor[0];
+                if ((uint)writeIndex >= (uint)TelemetryCapacity)
+                    writeIndex = 0;
 
-                    SubmarineAtmosphereTelemetryEntry entry = BuildAtmosphereTelemetryEntry(0f);
-                    entry.FailureCode = failureCode;
-                    telemetryRing[writeIndex] = entry;
-                    writeIndex = (writeIndex + 1) % telemetryRing.Length;
-                    telemetryCursor[0] = writeIndex;
-                    _telemetryWriteIndex = writeIndex;
-                }
-                finally
+                nextIndex = writeIndex + 1;
+                if (nextIndex >= TelemetryCapacity)
+                    nextIndex = 0;
+
+                telemetryCursor[0] = nextIndex;
+                _telemetryWriteIndex = nextIndex;
+
+                if (!vault.TryResolveHandle(in _telemetryRingHandle, out NativeArray<SubmarineAtmosphereTelemetryEntry> telemetryRing) ||
+                    !telemetryRing.IsCreated ||
+                    telemetryRing.Length < TelemetryCapacity)
                 {
-                    vault.ReleaseWriteLock(in _telemetryCursorHandle, SystemID.HabitatAtmosphere);
+                    return;
                 }
+
+                if ((uint)writeIndex >= (uint)telemetryRing.Length)
+                    writeIndex = 0;
+
+                SubmarineAtmosphereTelemetryEntry entry = BuildAtmosphereTelemetryEntry(0f);
+                entry.FailureCode = failureCode;
+                telemetryRing[writeIndex] = entry;
             }
             finally
             {
-                vault.ReleaseWriteLock(in _telemetryRingHandle, SystemID.HabitatAtmosphere);
+                vault.ReleaseMutationGuard(AtmosphereTelemetryMutationGuardMask);
             }
         }
 

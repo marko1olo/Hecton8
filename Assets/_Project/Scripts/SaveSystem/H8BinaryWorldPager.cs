@@ -522,132 +522,178 @@ namespace Hecton8.Core.Persistence.Paging
                 return false;
             }
 
-            if (!TryResolveDirectReadStaging(vault, out VaultSliceHandle<byte> stagingSlice, out NativeArray<byte> sliceBytes))
+            if (!TryAcquireDirectReadStagingWrite(vault, out VaultSliceHandle<byte> stagingSlice, out NativeArray<byte> sliceBytes, out IDataVault stagingVault))
             {
                 return false;
             }
 
             long offset = ResolveOffset(sectorHash);
             Span<byte> header = stackalloc byte[SectorHeaderBytes];
+            bool recordTelemetry = false;
+            bool dumpBlackBox = false;
+            int telemetryBytes = 0;
+            uint telemetryFlags = PageFlagProceduralFallback;
+            PagerTelemetryOperation telemetryOperation = PagerTelemetryOperation.ReadMiss;
             try
             {
-                FileStream stream = _stream;
-                lock (_streamLock)
+                try
                 {
-                    if (stream.Length < offset + SectorHeaderBytes)
+                    do
                     {
-                        status = H8WorldPageStatus.Missing;
-                        RecordTelemetry(sectorHash, offset, payloadType, frame, 0u, 0, PagerTelemetryOperation.ReadMiss, status, PageFlagProceduralFallback);
-                        return true;
-                    }
-
-                    stream.Position = offset;
-                    if (!ReadExact(stream, header))
-                    {
-                        status = H8WorldPageStatus.Missing;
-                        RecordTelemetry(sectorHash, offset, payloadType, frame, 0u, 0, PagerTelemetryOperation.ReadMiss, status, PageFlagProceduralFallback);
-                        return true;
-                    }
-
-                    fixed (byte* headerPtr = header)
-                    {
-                        if (!TryReadHeader(headerPtr, sectorHash, payloadType, out int rawBytes, out int storedBytes, out uint flags, out uint expectedPayloadCheck))
+                        FileStream stream = _stream;
+                        if (stream == null)
                         {
-                            status = HeaderIsEmpty(headerPtr) || HeaderIsDifferentPage(headerPtr, sectorHash, payloadType)
-                                ? H8WorldPageStatus.Missing
-                                : H8WorldPageStatus.Corrupt;
-                            RecordTelemetry(sectorHash, offset, payloadType, frame, 0u, 0, status == H8WorldPageStatus.Corrupt ? PagerTelemetryOperation.ReadCorrupt : PagerTelemetryOperation.ReadMiss, status, PageFlagProceduralFallback);
-                            return true;
+                            status = H8WorldPageStatus.IOError;
+                            telemetryOperation = PagerTelemetryOperation.ReadCorrupt;
+                            recordTelemetry = true;
+                            break;
                         }
 
-                        if (rawBytes <= 0 || rawBytes > SectorPayloadBytes || storedBytes <= 0 || storedBytes > SectorPayloadBytes)
+                        lock (_streamLock)
                         {
-                            status = H8WorldPageStatus.Corrupt;
-                            RecordTelemetry(sectorHash, offset, payloadType, frame, 0u, 0, PagerTelemetryOperation.ReadCorrupt, status, PageFlagProceduralFallback);
-                            DumpBlackBox();
-                            return true;
-                        }
-
-                        byte* rawPtr = (byte*)NativeArrayUnsafeUtility.GetUnsafeBufferPointerWithoutChecks(sliceBytes);
-                        if ((flags & PageFlagCompressed) != 0u)
-                        {
-                            byte* storedPtr = rawPtr + SectorPayloadBytes;
-                            if (!ReadExact(stream, new Span<byte>(storedPtr, storedBytes)) ||
-                                !TryDecompressRle(storedPtr, storedBytes, rawPtr, rawBytes))
+                            if (stream.Length < offset + SectorHeaderBytes)
                             {
-                                status = H8WorldPageStatus.Corrupt;
-                                RecordTelemetry(sectorHash, offset, payloadType, frame, 0u, 0, PagerTelemetryOperation.ReadCorrupt, status, PageFlagProceduralFallback);
-                                DumpBlackBox();
-                                return true;
+                                status = H8WorldPageStatus.Missing;
+                                recordTelemetry = true;
+                                break;
+                            }
+
+                            stream.Position = offset;
+                            if (!ReadExact(stream, header))
+                            {
+                                status = H8WorldPageStatus.Missing;
+                                recordTelemetry = true;
+                                break;
+                            }
+
+                            fixed (byte* headerPtr = header)
+                            {
+                                if (!TryReadHeader(headerPtr, sectorHash, payloadType, out int rawBytes, out int storedBytes, out uint flags, out uint expectedPayloadCheck))
+                                {
+                                    status = HeaderIsEmpty(headerPtr) || HeaderIsDifferentPage(headerPtr, sectorHash, payloadType)
+                                        ? H8WorldPageStatus.Missing
+                                        : H8WorldPageStatus.Corrupt;
+                                    telemetryOperation = status == H8WorldPageStatus.Corrupt ? PagerTelemetryOperation.ReadCorrupt : PagerTelemetryOperation.ReadMiss;
+                                    recordTelemetry = true;
+                                    break;
+                                }
+
+                                if (rawBytes <= 0 || rawBytes > SectorPayloadBytes || storedBytes <= 0 || storedBytes > SectorPayloadBytes)
+                                {
+                                    status = H8WorldPageStatus.Corrupt;
+                                    telemetryOperation = PagerTelemetryOperation.ReadCorrupt;
+                                    recordTelemetry = true;
+                                    dumpBlackBox = true;
+                                    break;
+                                }
+
+                                byte* rawPtr = (byte*)NativeArrayUnsafeUtility.GetUnsafeBufferPointerWithoutChecks(sliceBytes);
+                                if ((flags & PageFlagCompressed) != 0u)
+                                {
+                                    byte* storedPtr = rawPtr + SectorPayloadBytes;
+                                    if (!ReadExact(stream, new Span<byte>(storedPtr, storedBytes)) ||
+                                        !TryDecompressRle(storedPtr, storedBytes, rawPtr, rawBytes))
+                                    {
+                                        status = H8WorldPageStatus.Corrupt;
+                                        telemetryOperation = PagerTelemetryOperation.ReadCorrupt;
+                                        recordTelemetry = true;
+                                        dumpBlackBox = true;
+                                        break;
+                                    }
+                                }
+                                else if (!ReadExact(stream, new Span<byte>(rawPtr, rawBytes)))
+                                {
+                                    status = H8WorldPageStatus.Corrupt;
+                                    telemetryOperation = PagerTelemetryOperation.ReadCorrupt;
+                                    recordTelemetry = true;
+                                    dumpBlackBox = true;
+                                    break;
+                                }
+
+                                uint actualPayloadCheck = ComputePayloadCheck32(rawPtr, rawBytes, flags);
+                                if (actualPayloadCheck != expectedPayloadCheck)
+                                {
+                                    status = H8WorldPageStatus.Corrupt;
+                                    telemetryOperation = PagerTelemetryOperation.ReadCorrupt;
+                                    telemetryBytes = rawBytes;
+                                    recordTelemetry = true;
+                                    dumpBlackBox = true;
+                                    break;
+                                }
+
+                                bytesWritten = rawBytes;
+                                status = H8WorldPageStatus.Ready;
+                                slice = stagingSlice;
+                                telemetryOperation = PagerTelemetryOperation.ReadReady;
+                                telemetryBytes = rawBytes;
+                                telemetryFlags = flags;
+                                recordTelemetry = true;
                             }
                         }
-                        else if (!ReadExact(stream, new Span<byte>(rawPtr, rawBytes)))
-                        {
-                            status = H8WorldPageStatus.Corrupt;
-                            RecordTelemetry(sectorHash, offset, payloadType, frame, 0u, 0, PagerTelemetryOperation.ReadCorrupt, status, PageFlagProceduralFallback);
-                            DumpBlackBox();
-                            return true;
-                        }
-
-                        uint actualPayloadCheck = ComputePayloadCheck32(rawPtr, rawBytes, flags);
-                        if (actualPayloadCheck != expectedPayloadCheck)
-                        {
-                            status = H8WorldPageStatus.Corrupt;
-                            RecordTelemetry(sectorHash, offset, payloadType, frame, 0u, rawBytes, PagerTelemetryOperation.ReadCorrupt, status, PageFlagProceduralFallback);
-                            DumpBlackBox();
-                            return true;
-                        }
-
-                        bytesWritten = rawBytes;
-                        status = H8WorldPageStatus.Ready;
-                        slice = stagingSlice;
-                        RecordTelemetry(sectorHash, offset, payloadType, frame, 0u, rawBytes, PagerTelemetryOperation.ReadReady, status, flags);
-                        return true;
                     }
+                    while (false);
+                }
+                catch (IOException)
+                {
+                    status = H8WorldPageStatus.IOError;
+                    Interlocked.Increment(ref _ioErrorCount.Value);
+                    telemetryOperation = PagerTelemetryOperation.ReadCorrupt;
+                    telemetryBytes = bytesWritten;
+                    recordTelemetry = true;
+                }
+                catch (UnauthorizedAccessException)
+                {
+                    status = H8WorldPageStatus.IOError;
+                    Interlocked.Increment(ref _ioErrorCount.Value);
+                    telemetryOperation = PagerTelemetryOperation.ReadCorrupt;
+                    telemetryBytes = bytesWritten;
+                    recordTelemetry = true;
+                }
+                catch (ObjectDisposedException)
+                {
+                    status = H8WorldPageStatus.IOError;
+                    Interlocked.Increment(ref _ioErrorCount.Value);
+                    telemetryOperation = PagerTelemetryOperation.ReadCorrupt;
+                    telemetryBytes = bytesWritten;
+                    recordTelemetry = true;
+                }
+                catch (NotSupportedException)
+                {
+                    status = H8WorldPageStatus.IOError;
+                    Interlocked.Increment(ref _ioErrorCount.Value);
+                    telemetryOperation = PagerTelemetryOperation.ReadCorrupt;
+                    telemetryBytes = bytesWritten;
+                    recordTelemetry = true;
+                }
+                catch (ArgumentException)
+                {
+                    status = H8WorldPageStatus.IOError;
+                    Interlocked.Increment(ref _ioErrorCount.Value);
+                    telemetryOperation = PagerTelemetryOperation.ReadCorrupt;
+                    telemetryBytes = bytesWritten;
+                    recordTelemetry = true;
+                }
+                catch (InvalidOperationException)
+                {
+                    status = H8WorldPageStatus.IOError;
+                    Interlocked.Increment(ref _ioErrorCount.Value);
+                    telemetryOperation = PagerTelemetryOperation.ReadCorrupt;
+                    telemetryBytes = bytesWritten;
+                    recordTelemetry = true;
                 }
             }
-            catch (IOException)
+            finally
             {
-                status = H8WorldPageStatus.IOError;
-                Interlocked.Increment(ref _ioErrorCount.Value);
-                RecordTelemetry(sectorHash, offset, payloadType, frame, 0u, bytesWritten, PagerTelemetryOperation.ReadCorrupt, status, PageFlagProceduralFallback);
-                return true;
+                ReleasePagerVaultWrite(stagingVault, in _readStagingHandle, BufferID.SaveWorldPagerReadStaging);
             }
-            catch (UnauthorizedAccessException)
-            {
-                status = H8WorldPageStatus.IOError;
-                Interlocked.Increment(ref _ioErrorCount.Value);
-                RecordTelemetry(sectorHash, offset, payloadType, frame, 0u, bytesWritten, PagerTelemetryOperation.ReadCorrupt, status, PageFlagProceduralFallback);
-                return true;
-            }
-            catch (ObjectDisposedException)
-            {
-                status = H8WorldPageStatus.IOError;
-                Interlocked.Increment(ref _ioErrorCount.Value);
-                RecordTelemetry(sectorHash, offset, payloadType, frame, 0u, bytesWritten, PagerTelemetryOperation.ReadCorrupt, status, PageFlagProceduralFallback);
-                return true;
-            }
-            catch (NotSupportedException)
-            {
-                status = H8WorldPageStatus.IOError;
-                Interlocked.Increment(ref _ioErrorCount.Value);
-                RecordTelemetry(sectorHash, offset, payloadType, frame, 0u, bytesWritten, PagerTelemetryOperation.ReadCorrupt, status, PageFlagProceduralFallback);
-                return true;
-            }
-            catch (ArgumentException)
-            {
-                status = H8WorldPageStatus.IOError;
-                Interlocked.Increment(ref _ioErrorCount.Value);
-                RecordTelemetry(sectorHash, offset, payloadType, frame, 0u, bytesWritten, PagerTelemetryOperation.ReadCorrupt, status, PageFlagProceduralFallback);
-                return true;
-            }
-            catch (InvalidOperationException)
-            {
-                status = H8WorldPageStatus.IOError;
-                Interlocked.Increment(ref _ioErrorCount.Value);
-                RecordTelemetry(sectorHash, offset, payloadType, frame, 0u, bytesWritten, PagerTelemetryOperation.ReadCorrupt, status, PageFlagProceduralFallback);
-                return true;
-            }
+
+            if (recordTelemetry)
+                RecordTelemetry(sectorHash, offset, payloadType, frame, 0u, telemetryBytes, telemetryOperation, status, telemetryFlags);
+
+            if (dumpBlackBox)
+                DumpBlackBox();
+
+            return true;
         }
 
         public H8WorldPagerTelemetrySnapshot GetTelemetry()
@@ -1087,33 +1133,47 @@ namespace Hecton8.Core.Persistence.Paging
             TryResolvePagerVaultBuffer(in _readArenaHandle, BufferID.SaveWorldPagerReadArena, ReadSlotCount * SectorPayloadBytes, out array);
         }
 
-        private bool TryResolveDirectReadStaging(
+        private bool TryAcquireDirectReadStagingWrite(
             IDataVault vault,
             out VaultSliceHandle<byte> slice,
-            out NativeArray<byte> sliceBytes)
+            out NativeArray<byte> sliceBytes,
+            out IDataVault lockedVault)
         {
             slice = default;
             sliceBytes = default;
+            lockedVault = null;
             if (vault == null ||
                 vault.IsCompactionFenceActive ||
                 !IsPagerVaultHandle(in _readStagingHandle, BufferID.SaveWorldPagerReadStaging) ||
-                !vault.TryResolveHandle(in _readStagingHandle, out NativeArray<byte> staging) ||
-                !staging.IsCreated ||
-                staging.Length < SectorPayloadBytes * 2)
+                !vault.TryAcquireWriteLock(in _readStagingHandle, VaultOwner, out NativeArray<byte> staging))
             {
                 return false;
             }
 
-            slice.BufferID = _readStagingHandle.BufferID;
-            slice.SystemID = _readStagingHandle.SystemID;
-            slice.Generation = _readStagingHandle.Generation;
-            slice.HandleFlags = _readStagingHandle.Flags;
-            slice.StartIndex = 0;
-            slice.Length = SectorPayloadBytes * 2;
-            slice.Flags = 0u;
-            slice.Reserved0 = 0u;
-            sliceBytes = staging;
-            return true;
+            bool ownershipTransferred = false;
+            try
+            {
+                if (!staging.IsCreated || staging.Length < SectorPayloadBytes * 2)
+                    return false;
+
+                slice.BufferID = _readStagingHandle.BufferID;
+                slice.SystemID = _readStagingHandle.SystemID;
+                slice.Generation = _readStagingHandle.Generation;
+                slice.HandleFlags = _readStagingHandle.Flags;
+                slice.StartIndex = 0;
+                slice.Length = SectorPayloadBytes * 2;
+                slice.Flags = 0u;
+                slice.Reserved0 = 0u;
+                sliceBytes = staging;
+                lockedVault = vault;
+                ownershipTransferred = true;
+                return true;
+            }
+            finally
+            {
+                if (!ownershipTransferred)
+                    vault.ReleaseWriteLock(in _readStagingHandle, VaultOwner);
+            }
         }
 
         private void ResolveReadSlotStates(out NativeArray<byte> array)
@@ -1155,15 +1215,24 @@ namespace Hecton8.Core.Persistence.Paging
                 return false;
             }
 
-            if (array.IsCreated && array.Length >= requiredLength)
+            bool ownershipTransferred = false;
+            try
             {
-                lockedVault = vault;
-                return true;
-            }
+                if (array.IsCreated && array.Length >= requiredLength)
+                {
+                    lockedVault = vault;
+                    ownershipTransferred = true;
+                    return true;
+                }
 
-            vault.ReleaseWriteLock(in handle, VaultOwner);
-            array = default;
-            return false;
+                array = default;
+                return false;
+            }
+            finally
+            {
+                if (!ownershipTransferred)
+                    vault.ReleaseWriteLock(in handle, VaultOwner);
+            }
         }
 
         private static void ReleasePagerVaultWrite<T>(

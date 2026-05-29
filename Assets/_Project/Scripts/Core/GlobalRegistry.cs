@@ -73,7 +73,6 @@ namespace Hecton8.Core
     [Preserve]
     public static partial class GlobalRegistry
     {
-        private static int s_x001GlobalRegistrySignalPushDropCount;
         /// <summary>
         /// BIOS lifecycle phase for the registry mutation gate.
         /// </summary>
@@ -282,7 +281,6 @@ namespace Hecton8.Core
             nameof(GlobalRegistryServiceSlot.CablePhysics132Runtime)
         };
         private static int _registryPhase = (int)RegistryPhase.Uninitialized;
-        private static int _systemKillSwitchMask;
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
         private static bool _registeringGetViolationLogged;
         private static bool _readyLockViolationLogged;
@@ -809,49 +807,14 @@ namespace Hecton8.Core
         /// <summary>
         /// Runtime-wide emergency kill-switch mask. Callers must use stable bit constants.
         /// </summary>
-        public static uint SystemKillSwitchMask => unchecked((uint)Volatile.Read(ref _systemKillSwitchMask));
+        public static uint SystemKillSwitchMask => SignalBusRegistry.RuntimeKillSwitchMask;
 
         /// <summary>
         /// Atomically flips bits in the runtime-wide emergency kill-switch mask.
         /// </summary>
         public static void SetSystemKillSwitchBits(uint mask, bool enabled)
         {
-            int bitMask = unchecked((int)mask);
-            int observed;
-            int next;
-            do
-            {
-                observed = Volatile.Read(ref _systemKillSwitchMask);
-                next = enabled ? observed | bitMask : observed & ~bitMask;
-                if (next == observed)
-                    return;
-            }
-            while (Interlocked.CompareExchange(ref _systemKillSwitchMask, next, observed) != observed);
-
-            PublishSystemKillSwitchBitsSignal(
-                unchecked((uint)observed),
-                unchecked((uint)next),
-                mask,
-                enabled);
-        }
-
-        private static void PublishSystemKillSwitchBitsSignal(
-            uint previousMask,
-            uint currentMask,
-            uint changedMask,
-            bool enabled)
-        {
-            SystemKillSwitchBitsSignal signal = default;
-            signal.Frame = SystemDispatcher.CurrentFrameId;
-            signal.SourceHash = SystemKillSwitchBitsSignalSourceHash;
-            signal.PreviousMask = previousMask;
-            signal.CurrentMask = currentMask;
-            signal.ChangedMask = changedMask;
-            signal.EnabledMask = enabled ? changedMask : 0u;
-            signal.Flags = SystemKillSwitchBitsSignal.FlagRegistryOwner;
-            if (enabled)
-                signal.Flags |= SystemKillSwitchBitsSignal.FlagEnabled;
-            SignalBus<SystemKillSwitchBitsSignal>.TryPushTracked(in signal, ref s_x001GlobalRegistrySignalPushDropCount);
+            SignalBusRegistry.SetSystemKillSwitchBits(mask, enabled, SystemKillSwitchBitsSignalSourceHash);
         }
 
         /// <summary>
@@ -2587,7 +2550,7 @@ namespace Hecton8.Core
             _pendingMathPrecisionShaderLevel = (int)MathPrecisionLevel.Low;
             _pendingMathPrecisionShaderLowBlendMilli = MathPrecisionBlendScale;
             _mathPrecisionShaderDirty = 0;
-            Volatile.Write(ref _systemKillSwitchMask, 0);
+            SignalBusRegistry.ClearSystemKillSwitchBits();
             _currentDomain = (int)Domain.Unknown;
             _currentDomainOwner = null;
             ApplyMathPrecisionShaderState(MathPrecisionLevel.Low, MathPrecisionBlendScale);

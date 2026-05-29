@@ -328,6 +328,7 @@ namespace Hecton8.Core
         {
             GlobalTelemetryBus.Initialize();
             MathGuard.Initialize();
+            FrameTimeWatchdog.InitializeCold();
             BlackBoxHeartbeatThread.Start();
             GlobalRegistry.RegisterRuntimeWatchdogRuntime(this);
             RefreshRegistryDependenciesCold();
@@ -356,6 +357,7 @@ namespace Hecton8.Core
             ResetRegistryHeartbeatGuard(UnityEngine.Time.realtimeSinceStartupAsDouble);
             GlobalTelemetryBus.Initialize();
             MathGuard.Initialize();
+            FrameTimeWatchdog.InitializeCold();
             ResetGcCollectionSentinel();
             ResetMemorySpikeTracker();
         }
@@ -664,6 +666,7 @@ namespace Hecton8.Core
             Signal(RuntimeWatchdogLane.DispatcherLateFrame);
             BlackBoxHeartbeatThread.Ping();
             MathGuard.DrainInvalidNumberErrors();
+            FrameTimeWatchdog.LateFrameTick();
             ReportInputClockSkewIfUnsafe(Hecton8.Core.SystemDispatcher.CurrentFrameIndex);
 
             uint latencySequence = InputLatencyTracker.CompletedSequence;

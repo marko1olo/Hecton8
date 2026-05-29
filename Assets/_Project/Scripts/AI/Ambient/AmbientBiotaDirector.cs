@@ -68,6 +68,18 @@ namespace Hecton8.AI.Ambient
         private static readonly int BiotaOverkillShaderId = Shader.PropertyToID("_HectonBiotaOverkill01");
         private static readonly int BiotaVisualTimeShaderId = Shader.PropertyToID("_HectonBiotaVisualTime");
         private static readonly int BiotaOriginWsShaderId = Shader.PropertyToID("_HectonBiotaOriginWS");
+        private static readonly ulong MacroMutationGuardMask =
+            AmbientBiotaMutationGuardBit(BufferID.BiotaAUPs) |
+            AmbientBiotaMutationGuardBit(BufferID.BiotaVelocities) |
+            AmbientBiotaMutationGuardBit(BufferID.BiotaStates) |
+            AmbientBiotaMutationGuardBit(BufferID.BiotaMacroHydrationCounters);
+        private static readonly ulong BiotaJobMutationGuardMask =
+            AmbientBiotaMutationGuardBit(BufferID.BiotaAUPs) |
+            AmbientBiotaMutationGuardBit(BufferID.BiotaVelocities) |
+            AmbientBiotaMutationGuardBit(BufferID.BiotaStates);
+        private static readonly ulong TelemetryMutationGuardMask =
+            AmbientBiotaMutationGuardBit(BufferID.BiotaTelemetryRing) |
+            AmbientBiotaMutationGuardBit(BufferID.BiotaTelemetryCursor);
         private static readonly Vector3[] FallbackQuadVertices =
         {
             new Vector3(-0.5f, -0.5f, 0f),
@@ -163,6 +175,8 @@ namespace Hecton8.AI.Ambient
         private float _publishedBiotaOverkill = -1f;
         private float _publishedBiotaVisualTime = -1f;
         private bool _jobPending;
+        private bool _jobBuffersPinned;
+        private IDataVault _jobBufferGuardVault;
         private bool _pendingDebrisDrainActive;
         private bool _blackBoxDumped;
         private bool _gpuPayloadDirty = true;
@@ -249,7 +263,7 @@ namespace Hecton8.AI.Ambient
                 _telemetryClockSeconds = 0f;
             _telemetryClockSeconds += telemetryDeltaTime;
 
-            if (_jobPending || !TryResolveBiotaBuffers(out NativeArray<AbsoluteUniversePosition> aups, out NativeArray<float4> velocities, out NativeArray<AmbientBiotaState> states))
+            if (_jobPending)
                 return;
 
             if (safeDeltaTime <= 0f)
@@ -264,27 +278,43 @@ namespace Hecton8.AI.Ambient
 
             int activeBucket = ResolveActiveBucket();
             float radius = ResolveSimulationRadiusMeters();
-            AmbientBiotaDriftJob driftJob = new AmbientBiotaDriftJob
-            {
-                Aups = aups,
-                Velocities = velocities,
-                States = states,
-                CenterAup = _lastPlayerAup,
-                PlayerForward = _lastPlayerForward,
-                FlowVector = _flowVector,
-                DeltaTime = safeDeltaTime,
-                RadiusSq = (double)radius * radius,
-                ActiveBucket = activeBucket,
-                FrameIndex = _frameIndex,
-                SurvivalPressure01 = ResolveSurvivalPressure01(),
-                VisualOverkill01 = _visualOverkillWeight01,
-                HeadlightConeDot = PrecisionHeadlightConeDot,
-                AvoidanceMetersPerSecond = PrecisionAvoidanceMetersPerSecond
-            };
+            if (!TryPinBiotaJobBuffers())
+                return;
 
-            _activeJobHandle = driftJob.Schedule(_capacity, 64);
-            _jobPending = true;
-            _frameIndex++;
+            bool scheduled = false;
+            try
+            {
+                if (!TryResolveBiotaBuffers(out NativeArray<AbsoluteUniversePosition> aups, out NativeArray<float4> velocities, out NativeArray<AmbientBiotaState> states))
+                    return;
+
+                AmbientBiotaDriftJob driftJob = new AmbientBiotaDriftJob
+                {
+                    Aups = aups,
+                    Velocities = velocities,
+                    States = states,
+                    CenterAup = _lastPlayerAup,
+                    PlayerForward = _lastPlayerForward,
+                    FlowVector = _flowVector,
+                    DeltaTime = safeDeltaTime,
+                    RadiusSq = (double)radius * radius,
+                    ActiveBucket = activeBucket,
+                    FrameIndex = _frameIndex,
+                    SurvivalPressure01 = ResolveSurvivalPressure01(),
+                    VisualOverkill01 = _visualOverkillWeight01,
+                    HeadlightConeDot = PrecisionHeadlightConeDot,
+                    AvoidanceMetersPerSecond = PrecisionAvoidanceMetersPerSecond
+                };
+
+                _activeJobHandle = driftJob.Schedule(_capacity, 64);
+                _jobPending = true;
+                scheduled = true;
+                _frameIndex++;
+            }
+            finally
+            {
+                if (!scheduled)
+                    ReleaseBiotaJobBufferPins();
+            }
         }
 
         public void SlowTick()
@@ -295,9 +325,6 @@ namespace Hecton8.AI.Ambient
                 return;
 
             if (!HasVaultBuffersReadyNoGrow())
-                return;
-
-            if (!TryResolveBiotaBuffers(out NativeArray<AbsoluteUniversePosition> aups, out NativeArray<float4> velocities, out NativeArray<AmbientBiotaState> states))
                 return;
 
             if (!TryCapturePlayerPose(out PlayerRuntimePoseSnapshot pose))
@@ -316,53 +343,77 @@ namespace Hecton8.AI.Ambient
                 return;
 
             float radius = ResolveSimulationRadiusMeters();
-            AmbientBiotaSpawnJob spawnJob = new AmbientBiotaSpawnJob
-            {
-                Aups = aups,
-                Velocities = velocities,
-                States = states,
-                CenterAup = _lastPlayerAup,
-                PreyBiomass01 = preyBiomass01,
-                CarryingCapacity01 = carryingCapacity01,
-                RadiusMeters = radius,
-                LifetimeSeconds = lifetimeSeconds,
-                Capacity = _capacity,
-                SpawnBudget = spawnBudget,
-                BaseSpeciesId = baseSpeciesId,
-                Seed = BaseSeedSalt,
-                FrameIndex = _frameIndex,
-                CurrentBiomeHash = _currentBiomeHash,
-                SurvivalPressure01 = ResolveSurvivalPressure01(),
-                VisualOverkill01 = _visualOverkillWeight01
-            };
+            if (!TryPinBiotaJobBuffers())
+                return;
 
-            _activeJobHandle = spawnJob.Schedule();
-            _jobPending = true;
-            _frameIndex++;
+            bool scheduled = false;
+            try
+            {
+                if (!TryResolveBiotaBuffers(out NativeArray<AbsoluteUniversePosition> aups, out NativeArray<float4> velocities, out NativeArray<AmbientBiotaState> states))
+                    return;
+
+                AmbientBiotaSpawnJob spawnJob = new AmbientBiotaSpawnJob
+                {
+                    Aups = aups,
+                    Velocities = velocities,
+                    States = states,
+                    CenterAup = _lastPlayerAup,
+                    PreyBiomass01 = preyBiomass01,
+                    CarryingCapacity01 = carryingCapacity01,
+                    RadiusMeters = radius,
+                    LifetimeSeconds = lifetimeSeconds,
+                    Capacity = _capacity,
+                    SpawnBudget = spawnBudget,
+                    BaseSpeciesId = baseSpeciesId,
+                    Seed = BaseSeedSalt,
+                    FrameIndex = _frameIndex,
+                    CurrentBiomeHash = _currentBiomeHash,
+                    SurvivalPressure01 = ResolveSurvivalPressure01(),
+                    VisualOverkill01 = _visualOverkillWeight01
+                };
+
+                _activeJobHandle = spawnJob.Schedule();
+                _jobPending = true;
+                scheduled = true;
+                _frameIndex++;
+            }
+            finally
+            {
+                if (!scheduled)
+                    ReleaseBiotaJobBufferPins();
+            }
         }
 
         public void LateFrameTick()
         {
             bool completedJob = _jobPending && TryFinalizeActiveJobNoWait();
-            if (_jobPending)
+            try
             {
+                if (_jobPending)
+                {
+                    WriteTelemetryHeartbeat();
+                    return;
+                }
+
+                if (TryResolveBiotaBuffers(out NativeArray<AbsoluteUniversePosition> aups, out NativeArray<float4> velocities, out NativeArray<AmbientBiotaState> states))
+                {
+                    bool debrisWasPending = _pendingDebrisDrainActive;
+                    if (completedJob || debrisWasPending)
+                        PublishPendingDebrisSignals(aups, velocities, states);
+
+                    if (completedJob || debrisWasPending)
+                        RecountActiveBiota(states);
+
+                    RenderIndirectBiota(aups, velocities, states, completedJob || debrisWasPending);
+                }
+
                 WriteTelemetryHeartbeat();
-                return;
             }
-
-            if (TryResolveBiotaBuffers(out NativeArray<AbsoluteUniversePosition> aups, out NativeArray<float4> velocities, out NativeArray<AmbientBiotaState> states))
+            finally
             {
-                bool debrisWasPending = _pendingDebrisDrainActive;
-                if (completedJob || debrisWasPending)
-                    PublishPendingDebrisSignals(aups, velocities, states);
-
-                if (completedJob || debrisWasPending)
-                    RecountActiveBiota(states);
-
-                RenderIndirectBiota(aups, velocities, states, completedJob || debrisWasPending);
+                if (completedJob)
+                    ReleaseBiotaJobBufferPins();
             }
-
-            WriteTelemetryHeartbeat();
         }
 
         public bool TryHydrateMacroSwarms(
@@ -382,64 +433,74 @@ namespace Hecton8.AI.Ambient
                 return false;
 
             RefreshBiomeSignalState();
-            if (!TryResolveBiotaBuffers(out NativeArray<AbsoluteUniversePosition> aups, out NativeArray<float4> velocities, out NativeArray<AmbientBiotaState> states) ||
-                !TryResolveMacroCounters(out NativeArray<int> counters))
-            {
+            if (!TryAcquireAmbientMutationGuard(MacroMutationGuardMask, out IDataVault guardVault))
                 return false;
+
+            try
+            {
+                if (!TryResolveBiotaBuffers(out NativeArray<AbsoluteUniversePosition> aups, out NativeArray<float4> velocities, out NativeArray<AmbientBiotaState> states) ||
+                    !TryResolveMacroCounters(out NativeArray<int> counters))
+                {
+                    return false;
+                }
+
+                ClearMacroCounters(counters);
+                int safeSwarmCount = math.min(swarmCount, swarms.Length);
+                float radiusMeters = math.max(8f, radiusMetersQ);
+                float macroQualityWeight01 = ResolveMacroVisualQualityWeight01(in centerAup, qualityByte, systemStress01);
+                byte spawnQualityByte = EncodeMacroVisualQualitySignalByte(macroQualityWeight01);
+                float macroSurvivalPressure01 = math.max(
+                    1f - SmoothStep01(macroQualityWeight01),
+                    SmoothStep01(math.saturate((systemStress01 - 0.62f) * math.rcp(0.38f))));
+                AmbientBiotaMacroHydrationJob hydrationJob = new AmbientBiotaMacroHydrationJob
+                {
+                    Aups = aups,
+                    Velocities = velocities,
+                    States = states,
+                    Swarms = swarms,
+                    Counters = counters,
+                    CenterAup = centerAup,
+                    RadiusMeters = radiusMeters,
+                    LifetimeSeconds = lifetimeSeconds,
+                    Capacity = _capacity,
+                    SwarmCount = safeSwarmCount,
+                    BaseSpeciesId = baseSpeciesId,
+                    Seed = MacroHydrationSeedSalt,
+                    FrameIndex = _frameIndex,
+                    CurrentBiomeHash = _currentBiomeHash,
+                    QualityWeight01 = macroQualityWeight01,
+                    SurvivalPressure01 = macroSurvivalPressure01,
+                    SystemStress01 = math.saturate(systemStress01)
+                };
+
+                hydrationJob.Execute();
+                _frameIndex++;
+                spawnedBoidCount = counters[0];
+                if (spawnedBoidCount <= 0)
+                    return false;
+
+                RecountActiveBiota(states);
+                _gpuPayloadDirty = true;
+                EntitySpawnSignal spawnSignal = new EntitySpawnSignal
+                {
+                    PositionAup = centerAup,
+                    SourceHash = MacroHydrationSeedSalt,
+                    SpawnedCount = (ushort)math.clamp(spawnedBoidCount, 0, ushort.MaxValue),
+                    RequestedCount = (ushort)math.clamp(counters[1], 0, ushort.MaxValue),
+                    EntityKind = EntitySpawnSignal.KindEcology,
+                    QualityTier = spawnQualityByte,
+                    Flags = (byte)(EntitySpawnSignal.FlagEcology |
+                                   (macroSurvivalPressure01 >= 0.75f ? EntitySpawnMinimumQualityVisualFlag : 0) |
+                                   (macroQualityWeight01 >= 0.95f ? EntitySpawnVisualOverkillFlag : 0)),
+                    Frame = _frameIndex
+                };
+                SignalBus<EntitySpawnSignal>.TryPushTracked(in spawnSignal, ref s_x001AmbientBiotaDirectorSignalPushDropCount);
+                return true;
             }
-
-            ClearMacroCounters(counters);
-            int safeSwarmCount = math.min(swarmCount, swarms.Length);
-            float radiusMeters = math.max(8f, radiusMetersQ);
-            float macroQualityWeight01 = ResolveMacroVisualQualityWeight01(in centerAup, qualityByte, systemStress01);
-            byte spawnQualityByte = EncodeMacroVisualQualitySignalByte(macroQualityWeight01);
-            float macroSurvivalPressure01 = math.max(
-                1f - SmoothStep01(macroQualityWeight01),
-                SmoothStep01(math.saturate((systemStress01 - 0.62f) * math.rcp(0.38f))));
-            AmbientBiotaMacroHydrationJob hydrationJob = new AmbientBiotaMacroHydrationJob
+            finally
             {
-                Aups = aups,
-                Velocities = velocities,
-                States = states,
-                Swarms = swarms,
-                Counters = counters,
-                CenterAup = centerAup,
-                RadiusMeters = radiusMeters,
-                LifetimeSeconds = lifetimeSeconds,
-                Capacity = _capacity,
-                SwarmCount = safeSwarmCount,
-                BaseSpeciesId = baseSpeciesId,
-                Seed = MacroHydrationSeedSalt,
-                FrameIndex = _frameIndex,
-                CurrentBiomeHash = _currentBiomeHash,
-                QualityWeight01 = macroQualityWeight01,
-                SurvivalPressure01 = macroSurvivalPressure01,
-                SystemStress01 = math.saturate(systemStress01)
-            };
-
-            hydrationJob.Execute();
-            _frameIndex++;
-            spawnedBoidCount = counters[0];
-            if (spawnedBoidCount <= 0)
-                return false;
-
-            RecountActiveBiota(states);
-            _gpuPayloadDirty = true;
-            EntitySpawnSignal spawnSignal = new EntitySpawnSignal
-            {
-                PositionAup = centerAup,
-                SourceHash = MacroHydrationSeedSalt,
-                SpawnedCount = (ushort)math.clamp(spawnedBoidCount, 0, ushort.MaxValue),
-                RequestedCount = (ushort)math.clamp(counters[1], 0, ushort.MaxValue),
-                EntityKind = EntitySpawnSignal.KindEcology,
-                QualityTier = spawnQualityByte,
-                Flags = (byte)(EntitySpawnSignal.FlagEcology |
-                               (macroSurvivalPressure01 >= 0.75f ? EntitySpawnMinimumQualityVisualFlag : 0) |
-                               (macroQualityWeight01 >= 0.95f ? EntitySpawnVisualOverkillFlag : 0)),
-                Frame = _frameIndex
-            };
-            SignalBus<EntitySpawnSignal>.TryPushTracked(in spawnSignal, ref s_x001AmbientBiotaDirectorSignalPushDropCount);
-            return true;
+                ReleaseAmbientMutationGuard(guardVault, MacroMutationGuardMask);
+            }
         }
 
         public bool TryPackMacroHydratedBiota(
@@ -454,34 +515,44 @@ namespace Hecton8.AI.Ambient
             if (_jobPending)
                 return false;
 
-            if (!TryResolveBiotaBuffers(out NativeArray<AbsoluteUniversePosition> aups, out NativeArray<float4> velocities, out NativeArray<AmbientBiotaState> states) ||
-                !TryResolveMacroCounters(out NativeArray<int> counters))
-            {
+            if (!TryAcquireAmbientMutationGuard(MacroMutationGuardMask, out IDataVault guardVault))
                 return false;
+
+            try
+            {
+                if (!TryResolveBiotaBuffers(out NativeArray<AbsoluteUniversePosition> aups, out NativeArray<float4> velocities, out NativeArray<AmbientBiotaState> states) ||
+                    !TryResolveMacroCounters(out NativeArray<int> counters))
+                {
+                    return false;
+                }
+
+                ClearMacroCounters(counters);
+                float radiusMeters = math.max(8f, radiusMetersQ);
+                AmbientBiotaMacroDehydrationJob dehydrationJob = new AmbientBiotaMacroDehydrationJob
+                {
+                    Aups = aups,
+                    Velocities = velocities,
+                    States = states,
+                    Counters = counters,
+                    CenterAup = centerAup,
+                    RadiusSq = (double)radiusMeters * radiusMeters,
+                    Capacity = _capacity
+                };
+
+                dehydrationJob.Execute();
+                releasedBoidCount = counters[0];
+                if (releasedBoidCount <= 0)
+                    return false;
+
+                biomassValue = math.saturate(releasedBoidCount * math.rcp((float)MacroVisualBoidsPerBiomassUnit));
+                RecountActiveBiota(states);
+                _gpuPayloadDirty = true;
+                return biomassValue > 0f;
             }
-
-            ClearMacroCounters(counters);
-            float radiusMeters = math.max(8f, radiusMetersQ);
-            AmbientBiotaMacroDehydrationJob dehydrationJob = new AmbientBiotaMacroDehydrationJob
+            finally
             {
-                Aups = aups,
-                Velocities = velocities,
-                States = states,
-                Counters = counters,
-                CenterAup = centerAup,
-                RadiusSq = (double)radiusMeters * radiusMeters,
-                Capacity = _capacity
-            };
-
-            dehydrationJob.Execute();
-            releasedBoidCount = counters[0];
-            if (releasedBoidCount <= 0)
-                return false;
-
-            biomassValue = math.saturate(releasedBoidCount * math.rcp((float)MacroVisualBoidsPerBiomassUnit));
-            RecountActiveBiota(states);
-            _gpuPayloadDirty = true;
-            return biomassValue > 0f;
+                ReleaseAmbientMutationGuard(guardVault, MacroMutationGuardMask);
+            }
         }
 
         private void CacheDependencies()
@@ -714,6 +785,8 @@ namespace Hecton8.AI.Ambient
                 return;
 
             CompleteActiveJobForTeardown();
+            if (!_jobPending)
+                ReleaseBiotaJobBufferPins();
             ReleaseVaultHandles(_vault);
             ClearVaultHandles();
             _vault = currentVault;
@@ -871,6 +944,83 @@ namespace Hecton8.AI.Ambient
             _macroHydrationCounterHandle = default;
             _telemetryRingHandle = default;
             _telemetryCursorHandle = default;
+        }
+
+        private bool TryPinBiotaJobBuffers()
+        {
+            if (_jobBuffersPinned)
+                return false;
+
+            IDataVault vault = _vault;
+            ulong mask = BiotaJobMutationGuardMask;
+            bool success = false;
+            if (vault == null ||
+                vault.IsCompactionFenceActive ||
+                mask == 0UL ||
+                !TryResolveBiotaBuffers(_capacity, out _, out _, out _) ||
+                !vault.TryAcquireMutationGuard(mask))
+            {
+                return false;
+            }
+
+            try
+            {
+                if (vault.IsCompactionFenceActive ||
+                    !TryResolveBiotaBuffers(_capacity, out _, out _, out _))
+                {
+                    return false;
+                }
+
+                _jobBuffersPinned = true;
+                _jobBufferGuardVault = vault;
+                success = true;
+                return true;
+            }
+            finally
+            {
+                if (!success)
+                    vault.ReleaseMutationGuard(mask);
+            }
+        }
+
+        private void ReleaseBiotaJobBufferPins()
+        {
+            if (!_jobBuffersPinned)
+                return;
+
+            _jobBuffersPinned = false;
+            IDataVault vault = _jobBufferGuardVault ?? _vault;
+            _jobBufferGuardVault = null;
+            if (vault == null)
+                return;
+
+            vault.ReleaseMutationGuard(BiotaJobMutationGuardMask);
+        }
+
+        private bool TryAcquireAmbientMutationGuard(ulong mask, out IDataVault guardVault)
+        {
+            guardVault = null;
+            IDataVault vault = _vault;
+            if (vault == null ||
+                mask == 0UL ||
+                vault.IsCompactionFenceActive ||
+                !vault.TryAcquireMutationGuard(mask))
+            {
+                return false;
+            }
+
+            guardVault = vault;
+            return true;
+        }
+
+        private static void ReleaseAmbientMutationGuard(IDataVault guardVault, ulong mask)
+        {
+            guardVault?.ReleaseMutationGuard(mask);
+        }
+
+        private static ulong AmbientBiotaMutationGuardBit(BufferID bufferId)
+        {
+            return 1UL << ((int)bufferId & 31);
         }
 
         private void ReleaseVaultHandles(IDataVault vault)
@@ -1607,10 +1757,18 @@ namespace Hecton8.AI.Ambient
             if (!_jobPending)
                 return;
 
-            if (!DispatcherJobFence.TryComplete(ref _activeJobHandle, forceComplete: true))
-                return;
+            try
+            {
+                if (!DispatcherJobFence.TryComplete(ref _activeJobHandle, forceComplete: true))
+                    return;
 
-            _jobPending = false;
+                _jobPending = false;
+            }
+            finally
+            {
+                if (!_jobPending)
+                    ReleaseBiotaJobBufferPins();
+            }
         }
 
         private void PublishPendingDebrisSignals(
@@ -1703,34 +1861,44 @@ namespace Hecton8.AI.Ambient
 
         private void WriteTelemetryHeartbeat()
         {
-            if (!TryResolveTelemetryBuffers(out NativeArray<AmbientBiotaTelemetryEntry> ring, out NativeArray<int> cursor))
+            if (!TryAcquireAmbientMutationGuard(TelemetryMutationGuardMask, out IDataVault guardVault))
                 return;
 
-            int index = cursor[0];
-            if ((uint)index >= (uint)ring.Length)
-                index = 0;
-
-            uint heartbeatFrameIndex = _heartbeatFrameIndex++;
-            ring[index] = new AmbientBiotaTelemetryEntry
+            try
             {
-                CenterAup = _lastPlayerAup,
-                FrameIndex = heartbeatFrameIndex,
-                StateHash = _lastStateHash,
-                ActiveCount = (ushort)math.clamp(_activeBiotaCount, 0, ushort.MaxValue),
-                CulledCount = (ushort)math.clamp(_lastCulledCount, 0, ushort.MaxValue),
-                Capacity = (ushort)math.clamp(_capacity, 0, ushort.MaxValue),
-                Flags = _lastTelemetryFlags
-            };
+                if (!TryResolveTelemetryBuffers(out NativeArray<AmbientBiotaTelemetryEntry> ring, out NativeArray<int> cursor))
+                    return;
 
-            index++;
-            if (index >= ring.Length)
-                index = 0;
-            cursor[0] = index;
+                int index = cursor[0];
+                if ((uint)index >= (uint)ring.Length)
+                    index = 0;
 
-            if ((_lastTelemetryFlags & TelemetryFlagFaultSanitized) != 0 && !_blackBoxDumped)
+                uint heartbeatFrameIndex = _heartbeatFrameIndex++;
+                ring[index] = new AmbientBiotaTelemetryEntry
+                {
+                    CenterAup = _lastPlayerAup,
+                    FrameIndex = heartbeatFrameIndex,
+                    StateHash = _lastStateHash,
+                    ActiveCount = (ushort)math.clamp(_activeBiotaCount, 0, ushort.MaxValue),
+                    CulledCount = (ushort)math.clamp(_lastCulledCount, 0, ushort.MaxValue),
+                    Capacity = (ushort)math.clamp(_capacity, 0, ushort.MaxValue),
+                    Flags = _lastTelemetryFlags
+                };
+
+                index++;
+                if (index >= ring.Length)
+                    index = 0;
+                cursor[0] = index;
+
+                if ((_lastTelemetryFlags & TelemetryFlagFaultSanitized) != 0 && !_blackBoxDumped)
+                {
+                    DumpBlackBox(ring, index);
+                    _blackBoxDumped = true;
+                }
+            }
+            finally
             {
-                DumpBlackBox(ring, index);
-                _blackBoxDumped = true;
+                ReleaseAmbientMutationGuard(guardVault, TelemetryMutationGuardMask);
             }
         }
 

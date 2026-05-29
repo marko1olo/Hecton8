@@ -16,6 +16,7 @@ namespace MapMagic.Core
 	{
 		[SerializeField] public TerrainTile[] customTiles = new TerrainTile[0];
 		public Dictionary<Coord,TerrainTile> pinned = new Dictionary<Coord,TerrainTile>();
+		[NonSerialized] private int customTilesCount = -1;
 
 	
 		public void Pin (Coord coord, bool asDraft, MonoBehaviour holder=null)
@@ -33,7 +34,7 @@ namespace MapMagic.Core
 				tile.Pin(asDraft); 
 
 			tile.Pin(asDraft);
-			tile.Move(coord, camCoords != null ? GetRemoteness(coord,camCoords) : 0);
+			tile.Move(coord, camCoords != null ? GetRemoteness(coord, camCoords, camCoordsCount) : 0);
 
 			if (!pinned.ContainsKey(coord))
 				pinned.Add(coord, tile);
@@ -68,8 +69,13 @@ namespace MapMagic.Core
 			foreach (TerrainTile tile in base.Tiles()) 
 				yield return tile;
 
-			for (int i=0; i<customTiles.Length; i++) 
-				yield return customTiles[i];
+			int count = customTilesCount >= 0 && customTilesCount <= customTiles.Length ? customTilesCount : customTiles.Length;
+			for (int i=0; i<count; i++)
+			{
+				TerrainTile tile = customTiles[i];
+				if (tile != null && !tile.IsNull)
+					yield return tile;
+			}
 		}
 
 		/*public TerrainTile PreviewTile 
@@ -106,13 +112,19 @@ namespace MapMagic.Core
 		public void PinCustom (TerrainTile tile)
 		{
 			if (!customTiles.Contains(tile))
+			{
 				ArrayTools.Add(ref customTiles, tile);
+				customTilesCount = -1;
+			}
 		}
 
 		public void UnpinCustom (TerrainTile tile)
 		{
 			if (customTiles.Contains(tile))
+			{
 				ArrayTools.Remove(ref customTiles, tile);
+				customTilesCount = -1;
+			}
 		}
 
 
@@ -120,11 +132,23 @@ namespace MapMagic.Core
 		{
 			base.RemoveNulls();
 
-			for (int i=customTiles.Length-1; i>=0; i--)
+			int writeIndex = 0;
+			for (int i=0; i<customTiles.Length; i++)
 			{
-				if (customTiles[i]==null || customTiles[i].IsNull) 
-					ArrayTools.RemoveAt(ref customTiles, i);
+				TerrainTile tile = customTiles[i];
+				if (tile == null || tile.IsNull)
+					continue;
+
+				if (writeIndex != i)
+					customTiles[writeIndex] = tile;
+
+				writeIndex++;
 			}
+
+			for (int i=writeIndex; i<customTiles.Length; i++)
+				customTiles[i] = null;
+
+			customTilesCount = writeIndex;
 		}
 
 		public override TerrainTile Closest () 

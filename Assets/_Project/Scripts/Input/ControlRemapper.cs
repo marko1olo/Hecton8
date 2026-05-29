@@ -64,33 +64,45 @@ namespace Hecton8.Input
                 return;
             }
 
-            NativeArray<InputBindingTelemetryEntry> ring = default;
-            NativeArray<int> cursor = default;
-            bool ringLocked = false;
-            bool cursorLocked = false;
+            const int telemetryCapacity = InputBindingContractLayout.InputBindingTelemetryCapacity;
+
+            int index = 0;
+            if (!vault.TryAcquireWriteLock(in cursorHandle, SystemID.UI, out NativeArray<int> cursor))
+                return;
+
             try
             {
-                ringLocked = vault.TryAcquireWriteLock(in ringHandle, SystemID.UI, out ring);
-                cursorLocked = vault.TryAcquireWriteLock(in cursorHandle, SystemID.UI, out cursor);
-                if (!ringLocked || !cursorLocked || !ring.IsCreated || !cursor.IsCreated || ring.Length <= 0 || cursor.Length <= 0)
+                if (!cursor.IsCreated || cursor.Length <= 0)
                     return;
 
-                int index = cursor[0];
-                if (index < 0 || index >= ring.Length)
+                index = cursor[0];
+                if (index < 0 || index >= telemetryCapacity)
                     index = 0;
 
-                ring[index] = entry;
-                index++;
-                if (index >= ring.Length)
-                    index = 0;
-                cursor[0] = index;
+                int nextIndex = index + 1;
+                if (nextIndex >= telemetryCapacity)
+                    nextIndex = 0;
+
+                cursor[0] = nextIndex;
             }
             finally
             {
-                if (cursorLocked)
-                    vault.ReleaseWriteLock(in cursorHandle, SystemID.UI);
-                if (ringLocked)
-                    vault.ReleaseWriteLock(in ringHandle, SystemID.UI);
+                vault.ReleaseWriteLock(in cursorHandle, SystemID.UI);
+            }
+
+            if (!vault.TryAcquireWriteLock(in ringHandle, SystemID.UI, out NativeArray<InputBindingTelemetryEntry> ring))
+                return;
+
+            try
+            {
+                if (!ring.IsCreated || index >= ring.Length)
+                    return;
+
+                ring[index] = entry;
+            }
+            finally
+            {
+                vault.ReleaseWriteLock(in ringHandle, SystemID.UI);
             }
         }
 

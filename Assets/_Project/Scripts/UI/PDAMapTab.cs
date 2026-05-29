@@ -199,13 +199,17 @@ namespace Hecton8.UI
         private IPlayerRuntimeContext _playerContext;
         private IStreamingBackpressureService _streamingBackpressureService;
         private bool _hotSwapRegistered;
+        private bool _coldSupportsSetConstantBuffer;
+        private bool _coldSupportsComputeShaders;
         private void Awake()
         {
+            CacheGraphicsCapabilitiesCold();
             EnsureBuilt();
         }
 
         private void OnEnable()
         {
+            CacheGraphicsCapabilitiesCold();
             EnsureBuilt();
             CacheRegistryServicesCold();
             TryRegisterHotSwapListener();
@@ -354,7 +358,6 @@ namespace Hecton8.UI
 
         private void RunVisualSync(float deltaTime)
         {
-            EnsureBuilt();
             float dt = math.max(0f, deltaTime);
             _animationTime += dt;
             _refreshCountdown -= dt;
@@ -402,9 +405,9 @@ namespace Hecton8.UI
                 frame.color = new Color(0.02f, 0.09f, 0.12f, 0.76f);
                 frame.raycastTarget = false;
 
-                GameObject imageOwner = new GameObject("MapImage", typeof(RectTransform)); // COLD ALLOC: GameObject[1] — PDA map RawImage owner — owner: PDAMapTab
+                GameObject imageOwner = new GameObject("MapImage"); // COLD ALLOC: GameObject[1] - PDA map RawImage owner - owner: PDAMapTab
                 imageOwner.layer = gameObject.layer;
-                imageOwner.TryGetComponent(out RectTransform imageRect);
+                RectTransform imageRect = imageOwner.AddComponent<RectTransform>(); // COLD ALLOC: RectTransform[1] - PDA map RawImage layout - owner: PDAMapTab
                 imageRect.SetParent(mapRect, false);
                 imageRect.anchorMin = new Vector2(0f, 0f);
                 imageRect.anchorMax = new Vector2(1f, 1f);
@@ -421,9 +424,9 @@ namespace Hecton8.UI
 
             if (statusLabel == null)
             {
-                GameObject statusOwner = new GameObject("MapStatus", typeof(RectTransform)); // COLD ALLOC: GameObject[1] — PDA map status TMP owner — owner: PDAMapTab
+                GameObject statusOwner = new GameObject("MapStatus"); // COLD ALLOC: GameObject[1] - PDA map status TMP owner - owner: PDAMapTab
                 statusOwner.layer = gameObject.layer;
-                statusOwner.TryGetComponent(out RectTransform statusRect);
+                RectTransform statusRect = statusOwner.AddComponent<RectTransform>(); // COLD ALLOC: RectTransform[1] - PDA map status layout - owner: PDAMapTab
                 statusRect.SetParent(root, false);
                 statusRect.anchorMin = new Vector2(0f, 0f);
                 statusRect.anchorMax = new Vector2(1f, 0f);
@@ -450,9 +453,9 @@ namespace Hecton8.UI
 
         private static RectTransform CreateRect(string name, RectTransform parent)
         {
-            GameObject owner = new GameObject(name, typeof(RectTransform)); // COLD ALLOC: GameObject[1] — PDA map child RectTransform owner — owner: PDAMapTab
+            GameObject owner = new GameObject(name); // COLD ALLOC: GameObject[1] - PDA map child RectTransform owner - owner: PDAMapTab
             owner.layer = parent.gameObject.layer;
-            owner.TryGetComponent(out RectTransform rect);
+            RectTransform rect = owner.AddComponent<RectTransform>(); // COLD ALLOC: RectTransform[1] - PDA map child layout - owner: PDAMapTab
             rect.SetParent(parent, false);
             return rect;
         }
@@ -606,6 +609,12 @@ namespace Hecton8.UI
             _streamingBackpressureService = GlobalRegistry.StreamingBackpressure;
         }
 
+        private void CacheGraphicsCapabilitiesCold()
+        {
+            _coldSupportsSetConstantBuffer = SystemInfo.supportsSetConstantBuffer;
+            _coldSupportsComputeShaders = SystemInfo.supportsComputeShaders;
+        }
+
         private void TryRegisterHotSwapListener()
         {
             if (_hotSwapRegistered || !Application.isPlaying)
@@ -641,7 +650,7 @@ namespace Hecton8.UI
                     SonarIndirectArgsStrideBytes); // COLD ALLOC: GraphicsBuffer[5 uint] — GPU-written PDA sonar indirect args — owner: PDAMapTab
             }
 
-            if (SystemInfo.supportsSetConstantBuffer &&
+            if (_coldSupportsSetConstantBuffer &&
                 (_sonarMapConstantsBufferA == null || !_sonarMapConstantsBufferA.IsValid() ||
                  _sonarMapConstantsBufferB == null || !_sonarMapConstantsBufferB.IsValid()))
             {
@@ -654,7 +663,7 @@ namespace Hecton8.UI
                     SonarMapConstantsStrideBytes); // COLD ALLOC: GraphicsBuffer[96B] — packed PDA sonar compute constants — owner: PDAMapTab
             }
 
-            if (SystemInfo.supportsSetConstantBuffer &&
+            if (_coldSupportsSetConstantBuffer &&
                 (_sonarMapConstantsBufferB == null || !_sonarMapConstantsBufferB.IsValid()))
             {
                 _sonarMapConstantsBufferB = new GraphicsBuffer(
@@ -786,7 +795,7 @@ namespace Hecton8.UI
             if (_sonarComputeKernelsResolved)
                 return _sonarClearArgsKernel >= 0 && _sonarBuildMapPointsKernel >= 0;
 
-            if (sonarMapCompute == null || !HardwareTierDetector.AllowHighResourceComputeShaders)
+            if (sonarMapCompute == null || !_coldSupportsComputeShaders)
             {
                 ResetSonarComputeKernelState();
                 return false;
@@ -851,7 +860,6 @@ namespace Hecton8.UI
             if (mapImage == null || !isActiveAndEnabled || !_pointCloudMapReady)
                 return;
 
-            EnsurePointCloudResources();
             if (_hologramMapMaterial == null ||
                 _cartographyPackedR8Buffer == null ||
                 !_cartographyPackedR8Buffer.IsValid() ||
@@ -937,7 +945,6 @@ namespace Hecton8.UI
             if (mapImage == null || !isActiveAndEnabled || !_pointCloudMapReady)
                 return;
 
-            EnsurePointCloudResources();
             if (_pointCloudMaterial == null ||
                 _pointCloudAppendBuffer == null ||
                 !_pointCloudAppendBuffer.IsValid() ||
@@ -1076,7 +1083,7 @@ namespace Hecton8.UI
                 !_activeHlodImpostorAupBuffer.IsValid() ||
                 _cartographySectorWordBuffer == null ||
                 !_cartographySectorWordBuffer.IsValid() ||
-                !HardwareTierDetector.AllowHighResourceComputeShaders ||
+                !_coldSupportsComputeShaders ||
                 !TryResolveSonarComputeKernels())
             {
                 return false;
@@ -1205,7 +1212,7 @@ namespace Hecton8.UI
             };
 
             GraphicsBuffer constantsWriteBuffer = ResolveSonarMapConstantsWriteBuffer();
-            if (SystemInfo.supportsSetConstantBuffer &&
+            if (_coldSupportsSetConstantBuffer &&
                 constantsWriteBuffer != null &&
                 constantsWriteBuffer.IsValid())
             {
@@ -1227,7 +1234,7 @@ namespace Hecton8.UI
 
         private GraphicsBuffer ResolveSonarMapConstantsWriteBuffer()
         {
-            if (!SystemInfo.supportsSetConstantBuffer)
+            if (!_coldSupportsSetConstantBuffer)
                 return null;
 
             GraphicsBuffer preferred = (_sonarMapConstantsUploadIndex & 1) == 0
@@ -1456,7 +1463,6 @@ namespace Hecton8.UI
             if (_pendingMarkerCount <= 0 || maxUpdates <= 0)
                 return;
 
-            EnsureMarkerOverlayBuilt();
             if (_markerOverlayRoot == null)
             {
                 ClearPendingMarkerUpdates();

@@ -19,9 +19,13 @@ namespace Hecton8.Core
         private const float ScalabilityCooldownSeconds = 10f;
         private const float MathLodPrecisionWeightThreshold01 = 0.5f;
         private const float DistantFloraDisableWeightThreshold01 = 0.2f;
+        private const float DistantFloraPressureDisableThreshold01 = 0.75f;
         private const float VoxelAoEnableWeightThreshold01 = 0.5f;
+        private const float VoxelAoPressureDisableThreshold01 = 0.6f;
         private const float ThermalParticleSpawnScale = 0.5f;
         private const float FullParticleSpawnScale = 1f;
+        private const float CriticalMathLodPressureFloor01 = 0.85f;
+        private const float FramePressureReleasePerSecond = 0.5f;
         private const uint DefaultSubsystemHash = 0x46545744u;
         private const uint SustainedFrameOptimalHash = 0x46544F50u; // "FTOP"
         private const uint SustainedFrameCriticalHash = 0x46544352u; // "FTCR"
@@ -49,12 +53,18 @@ namespace Hecton8.Core
         private static int _reportedSubsystemFrame = -1;
         private static uint _reportedSubsystemHash;
         private static float _reportedSubsystemCostMs;
+        private static int _lastFrameSampleFrame = -1;
+        private static int _lastScalabilityDispatchFrame = -1;
         private static int _reportedBrgBatchFrame = -1;
         private static int _reportedBrgBatchCount;
+        private static float _lastFrameDeltaTimeSeconds;
+        private static float _lastAverageFrameTimeSeconds;
         private static float _frameTimeSumSeconds;
+        private static float _framePressure01;
         private static float _criticalAverageSeconds;
         private static float _lastScalabilitySwitchTimeSeconds = -ScalabilityCooldownSeconds;
         private static float _particleEmissionScale = 1f;
+        private static float _visualQualityWeight01 = 1f;
         private static MathLodMode _mathLodMode = MathLodMode.High;
         private static bool _voxelAoEnabled = true;
         private static bool _systemDegradationActive;
@@ -62,12 +72,17 @@ namespace Hecton8.Core
 
         public static bool IsDistantFloraRenderingEnabled => !_systemDegradationActive;
         public static float ParticleEmissionScale => _particleEmissionScale;
+        public static float CurrentVisualQualityWeight01 => _visualQualityWeight01;
         public static bool IsVoxelAmbientOcclusionEnabled => _voxelAoEnabled;
-        public static MathLodMode CurrentMathLodMode => _mathLodMode;
 
         internal static void TickMathPrecisionTransition(int frame)
         {
             s_tickMathPrecisionTransition(frame);
+        }
+
+        public static void InitializeCold()
+        {
+            EnsureFrameTimeSamples();
         }
 
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
@@ -80,12 +95,18 @@ namespace Hecton8.Core
             _reportedSubsystemFrame = -1;
             _reportedSubsystemHash = 0u;
             _reportedSubsystemCostMs = 0f;
+            _lastFrameSampleFrame = -1;
+            _lastScalabilityDispatchFrame = -1;
             _reportedBrgBatchFrame = -1;
             _reportedBrgBatchCount = 0;
+            _lastFrameDeltaTimeSeconds = 0f;
+            _lastAverageFrameTimeSeconds = 0f;
             _frameTimeSumSeconds = 0f;
+            _framePressure01 = 0f;
             _criticalAverageSeconds = 0f;
             _lastScalabilitySwitchTimeSeconds = -ScalabilityCooldownSeconds;
             _particleEmissionScale = 1f;
+            _visualQualityWeight01 = 1f;
             _mathLodMode = MathLodMode.High;
             _voxelAoEnabled = true;
             _systemDegradationActive = false;
@@ -145,16 +166,12 @@ namespace Hecton8.Core
         }
 
         /// <summary>
-        /// Samples dispatcher unscaled delta and emits telemetry/load-shed commands.
+        /// Samples dispatcher unscaled delta and updates frame-pressure state.
         /// </summary>
         public static void Tick()
         {
-            EnsureFrameTimeSamples();
-
-            if (!_shaderLodPushed)
-                PushInitialScalabilityFromGlobalQuality();
-
-            RefreshContinuousQualityOutputs();
+            if (!_frameTimeSamples.IsCreated)
+                return;
 
             if (SimulationSignalRoute.SimulationPaused)
                 return;
@@ -167,6 +184,10 @@ namespace Hecton8.Core
             }
 
             float averageFrameTimeSeconds = RecordFrameTimeSample(deltaTime);
+            UpdateFramePressure(deltaTime, averageFrameTimeSeconds);
+            _lastFrameDeltaTimeSeconds = deltaTime;
+            _lastAverageFrameTimeSeconds = averageFrameTimeSeconds;
+            _lastFrameSampleFrame = Hecton8.Core.SystemDispatcher.CurrentFrameIndex;
             if (deltaTime > SpikeThresholdSeconds)
                 _consecutiveSpikeFrames++;
             else
@@ -174,11 +195,30 @@ namespace Hecton8.Core
 
             if (_consecutiveSpikeFrames >= 3)
                 PublishSpike(deltaTime);
+        }
+
+        public static void LateFrameTick()
+        {
+            if (!_frameTimeSamples.IsCreated)
+                return;
+
+            if (!_shaderLodPushed)
+                PushInitialScalabilityFromGlobalQuality();
+
+            RefreshContinuousQualityOutputs();
 
             PublishDrawCallEstimateIfPresent();
 
-            if (_frameTimeSampleCount >= FrameTimeSampleCount)
-                DispatchScalabilityIfNeeded(deltaTime, averageFrameTimeSeconds);
+            int frame = Hecton8.Core.SystemDispatcher.CurrentFrameIndex;
+            if (_lastFrameSampleFrame != frame ||
+                _lastScalabilityDispatchFrame == frame ||
+                _frameTimeSampleCount < FrameTimeSampleCount)
+            {
+                return;
+            }
+
+            _lastScalabilityDispatchFrame = frame;
+            DispatchScalabilityIfNeeded(_lastFrameDeltaTimeSeconds, _lastAverageFrameTimeSeconds);
         }
 
         private static void PublishSpike(float deltaTime)
@@ -199,8 +239,6 @@ namespace Hecton8.Core
 
         private static float RecordFrameTimeSample(float deltaTime)
         {
-            EnsureFrameTimeSamples();
-
             long writeCursor = _frameTimeSamples.TotalWrites;
             int writeSlot = (int)writeCursor & FrameTimeSampleMask;
             float previous = 0f;
@@ -328,17 +366,56 @@ namespace Hecton8.Core
 
         private static void ApplyContinuousQualityState(float qualityWeight01, bool forcedLowMathLod)
         {
-            float effectiveQuality01 = math.select(qualityWeight01, 0.0f, forcedLowMathLod);
+            float pressure01 = ResolveEffectiveFramePressure01(forcedLowMathLod);
+            float safeQuality01 = math.saturate(math.select(1f, qualityWeight01, math.isfinite(qualityWeight01)));
+            float pressureFloor01 = math.min(safeQuality01, 0.25f);
+            float effectiveQuality01 = math.lerp(safeQuality01, pressureFloor01, pressure01);
             float curvedQuality01 = SmoothStep01(effectiveQuality01);
-            _systemDegradationActive = forcedLowMathLod || curvedQuality01 <= DistantFloraDisableWeightThreshold01;
+            _visualQualityWeight01 = curvedQuality01;
+            _systemDegradationActive =
+                pressure01 >= DistantFloraPressureDisableThreshold01 ||
+                curvedQuality01 <= DistantFloraDisableWeightThreshold01;
             _particleEmissionScale = math.lerp(ThermalParticleSpawnScale, FullParticleSpawnScale, curvedQuality01);
-            _voxelAoEnabled = !forcedLowMathLod && curvedQuality01 >= VoxelAoEnableWeightThreshold01;
+            _voxelAoEnabled =
+                pressure01 < VoxelAoPressureDisableThreshold01 &&
+                curvedQuality01 >= VoxelAoEnableWeightThreshold01;
         }
 
         private static float ResolveShaderQualityWeight01(float qualityWeight01, bool forcedLowMathLod)
         {
             float safeQuality = math.saturate(math.select(1f, qualityWeight01, math.isfinite(qualityWeight01)));
-            return forcedLowMathLod ? math.min(safeQuality, 0.25f) : safeQuality;
+            float pressure01 = ResolveEffectiveFramePressure01(forcedLowMathLod);
+            return math.lerp(safeQuality, math.min(safeQuality, 0.25f), pressure01);
+        }
+
+        private static void UpdateFramePressure(float deltaTime, float averageFrameTimeSeconds)
+        {
+            float targetPressure01 = ResolveFramePressure01(averageFrameTimeSeconds);
+            if (targetPressure01 >= _framePressure01)
+            {
+                _framePressure01 = targetPressure01;
+                return;
+            }
+
+            float release = math.saturate(deltaTime * FramePressureReleasePerSecond);
+            _framePressure01 = math.max(targetPressure01, _framePressure01 - release);
+        }
+
+        private static float ResolveEffectiveFramePressure01(bool forcedLowMathLod)
+        {
+            float pressure01 = math.saturate(_framePressure01);
+            return forcedLowMathLod
+                ? math.max(pressure01, CriticalMathLodPressureFloor01)
+                : pressure01;
+        }
+
+        private static float ResolveFramePressure01(float averageFrameTimeSeconds)
+        {
+            float range = CriticalAverageThresholdSeconds - OptimalAverageThresholdSeconds;
+            if (!math.isfinite(averageFrameTimeSeconds) || range <= 0f)
+                return 0f;
+
+            return SmoothStep01((averageFrameTimeSeconds - OptimalAverageThresholdSeconds) / range);
         }
 
         private static MathLodMode ResolveQualityMathLodMode(float qualityWeight01)

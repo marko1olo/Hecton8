@@ -3738,15 +3738,23 @@ namespace Hecton8.Core.Contracts.Signals
                 return;
             }
 
-            DispatcherJobFence.TryComplete(ref handle, forceComplete: true);
-            if (SignalThreadLocalScratchpad.ScheduleCommit(frame, default, out JobHandle commitHandle))
+            DispatcherJobFence.BeginPostSimulationSwapWindow();
+            try
             {
-                long startTicks = System.Diagnostics.Stopwatch.GetTimestamp();
-                DispatcherJobFence.TryComplete(ref commitHandle, forceComplete: true);
-                long elapsedTicks = System.Diagnostics.Stopwatch.GetTimestamp() - startTicks;
-                double elapsedMicroseconds = elapsedTicks * 1000000.0d / System.Diagnostics.Stopwatch.Frequency;
-                SignalThreadLocalScratchpad.RecordLastCommitMicroseconds(unchecked((uint)math.max(0, (int)math.round(elapsedMicroseconds))));
-                SignalThreadLocalScratchpad.TryDumpOnFault();
+                DispatcherJobFence.TryComplete(ref handle, forceComplete: true);
+                if (SignalThreadLocalScratchpad.ScheduleCommit(frame, default, out JobHandle commitHandle))
+                {
+                    long startTicks = System.Diagnostics.Stopwatch.GetTimestamp();
+                    DispatcherJobFence.TryComplete(ref commitHandle, forceComplete: true);
+                    long elapsedTicks = System.Diagnostics.Stopwatch.GetTimestamp() - startTicks;
+                    double elapsedMicroseconds = elapsedTicks * 1000000.0d / System.Diagnostics.Stopwatch.Frequency;
+                    SignalThreadLocalScratchpad.RecordLastCommitMicroseconds(unchecked((uint)math.max(0, (int)math.round(elapsedMicroseconds))));
+                    SignalThreadLocalScratchpad.TryDumpOnFault();
+                }
+            }
+            finally
+            {
+                DispatcherJobFence.EndPostSimulationSwapWindow();
             }
 
             RefreshMetrics();

@@ -15,21 +15,22 @@ namespace Hecton8.Animation.FaunaProcedural
     [DisallowMultipleComponent]
     public sealed class ProceduralBoneBlenderRuntime : MonoBehaviour, IUpdatable, ILateFrameTickable, IGlobalRegistryHotSwapListener, IDisposable
     {
-        private const int LockRigs = 1 << 0;
-        private const int LockInputs = 1 << 1;
-        private const int LockParents = 1 << 2;
-        private const int LockBindPoses = 1 << 3;
-        private const int LockBoneStates = 1 << 4;
-        private const int LockMatrices = 1 << 5;
-        private const int LockStats = 1 << 6;
-        private const int LockTelemetry = 1 << 7;
-        private const int LockCursor = 1 << 8;
-        private const int LockTuning = 1 << 9;
-        private const int LockMockSignals = 1 << 10;
         private const int ProceduralBoneShaderGlobalsBytes = 32;
 
         private static readonly int ProceduralBoneMatricesId = Shader.PropertyToID("_H8ProceduralBoneMatrices");
         private static readonly int ProceduralBoneGlobalsId = Shader.PropertyToID("_H8ProceduralBoneGlobals");
+        private static readonly ulong JobMutationGuardMask =
+            ProceduralBoneMutationGuardBit(ProceduralBoneBlenderBufferIds.Rigs) |
+            ProceduralBoneMutationGuardBit(ProceduralBoneBlenderBufferIds.FrameInputs) |
+            ProceduralBoneMutationGuardBit(ProceduralBoneBlenderBufferIds.ParentIndices) |
+            ProceduralBoneMutationGuardBit(ProceduralBoneBlenderBufferIds.BindPoses) |
+            ProceduralBoneMutationGuardBit(ProceduralBoneBlenderBufferIds.BoneStates) |
+            ProceduralBoneMutationGuardBit(ProceduralBoneBlenderBufferIds.BoneMatrices) |
+            ProceduralBoneMutationGuardBit(ProceduralBoneBlenderBufferIds.FrameStats) |
+            ProceduralBoneMutationGuardBit(ProceduralBoneBlenderBufferIds.TelemetryRing) |
+            ProceduralBoneMutationGuardBit(ProceduralBoneBlenderBufferIds.TelemetryCursor) |
+            ProceduralBoneMutationGuardBit(ProceduralBoneBlenderBufferIds.Tuning) |
+            ProceduralBoneMutationGuardBit(ProceduralBoneBlenderBufferIds.MockAiSignals);
         private const int ProceduralBoneGlobalsScalars0Offset = 0;
         private const int ProceduralBoneGlobalsScalars1Offset = 16;
 
@@ -74,7 +75,8 @@ namespace Hecton8.Animation.FaunaProcedural
         private int _uploadedMatrixCount;
         private int _publishedSkinningMatrixCount = -1;
         private int _uploadedSkeletonCount;
-        private int _lockedBuffers;
+        private bool _jobMutationGuardActive;
+        private IDataVault _jobBufferGuardVault;
         private float _uploadedQuality = -1f;
         private bool _solverScheduled;
         private bool _registeredUpdate;
@@ -139,7 +141,7 @@ namespace Hecton8.Animation.FaunaProcedural
 
         public bool TryApplyEditorTuning(in ProceduralBoneRigTuningDTO tuning)
         {
-            if (!EnsureVaultBuffers())
+            if (!OpenOrAcquireVaultBuffersForOwnerRoute())
                 return false;
 
             if (!TryResolveTuningMutable(out NativeArray<ProceduralBoneRigTuningDTO> mutableTuning))
@@ -199,7 +201,7 @@ namespace Hecton8.Animation.FaunaProcedural
         {
             if (csvText == null ||
                 csvText.Length == 0 ||
-                !EnsureVaultBuffers() ||
+                !OpenOrAcquireVaultBuffersForOwnerRoute() ||
                 !TryResolveTuningMutable(out NativeArray<ProceduralBoneRigTuningDTO> tuning))
                 return false;
 
@@ -231,7 +233,7 @@ namespace Hecton8.Animation.FaunaProcedural
                 _activeRuntimeInstance = this;
 
             RefreshColdDependencies();
-            if (EnsureVaultBuffers())
+            if (OpenOrAcquireVaultBuffersForOwnerRoute())
                 EnsureGraphicsBuffers();
             if (_seedEmergencyMockRig)
                 GenerateEmergencyMockRigs();
@@ -244,7 +246,7 @@ namespace Hecton8.Animation.FaunaProcedural
 
             CompletePendingSolverForTeardown();
             RefreshColdDependencies();
-            if (EnsureVaultBuffers())
+            if (OpenOrAcquireVaultBuffersForOwnerRoute())
                 EnsureGraphicsBuffers();
             if (_seedEmergencyMockRig)
                 GenerateEmergencyMockRigs();
@@ -299,29 +301,35 @@ namespace Hecton8.Animation.FaunaProcedural
             if (vault == null)
                 return;
 
-            if (!TryResolveRuntimeBuffers(
-                    vault,
-                    out NativeArray<ProceduralBoneRigDTO> rigs,
-                    out NativeArray<ProceduralBoneFrameInputDTO> inputs,
-                    out NativeArray<int> parents,
-                    out NativeArray<float4x4> bindPoses,
-                    out NativeArray<BoneStateDTO> boneStates,
-                    out NativeArray<float4x4> matrices,
-                    out NativeArray<ProceduralBoneFrameStatsDTO> stats,
-                    out NativeArray<ProceduralBoneTelemetryEntry> telemetry,
-                    out NativeArray<int> cursor,
-                    out NativeArray<ProceduralBoneRigTuningDTO> tuningArray,
-                    out NativeArray<MockAiVelocitySignal> mockSignals))
-            {
+            ProceduralBoneRigTuningDTO tuning = ProceduralBoneRigTuningDTO.Default();
+            float globalQuality = _lastQuality;
+            ulong tuningGuardMask = ProceduralBoneMutationGuardBit(ProceduralBoneBlenderBufferIds.Tuning);
+            if (!vault.TryAcquireMutationGuard(tuningGuardMask))
                 return;
-            }
 
-            ProceduralBoneRigTuningDTO tuning = ProceduralBoneSanitizer.SanitizeTuning(tuningArray[0]);
-            float globalQuality = ResolveGlobalQualityWeight(vault);
-            tuning.GlobalQualityWeight = globalQuality;
-            tuning.ActiveSkeletonCount = math.clamp(tuning.ActiveSkeletonCount, 0, _skeletonCapacity);
-            tuningArray[0] = tuning;
-            _lastQuality = globalQuality;
+            try
+            {
+                if (!TryResolveOwnedVaultBuffer(
+                        vault,
+                        ProceduralBoneBlenderBufferIds.Tuning,
+                        in _tuningHandle,
+                        ProceduralBoneBlenderConstants.TuningCapacity,
+                        out NativeArray<ProceduralBoneRigTuningDTO> tuningWrite))
+                {
+                    return;
+                }
+
+                tuning = ProceduralBoneSanitizer.SanitizeTuning(tuningWrite[0]);
+                globalQuality = ResolveGlobalQualityWeight(vault);
+                tuning.GlobalQualityWeight = globalQuality;
+                tuning.ActiveSkeletonCount = math.clamp(tuning.ActiveSkeletonCount, 0, _skeletonCapacity);
+                tuningWrite[0] = tuning;
+                _lastQuality = globalQuality;
+            }
+            finally
+            {
+                vault.ReleaseMutationGuard(tuningGuardMask);
+            }
 
             float safeDelta = math.clamp(deltaTime, ProceduralBoneBlenderConstants.MinDeltaTime, ProceduralBoneBlenderConstants.MaxDeltaTime);
             _accumulatedDelta = math.min(_accumulatedDelta + safeDelta, ProceduralBoneBlenderConstants.MaxDeltaTime);
@@ -330,50 +338,92 @@ namespace Hecton8.Animation.FaunaProcedural
             if (_accumulatedDelta + 0.00001f < updateInterval && _frameCounter != 0u)
                 return;
 
-            int activeSkeletons = math.min(tuning.ActiveSkeletonCount, math.min(rigs.Length, inputs.Length));
+            int activeSkeletons = tuning.ActiveSkeletonCount;
             if (activeSkeletons <= 0)
                 return;
 
-            if (!TryLockJobBuffers(vault))
+            NativeArray<ProceduralBoneRigDTO> rigs;
+            NativeArray<ProceduralBoneFrameInputDTO> inputs;
+            NativeArray<int> parents;
+            NativeArray<float4x4> bindPoses;
+            NativeArray<BoneStateDTO> boneStates;
+            NativeArray<float4x4> matrices;
+            NativeArray<ProceduralBoneFrameStatsDTO> stats;
+            NativeArray<ProceduralBoneTelemetryEntry> telemetry;
+            NativeArray<int> cursor;
+            NativeArray<ProceduralBoneRigTuningDTO> tuningArray;
+            NativeArray<MockAiVelocitySignal> mockSignals;
+
+            if (!TryAcquireJobMutationGuardAndResolveBuffers(
+                    vault,
+                    out rigs,
+                    out inputs,
+                    out parents,
+                    out bindPoses,
+                    out boneStates,
+                    out matrices,
+                    out stats,
+                    out telemetry,
+                    out cursor,
+                    out tuningArray,
+                    out mockSignals))
                 return;
+
+            activeSkeletons = math.min(tuning.ActiveSkeletonCount, math.min(rigs.Length, inputs.Length));
+            if (activeSkeletons <= 0)
+            {
+                ReleaseJobMutationGuard();
+                return;
+            }
 
             float solveDelta = _accumulatedDelta;
             _accumulatedDelta = 0f;
             _simulationTime += solveDelta;
             uint frame = _frameCounter + 1u;
 
-            MockAiVelocitySignalJob mockJob = default;
-            mockJob.Signals = mockSignals;
-            mockJob.SectorHash = tuning.SectorHash;
-            mockJob.SimulationFrame = frame;
-            mockJob.GlobalQualityWeight = globalQuality;
-            JobHandle handle = mockJob.Schedule(activeSkeletons, 64);
+            bool scheduled = false;
+            try
+            {
+                MockAiVelocitySignalJob mockJob = default;
+                mockJob.Signals = mockSignals;
+                mockJob.SectorHash = tuning.SectorHash;
+                mockJob.SimulationFrame = frame;
+                mockJob.GlobalQualityWeight = globalQuality;
+                JobHandle handle = mockJob.Schedule(activeSkeletons, 64);
 
-            ProceduralBoneSolveJob solveJob = default;
-            solveJob.Rigs = rigs;
-            solveJob.Inputs = inputs;
-            solveJob.ParentIndices = parents;
-            solveJob.BindPoses = bindPoses;
-            solveJob.BoneStates = boneStates;
-            solveJob.BoneMatrices = matrices;
-            solveJob.Stats = stats;
-            solveJob.MockSignals = mockSignals;
-            solveJob.Tuning = tuningArray;
-            solveJob.GlobalQualityWeight = globalQuality;
-            solveJob.DeltaTime = solveDelta;
-            solveJob.SimulationTime = _simulationTime;
-            solveJob.SimulationFrame = frame;
-            handle = solveJob.Schedule(activeSkeletons, 16, handle);
+                ProceduralBoneSolveJob solveJob = default;
+                solveJob.Rigs = rigs;
+                solveJob.Inputs = inputs;
+                solveJob.ParentIndices = parents;
+                solveJob.BindPoses = bindPoses;
+                solveJob.BoneStates = boneStates;
+                solveJob.BoneMatrices = matrices;
+                solveJob.Stats = stats;
+                solveJob.MockSignals = mockSignals;
+                solveJob.Tuning = tuningArray;
+                solveJob.GlobalQualityWeight = globalQuality;
+                solveJob.DeltaTime = solveDelta;
+                solveJob.SimulationTime = _simulationTime;
+                solveJob.SimulationFrame = frame;
+                handle = solveJob.Schedule(activeSkeletons, 16, handle);
 
-            ProceduralBoneTelemetryReduceJob telemetryJob = default;
-            telemetryJob.Stats = stats;
-            telemetryJob.TelemetryRing = telemetry;
-            telemetryJob.TelemetryCursor = cursor;
-            telemetryJob.ActiveSkeletonCount = activeSkeletons;
-            telemetryJob.SimulationFrame = frame;
-            telemetryJob.GlobalQualityWeight = globalQuality;
-            _pendingHandle = telemetryJob.Schedule(handle);
-            _solverScheduled = true;
+                ProceduralBoneTelemetryReduceJob telemetryJob = default;
+                telemetryJob.Stats = stats;
+                telemetryJob.TelemetryRing = telemetry;
+                telemetryJob.TelemetryCursor = cursor;
+                telemetryJob.ActiveSkeletonCount = activeSkeletons;
+                telemetryJob.SimulationFrame = frame;
+                telemetryJob.GlobalQualityWeight = globalQuality;
+                _pendingHandle = telemetryJob.Schedule(handle);
+                H8Memory.RegisterActiveJob(SystemID.AnimationFauna, _pendingHandle);
+                _solverScheduled = true;
+                scheduled = true;
+            }
+            finally
+            {
+                if (!scheduled)
+                    ReleaseJobMutationGuard();
+            }
         }
 
         public void LateFrameTick()
@@ -401,7 +451,7 @@ namespace Hecton8.Animation.FaunaProcedural
             IDataVault currentVault = currentService is IDataVault nextVault ? nextVault : null;
             IDataVault previousVault = previousService is IDataVault oldVault ? oldVault : null;
             BindDataVaultForLifecycle(currentVault, previousVault);
-            if (EnsureVaultBuffers())
+            if (OpenOrAcquireVaultBuffersForOwnerRoute())
                 EnsureGraphicsBuffers();
             if (_seedEmergencyMockRig)
                 GenerateEmergencyMockRigs();
@@ -410,7 +460,7 @@ namespace Hecton8.Animation.FaunaProcedural
         public bool GenerateEmergencyMockRigs()
         {
             IDataVault vault = _dataVault;
-            if (vault == null || !EnsureVaultBuffers())
+            if (vault == null || !OpenOrAcquireVaultBuffersForOwnerRoute())
                 return false;
 
             if (!TryResolveRuntimeBuffers(
@@ -563,7 +613,7 @@ namespace Hecton8.Animation.FaunaProcedural
             _gpuBufferDataValid = false;
         }
 
-        private bool EnsureVaultBuffers()
+        private bool OpenOrAcquireVaultBuffersForOwnerRoute()
         {
             IDataVault vault = _dataVault;
             if (vault == null || !ProceduralBoneBlenderLayout.Validate())
@@ -578,70 +628,70 @@ namespace Hecton8.Animation.FaunaProcedural
             _dataVault = vault;
             int skeletonCapacity = math.clamp(_skeletonCapacity, 1, ProceduralBoneBlenderConstants.DefaultSkeletonCapacity);
             int boneCapacity = math.clamp(_boneCapacity, ProceduralBoneBlenderConstants.EmergencyMockBoneCount, ProceduralBoneBlenderConstants.DefaultBoneCapacity);
-            bool resolved = TryResolveOrAcquireVaultBuffer(
+            bool resolved = OpenOrAcquireVaultBufferForOwnerRoute(
                 vault,
                 ProceduralBoneBlenderBufferIds.Rigs,
                 skeletonCapacity,
                 ref _rigsHandle,
                 out _) &&
-            TryResolveOrAcquireVaultBuffer(
+            OpenOrAcquireVaultBufferForOwnerRoute(
                 vault,
                 ProceduralBoneBlenderBufferIds.FrameInputs,
                 skeletonCapacity,
                 ref _frameInputsHandle,
                 out _) &&
-            TryResolveOrAcquireVaultBuffer(
+            OpenOrAcquireVaultBufferForOwnerRoute(
                 vault,
                 ProceduralBoneBlenderBufferIds.ParentIndices,
                 boneCapacity,
                 ref _parentIndicesHandle,
                 out _) &&
-            TryResolveOrAcquireVaultBuffer(
+            OpenOrAcquireVaultBufferForOwnerRoute(
                 vault,
                 ProceduralBoneBlenderBufferIds.BindPoses,
                 boneCapacity,
                 ref _bindPosesHandle,
                 out _) &&
-            TryResolveOrAcquireVaultBuffer(
+            OpenOrAcquireVaultBufferForOwnerRoute(
                 vault,
                 ProceduralBoneBlenderBufferIds.BoneStates,
                 boneCapacity,
                 ref _boneStatesHandle,
                 out _) &&
-            TryResolveOrAcquireVaultBuffer(
+            OpenOrAcquireVaultBufferForOwnerRoute(
                 vault,
                 ProceduralBoneBlenderBufferIds.BoneMatrices,
                 boneCapacity,
                 ref _boneMatricesHandle,
                 out _) &&
-            TryResolveOrAcquireVaultBuffer(
+            OpenOrAcquireVaultBufferForOwnerRoute(
                 vault,
                 ProceduralBoneBlenderBufferIds.FrameStats,
                 skeletonCapacity,
                 ref _frameStatsHandle,
                 out _) &&
-            TryResolveOrAcquireVaultBuffer(
+            OpenOrAcquireVaultBufferForOwnerRoute(
                 vault,
                 ProceduralBoneBlenderBufferIds.TelemetryRing,
                 ProceduralBoneBlenderConstants.TelemetryCapacity,
                 ref _telemetryRingHandle,
                 out _,
                 NativeArrayOptions.ClearMemory) &&
-            TryResolveOrAcquireVaultBuffer(
+            OpenOrAcquireVaultBufferForOwnerRoute(
                 vault,
                 ProceduralBoneBlenderBufferIds.TelemetryCursor,
                 1,
                 ref _telemetryCursorHandle,
                 out _,
                 NativeArrayOptions.ClearMemory) &&
-            TryResolveOrAcquireVaultBuffer(
+            OpenOrAcquireVaultBufferForOwnerRoute(
                 vault,
                 ProceduralBoneBlenderBufferIds.Tuning,
                 ProceduralBoneBlenderConstants.TuningCapacity,
                 ref _tuningHandle,
                 out _,
                 NativeArrayOptions.ClearMemory) &&
-            TryResolveOrAcquireVaultBuffer(
+            OpenOrAcquireVaultBufferForOwnerRoute(
                 vault,
                 ProceduralBoneBlenderBufferIds.MockAiSignals,
                 skeletonCapacity,
@@ -679,13 +729,15 @@ namespace Hecton8.Animation.FaunaProcedural
         {
             buffer = default;
             return vault != null &&
+                   !vault.IsCompactionFenceActive &&
                    IsOwnedVaultHandle(in handle, bufferId) &&
                    vault.TryResolveHandle(in handle, out buffer) &&
+                   !vault.IsCompactionFenceActive &&
                    buffer.IsCreated &&
                    buffer.Length >= requiredLength;
         }
 
-        private static bool TryResolveOrAcquireVaultBuffer<T>(
+        private static bool OpenOrAcquireVaultBufferForOwnerRoute<T>(
             IDataVault vault,
             BufferID bufferId,
             int requiredLength,
@@ -795,75 +847,111 @@ namespace Hecton8.Animation.FaunaProcedural
         private bool FinishPendingSolverCompletion()
         {
             _solverScheduled = false;
-            UnlockJobBuffers();
-            _frameCounter++;
-            RefreshLatestTelemetrySnapshot();
-            _gpuUploadDirty = ShouldUploadMatrices();
-            if (!_dumpedFault && LatestTelemetryHasInvalidFlag())
+            try
             {
-                DumpBlackBoxOnce();
-            }
+                _frameCounter++;
+                RefreshLatestTelemetrySnapshot();
+                _gpuUploadDirty = ShouldUploadMatrices();
+                if (!_dumpedFault && LatestTelemetryHasInvalidFlag())
+                {
+                    DumpBlackBoxOnce();
+                }
 
-            return true;
-        }
-
-        private bool TryLockJobBuffers(IDataVault vault)
-        {
-            _lockedBuffers = 0;
-            return TryLock(vault, ProceduralBoneBlenderBufferIds.Rigs, LockRigs) &&
-                   TryLock(vault, ProceduralBoneBlenderBufferIds.FrameInputs, LockInputs) &&
-                   TryLock(vault, ProceduralBoneBlenderBufferIds.ParentIndices, LockParents) &&
-                   TryLock(vault, ProceduralBoneBlenderBufferIds.BindPoses, LockBindPoses) &&
-                   TryLock(vault, ProceduralBoneBlenderBufferIds.BoneStates, LockBoneStates) &&
-                   TryLock(vault, ProceduralBoneBlenderBufferIds.BoneMatrices, LockMatrices) &&
-                   TryLock(vault, ProceduralBoneBlenderBufferIds.FrameStats, LockStats) &&
-                   TryLock(vault, ProceduralBoneBlenderBufferIds.TelemetryRing, LockTelemetry) &&
-                   TryLock(vault, ProceduralBoneBlenderBufferIds.TelemetryCursor, LockCursor) &&
-                   TryLock(vault, ProceduralBoneBlenderBufferIds.Tuning, LockTuning) &&
-                   TryLock(vault, ProceduralBoneBlenderBufferIds.MockAiSignals, LockMockSignals);
-        }
-
-        private bool TryLock(IDataVault vault, BufferID bufferId, int bit)
-        {
-            if (vault.TryLockBuffer(bufferId, SystemID.AnimationFauna))
-            {
-                _lockedBuffers |= bit;
                 return true;
             }
-
-            UnlockJobBuffers();
-            return false;
+            finally
+            {
+                ReleaseJobMutationGuard();
+            }
         }
 
-        private void UnlockJobBuffers()
+        private bool TryAcquireJobMutationGuardAndResolveBuffers(
+            IDataVault vault,
+            out NativeArray<ProceduralBoneRigDTO> rigs,
+            out NativeArray<ProceduralBoneFrameInputDTO> inputs,
+            out NativeArray<int> parents,
+            out NativeArray<float4x4> bindPoses,
+            out NativeArray<BoneStateDTO> boneStates,
+            out NativeArray<float4x4> matrices,
+            out NativeArray<ProceduralBoneFrameStatsDTO> stats,
+            out NativeArray<ProceduralBoneTelemetryEntry> telemetry,
+            out NativeArray<int> cursor,
+            out NativeArray<ProceduralBoneRigTuningDTO> tuning,
+            out NativeArray<MockAiVelocitySignal> mockSignals)
         {
-            IDataVault vault = _dataVault;
-            if (vault == null || _lockedBuffers == 0)
+            rigs = default;
+            inputs = default;
+            parents = default;
+            bindPoses = default;
+            boneStates = default;
+            matrices = default;
+            stats = default;
+            telemetry = default;
+            cursor = default;
+            tuning = default;
+            mockSignals = default;
+            _jobMutationGuardActive = false;
+            _jobBufferGuardVault = null;
+            if (vault == null || vault.IsCompactionFenceActive)
             {
-                _lockedBuffers = 0;
+                return false;
+            }
+
+            ulong guardMask = JobMutationGuardMask;
+            bool acquired = false;
+            try
+            {
+                if (!vault.TryAcquireMutationGuard(guardMask))
+                    return false;
+
+                acquired = true;
+                if (!TryResolveRuntimeBuffers(
+                        vault,
+                        out rigs,
+                        out inputs,
+                        out parents,
+                        out bindPoses,
+                        out boneStates,
+                        out matrices,
+                        out stats,
+                        out telemetry,
+                        out cursor,
+                        out tuning,
+                        out mockSignals))
+                {
+                    return false;
+                }
+
+                _jobMutationGuardActive = true;
+                _jobBufferGuardVault = vault;
+                acquired = false;
+                return true;
+            }
+            finally
+            {
+                if (acquired)
+                    vault.ReleaseMutationGuard(guardMask);
+            }
+        }
+
+        private void ReleaseJobMutationGuard()
+        {
+            IDataVault vault = _jobBufferGuardVault ?? _dataVault;
+            if (vault == null || !_jobMutationGuardActive)
+            {
+                _jobMutationGuardActive = false;
+                _jobBufferGuardVault = null;
                 return;
             }
 
-            Unlock(vault, ProceduralBoneBlenderBufferIds.Rigs, LockRigs);
-            Unlock(vault, ProceduralBoneBlenderBufferIds.FrameInputs, LockInputs);
-            Unlock(vault, ProceduralBoneBlenderBufferIds.ParentIndices, LockParents);
-            Unlock(vault, ProceduralBoneBlenderBufferIds.BindPoses, LockBindPoses);
-            Unlock(vault, ProceduralBoneBlenderBufferIds.BoneStates, LockBoneStates);
-            Unlock(vault, ProceduralBoneBlenderBufferIds.BoneMatrices, LockMatrices);
-            Unlock(vault, ProceduralBoneBlenderBufferIds.FrameStats, LockStats);
-            Unlock(vault, ProceduralBoneBlenderBufferIds.TelemetryRing, LockTelemetry);
-            Unlock(vault, ProceduralBoneBlenderBufferIds.TelemetryCursor, LockCursor);
-            Unlock(vault, ProceduralBoneBlenderBufferIds.Tuning, LockTuning);
-            Unlock(vault, ProceduralBoneBlenderBufferIds.MockAiSignals, LockMockSignals);
-            _lockedBuffers = 0;
+            vault.ReleaseMutationGuard(JobMutationGuardMask);
+            _jobMutationGuardActive = false;
+            _jobBufferGuardVault = null;
         }
 
-        private void Unlock(IDataVault vault, BufferID bufferId, int bit)
+        private static ulong ProceduralBoneMutationGuardBit(BufferID bufferId)
         {
-            if ((_lockedBuffers & bit) == 0)
-                return;
-
-            vault.TryUnlockBuffer(bufferId, SystemID.AnimationFauna);
+            return 1UL << ((int)bufferId & 31);
         }
 
         private float ResolveGlobalQualityWeight(IDataVault vault)

@@ -609,6 +609,7 @@ namespace Hecton8.UI
         private PlayerPDA _playerPda;
         private HectonPlayerMovement _playerMovement;
         private INativeInputManagerRuntime _inputManager;
+        private ILocalizationTransientOverrideSink _transientOverrideSink;
         private InputAction _submitAction;
         private HectonMapMagicVegetationBridge _vegetationBridge;
         private GameObject _driftPanelRoot;
@@ -664,14 +665,18 @@ namespace Hecton8.UI
             }
 
             ResolveRuntimeOwners();
-            ResolveInputActionOwner();
+            BindInputActionOwnerCold();
+            BindLocalizationOverrideSinkCold();
+            RebuildTextDriftTargetsCold();
         }
 
         private void OnEnable()
         {
             TryRegisterService();
             ResolveRuntimeOwners();
-            ResolveInputActionOwner();
+            BindInputActionOwnerCold();
+            BindLocalizationOverrideSinkCold();
+            RebuildTextDriftTargetsCold();
             TryRegisterHotSwapListener();
             RegisterToTickManager();
             DirectorAIEvents.Register(this);
@@ -680,7 +685,9 @@ namespace Hecton8.UI
         private void Start()
         {
             ResolveRuntimeOwners();
-            ResolveInputActionOwner();
+            BindInputActionOwnerCold();
+            BindLocalizationOverrideSinkCold();
+            RebuildTextDriftTargetsCold();
             TryRegisterHotSwapListener();
             RegisterToTickManager();
         }
@@ -739,8 +746,6 @@ namespace Hecton8.UI
         /// <inheritdoc />
         private void AdvanceIntrusionPresentationState(float dt)
         {
-            ResolveRuntimeOwners(dt);
-
             if (!_isHacked)
             {
                 _restoreTextDriftRequested = true;
@@ -946,8 +951,18 @@ namespace Hecton8.UI
             }
 
             _textDriftRescanTimer -= dt;
-            if (!ReferenceEquals(_driftPanelRoot, panelRoot) || _driftTargetCount == 0 || _textDriftRescanTimer <= 0f)
-                RebuildTextDriftTargets(panelRoot);
+            if (!ReferenceEquals(_driftPanelRoot, panelRoot))
+            {
+                RestoreTextDriftPositions();
+                _textDriftRescanTimer = math.max(0.1f, TextDriftRescanInterval);
+                return;
+            }
+
+            if (_driftTargetCount == 0)
+                return;
+
+            if (_textDriftRescanTimer <= 0f)
+                _textDriftRescanTimer = math.max(0.1f, TextDriftRescanInterval);
 
             if (_driftTargetCount == 0)
                 return;
@@ -1025,6 +1040,16 @@ namespace Hecton8.UI
                 _driftRects[MaxDriftTargets - 1 - i] = null;
         }
 
+        private void RebuildTextDriftTargetsCold()
+        {
+            PlayerPDA pda = _playerPda;
+            GameObject panelRoot = pda != null ? pda.PanelRoot : null;
+            if (panelRoot == null)
+                return;
+
+            RebuildTextDriftTargets(panelRoot);
+        }
+
         private void RestoreTextDriftPositions()
         {
             if (_driftTargetCount <= 0)
@@ -1067,7 +1092,7 @@ namespace Hecton8.UI
 
         private void ApplyVisualPhase()
         {
-            ILocalizationTransientOverrideSink overrideSink = Hecton8.Core.GlobalRegistry.LocalizationTransientOverrideSink;
+            ILocalizationTransientOverrideSink overrideSink = _transientOverrideSink;
             if (overrideSink == null)
                 return;
 
@@ -1093,7 +1118,7 @@ namespace Hecton8.UI
 
         private void ClearVisualOverride()
         {
-            Hecton8.Core.GlobalRegistry.LocalizationTransientOverrideSink?.ClearTransientLanguageOverride();
+            _transientOverrideSink?.ClearTransientLanguageOverride();
         }
 
         private void ResetTransientState()
@@ -1151,14 +1176,19 @@ namespace Hecton8.UI
                 _vegetationBridge = HectonMapMagicVegetationBridge.ActiveRuntimeInstance;
         }
 
-        private void ResolveInputActionOwner()
+        private void BindInputActionOwnerCold()
         {
-            ResolveInputActionOwner(ResolveNativeInputManager());
+            ResolveInputActionOwner(CaptureNativeInputRuntimeCold());
         }
 
-        private static INativeInputManagerRuntime ResolveNativeInputManager()
+        private static INativeInputManagerRuntime CaptureNativeInputRuntimeCold()
         {
             return GlobalRegistry.NativeInputRuntime;
+        }
+
+        private void BindLocalizationOverrideSinkCold()
+        {
+            _transientOverrideSink = GlobalRegistry.LocalizationTransientOverrideSink;
         }
 
         private void ResolveInputActionOwner(INativeInputManagerRuntime inputManager)
@@ -1186,15 +1216,32 @@ namespace Hecton8.UI
             object previousService,
             object currentService)
         {
-            if (serviceSlot != GlobalRegistryServiceSlot.Input)
+            if (serviceSlot == GlobalRegistryServiceSlot.Input ||
+                serviceSlot == GlobalRegistryServiceSlot.NativeInputManagerRuntime)
+            {
+                ClearInputActionOwner();
+
+                if (!isActiveAndEnabled)
+                    return;
+
+                INativeInputManagerRuntime inputManager = currentService as INativeInputManagerRuntime;
+                ResolveInputActionOwner(inputManager ?? CaptureNativeInputRuntimeCold());
                 return;
+            }
 
-            ClearInputActionOwner();
-
-            if (!isActiveAndEnabled)
+            if (serviceSlot == GlobalRegistryServiceSlot.LocalizationRuntime)
+            {
+                _transientOverrideSink = currentService as ILocalizationTransientOverrideSink;
                 return;
+            }
 
-            ResolveInputActionOwner(ResolveNativeInputManager());
+            if (serviceSlot == GlobalRegistryServiceSlot.Player)
+            {
+                _playerPda = null;
+                _playerMovement = null;
+                ResolveRuntimeOwners();
+                RebuildTextDriftTargetsCold();
+            }
         }
 
         private void TryRegisterHotSwapListener()

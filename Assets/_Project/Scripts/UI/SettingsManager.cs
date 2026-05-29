@@ -60,11 +60,13 @@ namespace Hecton8.UI
         // ══════════════════════════════════════════════════════════
 
         private static bool _isShuttingDown;
+        private static SettingsManager s_runtimeInstance;
 
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
         private static void ResetStaticState()
         {
             _isShuttingDown = false;
+            s_runtimeInstance = null;
         }
 
         /// <summary>
@@ -75,12 +77,12 @@ namespace Hecton8.UI
             if (_isShuttingDown || !Application.isPlaying)
                 return null;
 
-            return GlobalRegistry.Settings;
+            return s_runtimeInstance;
         }
 
         public static bool TryGetInstance(out SettingsManager instance)
         {
-            instance = GlobalRegistry.Settings;
+            instance = s_runtimeInstance;
             return instance != null;
         }
 
@@ -146,6 +148,7 @@ namespace Hecton8.UI
             }
 
             _isShuttingDown = false;
+            s_runtimeInstance = this;
             SceneManager.sceneLoaded += HandleSceneLoaded;
             if (Application.isPlaying)
                 GameBootstrapper.PersistRuntimeService(this);
@@ -178,6 +181,8 @@ namespace Hecton8.UI
             TryUnregisterHotSwapListener();
             UnregisterFromGlobalRegistry();
             _playerRuntimeContext = null;
+            if (ReferenceEquals(s_runtimeInstance, this))
+                s_runtimeInstance = null;
         }
 
         private void OnDestroy()
@@ -189,6 +194,8 @@ namespace Hecton8.UI
 
             if (wasRegisteredOwner)
                 _isShuttingDown = true;
+            if (ReferenceEquals(s_runtimeInstance, this))
+                s_runtimeInstance = null;
         }
 
         /// <inheritdoc />

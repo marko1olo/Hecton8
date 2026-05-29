@@ -1,0 +1,113 @@
+{
+  "agent_id": "COMPILE_MEDIC",
+  "domain": "Echelon 9 / The Integrator (Compile Medic)",
+  "generated_at": "2026-05-28T23:59:48.1725270+04:00",
+  "status": "PENDING_VERIFICATION",
+  "trigger_log": "Docs/Reports/APEX_COMPILE_MEDIC_CORE_GETENTITYID_RECHECK_20260528_1.log",
+  "trigger_log_summary": {
+    "warnings": 0,
+    "errors": 51,
+    "classification": "stale_mixed_parallel_source_log_plus_one_live_shinobu_contract_fault"
+  },
+  "source_changes": [
+    {
+      "file": "Assets/_Project/Scripts/AI/Ecosystem/ShinobuEcosystemBalancer.FlockingAvoidance.cs",
+      "lines": [37, 38, 39, 40, 144, 145],
+      "problem": "Partial file called TryOpenVaultView without the required expected BufferID argument.",
+      "fix": "Added authoritative BufferID constants matching the handles created and released by ShinobuEcosystemBalancer.",
+      "buffer_ids": [
+        "BufferID.ShinobuFlockingThreats",
+        "BufferID.ShinobuFlockingThreatCount",
+        "BufferID.ShinobuFlockingCounters64",
+        "BufferID.ShinobuFlockingTelemetryRing"
+      ]
+    },
+    {
+      "file": "Assets/_Project/Scripts/Construction/LogisticsPipeNode.cs",
+      "lines": [550, 556],
+      "problem": "First-party runtime node identity cache still used obsolete Object.GetInstanceID.",
+      "fix": "Replaced source and destination crate identity derivation with EntityId.ToULong(crate.GetEntityId()) folding.",
+      "buffer_ids": []
+    }
+  ],
+  "stale_error_classification": [
+    {
+      "file": "Assets/_Project/Scripts/Fauna/StressDrivenSpawnDirector.cs",
+      "reason": "Current source defines TryRead with IDataVault, handle, BufferID, SystemID, out NativeArray<T> and current calls pass that shape; latest failing log was captured before the settled source."
+    },
+    {
+      "file": "Assets/_Project/Scripts/PowerGrid.cs",
+      "reason": "Current source no longer contains the missing _batteryDispatchRecordsHandle, _batteryDispatchResultsHandle, BatteryDispatchRecordsBufferOffset, or BatteryDispatchResultsBufferOffset references reported by the stale log."
+    }
+  ],
+  "zero_gc_static_scan": {
+    "scanned_files": [
+      "Assets/_Project/Scripts/AI/Ecosystem/ShinobuEcosystemBalancer.FlockingAvoidance.cs",
+      "Assets/_Project/Scripts/Construction/LogisticsPipeNode.cs"
+    ],
+    "changed_lines_reference_new": 0,
+    "changed_lines_string_format": 0,
+    "changed_lines_to_string": 0,
+    "changed_lines_linq": 0,
+    "changed_lines_foreach": 0,
+    "whole_file_managed_new_exceptions": [
+      {
+        "lines": [268, 269],
+        "tokens": ["FileStream", "BinaryWriter"],
+        "classification": "fault_dump_only_cold_path_not_per_frame_hot_path"
+      }
+    ],
+    "whole_file_value_new_tokens": {
+      "ShinobuEcosystemBalancer.FlockingAvoidance.cs": [126, 170, 229, 356, 357, 358, 360, 367, 372, 373, 374, 375, 431],
+      "LogisticsPipeNode.cs": [698, 710, 756, 766]
+    },
+    "global_first_party_obsolete_identity_scan": {
+      "pattern": "GetInstanceID\\(|enableWordWrapping",
+      "hits_after_patch": 0
+    }
+  },
+  "data_sovereignty": {
+    "migrated_fields_to_global_data_vault": false,
+    "write_locks_added": false,
+    "reason": "This patch only restored read-view BufferID validation at existing Shinobu vault handle access sites."
+  },
+  "continuous_scalability": {
+    "binary_low_end_switches_added": 0,
+    "existing_quality_routes": [
+      "ResolveFlockingThreatBudget(globalQualityWeight) scales threat capture budget continuously.",
+      "TryPublishFlockingDispersalSignal uses Smooth01(globalQualityWeight) for cadence and radius."
+    ]
+  },
+  "post_resume_static_scans": {
+    "assets_project_scripts_get_instance_id_or_enable_word_wrapping_hits": 0,
+    "shinobu_try_open_vault_view_expected_buffer_id_hits": 116,
+    "shinobu_try_open_vault_view_missing_expected_buffer_id_hits": 0,
+    "global_system_scan_classification": "TryGetLatestCreated, scene-search, and direct JobHandle.Complete hits found by repository scan remain editor/authoring/diagnostic/crash or dispatcher-owned fence paths in the sampled output; no new runtime hot-loop edit was introduced in this pass."
+  },
+  "compilation_resource_throttling": {
+    "build_launched_after_patch": false,
+    "cpu_samples": [
+      { "time_local": "2026-05-28T22:30:00+04:00", "cpu_percent": 57, "compiler_process_count": 0 },
+      { "time_local": "2026-05-28T22:31:00+04:00", "cpu_percent": 76, "compiler_process_count": 0 },
+      { "time_local": "2026-05-28T22:32:00+04:00", "cpu_percent": 88, "compiler_process_count": 0 },
+      { "time_local": "2026-05-28T22:35:00+04:00", "cpu_percent": 60, "compiler_process_count": 0 },
+      { "time_local": "2026-05-28T22:37:00+04:00", "cpu_percent": 65, "compiler_process_count": 0 },
+      { "time_local": "2026-05-28T22:38:00+04:00", "cpu_percent": 100, "compiler_process_count": 0 },
+      { "time_local": "2026-05-28T22:43:00+04:00", "cpu_percent": 99, "compiler_process_count": 0 },
+      { "time_local": "2026-05-28T22:46:00+04:00", "cpu_percent": 71, "compiler_process_count": 0 },
+      { "time_local": "2026-05-28T22:48:00+04:00", "cpu_percent": 88, "compiler_process_count": 0 },
+      { "time_local": "2026-05-28T22:50:00+04:00", "cpu_percent": 100, "compiler_process_count": 0 },
+      { "time_local": "2026-05-28T23:52:00+04:00", "cpu_percent": 100, "compiler_process_count": 0 },
+      { "time_local": "2026-05-28T23:56:00+04:00", "cpu_percent": 100, "compiler_process_count": 0 },
+      { "time_local": "2026-05-28T23:59:00+04:00", "cpu_percent": 100, "compiler_process_count": 0 }
+    ],
+    "blocked_reason": "Project gate forbids dotnet build while CPU load is greater than 50 percent."
+  },
+  "unity_editor_proof": {
+    "import": "not_run",
+    "console": "not_run",
+    "play_mode": "not_run",
+    "profiler_gc": "not_run",
+    "player_build": "not_run"
+  }
+}

@@ -2475,3 +2475,486 @@ Residuals still open:
 
 Exact microseconds saved:
 - Runtime: `0 us` claimed. No profiler/player proof.
+
+## 2026-05-29 - UNKNOWN - Physics Buoyancy DataVault Drain Guard Pass
+
+What was wrong:
+- `BuoyancyDisplacementRuntime.PostFixedTick()` drained force packets and could mutate counters/body bindings without a DataVault mutation guard.
+- Completion telemetry writes happened after scheduled jobs but before an explicit guarded write body.
+- Cold owner-open behavior was named `EnsureVaultBuffers` / `EnsureVaultDescriptor`, hiding `EnsureGenerationHandle` behind validation-looking names.
+
+What was done:
+- Added `ForceDrainMutationGuardMask` around PostFixed force-packet drain with `ReleaseMutationGuard` in `finally`.
+- Added `CompletionTelemetryMutationGuardMask` around completion compute telemetry writes with `ReleaseMutationGuard` in `finally`.
+- Released scheduled job pins before guarded completion telemetry mutation to avoid mutation-guard vs active-pin conflict.
+- Added cold/manual mutation guards for emergency mock seed, editor SIMD benchmark, and editor CSV hydration.
+- Renamed owner-open route to `OpenOrAcquireVaultBuffersForOwnerRoute` and descriptor helper to `OpenOrAcquireVaultDescriptorForOwnerRoute`.
+- Changed ambient current polling cadence to continuous `GlobalQualityWeight` scaling from `12` to `4` frames; primary buoyancy force evaluation remains every tick.
+
+Cinematic cheats used:
+- Ambient current polling cadence is a cheap perceptual cadence knob. No physical simulation was added; core buoyancy force truth was not degraded.
+
+Exact microseconds saved:
+- Runtime: `0 us` claimed. No profiler/player proof.
+
+Proof:
+- Source: `Assets/_Project/Scripts/Physics/Buoyancy/BuoyancyDisplacementRuntime.cs`.
+- Source SHA-256: `317E42E830984F2EE9CFE542142BDDCF7A286E80847720A62119FE32B6F6296B`.
+- Forbidden scan: `GlobalRegistry.Get<`, `GetComponent<`, `.Complete(`, `TryResolveOrAcquire`, old ensure names, `string.Format`, `.ToString()`, LINQ call tokens, and `foreach` returned exit `1`.
+- Brace counts: `158/158`.
+- Scoped `git diff --check`: exit `0`; LF/CRLF warning only.
+- Diff size: `223` insertions, `110` deletions.
+- CPU/build guard: CPU samples `85%` then final `64%`; build invocations `0`.
+
+Residuals:
+- Status remains `PENDING_RUNTIME_VERIFICATION`.
+- No Unity import, Play Mode, profiler, GCMonitor, player build, device run, or DataVault hot-swap runtime test was performed.
+
+## 2026-05-29 - UNKNOWN - Physics Gerstner/Cavitation DataVault Pin Guard Pass
+
+What was wrong:
+- Gerstner scheduled work resolved DataVault views before pin acquisition.
+- Cavitation scheduled shockwave/SDF/telemetry/tuning buffers had no local relocation-pin proof.
+- Cavitation cold init, editor CSV import, completion telemetry patch, and dropped-signal counter writes lacked mutation-guard/finally proof.
+
+What was done:
+- `AnalyticalGerstnerWaveRuntime.cs`: job buffer pins now precede runtime view resolution; PostFixed telemetry mutation runs after job pins are released and inside a mutation guard.
+- `AbyssalCavitationRuntime.cs`: scheduled simulation buffers are pinned before scheduling and released on failure/completion/teardown.
+- `AbyssalCavitationRuntime.cs`: cold init, CSV import, telemetry patch, and dropped-signal counter writes now acquire one mutation guard mask per write body and release in `finally`.
+
+Cinematic cheats used:
+- No new physical simulation. Existing continuous visual cap through `GlobalQualityWeight` remains; gameplay truth cadence was not degraded.
+
+Exact microseconds saved:
+- Runtime: `0 us` claimed. No profiler/player proof.
+
+Proof:
+- `AnalyticalGerstnerWaveRuntime.cs` SHA-256: `A86B4E2476597D612EAE3EB6179ACC9A0FD2BCEDC3982734DF264EF41B16DE60`.
+- `AbyssalCavitationRuntime.cs` SHA-256: `AC6756565DFCE2E63E087EB2C8C764E6BB4D8BF12BB3260D06EB9FF96084A150`.
+- Added-line scan: `new=0`, `string.Format=0`, `.ToString()=0`, case-sensitive `.Select/.Where=0`, `foreach=0`, `.Complete(`=0, `GlobalRegistry.Get<`=0, `GetComponent<`=0, `TryResolveOrAcquire=0`.
+- Lowercase `math.select(` added-line count: `1`; this is Unity.Mathematics branchless select, not LINQ.
+- Scoped forbidden `rg`: exit `1`.
+- Brace counts: Cavitation `215/215`; Gerstner `94/94`.
+- Scoped `git diff --check`: exit `0`; LF/CRLF warnings only.
+- CPU/build guard: latest CPU sample `38%`; active `dotnet/csc/VBCSCompiler` processes `0`; build invocations `0`. Build was not launched because current pass is source-level static validation and broad compile-wall repair is owned by another agent.
+
+Residuals:
+- Status remains `PENDING_RUNTIME_VERIFICATION`.
+- No Unity import, Console check, Play Mode, profiler/GCMonitor, player build, device run, or DataVault hot-swap runtime test was performed.
+
+## 2026-05-29 - UNKNOWN - Physics Cable132 Cold Bootstrap Mutation Guard Pass
+
+What was wrong:
+- `CablePhysicsSolver132.EnsureMockBuffers()` opened/acquired and wrote Cable132 DataVault buffers without mutation-guard/finally proof.
+
+What was done:
+- Added `BootstrapMutationGuardMask` for Cable132 bootstrap, node, constraint, endpoint, spline, tension, event, telemetry, pinned, tuning, and material buffers.
+- Wrapped `EnsureMockBuffers()` cold bootstrap writes with `TryAcquireMutationGuard` and `ReleaseMutationGuard` in `finally`.
+
+Cinematic cheats used:
+- No new simulation. Existing `globalQualityWeight` iteration and spline scaling remain unchanged.
+
+Exact microseconds saved:
+- Runtime: `0 us` claimed. No profiler/player proof.
+
+Proof:
+- `CablePhysicsSolver132.cs` SHA-256: `30825D6E145141D003D1DC7FA99741BE0F8C929A7A13EC175471EC28A7F686FD`.
+- Combined added-line scan over current three touched physics sources: `added_lines=360`, `new=0`, `string.Format=0`, `.ToString()=0`, case-sensitive `.Select/.Where=0`, `foreach=0`, `.Complete(` `0`, `GlobalRegistry.Get<` `0`, `GetComponent<` `0`, `TryResolveOrAcquire=0`.
+- Lowercase `math.select(` count remains `1`; this is Unity.Mathematics branchless select, not LINQ.
+- Scoped forbidden `rg`: exit `1`.
+- Brace counts: Gerstner `94/94`; Cavitation `215/215`; Cable132 `142/142`.
+- Scoped `git diff --check`: exit `0`; LF/CRLF warnings only.
+- CPU/build guard: latest CPU sample `38%`; active `dotnet/csc/VBCSCompiler` processes `0`; build invocations `0`.
+
+Residuals:
+- Cable132 runtime scheduled buffer pinning remains unresolved because the correct pin release point is the dirty `TetherManager.cs` completion owner.
+- No Unity import, Console check, Play Mode, profiler/GCMonitor, player build, device run, or DataVault hot-swap runtime test was performed.
+
+## 2026-05-29 - UNKNOWN - Cable132 Runtime Schedule Pin Lease Pass
+
+What was wrong:
+- `CablePhysicsSolver132.TryScheduleMockFromVault()` scheduled Cable132 jobs over DataVault-backed buffers without a long-lived relocation pin covering the returned `JobHandle`.
+- The completion owner is `TetherManager`, so solver-local immediate release would be false proof.
+
+What was done:
+- `CablePhysicsSolver132` now locks `CableNodes`, `CableConstraints`, `Endpoints`, `SplineVertices`, `SegmentTensions`, `PhysicsEvents`, `TelemetryRing`, `TelemetryHead`, `PinnedAups`, `PinnedMask`, and `Tuning` before resolving views for `ScheduleMock`.
+- Failure and partial-acquisition paths release pins through `finally`; successful schedules keep pins held until `ReleaseMockScheduleBufferPins`.
+- `ICablePhysics132Service.ReleaseMockScheduleBufferPins` and `CablePhysics132Service` expose the release route without adding a concrete physics dependency to `TetherManager`.
+- `TetherManager` stores `_shinobu132CableMockLeaseService` and `_shinobu132CableMockLeaseVault` at successful schedule, then releases that exact lease in `FinishShinobu132CableMockCompletion()` after `TryFinalizeCompleted` or teardown `TryComplete` succeeds.
+
+Cinematic cheats used:
+- None. This is native memory lifetime correctness for an existing deterministic cable mock. Existing continuous `globalQualityWeight` iteration and spline scaling remain unchanged.
+
+Exact microseconds saved:
+- Runtime: `0 us` claimed. No profiler/player proof.
+
+Proof:
+- `CablePhysicsSolver132.cs` SHA-256: `D8B30F460C5E34322F6C5A30CF570B6A36DB63746AA38AFA3F39D366DCB7CCB4`.
+- `CablePhysics132Service.cs` SHA-256: `73E39ED3A41ED2A4A9C56FEBBD3A1C45A9587DDE714E26530E87FFE5ABDCC928`.
+- `TetherManager.cs` SHA-256: `F8A4E4F7FD003002EB5D9EF9799CC4FDC01B83CC74307D917A641EB41BACCCE6`.
+- `GlobalRegistryContracts.cs` SHA-256: `87A7948F304FCC59C800E26A2CF2FA9D24BAD5D4E94E1CC3D4C3F2FEBE053C83`.
+- Source evidence: `CablePhysicsSolver132.cs:76-88`, `333`, `381-384`, `388-407`, `735-768`; `CablePhysics132Service.cs:56-58`; `GlobalRegistryContracts.cs:4584`; `TetherManager.cs:123-124`, `947-948`, `976-990`.
+- Forbidden `rg` scan over touched files for `GlobalRegistry.Get<`, `GetComponent<`, `TryResolveOrAcquire`, `string.Format`, `.ToString()`, LINQ `.Select/.Where`, `foreach`, and `.Complete(` returned exit `1`.
+- Added-line scan: `added_lines=184`, `new=0`, `string.Format=0`, `.ToString=0`, LINQ `0`, `foreach=0`, `GlobalRegistry.Get=0`, `GetComponent=0`, `.Complete=0`, `TryLockBuffer=1`, `TryUnlockBuffer=1`, `finally=3`.
+- Brace/paren counts: `CablePhysicsSolver132.cs 150/150 684/684`; `CablePhysics132Service.cs 10/10 19/19`; `GlobalRegistryContracts.cs 588/588 1080/1080`; `TetherManager.cs 137/137 596/596`.
+- Scoped `git diff --check`: exit `0`; LF/CRLF warnings only.
+- CPU/build guard: samples were `100%` with active `dotnet` PID `12228`, then `94%` with no active `dotnet/csc/VBCSCompiler` output; build invocations `0`.
+
+Residuals:
+- Status remains `PENDING_RUNTIME_VERIFICATION`.
+- No Unity import, Console check, Play Mode, profiler/GCMonitor, player build, device run, Cable132 runtime hot-swap test, or crash dump was produced.
+
+## 2026-05-29 - UNKNOWN - Harpoon328 Runtime Schedule Pin Lease Pass
+
+What was wrong:
+- `HarpoonTensionSolver328.TryScheduleMockFromVault()` scheduled Harpoon tension jobs over DataVault-backed buffers without a long-lived relocation pin covering the returned `JobHandle`.
+- The completion owner is `TetherManager`, so solver-local immediate release would be false proof.
+
+What was done:
+- `HarpoonTensionSolver328` now locks `TetherStates`, `StressStates`, `TetherNodes`, `TetherPreviousNodes`, `TetherConstraints`, `ForcePackets`, `PhysicsEvents`, `SplineVertices`, `TelemetryRing`, `TelemetryHead`, `Tuning`, and `FaultFlags` before resolving views for the mock schedule.
+- Failure and partial-acquisition paths release pins through `finally`; successful schedules keep pins held until `ReleaseMockScheduleBufferPins`.
+- `TetherManager` stores `_shinobu328TensionMockLeaseVault` at successful schedule, then releases that exact vault lease in `FinishShinobu328TensionMockCompletion()` after `TryFinalizeCompleted` or teardown `TryComplete` succeeds.
+
+Cinematic cheats used:
+- None. This is native memory lifetime correctness for an existing deterministic tether mock. Existing continuous `globalQualityWeight` iteration and spline scaling remain unchanged.
+
+Exact microseconds saved:
+- Runtime: `0 us` claimed. No profiler/player proof.
+
+Proof:
+- `HarpoonTensionSolver328.cs` SHA-256: `BFB84D406617F5C013C16B76117F974A04F075EFBF6457A87526996193168506`.
+- `TetherManager.cs` SHA-256: `0F78DBC0224DA4E844FE4C30A7F12EC2CAC44008B05A7D824AA351B64D836666`.
+- Source evidence: `HarpoonTensionSolver328.cs:473`, `540`, `544-566`, `1116-1150`; `TetherManager.cs:130`, `1055`, `1085-1099`.
+- Added-line scan: `added_lines=175`, `new=0`, `string.Format=0`, `.ToString=0`, LINQ `0`, `foreach=0`, `GlobalRegistry.Get=0`, `GetComponent=0`, `.Complete=0`, `TryLockBuffer=1`, `TryUnlockBuffer=1`, `finally=3`.
+- Whole-file forbidden `rg` found only existing editor report `builder.ToString()` at `HarpoonTensionSolver328.cs:996`; no added-line hit and not in the scheduled hot path.
+- Brace/paren counts: `HarpoonTensionSolver328.cs 168/168 1026/1026`; `TetherManager.cs 139/139 597/597`.
+- Scoped `git diff --check`: exit `0`; LF/CRLF warnings only.
+- CPU/build guard: CPU sample `100%`; active `dotnet.exe` PID `40100`; build invocations `0`.
+
+Residuals:
+- Status remains `PENDING_RUNTIME_VERIFICATION`.
+- No Unity import, Console check, Play Mode, profiler/GCMonitor, player build, device run, Harpoon328 hot-swap test, or crash dump was produced.
+
+## 2026-05-29 - UNKNOWN - KCC Scheduled Vault Pin Lease Pass
+
+What was wrong:
+- `HydrodynamicKccRuntime.FixedTick()` and `PostFixedTick()` scheduled jobs over Physics-owned DataVault-backed buffers without a long-lived relocation pin covering the full Fixed/Post chain.
+- `PostFixedTick()` reopened views and scheduled dependent jobs while the FixedTick chain could still be in flight.
+
+What was done:
+- Added scheduled pin bits and `_scheduledVaultBufferLocks`.
+- `FixedTick()` now calls `TryLockScheduledVaultBuffers()` before resolving any job-owned KCC DataVault views.
+- Pins cover `ShinobuHydroKccStates`, `Inputs`, `ProposedVelocities`, `ResolvedHits`, `FaultFlags`, `WakePackets`, `Tuning`, `PreviousAup`, `VisualOutputs`, `TelemetryRing`, `TelemetryCursor`, `RollbackBytes`, `DebugOutputs`, plus KCC environment profile/grid/flow/SDF/mock-metabolism/debug/telemetry buffers.
+- Pins release after `_postSimulationHandle` finalizes, rollback immediate finalization, or `ClearScheduledBatchState()` for abort/teardown/hot-swap.
+
+Cinematic cheats used:
+- None. This is native memory lifetime correctness for an existing deterministic KCC batch. Existing continuous `GlobalQualityWeight` behavior remains unchanged.
+
+Exact microseconds saved:
+- Runtime: `0 us` claimed. No profiler/player proof.
+
+Proof:
+- `HydrodynamicKccRuntime.cs` SHA-256: `95564EB586A18C9F7A56253E033195143E92FB3CF7378A30D09AAD3F0D2F57C6`.
+- Source evidence: `HydrodynamicKccRuntime.cs:2982`, `3161`, `3344`, `3437`, `3699-3776`, `4094`.
+- Added-line scan: `added_lines=119`, `new=0`, `string.Format=0`, `.ToString=0`, LINQ `0`, `foreach=0`, `GlobalRegistry.Get=0`, `GetComponent=0`, `.Complete=0`, `TryLockBuffer=1`, `TryUnlockBuffer=1`, `finally=1`.
+- Whole-file forbidden `rg` found only existing `TryGetComponent(out _capsule)` at `HydrodynamicKccRuntime.cs:2933`, inside `Awake`, not in `FixedTick`, `PostFixedTick`, `LateFrameTick`, or job `Execute`.
+- Brace/paren counts: `362/362 2322/2322`.
+- Scoped `git diff --check`: exit `0`; LF/CRLF warning only.
+- CPU/build guard: CPU sample `100%`; active compiler scan returned no `dotnet/csc/VBCSCompiler`; build invocations `0` because CPU exceeded AGENTS 50% throttle.
+
+Residuals:
+- Status remains `PENDING_RUNTIME_VERIFICATION`.
+- Cross-domain `ShinobuMetabolismStates` still uses the existing metabolism mutation guard route; no cross-domain buffer pin was added without a GameplayPlayer/Physics ownership contract.
+- No Unity import, Console check, Play Mode, profiler/GCMonitor, player build, device run, KCC hot-swap test, or crash dump was produced.
+
+## 2026-05-29 - UNKNOWN - TetherAUP Bootstrap Mutation Guard Pass
+
+What was wrong:
+- `TetherAupRuntimeIntrospection.EnsureMockBuffers()` synchronously opened/acquired and wrote Shinobu143 DataVault buffers without a mutation guard.
+
+What was done:
+- Added `BootstrapMutationGuardMask` for Shinobu143 bootstrap, node, constraint, endpoint, spline, force packet, segment tension, solver stat, pin, telemetry, material, and scratch buffers.
+- `EnsureMockBuffers()` now acquires the guard before DataVault open/acquire/write and releases it in `finally`.
+
+Cinematic cheats used:
+- None. This is cold DataVault owner-write correctness. Existing continuous `globalQualityWeight` math remains unchanged.
+
+Exact microseconds saved:
+- Runtime: `0 us` claimed. No profiler/player proof.
+
+Proof:
+- `TetherAupVerletJobs.cs` SHA-256: `F868ABAFF9DCD54772D5304A4BAE388CDA740AD42B7D36AB929F08059F5923D2`.
+- Source evidence: `TetherAupVerletJobs.cs:1024-1038`, `1309`, `1447`, `1451-1463`.
+- Added-line scan: `added_lines=40`, `new=0`, `string.Format=0`, `.ToString=0`, LINQ `0`, `foreach=0`, `GlobalRegistry.Get=0`, `GetComponent=0`, `.Complete=0`, `TryAcquireMutationGuard=1`, `ReleaseMutationGuard=1`, `finally=1`.
+- Brace/paren counts: `122/122 570/570`.
+- Scoped `git diff --check`: exit `0`; LF/CRLF warning only.
+- CPU/build guard: CPU sample `100%`; active `dotnet.exe` PID `8688`; build invocations `0`.
+
+Residuals:
+- Status remains `PENDING_RUNTIME_VERIFICATION`.
+- No Unity import, Console check, Play Mode, profiler/GCMonitor, player build, device run, TetherAUP bootstrap test, or crash dump was produced.
+
+## 2026-05-29 - UNKNOWN - SubmarineDynamics Lock-Flattening / Scheduled Pin Pass
+
+What was wrong:
+- `SubmarineDynamicsRuntime.LockSimulationBuffers()` held many DataVault write locks at once and kept them through scheduled vehicle jobs.
+- `SubmarineDynamicsRuntime_Gyroscopes.TryLockGyroBuffers()` held five gyro write locks through scheduled gyro jobs.
+- `TryInitializeBootProfiles`, `TryInitializeGyroDefaults`, and editor CSV routes stacked multiple write locks in one thread.
+- `ApplyVehicleComponentDamageState` could call `TryGetGenerationHandle` from `FixedTick`.
+
+What was done:
+- Replaced scheduled vehicle write locks with buffer pins for state, controls, pid, mass, forces, telemetry, added-mass, hydrodynamics telemetry, config, hull profiles, tuning, and drag LUT.
+- Replaced scheduled gyro write locks with buffer pins for gyros, errors, force packets, telemetry, visuals, and counters.
+- Kept pins alive until `PostFixedTick` completion or lifecycle forced completion, then released by exact mask.
+- Moved boot/default/CSV multi-buffer writes to one mutation guard mask per route with `finally` release.
+- Cached vehicle damage state handle from `EnsureVaultBuffers` / `SlowTick`; `FixedTick` now only reads an already-created handle.
+
+Cinematic cheats used:
+- None. This was not a visual/physics expansion. It preserves existing submarine/gyro truth cadence and `GlobalQualityWeight` quality math.
+
+Exact microseconds saved:
+- Claimed runtime savings: `0 us`; no profiler proof.
+- Expected value is stability: lower deadlock and DataVault relocation risk under scheduled submarine physics.
+
+Verification:
+- Hashes: `SubmarineDynamicsRuntime.cs=FC259B68836FB8183F2FB3C40A8D32DC1D12F0A73B884E2BF78AFA6B459F5BC3`; `SubmarineDynamicsRuntime_Gyroscopes.cs=18EF877E47A694249EB2371AD764A7A6A061712DE1EAF69A13969EA7ADD6929A`.
+- Added-line scan: `added_lines=214`, `new=0`, `string.Format=0`, `.ToString=0`, LINQ `0`, `foreach=0`, `GlobalRegistry.Get=0`, `GetComponent=0`, `.Complete=0`, `TryAcquireWriteLock=0`, `TryAcquireMutationGuard=5`, `ReleaseMutationGuard=5`.
+- Whole-file scan: `TryAcquireVaultWriteLock=4` including helper plus three single-buffer tuning writes; `TryLockBuffer=1`; `TryUnlockBuffer=2`; hot `GlobalRegistry.Get` and `GetComponent` hits `0`.
+- Source evidence: `SubmarineDynamicsRuntime.cs:241`, `271`, `349`, `659`, `811`, `892`, `915`, `1172-1257`, `1458`, `1548`; `SubmarineDynamicsRuntime_Gyroscopes.cs:147`, `231-287`, `290`, `638`.
+- Brace/paren counts: runtime `205/205 993/993`; gyro `70/70 344/344`.
+- Scoped `git diff --check`: exit `0`, LF/CRLF warnings only.
+- `dotnet build` invocations: 0; CPU sample `82%`; active `dotnet.exe` PID `56480`.
+- Runtime verification absent: no Unity import, Console, Play Mode, profiler, player build, device run, or crash dump.
+
+## 2026-05-29 - UNKNOWN - Vehicle Automation DataVault Pin/Guard Pass
+
+What was wrong:
+- `SubmarineAutopilotSdfNavigator.LockInitializationBuffers()` and `LockSolverBuffers()` used DataVault write locks as scheduled-job lifetime protection.
+- `SubmarineAutopilotSdfNavigator.TryWriteRoute()` stacked waypoint, route, and state write ownership in one route.
+- `DockingAutopilotService` public spline acquire/write/release/shutdown routes mutated `VehicleDockingActiveSplines` without an explicit DataVault mutation guard.
+- `DockingAutopilotService.TryEvaluateActiveSpline()` wrote progress during a read/evaluate path.
+
+What was done:
+- Replaced scheduled submarine autopilot write-lock lifetime with DataVault buffer pins for kinematic, autopilot, avoidance, feeler, waypoint, route, telemetry, mock SDF, flow, and handling-profile buffers.
+- Released scheduled pins only after init/solver completion, forced teardown completion, or schedule failure/abort.
+- Moved route and editor handling-profile multi-buffer writes to mutation guard masks with `finally` release.
+- Moved docking spline acquire/write/release/shutdown to `ActiveSplineMutationGuardMask` with `finally` release.
+- Converted docking read/evaluate to `TryReadOnlyHandle`; evaluation no longer mutates stored spline progress.
+
+Cinematic cheats used:
+- None. This pass did not expand physical simulation or visuals. It preserves existing continuous quality math and removes ownership/deadlock risk.
+
+Exact microseconds saved:
+- Claimed runtime savings: `0 us`; no profiler proof.
+- Expected value is stability: lower deadlock and DataVault relocation risk around scheduled autopilot and docking spline shared state.
+
+Verification:
+- Hashes: `SubmarineAutopilotSdfNavigator.cs=1C9C66EF22F44006C0D48DABA308F82CDBC327E3B1C66DEB26C10AAA581E9B81`; `DockingAutopilotService.cs=3D3E417831D153B87D4C937FA781365ADE19C380F0710E2FF8D29DE84334071C`.
+- Added-line scan: `added_lines=197`, `new=0`, `string.Format=0`, `.ToString=0`, LINQ `0`, `foreach=0`, `GlobalRegistry.Get=0`, `GetComponent=0`, `.Complete=0`, `TryAcquireWriteLock=0`, `TryAcquireMutationGuard=2`, `ReleaseMutationGuard=6`, `TryLockBuffer=0`, `TryUnlockBuffer=0`, `finally=4`.
+- Whole-file evidence: scheduled pins at `SubmarineAutopilotSdfNavigator.cs:2430`, `2456`, `2487`, `2502`; guarded route write at `SubmarineAutopilotSdfNavigator.cs:1654`, `1682`, `1738`; guarded CSV write at `SubmarineAutopilotSdfNavigator.cs:2593`, `2618`, `2651`; docking guarded writes at `DockingAutopilotService.cs:390`, `436`, `503`, `534`; docking read-only evaluate at `DockingAutopilotService.cs:474`, `487`, `638`.
+- Brace/paren counts: autopilot `252/252 1694/1694`; docking `75/75 302/302`.
+- Scoped `git diff --check`: exit `0`, LF/CRLF warnings only.
+- `dotnet build` invocations: 0; CPU sample `67%`; active `dotnet.exe` PID `18480`.
+- Runtime verification absent: no Unity import, Console, Play Mode, profiler, player build, device run, autopilot route test, docking spline test, or crash dump.
+
+## 2026-05-29 - UNKNOWN - PhysicsApplySystem Validation Pin Lease Pass
+
+What was wrong:
+- `ScheduleFrontPacketValidation()` scheduled `ValidateForcePacketsJob` over DataVault-backed validation buffers, then released the validation write locks before the job completed.
+- `FlushValidatedFrontBuffer()` held front-packet and validation-mask write locks together in the FixedTick force packet apply route.
+
+What was done:
+- Added validation pin bits and `_validationSchedulePinMask`.
+- Added `TryLockValidationScheduleBuffers()`, `TryPinValidationScheduleBuffer()`, and `ReleaseValidationScheduleBufferPins()`.
+- `ScheduleFrontPacketValidation()` now pins validation packets/mask before resolving job views and keeps those pins until `LateFrameTick` completion or teardown force-complete.
+- `FlushValidatedFrontBuffer()` now copies validation mask bytes and front packets under separate write-lock windows; it no longer stacks both locks.
+- `ReleaseValidationBufferViews()` now force-completes the validation job before releasing validation pins and DataVault handles.
+
+Cinematic cheats used:
+- None. This was native memory lifetime and lock-order correctness for an existing force packet validation path. It did not add simulation fidelity or binary quality switches.
+
+Exact microseconds saved:
+- Claimed runtime savings: `0 us`; no profiler proof.
+- Expected value is stability: lower DataVault relocation risk for scheduled validation and lower deadlock surface during FixedTick flush.
+
+Verification:
+- Hash: `PhysicsApplySystem.cs=D99115E3A0A4F3576AEC5360EDDDB59590986D92985143E32E10F4186C9DE789`.
+- Source evidence: `PhysicsApplySystem.cs:1519`, `1597`, `2553`, `3475`, `3513`, `3557`, `3595`, `3840`, `3907`, `4347`.
+- Added-line scan: `added_lines=173`, `new=0`, `string.Format=0`, `.ToString=0`, LINQ `0`, `foreach=0`, `GlobalRegistry.Get=0`, `GetComponent=0`, `.Complete=0`, `TryAcquireWriteLock=0`, `TryLockBuffer=1`, `TryUnlockBuffer=3`, `finally=4`.
+- Whole-file forbidden token scan for `GlobalRegistry.Get<`, `GetComponent<`, `.Complete(`, `string.Format`, `.ToString(`, LINQ call tokens, and `foreach (` returned no matches.
+- Brace/paren counts: `433/433 1670/1670`.
+- Scoped `git diff --check`: exit `0`, LF/CRLF warning only.
+- `dotnet build` invocations: 0; CPU sample `17%`; active `dotnet/csc/VBCSCompiler` processes: 0.
+- Runtime verification absent: no Unity import, Console, Play Mode, profiler, player build, device run, PhysicsApply force packet integration test, or crash dump.
+
+## 2026-05-29 - UNKNOWN - KCC Editor Tuner Lock-Flattening Pass
+
+What was wrong:
+- `HydrodynamicKccTunerWindow.WriteToVault()` acquired tuning and environment DataVault write views at the same time.
+- The route is editor-only, but it still widened lock ownership and contradicted the project lock-flattening rule.
+
+What was done:
+- Split `WriteToVault()` into two sequential write ownership windows.
+- `ShinobuHydroKccTuning` is acquired, written, and released in `finally` before any environment write is attempted.
+- `ShinobuKccEnvironmentProfile` is acquired, written, and released in a separate `finally`.
+- Preserved previous fail-closed behavior: environment write is skipped when tuning acquisition fails.
+
+Cinematic cheats used:
+- None. This was editor DataVault ownership cleanup only. Runtime KCC truth, visuals, and continuous `GlobalQualityWeight` behavior were not changed.
+
+Exact microseconds saved:
+- Claimed runtime savings: `0 us`; no profiler proof.
+- Expected value is authoring stability: lower editor-side lock contention risk for KCC tuning writes.
+
+Verification:
+- Hash: `HydrodynamicKccTunerWindow.cs=5DF479D2A603C7001123D492199B4E7A61D8FDE8947D7C3564FD0A062AD3C395`.
+- Source evidence: `HydrodynamicKccTunerWindow.cs:136-162` and `164-186`.
+- Added-line scan: `added_lines=24`, `new=0`, `string.Format=0`, `.ToString=0`, LINQ `0`, `foreach=0`, `GlobalRegistry.Get=0`, `GetComponent=0`, `.Complete=0`, `TryAcquireWriteLock=0`, `TryAcquireEditorWriteView=1`, `ReleaseWriteLock=1`, `finally=1`.
+- Final source has two write-lock/finally windows; no simultaneous tuning/environment write-lock ownership remains in `WriteToVault()`.
+- Brace/paren counts: `32/32 145/145`.
+- Scoped `git diff --check`: exit `0`, LF/CRLF warning only.
+- `dotnet build` invocations: 0; CPU sample `35%`; active `dotnet/csc/VBCSCompiler` processes: 0.
+- Runtime/editor verification absent: no Unity import, editor window interaction, Console, Play Mode, profiler, player build, device run, or crash dump.
+
+## 2026-05-29 - UNKNOWN - Analytics DataVault Guard Pass
+
+What was wrong:
+- `AsynchronousTelemetryExporter` owned `WorkerVaultMutationGuardMask`, but runtime routes could still resolve mutable DataVault views through a raw private helper.
+- `TryAcquireVaultStorage()` wrote default tuning and ingress cursor state before the worker mutation guard existed.
+
+What was done:
+- Deleted the raw private `TryResolveVaultBuffer` helper.
+- Moved processing, ingress, counters, tuning, telemetry, CSV scratch, handoff, dump snapshot, heatmap, and vault-byte view resolution to `TryResolveWorkerBuffer`.
+- Reordered storage acquisition to create handles first, acquire `WorkerVaultMutationGuardMask`, then write default tuning and initialize ingress cursor.
+- `ReleaseVaultHandles()` now releases the worker guard before releasing generation handles.
+- `TryWriteTuning()` now fails closed when called off the exporter owner thread.
+
+Cinematic cheats used:
+- None. This is diagnostics/data ownership, not simulation or presentation.
+
+Exact microseconds saved:
+- Claimed runtime savings: `0 us`; no profiler proof.
+- Expected value is stability: runtime analytics DataVault access now fails closed unless the single worker guard is held; public tuning mutation is owner-thread gated.
+
+Verification:
+- Hash: `AsynchronousTelemetryExporter.cs=4E3FB79F60C0F1CDF1C939B281651CCE77596C9A476D4A8F44D039D3545AFDC8`.
+- Added-line scan: `added_lines=55`, `new=0`, `string.Format=0`, `.ToString=0`, LINQ `0`, `foreach=0`, `GlobalRegistry.Get=0`, `GetComponent=0`, `.Complete=0`, `TryResolveVaultBuffer=0`, `TryResolveWorkerBuffer=21`, `IsOwnerThread=3`.
+- Whole-file raw resolver scan now returns only zero raw resolver definitions/usages; all resolver hits are `TryResolveWorkerBuffer`.
+- Brace/paren counts: `284/284 1498/1498`.
+- Scoped `git diff --check`: exit `0`, LF/CRLF warning only.
+- `dotnet build` invocations: 0; CPU sample `36%`; active `dotnet/csc/VBCSCompiler` processes: 0.
+- Runtime verification absent: no Unity import, Console, Play Mode, profiler, GCMonitor, player build, analytics worker soak, dump write/read test, or crash dump.
+
+## 2026-05-29 - UNKNOWN - InputDispatcher DataVault Guard Pass
+
+What was wrong:
+- `InputDispatcher` had several mutable DataVault resolve/write routes for deterministic input, prediction, XR input states, haptic commands, profile CSV staging, and block masks without one explicit owner mutation guard.
+- `CaptureXRToolActionBitsAndPublishSignal()` used a mutable XR state resolve for a read-only LateFrame action capture path.
+- The file had no owner-thread proof around public/cold input vault writes.
+
+What was done:
+- Added `InputOwnerMutationGuardMask` for deterministic input, journal, prediction, AUP targets, bridge, button window, block mask, profile, telemetry, replay snapshot, haptics, XR state, and editor CSV scratch buffers.
+- Added captured owner-thread gating plus nested guard depth so same-owner nested calls do not reacquire the DataVault mutation guard and the exact guard vault is released.
+- Wrapped deterministic publish, deterministic cold clear, predicted buffer init, mock history generation, profile CSV apply, block mask mutation, XR refresh/clear/dispose, haptic insert, and haptic evaluate in guard/finally ownership.
+- Added `TryReadXRInputStates` and moved XR action capture to read-only access.
+
+Cinematic cheats used:
+- None. This was input/XR/haptic DataVault ownership and phase/read-purity cleanup, not simulation fidelity or presentation expansion.
+
+Exact microseconds saved:
+- Claimed runtime savings: `0 us`; no profiler proof.
+- Expected value is stability: fewer unguarded mutable DataVault view openings and no mutable XR state view for read-only LateFrame action capture.
+
+Verification:
+- Hash: `InputDispatcher.cs=B39AC831342E9A89F702E5C5D87775DD72C630FCCBC90FDB2880B5AC2B8E55CF`.
+- Source evidence: `InputDispatcher.cs:119`, `435`, `466`, `484`, `648`, `653`, `718`, `988`, `1010`, `1104`, `1121`, `1138`, `1144`, `1446`, `1473`, `1980`, `1994`, `2898`, `2921`, `2968`, `3045`, `3711`, `3764`.
+- Added-line scan: `added_lines=388`, `new=0`, `string.Format=0`, `.ToString=0`, LINQ `0`, `foreach=0`, `GlobalRegistry.Get=0`, `GetComponent=0`, `.Complete=0`, `TryAcquireMutationGuard=1`, `ReleaseMutationGuard=1`, `finally=13`.
+- Whole-file forbidden token scan for `GlobalRegistry.Get<`, `GetComponent<`, `.Complete(`, `string.Format`, `.ToString(`, LINQ call tokens, and `foreach (` returned no matches.
+- Brace/paren counts: `370/370 1563/1563`.
+- Scoped `git diff --check`: exit `0`, LF/CRLF warning only.
+- `dotnet build` invocations: 0; CPU sample `80%`; active compiler processes: `dotnet.exe` PID `9452`, `VBCSCompiler` PID `45732`.
+- Runtime verification absent: no Unity import, Console, Play Mode, profiler, GCMonitor, player build, device run, input replay, XR action capture test, haptic command test, or crash dump.
+
+## 2026-05-29 - UNKNOWN - MacroDatabase NativeState Guard Pass
+
+What was wrong:
+- `H8MacroDatabaseService` used `_fileGate` around native database state, but `_fileGate` does not tell `GlobalDataVault` that database scratch/dirty/sector buffers are being mutated.
+- Hydration, dirty payload tracking, eviction, async hydration staging, compaction dirty flush, shutdown clear, and native-state reset paths resolved mutable DataVault buffers without a mutation guard.
+- The blackbox telemetry buffer already had a single write-lock/finally path; mixing it into the broad guard would have been the wrong fix.
+
+What was done:
+- Added `NativeStateMutationGuardMask` for database-owned dirty payload slots/keys, sector-coordinate slots, sector-window scratch, sector-coordinate scratch, async-hydration scratch, and payload-copy scratch.
+- Added nested guard depth and exact-vault release.
+- Guarded `HydrateRadiusLocked`, `MarkDirty`, `EvictDistant`, `TryAppendDirtyPayload`, async hydration stage/store, compaction dirty flush/swap cleanup, shutdown dirty flush/clear, and native-state reset clear paths.
+- Left `SaveMacroDatabaseBlackBox` on its existing single-buffer write-lock route.
+
+Cinematic cheats used:
+- None. This is Core database native ownership safety, not visual or physical simulation.
+
+Exact microseconds saved:
+- Claimed runtime savings: `0 us`; no profiler proof.
+- Expected value is stability: database scratch/dirty/sector mutation now fails closed during DataVault compaction/active mutation conflict instead of relying only on `_fileGate`.
+
+Verification:
+- Hash: `H8MacroDatabaseService.cs=72F7221167B86822AE336583D026F9AD9A6E475CB0CAA25E222738C41EDD0F98`.
+- Source evidence: `H8MacroDatabaseService.cs:32`, `88`, `89`, `424`, `477`, `554`, `597`, `617`, `671`, `680`, `704`, `852`, `868`, `894`, `907`, `1017`, `1025`, `1032`, `1041`, `1618`, `1636`, `1647`, `1674`, `2431`, `2455`, `2634`, `2642`, `2668`, `2676`.
+- Added-line scan: `added_lines=321`, `new=0`, `string.Format=0`, `.ToString=0`, LINQ `0`, `foreach=0`, `GlobalRegistry.Get=0`, `GetComponent=0`, `.Complete=0`, `TryAcquireMutationGuard=1`, `ReleaseMutationGuard=1`, `TryAcquireWriteLock=0`, `finally=12`.
+- Whole-file forbidden token scan for `GlobalRegistry.Get<`, `GetComponent<`, `.Complete(`, `string.Format`, `.ToString(`, LINQ call tokens, and `foreach (` returned no matches.
+- Brace/paren counts: `369/369 1250/1250`.
+- Scoped `git diff --check`: exit `0`, LF/CRLF warning only.
+- `dotnet build` invocations: 0; CPU sample `71%`; active `dotnet/csc/VBCSCompiler` processes: 0.
+- Runtime verification absent: no Unity import, Console, Play Mode, profiler, GCMonitor, macro database hydration/dirty/compaction test, player build, device run, or crash dump.
+
+## 2026-05-29 - UNKNOWN - Submarine Navigation Harness Lock-Flattening Pass
+
+What was wrong:
+- `SubmarineNavigationStressHarness1420.RunBallastIteration()` held five DataVault write locks simultaneously for ballast tanks, commands, samples, force packets, and telemetry while the editmode solver jobs ran.
+- The fail-closed write-lock test and `SeedTanks()` were not the problem: they hold or attempt one buffer lock only.
+
+What was done:
+- Added `SolverMutationGuardMask` for ballast tanks, commands, fluid samples, force packets, and telemetry.
+- Replaced the five simultaneous write-lock acquisitions in `RunBallastIteration()` with one mutation guard and direct handle resolution under that guard.
+- Released the guard through the existing `finally` block.
+
+Cinematic cheats used:
+- None. This is editor stress-harness DataVault ownership safety, not visual or physical simulation.
+
+Exact microseconds saved:
+- Claimed runtime savings: `0 us`; no profiler proof.
+- Expected value is architectural hygiene: the ballast stress test no longer encodes a multi-write-lock ownership pattern.
+
+Verification:
+- Hash: `SubmarineNavigationStressHarness1420.cs=370D92908F68A5EB1DC179C325B53876396BE9AE618C47A494873A09F141782A`.
+- Source evidence: `SubmarineNavigationStressHarness1420.cs:17-22`, `33-37`, `179`, `217`.
+- Added-line scan: `added_lines=26`, `new=0`, `string.Format=0`, `.ToString=0`, LINQ `0`, `foreach=0`, `GlobalRegistry.Get=0`, `GetComponent=0`, `.Complete=0`, `TryAcquireWriteLock=0`, `TryAcquireMutationGuard=1`, `ReleaseMutationGuard=1`.
+- Brace/paren counts: `30/30 96/96`.
+- Scoped `git diff --check`: exit `0`, LF/CRLF warning only.
+- `dotnet build` invocations: 0; CPU sample `99%`; active compiler process: `dotnet.exe` PID `17748`.
+- Runtime/editor verification absent: no Unity import, editmode test run, Console, Play Mode, profiler, GCMonitor, player build, device run, or crash dump.
+
+## 2026-05-29 - UNKNOWN - StaticData / Vault Maintenance / Guard-Mask Pass
+
+What was wrong:
+- `H8StaticDataContracts.GenerateHashManifest()` allocated one formatted string per hash row via `ToString("X8", CultureInfo.InvariantCulture)`.
+- `VaultSovereigntyMaintenance.RunPreSimulationFrost()` is a PRE_SIMULATION maintenance call, but it used `TryEnsureCoreVaultBuffer()` and could grow/create DataVault buffers during the runtime phase.
+- My new mutation guard helpers used `&31` even though `GlobalDataVault.ActiveMutationGuardMask` is 64-bit low/high.
+
+What was done:
+- Replaced hash formatting with `WriteHex8(TextWriter,uint)`.
+- Added `MaintenanceMutationGuardMask` to VaultSovereignty maintenance; PRE_SIMULATION now resolves only existing/prewarmed buffers, clamps to existing lengths, uses `default` job structs, and releases the guard in `finally`.
+- Widened the new guard-bit helpers in `InputDispatcher.cs`, `H8MacroDatabaseService.cs`, `SubmarineNavigationStressHarness1420.cs`, and `VaultMemoryContracts.cs` to `bufferId & 63`.
+
+Cinematic cheats used:
+- None. This was DataVault/source hygiene. Existing continuous `GlobalQualityWeight` sweep-budget behavior was preserved.
+
+Exact microseconds saved:
+- Claimed runtime savings: `0 us`; no profiler proof.
+- Expected value is stability: no runtime maintenance buffer growth and fewer false mutation-guard collisions.
+
+Verification:
+- Hashes: `InputDispatcher.cs=EE050468336D827DB3395CE1205E2A2095F795C9B0FBB2034BB422E1F31A6ADA`; `H8MacroDatabaseService.cs=ED095F6FCF136DC1724A11E4AB6D0CB3EEACB0F05270647A50B5E71194DF5DDF`; `SubmarineNavigationStressHarness1420.cs=B5C60031E26D936952AF681E10FE91BD2BB1A49438FF17821C5C2C8B71C15B97`; `VaultMemoryContracts.cs=C1F7966C8256934BA7328348E609D859BF665BD4E1A0142486ABE6BD4C80F2E4`; `H8StaticDataContracts.cs=B8990A5E75614295068B3659E07EE16E337D7D2C0029EFFB2B8A28659E3F05EC`.
+- Aggregate added-line scan across the five files: `new=0`, `string.Format=0`, `.ToString=0`, LINQ `0`, `foreach=0`, `GlobalRegistry.Get=0`, `GetComponent=0`, `.Complete=0`, `TryAcquireWriteLock=0`, `EnsureGenerationHandle=0`.
+- Source evidence: `H8StaticDataContracts.cs:2070/2093`; `VaultMemoryContracts.cs:642/718/730/739/790/811/831/833`; helper widening lines `InputDispatcher.cs:141`, `H8MacroDatabaseService.cs:2427`, `SubmarineNavigationStressHarness1420.cs:35`, `VaultMemoryContracts.cs:833`.
+- Scoped `git diff --check`: exit `0`, LF/CRLF warnings only.
+- `dotnet build` invocations: 0; CPU sample `100%`; active `dotnet/csc/VBCSCompiler` processes: 0.
+- Runtime verification absent: no Unity import, Console check, Play Mode, profiler, GCMonitor, player build, device run, StaticData bake/import test, or VaultSovereignty crash dump.

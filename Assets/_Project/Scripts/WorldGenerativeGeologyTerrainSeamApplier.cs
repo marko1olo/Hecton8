@@ -182,7 +182,7 @@ namespace Hecton8.World
         private float _debugGlobalQualityWeight = 1f;
         private float _debugSeamExpensiveWeight;
         private float _debugMaskDetailWeight;
-        private bool _debugLowTierVisualOnly;
+        private bool _debugVisualSamplingSuppressed;
         private bool _debugMaskDetailActive;
 
         private void Awake()
@@ -702,7 +702,7 @@ namespace Hecton8.World
             float globalQualityWeight = ResolveGlobalQualityWeight();
             float seamExpensiveWeight = ResolveSeamExpensiveWeight(globalQualityWeight);
             float maskDetailWeight = ResolveMaskDetailWeight(globalQualityWeight);
-            bool lowTierVisualOnly = seamExpensiveWeight <= 0.0001f;
+            bool visualSamplingSuppressed = seamExpensiveWeight <= 0.0001f;
             bool maskDetailActive = maskDetailWeight > 0.0001f;
             NativeArray<ushort> quantizedHeightmap = default;
             bool usedVaultHeightmap = TryResolveVaultHeightmap(state, out quantizedHeightmap);
@@ -781,7 +781,7 @@ namespace Hecton8.World
                     HeightmapInvMaxIndex = 1f / Mathf.Max(1, state.heightmapResolution - 1),
                     TerrainPosition = float3.zero,
                     TerrainSize = (float3)terrainSize,
-                    LowTierVisualOnly = lowTierVisualOnly ? (byte)1 : (byte)0
+                    VisualSamplingSuppressed = visualSamplingSuppressed ? (byte)1 : (byte)0
                 };
                 InjectGlobalQualityWeight(ref projectionJob, globalQualityWeight);
 
@@ -868,7 +868,7 @@ namespace Hecton8.World
                     minHeight01,
                     maxHeight01,
                     maxBlend01,
-                    lowTierVisualOnly,
+                    visualSamplingSuppressed,
                     maskDetailActive,
                     usedVaultHeightmap,
                     changedHeightSample,
@@ -894,7 +894,7 @@ namespace Hecton8.World
                 _debugGlobalQualityWeight = globalQualityWeight;
                 _debugSeamExpensiveWeight = seamExpensiveWeight;
                 _debugMaskDetailWeight = maskDetailWeight;
-                _debugLowTierVisualOnly = lowTierVisualOnly;
+                _debugVisualSamplingSuppressed = visualSamplingSuppressed;
                 _debugMaskDetailActive = maskDetailActive;
 
                 if (faulted)
@@ -1460,7 +1460,7 @@ namespace Hecton8.World
             float minHeight01,
             float maxHeight01,
             float maxBlend01,
-            bool lowTierVisualOnly,
+            bool visualSamplingSuppressed,
             bool maskDetailActive,
             bool usedVaultHeightmap,
             bool heightmapChanged,
@@ -1488,7 +1488,7 @@ namespace Hecton8.World
                 MaxHeight01 = maxHeight01,
                 MaxBlend01 = maxBlend01,
                 Flags = (uint)(
-                    (lowTierVisualOnly ? 1 : 0) |
+                    (visualSamplingSuppressed ? 1 : 0) |
                     (faulted ? 2 : 0) |
                     (maskDetailActive ? 4 : 0) |
                     (usedVaultHeightmap ? 8 : 0) |

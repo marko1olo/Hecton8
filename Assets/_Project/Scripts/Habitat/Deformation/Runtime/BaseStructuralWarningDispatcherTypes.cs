@@ -831,17 +831,6 @@ namespace Hecton8.Habitat.Deformation
         private const int SolverLockBaseWarningTuning = 1 << 15;
         private const int SolverLockBaseWarningProfiles = 1 << 16;
         private const int SolverLockBaseWarningCsvScratch = 1 << 17;
-        private const int SolverLockBaseWarningMask =
-            SolverLockBaseWarningRaw |
-            SolverLockBaseWarningGroups |
-            SolverLockBaseWarningTimers |
-            SolverLockBaseWarningCounters |
-            SolverLockBaseWarningTelemetry |
-            SolverLockBaseWarningTelemetryCursor |
-            SolverLockBaseWarningTuning |
-            SolverLockBaseWarningProfiles |
-            SolverLockBaseWarningCsvScratch;
-
         private VaultGenerationHandle<RawWarningDTO> _baseWarningRawHandle;
         private VaultGenerationHandle<GroupedWarningDTO> _baseWarningGroupsHandle;
         private VaultGenerationHandle<BaseStructuralWarningTimerDTO> _baseWarningTimersHandle;
@@ -872,7 +861,7 @@ namespace Hecton8.Habitat.Deformation
             if (_initialized == 0 || _jobScheduled != 0 || _dataVault == null)
                 return false;
 
-            if (!_dataVault.TryLockBuffer(BufferID.BaseStructuralWarningTuning, SystemID.HullIntegrity))
+            if (!TryAcquireStructuralMutationGuard())
                 return false;
 
             try
@@ -886,7 +875,7 @@ namespace Hecton8.Habitat.Deformation
             }
             finally
             {
-                _dataVault.TryUnlockBuffer(BufferID.BaseStructuralWarningTuning, SystemID.HullIntegrity);
+                ReleaseStructuralMutationGuard();
             }
         }
 
@@ -933,14 +922,8 @@ namespace Hecton8.Habitat.Deformation
             if (_initialized == 0 || _jobScheduled != 0)
                 return false;
 
-            if (!TryAcquireStructuralMutationGuard())
+            if (!TryPinSolverBuffers(false))
                 return false;
-
-            if (!TryLockSolverBuffers(false))
-            {
-                ReleaseStructuralMutationGuard();
-                return false;
-            }
 
             try
             {
@@ -968,7 +951,6 @@ namespace Hecton8.Habitat.Deformation
             finally
             {
                 UnlockSolverBuffers();
-                ReleaseStructuralMutationGuard();
             }
         }
 
@@ -986,19 +968,8 @@ namespace Hecton8.Habitat.Deformation
             if (info.Length <= 0L || info.Length > BaseStructuralWarningConstants.CsvScratchBytes)
                 return WriteDefaultBaseAlarmProfile();
 
-            bool scratchLocked = _dataVault.TryLockBuffer(BufferID.BaseStructuralWarningCsvScratch, SystemID.HullIntegrity);
-            bool profilesLocked = _dataVault.TryLockBuffer(BufferID.BaseStructuralWarningProfiles, SystemID.HullIntegrity);
-            bool tuningLocked = _dataVault.TryLockBuffer(BufferID.BaseStructuralWarningTuning, SystemID.HullIntegrity);
-            if (!scratchLocked || !profilesLocked || !tuningLocked)
-            {
-                if (scratchLocked)
-                    _dataVault.TryUnlockBuffer(BufferID.BaseStructuralWarningCsvScratch, SystemID.HullIntegrity);
-                if (profilesLocked)
-                    _dataVault.TryUnlockBuffer(BufferID.BaseStructuralWarningProfiles, SystemID.HullIntegrity);
-                if (tuningLocked)
-                    _dataVault.TryUnlockBuffer(BufferID.BaseStructuralWarningTuning, SystemID.HullIntegrity);
+            if (!TryAcquireStructuralMutationGuard())
                 return false;
-            }
 
             try
             {
@@ -1038,9 +1009,7 @@ namespace Hecton8.Habitat.Deformation
             }
             finally
             {
-                _dataVault.TryUnlockBuffer(BufferID.BaseStructuralWarningTuning, SystemID.HullIntegrity);
-                _dataVault.TryUnlockBuffer(BufferID.BaseStructuralWarningProfiles, SystemID.HullIntegrity);
-                _dataVault.TryUnlockBuffer(BufferID.BaseStructuralWarningCsvScratch, SystemID.HullIntegrity);
+                ReleaseStructuralMutationGuard();
             }
         }
 #endif
@@ -1146,8 +1115,14 @@ namespace Hecton8.Habitat.Deformation
         private bool ClearBaseStructuralWarningBootBuffers()
         {
             int mask = 0;
-            if (!TryLockBaseStructuralWarningBuffers(ref mask))
+            if (!TryAcquireStructuralMutationGuard())
                 return false;
+
+            if (!TryMarkBaseStructuralWarningBuffers(ref mask))
+            {
+                ReleaseStructuralMutationGuard();
+                return false;
+            }
 
             try
             {
@@ -1166,24 +1141,14 @@ namespace Hecton8.Habitat.Deformation
             }
             finally
             {
-                UnlockBaseStructuralWarningBuffers(mask);
+                ReleaseStructuralMutationGuard();
             }
         }
 
         private bool WriteDefaultBaseStructuralWarningTuning()
         {
-            if (_dataVault == null ||
-                !_dataVault.TryLockBuffer(BufferID.BaseStructuralWarningTuning, SystemID.HullIntegrity) ||
-                !_dataVault.TryLockBuffer(BufferID.BaseStructuralWarningProfiles, SystemID.HullIntegrity))
-            {
-                if (_dataVault != null)
-                {
-                    _dataVault.TryUnlockBuffer(BufferID.BaseStructuralWarningTuning, SystemID.HullIntegrity);
-                    _dataVault.TryUnlockBuffer(BufferID.BaseStructuralWarningProfiles, SystemID.HullIntegrity);
-                }
-
+            if (_dataVault == null || !TryAcquireStructuralMutationGuard())
                 return false;
-            }
 
             try
             {
@@ -1215,8 +1180,7 @@ namespace Hecton8.Habitat.Deformation
             }
             finally
             {
-                _dataVault.TryUnlockBuffer(BufferID.BaseStructuralWarningProfiles, SystemID.HullIntegrity);
-                _dataVault.TryUnlockBuffer(BufferID.BaseStructuralWarningTuning, SystemID.HullIntegrity);
+                ReleaseStructuralMutationGuard();
             }
         }
 
@@ -1298,40 +1262,18 @@ namespace Hecton8.Habitat.Deformation
             return handle;
         }
 
-        private bool TryLockBaseStructuralWarningBuffers(ref int mask)
+        private bool TryMarkBaseStructuralWarningBuffers(ref int mask)
         {
-            if (!TryLockSolverBuffer(BufferID.BaseStructuralWarningRawWarnings, SolverLockBaseWarningRaw, ref mask)) { RollbackBaseStructuralWarningLocks(ref mask); return false; }
-            if (!TryLockSolverBuffer(BufferID.BaseStructuralWarningGroups, SolverLockBaseWarningGroups, ref mask)) { RollbackBaseStructuralWarningLocks(ref mask); return false; }
-            if (!TryLockSolverBuffer(BufferID.BaseStructuralWarningTimers, SolverLockBaseWarningTimers, ref mask)) { RollbackBaseStructuralWarningLocks(ref mask); return false; }
-            if (!TryLockSolverBuffer(BufferID.BaseStructuralWarningCounters, SolverLockBaseWarningCounters, ref mask)) { RollbackBaseStructuralWarningLocks(ref mask); return false; }
-            if (!TryLockSolverBuffer(BufferID.BaseStructuralWarningTelemetryRing, SolverLockBaseWarningTelemetry, ref mask)) { RollbackBaseStructuralWarningLocks(ref mask); return false; }
-            if (!TryLockSolverBuffer(BufferID.BaseStructuralWarningTelemetryCursor, SolverLockBaseWarningTelemetryCursor, ref mask)) { RollbackBaseStructuralWarningLocks(ref mask); return false; }
-            if (!TryLockSolverBuffer(BufferID.BaseStructuralWarningTuning, SolverLockBaseWarningTuning, ref mask)) { RollbackBaseStructuralWarningLocks(ref mask); return false; }
-            if (!TryLockSolverBuffer(BufferID.BaseStructuralWarningProfiles, SolverLockBaseWarningProfiles, ref mask)) { RollbackBaseStructuralWarningLocks(ref mask); return false; }
-            if (!TryLockSolverBuffer(BufferID.BaseStructuralWarningCsvScratch, SolverLockBaseWarningCsvScratch, ref mask)) { RollbackBaseStructuralWarningLocks(ref mask); return false; }
+            if (!TryMarkSolverBuffer(in _baseWarningRawHandle, BufferID.BaseStructuralWarningRawWarnings, SolverLockBaseWarningRaw, BaseStructuralWarningConstants.MaxRawWarnings, ref mask)) return false;
+            if (!TryMarkSolverBuffer(in _baseWarningGroupsHandle, BufferID.BaseStructuralWarningGroups, SolverLockBaseWarningGroups, BaseStructuralWarningConstants.MaxGroupedWarnings, ref mask)) return false;
+            if (!TryMarkSolverBuffer(in _baseWarningTimersHandle, BufferID.BaseStructuralWarningTimers, SolverLockBaseWarningTimers, BaseStructuralWarningConstants.SectorTimerCapacity, ref mask)) return false;
+            if (!TryMarkSolverBuffer(in _baseWarningCountersHandle, BufferID.BaseStructuralWarningCounters, SolverLockBaseWarningCounters, BaseStructuralWarningConstants.CounterCapacity, ref mask)) return false;
+            if (!TryMarkSolverBuffer(in _baseWarningTelemetryHandle, BufferID.BaseStructuralWarningTelemetryRing, SolverLockBaseWarningTelemetry, BaseStructuralWarningConstants.TelemetryFrameCapacity, ref mask)) return false;
+            if (!TryMarkSolverBuffer(in _baseWarningTelemetryCursorHandle, BufferID.BaseStructuralWarningTelemetryCursor, SolverLockBaseWarningTelemetryCursor, 1, ref mask)) return false;
+            if (!TryMarkSolverBuffer(in _baseWarningTuningHandle, BufferID.BaseStructuralWarningTuning, SolverLockBaseWarningTuning, 1, ref mask)) return false;
+            if (!TryMarkSolverBuffer(in _baseWarningProfilesHandle, BufferID.BaseStructuralWarningProfiles, SolverLockBaseWarningProfiles, BaseStructuralWarningConstants.AlarmProfileCapacity, ref mask)) return false;
+            if (!TryMarkSolverBuffer(in _baseWarningCsvScratchHandle, BufferID.BaseStructuralWarningCsvScratch, SolverLockBaseWarningCsvScratch, BaseStructuralWarningConstants.CsvScratchBytes, ref mask)) return false;
             return true;
-        }
-
-        private void RollbackBaseStructuralWarningLocks(ref int mask)
-        {
-            UnlockBaseStructuralWarningBuffers(mask);
-            mask &= ~SolverLockBaseWarningMask;
-        }
-
-        private void UnlockBaseStructuralWarningBuffers(int mask)
-        {
-            if (_dataVault == null || mask == 0)
-                return;
-
-            if ((mask & SolverLockBaseWarningCsvScratch) != 0) _dataVault.TryUnlockBuffer(BufferID.BaseStructuralWarningCsvScratch, SystemID.HullIntegrity);
-            if ((mask & SolverLockBaseWarningProfiles) != 0) _dataVault.TryUnlockBuffer(BufferID.BaseStructuralWarningProfiles, SystemID.HullIntegrity);
-            if ((mask & SolverLockBaseWarningTuning) != 0) _dataVault.TryUnlockBuffer(BufferID.BaseStructuralWarningTuning, SystemID.HullIntegrity);
-            if ((mask & SolverLockBaseWarningTelemetryCursor) != 0) _dataVault.TryUnlockBuffer(BufferID.BaseStructuralWarningTelemetryCursor, SystemID.HullIntegrity);
-            if ((mask & SolverLockBaseWarningTelemetry) != 0) _dataVault.TryUnlockBuffer(BufferID.BaseStructuralWarningTelemetryRing, SystemID.HullIntegrity);
-            if ((mask & SolverLockBaseWarningCounters) != 0) _dataVault.TryUnlockBuffer(BufferID.BaseStructuralWarningCounters, SystemID.HullIntegrity);
-            if ((mask & SolverLockBaseWarningTimers) != 0) _dataVault.TryUnlockBuffer(BufferID.BaseStructuralWarningTimers, SystemID.HullIntegrity);
-            if ((mask & SolverLockBaseWarningGroups) != 0) _dataVault.TryUnlockBuffer(BufferID.BaseStructuralWarningGroups, SystemID.HullIntegrity);
-            if ((mask & SolverLockBaseWarningRaw) != 0) _dataVault.TryUnlockBuffer(BufferID.BaseStructuralWarningRawWarnings, SystemID.HullIntegrity);
         }
 
         private void DrawBaseStructuralWarningGizmos(double3 originAup)
@@ -1477,7 +1419,7 @@ namespace Hecton8.Habitat.Deformation
 
         private bool WriteDefaultBaseAlarmProfile()
         {
-            if (_dataVault == null || !_dataVault.TryLockBuffer(BufferID.BaseStructuralWarningProfiles, SystemID.HullIntegrity))
+            if (_dataVault == null || !TryAcquireStructuralMutationGuard())
                 return false;
 
             try
@@ -1493,7 +1435,7 @@ namespace Hecton8.Habitat.Deformation
             }
             finally
             {
-                _dataVault.TryUnlockBuffer(BufferID.BaseStructuralWarningProfiles, SystemID.HullIntegrity);
+                ReleaseStructuralMutationGuard();
             }
         }
 

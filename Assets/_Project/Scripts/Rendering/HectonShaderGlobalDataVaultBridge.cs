@@ -36,6 +36,8 @@ namespace Hecton8.Core
         internal const int SlotCount = 512;
 
         private static readonly bool s_slotMapValid = ValidateSharedSlotMap();
+        private const ulong ShaderGlobalStateMutationGuardMask =
+            1UL << ((int)BufferID.ShaderGlobalState & 31);
 
         private static readonly int _BiolumMasterPhaseId = Shader.PropertyToID("_BiolumMasterPhase");
         private static readonly int _HectonFloatingOriginOffsetId = Shader.PropertyToID("_HectonFloatingOriginOffset");
@@ -431,11 +433,12 @@ namespace Hecton8.Core
         {
             fallback = value;
             if (TryPrepareSlotsVault(vault, allowAllocation) &&
-                vault.TryLockBuffer(BufferID.ShaderGlobalState, SystemID.GraphicsScalability))
+                vault.TryAcquireMutationGuard(ShaderGlobalStateMutationGuardMask))
             {
                 try
                 {
-                    if (vault.TryResolveHandle(in _slotsHandle, out NativeArray<float4> slots) &&
+                    if (IsSlotsHandleOwned(in _slotsHandle) &&
+                        vault.TryResolveHandle(in _slotsHandle, out NativeArray<float4> slots) &&
                         slots.IsCreated &&
                         slot >= 0 &&
                         slot < slots.Length)
@@ -446,7 +449,7 @@ namespace Hecton8.Core
                 }
                 finally
                 {
-                    vault.TryUnlockBuffer(BufferID.ShaderGlobalState, SystemID.GraphicsScalability);
+                    vault.ReleaseMutationGuard(ShaderGlobalStateMutationGuardMask);
                 }
             }
 
@@ -585,6 +588,7 @@ namespace Hecton8.Core
         private static bool IsSlotsHandleOwned(in VaultGenerationHandle<float4> handle)
         {
             return IsSlotsHandleCreated(in handle) &&
+                   handle.BufferID == (uint)BufferID.ShaderGlobalState &&
                    handle.SystemID == (uint)SystemID.GraphicsScalability;
         }
 

@@ -1058,16 +1058,32 @@ namespace Hecton8.Narrative
                 return false;
             }
 
-            if (!buffer.IsCreated || buffer.Length < requiredLength)
+            bool success = false;
+            bool validationFailed = false;
+            try
             {
-                vault.ReleaseWriteLock(in handle, OwnerSystemId);
-                _vaultResolutionFailureCount++;
-                RecordVaultTelemetry(fallbackFlag, bufferId);
-                return false;
-            }
+                if (!buffer.IsCreated || buffer.Length < requiredLength)
+                {
+                    validationFailed = true;
+                    return false;
+                }
 
-            _vaultResolutionSuccessCount++;
-            return true;
+                _vaultResolutionSuccessCount++;
+                success = true;
+                return true;
+            }
+            finally
+            {
+                if (!success)
+                {
+                    vault.ReleaseWriteLock(in handle, OwnerSystemId);
+                    if (validationFailed)
+                    {
+                        _vaultResolutionFailureCount++;
+                        RecordVaultTelemetry(fallbackFlag, bufferId);
+                    }
+                }
+            }
         }
 
         private void ReleaseVaultWrite<T>(in VaultGenerationHandle<T> handle, BufferID bufferId) where T : struct
@@ -1085,44 +1101,37 @@ namespace Hecton8.Narrative
             return hasHashes && hasBits;
         }
 
-        private bool TryAcquireEncryptedFragmentState(
-            out NativeArray<uint> hashes,
-            out NativeArray<uint> recoveredBits)
-        {
-            hashes = default;
-            recoveredBits = default;
-            if (!TryAcquireVaultWrite(in _encryptedFragmentLogHashesHandle, BufferID.AudioLogEncryptedFragmentHashes, EncryptedFragmentStateCapacity, VaultFallbackEncryptedHashes, out hashes))
-                return false;
-
-            if (TryAcquireVaultWrite(in _encryptedFragmentRecoveredBitsHandle, BufferID.AudioLogEncryptedFragmentRecoveredBits, EncryptedFragmentStateCapacity, VaultFallbackEncryptedBits, out recoveredBits))
-                return true;
-
-            ReleaseVaultWrite(in _encryptedFragmentLogHashesHandle, BufferID.AudioLogEncryptedFragmentHashes);
-            hashes = default;
-            return false;
-        }
-
-        private void ReleaseEncryptedFragmentWriteLocks()
-        {
-            ReleaseVaultWrite(in _encryptedFragmentRecoveredBitsHandle, BufferID.AudioLogEncryptedFragmentRecoveredBits);
-            ReleaseVaultWrite(in _encryptedFragmentLogHashesHandle, BufferID.AudioLogEncryptedFragmentHashes);
-        }
-
         private void ClearEncryptedFragmentState()
         {
-            if (TryAcquireEncryptedFragmentState(out NativeArray<uint> hashes, out NativeArray<uint> recoveredBits))
+            int count = _encryptedFragmentStateCount;
+            if (count > EncryptedFragmentStateCapacity)
+                count = EncryptedFragmentStateCapacity;
+
+            if (count > 0 &&
+                TryAcquireVaultWrite(in _encryptedFragmentLogHashesHandle, BufferID.AudioLogEncryptedFragmentHashes, EncryptedFragmentStateCapacity, VaultFallbackEncryptedHashes, out NativeArray<uint> hashes))
             {
                 try
                 {
-                    for (int i = 0; i < _encryptedFragmentStateCount; i++)
-                    {
+                    for (int i = 0; i < count; i++)
                         hashes[i] = 0u;
-                        recoveredBits[i] = 0u;
-                    }
                 }
                 finally
                 {
-                    ReleaseEncryptedFragmentWriteLocks();
+                    ReleaseVaultWrite(in _encryptedFragmentLogHashesHandle, BufferID.AudioLogEncryptedFragmentHashes);
+                }
+            }
+
+            if (count > 0 &&
+                TryAcquireVaultWrite(in _encryptedFragmentRecoveredBitsHandle, BufferID.AudioLogEncryptedFragmentRecoveredBits, EncryptedFragmentStateCapacity, VaultFallbackEncryptedBits, out NativeArray<uint> recoveredBits))
+            {
+                try
+                {
+                    for (int i = 0; i < count; i++)
+                        recoveredBits[i] = 0u;
+                }
+                finally
+                {
+                    ReleaseVaultWrite(in _encryptedFragmentRecoveredBitsHandle, BufferID.AudioLogEncryptedFragmentRecoveredBits);
                 }
             }
 
@@ -1138,7 +1147,13 @@ namespace Hecton8.Narrative
                 return false;
             }
 
-            for (int i = 0; i < _encryptedFragmentStateCount; i++)
+            int count = _encryptedFragmentStateCount;
+            if (count < 0)
+                return false;
+            if (count > EncryptedFragmentStateCapacity)
+                count = EncryptedFragmentStateCapacity;
+
+            for (int i = 0; i < count; i++)
             {
                 if (hashes[i] != logHash)
                     continue;
@@ -1155,38 +1170,67 @@ namespace Hecton8.Narrative
             if (logHash == 0u)
                 return false;
 
-            if (!TryAcquireEncryptedFragmentState(out NativeArray<uint> hashes, out NativeArray<uint> recoveredBitBuffer))
+            if (!TryReadVaultBuffer(in _encryptedFragmentLogHashesHandle, BufferID.AudioLogEncryptedFragmentHashes, EncryptedFragmentStateCapacity, out NativeArray<uint>.ReadOnly hashes))
                 return false;
 
-            try
+            int activeCount = _encryptedFragmentStateCount;
+            if (activeCount < 0)
+                activeCount = 0;
+            if (activeCount > EncryptedFragmentStateCapacity)
+                activeCount = EncryptedFragmentStateCapacity;
+
+            int slot = -1;
+            for (int i = 0; i < activeCount; i++)
             {
-                for (int i = 0; i < _encryptedFragmentStateCount; i++)
-                {
-                    if (hashes[i] != logHash)
-                        continue;
+                if (hashes[i] != logHash)
+                    continue;
 
-                    recoveredBitBuffer[i] = recoveredBits & EncryptedLogCompleteMask;
-                    return true;
-                }
+                slot = i;
+                break;
+            }
 
-                if (_encryptedFragmentStateCount >= EncryptedFragmentStateCapacity)
+            bool newSlot = slot < 0;
+            if (newSlot)
+            {
+                if (activeCount >= EncryptedFragmentStateCapacity)
                 {
                     GlobalTelemetryBus.PublishPerformanceWarning(
                         _EncryptedFragmentStateFullWarningHash,
                         _NarrativeQueueContextHash,
-                        _encryptedFragmentStateCount);
+                        activeCount);
                     return false;
                 }
 
-                int slot = _encryptedFragmentStateCount++;
-                hashes[slot] = logHash;
+                slot = activeCount;
+                if (!TryAcquireVaultWrite(in _encryptedFragmentLogHashesHandle, BufferID.AudioLogEncryptedFragmentHashes, EncryptedFragmentStateCapacity, VaultFallbackEncryptedHashes, out NativeArray<uint> writableHashes))
+                    return false;
+
+                try
+                {
+                    writableHashes[slot] = logHash;
+                }
+                finally
+                {
+                    ReleaseVaultWrite(in _encryptedFragmentLogHashesHandle, BufferID.AudioLogEncryptedFragmentHashes);
+                }
+            }
+
+            if (!TryAcquireVaultWrite(in _encryptedFragmentRecoveredBitsHandle, BufferID.AudioLogEncryptedFragmentRecoveredBits, EncryptedFragmentStateCapacity, VaultFallbackEncryptedBits, out NativeArray<uint> recoveredBitBuffer))
+                return false;
+
+            try
+            {
                 recoveredBitBuffer[slot] = recoveredBits & EncryptedLogCompleteMask;
-                return true;
             }
             finally
             {
-                ReleaseEncryptedFragmentWriteLocks();
+                ReleaseVaultWrite(in _encryptedFragmentRecoveredBitsHandle, BufferID.AudioLogEncryptedFragmentRecoveredBits);
             }
+
+            if (newSlot)
+                _encryptedFragmentStateCount = activeCount + 1;
+
+            return true;
         }
 
         private void RecordVaultTelemetry(uint fallbackFlags, BufferID bufferId)
@@ -1199,26 +1243,40 @@ namespace Hecton8.Narrative
                 return;
             }
 
-            if (!vault.TryAcquireWriteLock(in _telemetryRingHandle, OwnerSystemId, out NativeArray<AudioLogVaultTelemetryEntry> telemetry))
+            int index = 0;
+            if (!vault.TryAcquireWriteLock(in _telemetryCursorHandle, OwnerSystemId, out NativeArray<int> cursor))
                 return;
 
-            bool cursorLocked = false;
             try
             {
-                if (!vault.TryAcquireWriteLock(in _telemetryCursorHandle, OwnerSystemId, out NativeArray<int> cursor))
-                    return;
-
-                cursorLocked = true;
-                if (!telemetry.IsCreated ||
-                    !cursor.IsCreated ||
-                    telemetry.Length < AudioLogTelemetryCapacity ||
-                    cursor.Length <= 0)
+                if (!cursor.IsCreated || cursor.Length <= 0)
                 {
                     return;
                 }
 
-                int index = math.clamp(cursor[0], 0, AudioLogTelemetryCapacity - 1);
-                cursor[0] = (index + 1) % AudioLogTelemetryCapacity;
+                index = math.clamp(cursor[0], 0, AudioLogTelemetryCapacity - 1);
+                int nextIndex = index + 1;
+                if (nextIndex >= AudioLogTelemetryCapacity)
+                    nextIndex = 0;
+
+                cursor[0] = nextIndex;
+            }
+            finally
+            {
+                vault.ReleaseWriteLock(in _telemetryCursorHandle, OwnerSystemId);
+            }
+
+            if (!vault.TryAcquireWriteLock(in _telemetryRingHandle, OwnerSystemId, out NativeArray<AudioLogVaultTelemetryEntry> telemetry))
+                return;
+
+            try
+            {
+                if (!telemetry.IsCreated ||
+                    telemetry.Length < AudioLogTelemetryCapacity)
+                {
+                    return;
+                }
+
                 telemetry[index] = new AudioLogVaultTelemetryEntry
                 {
                     FrameIndex = (uint)SystemDispatcher.CurrentFrameIndex,
@@ -1235,9 +1293,6 @@ namespace Hecton8.Narrative
             }
             finally
             {
-                if (cursorLocked)
-                    vault.ReleaseWriteLock(in _telemetryCursorHandle, OwnerSystemId);
-
                 vault.ReleaseWriteLock(in _telemetryRingHandle, OwnerSystemId);
             }
         }

@@ -179,6 +179,7 @@ namespace Hecton8.UI
         private VaultGenerationHandle<byte> _glitchTableHandle;
         private bool _glitchTableHandleReady;
         private bool _hotSwapRegistered;
+        private bool _localizedChromeDirty;
 
         private void Awake()
         {
@@ -327,8 +328,7 @@ namespace Hecton8.UI
             if (serviceSlot == GlobalRegistryServiceSlot.LocalizationRuntime)
             {
                 _localization = currentService as ILocalizationStressPresentationReadModel;
-                RefreshLocalizedTextCache();
-                InvalidateAppliedLabelVersions();
+                QueueLocalizedChromeRefresh();
                 return;
             }
 
@@ -504,6 +504,13 @@ namespace Hecton8.UI
 
         public void LateFrameTick()
         {
+            if (_localizedChromeDirty)
+            {
+                _localizedChromeDirty = false;
+                RefreshLocalizedTextCache();
+                RefreshChrome();
+            }
+
             if (!PlayerPDA.IsOpen)
             {
                 _lastStressCorruptionBucket = int.MinValue;
@@ -778,7 +785,12 @@ namespace Hecton8.UI
 
         private void HandleLanguageChanged(GameLanguage language)
         {
-            RefreshLocalizedTextCache();
+            QueueLocalizedChromeRefresh();
+        }
+
+        private void QueueLocalizedChromeRefresh()
+        {
+            _localizedChromeDirty = true;
             _lastActiveTab = int.MinValue;
             _lastCargoCells = -1;
             _lastCargoTotal = -1;
@@ -793,7 +805,6 @@ namespace Hecton8.UI
             _cachedRebootBindingLength = 0;
             _cachedRebootBindingStyleCode = byte.MaxValue;
             InvalidateAppliedLabelVersions();
-            RefreshChrome();
         }
 
         private void RefreshChrome()

@@ -82,7 +82,7 @@ namespace Crest
             }
 
             var waveCombineShader = Resources.Load<ComputeShader>("FFT/FFTBake");
-            if (waveCombineShader == null)
+            if (waveCombineShader == null || !waveCombineShader.HasKernel("FFTBakeMultiRes"))
             {
                 Debug.LogError("Crest: Missing FFT bake compute shader.", fftWaves);
                 return null;

@@ -1,6 +1,5 @@
 using System;
 using System.Collections.Generic;
-using System.Linq;
 namespace CandiceAIforGames.AI
 {
     /// <summary>
@@ -35,10 +34,12 @@ namespace CandiceAIforGames.AI
         /// <returns>True if the current node satisfies the goal state, otherwise false.</returns>
         public bool Satisfies(CandiceDictionary<string, int> goal)
         {
-            foreach (KeyValuePair<string, int> condition in goal)
+            for (int i = 0; i < goal.Count; i++)
             {
+                string key = goal.KeyAt(i);
+                int value = goal.ValueAt(i);
                 // Check if the current node's state contains the goal state condition and satisfies it
-                if (!state.state.ContainsKey(condition.Key) || state.state[condition.Key] < condition.Value)
+                if (!state.state.ContainsKey(key) || state.state[key] < value)
                 {
                     return false;
                 }
@@ -56,17 +57,19 @@ namespace CandiceAIforGames.AI
             int heuristicValue = 0;
 
             // Iterate through each condition in the goal state
-            foreach (KeyValuePair<string, int> condition in goal)
+            for (int i = 0; i < goal.Count; i++)
             {
+                string key = goal.KeyAt(i);
+                int value = goal.ValueAt(i);
                 // If the current node's state does not contain the condition, add it to the heuristic value
-                if (!state.state.ContainsKey(condition.Key))
+                if (!state.state.ContainsKey(key))
                 {
-                    heuristicValue += condition.Value;
+                    heuristicValue += value;
                 }
                 // If the current node's state does contain the condition, but not enough to satisfy the goal state, add the difference to the heuristic value
-                else if (state.state[condition.Key] < condition.Value)
+                else if (state.state[key] < value)
                 {
-                    heuristicValue += condition.Value - state.state[condition.Key];
+                    heuristicValue += value - state.state[key];
                 }
             }
             return heuristicValue;

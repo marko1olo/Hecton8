@@ -1529,20 +1529,48 @@ namespace Hecton8.Tools
                 return;
             }
 
-            bool ringLocked = false;
-            bool cursorLocked = false;
+            int index = 0;
+            int nextIndex = 0;
+            bool cursorReleaseDeferred = false;
+            if (!vault.TryAcquireWriteLock(in _equipmentTelemetryCursorHandle, EquipmentVaultOwnerSystemId, out NativeArray<int> cursor))
+                return;
+
             try
             {
-                if (!vault.TryAcquireWriteLock(in _equipmentTelemetryRingHandle, EquipmentVaultOwnerSystemId, out NativeArray<EquipmentTelemetryEntry> ring))
-                    return;
-                ringLocked = true;
-                if (!vault.TryAcquireWriteLock(in _equipmentTelemetryCursorHandle, EquipmentVaultOwnerSystemId, out NativeArray<int> cursor))
-                    return;
-                cursorLocked = true;
-                if (!ring.IsCreated || !cursor.IsCreated || ring.Length <= 0 || cursor.Length <= 0)
+                if (!cursor.IsCreated || cursor.Length <= 0)
                     return;
 
-                int index = math.clamp(cursor[0], 0, ring.Length - 1);
+                index = math.clamp(cursor[0], 0, EquipmentTelemetryRingLength - 1);
+                nextIndex = index + 1;
+                if (nextIndex >= EquipmentTelemetryRingLength)
+                    nextIndex = 0;
+
+                cursor[0] = nextIndex;
+            }
+            finally
+            {
+                if (!vault.ReleaseWriteLock(in _equipmentTelemetryCursorHandle, EquipmentVaultOwnerSystemId))
+                {
+                    _equipmentPendingReleaseVault = vault;
+                    _equipmentPendingReleaseMask |= 1u << 13;
+                    cursorReleaseDeferred = true;
+                }
+            }
+
+            if (cursorReleaseDeferred)
+                return;
+
+            if (!vault.TryAcquireWriteLock(in _equipmentTelemetryRingHandle, EquipmentVaultOwnerSystemId, out NativeArray<EquipmentTelemetryEntry> ring))
+                return;
+
+            try
+            {
+                if (!ring.IsCreated || ring.Length <= 0)
+                    return;
+
+                if (index >= ring.Length)
+                    index = 0;
+
                 ring[index] = new EquipmentTelemetryEntry
                 {
                     Frame = unchecked((uint)Time.frameCount),
@@ -1559,20 +1587,14 @@ namespace Hecton8.Tools
                     SnapshotHash = 0u,
                     WearDrainNormalized = 0f
                 };
-                cursor[0] = (index + 1) % ring.Length;
                 _equipmentFaultDumpPending = true;
             }
             finally
             {
-                uint failedMask = 0u;
-                if (cursorLocked && !vault.ReleaseWriteLock(in _equipmentTelemetryCursorHandle, EquipmentVaultOwnerSystemId))
-                    failedMask |= 1u << 13;
-                if (ringLocked && !vault.ReleaseWriteLock(in _equipmentTelemetryRingHandle, EquipmentVaultOwnerSystemId))
-                    failedMask |= 1u << 12;
-                if (failedMask != 0u)
+                if (!vault.ReleaseWriteLock(in _equipmentTelemetryRingHandle, EquipmentVaultOwnerSystemId))
                 {
                     _equipmentPendingReleaseVault = vault;
-                    _equipmentPendingReleaseMask |= failedMask;
+                    _equipmentPendingReleaseMask |= 1u << 12;
                 }
             }
         }

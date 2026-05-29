@@ -348,9 +348,6 @@ namespace Hecton8.Audio
         private ISurfaceWeatherReadModel _cachedSurfaceWeatherDirector;
         private IFirstHourReadModel _cachedFirstHourDirector;
         private bool _depthZoneDirectorRuntimeCached;
-        private bool _playerMovementLookupAttempted;
-        private bool _survivalLookupAttempted;
-        private int _nextDependencyRetryFrame;
         private int _nextPlayerContextResolveFrame;
         private int _nextAudioServiceResolveFrame;
         private int _nextAcousticZoneResolveFrame;
@@ -374,20 +371,6 @@ namespace Hecton8.Audio
         private float _lastDangerDb = float.MinValue;
         private float _nextEditorDebugStateTime;
         private uint _musicRandomState;
-
-        /// <summary>
-        /// Global access to the music director.
-        /// </summary>
-        public static HectonMusicDirector Instance => s_activeRuntimeInstance;
-
-        /// <summary>
-        /// Silent singleton probe for optional callers.
-        /// </summary>
-        public static bool TryGetInstance(out HectonMusicDirector instance)
-        {
-            instance = s_activeRuntimeInstance;
-            return instance != null;
-        }
 
         /// <summary>
         /// Currently resolved runtime profile.
@@ -1186,9 +1169,6 @@ namespace Hecton8.Audio
             _dependencyPlayerTransform = null;
             _playerMovement = null;
             _survivalSystem = null;
-            _playerMovementLookupAttempted = false;
-            _survivalLookupAttempted = false;
-            _nextDependencyRetryFrame = 0;
         }
 
         private void CacheAudioService(IAudioService audioService, int frame)
@@ -1267,46 +1247,19 @@ namespace Hecton8.Audio
                                   ReferenceEquals(playerContext.PlayerTransform, resolvedPlayerTransform)
                     ? playerContext.PlayerMovement
                     : null;
-                _survivalSystem = null;
-                _playerMovementLookupAttempted = _playerMovement != null;
-                _survivalLookupAttempted = false;
-                _nextDependencyRetryFrame = 0;
+                _survivalSystem = playerContext != null &&
+                                  ReferenceEquals(playerContext.PlayerTransform, resolvedPlayerTransform)
+                    ? playerContext.SurvivalSystem
+                    : null;
             }
 
-            if ((_playerMovement == null && _playerMovementLookupAttempted) ||
-                (_survivalSystem == null && _survivalLookupAttempted))
+            if (playerContext != null && ReferenceEquals(playerContext.PlayerTransform, resolvedPlayerTransform))
             {
-                if (Hecton8.Core.SystemDispatcher.CurrentFrameIndex >= _nextDependencyRetryFrame)
-                {
-                    _playerMovementLookupAttempted = _playerMovement != null;
-                    _survivalLookupAttempted = _survivalSystem != null;
-                }
-            }
-
-            if (_playerMovement == null &&
-                playerContext != null &&
-                ReferenceEquals(playerContext.PlayerTransform, resolvedPlayerTransform) &&
-                playerContext.PlayerMovement != null)
-            {
-                _playerMovement = playerContext.PlayerMovement;
-                _playerMovementLookupAttempted = true;
-            }
-
-            if (_playerMovement == null && !_playerMovementLookupAttempted && _playerTransform != null)
-            {
-                _playerMovementLookupAttempted = true;
-                _playerTransform.TryGetComponent(out _playerMovement);
                 if (_playerMovement == null)
-                    _nextDependencyRetryFrame = Hecton8.Core.SystemDispatcher.CurrentFrameIndex + DependencyRetryFrameInterval;
-            }
+                    _playerMovement = playerContext.PlayerMovement;
 
-            if (_survivalSystem == null && !_survivalLookupAttempted)
-            {
-                _survivalLookupAttempted = true;
-                if (_playerTransform != null)
-                    _playerTransform.TryGetComponent(out _survivalSystem);
                 if (_survivalSystem == null)
-                    _nextDependencyRetryFrame = Hecton8.Core.SystemDispatcher.CurrentFrameIndex + DependencyRetryFrameInterval;
+                    _survivalSystem = playerContext.SurvivalSystem;
             }
 
             AudioMixerGroup musicGroup = ResolveMusicMixerGroup();

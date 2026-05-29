@@ -24,6 +24,24 @@ namespace Hecton8.Construction
 
         private byte _currentState = StateUnknown;
 
+        private void Awake()
+        {
+            CacheMeshFilterCold();
+        }
+
+#if UNITY_EDITOR
+        private void OnValidate()
+        {
+            CacheMeshFilterCold();
+        }
+#endif
+
+        private void CacheMeshFilterCold()
+        {
+            if (meshFilter == null)
+                TryGetComponent(out meshFilter);
+        }
+
         internal static byte BuildAdjacentFlags(
             bool hasAdjacent,
             bool adjacentFlooded,
@@ -66,7 +84,7 @@ namespace Hecton8.Construction
 
         private void ApplyMesh(byte state)
         {
-            if (meshFilter == null && !TryGetComponent(out meshFilter))
+            if (meshFilter == null)
                 return;
 
             Mesh nextMesh = state == StateOpen

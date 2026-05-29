@@ -276,8 +276,8 @@ namespace Hecton8.Tests.Editor
             Assert.That(applyIndex, Is.GreaterThan(applyDataIndex));
             Assert.That(resolutionIndex, Is.GreaterThan(applyIndex));
             string applyBlock = source.Substring(applyIndex, resolutionIndex - applyIndex);
-            Assert.That(applyBlock.Contains("HectonRockManager manager = HectonRockManager.Instance;"), Is.True);
-            Assert.That(applyBlock.Contains("HectonRockManager manager = GlobalRegistry.RockManager;"), Is.False);
+            Assert.That(applyBlock.Contains("HectonRockManager manager = GlobalRegistry.RockManager;"), Is.True);
+            Assert.That(applyBlock.Contains("HectonRockManager manager = HectonRockManager.Instance;"), Is.False);
             int unregisterIndex = applyBlock.IndexOf("manager.UnregisterChunk(chunkCoord);", StringComparison.Ordinal);
             int nullCheckIndex = applyBlock.IndexOf("if (layerMatrices == null || layerMatrices.Count == 0)", StringComparison.Ordinal);
             Assert.That(unregisterIndex, Is.GreaterThanOrEqualTo(0));
@@ -286,8 +286,8 @@ namespace Hecton8.Tests.Editor
             int clearIndex = source.IndexOf("public override void ClearApplied(TileData data, UnityEngine.Terrain terrain)", resolutionIndex, StringComparison.Ordinal);
             Assert.That(clearIndex, Is.GreaterThan(resolutionIndex));
             string clearBlock = source.Substring(clearIndex);
-            Assert.That(clearBlock.Contains("HectonRockManager manager = HectonRockManager.Instance;"), Is.True);
-            Assert.That(clearBlock.Contains("HectonRockManager manager = GlobalRegistry.RockManager;"), Is.False);
+            Assert.That(clearBlock.Contains("HectonRockManager manager = GlobalRegistry.RockManager;"), Is.True);
+            Assert.That(clearBlock.Contains("HectonRockManager manager = HectonRockManager.Instance;"), Is.False);
         }
 
         [Test]
@@ -980,8 +980,8 @@ namespace Hecton8.Tests.Editor
             string cullingPath = Path.Combine(root, "Assets", "_Project", "Scripts", "World", "CullingManager.cs");
             string culling = File.ReadAllText(cullingPath);
             Assert.That(culling.Contains("private static CullingManager s_activeRuntimeInstance;"), Is.True);
-            Assert.That(culling.Contains("public static CullingManager Instance => s_activeRuntimeInstance;"), Is.True);
-            Assert.That(culling.Contains("public static CullingManager Instance => GlobalRegistry.Culling;"), Is.False);
+            Assert.That(culling.Contains("public static CullingManager Instance =>"), Is.False);
+            Assert.That(culling.Contains("GlobalRegistry.RegisterCullingRuntime(this);"), Is.True);
             Assert.That(culling.Contains("s_activeRuntimeInstance = this;"), Is.True);
             Assert.That(culling.Contains("ReferenceEquals(s_activeRuntimeInstance, this)"), Is.True);
 
@@ -995,13 +995,13 @@ namespace Hecton8.Tests.Editor
 
             string proxyPath = Path.Combine(root, "Assets", "_Project", "Scripts", "WorldProceduralProxyInstance.cs");
             string proxy = File.ReadAllText(proxyPath);
-            Assert.That(proxy.Contains("CullingManager manager = CullingManager.Instance;"), Is.True);
-            Assert.That(proxy.Contains("CullingManager manager = GlobalRegistry.Culling;"), Is.False);
+            Assert.That(proxy.Contains("CullingManager manager = GlobalRegistry.Culling;"), Is.True);
+            Assert.That(proxy.Contains("CullingManager manager = CullingManager.Instance;"), Is.False);
 
             string bootstrapPath = Path.Combine(root, "Assets", "_Project", "Scripts", "World", "WorldLODSceneBootstrap.cs");
             string bootstrap = File.ReadAllText(bootstrapPath);
-            Assert.That(bootstrap.Contains("_cullingManager ??= CullingManager.Instance;"), Is.True);
-            Assert.That(bootstrap.Contains("_cullingManager ??= GlobalRegistry.Culling;"), Is.False);
+            Assert.That(bootstrap.Contains("_cullingManager ??= GlobalRegistry.Culling;"), Is.True);
+            Assert.That(bootstrap.Contains("_cullingManager ??= CullingManager.Instance;"), Is.False);
 
             string lodPath = Path.Combine(root, "Assets", "_Project", "Scripts", "World", "LODSystemManager.cs");
             string lod = File.ReadAllText(lodPath);
@@ -1054,8 +1054,8 @@ namespace Hecton8.Tests.Editor
 
             string pollutionPath = Path.Combine(root, "Assets", "_Project", "Scripts", "World", "BasePollutionManager.cs");
             string pollution = File.ReadAllText(pollutionPath);
-            Assert.That(pollution.Contains("CacheEnvironmentalStrain(EnvironmentalStrainManager.Instance);"), Is.True);
-            Assert.That(pollution.Contains("CacheEnvironmentalStrain(GlobalRegistry.EnvironmentalStrainIndustrialSink);"), Is.False);
+            Assert.That(pollution.Contains("CacheEnvironmentalStrain(GlobalRegistry.EnvironmentalStrainIndustrialSink);"), Is.True);
+            Assert.That(pollution.Contains("CacheEnvironmentalStrain(EnvironmentalStrainManager.Instance);"), Is.False);
 
             string[] persistentConsumers =
             {

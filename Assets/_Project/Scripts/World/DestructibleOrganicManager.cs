@@ -2125,7 +2125,7 @@ namespace Hecton8.World
         private void CacheRegistryServicesCold()
         {
             _playerInventoryService = GlobalRegistry.PlayerInventory;
-            _persistentWorldRegistry = PersistentWorldRegistry.Instance;
+            _persistentWorldRegistry = GlobalRegistry.PersistentWorldRegistry;
             _dearLieVault = GlobalRegistry.DataVault;
             CacheAudioService(GlobalRegistry.Audio);
             CacheDearLieFallbackQualityWeightCold();

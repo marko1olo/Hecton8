@@ -1,5 +1,4 @@
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
-using System.Globalization;
 using System.IO;
 using Hecton8.UI;
 using UnityEngine;
@@ -41,7 +40,7 @@ namespace Hecton8.Dev
                    + "\"ghostDepthGate\":{\"pass\":" + ToJsonBool(ghostDepthGatePass) + "},"
                    + "\"ghostDeterminism\":{\"pass\":" + ToJsonBool(ghostDeterminismPass)
                    + ",\"cycleIndex\":" + ghostCycleIndex
-                   + ",\"intensity\":" + string.Format(CultureInfo.InvariantCulture, "{0:0.000}", ghostIntensity) + "},"
+                   + ",\"intensity\":" + ToJsonFixed3(ghostIntensity) + "},"
                    + "\"sourceAudit\":{\"pass\":" + ToJsonBool(sourceAuditPass)
                    + ",\"singletonResidue\":" + singletonResidue
                    + ",\"queueTokenCount\":" + queueTokenCount
@@ -131,6 +130,24 @@ namespace Hecton8.Dev
         private static string ToJsonBool(bool value)
         {
             return value ? "true" : "false";
+        }
+
+        private static string ToJsonFixed3(float value)
+        {
+            if (float.IsNaN(value) || float.IsInfinity(value))
+                value = 0f;
+
+            int milli = Mathf.Clamp(Mathf.RoundToInt(value * 1000f), 0, 1000);
+            int whole = milli / 1000;
+            int fraction = milli - whole * 1000;
+            return string.Create(5, (whole, fraction), static (buffer, state) =>
+            {
+                buffer[0] = (char)('0' + state.whole % 10);
+                buffer[1] = '.';
+                buffer[2] = (char)('0' + (state.fraction / 100) % 10);
+                buffer[3] = (char)('0' + (state.fraction / 10) % 10);
+                buffer[4] = (char)('0' + state.fraction % 10);
+            });
         }
     }
 }

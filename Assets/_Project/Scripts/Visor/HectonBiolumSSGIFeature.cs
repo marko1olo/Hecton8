@@ -558,7 +558,7 @@ namespace Hecton8.Visor
             if (cameraType == CameraType.Preview || cameraType == CameraType.Reflection)
                 return;
 
-            bool forceProxyOnly = settings.computeShader == null || !HardwareTierDetector.AllowHighResourceComputeShaders;
+            bool forceProxyOnly = settings.computeShader == null || !SystemInfo.supportsComputeShaders;
             _pass.Setup(settings, settings.computeShader, _compositeMaterial, forceProxyOnly);
             renderer.EnqueuePass(_pass);
         }

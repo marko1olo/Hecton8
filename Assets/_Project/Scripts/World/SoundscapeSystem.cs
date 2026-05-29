@@ -559,10 +559,8 @@ namespace Hecton8.World
         private float impactClangPitchIntensityScale = 0.2f;
 
         // ══════════════════════════════════════════════════════════
-        //  SINGLETON
+        //  STATIC LIFECYCLE MIRROR
         // ══════════════════════════════════════════════════════════
-
-        public static SoundscapeSystem Instance => s_activeRuntimeInstance;
 
         // ══════════════════════════════════════════════════════════
         //  PRIVATE STATE
@@ -754,7 +752,7 @@ namespace Hecton8.World
         {
             DrainSignals();
 
-            if (survivalSystem == null && !ResolveSurvivalSystem())
+            if (survivalSystem == null)
                 return;
 
             float depth = survivalSystem != null ? survivalSystem.Depth : 0f;
@@ -925,13 +923,9 @@ namespace Hecton8.World
             if (survivalSystem != null)
                 return true;
 
-            if (!BootstrapState.TryGetCurrentPlayerTransform(out Transform playerTransform) ||
-                playerTransform == null)
-            {
-                return false;
-            }
-
-            return playerTransform.TryGetComponent(out survivalSystem);
+            IPlayerRuntimeContext playerContext = GlobalRegistry.Player;
+            survivalSystem = playerContext != null ? playerContext.SurvivalSystem : null;
+            return survivalSystem != null;
         }
 
         void IBiomeMatrixEventListener.OnMatrixBiomeChanged(HectonBiomeMatrixProfile profile)
@@ -967,6 +961,12 @@ namespace Hecton8.World
         {
             if (serviceSlot == GlobalRegistryServiceSlot.Audio)
                 CacheAudioService(currentService as IAudioService);
+
+            if (serviceSlot == GlobalRegistryServiceSlot.Player)
+            {
+                IPlayerRuntimeContext playerContext = currentService as IPlayerRuntimeContext;
+                survivalSystem = playerContext != null ? playerContext.SurvivalSystem : null;
+            }
         }
 
         void IGlobalRegistryHotSwapListener.OnGlobalRegistryServiceReplaced(
@@ -977,6 +977,13 @@ namespace Hecton8.World
             if (serviceSlot == GlobalRegistryServiceSlot.Audio)
             {
                 CacheAudioService(currentService as IAudioService);
+                return;
+            }
+
+            if (serviceSlot == GlobalRegistryServiceSlot.Player)
+            {
+                IPlayerRuntimeContext playerContext = currentService as IPlayerRuntimeContext;
+                survivalSystem = playerContext != null ? playerContext.SurvivalSystem : null;
                 return;
             }
 
@@ -1000,9 +1007,7 @@ namespace Hecton8.World
                 return true;
             }
 
-            if (!HectonMusicDirector.TryGetInstance(out director))
-                director = null;
-
+            director = GlobalRegistry.MusicDirector;
             _musicDirector = director;
             return _musicDirector != null;
         }

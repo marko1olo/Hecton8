@@ -788,7 +788,10 @@ namespace Hecton8.Core.Content
         public bool RegisterBundleAcquire(uint hash)
         {
             if (_dataVault == null)
-                CacheDependencies();
+            {
+                LogMissingRuntimeDataVault(hash);
+                return false;
+            }
 
             if (assetHashMap == null)
             {
@@ -850,7 +853,10 @@ namespace Hecton8.Core.Content
         public bool RegisterBundleRelease(uint hash)
         {
             if (_dataVault == null)
-                CacheDependencies();
+            {
+                LogMissingRuntimeDataVault(hash);
+                return false;
+            }
 
             bool released = _bundleRefs.Release(hash, SystemDispatcher.CurrentFrameIndex, out bool becameUnused);
             if (released && becameUnused)
@@ -892,7 +898,10 @@ namespace Hecton8.Core.Content
             }
 
             if (_dataVault == null)
-                CacheDependencies();
+            {
+                LogMissingRuntimeDataVault(hash);
+                return false;
+            }
 
             if (assetHashMap == null)
             {
@@ -2075,6 +2084,13 @@ namespace Hecton8.Core.Content
 
         [System.Diagnostics.Conditional("UNITY_EDITOR")]
         [System.Diagnostics.Conditional("DEVELOPMENT_BUILD")]
+        private static void LogMissingRuntimeDataVault(uint hash)
+        {
+            Hecton8.Core.H8Debug.LogError("[ContentAuthorityRuntime] DataVault dependency unavailable on runtime content route.");
+        }
+
+        [System.Diagnostics.Conditional("UNITY_EDITOR")]
+        [System.Diagnostics.Conditional("DEVELOPMENT_BUILD")]
         private static void LogBundleHandleTrackFailed(uint hash)
         {
             Hecton8.Core.H8Debug.LogError("[ContentAuthorityRuntime] Failed to track Addressables bundle handle.");
@@ -2310,6 +2326,7 @@ namespace Hecton8.Core.Content
         private const float CoreTierVisualCeiling01 = 0.38f;
         private const float HighResTierVisualCeiling01 = 0.68f;
         private const float OverkillDownloadThreshold01 = 0.74f;
+        private static readonly int s_coldGraphicsMemoryMb = ResolveColdGraphicsMemoryMb();
 
         public const uint VisualFeatureSaltCrystals = 1u << 0;
         public const uint VisualFeatureVolumetricSiltWake = 1u << 1;
@@ -2366,7 +2383,7 @@ namespace Hecton8.Core.Content
         {
             return ResolveRuntimeVisualBudgetWeight01(
                 tier,
-                SystemInfo.graphicsMemorySize,
+                s_coldGraphicsMemoryMb,
                 HectonXRRuntimeState.IsXRActive,
                 HomeostasisBrain.GlobalQualityWeight);
         }
@@ -2403,6 +2420,11 @@ namespace Hecton8.Core.Content
                 return HighResTierVisualCeiling01;
 
             return CoreTierVisualCeiling01;
+        }
+
+        private static int ResolveColdGraphicsMemoryMb()
+        {
+            return math.max(0, SystemInfo.graphicsMemorySize);
         }
 
         private static ContentVisualFeatureBudget ResolveVisualBudgetForWeight(float visualWeight01)

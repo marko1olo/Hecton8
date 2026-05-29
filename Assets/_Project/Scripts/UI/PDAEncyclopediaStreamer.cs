@@ -367,11 +367,7 @@ namespace Hecton8.UI
         private void AdvanceEncyclopediaFrameState()
         {
             if (!_vaultReady)
-            {
-                TryColdBootstrap();
-                if (!_vaultReady)
-                    return;
-            }
+                return;
 
             ConsumeScanSignals();
             if (!_registeredPdaEvents)
@@ -395,11 +391,7 @@ namespace Hecton8.UI
             }
 
             if (!_vaultReady)
-            {
-                TryColdBootstrap();
-                if (!_vaultReady)
-                    return;
-            }
+                return;
 
             if (_pendingSelectHash != 0u)
             {
@@ -1521,7 +1513,6 @@ namespace Hecton8.UI
                 !buffer.IsCreated ||
                 buffer.Length <= 0)
             {
-                InvalidateVaultDescriptors();
                 return false;
             }
 
@@ -1572,11 +1563,6 @@ namespace Hecton8.UI
         {
             return TryResolveVaultBuffer(in handle, expectedBufferId, out NativeArray<T> buffer) &&
                    buffer.Length >= requiredLength;
-        }
-
-        private void InvalidateVaultDescriptors()
-        {
-            _vaultReady = false;
         }
 
         private void BindDataVaultForLifecycle(IDataVault nextVault, IDataVault fallbackReleaseVault = null)

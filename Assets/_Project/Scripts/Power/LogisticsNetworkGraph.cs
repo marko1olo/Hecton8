@@ -1723,9 +1723,11 @@ namespace Hecton8.Power
         private const int PowerBlackBoxSolverMaxIterationShift = 24;
         private const uint PowerBlackBoxSolverLowFlagMask = 0x0000FFFFu;
         private const string PowerBlackBoxDumpRelativePath = "Docs/AgentLogs/Dump_1422_PowerGrid.bin";
-        private const int LogisticsGraphBufferBase = 731300;
-        private const int LogisticsGraphBufferStride = 64;
         private const int SolverTelemetryBufferOffset = 45;
+        private const int LogisticsGraphBufferBase = 731300;
+        private const int LogisticsGraphBufferLockLaneStride = 32;
+        private const int LogisticsGraphBufferStride =
+            (SolverTelemetryBufferOffset + 1) * LogisticsGraphBufferLockLaneStride + LogisticsGraphBufferLockLaneStride;
         private const string NativeMemoryOwner = nameof(LogisticsNetworkGraph);
 
         private LogisticsNetworkType _networkType;
@@ -1784,11 +1786,14 @@ namespace Hecton8.Power
         private IDataVault _dataVault;
         private IDataVault _powerBlackBoxVault;
         private readonly int _vaultBufferBase;
+        private readonly ulong _graphMutationGuardMask;
         private static int _nextSentinelInstanceId;
         private JobHandle _evaluateGraphJobHandle;
         private bool _evaluateGraphPending;
+        private ulong _evaluateGraphLockedMask;
         private JobHandle _publishNodeStatesJobHandle;
         private bool _publishNodeStatesPending;
+        private ulong _publishNodeStatesLockedMask;
         private TopologySummary _committedTopologySummary;
         private DistributionSummary _committedDistributionSummary;
         private int _adaptiveSolveCursor;
@@ -1854,13 +1859,18 @@ namespace Hecton8.Power
         private NativeArray<ushort> _publishedNodeStatesBack => ResolveVaultBuffer(in _publishedNodeStatesBackHandle);
         private NativeArray<PowerGridCounter64> _solverTelemetry => ResolveVaultBuffer(in _solverTelemetryHandle);
 
-        public LogisticsNetworkGraph(int nodeCapacity = 16, int edgeCapacity = 32, int consumerCapacity = 16)
+        public LogisticsNetworkGraph(int nodeCapacity = 16, int edgeCapacity = 32, int consumerCapacity = 16, IDataVault dataVault = null)
         {
             int safeNodeCapacity = math.max(1, nodeCapacity);
             int safeEdgeCapacity = math.max(1, edgeCapacity);
             int safeConsumerCapacity = math.max(1, consumerCapacity);
-            _vaultBufferBase = LogisticsGraphBufferBase + (++_nextSentinelInstanceId * LogisticsGraphBufferStride);
-            _dataVault = GlobalRegistry.DataVault;
+            int graphInstanceId = ++_nextSentinelInstanceId;
+            _vaultBufferBase =
+                LogisticsGraphBufferBase +
+                graphInstanceId * LogisticsGraphBufferStride +
+                (graphInstanceId & 31);
+            _graphMutationGuardMask = ResolveGraphMutationGuardMask(_vaultBufferBase);
+            _dataVault = dataVault ?? GlobalRegistry.DataVault;
             _powerBlackBoxVault = _dataVault;
             _baseAwakeStateValue = 1;
 
@@ -1879,12 +1889,70 @@ namespace Hecton8.Power
             };
         }
 
+        public bool InjectDataVault(IDataVault dataVault)
+        {
+            if (ReferenceEquals(_dataVault, dataVault))
+                return false;
+
+            JobHandle rebindDependency = CancelPendingJobsForDispose();
+            DispatcherJobFence.TryComplete(ref rebindDependency, forceComplete: true);
+            ReleaseEvaluationMutationGuard();
+            ReleasePublishNodeStatesMutationGuard();
+            ReleaseVaultOwnedBuffers();
+            ResetRuntimeStateForVaultRebind();
+
+            _dataVault = dataVault;
+            _powerBlackBoxVault = dataVault;
+            if (dataVault != null)
+            {
+                EnsureNodeCapacity(1);
+                EnsureEdgeCapacity(1);
+                EnsureTopologyCapacity(1);
+                EnsureProducerCapacity(1);
+                EnsureConsumerCapacity(1);
+                EnsureWorkingCapacity(1, 1);
+                EnsureSummaryBuffers();
+                EnsurePowerBlackBoxBuffers();
+            }
+
+            JobHandle.ScheduleBatchedJobs();
+            return true;
+        }
+
         public int NodeCount => _nodeCount;
         public int EdgeCount => _edgeCount;
         public int ConsumerCount => _consumerCount;
         public bool HasPendingEvaluation => _evaluateGraphPending;
         public bool HasPendingNodeStatePublish => _publishNodeStatesPending;
         public bool UsesAdaptiveEvaluation => _nodeCount > AdaptiveSolveNodeThreshold;
+
+        public NativeArray<int>.ReadOnly GetEdgeOffsetsReadOnly()
+        {
+            if (_evaluateGraphPending)
+                return default;
+
+            IDataVault vault = _dataVault;
+            return vault != null &&
+                   _edgeOffsetsHandle.BufferID != 0u &&
+                   vault.TryReadOnlyHandle(in _edgeOffsetsHandle, out NativeArray<int>.ReadOnly edgeOffsets) &&
+                   edgeOffsets.IsCreated
+                ? edgeOffsets
+                : default;
+        }
+
+        public NativeArray<int>.ReadOnly GetEdgeDestinationsReadOnly()
+        {
+            if (_evaluateGraphPending)
+                return default;
+
+            IDataVault vault = _dataVault;
+            return vault != null &&
+                   _edgeDestinationsHandle.BufferID != 0u &&
+                   vault.TryReadOnlyHandle(in _edgeDestinationsHandle, out NativeArray<int>.ReadOnly edgeDestinations) &&
+                   edgeDestinations.IsCreated
+                ? edgeDestinations
+                : default;
+        }
 
         public NativeArray<byte>.ReadOnly GetEdgeStatesReadOnly()
         {
@@ -1997,8 +2065,6 @@ namespace Hecton8.Power
         public bool TryConsumeNodePotential(int nodeIndex, float consumption)
         {
             if (_evaluateGraphPending ||
-                !_potentialFront.IsCreated ||
-                !_potentialBack.IsCreated ||
                 nodeIndex < 0 ||
                 nodeIndex >= _nodeCount ||
                 !math.isfinite(consumption) ||
@@ -2012,27 +2078,42 @@ namespace Hecton8.Power
 
             try
             {
-                float currentPotential = math.isfinite(_potentialFront[nodeIndex])
-                    ? math.saturate(_potentialFront[nodeIndex])
-                    : 0f;
-                if (!math.isfinite(_potentialFront[nodeIndex]))
+                NativeArray<float> potentialFront = _potentialFront;
+                NativeArray<float> potentialBack = _potentialBack;
+                NativeArray<float> nodeVoltageSupplyRatio = _nodeVoltageSupplyRatio;
+                NativeArray<byte> powerNodeFlags = _powerNodeFlags;
+                NativeArray<LogisticsNode> nodeBuffer = _nodeBuffer;
+                if (!potentialFront.IsCreated ||
+                    !potentialBack.IsCreated ||
+                    !nodeBuffer.IsCreated ||
+                    nodeIndex >= potentialFront.Length ||
+                    nodeIndex >= potentialBack.Length ||
+                    nodeIndex >= nodeBuffer.Length)
+                {
+                    return false;
+                }
+
+                float rawPotential = potentialFront[nodeIndex];
+                bool potentialFinite = math.isfinite(rawPotential);
+                float currentPotential = math.saturate(math.select(0f, rawPotential, potentialFinite));
+                if (!potentialFinite)
                     WritePowerBlackBoxSample(PowerBlackBoxNonFiniteFlag);
                 float nextPotential = math.saturate(currentPotential - consumption);
-                WriteNative(_potentialFront, nodeIndex, nextPotential);
-                WriteNative(_potentialBack, nodeIndex, nextPotential);
-                if (_nodeVoltageSupplyRatio.IsCreated && nodeIndex < _nodeVoltageSupplyRatio.Length)
-                    WriteNative(_nodeVoltageSupplyRatio, nodeIndex, nextPotential);
+                WriteNative(potentialFront, nodeIndex, nextPotential);
+                WriteNative(potentialBack, nodeIndex, nextPotential);
+                if (nodeVoltageSupplyRatio.IsCreated && nodeIndex < nodeVoltageSupplyRatio.Length)
+                    WriteNative(nodeVoltageSupplyRatio, nodeIndex, nextPotential);
 
-                LogisticsNode node = _nodeBuffer[nodeIndex];
+                LogisticsNode node = nodeBuffer[nodeIndex];
                 node.Potential = nextPotential;
                 if (nextPotential < TwoPassPowerGridSolverJob.BrownoutPotentialThreshold)
                 {
                     node.Flags |= LogisticsNodeFlags.Brownout;
-                    if (_powerNodeFlags.IsCreated && nodeIndex < _powerNodeFlags.Length)
-                        WriteNative(_powerNodeFlags, nodeIndex, (byte)((_powerNodeFlags[nodeIndex] | (byte)PowerGridNodeFlags.Offline) & ~(byte)PowerGridNodeFlags.Powered));
+                    if (powerNodeFlags.IsCreated && nodeIndex < powerNodeFlags.Length)
+                        WriteNative(powerNodeFlags, nodeIndex, (byte)((powerNodeFlags[nodeIndex] | (byte)PowerGridNodeFlags.Offline) & ~(byte)PowerGridNodeFlags.Powered));
                 }
 
-                WriteNative(_nodeBuffer, nodeIndex, node);
+                WriteNative(nodeBuffer, nodeIndex, node);
                 return true;
             }
             finally
@@ -2044,9 +2125,6 @@ namespace Hecton8.Power
         public bool TryRemovePowerConnectionBucket(int sourceNodeIndex)
         {
             if (_evaluateGraphPending ||
-                !_edgeOffsets.IsCreated ||
-                !_edgeStates.IsCreated ||
-                !_edgeFlow.IsCreated ||
                 sourceNodeIndex < 0 ||
                 sourceNodeIndex >= _nodeCount)
             {
@@ -2058,21 +2136,33 @@ namespace Hecton8.Power
 
             try
             {
-                int edgeStart = _edgeOffsets[sourceNodeIndex];
-                int edgeEnd = _edgeOffsets[sourceNodeIndex + 1];
+                NativeArray<int> edgeOffsets = _edgeOffsets;
+                NativeArray<byte> edgeStates = _edgeStates;
+                NativeArray<float> edgeFlow = _edgeFlow;
+                NativeArray<int> runtimeConductiveEdgeCount = _runtimeConductiveEdgeCount;
+                if (!edgeOffsets.IsCreated ||
+                    !edgeStates.IsCreated ||
+                    !edgeFlow.IsCreated ||
+                    sourceNodeIndex + 1 >= edgeOffsets.Length)
+                {
+                    return false;
+                }
+
+                int edgeStart = math.clamp(edgeOffsets[sourceNodeIndex], 0, math.min(edgeStates.Length, edgeFlow.Length));
+                int edgeEnd = math.clamp(edgeOffsets[sourceNodeIndex + 1], edgeStart, math.min(edgeStates.Length, edgeFlow.Length));
                 int removedConductiveEdges = 0;
                 for (int edgeIndex = edgeStart; edgeIndex < edgeEnd; edgeIndex++)
                 {
-                    byte state = _edgeStates[edgeIndex];
+                    byte state = edgeStates[edgeIndex];
                     if ((state & (byte)LogisticsEdgeState.Ruptured) == 0)
                         removedConductiveEdges++;
 
-                    WriteNative(_edgeStates, edgeIndex, (byte)(state | (byte)LogisticsEdgeState.Ruptured));
-                    WriteNative(_edgeFlow, edgeIndex, 0f);
+                    WriteNative(edgeStates, edgeIndex, (byte)(state | (byte)LogisticsEdgeState.Ruptured));
+                    WriteNative(edgeFlow, edgeIndex, 0f);
                 }
 
-                if (_runtimeConductiveEdgeCount.IsCreated && _runtimeConductiveEdgeCount.Length > 0)
-                    WriteNative(_runtimeConductiveEdgeCount, 0, math.max(0, _runtimeConductiveEdgeCount[0] - removedConductiveEdges));
+                if (runtimeConductiveEdgeCount.IsCreated && runtimeConductiveEdgeCount.Length > 0)
+                    WriteNative(runtimeConductiveEdgeCount, 0, math.max(0, runtimeConductiveEdgeCount[0] - removedConductiveEdges));
                 return true;
             }
             finally
@@ -2115,13 +2205,47 @@ namespace Hecton8.Power
         {
             JobHandle disposeDependency = CancelPendingJobsForDispose();
             DispatcherJobFence.TryComplete(ref disposeDependency, forceComplete: true);
+            ReleaseEvaluationMutationGuard();
+            ReleasePublishNodeStatesMutationGuard();
 
-            _baseAwakeIndex = 0;
-            _baseAwakeStateValue = 1;
-            _topologyEdgeCount = 0;
+            ResetRuntimeStateForVaultRebind();
+            ReleaseVaultOwnedBuffers();
+            _dataVault = null;
+            _powerBlackBoxVault = null;
+
+            JobHandle.ScheduleBatchedJobs();
+        }
+
+        private void ResetRuntimeStateForVaultRebind()
+        {
+            _nodeCount = 0;
+            _edgeCount = 0;
+            _conductiveEdgeCount = 0;
             _producerCount = 0;
             _consumerCount = 0;
+            _topologyEdgeCount = 0;
+            _adaptiveSolveCursor = 0;
+            _adaptiveSolveRemainingNodes = 0;
+            _scheduledSolveNodeCount = 0;
+            _lastPowerBlackBoxSolveStartNode = 0;
+            _lastPowerBlackBoxSolveNodeCount = 0;
+            _baseAwakeIndex = 0;
+            _baseAwakeStateValue = 1;
+            _scheduledAdaptiveSolveSlice = false;
+            _powerBlackBoxDumped = false;
+            _buildOpen = false;
+            _unpoweredZeroStateLatched = false;
+            _noEdgeZeroStateLatched = false;
+            _committedTopologySummary = default;
+            _committedDistributionSummary = new DistributionSummary
+            {
+                SupplyRatio = 1f,
+                BrownoutTier = LogisticsBrownoutTier.None
+            };
+        }
 
+        private void ReleaseVaultOwnedBuffers()
+        {
             ReleaseVaultBuffer(ref _nodeBufferHandle);
             ReleaseVaultBuffer(ref _edgeOffsetsHandle);
             ReleaseVaultBuffer(ref _edgeDestinationsHandle);
@@ -2170,10 +2294,6 @@ namespace Hecton8.Power
             ReleaseVaultBuffer(ref _solverTelemetryHandle);
             _powerBlackBoxHandle = default;
             _powerBlackBoxCursorHandle = default;
-            _dataVault = null;
-            _powerBlackBoxVault = null;
-
-            JobHandle.ScheduleBatchedJobs();
         }
 
         private JobHandle CancelPendingJobsForDispose()
@@ -2198,7 +2318,12 @@ namespace Hecton8.Power
 
         private BufferID ResolveGraphBufferId(int localOffset)
         {
-            return (BufferID)(_vaultBufferBase + localOffset);
+            return (BufferID)(_vaultBufferBase + localOffset * LogisticsGraphBufferLockLaneStride);
+        }
+
+        private static ulong ResolveGraphMutationGuardMask(int vaultBufferBase)
+        {
+            return 1UL << (vaultBufferBase & 31);
         }
 
         private NativeArray<T> ResolveVaultBuffer<T>(in VaultGenerationHandle<T> handle)
@@ -2255,84 +2380,16 @@ namespace Hecton8.Power
 
         private bool TryLockGraphMutationBuffers(out ulong lockedMask)
         {
-            lockedMask = 0UL;
+            lockedMask = _graphMutationGuardMask;
             IDataVault vault = _dataVault;
-            if (vault == null || vault.IsCompactionFenceActive)
+            if (vault == null || lockedMask == 0UL || vault.IsCompactionFenceActive)
                 return false;
 
-            bool locked =
-                TryLockGraphBuffer(vault, in _nodeBufferHandle, 0, ref lockedMask) &&
-                TryLockGraphBuffer(vault, in _edgeOffsetsHandle, 1, ref lockedMask) &&
-                TryLockGraphBuffer(vault, in _edgeDestinationsHandle, 2, ref lockedMask) &&
-                TryLockGraphBuffer(vault, in _edgeConductanceHandle, 3, ref lockedMask) &&
-                TryLockGraphBuffer(vault, in _edgeCapacityHandle, 4, ref lockedMask) &&
-                TryLockGraphBuffer(vault, in _edgeWriteCursorHandle, 5, ref lockedMask) &&
-                TryLockGraphBuffer(vault, in _topologyEdgeListHandle, 6, ref lockedMask) &&
-                TryLockGraphBuffer(vault, in _producersHandle, 7, ref lockedMask) &&
-                TryLockGraphBuffer(vault, in _consumersHandle, 8, ref lockedMask) &&
-                TryLockGraphBuffer(vault, in _producerRatesHandle, 9, ref lockedMask) &&
-                TryLockGraphBuffer(vault, in _consumerDemandHandle, 10, ref lockedMask) &&
-                TryLockGraphBuffer(vault, in _parentsHandle, 11, ref lockedMask) &&
-                TryLockGraphBuffer(vault, in _ranksHandle, 12, ref lockedMask) &&
-                TryLockGraphBuffer(vault, in _componentIdsHandle, 13, ref lockedMask) &&
-                TryLockGraphBuffer(vault, in _componentSizesHandle, 14, ref lockedMask) &&
-                TryLockGraphBuffer(vault, in _rootToComponentHandle, 15, ref lockedMask) &&
-                TryLockGraphBuffer(vault, in _traversalQueueHandle, 16, ref lockedMask) &&
-                TryLockGraphBuffer(vault, in _visitedHandle, 17, ref lockedMask) &&
-                TryLockGraphBuffer(vault, in _consumerStatesHandle, 18, ref lockedMask) &&
-                TryLockGraphBuffer(vault, in _nodeNetInjectionHandle, 19, ref lockedMask) &&
-                TryLockGraphBuffer(vault, in _nodeServedDemandHandle, 20, ref lockedMask) &&
-                TryLockGraphBuffer(vault, in _nodeVoltageSupplyRatioHandle, 21, ref lockedMask) &&
-                TryLockGraphBuffer(vault, in _nodeSourcePotentialHandle, 22, ref lockedMask) &&
-                TryLockGraphBuffer(vault, in _nodeConductanceSumHandle, 23, ref lockedMask) &&
-                TryLockGraphBuffer(vault, in _nodeConductanceInverseSumHandle, 24, ref lockedMask) &&
-                TryLockGraphBuffer(vault, in _potentialFrontHandle, 25, ref lockedMask) &&
-                TryLockGraphBuffer(vault, in _potentialBackHandle, 26, ref lockedMask) &&
-                TryLockGraphBuffer(vault, in _powerCapacitiesHandle, 27, ref lockedMask) &&
-                TryLockGraphBuffer(vault, in _powerNodeFlagsHandle, 28, ref lockedMask) &&
-                TryLockGraphBuffer(vault, in _edgeFlowHandle, 29, ref lockedMask) &&
-                TryLockGraphBuffer(vault, in _edgeStatesHandle, 30, ref lockedMask) &&
-                TryLockGraphBuffer(vault, in _edgeKeysHandle, 31, ref lockedMask) &&
-                TryLockGraphBuffer(vault, in _runtimeConductiveEdgeCountHandle, 32, ref lockedMask) &&
-                TryLockGraphBuffer(vault, in _componentGenerationHandle, 33, ref lockedMask) &&
-                TryLockGraphBuffer(vault, in _componentDemandHandle, 34, ref lockedMask) &&
-                TryLockGraphBuffer(vault, in _componentServedDemandHandle, 35, ref lockedMask) &&
-                TryLockGraphBuffer(vault, in _componentRemainingSupplyHandle, 36, ref lockedMask) &&
-                TryLockGraphBuffer(vault, in _componentSupplyRatioHandle, 37, ref lockedMask) &&
-                TryLockGraphBuffer(vault, in _componentResidualInjectionHandle, 38, ref lockedMask) &&
-                TryLockGraphBuffer(vault, in _componentAnchorNodeHandle, 39, ref lockedMask) &&
-                TryLockGraphBuffer(vault, in _componentBrownoutTierHandle, 40, ref lockedMask) &&
-                TryLockGraphBuffer(vault, in _scheduledTopologySummaryHandle, 41, ref lockedMask) &&
-                TryLockGraphBuffer(vault, in _scheduledDistributionSummaryHandle, 42, ref lockedMask) &&
-                TryLockGraphBuffer(vault, in _publishedNodeStatesHandle, 43, ref lockedMask) &&
-                TryLockGraphBuffer(vault, in _publishedNodeStatesBackHandle, 44, ref lockedMask) &&
-                TryLockGraphBuffer(vault, in _solverTelemetryHandle, SolverTelemetryBufferOffset, ref lockedMask);
-
-            if (locked)
+            if (vault.TryAcquireMutationGuard(lockedMask))
                 return true;
 
-            UnlockGraphMutationBuffers(lockedMask);
             lockedMask = 0UL;
             return false;
-        }
-
-        private static bool TryLockGraphBuffer<T>(
-            IDataVault vault,
-            in VaultGenerationHandle<T> handle,
-            int bit,
-            ref ulong lockedMask) where T : struct
-        {
-            if (handle.BufferID == 0u)
-                return true;
-
-            if (vault == null || vault.IsCompactionFenceActive)
-                return false;
-
-            if (!vault.TryAcquireWriteLock(in handle, SystemID.Power, out NativeArray<T> _))
-                return false;
-
-            lockedMask |= 1UL << bit;
-            return true;
         }
 
         private void UnlockGraphMutationBuffers(ulong lockedMask)
@@ -2341,62 +2398,35 @@ namespace Hecton8.Power
             if (vault == null || lockedMask == 0UL)
                 return;
 
-            UnlockGraphBuffer(vault, in _solverTelemetryHandle, SolverTelemetryBufferOffset, lockedMask);
-            UnlockGraphBuffer(vault, in _publishedNodeStatesBackHandle, 44, lockedMask);
-            UnlockGraphBuffer(vault, in _publishedNodeStatesHandle, 43, lockedMask);
-            UnlockGraphBuffer(vault, in _scheduledDistributionSummaryHandle, 42, lockedMask);
-            UnlockGraphBuffer(vault, in _scheduledTopologySummaryHandle, 41, lockedMask);
-            UnlockGraphBuffer(vault, in _componentBrownoutTierHandle, 40, lockedMask);
-            UnlockGraphBuffer(vault, in _componentAnchorNodeHandle, 39, lockedMask);
-            UnlockGraphBuffer(vault, in _componentResidualInjectionHandle, 38, lockedMask);
-            UnlockGraphBuffer(vault, in _componentSupplyRatioHandle, 37, lockedMask);
-            UnlockGraphBuffer(vault, in _componentRemainingSupplyHandle, 36, lockedMask);
-            UnlockGraphBuffer(vault, in _componentServedDemandHandle, 35, lockedMask);
-            UnlockGraphBuffer(vault, in _componentDemandHandle, 34, lockedMask);
-            UnlockGraphBuffer(vault, in _componentGenerationHandle, 33, lockedMask);
-            UnlockGraphBuffer(vault, in _runtimeConductiveEdgeCountHandle, 32, lockedMask);
-            UnlockGraphBuffer(vault, in _edgeKeysHandle, 31, lockedMask);
-            UnlockGraphBuffer(vault, in _edgeStatesHandle, 30, lockedMask);
-            UnlockGraphBuffer(vault, in _edgeFlowHandle, 29, lockedMask);
-            UnlockGraphBuffer(vault, in _powerNodeFlagsHandle, 28, lockedMask);
-            UnlockGraphBuffer(vault, in _powerCapacitiesHandle, 27, lockedMask);
-            UnlockGraphBuffer(vault, in _potentialBackHandle, 26, lockedMask);
-            UnlockGraphBuffer(vault, in _potentialFrontHandle, 25, lockedMask);
-            UnlockGraphBuffer(vault, in _nodeConductanceInverseSumHandle, 24, lockedMask);
-            UnlockGraphBuffer(vault, in _nodeConductanceSumHandle, 23, lockedMask);
-            UnlockGraphBuffer(vault, in _nodeSourcePotentialHandle, 22, lockedMask);
-            UnlockGraphBuffer(vault, in _nodeVoltageSupplyRatioHandle, 21, lockedMask);
-            UnlockGraphBuffer(vault, in _nodeServedDemandHandle, 20, lockedMask);
-            UnlockGraphBuffer(vault, in _nodeNetInjectionHandle, 19, lockedMask);
-            UnlockGraphBuffer(vault, in _consumerStatesHandle, 18, lockedMask);
-            UnlockGraphBuffer(vault, in _visitedHandle, 17, lockedMask);
-            UnlockGraphBuffer(vault, in _traversalQueueHandle, 16, lockedMask);
-            UnlockGraphBuffer(vault, in _rootToComponentHandle, 15, lockedMask);
-            UnlockGraphBuffer(vault, in _componentSizesHandle, 14, lockedMask);
-            UnlockGraphBuffer(vault, in _componentIdsHandle, 13, lockedMask);
-            UnlockGraphBuffer(vault, in _ranksHandle, 12, lockedMask);
-            UnlockGraphBuffer(vault, in _parentsHandle, 11, lockedMask);
-            UnlockGraphBuffer(vault, in _consumerDemandHandle, 10, lockedMask);
-            UnlockGraphBuffer(vault, in _producerRatesHandle, 9, lockedMask);
-            UnlockGraphBuffer(vault, in _consumersHandle, 8, lockedMask);
-            UnlockGraphBuffer(vault, in _producersHandle, 7, lockedMask);
-            UnlockGraphBuffer(vault, in _topologyEdgeListHandle, 6, lockedMask);
-            UnlockGraphBuffer(vault, in _edgeWriteCursorHandle, 5, lockedMask);
-            UnlockGraphBuffer(vault, in _edgeCapacityHandle, 4, lockedMask);
-            UnlockGraphBuffer(vault, in _edgeConductanceHandle, 3, lockedMask);
-            UnlockGraphBuffer(vault, in _edgeDestinationsHandle, 2, lockedMask);
-            UnlockGraphBuffer(vault, in _edgeOffsetsHandle, 1, lockedMask);
-            UnlockGraphBuffer(vault, in _nodeBufferHandle, 0, lockedMask);
+            vault.ReleaseMutationGuard(lockedMask);
         }
 
-        private static void UnlockGraphBuffer<T>(
-            IDataVault vault,
-            in VaultGenerationHandle<T> handle,
-            int bit,
-            ulong lockedMask) where T : struct
+        private void ReleaseEvaluationMutationGuard()
         {
-            if ((lockedMask & (1UL << bit)) != 0UL && handle.BufferID != 0u)
-                vault.ReleaseWriteLock(in handle, SystemID.Power);
+            ulong lockedMask = 0UL;
+            try
+            {
+                lockedMask = _evaluateGraphLockedMask;
+                _evaluateGraphLockedMask = 0UL;
+            }
+            finally
+            {
+                UnlockGraphMutationBuffers(lockedMask);
+            }
+        }
+
+        private void ReleasePublishNodeStatesMutationGuard()
+        {
+            ulong lockedMask = 0UL;
+            try
+            {
+                lockedMask = _publishNodeStatesLockedMask;
+                _publishNodeStatesLockedMask = 0UL;
+            }
+            finally
+            {
+                UnlockGraphMutationBuffers(lockedMask);
+            }
         }
 
         private static void ClearNativeArray<T>(NativeArray<T> buffer)
@@ -2499,8 +2529,7 @@ namespace Hecton8.Power
             if (!_buildOpen)
                 return -1;
 
-            if (_nodeCount >= _nodeBuffer.Length)
-                EnsureNodeCapacity(_nodeCount + 1);
+            EnsureNodeCapacity(_nodeCount + 1);
 
             if (!TryLockGraphMutationBuffers(out ulong lockedMask))
                 return -1;
@@ -2535,8 +2564,7 @@ namespace Hecton8.Power
             if (!_buildOpen)
                 return;
 
-            if (_topologyEdgeCount >= _topologyEdgeList.Length)
-                EnsureTopologyCapacity(math.max(1, _topologyEdgeList.Length * 2));
+            EnsureTopologyCapacity(_topologyEdgeCount + 1);
 
             if (!TryLockGraphMutationBuffers(out ulong lockedMask))
                 return;
@@ -2564,31 +2592,35 @@ namespace Hecton8.Power
             if (nodeIndex < 0 || nodeIndex >= _nodeCount || productionRate <= 0f)
                 return;
 
-            NativeArray<float> producerRates = _producerRates;
-            if (!producerRates.IsCreated || nodeIndex >= producerRates.Length)
-                return;
-
-            if (_producerCount >= _producers.Length)
-                EnsureProducerCapacity(math.max(1, _producers.Length * 2));
+            EnsureProducerCapacity(_producerCount + 1);
 
             if (!TryLockGraphMutationBuffers(out ulong lockedMask))
                 return;
 
             try
             {
-                float currentProduction = _producerRates[nodeIndex];
+                NativeArray<float> producerRates = _producerRates;
+                NativeArray<byte> powerNodeFlags = _powerNodeFlags;
+                if (!producerRates.IsCreated || nodeIndex >= producerRates.Length)
+                    return;
+
+                float currentProduction = producerRates[nodeIndex];
                 if (currentProduction > Epsilon)
                 {
-                    WriteNative(_producerRates, nodeIndex, currentProduction + productionRate);
-                    if (_powerNodeFlags.IsCreated && nodeIndex < _powerNodeFlags.Length)
-                        WriteNative(_powerNodeFlags, nodeIndex, (byte)(_powerNodeFlags[nodeIndex] | (byte)PowerGridNodeFlags.Source | (byte)PowerGridNodeFlags.Powered));
+                    WriteNative(producerRates, nodeIndex, currentProduction + productionRate);
+                    if (powerNodeFlags.IsCreated && nodeIndex < powerNodeFlags.Length)
+                        WriteNative(powerNodeFlags, nodeIndex, (byte)(powerNodeFlags[nodeIndex] | (byte)PowerGridNodeFlags.Source | (byte)PowerGridNodeFlags.Powered));
                     return;
                 }
 
-                WriteNative(_producerRates, nodeIndex, productionRate);
-                WriteNative(_producers, _producerCount++, new ProducerRecord { NodeIndex = nodeIndex });
-                if (_powerNodeFlags.IsCreated && nodeIndex < _powerNodeFlags.Length)
-                    WriteNative(_powerNodeFlags, nodeIndex, (byte)(_powerNodeFlags[nodeIndex] | (byte)PowerGridNodeFlags.Source | (byte)PowerGridNodeFlags.Powered));
+                NativeArray<ProducerRecord> producers = _producers;
+                if (!producers.IsCreated || _producerCount >= producers.Length)
+                    return;
+
+                WriteNative(producerRates, nodeIndex, productionRate);
+                WriteNative(producers, _producerCount++, new ProducerRecord { NodeIndex = nodeIndex });
+                if (powerNodeFlags.IsCreated && nodeIndex < powerNodeFlags.Length)
+                    WriteNative(powerNodeFlags, nodeIndex, (byte)(powerNodeFlags[nodeIndex] | (byte)PowerGridNodeFlags.Source | (byte)PowerGridNodeFlags.Powered));
             }
             finally
             {
@@ -2604,8 +2636,7 @@ namespace Hecton8.Power
             if (nodeIndex < 0 || nodeIndex >= _nodeCount || demand <= 0f)
                 return;
 
-            if (_consumerCount >= _consumers.Length)
-                EnsureConsumerCapacity(math.max(1, _consumers.Length * 2));
+            EnsureConsumerCapacity(_consumerCount + 1);
 
             if (!TryLockGraphMutationBuffers(out ulong lockedMask))
                 return;
@@ -2935,6 +2966,8 @@ namespace Hecton8.Power
         {
             if (_publishNodeStatesPending)
                 return;
+            if (_publishNodeStatesLockedMask != 0UL)
+                return;
 
             if (_nodeCount <= 0)
             {
@@ -2965,10 +2998,13 @@ namespace Hecton8.Power
 
                 _publishNodeStatesJobHandle = job.Schedule(_nodeCount, ParallelNodeBatchSize, publishDependency);
                 _publishNodeStatesPending = true;
+                _publishNodeStatesLockedMask = lockedMask;
+                lockedMask = 0UL;
             }
             finally
             {
-                UnlockGraphMutationBuffers(lockedMask);
+                if (lockedMask != 0UL)
+                    UnlockGraphMutationBuffers(lockedMask);
             }
         }
 
@@ -2976,6 +3012,11 @@ namespace Hecton8.Power
         {
             if (_evaluateGraphPending)
                 return _evaluateGraphJobHandle;
+            if (_evaluateGraphLockedMask != 0UL)
+            {
+                WritePowerBlackBoxSample(PowerBlackBoxVaultLockFailureFlag);
+                return default;
+            }
 
             _adaptiveSolveRemainingNodes = 0;
             _scheduledSolveNodeCount = 0;
@@ -3088,11 +3129,14 @@ namespace Hecton8.Power
 
                 _evaluateGraphJobHandle = job.Schedule();
                 _evaluateGraphPending = true;
+                _evaluateGraphLockedMask = lockedMask;
+                lockedMask = 0UL;
                 return _evaluateGraphJobHandle;
             }
             finally
             {
-                UnlockGraphMutationBuffers(lockedMask);
+                if (lockedMask != 0UL)
+                    UnlockGraphMutationBuffers(lockedMask);
             }
         }
 
@@ -3353,6 +3397,7 @@ namespace Hecton8.Power
 
             _evaluateGraphJobHandle = default;
             _evaluateGraphPending = false;
+            ReleaseEvaluationMutationGuard();
             if (_scheduledAdaptiveSolveSlice)
             {
                 int completedNodeCount = math.max(0, _scheduledSolveNodeCount);
@@ -3463,15 +3508,27 @@ namespace Hecton8.Power
                 return false;
             }
 
-            if (!vault.TryAcquireWriteLock(in _powerBlackBoxHandle, SystemID.Power, out ring))
-                return false;
+            bool acquired = false;
+            try
+            {
+                if (!vault.TryAcquireWriteLock(in _powerBlackBoxHandle, SystemID.Power, out ring))
+                    return false;
 
-            if (ring.IsCreated && ring.Length >= PowerBlackBoxCapacity)
+                acquired = true;
+                if (!ring.IsCreated || ring.Length < PowerBlackBoxCapacity)
+                    return false;
+
+                acquired = false;
                 return true;
-
-            vault.ReleaseWriteLock(in _powerBlackBoxHandle, SystemID.Power);
-            ring = default;
-            return false;
+            }
+            finally
+            {
+                if (acquired)
+                {
+                    vault.ReleaseWriteLock(in _powerBlackBoxHandle, SystemID.Power);
+                    ring = default;
+                }
+            }
         }
 
         private bool TryAcquirePowerBlackBoxCursorWriteLock(out NativeArray<PowerGridCounter64> cursor)
@@ -3491,15 +3548,27 @@ namespace Hecton8.Power
             if (vault.IsCompactionFenceActive)
                 return false;
 
-            if (!vault.TryAcquireWriteLock(in _powerBlackBoxCursorHandle, SystemID.Power, out cursor))
-                return false;
+            bool acquired = false;
+            try
+            {
+                if (!vault.TryAcquireWriteLock(in _powerBlackBoxCursorHandle, SystemID.Power, out cursor))
+                    return false;
 
-            if (cursor.IsCreated && cursor.Length > 0)
+                acquired = true;
+                if (!cursor.IsCreated || cursor.Length <= 0)
+                    return false;
+
+                acquired = false;
                 return true;
-
-            vault.ReleaseWriteLock(in _powerBlackBoxCursorHandle, SystemID.Power);
-            cursor = default;
-            return false;
+            }
+            finally
+            {
+                if (acquired)
+                {
+                    vault.ReleaseWriteLock(in _powerBlackBoxCursorHandle, SystemID.Power);
+                    cursor = default;
+                }
+            }
         }
 
         private uint ReadSolverTelemetryReasonFlags()
@@ -3819,6 +3888,7 @@ namespace Hecton8.Power
 
             _publishNodeStatesJobHandle = default;
             _publishNodeStatesPending = false;
+            ReleasePublishNodeStatesMutationGuard();
             SwapPublishedNodeStateBuffers();
             return true;
         }

@@ -265,3 +265,35 @@ Solution: Replace validation with `TryReadOnlyHandle` and add an `IsValidWfcOutp
 Rejected Alternatives: Keep mutable resolve because it was not writing; rejected because read accessors must be pure and should not acquire mutable aliases. Convert all WFC public APIs to read-only inputs; rejected because persistence and hydration routes intentionally mutate the caller-owned grid under writer locks.
 Scalability potential: Low devices get safer vault relocation behavior under memory pressure. Middle/High/Ultra keep identical WFC persistence behavior; no binary quality switch or visual simulation was introduced.
 Hardware Impact: Measured runtime microseconds saved: 0. Expected benefit is correctness under GlobalDataVault compaction/relocation, not frame-time reduction.
+
+## Decision 033 - Adjacent VR Hand IK Dump Must Not Allocate Managed Writers
+
+Problem: `VRPhysicalHandPresenceBlackBox.TryDumpTelemetry` still used `new FileStream` and `new BinaryWriter` for a 300-frame IK black-box dump. The path is cold and adjacent to the contextual IK scope, but it is the same class of forensic writer debt already removed from SaveManager and ContextualPhysicalIkRuntime.
+Solution: Stage the dump into a Temp `NativeArray<byte>`, write the header and each `VRHandIkTelemetryEntry` with `BinaryPrimitives` little-endian helpers, pad every record to the declared 128-byte layout, and call `AsyncWriteManager.WriteAll`.
+Rejected Alternatives: Leave BinaryWriter because the route is cold; rejected because black-box evidence should not allocate managed writer objects during fault export. Rewrite VRPhysicalHandPresenceVault locking; rejected because `TryResolveBuffers` currently has no production caller in `rg`, and a correct writer-lock contract would need job lifetime/release ownership, not a partial local patch.
+Scalability potential: Low devices avoid managed dump writer churn on IK fault export. Middle/High/Ultra keep identical IK math, haptics, and visual behavior; this is crash-evidence hygiene, not a simulation change.
+Hardware Impact: Measured runtime microseconds saved: 0. Expected benefit is lower fault-path GC pressure and a correctly fixed-size dump record format.
+
+## Decision 034 - Static Managed Scratch Must Not Survive The Purge
+
+Problem: A final dependency scan still found `SaveBinaryStorage` static managed `byte[]` buffers: Unix path UTF-8 scratch and managed Deflate fallback copy scratch. It also found an unused private VR hand IK vault resolver that exposed mutable `TryResolveHandle`.
+Solution: Replace Unix path scratch with a fixed unmanaged static buffer guarded by the existing lock. Replace managed Deflate copy scratch with a stackalloc `Span<byte>` in the copy method. Remove the unused private VR resolver methods instead of inventing a partial lock lifecycle for dead code.
+Rejected Alternatives: Keep static `byte[]` because the routes are cold; rejected because the final proof artifact explicitly listed them as residual debt. Convert the Deflate fallback to a custom native deflater; rejected as a compression-format redesign outside this pass. Patch H8BinaryWorldPager FileStream in place; rejected because it is the central page/WAL storage backend and needs a full native-handle pager redesign, not a local cosmetic change.
+Scalability potential: Low devices avoid static managed buffer lifetime and cold pool pressure in save IO/compression fallback paths. Middle/High/Ultra preserve identical save bytes, DTO layout, IK math, and visual behavior.
+Hardware Impact: Measured runtime microseconds saved: 0. Expected benefit is lower managed heap residency and cleaner crash/memory forensics on i3/MX350-class hardware.
+
+## Decision 035 - Final Build Gate Still Closed By CPU
+
+Problem: After the static scratch patch, compiler proof was still desirable, but project rules forbid `dotnet build` when CPU exceeds 50%.
+Solution: Wait 30 seconds and resample. Latest gate: CPU 94%, `dotnet=0`, `csc=0`, `VBCSCompiler=0`; no build launched.
+Rejected Alternatives: Running build because compiler processes were gone; rejected because CPU alone still violates the throttle rule. Reporting source scans as compile proof; rejected as false evidence.
+Scalability potential: Runtime behavior unchanged. Verification remains `PENDING_VERIFICATION`.
+Hardware Impact: Avoided adding a compiler workload during 94% CPU load.
+
+## Decision 036 - New Save Writes Must Not Create Managed Deflate Blocks
+
+Problem: After removing the static compression scratch, write-side `TryCompressBlock` could still fall back to `DeflateStream`/`UnmanagedMemoryStream` when native LZ4 was unavailable. That stopped static byte[] residue but still allowed managed compression objects and new managed-Deflate blocks.
+Solution: Make write-side block compression native LZ4 only. If LZ4 is unavailable or fails, the write route fails closed. `EncodeCompressedBlockLength` no longer accepts a managed-fallback flag, so new writes cannot emit `ManagedDeflateBlockLengthFlag`. Keep `DeflateBlockDecompressManaged` only for legacy readback of old blocks already carrying that flag.
+Rejected Alternatives: Keep managed Deflate fallback for compatibility; rejected for new writes because it violates the zero-GC evidence path. Remove legacy Deflate read support; rejected because it could strand existing saves/mod payloads. Replace with a new native Deflate backend; rejected as a platform plugin and compression-format project outside this scoped pass.
+Scalability potential: Low devices avoid managed compression object churn under missing native LZ4. Middle/High/Ultra keep native LZ4 fast path and identical current save format for new writes.
+Hardware Impact: Measured runtime microseconds saved: 0. Expected benefit is removal of cold managed compression allocations and deterministic fail-closed behavior when native compression is absent.

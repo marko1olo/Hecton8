@@ -123,7 +123,7 @@ namespace Hecton8.UI.Rendering
                     builder.UseBuffer(globalsBufferHandle, AccessFlags.Read);
                     builder.SetRenderAttachment(destinationTexture, 0, AccessFlags.Write);
                     builder.AllowGlobalStateModification(true);
-                    builder.SetRenderFunc(static (PassData data, RasterGraphContext context) =>
+                    builder.SetRenderFunc((PassData data, RasterGraphContext context) =>
                     {
                         GraphicsBuffer stateGraphicsBuffer = data.StateBuffer;
                         GraphicsBuffer globalsGraphicsBuffer = data.GlobalsBuffer;

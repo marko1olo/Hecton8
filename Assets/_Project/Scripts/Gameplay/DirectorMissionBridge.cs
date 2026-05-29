@@ -13,6 +13,7 @@
 //   • Naznachit na tot zhe GameObject chto i HectonDirectorAI.
 // ============================================================================
 
+using System;
 using Hecton8.Core;
 using Hecton8.Systems.AI;
 using UnityEngine;
@@ -23,6 +24,10 @@ namespace Hecton8.Gameplay
     [AddComponentMenu("Hecton8/Gameplay/Director Mission Bridge")]
     public sealed class DirectorMissionBridge : MonoBehaviour, IDirectorAIEventListener, IGlobalRegistryHotSwapListener
     {
+        [Header("── Profile ─────────────────────────────")]
+        [Tooltip("Designer-authored mission weights, cooldowns, discovery id, and first-hour gates. Legacy fields below are fallback only.")]
+        [SerializeField] private DirectorMissionBridgeProfile missionProfile;
+
         [Header("── Mission IDs ─────────────────────────────")]
         [Tooltip("ID missiy kotorye Director mozhet aktivirovat sluchayno.")]
         [SerializeField] private string[] directorMissionIds = new string[0];
@@ -36,12 +41,18 @@ namespace Hecton8.Gameplay
 
         private int _lastMissionIndex;
         private uint _rareDiscoveryHash;
+        private int[] _profileWeightedMissionIndices;
+        private float[] _profileMissionCooldownUntil;
+        private DirectorMissionBridgeProfile _cachedProfile;
+        private int _profileWeightedMissionCount;
+        private int _profileRuntimeMissionCount;
         private bool _hotSwapRegistered;
         private IQuestSystem _missionManager;
         private IFirstHourReadModel _firstHourDirector;
 
         private void OnEnable()
         {
+            RebuildProfileRuntimeStateCold();
             RefreshRareDiscoveryHash();
             CacheRegistryServicesCold();
             TryRegisterHotSwapListener();
@@ -63,6 +74,7 @@ namespace Hecton8.Gameplay
 #if UNITY_EDITOR
         private void OnValidate()
         {
+            RebuildProfileRuntimeStateCold();
             RefreshRareDiscoveryHash();
 
             if (directorMissionIds == null || directorMissionIds.Length <= 0)
@@ -105,8 +117,14 @@ namespace Hecton8.Gameplay
 
         private void HandleMissionTrigger(Vector3 position)
         {
-            if (!CanServeDirectorContent())
+            if (!CanServeDirectorContent(ResolveMinimumMilestone()))
                 return;
+
+            if (missionProfile != null && missionProfile.MissionCount > 0)
+            {
+                HandleProfileMissionTrigger(position);
+                return;
+            }
 
             if (directorMissionIds == null || directorMissionIds.Length == 0)
                 return;
@@ -139,7 +157,7 @@ namespace Hecton8.Gameplay
 
         private void HandleRareDiscovery(Vector3 position)
         {
-            if (!CanServeDirectorContent())
+            if (!CanServeDirectorContent(ResolveMinimumMilestone()))
                 return;
 
             if (_rareDiscoveryHash != 0u)
@@ -148,7 +166,8 @@ namespace Hecton8.Gameplay
 
         private void RefreshRareDiscoveryHash()
         {
-            _rareDiscoveryHash = NarrativeEvents.ComputeDiscoveryHash(rareDiscoveryId);
+            string discoveryId = missionProfile != null ? missionProfile.RareDiscoveryId : rareDiscoveryId;
+            _rareDiscoveryHash = NarrativeEvents.ComputeDiscoveryHash(discoveryId);
         }
 
         void IDirectorAIEventListener.OnDirectorSpawnHordeRequested(Vector3 position)
@@ -181,13 +200,131 @@ namespace Hecton8.Gameplay
         {
         }
 
-        private bool CanServeDirectorContent()
+        private void HandleProfileMissionTrigger(Vector3 position)
+        {
+            DirectorMissionBridgeProfile profile = missionProfile;
+            if (profile == null)
+                return;
+
+            if (!HasProfileRuntimeState(profile))
+                return;
+
+            int totalWeight = _profileWeightedMissionCount;
+            if (totalWeight <= 0)
+                return;
+
+            IQuestSystem mm = _missionManager;
+            if (mm == null)
+                return;
+
+            float now = Time.time;
+            for (int i = 0; i < totalWeight; i++)
+            {
+                int weightedIndex = (_lastMissionIndex + i) % totalWeight;
+                int missionIndex = _profileWeightedMissionIndices[weightedIndex];
+                if (!profile.TryGetRuntimeMission(missionIndex, out DirectorMissionBridgeProfile.MissionEntry entry))
+                    continue;
+
+                if (_profileMissionCooldownUntil != null &&
+                    (uint)missionIndex < (uint)_profileMissionCooldownUntil.Length &&
+                    now < _profileMissionCooldownUntil[missionIndex])
+                {
+                    continue;
+                }
+
+                if (!CanServeDirectorContent(entry.MinimumMilestone))
+                    continue;
+
+                string missionId = entry.MissionId;
+                if (string.IsNullOrEmpty(missionId)) continue;
+                if (mm.IsCompleted(missionId)) continue;
+                if (mm.IsActive(missionId)) continue;
+
+                mm.ActivateQuest(missionId);
+                if (!mm.IsActive(missionId))
+                    continue;
+
+                _lastMissionIndex = (weightedIndex + 1) % totalWeight;
+                if (_profileMissionCooldownUntil != null &&
+                    (uint)missionIndex < (uint)_profileMissionCooldownUntil.Length)
+                {
+                    _profileMissionCooldownUntil[missionIndex] = now + entry.CooldownSeconds;
+                }
+
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+                H8Debug.Log($"[DirectorBridge] Profile mission triggered: {missionId} near {position}");
+#endif
+                return;
+            }
+        }
+
+        private FirstHourMilestone ResolveMinimumMilestone()
+        {
+            return missionProfile != null ? missionProfile.MinimumMilestone : minimumMilestone;
+        }
+
+        private bool CanServeDirectorContent(FirstHourMilestone gate)
         {
             IFirstHourReadModel firstHourDirector = _firstHourDirector;
             if (firstHourDirector == null)
                 return true;
 
-            return firstHourDirector.IsFirstHourMilestoneComplete((int)minimumMilestone);
+            return firstHourDirector.IsFirstHourMilestoneComplete((int)gate);
+        }
+
+        private void RebuildProfileRuntimeStateCold()
+        {
+            DirectorMissionBridgeProfile profile = missionProfile;
+            int missionCount = profile != null ? profile.RuntimeMissionCount : 0;
+            if (profile == null || missionCount <= 0)
+            {
+                _cachedProfile = null;
+                _profileRuntimeMissionCount = 0;
+                _profileWeightedMissionCount = 0;
+                _profileMissionCooldownUntil = null;
+                return;
+            }
+
+            if (_profileMissionCooldownUntil == null ||
+                _profileMissionCooldownUntil.Length < DirectorMissionBridgeProfile.MaxRuntimeMissions)
+            {
+                _profileMissionCooldownUntil = new float[DirectorMissionBridgeProfile.MaxRuntimeMissions]; // COLD ALLOC: fixed profile mission cooldown clock - owner: DirectorMissionBridge
+            }
+            else
+            {
+                Array.Clear(_profileMissionCooldownUntil, 0, _profileMissionCooldownUntil.Length);
+            }
+
+            if (_profileWeightedMissionIndices == null ||
+                _profileWeightedMissionIndices.Length < DirectorMissionBridgeProfile.MaxRuntimeTotalWeight)
+            {
+                _profileWeightedMissionIndices = new int[DirectorMissionBridgeProfile.MaxRuntimeTotalWeight]; // COLD ALLOC: fixed weighted mission lookup table - owner: DirectorMissionBridge
+            }
+
+            _cachedProfile = profile;
+            _profileRuntimeMissionCount = missionCount;
+            _profileWeightedMissionCount = profile.TryBuildWeightedMissionIndexTable(
+                _profileWeightedMissionIndices,
+                out int weightedMissionCount)
+                ? weightedMissionCount
+                : 0;
+
+            if (_profileWeightedMissionCount <= 0)
+                _lastMissionIndex = 0;
+            else if ((uint)_lastMissionIndex >= (uint)_profileWeightedMissionCount)
+                _lastMissionIndex %= _profileWeightedMissionCount;
+        }
+
+        private bool HasProfileRuntimeState(DirectorMissionBridgeProfile profile)
+        {
+            return profile != null &&
+                   ReferenceEquals(profile, _cachedProfile) &&
+                   _profileRuntimeMissionCount == profile.RuntimeMissionCount &&
+                   _profileWeightedMissionCount > 0 &&
+                   _profileWeightedMissionIndices != null &&
+                   _profileWeightedMissionCount <= _profileWeightedMissionIndices.Length &&
+                   _profileMissionCooldownUntil != null &&
+                   _profileMissionCooldownUntil.Length >= _profileRuntimeMissionCount;
         }
 
         public void OnGlobalRegistryServiceReplaced(
@@ -198,6 +335,8 @@ namespace Hecton8.Gameplay
             switch (serviceSlot)
             {
                 case GlobalRegistryServiceSlot.MissionRuntime:
+                case GlobalRegistryServiceSlot.QuestSystem:
+                case GlobalRegistryServiceSlot.QuestRuntime:
                     _missionManager = currentService as IQuestSystem;
                     break;
                 case GlobalRegistryServiceSlot.FirstHourRuntime:

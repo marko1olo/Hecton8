@@ -48,6 +48,7 @@ namespace Hecton8.AI
         {
             _cachedTransform = base.transform;
             TryGetComponent(out _faunaBrain);
+            _faunaBrain?.BindCreatureDamageManagerOwner(this);
             RefreshBounds();
         }
 
@@ -57,6 +58,7 @@ namespace Hecton8.AI
                 _cachedTransform = base.transform;
 
             TryGetComponent(out _faunaBrain);
+            _faunaBrain?.BindCreatureDamageManagerOwner(this);
             RefreshBounds();
             TryRegisterHotSwapListener();
             if (Application.isPlaying && _woundCount > 0 && IsLeviathanPresentationOwner())
@@ -107,6 +109,7 @@ namespace Hecton8.AI
         internal void BindFromFauna(FaunaBrain faunaBrain)
         {
             _faunaBrain = faunaBrain;
+            faunaBrain?.BindCreatureDamageManagerOwner(this);
             RefreshBounds();
         }
 

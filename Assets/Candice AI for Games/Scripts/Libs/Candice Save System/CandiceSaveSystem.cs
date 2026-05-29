@@ -1,7 +1,6 @@
 using System;
 using System.Collections.Generic;
 using System.IO;
-using System.Runtime.Serialization.Formatters.Binary;
 using UnityEngine;
 
 namespace CandiceAIforGames.Data
@@ -21,6 +20,10 @@ namespace CandiceAIforGames.Data
         private string defaultExtension = ".bin";
         #pragma warning restore CS0414
         private CandiceProviderBase providerBase;
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+        private const string LegacyFileSerializationDisabledMessage = "Candice legacy file serialization is disabled. Vendor file saves are quarantined; use the first-party save authority.";
+        private static bool s_loggedLegacyFileSerializationDisabled;
+#endif
 
         public static CandiceSaveSystem Instance
         {
@@ -69,26 +72,12 @@ namespace CandiceAIforGames.Data
         {
             //
             //Method Name : SaveToFile(object userData, string fileName)
-            //Purpose     : Saves the object to a file using BinaryFormatter.
+            //Purpose     : Legacy vendor file save entry point. Disabled by default in HECTON runtime.
             //Re-use      : none
             //Input       : object userData, string fileName
             //Output      : none
             //
-            try
-            {
-                BinaryFormatter bf = new BinaryFormatter();
-                if (File.Exists(storagePath + fileName))
-                {
-                    File.Delete(storagePath + fileName);
-                }
-                FileStream file = File.Create(storagePath + fileName);
-                bf.Serialize(file, userData);
-                file.Close();
-            }
-            catch (Exception e)
-            {
-                Debug.Log("ERROR: " + e.Message);
-            }
+            LogLegacyFileSerializationDisabledOnce();
 
         }
         public string[] GetFileNames(string folderName = "")
@@ -118,32 +107,27 @@ namespace CandiceAIforGames.Data
         {
             //
             //Method Name : LoadFromFile()
-            //Purpose     : Reads the object from a file using BinaryFormatter.
+            //Purpose     : Legacy vendor file load entry point. Disabled by default in HECTON runtime.
             //Re-use      : none
             //Input       : none
             //Output      : UserData userData
             //
             object obj = null;
-            try
-            {
-                if (File.Exists(storagePath + fileName))
-                {
-                    Debug.Log("File esists, attempting to read... ");
-                    BinaryFormatter bf = new BinaryFormatter();
-                    FileStream file = File.Open(storagePath + fileName, FileMode.Open);
-                    obj = bf.Deserialize(file);
-                    file.Close();
-                }
-                else
-                {
-                    Debug.Log("File does not exist: " + storagePath + fileName);
-                }
-            }
-            catch (Exception e)
-            {
-                Debug.Log("ERROR: " + e.Message);
-            }
+            LogLegacyFileSerializationDisabledOnce();
             return obj;
+        }
+
+        private static void LogLegacyFileSerializationDisabledOnce()
+        {
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+            if (s_loggedLegacyFileSerializationDisabled)
+            {
+                return;
+            }
+
+            s_loggedLegacyFileSerializationDisabled = true;
+            Debug.LogWarning(LegacyFileSerializationDisabledMessage);
+#endif
         }
 
 

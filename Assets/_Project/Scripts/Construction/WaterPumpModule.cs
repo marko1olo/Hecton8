@@ -1,4 +1,3 @@
-using System.Collections.Generic;
 using Hecton8.Core;
 using Hecton8.Gameplay;
 using Hecton8.Logistics;
@@ -29,14 +28,16 @@ namespace Hecton8.Construction
         [SerializeField] private bool _debugHasPower = true;
         [SerializeField] private float _debugLastDrainBudgetM3;
 
-        // COLD ALLOC: List<WaterPumpModule>[16] - active pump registry for CSR flood drainage - owner: WaterPumpModule
-        private static readonly List<WaterPumpModule> s_activePumps = new List<WaterPumpModule>(MaxPumpCapacity);
+        // COLD ALLOC: WaterPumpModule[32] - fixed active pump registry for CSR flood drainage - owner: WaterPumpModule
+        private static readonly WaterPumpModule[] s_activePumps = new WaterPumpModule[MaxPumpCapacity];
+        private static int s_activePumpCount;
 
         private BaseModule _hostModule;
         private ISubmarineAtmosphereRoomReadModel _atmosphereSystem;
         private IFluidPipeGraphService _pipeGraphService;
         private bool _hasPower = true;
         private bool _registered;
+        private int _activePumpSlot = -1;
         private int _waterPipeNodeIndex = -1;
         private int _waterPipeOutletNodeIndex = -1;
         private bool _waterPipeOutletConnected;
@@ -50,7 +51,10 @@ namespace Hecton8.Construction
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
         private static void ResetStaticState()
         {
-            s_activePumps.Clear();
+            for (int i = 0; i < s_activePumpCount; i++)
+                s_activePumps[i] = null;
+
+            s_activePumpCount = 0;
         }
 
         private void Awake()
@@ -97,11 +101,11 @@ namespace Hecton8.Construction
             _debugHasPower = hasPower;
         }
 
-        internal static int ActivePumpCount => s_activePumps.Count;
+        internal static int ActivePumpCount => s_activePumpCount;
 
         internal static WaterPumpModule GetActivePump(int index)
         {
-            return index >= 0 && index < s_activePumps.Count ? s_activePumps[index] : null;
+            return (uint)index < (uint)s_activePumpCount ? s_activePumps[index] : null;
         }
 
         internal float ResolveDrainBudgetM3(float deltaTime)
@@ -205,10 +209,11 @@ namespace Hecton8.Construction
 
             CacheColdReferences();
 
-            if (s_activePumps.Count >= MaxPumpCapacity)
+            if (s_activePumpCount >= MaxPumpCapacity)
                 return;
 
-            s_activePumps.Add(this);
+            _activePumpSlot = s_activePumpCount;
+            s_activePumps[s_activePumpCount++] = this;
             _registered = true;
         }
 
@@ -217,13 +222,42 @@ namespace Hecton8.Construction
             if (!_registered)
                 return;
 
-            for (int i = s_activePumps.Count - 1; i >= 0; i--)
+            int slot = _activePumpSlot;
+            if ((uint)slot < (uint)s_activePumpCount && ReferenceEquals(s_activePumps[slot], this))
             {
-                if (ReferenceEquals(s_activePumps[i], this))
-                    s_activePumps.RemoveAt(i);
+                RemoveActivePumpAt(slot);
+            }
+            else
+            {
+                for (int i = s_activePumpCount - 1; i >= 0; i--)
+                {
+                    if (ReferenceEquals(s_activePumps[i], this))
+                    {
+                        RemoveActivePumpAt(i);
+                        break;
+                    }
+                }
             }
 
+            _activePumpSlot = -1;
             _registered = false;
+        }
+
+        private static void RemoveActivePumpAt(int index)
+        {
+            int lastIndex = s_activePumpCount - 1;
+            if ((uint)index > (uint)lastIndex)
+                return;
+
+            WaterPumpModule movedPump = s_activePumps[lastIndex];
+            s_activePumps[lastIndex] = null;
+            s_activePumpCount = lastIndex;
+            if (index >= lastIndex)
+                return;
+
+            s_activePumps[index] = movedPump;
+            if (movedPump != null)
+                movedPump._activePumpSlot = index;
         }
 
         private void DisableWaterPipeNode(bool forgetNode)

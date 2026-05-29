@@ -995,6 +995,21 @@ namespace Hecton8.Environment
         private static readonly int _HectonCelestialSunDirectionId = Shader.PropertyToID("_HectonCelestialSunDirection");
         private static readonly int _HectonCelestialMoonDirectionId = Shader.PropertyToID("_HectonCelestialMoonDirection");
         private static readonly int _HectonCelestialEclipseShadowScalarId = Shader.PropertyToID("_HectonCelestialEclipseShadowScalar01");
+        private static readonly ulong CelestialMechanicsMutationGuardMask =
+            SeismicMutationGuardBit(SeismicDirectorConstants.CelestialStateWriteBuffer) |
+            SeismicMutationGuardBit(SeismicDirectorConstants.CelestialStateReadBuffer) |
+            SeismicMutationGuardBit(SeismicDirectorConstants.EnvironmentStateBuffer) |
+            SeismicMutationGuardBit(SeismicDirectorConstants.CelestialFlowModifierBuffer) |
+            SeismicMutationGuardBit(SeismicDirectorConstants.CelestialTuningBuffer) |
+            SeismicMutationGuardBit(SeismicDirectorConstants.CelestialMockTimelineBuffer) |
+            SeismicMutationGuardBit(SeismicDirectorConstants.CelestialOrbitalParametersBuffer);
+        private static readonly ulong SeismicEvaluationMutationGuardMask =
+            SeismicMutationGuardBit(SeismicDirectorConstants.EventSlotsBuffer) |
+            SeismicMutationGuardBit(SeismicDirectorConstants.SeismicStateBuffer) |
+            SeismicMutationGuardBit(SeismicDirectorConstants.ShakeOffsetBuffer) |
+            SeismicMutationGuardBit(SeismicDirectorConstants.TurbiditySpikeBuffer) |
+            SeismicMutationGuardBit(SeismicDirectorConstants.TelemetryRingBuffer) |
+            SeismicMutationGuardBit(SeismicDirectorConstants.MockSiltSignalBuffer);
 
         [Header("Tide")]
         [SerializeField, Min(0f), Tooltip("Peak deterministic tide displacement in meters before harmonic weighting.")]
@@ -1017,6 +1032,8 @@ namespace Hecton8.Environment
         private float audioRumbleScale = 0.9f;
 
         private IDataVault _dataVault;
+        private IDataVault _seismicEvaluationGuardVault;
+        private IDataVault _celestialMechanicsGuardVault;
         private VaultGenerationHandle<SeismicTideTelemetryEntry> _tideTelemetryHandle;
         private VaultGenerationHandle<SeismicEventDTO> _seismicEventsHandle;
         private VaultGenerationHandle<SeismicStateDTO> _seismicStatesHandle;
@@ -1068,12 +1085,12 @@ namespace Hecton8.Environment
         private bool _dumpedInvalidTelemetry;
         private bool _dumpedCelestialTelemetry;
         private bool _lowMemoryProfile = true;
-        private bool _shaderShakeDisabled = true;
+        private bool _shaderShakeSuppressed = true;
         private bool _hasShaderShakeState;
         private bool _hasPendingShaderShakeState;
         private bool _hasEclipseState;
         private bool _lastEclipseActive;
-        private bool _pendingShaderShakeDisabled;
+        private bool _pendingShaderShakeSuppressed;
         private int _telemetryWriteIndex;
         private int _seismicTelemetryWriteIndex;
         private int _celestialTelemetryWriteIndex;
@@ -1250,7 +1267,9 @@ namespace Hecton8.Environment
         private static bool IsMatchingVaultHandle<T>(in VaultGenerationHandle<T> handle, BufferID bufferId)
             where T : struct
         {
-            return handle.BufferID == unchecked((uint)(int)bufferId) && handle.Generation != 0u;
+            return handle.BufferID == unchecked((uint)(int)bufferId) &&
+                   handle.SystemID == unchecked((uint)SeismicDirectorConstants.SeismicSystemId) &&
+                   handle.Generation != 0u;
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -1258,6 +1277,12 @@ namespace Hecton8.Environment
             where T : struct
         {
             return IsMatchingVaultHandle(in handle, bufferId);
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private static ulong SeismicMutationGuardBit(BufferID bufferId)
+        {
+            return 1UL << (unchecked((int)(uint)(int)bufferId) & 31);
         }
 
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
@@ -2795,19 +2820,19 @@ namespace Hecton8.Environment
             state = default;
             environmentState = default;
             flowModifier = default;
-            if (!TryLockCelestialMechanicsVaultBuffers())
+            if (!TryPinCelestialMechanicsVaultBuffers(out IDataVault vault))
                 return false;
 
-            CelestialStateDTO* writeState = OpenVaultPointer(_dataVault, in _celestialStateWriteHandle, SeismicDirectorConstants.CelestialStateWriteBuffer, SeismicDirectorConstants.CelestialStateSlots);
-            CelestialStateDTO* readState = OpenVaultPointer(_dataVault, in _celestialStateReadHandle, SeismicDirectorConstants.CelestialStateReadBuffer, SeismicDirectorConstants.CelestialStateSlots);
-            EnvironmentStateDTO* environment = OpenVaultPointer(_dataVault, in _environmentStateHandle, SeismicDirectorConstants.EnvironmentStateBuffer, SeismicDirectorConstants.EnvironmentStateSlots);
-            CelestialFlowModifierDTO* flow = OpenVaultPointer(_dataVault, in _celestialFlowModifierHandle, SeismicDirectorConstants.CelestialFlowModifierBuffer, SeismicDirectorConstants.CelestialFlowSlots);
-            CelestialTuningDTO* tuning = OpenVaultPointer(_dataVault, in _celestialTuningHandle, SeismicDirectorConstants.CelestialTuningBuffer, SeismicDirectorConstants.CelestialTuningSlots);
-            double* mockTimeline = OpenVaultPointer(_dataVault, in _celestialMockTimelineHandle, SeismicDirectorConstants.CelestialMockTimelineBuffer, SeismicDirectorConstants.CelestialStateSlots);
-            CelestialOrbitalParameterDTO* orbitalParameters = OpenVaultPointer(_dataVault, in _celestialOrbitalParametersHandle, SeismicDirectorConstants.CelestialOrbitalParametersBuffer, SeismicDirectorConstants.CelestialOrbitalParameterSlots);
+            CelestialStateDTO* writeState = OpenVaultPointer(vault, in _celestialStateWriteHandle, SeismicDirectorConstants.CelestialStateWriteBuffer, SeismicDirectorConstants.CelestialStateSlots);
+            CelestialStateDTO* readState = OpenVaultPointer(vault, in _celestialStateReadHandle, SeismicDirectorConstants.CelestialStateReadBuffer, SeismicDirectorConstants.CelestialStateSlots);
+            EnvironmentStateDTO* environment = OpenVaultPointer(vault, in _environmentStateHandle, SeismicDirectorConstants.EnvironmentStateBuffer, SeismicDirectorConstants.EnvironmentStateSlots);
+            CelestialFlowModifierDTO* flow = OpenVaultPointer(vault, in _celestialFlowModifierHandle, SeismicDirectorConstants.CelestialFlowModifierBuffer, SeismicDirectorConstants.CelestialFlowSlots);
+            CelestialTuningDTO* tuning = OpenVaultPointer(vault, in _celestialTuningHandle, SeismicDirectorConstants.CelestialTuningBuffer, SeismicDirectorConstants.CelestialTuningSlots);
+            double* mockTimeline = OpenVaultPointer(vault, in _celestialMockTimelineHandle, SeismicDirectorConstants.CelestialMockTimelineBuffer, SeismicDirectorConstants.CelestialStateSlots);
+            CelestialOrbitalParameterDTO* orbitalParameters = OpenVaultPointer(vault, in _celestialOrbitalParametersHandle, SeismicDirectorConstants.CelestialOrbitalParametersBuffer, SeismicDirectorConstants.CelestialOrbitalParameterSlots);
             if (writeState == null || readState == null || environment == null || flow == null || tuning == null || mockTimeline == null || orbitalParameters == null)
             {
-                UnlockCelestialMechanicsVaultBuffers();
+                ReleaseCelestialMechanicsVaultPins();
                 return false;
             }
 
@@ -2840,82 +2865,67 @@ namespace Hecton8.Environment
             return TryFinalizeCelestialMechanicsJobNoWait(out state, out environmentState, out flowModifier);
         }
 
-        private bool TryLockCelestialMechanicsVaultBuffers()
+        private bool TryPinCelestialMechanicsVaultBuffers(out IDataVault vault)
         {
+            vault = _celestialMechanicsGuardVault ?? _dataVault;
             if (_celestialMechanicsVaultLocked)
+            {
+                if (vault != null && TryValidateCelestialMechanicsVaultBuffers(vault))
+                    return true;
+
+                if (!_celestialMechanicsJobScheduled)
+                    ReleaseCelestialMechanicsVaultPins();
+                vault = null;
+                return false;
+            }
+
+            vault = _dataVault;
+            if (vault == null || !TryValidateCelestialMechanicsVaultBuffers(vault))
+                return false;
+
+            bool acquired = false;
+            try
+            {
+                if (!vault.TryAcquireMutationGuard(CelestialMechanicsMutationGuardMask))
+                    return false;
+
+                acquired = true;
+                if (!TryValidateCelestialMechanicsVaultBuffers(vault))
+                    return false;
+
+                _celestialMechanicsGuardVault = vault;
+                _celestialMechanicsVaultLocked = true;
+                acquired = false;
                 return true;
-
-            IDataVault vault = _dataVault;
-            if (vault == null)
-                return false;
-
-            int lockedCount = 0;
-            if (!vault.TryLockBuffer(SeismicDirectorConstants.CelestialStateWriteBuffer, SeismicDirectorConstants.SeismicSystemId))
-            {
-                return false;
             }
-            lockedCount++;
-            if (!vault.TryLockBuffer(SeismicDirectorConstants.CelestialStateReadBuffer, SeismicDirectorConstants.SeismicSystemId))
+            finally
             {
-                UnlockCelestialMechanicsVaultBuffers(lockedCount);
-                return false;
+                if (acquired)
+                    vault.ReleaseMutationGuard(CelestialMechanicsMutationGuardMask);
             }
-            lockedCount++;
-            if (!vault.TryLockBuffer(SeismicDirectorConstants.EnvironmentStateBuffer, SeismicDirectorConstants.SeismicSystemId))
-            {
-                UnlockCelestialMechanicsVaultBuffers(lockedCount);
-                return false;
-            }
-            lockedCount++;
-            if (!vault.TryLockBuffer(SeismicDirectorConstants.CelestialFlowModifierBuffer, SeismicDirectorConstants.SeismicSystemId))
-            {
-                UnlockCelestialMechanicsVaultBuffers(lockedCount);
-                return false;
-            }
-            lockedCount++;
-            if (!vault.TryLockBuffer(SeismicDirectorConstants.CelestialTuningBuffer, SeismicDirectorConstants.SeismicSystemId))
-            {
-                UnlockCelestialMechanicsVaultBuffers(lockedCount);
-                return false;
-            }
-            lockedCount++;
-            if (!vault.TryLockBuffer(SeismicDirectorConstants.CelestialMockTimelineBuffer, SeismicDirectorConstants.SeismicSystemId))
-            {
-                UnlockCelestialMechanicsVaultBuffers(lockedCount);
-                return false;
-            }
-            lockedCount++;
-            if (!vault.TryLockBuffer(SeismicDirectorConstants.CelestialOrbitalParametersBuffer, SeismicDirectorConstants.SeismicSystemId))
-            {
-                UnlockCelestialMechanicsVaultBuffers(lockedCount);
-                return false;
-            }
-
-            _celestialMechanicsVaultLocked = true;
-            return true;
         }
 
-        private void UnlockCelestialMechanicsVaultBuffers()
+        private bool TryValidateCelestialMechanicsVaultBuffers(IDataVault vault)
         {
-            UnlockCelestialMechanicsVaultBuffers(7);
+            return TryOpenVaultBuffer(vault, in _celestialStateWriteHandle, SeismicDirectorConstants.CelestialStateWriteBuffer, SeismicDirectorConstants.CelestialStateSlots, out _) &&
+                   TryOpenVaultBuffer(vault, in _celestialStateReadHandle, SeismicDirectorConstants.CelestialStateReadBuffer, SeismicDirectorConstants.CelestialStateSlots, out _) &&
+                   TryOpenVaultBuffer(vault, in _environmentStateHandle, SeismicDirectorConstants.EnvironmentStateBuffer, SeismicDirectorConstants.EnvironmentStateSlots, out _) &&
+                   TryOpenVaultBuffer(vault, in _celestialFlowModifierHandle, SeismicDirectorConstants.CelestialFlowModifierBuffer, SeismicDirectorConstants.CelestialFlowSlots, out _) &&
+                   TryOpenVaultBuffer(vault, in _celestialTuningHandle, SeismicDirectorConstants.CelestialTuningBuffer, SeismicDirectorConstants.CelestialTuningSlots, out _) &&
+                   TryOpenVaultBuffer(vault, in _celestialMockTimelineHandle, SeismicDirectorConstants.CelestialMockTimelineBuffer, SeismicDirectorConstants.CelestialStateSlots, out _) &&
+                   TryOpenVaultBuffer(vault, in _celestialOrbitalParametersHandle, SeismicDirectorConstants.CelestialOrbitalParametersBuffer, SeismicDirectorConstants.CelestialOrbitalParameterSlots, out _);
         }
 
-        private void UnlockCelestialMechanicsVaultBuffers(int lockedCount)
+        private void ReleaseCelestialMechanicsVaultPins()
         {
-            IDataVault vault = _dataVault;
-            if (vault == null)
-            {
-                _celestialMechanicsVaultLocked = false;
+            if (!_celestialMechanicsVaultLocked)
                 return;
-            }
 
-            if (lockedCount >= 7) vault.TryUnlockBuffer(SeismicDirectorConstants.CelestialOrbitalParametersBuffer, SeismicDirectorConstants.SeismicSystemId);
-            if (lockedCount >= 6) vault.TryUnlockBuffer(SeismicDirectorConstants.CelestialMockTimelineBuffer, SeismicDirectorConstants.SeismicSystemId);
-            if (lockedCount >= 5) vault.TryUnlockBuffer(SeismicDirectorConstants.CelestialTuningBuffer, SeismicDirectorConstants.SeismicSystemId);
-            if (lockedCount >= 4) vault.TryUnlockBuffer(SeismicDirectorConstants.CelestialFlowModifierBuffer, SeismicDirectorConstants.SeismicSystemId);
-            if (lockedCount >= 3) vault.TryUnlockBuffer(SeismicDirectorConstants.EnvironmentStateBuffer, SeismicDirectorConstants.SeismicSystemId);
-            if (lockedCount >= 2) vault.TryUnlockBuffer(SeismicDirectorConstants.CelestialStateReadBuffer, SeismicDirectorConstants.SeismicSystemId);
-            if (lockedCount >= 1) vault.TryUnlockBuffer(SeismicDirectorConstants.CelestialStateWriteBuffer, SeismicDirectorConstants.SeismicSystemId);
+            IDataVault vault = _celestialMechanicsGuardVault ?? _dataVault;
+            if (vault != null)
+                vault.ReleaseMutationGuard(CelestialMechanicsMutationGuardMask);
+
+            _celestialMechanicsGuardVault = null;
             _celestialMechanicsVaultLocked = false;
         }
 
@@ -2974,14 +2984,15 @@ namespace Hecton8.Environment
             bool telemetryRequested = _celestialMechanicsTelemetryRequested;
             _celestialMechanicsTelemetryRequested = false;
 
-            CelestialStateDTO* writeState = OpenVaultPointer(_dataVault, in _celestialStateWriteHandle, SeismicDirectorConstants.CelestialStateWriteBuffer, SeismicDirectorConstants.CelestialStateSlots);
-            CelestialStateDTO* readState = OpenVaultPointer(_dataVault, in _celestialStateReadHandle, SeismicDirectorConstants.CelestialStateReadBuffer, SeismicDirectorConstants.CelestialStateSlots);
-            EnvironmentStateDTO* environment = OpenVaultPointer(_dataVault, in _environmentStateHandle, SeismicDirectorConstants.EnvironmentStateBuffer, SeismicDirectorConstants.EnvironmentStateSlots);
-            CelestialFlowModifierDTO* flow = OpenVaultPointer(_dataVault, in _celestialFlowModifierHandle, SeismicDirectorConstants.CelestialFlowModifierBuffer, SeismicDirectorConstants.CelestialFlowSlots);
-            CelestialTuningDTO* tuning = OpenVaultPointer(_dataVault, in _celestialTuningHandle, SeismicDirectorConstants.CelestialTuningBuffer, SeismicDirectorConstants.CelestialTuningSlots);
+            IDataVault vault = _celestialMechanicsGuardVault ?? _dataVault;
+            CelestialStateDTO* writeState = OpenVaultPointer(vault, in _celestialStateWriteHandle, SeismicDirectorConstants.CelestialStateWriteBuffer, SeismicDirectorConstants.CelestialStateSlots);
+            CelestialStateDTO* readState = OpenVaultPointer(vault, in _celestialStateReadHandle, SeismicDirectorConstants.CelestialStateReadBuffer, SeismicDirectorConstants.CelestialStateSlots);
+            EnvironmentStateDTO* environment = OpenVaultPointer(vault, in _environmentStateHandle, SeismicDirectorConstants.EnvironmentStateBuffer, SeismicDirectorConstants.EnvironmentStateSlots);
+            CelestialFlowModifierDTO* flow = OpenVaultPointer(vault, in _celestialFlowModifierHandle, SeismicDirectorConstants.CelestialFlowModifierBuffer, SeismicDirectorConstants.CelestialFlowSlots);
+            CelestialTuningDTO* tuning = OpenVaultPointer(vault, in _celestialTuningHandle, SeismicDirectorConstants.CelestialTuningBuffer, SeismicDirectorConstants.CelestialTuningSlots);
             if (writeState == null || readState == null || environment == null || flow == null || tuning == null)
             {
-                UnlockCelestialMechanicsVaultBuffers();
+                ReleaseCelestialMechanicsVaultPins();
                 return false;
             }
 
@@ -2997,13 +3008,13 @@ namespace Hecton8.Environment
             {
                 environmentState.ActiveEventFlags |= (uint)CelestialEventFlagNonFinite;
                 DumpCelestialTelemetryOnce();
-                UnlockCelestialMechanicsVaultBuffers();
+                ReleaseCelestialMechanicsVaultPins();
                 return false;
             }
 
             if (telemetryRequested)
                 WriteCelestialTelemetryEntry(_lastCelestialSolverMs, in state, in environmentState, in flowModifier);
-            UnlockCelestialMechanicsVaultBuffers();
+            ReleaseCelestialMechanicsVaultPins();
             return true;
         }
 
@@ -3313,18 +3324,18 @@ namespace Hecton8.Environment
                 return;
             double nextEvaluationTime = h8Time + tickInterval;
 
-            if (!TryLockSeismicEvaluationVaultBuffers())
+            if (!TryPinSeismicEvaluationVaultBuffers(out IDataVault vault))
                 return;
 
-            SeismicEventDTO* events = OpenVaultPointer(_dataVault, in _seismicEventsHandle, SeismicDirectorConstants.EventSlotsBuffer, SeismicDirectorConstants.MaxQuakeSlots);
-            SeismicStateDTO* states = OpenVaultPointer(_dataVault, in _seismicStatesHandle, SeismicDirectorConstants.SeismicStateBuffer, SeismicDirectorConstants.MaxQuakeSlots);
-            ShakeOffsetDTO* shake = OpenVaultPointer(_dataVault, in _shakeOffsetHandle, SeismicDirectorConstants.ShakeOffsetBuffer, SeismicOutputSlots);
-            float* turbidity = OpenVaultPointer(_dataVault, in _turbiditySpikeHandle, SeismicDirectorConstants.TurbiditySpikeBuffer, SeismicOutputSlots);
-            SeismicTelemetryEntry* telemetry = OpenVaultPointer(_dataVault, in _seismicTelemetryHandle, SeismicDirectorConstants.TelemetryRingBuffer, SeismicDirectorConstants.TelemetryFrames);
-            MockSiltSignal* mockSilt = OpenVaultPointer(_dataVault, in _mockSiltHandle, SeismicDirectorConstants.MockSiltSignalBuffer, SeismicMockSignalSlots);
+            SeismicEventDTO* events = OpenVaultPointer(vault, in _seismicEventsHandle, SeismicDirectorConstants.EventSlotsBuffer, SeismicDirectorConstants.MaxQuakeSlots);
+            SeismicStateDTO* states = OpenVaultPointer(vault, in _seismicStatesHandle, SeismicDirectorConstants.SeismicStateBuffer, SeismicDirectorConstants.MaxQuakeSlots);
+            ShakeOffsetDTO* shake = OpenVaultPointer(vault, in _shakeOffsetHandle, SeismicDirectorConstants.ShakeOffsetBuffer, SeismicOutputSlots);
+            float* turbidity = OpenVaultPointer(vault, in _turbiditySpikeHandle, SeismicDirectorConstants.TurbiditySpikeBuffer, SeismicOutputSlots);
+            SeismicTelemetryEntry* telemetry = OpenVaultPointer(vault, in _seismicTelemetryHandle, SeismicDirectorConstants.TelemetryRingBuffer, SeismicDirectorConstants.TelemetryFrames);
+            MockSiltSignal* mockSilt = OpenVaultPointer(vault, in _mockSiltHandle, SeismicDirectorConstants.MockSiltSignalBuffer, SeismicMockSignalSlots);
             if (events == null || states == null || shake == null || turbidity == null || telemetry == null || mockSilt == null)
             {
-                UnlockSeismicEvaluationVaultBuffers();
+                ReleaseSeismicEvaluationVaultPins();
                 return;
             }
 
@@ -3368,73 +3379,66 @@ namespace Hecton8.Environment
             _nextSeismicEvaluationTime = nextEvaluationTime;
         }
 
-        private bool TryLockSeismicEvaluationVaultBuffers()
+        private bool TryPinSeismicEvaluationVaultBuffers(out IDataVault vault)
         {
+            vault = _seismicEvaluationGuardVault ?? _dataVault;
             if (_seismicEvaluationVaultLocked)
+            {
+                if (vault != null && TryValidateSeismicEvaluationVaultBuffers(vault))
+                    return true;
+
+                if (!_seismicEvaluationJobScheduled)
+                    ReleaseSeismicEvaluationVaultPins();
+                vault = null;
+                return false;
+            }
+
+            vault = _dataVault;
+            if (vault == null || !TryValidateSeismicEvaluationVaultBuffers(vault))
+                return false;
+
+            bool acquired = false;
+            try
+            {
+                if (!vault.TryAcquireMutationGuard(SeismicEvaluationMutationGuardMask))
+                    return false;
+
+                acquired = true;
+                if (!TryValidateSeismicEvaluationVaultBuffers(vault))
+                    return false;
+
+                _seismicEvaluationGuardVault = vault;
+                _seismicEvaluationVaultLocked = true;
+                acquired = false;
                 return true;
-
-            IDataVault vault = _dataVault;
-            if (vault == null)
-                return false;
-
-            int lockedCount = 0;
-            if (!vault.TryLockBuffer(SeismicDirectorConstants.EventSlotsBuffer, SeismicDirectorConstants.SeismicSystemId))
-                return false;
-            lockedCount++;
-            if (!vault.TryLockBuffer(SeismicDirectorConstants.SeismicStateBuffer, SeismicDirectorConstants.SeismicSystemId))
-            {
-                UnlockSeismicEvaluationVaultBuffers(lockedCount);
-                return false;
             }
-            lockedCount++;
-            if (!vault.TryLockBuffer(SeismicDirectorConstants.ShakeOffsetBuffer, SeismicDirectorConstants.SeismicSystemId))
+            finally
             {
-                UnlockSeismicEvaluationVaultBuffers(lockedCount);
-                return false;
+                if (acquired)
+                    vault.ReleaseMutationGuard(SeismicEvaluationMutationGuardMask);
             }
-            lockedCount++;
-            if (!vault.TryLockBuffer(SeismicDirectorConstants.TurbiditySpikeBuffer, SeismicDirectorConstants.SeismicSystemId))
-            {
-                UnlockSeismicEvaluationVaultBuffers(lockedCount);
-                return false;
-            }
-            lockedCount++;
-            if (!vault.TryLockBuffer(SeismicDirectorConstants.TelemetryRingBuffer, SeismicDirectorConstants.SeismicSystemId))
-            {
-                UnlockSeismicEvaluationVaultBuffers(lockedCount);
-                return false;
-            }
-            lockedCount++;
-            if (!vault.TryLockBuffer(SeismicDirectorConstants.MockSiltSignalBuffer, SeismicDirectorConstants.SeismicSystemId))
-            {
-                UnlockSeismicEvaluationVaultBuffers(lockedCount);
-                return false;
-            }
-
-            _seismicEvaluationVaultLocked = true;
-            return true;
         }
 
-        private void UnlockSeismicEvaluationVaultBuffers()
+        private bool TryValidateSeismicEvaluationVaultBuffers(IDataVault vault)
         {
-            UnlockSeismicEvaluationVaultBuffers(6);
+            return TryOpenVaultBuffer(vault, in _seismicEventsHandle, SeismicDirectorConstants.EventSlotsBuffer, SeismicDirectorConstants.MaxQuakeSlots, out _) &&
+                   TryOpenVaultBuffer(vault, in _seismicStatesHandle, SeismicDirectorConstants.SeismicStateBuffer, SeismicDirectorConstants.MaxQuakeSlots, out _) &&
+                   TryOpenVaultBuffer(vault, in _shakeOffsetHandle, SeismicDirectorConstants.ShakeOffsetBuffer, SeismicOutputSlots, out _) &&
+                   TryOpenVaultBuffer(vault, in _turbiditySpikeHandle, SeismicDirectorConstants.TurbiditySpikeBuffer, SeismicOutputSlots, out _) &&
+                   TryOpenVaultBuffer(vault, in _seismicTelemetryHandle, SeismicDirectorConstants.TelemetryRingBuffer, SeismicDirectorConstants.TelemetryFrames, out _) &&
+                   TryOpenVaultBuffer(vault, in _mockSiltHandle, SeismicDirectorConstants.MockSiltSignalBuffer, SeismicMockSignalSlots, out _);
         }
 
-        private void UnlockSeismicEvaluationVaultBuffers(int lockedCount)
+        private void ReleaseSeismicEvaluationVaultPins()
         {
-            IDataVault vault = _dataVault;
-            if (vault == null)
-            {
-                _seismicEvaluationVaultLocked = false;
+            if (!_seismicEvaluationVaultLocked)
                 return;
-            }
 
-            if (lockedCount >= 6) vault.TryUnlockBuffer(SeismicDirectorConstants.MockSiltSignalBuffer, SeismicDirectorConstants.SeismicSystemId);
-            if (lockedCount >= 5) vault.TryUnlockBuffer(SeismicDirectorConstants.TelemetryRingBuffer, SeismicDirectorConstants.SeismicSystemId);
-            if (lockedCount >= 4) vault.TryUnlockBuffer(SeismicDirectorConstants.TurbiditySpikeBuffer, SeismicDirectorConstants.SeismicSystemId);
-            if (lockedCount >= 3) vault.TryUnlockBuffer(SeismicDirectorConstants.ShakeOffsetBuffer, SeismicDirectorConstants.SeismicSystemId);
-            if (lockedCount >= 2) vault.TryUnlockBuffer(SeismicDirectorConstants.SeismicStateBuffer, SeismicDirectorConstants.SeismicSystemId);
-            if (lockedCount >= 1) vault.TryUnlockBuffer(SeismicDirectorConstants.EventSlotsBuffer, SeismicDirectorConstants.SeismicSystemId);
+            IDataVault vault = _seismicEvaluationGuardVault ?? _dataVault;
+            if (vault != null)
+                vault.ReleaseMutationGuard(SeismicEvaluationMutationGuardMask);
+
+            _seismicEvaluationGuardVault = null;
             _seismicEvaluationVaultLocked = false;
         }
 
@@ -3454,7 +3458,7 @@ namespace Hecton8.Environment
 
             UpdateCompletedSeismicTelemetry(computeMs);
             PublishSeismicOutputSignal();
-            UnlockSeismicEvaluationVaultBuffers();
+            ReleaseSeismicEvaluationVaultPins();
         }
 
         private void UpdateCompletedSeismicTelemetry(float computeMs)
@@ -3835,32 +3839,32 @@ namespace Hecton8.Environment
             _lowMemoryProfile = GlobalRegistry.H8_LOW_MEMORY_PROFILE;
             _globalQualityWeight = UpdateGlobalQualityWeight();
             float shaderShakeQuality = math.saturate(math.isfinite(_globalQualityWeight) ? _globalQualityWeight : 0.5f);
-            bool requestedShaderShakeDisabled = _lowMemoryProfile ||
-                                                _mathPrecision == MathPrecisionLevel.Low ||
-                                                shaderShakeQuality <= 0.15f;
-            UpdateShaderShakeLodState(requestedShaderShakeDisabled);
+            bool requestedShaderShakeSuppressed = _lowMemoryProfile ||
+                                                  _mathPrecision == MathPrecisionLevel.Low ||
+                                                  shaderShakeQuality <= 0.15f;
+            UpdateShaderShakeLodState(requestedShaderShakeSuppressed);
         }
 
-        private void UpdateShaderShakeLodState(bool requestedDisabled)
+        private void UpdateShaderShakeLodState(bool requestedSuppressed)
         {
             double now = ResolveH8TimeSeconds();
             if (!_hasShaderShakeState)
             {
-                _shaderShakeDisabled = requestedDisabled;
+                _shaderShakeSuppressed = requestedSuppressed;
                 _hasShaderShakeState = true;
                 _hasPendingShaderShakeState = false;
                 return;
             }
 
-            if (requestedDisabled == _shaderShakeDisabled)
+            if (requestedSuppressed == _shaderShakeSuppressed)
             {
                 _hasPendingShaderShakeState = false;
                 return;
             }
 
-            if (!_hasPendingShaderShakeState || _pendingShaderShakeDisabled != requestedDisabled)
+            if (!_hasPendingShaderShakeState || _pendingShaderShakeSuppressed != requestedSuppressed)
             {
-                _pendingShaderShakeDisabled = requestedDisabled;
+                _pendingShaderShakeSuppressed = requestedSuppressed;
                 _shaderShakeLodSwitchTime = now + ShaderShakeLodHysteresisSeconds;
                 _hasPendingShaderShakeState = true;
                 return;
@@ -3869,14 +3873,18 @@ namespace Hecton8.Environment
             if (now < _shaderShakeLodSwitchTime)
                 return;
 
-            _shaderShakeDisabled = requestedDisabled;
+            _shaderShakeSuppressed = requestedSuppressed;
             _hasPendingShaderShakeState = false;
         }
 
         private void ClearCachedRuntimeState()
         {
+            ReleaseSeismicEvaluationVaultPins();
+            ReleaseCelestialMechanicsVaultPins();
             _tickDispatcher = null;
             _dataVault = null;
+            _seismicEvaluationGuardVault = null;
+            _celestialMechanicsGuardVault = null;
             _worldSeedProvider = null;
             _playerRuntime = null;
             _tideTelemetryHandle = default;
@@ -3909,10 +3917,10 @@ namespace Hecton8.Environment
             _hasCachedTide = false;
             _mathPrecision = MathPrecisionLevel.Low;
             _lowMemoryProfile = true;
-            _shaderShakeDisabled = true;
+            _shaderShakeSuppressed = true;
             _hasShaderShakeState = false;
             _hasPendingShaderShakeState = false;
-            _pendingShaderShakeDisabled = false;
+            _pendingShaderShakeSuppressed = false;
             _shaderShakeLodSwitchTime = 0d;
             _seismicVaultReady = false;
             _celestialVaultReady = false;
@@ -3961,9 +3969,9 @@ namespace Hecton8.Environment
             return _cachedWorldSeed;
         }
 
-        private bool IsLowTierShaderShakeDisabled()
+        private bool IsShaderShakeSuppressed()
         {
-            return _shaderShakeDisabled;
+            return _shaderShakeSuppressed;
         }
 
         private bool TryResolvePlayerAup(out AbsoluteUniversePosition aup)
@@ -5584,6 +5592,7 @@ namespace Hecton8.Environment
             if (vault == null ||
                 requiredLength < 0 ||
                 handle.BufferID != unchecked((uint)(int)bufferId) ||
+                handle.SystemID != unchecked((uint)SeismicDirectorConstants.SeismicSystemId) ||
                 handle.Generation == 0u)
             {
                 return false;

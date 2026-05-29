@@ -395,7 +395,7 @@ namespace Hecton8.Gameplay
         [Header("Physical Hands")]
         [SerializeField, Range(2f, 80f)] private float handSpringForce = 24f;
         [SerializeField, Range(0.08f, 0.5f)] private float ghostHandDistanceMeters = 0.2f;
-        [SerializeField, FormerlySerializedAs("disableGhostHandsOnLowTier")] private bool reduceGhostHandsAtLowQuality = true;
+        [SerializeField, FormerlySerializedAs("reduceGhostHandsAtLowQuality"), FormerlySerializedAs("disableGhostHandsOnLowTier")] private bool scaleGhostHandToleranceByQuality = true;
 
         [Header("Breathing Audio")]
         [SerializeField] private AudioSource breathingSource;
@@ -2000,7 +2000,7 @@ namespace Hecton8.Gameplay
 
             float baseThreshold = SanitizeMinimum(ghostHandDistanceMeters, 0.01f);
             float qualityCurve = Smoothstep01(_globalQualityWeight01);
-            float threshold = reduceGhostHandsAtLowQuality
+            float threshold = scaleGhostHandToleranceByQuality
                 ? baseThreshold * math.lerp(2.5f, 1f, qualityCurve)
                 : baseThreshold;
             float thresholdSq = threshold * threshold;

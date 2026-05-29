@@ -2067,7 +2067,7 @@ namespace Hecton8.Core.Data
                     uint hash = ComputeFnv1a32(id.AsSpan());
                     writer.Write(id);
                     writer.Write(',');
-                    writer.Write(hash.ToString("X8", System.Globalization.CultureInfo.InvariantCulture));
+                    WriteHex8(writer, hash);
                     writer.WriteLine();
                 }
             }
@@ -2088,6 +2088,13 @@ namespace Hecton8.Core.Data
                 Success = false,
                 Message = message
             };
+        }
+
+        private static void WriteHex8(TextWriter writer, uint value)
+        {
+            const string HexDigits = "0123456789ABCDEF";
+            for (int shift = 28; shift >= 0; shift -= 4)
+                writer.Write(HexDigits[(int)((value >> shift) & 0xFu)]);
         }
 #endif
     }
