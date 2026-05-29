@@ -201,6 +201,49 @@ namespace Hecton8.Tests.Editor
         }
 
         [Test]
+        public void CoreMemoryHotPaths_DoNotResolveColdDependencies()
+        {
+            string h8Memory = ReadProjectFile("Assets/_Project/Scripts/Core/Memory/H8Memory.cs");
+            string vault = ReadProjectFile("Assets/_Project/Scripts/Core/Memory/GlobalDataVault.cs");
+            string sentinel = ReadProjectFile("Assets/_Project/Scripts/Core/NativeMemorySentinel.cs");
+            string dispatcher = ReadProjectFile("Assets/_Project/Scripts/Core/SystemDispatcher.cs");
+
+            AssertNoColdLookup(ExtractMethod(vault, "public bool TryAcquireWriteLock<T>"));
+            AssertNoColdLookup(ExtractMethod(vault, "public bool ReleaseWriteLock<T>"));
+            AssertNoColdLookup(ExtractMethod(vault, "public bool ProcessDeferredArenaGrowth"));
+            AssertNoColdLookup(ExtractMethod(vault, "private bool TryGrowArena("));
+            AssertNoColdLookup(ExtractMethod(h8Memory, "private static int RegisterBlockDescriptorThreadSafe"));
+            AssertNoColdLookup(ExtractMethod(h8Memory, "private static void EnterBlockDescriptorMutationGate"));
+            AssertNoColdLookup(ExtractMethod(sentinel, "private static int RegisterPointer("));
+            AssertNoColdLookup(ExtractMethod(dispatcher, "private void ProcessDeferredArenaGrowthPostSimulation"));
+            AssertNoColdLookup(ExtractMethod(dispatcher, "private void RunMasterVisualSyncPhase"));
+            AssertNoColdLookup(ExtractMethod(dispatcher, "private void RunDispatcherLateFrame"));
+            AssertNoColdLookup(ExtractMethod(dispatcher, "private static bool TryResolveCachedDataVault"));
+        }
+
+        [Test]
+        public void GlobalDataVault_DeferredGrowthStateTransferIsInterlockedAndAllocationFree()
+        {
+            string vault = ReadProjectFile("Assets/_Project/Scripts/Core/Memory/GlobalDataVault.cs");
+            string queue = ExtractMethod(vault, "private void QueueDeferredArenaGrowth");
+            string clear = ExtractMethod(vault, "private void ClearDeferredArenaGrowthIfSatisfied");
+            string process = ExtractMethod(vault, "public bool ProcessDeferredArenaGrowth");
+            string dispatcher = ReadProjectFile("Assets/_Project/Scripts/Core/SystemDispatcher.cs");
+            string bridge = ExtractMethod(dispatcher, "private void ProcessDeferredArenaGrowthPostSimulation");
+
+            StringAssert.Contains("Volatile.Read(ref _deferredArenaGrowthBytes)", queue);
+            StringAssert.Contains("Interlocked.CompareExchange(ref _deferredArenaGrowthBytes, requiredBytes, observed)", queue);
+            StringAssert.Contains("Volatile.Read(ref _deferredArenaGrowthBytes)", clear);
+            StringAssert.Contains("Interlocked.CompareExchange(ref _deferredArenaGrowthBytes, 0L, observed)", clear);
+            StringAssert.Contains("Volatile.Read(ref _deferredArenaGrowthBytes)", process);
+            StringAssert.Contains("IDataVault dataVault = _dataVault;", bridge);
+            AssertNoForbiddenManagedHotPathConstructs(queue);
+            AssertNoForbiddenManagedHotPathConstructs(clear);
+            AssertNoForbiddenManagedHotPathConstructs(process);
+            AssertNoForbiddenManagedHotPathConstructs(bridge);
+        }
+
+        [Test]
         public void GlobalDataVault_ArenaGrowthPreflightsTailMetadataBeforeRawReallocate()
         {
             string h8Memory = ReadProjectFile("Assets/_Project/Scripts/Core/Memory/H8Memory.cs");
@@ -332,6 +375,26 @@ namespace Hecton8.Tests.Editor
                 block.Contains("Volatile.Read(ref _compactionFence)") ||
                 block.Contains("TryResolveHandle(in baseHandle"),
                 signature);
+        }
+
+        private static void AssertNoColdLookup(string block)
+        {
+            Assert.IsFalse(block.Contains("GlobalRegistry.Get<"));
+            Assert.IsFalse(block.Contains("GetComponent<"));
+            Assert.IsFalse(block.Contains("GetComponent("));
+            Assert.IsFalse(block.Contains("TryGetComponent("));
+        }
+
+        private static void AssertNoForbiddenManagedHotPathConstructs(string block)
+        {
+            Assert.IsFalse(block.Contains("new "));
+            Assert.IsFalse(block.Contains("string.Format"));
+            Assert.IsFalse(block.Contains(".ToString("));
+            Assert.IsFalse(block.Contains("foreach"));
+            Assert.IsFalse(block.Contains(".Select("));
+            Assert.IsFalse(block.Contains(".Where("));
+            Assert.IsFalse(block.Contains(".ToArray("));
+            Assert.IsFalse(block.Contains(".ToList("));
         }
 
         private static string ReadProjectFile(string relativePath)

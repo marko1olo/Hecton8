@@ -121,12 +121,12 @@ function Assert-DependencyListValid([string]$ModId, [string[]]$Dependencies) {
 function Invoke-LocalValidation {
     $validator = Require-File 'Tools/validate_structure.ps1'
     $global:LASTEXITCODE = 0
-    & $validator -Root $Root
+    $validationOutput = & $validator -Root $Root 2>&1
     if (-not $?) {
-        throw 'validate_structure.ps1 failed.'
+        throw ('validate_structure.ps1 failed: ' + (($validationOutput | ForEach-Object { [string]$_ }) -join ' | '))
     }
     if ($global:LASTEXITCODE -ne 0) {
-        throw ('validate_structure.ps1 exit code ' + $global:LASTEXITCODE)
+        throw ('validate_structure.ps1 exit code ' + $global:LASTEXITCODE + ': ' + (($validationOutput | ForEach-Object { [string]$_ }) -join ' | '))
     }
 }
 

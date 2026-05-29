@@ -5598,7 +5598,7 @@ namespace Hecton8.World
         private GraphicsBuffer ResolveActiveInstanceDataBuffer()
         {
             if (_instanceDataBuffer != null)
-                return _instanceDataBuffer;
+                return IsValidBuffer(_instanceDataBuffer) ? _instanceDataBuffer : null;
 
             if (_instanceCount <= 0)
                 return null;
@@ -5620,7 +5620,7 @@ namespace Hecton8.World
         private GraphicsBuffer TryResolveActiveInstanceDataBufferHot()
         {
             if (_instanceDataBuffer != null)
-                return _instanceDataBuffer;
+                return IsValidBuffer(_instanceDataBuffer) ? _instanceDataBuffer : null;
 
             if (_instanceCount <= 0 ||
                 _legacyDataDirty ||
